@@ -1,0 +1,7 @@
+<launch>
+
+  <!-- avoidance node -->
+  <node pkg="avoidance" name="avoidance" type="avoidance_node" output="screen">
+  </node>
+
+</launch>
