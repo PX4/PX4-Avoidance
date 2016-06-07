@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(avoidance)
 
+add_definitions(-std=c++11)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -10,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
 )
 find_package(PCL 1.7 REQUIRED)
+find_package(octomap REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -101,9 +104,9 @@ find_package(PCL 1.7 REQUIRED)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES avoidance
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+  INCLUDE_DIRS include
+  LIBRARIES global_planner cell node
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs
 #  DEPENDS system_lib
 )
 
@@ -115,14 +118,26 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include)
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${OCTOMAP_INCLUDE_DIRS}
 )
+link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(avoidance
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
+add_library(cell
+  src/library/cell.cpp
+)
+add_library(node
+  src/library/node.cpp
+)
+add_library(global_planner
+  src/library/global_planner.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -131,6 +146,8 @@ include_directories(
 
 ## Declare a C++ executable
 add_executable(avoidance_node src/avoidance_node.cpp)
+add_executable(global_planner_node src/nodes/global_planner_node.cpp)
+add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -141,6 +158,10 @@ target_link_libraries(avoidance_node
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
+target_link_libraries(global_planner_node
+  global_planner cell node ${catkin_LIBRARIES})
+target_link_libraries(path_handler_node
+  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
