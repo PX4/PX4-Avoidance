@@ -34,7 +34,7 @@ struct PathInfo {
 
 class GlobalPlanner {
  public:
-  // octomap::OcTree* octree;
+  octomap::OcTree* octree = NULL;
   std::vector<double> heightPrior { 1.0, 0.5, 0.3, 0.2, 0.1, 0.05, 0.01,
                                     0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
   // std::vector<double> heightPrior { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
@@ -67,10 +67,10 @@ class GlobalPlanner {
   double maxPathProb = 0.0;
   double maxBailProb = 1.0;     // Must be >= 0 (50%) because of the fixed uniform prior in OctoMap
   double maxCellRisk = 20.0;
-  double smoothFactor = 2.0;
+  double smoothFactor = 5.0;
   double vertToHorCost = 1.0;   // The cost of changing between vertical and horizontal motion
   double riskFactor = 100.0;
-  double neighborRiskFlow = 0.2;
+  double neighborRiskFlow = 0.3;
   double explorePenalty = 0.015;
   double upCost = 3.0;
   double downCost = 1.0;
@@ -89,7 +89,7 @@ class GlobalPlanner {
 
   void calculateAccumulatedHeightPrior();
 
-  void setPose(const geometry_msgs::Point & newPos, double newYaw);
+  void setPose(const geometry_msgs::PoseStamped & newPose);
   void setGoal(const Cell & goal);
   void setPath(const std::vector<Cell> & path);
 
@@ -109,7 +109,7 @@ class GlobalPlanner {
   double altitudeHeuristic(const Cell & u, const Cell & goal);
   double getHeuristic(const Node & u, const Cell & goal);
   
-  geometry_msgs::PoseStamped createPoseMsg(double x, double y, double z, double yaw);
+  geometry_msgs::PoseStamped createPoseMsg(const Cell cell, double yaw);
   nav_msgs::Path getPathMsg();
 
   PathInfo getPathInfo(const std::vector<Cell> & path, const Node lastNode);

@@ -26,31 +26,22 @@ void GlobalPlannerNode::SetNewGoal(Cell goal) {
   global_planner.setGoal(goal);
   geometry_msgs::PointStamped pointMsg;
   pointMsg.header.frame_id = "/world";
-  pointMsg.point.x = goal.xPos();
-  pointMsg.point.y = goal.yPos();
-  pointMsg.point.z = goal.zPos();
+  pointMsg.point = goal.toPoint();
   cmd_clicked_point_pub_.publish(pointMsg);
-  cmd_clicked_point_pub_.publish(pointMsg);
+  cmd_clicked_point_pub_.publish(pointMsg);  // Needed to show up in Rviz, TODO: remove
   PlanPath();
 }
 
 void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped& msg) {
   global_planner.currVel = msg.twist.linear;
-  global_planner.currVel.x = (msg.twist.linear.y);  // 90 deg fix
-  global_planner.currVel.y = -(msg.twist.linear.x); // 90 deg fix
+  global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
 }
-
 
 void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) {
 
   auto rot_msg = msg;
-  double yaw = tf::getYaw(rot_msg.pose.orientation);
-
-  rot_msg.pose.position.x = (msg.pose.position.y);  // 90 deg fix
-  rot_msg.pose.position.y = -(msg.pose.position.x); // 90 deg fix
-  yaw -= M_PI/2;                                    // 90 deg fix
-
-  global_planner.setPose(rot_msg.pose.position, yaw);    // TODO: call with just pose
+  rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
+  global_planner.setPose(rot_msg);
 
   double distToGoal = global_planner.goalPos.manhattanDist(global_planner.currPos.x, global_planner.currPos.y, global_planner.currPos.z);
   if (fileGoals.size() > 0 && (distToGoal < 1.0 || global_planner.goalIsBlocked)) {
@@ -59,11 +50,12 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) 
       ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actualPath), pathEnergy(actualPath, global_planner.upCost));
       ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner.goalPos.asString().c_str(), (int) fileGoals.size());
     }
-    Cell newGoal = fileGoals[0];
+    Cell newGoal = fileGoals.front();
     fileGoals.erase(fileGoals.begin());
     SetNewGoal(newGoal);
   }
 
+  // Keep track of and publish the actual travel trajectory
   if (numPositionMessages++ % 50 == 0) {
     rot_msg.header.frame_id = "/world";
     actualPath.poses.push_back(rot_msg);
@@ -71,9 +63,7 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) 
   }
 }
 
-void GlobalPlannerNode::ClickedPointCallback(
-    const geometry_msgs::PointStamped& msg) {
-
+void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped& msg) {
   SetNewGoal(Cell(msg.point.x, msg.point.y, 3.0));
 }
 
@@ -139,13 +129,10 @@ void GlobalPlannerNode::PublishExploredCells() {
     marker.id = id++;
     marker.header.frame_id = "/world";
     marker.header.stamp = ros::Time();
+    marker.pose.position = cell.toPoint();
     marker.type = visualization_msgs::Marker::CUBE;
     marker.action = visualization_msgs::Marker::ADD;
     marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
-    // TODO: Function
-    marker.pose.position.x = cell.xPos();
-    marker.pose.position.y = cell.yPos();
-    marker.pose.position.z = cell.zPos();
 
     // Just a hack to get the (almost) color spectrum depending on height
     // h=0 -> blue    h=0.5 -> green  h=1 -> red
@@ -158,17 +145,12 @@ void GlobalPlannerNode::PublishExploredCells() {
     marker.color.b = 1.0 - h;
     marker.color.a = 1.0;
 
-    if (global_planner.occProb.find(cell) != global_planner.occProb.end()) {
-      // Octomap has a probability for the cell
-      msg.markers.push_back(marker);
-    }
-    else {
+    if (!global_planner.octree->search(cell.xPos(), cell.yPos(), cell.zPos())) {
+    // if (global_planner.occProb.find(cell) != global_planner.occProb.end()) {
       // Unknown space
-      marker.color.r = 0.2;
-      marker.color.g = 0.2;
-      marker.color.b = 0.2;
-      msg.markers.push_back(marker);
+      marker.color.r = marker.color.g = marker.color.b = 0.2; // Dark gray
     }
+    msg.markers.push_back(marker);
   }
   cmd_explored_cells_pub_.publish(msg);
 }

@@ -30,9 +30,9 @@ void GlobalPlanner::calculateAccumulatedHeightPrior() {
 }
 
 // Updates the current pose and keeps track of the path back
-void GlobalPlanner::setPose(const geometry_msgs::Point & newPos, double newYaw) {
-  currPos = newPos;
-  currYaw = newYaw;
+void GlobalPlanner::setPose(const geometry_msgs::PoseStamped & newPose) {
+  currPos = newPose.pose.position;
+  currYaw = tf::getYaw(newPose.pose.orientation);
   Cell currCell = Cell(currPos);
   if (!goingBack && (pathBack.empty() || currCell != pathBack.back())) {
     // Keep track of where we have been, add current position to pathBack if it is different from last one
@@ -77,31 +77,35 @@ bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap & msg) {
   occupied.clear();
   riskCache.clear();
   octomap::AbstractOcTree* tree = octomap_msgs::msgToMap(msg);
-  octomap::OcTree* octree = dynamic_cast<octomap::OcTree*>(tree);
-  if (tree) {
-    for(auto it = octree->begin_leafs(), end=octree->end_leafs(); it!= end; ++it){
-      Cell cell(it.getCoordinate().x(), it.getCoordinate().y(), it.getCoordinate().z());
-      double cellProb = it->getValue(); 
-      occProb[cell] = cellProb;
-
-      if (cellProb > maxPathProb) {
-        // Cell is too risky to plan a new path through
-        occupied.insert(cell);
-        if (cellProb > maxBailProb && pathCells.find(cell) != pathCells.end()) {
-          // Cell is on path and is risky enough to abort mission
-          currPathIsFree = false;
-          printf("BAD CELL: %s \n", cell.asString().c_str());
-          pathCells.clear();  // TODO: is this ok?
-        }
-      }
-
-      if (it.getSize() > 2) {
-        // TODO: Need a loop for large leafs
-        printf("LARGE LEAF: %d, %d, %d: %2.3f %2.3f", cell.xPos(), cell.yPos(), cell.zPos(), it.getSize(), it->getValue());
-      }
-    }
+  if (octree) {
+    delete octree;
   }
-  delete octree;
+  octree = dynamic_cast<octomap::OcTree*>(tree);
+  ROS_INFO("Tree depth: %d", octree->getTreeDepth());
+  // if (tree) {
+  //   for(auto it = octree->begin_leafs(), end=octree->end_leafs(); it!= end; ++it) {
+  //     Cell cell(it.getCoordinate().x(), it.getCoordinate().y(), it.getCoordinate().z());
+  //     double cellProb = it->getValue(); 
+  //     occProb[cell] = cellProb;
+
+  //     if (cellProb > maxPathProb) {
+  //       // Cell is too risky to plan a new path through
+  //       occupied.insert(cell);
+  //       if (cellProb > maxBailProb && pathCells.find(cell) != pathCells.end()) {
+  //         // Cell is on path and is risky enough to abort mission
+  //         currPathIsFree = false;
+  //         printf("BAD CELL: %s \n", cell.asString().c_str());
+  //         pathCells.clear();  // TODO: is this ok?
+  //       }
+  //     }
+
+  //     if (it.getSize() > 2) {
+  //       // TODO: Need a loop for large leafs
+  //       printf("LARGE LEAF: %s: %2.3f %2.3f", cell.asString().c_str(), it.getSize(), it->getValue());
+  //     }
+  //   }
+  // }
+  // delete octree;
 
   // Check if the risk of the current path has increased 
   if (!lastPath.empty()) {
@@ -206,10 +210,16 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
   if (cell.z() < 1) {
     return 1.0;   // Octomap does not keep track of the ground
   }
-  if (occProb.find(cell) != occProb.end()) {
+  octomap::OcTreeNode* node = octree->search(cell.xPos(), cell.yPos(), cell.zPos());
+  // octomap::OcTreeNode* parent = octree->search(cell.xPos(), cell.yPos(), cell.zPos(), 15);
+  // if (occProb.find(cell) != occProb.end()) {
+  if (node) {
     // TODO: update in log-space
-    // return posterior(heightPrior[cell.z()], octomap::probability(occProb[cell]));     // If the cell has been seen
-    return posterior(0.12, octomap::probability(occProb[cell]));     // If the cell has been seen
+    // double logOdds = occProb[cell];
+    double logOdds = node->getValue();
+    // double parentLogOdds = parent->getValue();
+    return posterior(heightPrior[cell.z()], octomap::probability(logOdds));     // If the cell has been seen
+    // return posterior(0.06, octomap::probability(logOdds));     // If the cell has been seen
   }
   return explorePenalty * heightPrior[cell.z()];    // Risk for unexplored cells
 }
@@ -319,14 +329,11 @@ double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   return heuristic;
 }
 
-geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(double x, double y, double z, double yaw) {
+geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell cell, double yaw) {
   geometry_msgs::PoseStamped poseMsg;
   poseMsg.header.frame_id="/world";
-  poseMsg.pose.position.x = x;
-  poseMsg.pose.position.y = y;
-  poseMsg.pose.position.z = z;
+  poseMsg.pose.position = cell.toPoint();
   poseMsg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-  poseMsg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw + M_PI/2.0);  // 90 deg fix
   return poseMsg;
 }
 
@@ -342,12 +349,12 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
     Cell lastP = lastPath[i-1];
     double newYaw = angle(p, lastPath[i+1], lastYaw);
     // if (newYaw != lastYaw) {   // only publish corner points
-      pathMsg.poses.push_back(createPoseMsg(p.xPos(), p.yPos(), p.zPos(), newYaw));
+      pathMsg.poses.push_back(createPoseMsg(p, newYaw));
     // }
     lastYaw = newYaw;
   }
   Cell lastPoint = lastPath[lastPath.size()-1];   // Last point should have the same yaw as the previous point
-  pathMsg.poses.push_back(createPoseMsg(lastPoint.xPos(), lastPoint.yPos(), lastPoint.zPos(), lastYaw));
+  pathMsg.poses.push_back(createPoseMsg(lastPoint, lastYaw));
   return pathMsg;
 }
 
