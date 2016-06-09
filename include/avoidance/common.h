@@ -21,9 +21,11 @@
 #ifndef GLOBAL_PLANNER_COMMON_H_
 #define GLOBAL_PLANNER_COMMON_H_
 
-#include <glog/logging.h>
-
 #include <nav_msgs/Path.h>
+#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
+#include <geometry_msgs/PoseStamped.h>
+
+ 
  
 
 namespace avoidance {
@@ -39,15 +41,16 @@ double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) 
   double diffX = a.pose.position.x - b.pose.position.x;
   double diffY = a.pose.position.y - b.pose.position.y;
   double diffZ = a.pose.position.z - b.pose.position.z;
-  return sqrt(diffX*diffX + diffY*diffY + diffZ*diffZ);
+  return sqrt(squared(diffX) + squared(diffY) + squared(diffZ));
 }
 
+// Returns a weighted average of start and end, where ratio is the weight of start 
 double interpolate(double start, double end, double ratio) {
   return start + (end - start) * ratio;
 }
 
+// returns angle in the range [-pi, pi]
 double angleToRange(double angle) {
-  // returns the angle in the range [-pi, pi]
   angle += M_PI;
   angle -= (2*M_PI) * std::floor( angle / (2*M_PI) );
   angle -= M_PI;
@@ -61,12 +64,47 @@ double angleToRange(double angle) {
 //   return sqrt(squared(xDiff) + squared(yDiff) + squared(zDiff));
 // }
 
+// Returns true if msg1 and msg2 have both the same altitude and orientation
 bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1,
-                         const geometry_msgs::Pose& msg2) {
+                           const geometry_msgs::Pose& msg2) {
 
   return msg1.orientation.z == msg2.orientation.z
       && msg1.orientation.w == msg2.orientation.w
       && msg1.position.z == msg2.position.z;
+}
+
+template <typename T>
+T rotateToWorldCoordinates(T point) {
+  T newPoint;
+  newPoint.x = point.y;
+  newPoint.y = -point.x;
+  newPoint.z = point.z;
+  return newPoint;
+}
+
+template <typename T>
+T rotateToMavrosCoordinates(T point) {
+  T newPoint;
+  newPoint.x = -point.y;
+  newPoint.y = point.x;
+  newPoint.z = point.z;
+  return newPoint;
+}
+
+geometry_msgs::PoseStamped rotatePoseMsgToWorld(const geometry_msgs::PoseStamped & msg) {
+  geometry_msgs::PoseStamped rot_msg = msg;
+  rot_msg.pose.position = rotateToWorldCoordinates(msg.pose.position);
+  double yaw = tf::getYaw(msg.pose.orientation);
+  rot_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw - M_PI/2);
+  return rot_msg;
+}
+
+geometry_msgs::PoseStamped rotatePoseMsgToMavros(const geometry_msgs::PoseStamped & msg) {
+  geometry_msgs::PoseStamped rot_msg = msg;
+  rot_msg.pose.position = rotateToMavrosCoordinates(msg.pose.position);
+  double yaw = tf::getYaw(msg.pose.orientation);
+  rot_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw + M_PI/2);
+  return rot_msg;
 }
 
 double posterior(double p, double prior) {
@@ -77,7 +115,6 @@ double posterior(double p, double prior) {
 }
 
 double pathLength(nav_msgs::Path & path) {
-  // p and prior are independent measurements of the same event
   double totalDist = 0.0;
   for (int i=1; i < path.poses.size(); ++i) {
     totalDist += distance(path.poses[i-1], path.poses[i]);
@@ -86,7 +123,6 @@ double pathLength(nav_msgs::Path & path) {
 }
 
 double pathKineticEnergy(nav_msgs::Path & path) {
-  // p and prior are independent measurements of the same event
   if (path.poses.size() < 3) {
     return 0.0;
   }

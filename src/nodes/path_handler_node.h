@@ -20,7 +20,7 @@ class PathHandlerNode {
   ~PathHandlerNode();
 
  private:
-  geometry_msgs::PoseStamped last_msg;
+  geometry_msgs::PoseStamped currentGoal;
   geometry_msgs::PoseStamped last_pos;
   double speed = 1.0;
   double maxSpeed = 1.5;

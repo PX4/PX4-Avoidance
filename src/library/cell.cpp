@@ -22,6 +22,14 @@ double Cell::xPos() const {return scale * x() + scale * 0.5;}
 double Cell::yPos() const {return scale * y() + scale * 0.5;}
 double Cell::zPos() const {return scale * z() + scale * 0.5;}
 
+geometry_msgs::Point Cell::toPoint() const {
+  geometry_msgs::Point point;
+  point.x = xPos();
+  point.y = yPos();
+  point.z = zPos();
+  return point;
+}
+
 // Returns the Manhattan-distance from the center of the Cell
 double Cell::manhattanDist(double _x, double _y, double _z) const {
   return std::abs(xPos() - _x) + std::abs(yPos() - _y) + std::abs(zPos() - _z);

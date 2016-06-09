@@ -5,6 +5,8 @@
 #include <string>
 #include <tuple>
 
+#include <geometry_msgs/Point.h>
+
 #include "avoidance/common.h"
 
 namespace avoidance {
@@ -27,6 +29,8 @@ class Cell {
   double xPos() const;
   double yPos() const;
   double zPos() const;
+
+  geometry_msgs::Point toPoint() const;
 
   double manhattanDist(double _x, double _y, double _z) const;
   double distance2D(const Cell & b) const;
