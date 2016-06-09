@@ -69,8 +69,8 @@
         <param name="frame_id" type="string" value="world" />
         <!-- maximum range to integrate (speedup!) -->
         <param name="sensor_model/max_range" value="9.0" />
-        <param name="sensor_model/min" value="0.0" />
-        <param name="sensor_model/max" value="1.0" />
+        <param name="sensor_model/min" value="0.01" />
+        <param name="sensor_model/max" value="0.9" />
         <param name="sensor_model/hit" value="0.7" />
         <param name="sensor_model/miss" value="0.4" />
         <param name="color/r" value="0.1" />
