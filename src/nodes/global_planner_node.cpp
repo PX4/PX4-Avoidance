@@ -74,7 +74,7 @@ void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan& msg) {
     minRange = range < msg.range_min ? minRange : std::min(minRange, range);
   }
   if (!global_planner.goingBack && minRange < 0.5) {
-    ROS_INFO("CHRASH!!! Distance to obstacle: %2.2f\n\n\n", minRange);
+    ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", minRange);
     if (global_planner.pathBack.size() > 3) {
       global_planner.goBack();
       PublishPath();
