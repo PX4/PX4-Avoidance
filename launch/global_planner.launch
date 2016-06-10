@@ -34,7 +34,6 @@
     <group ns="$(arg ns)">
         <include file="$(find mavros)/launch/node.launch">
             <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
-
             <!-- Need to change the config file to get the tf topic 
                  and get local position in terms of local origin -->
             <arg name="config_yaml" value="$(find avoidance)/resource/px4_config.yaml" />
@@ -70,9 +69,9 @@
         <!-- maximum range to integrate (speedup!) -->
         <param name="sensor_model/max_range" value="9.0" />
         <param name="sensor_model/min" value="0.01" />
-        <param name="sensor_model/max" value="0.9" />
-        <param name="sensor_model/hit" value="0.7" />
-        <param name="sensor_model/miss" value="0.4" />
+        <param name="sensor_model/max" value="0.99" />
+        <param name="sensor_model/hit" value="0.9" />
+        <param name="sensor_model/miss" value="0.45" />
         <param name="color/r" value="0.1" />
         <param name="color/g" value="0.1" />
         <param name="color/b" value="0.1" />

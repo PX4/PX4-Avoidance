@@ -66,11 +66,11 @@ class GlobalPlanner {
   int maxHeight = 10;
   double maxPathProb = 0.0;
   double maxBailProb = 1.0;     // Must be >= 0 (50%) because of the fixed uniform prior in OctoMap
-  double maxCellRisk = 20.0;
+  double maxCellRisk = 15.0;
   double smoothFactor = 5.0;
   double vertToHorCost = 1.0;   // The cost of changing between vertical and horizontal motion
-  double riskFactor = 100.0;
-  double neighborRiskFlow = 0.3;
+  double riskFactor = 200.0;
+  double neighborRiskFlow = 1.0;
   double explorePenalty = 0.015;
   double upCost = 3.0;
   double downCost = 1.0;

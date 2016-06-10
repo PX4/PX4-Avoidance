@@ -98,6 +98,7 @@ void GlobalPlannerNode::OctomapFullCallback(
 
 void GlobalPlannerNode::PlanPath() {
   ROS_INFO("Start planning path.");
+  ROS_INFO("OctoMap memory usage: %2.3fMB", global_planner.octree->memoryUsage() / 1000000.0);
   bool foundPath = global_planner.getGlobalPath();
   PublishExploredCells();
   if (!foundPath) {
