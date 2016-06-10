@@ -81,7 +81,6 @@ bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap & msg) {
     delete octree;
   }
   octree = dynamic_cast<octomap::OcTree*>(tree);
-  ROS_INFO("Tree depth: %d", octree->getTreeDepth());
   // if (tree) {
   //   for(auto it = octree->begin_leafs(), end=octree->end_leafs(); it!= end; ++it) {
   //     Cell cell(it.getCoordinate().x(), it.getCoordinate().y(), it.getCoordinate().z());
