@@ -194,14 +194,12 @@ bool GlobalPlanner::isNearWall(const Cell & cell){
 
 // The distance between two adjacent cells
 double GlobalPlanner::getEdgeDist(const Cell & u, const Cell & v) {
-  int xDiff = std::abs(v.x() - u.x());
-  int yDiff = std::abs(v.y() - u.y());
-  int zDiff = v.z() - u.z();
-  int diff = xDiff + yDiff;
-  if (diff == 1) return v.scale;            // v is horizontally adjacent to u
-  if (diff == 2) return 1.41 * v.scale;     // v is a diagonal neighbor of u
-  if (zDiff == 1) return upCost * v.scale;  // v is above u
-  return downCost * v.scale;                // v is below u
+  double zDiff = v.zPos() - u.zPos();
+  double xyDiff = u.distance2D(v);
+  if (zDiff > 0) {
+    return xyDiff + zDiff * upCost;
+  }
+  return xyDiff + std::abs(zDiff) * downCost; 
 }
 
 // Risk without looking at the neighbors
@@ -263,7 +261,7 @@ double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
 double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
   double distCost = getEdgeDist(u.cell, v.cell);
   double smoothCost = smoothFactor * getTurnSmoothness(u, v);
-  double riskCost = riskFactor * getRisk(v.cell);   // TODO: multiply with edge length
+  double riskCost = u.cell.distance3D(v.cell) * riskFactor * getRisk(v.cell);
   return distCost + riskCost + smoothCost;
 }
 

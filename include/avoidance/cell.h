@@ -34,6 +34,7 @@ class Cell {
 
   double manhattanDist(double _x, double _y, double _z) const;
   double distance2D(const Cell & b) const;
+  double distance3D(const Cell & b) const;
   double diagDistance2D(const Cell & b) const;
   double angle() const;
   
