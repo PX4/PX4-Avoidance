@@ -40,6 +40,10 @@ double Cell::distance2D(const Cell & b) const {
   return sqrt(squared(xPos() - b.xPos()) + squared(yPos() - b.yPos()));
 }
 
+double Cell::distance3D(const Cell & b) const {
+  return sqrt(squared(xPos() - b.xPos()) + squared(yPos() - b.yPos()) + squared(zPos() - b.zPos()));
+}
+
 // Returns the minimum distance on the XY-grid, where you can move diagonally, to the center of the Cell
 double Cell::diagDistance2D(const Cell & b) const {
   double dx = abs(xPos() - b.xPos());

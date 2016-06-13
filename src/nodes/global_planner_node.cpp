@@ -28,7 +28,6 @@ void GlobalPlannerNode::SetNewGoal(Cell goal) {
   pointMsg.header.frame_id = "/world";
   pointMsg.point = goal.toPoint();
   cmd_clicked_point_pub_.publish(pointMsg);
-  cmd_clicked_point_pub_.publish(pointMsg);  // Needed to show up in Rviz, TODO: remove
   PlanPath();
 }
 
@@ -98,12 +97,11 @@ void GlobalPlannerNode::OctomapFullCallback(
 
 void GlobalPlannerNode::PlanPath() {
   ROS_INFO("Start planning path.");
-  ROS_INFO("OctoMap memory usage: %2.3fMB", global_planner.octree->memoryUsage() / 1000000.0);
+  ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner.octree->memoryUsage() / 1000000.0);
   bool foundPath = global_planner.getGlobalPath();
   PublishExploredCells();
   if (!foundPath) {
     ROS_INFO("Failed to find a path");
-    return;
   }
   PublishPath();
 }

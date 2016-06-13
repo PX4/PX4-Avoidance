@@ -22,7 +22,7 @@ rosmake octomap_mapping
 
 ```bash
 # Source SITL and catkin
-cd <Firmware_clone>
+cd <Firmware_dir>
 source integrationtests/setup_gazebo_ros.bash $(pwd)
 cd <catkin_directory>
 source devel/setup.bash
@@ -33,3 +33,6 @@ export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:<catkin_directory>/src/detection/m
 roslaunch avoidance global_planner
 
 ```
+
+If the drone does not follow the path properly, some tuning may be required in the file 
+<Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris 
