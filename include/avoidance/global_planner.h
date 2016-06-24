@@ -66,7 +66,7 @@ class GlobalPlanner {
   int maxHeight = 10;
   double maxPathProb = 0.0;
   double maxBailProb = 1.0;     // Must be >= 0 (50%) because of the fixed uniform prior in OctoMap
-  double maxCellRisk = 15.0;
+  double maxCellRisk = 0.5;
   double smoothFactor = 5.0;
   double vertToHorCost = 1.0;   // The cost of changing between vertical and horizontal motion
   double riskFactor = 200.0;
@@ -100,6 +100,7 @@ class GlobalPlanner {
 
   double getEdgeDist(const Cell & u, const Cell & v);
   double getSingleCellRisk(const Cell & cell);
+  bool isOccupied(const Cell & cell);
   double getRisk(const Cell & cell);
   double getTurnSmoothness(const Node & u, const Node & v);
   double getEdgeCost(const Node & u, const Node & v);
