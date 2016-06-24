@@ -45,13 +45,13 @@ class GlobalPlanner {
   // Needed to quickly estimate the risk of vertical movement
   std::vector<double> accumulatedHeightPrior; // accumulatedHeightPrior[i] = sum(heightPrior[0:i])
 
-  std::unordered_map<Cell, double, HashCell> occProb;   // OctoMap probability of Cell being occupied
-  std::unordered_map<Cell, double, HashCell> seenCount; // number of times a cell was explored in last search
-  std::unordered_map<Cell, double, HashCell> riskCache; // Cache of getRisk(Cell)
+  std::unordered_map<Cell, double> occProb;   // OctoMap probability of Cell being occupied
+  std::unordered_map<Cell, double> seenCount; // number of times a cell was explored in last search
+  std::unordered_map<Cell, double> riskCache; // Cache of getRisk(Cell)
   
-  std::unordered_set<Cell, HashCell> seen;        // Cells that were explored in last search
-  std::unordered_set<Cell, HashCell> occupied;    // Cells such that occProp[Cell] > maxPathProp
-  std::unordered_set<Cell, HashCell> pathCells;   // Cells that are on current path, and may not be blocked
+  std::unordered_set<Cell> seen;        // Cells that were explored in last search
+  std::unordered_set<Cell> occupied;    // Cells such that occProp[Cell] > maxPathProp
+  std::unordered_set<Cell> pathCells;   // Cells that are on current path, and may not be blocked
 
   // TODO: rename and remove not needed
   std::vector<Cell> pathBack;

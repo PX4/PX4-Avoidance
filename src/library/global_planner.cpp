@@ -2,13 +2,12 @@
 
 namespace avoidance {
 
-// Returns the XY-angle between u and v, or if v is directly above/below u, it returns lastAng 
-// TODO: change name
-double angle(Cell u, Cell v, double lastAng) {
+// Returns the XY-angle between u and v, or if v is directly above/below u, it returns lastYaw 
+double nextYaw(Cell u, Cell v, double lastYaw) {
   int dx = v.x() - u.x();
   int dy = v.y() - u.y();
   if (dx == 0 && dy == 0) {
-    return lastAng;   // Going up or down
+    return lastYaw;   // Going up or down
   }
   return atan2(dy, dx);
 }
@@ -344,7 +343,7 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
   for (int i=1; i < lastPath.size()-1; ++i) {
     Cell p = lastPath[i];
     Cell lastP = lastPath[i-1];
-    double newYaw = angle(p, lastPath[i+1], lastYaw);
+    double newYaw = nextYaw(p, lastPath[i+1], lastYaw);
     // if (newYaw != lastYaw) {   // only publish corner points
       pathMsg.poses.push_back(createPoseMsg(p, newYaw));
     // }
@@ -589,7 +588,7 @@ bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s,
         // Found a better path to v, have to add v to the queue 
         parent[v] = u;
         distance[v] = newDist;
-        // TODO: try Dynamic Weighting in stead of a constant overEstimateFactor
+        // TODO: try Dynamic Weighting instead of a constant overEstimateFactor
         double heuristic = v.diagDistance2D(t);                // Lower bound for distance on a grid 
         heuristic += upCost * std::max(0, t.z() - v.z());       // Minumum cost for increasing altitude
         heuristic += std::max(0, v.z() - t.z());                // Minumum cost for decreasing altitude
@@ -637,9 +636,9 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
   seenCount.clear();
 
   // TODO: use unordered
-  std::set<Node> seenNodes;
-  std::map<Node, Node> parent;
-  std::map<Node, double> distance;
+  std::unordered_set<Node> seenNodes;
+  std::unordered_map<Node, Node> parent;
+  std::unordered_map<Node, double> distance;
   std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, CompareDist> pq;                 
   pq.push(std::make_pair(s, 0.0));
   distance[s] = 0.0;
