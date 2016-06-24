@@ -67,13 +67,18 @@ inline Cell operator-(const Cell& lhs, const Cell& rhs) {
 
 typedef std::pair<Cell, double> CellDistancePair;
 
-struct HashCell {
-    size_t operator()(const Cell & cell ) const
-    {
-        return std::hash<std::string>()(cell.asString());
+
+} // namespace avoidance
+
+namespace std {
+
+template <>
+struct hash<avoidance::Cell> {
+    std::size_t operator()(const avoidance::Cell & cell ) const {
+        return std::get<0>(cell.tpl) ^ std::get<1>(cell.tpl) ^ std::get<2>(cell.tpl);
     }
 };
 
-} // namespace avoidance
+} // namespace std
 
 #endif // GLOBAL_PLANNER_CELL

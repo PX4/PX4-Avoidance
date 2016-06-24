@@ -29,17 +29,6 @@ inline bool operator>=(const Node& lhs, const Node& rhs) {return !operator< (lhs
 
 typedef std::pair<Node, double> NodeDistancePair;
 
-struct HashNode {
-  size_t operator()(const Node &node ) const {
-    HashCell hash;
-    std::string s = "";
-    s += hash(node.cell);
-    s += " ";
-    s += hash(node.parent);
-    return std::hash<std::string>()(s);
-  }
-};  
-
 class CompareDist {
  public:
   bool operator()(const CellDistancePair n1, const CellDistancePair n2) {
@@ -51,5 +40,16 @@ class CompareDist {
 };
 
 } // namespace avoidance
+
+namespace std {
+
+template <>
+struct hash<avoidance::Node> {
+    std::size_t operator()(const avoidance::Node & node ) const {
+        return std::hash<avoidance::Cell>()(node.cell) ^ std::hash<avoidance::Cell>()(node.parent);
+    }
+};
+
+} // namespace std
 
 #endif // GLOBAL_PLANNER_NODE
