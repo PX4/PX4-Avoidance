@@ -73,7 +73,6 @@ void GlobalPlanner::setPath(const std::vector<Cell> & path) {
 // Going through the octomap can take more than 50 ms for 100m x 100m explored map 
 bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap & msg) {
   bool currPathIsFree = true;
-  occupied.clear();
   riskCache.clear();
   octomap::AbstractOcTree* tree = octomap_msgs::msgToMap(msg);
   if (octree) {
@@ -136,47 +135,30 @@ void GlobalPlanner::getOpenNeighbors(const Cell & cell,
   Cell up = Cell(std::tuple<int,int,int>(x, y, z+1));
   Cell down = Cell(std::tuple<int,int,int>(x, y, z-1));
 
-  bool forwOpen = occupied.find(forw) == occupied.end();
-  bool backOpen = occupied.find(back) == occupied.end();
-  bool leftOpen = occupied.find(left) == occupied.end();
-  bool righOpen = occupied.find(righ) == occupied.end();
-  bool forwLeftOpen = occupied.find(forwLeft) == occupied.end();
-  bool forwRighOpen = occupied.find(forwRigh) == occupied.end();
-  bool backLeftOpen = occupied.find(backLeft) == occupied.end();
-  bool backRighOpen = occupied.find(backRigh) == occupied.end();
-  bool upOpen = occupied.find(up) == occupied.end();
-  bool downOpen = occupied.find(down) == occupied.end();
+  // bool forwOpen = occupied.find(forw) == occupied.end();
+  // bool backOpen = occupied.find(back) == occupied.end();
+  // bool leftOpen = occupied.find(left) == occupied.end();
+  // bool righOpen = occupied.find(righ) == occupied.end();
+  // bool forwLeftOpen = occupied.find(forwLeft) == occupied.end();
+  // bool forwRighOpen = occupied.find(forwRigh) == occupied.end();
+  // bool backLeftOpen = occupied.find(backLeft) == occupied.end();
+  // bool backRighOpen = occupied.find(backRigh) == occupied.end();
+  // bool upOpen = occupied.find(up) == occupied.end();
+  // bool downOpen = occupied.find(down) == occupied.end();
 
-  if (forwOpen) {
-    neighbors.push_back(std::make_pair(forw, 1.0));
-    if (leftOpen && forwLeftOpen) {
-      neighbors.push_back(std::make_pair(forwLeft, 1.41));
-    }
-    if (righOpen && forwRighOpen) {
-      neighbors.push_back(std::make_pair(forwRigh, 1.41));
-    }
-  }
-  if (backOpen) {
-    neighbors.push_back(std::make_pair(back, 1.0));
-    if (leftOpen && backLeftOpen) {
-      neighbors.push_back(std::make_pair(backLeft, 1.41));
-    }
-    if (righOpen && backRighOpen) {
-      neighbors.push_back(std::make_pair(backRigh, 1.41));
-    }
-  }
-  if (leftOpen) {
-    neighbors.push_back(std::make_pair(left, 1.0));
-  }
-  if (righOpen) {
-    neighbors.push_back(std::make_pair(righ, 1.0));
-  }
-
+  neighbors.push_back(std::make_pair(forw, 1.0));
+  neighbors.push_back(std::make_pair(forwLeft, 1.41));
+  neighbors.push_back(std::make_pair(forwRigh, 1.41));
+  neighbors.push_back(std::make_pair(back, 1.0));
+  neighbors.push_back(std::make_pair(backLeft, 1.41));
+  neighbors.push_back(std::make_pair(backRigh, 1.41));
+  neighbors.push_back(std::make_pair(left, 1.0));
+  neighbors.push_back(std::make_pair(righ, 1.0));
   // Vertical neighbors
-  if (is3D && z < maxHeight && upOpen) {
+  if (is3D && z < maxHeight) {
     neighbors.push_back(std::make_pair(up, upCost));
   }
-  if (is3D && z > minHeight && downOpen) {
+  if (is3D && z > minHeight) {
     neighbors.push_back(std::make_pair(down, downCost));
   }
 }
@@ -184,7 +166,7 @@ void GlobalPlanner::getOpenNeighbors(const Cell & cell,
 // Returns true if cell has an occupied neighbor 
 bool GlobalPlanner::isNearWall(const Cell & cell){
   for (Cell neighbor : cell.getDiagonalNeighbors()) {
-    if (occupied.find(neighbor) != occupied.end()) {
+    if (isOccupied(neighbor)) {
       return true;
     }
   }
@@ -219,6 +201,11 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
   }
   return explorePenalty * heightPrior[cell.z()];    // Risk for unexplored cells
 }
+
+bool GlobalPlanner::isOccupied(const Cell & cell) {
+  return getSingleCellRisk(cell) > 0.5;
+}
+
 
 // Returns the risk from the cell, its neighbors and the prior
 double GlobalPlanner::getRisk(const Cell & cell) {
@@ -336,6 +323,10 @@ geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell cell, double 
 nav_msgs::Path GlobalPlanner::getPathMsg() {
   nav_msgs::Path pathMsg;
   pathMsg.header.frame_id="/world";
+
+  if (lastPath.size() == 0) {
+    return pathMsg;
+  }
 
   // Use actual position instead of the center of the cell
   double lastYaw = currYaw;
@@ -576,7 +567,7 @@ bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s,
       Cell v = cellDistV.first;
       double costOfEdge = cellDistV.second;   // Use getEdgeCost
       double risk = riskFactor * getRisk(v);
-      if (risk > maxCellRisk && v != t) {
+      if (risk > riskFactor * maxCellRisk && v != t) {
         continue;
       }
       double newDist = d + costOfEdge + risk;
@@ -635,7 +626,6 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
   seen.clear();
   seenCount.clear();
 
-  // TODO: use unordered
   std::unordered_set<Node> seenNodes;
   std::unordered_map<Node, Node> parent;
   std::unordered_map<Node, double> distance;
@@ -714,13 +704,13 @@ bool GlobalPlanner::getGlobalPath() {
   Cell s = Cell(currPos);
   Cell t = Cell(goalPos);
   
-  if (occupied.find(t) != occupied.end()) {
+  if (getRisk(t) > maxCellRisk) {
     // If goal is occupied, no path is published
     ROS_INFO("Goal position is occupied");
     goalIsBlocked = true;
     return false;
   }
-  // else if (occupied.find(s) != occupied.end()) {
+  // else if (isOccupied(s)) {
   //   // If current position is occupied the way back is published
   //   ROS_INFO("Current position is occupied, going back.");
   //   goBack();

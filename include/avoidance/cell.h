@@ -75,7 +75,7 @@ namespace std {
 template <>
 struct hash<avoidance::Cell> {
     std::size_t operator()(const avoidance::Cell & cell ) const {
-        return std::get<0>(cell.tpl) ^ std::get<1>(cell.tpl) ^ std::get<2>(cell.tpl);
+        return (std::get<0>(cell.tpl) << 20) ^ (std::get<1>(cell.tpl) << 10) ^ std::get<2>(cell.tpl);
     }
 };
 
