@@ -46,7 +46,7 @@ namespace std {
 template <>
 struct hash<avoidance::Node> {
     std::size_t operator()(const avoidance::Node & node ) const {
-        return std::hash<avoidance::Cell>()(node.cell) ^ std::hash<avoidance::Cell>()(node.parent);
+        return (std::hash<avoidance::Cell>()(node.cell) << 1) ^ std::hash<avoidance::Cell>()(node.parent);
     }
 };
 
