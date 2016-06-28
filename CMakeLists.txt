@@ -155,9 +155,9 @@ add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(avoidance_node
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
+#   ${catkin_LIBRARIES}
+#   ${PCL_LIBRARIES}
+# )
 target_link_libraries(global_planner_node
   global_planner cell node ${catkin_LIBRARIES})
 target_link_libraries(path_handler_node
