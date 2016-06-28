@@ -145,7 +145,7 @@ add_library(global_planner
 # add_dependencies(avoidance ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(avoidance_node src/avoidance_node.cpp)
+# add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(global_planner_node src/nodes/global_planner_node.cpp)
 add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 
@@ -154,7 +154,7 @@ add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 # add_dependencies(avoidance_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(avoidance_node
+# target_link_libraries(avoidance_node
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
