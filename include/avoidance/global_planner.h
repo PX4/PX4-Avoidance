@@ -58,7 +58,7 @@ class GlobalPlanner {
   geometry_msgs::Point currPos;
   double currYaw;
   geometry_msgs::Vector3 currVel;
-  Cell goalPos = Cell(2.5, 0.0, 1.5);
+  Cell goalPos = Cell(2.5, 0.5, 1.5);
   bool goingBack = true;        // we start by just finding the start position
 
   double overEstimateFactor = 4.0;
