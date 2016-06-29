@@ -15,9 +15,9 @@ PathHandlerNode::PathHandlerNode() {
   current_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
 
   currentGoal.header.frame_id="/world";
-  currentGoal.pose.position.x = 0.5;
+  currentGoal.pose.position.x = 2.5;
   currentGoal.pose.position.y = 0.5;
-  currentGoal.pose.position.z = 3.5;
+  currentGoal.pose.position.z = 1.5;
 
   currentGoal.pose.orientation.x = 0.0;
   currentGoal.pose.orientation.y = 0.0;
@@ -49,7 +49,7 @@ PathHandlerNode::PathHandlerNode() {
     // Publish setpoint for vizualization
     current_waypoint_publisher.publish(setpoint);
 
-    setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
+    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
 
     // Publish setpoint to Mavros
     mavros_waypoint_publisher.publish(setpoint);
@@ -82,7 +82,7 @@ void PathHandlerNode::PositionCallback(
     const geometry_msgs::PoseStamped& pose_msg) {
 
   last_pos = pose_msg;
-  last_pos = rotatePoseMsgToWorld(last_pos); // 90 deg fix
+  // last_pos = rotatePoseMsgToWorld(last_pos); // 90 deg fix
 
   // Check if we are close enough to current goal to get the next part of the path
   if (path.size() > 0 && std::abs(currentGoal.pose.position.x - last_pos.pose.position.x) < 1 

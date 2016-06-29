@@ -46,8 +46,6 @@ class GlobalPlannerNode {
   int numOctomapMessages = 0;
   int numPositionMessages = 0;
 
-
-
   // Subscribers
   ros::Subscriber cmd_waypoint_sub_;
   ros::Subscriber cmd_octomap_sub_;
