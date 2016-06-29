@@ -48,5 +48,5 @@
     </node>
 
     <!-- RViz -->
-    <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true" />
+    <!-- <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true" /> -->
 </launch>
