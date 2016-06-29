@@ -18,6 +18,7 @@ class MockDataNode {
   MockDataNode();
   ~MockDataNode();
   void createWall(int dist, int width, int height);
+  void sendClickedPoint();
   void ReceivePath(const nav_msgs::Path& msg);
   void sendMockData();
   

@@ -10,13 +10,17 @@ MockDataNode::MockDataNode() {
 
   depth_points_publisher = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
   local_position_publisher = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
-  // clicked_point_publisher = nh.advertise<geometry_msgs::PoseStamped>("/clicked_point", 10);
+  clicked_point_publisher = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
+  
   createWall(5, 5, 6);
 
-
+  int loopNumber = 0;
   ros::Rate rate(1);
   while(ros::ok())
   {
+    if (loopNumber++ == 10) {
+      sendClickedPoint();
+    }
     sendMockData();
     rate.sleep();
     ros::spinOnce();
@@ -34,6 +38,15 @@ void MockDataNode::createWall(int dist, int width, int height) {
       points.push_back(j + 0.5);
     }
   }
+}
+
+void MockDataNode::sendClickedPoint() {
+  geometry_msgs::PointStamped msg;
+  msg.header.frame_id = "/world";
+  msg.point.x = 8.5;
+  msg.point.y = 4.5;
+  msg.point.z = 1.5;
+  clicked_point_publisher.publish(msg);
 }
 
 void MockDataNode::ReceivePath(const nav_msgs::Path& msg) {
