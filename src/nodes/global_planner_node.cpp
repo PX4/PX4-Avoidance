@@ -33,13 +33,13 @@ void GlobalPlannerNode::SetNewGoal(Cell goal) {
 
 void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped& msg) {
   global_planner.currVel = msg.twist.linear;
-  // global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
+  global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
 }
 
 void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) {
 
   auto rot_msg = msg;
-  // rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
+  rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
   global_planner.setPose(rot_msg);
 
   double distToGoal = global_planner.goalPos.manhattanDist(global_planner.currPos.x, global_planner.currPos.y, global_planner.currPos.z);
