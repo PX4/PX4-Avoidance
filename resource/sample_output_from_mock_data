@@ -1,0 +1,13 @@
+[ INFO] [1467203468.623922075]:   No goal file given.
+[ INFO] [1467203478.608638174]: ========== Set goal : (8,4,3) ==========
+[ INFO] [1467203478.608707527]: Start planning path.
+[ INFO] [1467203478.608757630]: OctoMap memory usage: 0.010 MB
+[ INFO] [1467203478.608901955]: Planning a path from (0,2,1) to (8,4,3)
+[ INFO] [1467203478.608933362]: currPos: 0.50,2.50,1.50 s: 0.50,2.50,1.50
+Average iteration time: 0.162512 ms 
+overEstimateFactor: 2.00,  numIter: 43  path cost: 126.23 (cost: 126.23, dist: 30.83, risk: 75.22, smooth: 20.00) 
+Average iteration time: 0.132180 ms 
+overEstimateFactor: 1.25,  numIter: 50  path cost: 126.23 (cost: 126.23, dist: 30.83, risk: 75.22, smooth: 20.00) 
+Average iteration time: 0.145964 ms 
+overEstimateFactor: 1.06,  numIter: 55  path cost: 126.23 (cost: 126.23, dist: 30.83, risk: 75.22, smooth: 20.00) 
+(0.50, 2.50, 2.50) -> (0.50, 2.50, 3.50) -> (0.50, 2.50, 4.50) -> (0.50, 2.50, 5.50) -> (0.50, 2.50, 6.50) -> (0.50, 2.50, 7.50) -> (1.50, 3.50, 7.50) -> (2.50, 4.50, 7.50) -> (3.50, 4.50, 7.50) -> (4.50, 4.50, 7.50) -> (5.50, 4.50, 7.50) -> (6.50, 4.50, 7.50) -> (7.50, 4.50, 7.50) -> (8.50, 4.50, 7.50) -> (8.50, 4.50, 6.50) -> (8.50, 4.50, 5.50) -> (8.50, 4.50, 4.50) -> (8.50, 4.50, 3.50) -> 
