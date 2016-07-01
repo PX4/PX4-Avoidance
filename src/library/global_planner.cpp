@@ -44,6 +44,7 @@ void GlobalPlanner::setGoal(const Cell & goal) {
   goalPos = goal;
   goingBack = false;
   goalIsBlocked = false;
+  heuristicCache.clear();
 }
 
 // Sets path to be the current path
@@ -300,6 +301,10 @@ double GlobalPlanner::altitudeHeuristic(const Cell & u, const Cell & goal) {
 // Returns a heuristic of going from u to goal
 double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   // Only overestimate the distance
+  if (heuristicCache.find(u) != heuristicCache.end()) {
+    return heuristicCache[u];
+  }
+  
   double heuristic = overEstimateFactor * u.cell.diagDistance2D(goal);
   heuristic += altitudeHeuristic(u.cell, goal);        // Lower bound cost due to altitude change
   heuristic += smoothnessHeuristic(u, goal);           // Lower bound cost due to turning  
@@ -309,6 +314,7 @@ double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   if (useSpeedUpHeuristics) {
     heuristic += seenCount[u.cell];
   }
+  heuristicCache[u] = heuristic;
   return heuristic;
 }
 
