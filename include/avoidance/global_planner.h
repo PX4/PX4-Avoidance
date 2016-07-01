@@ -48,7 +48,8 @@ class GlobalPlanner {
   std::unordered_map<Cell, double> occProb;   // OctoMap probability of Cell being occupied
   std::unordered_map<Cell, double> seenCount; // number of times a cell was explored in last search
   std::unordered_map<Cell, double> riskCache; // Cache of getRisk(Cell)
-  
+  std::unordered_map<Node, double> heuristicCache; // Cache of getHeuristic(Node) (and later reverse search)
+
   std::unordered_set<Cell> seen;        // Cells that were explored in last search
   std::unordered_set<Cell> occupied;    // Cells such that occProp[Cell] > maxPathProp
   std::unordered_set<Cell> pathCells;   // Cells that are on current path, and may not be blocked
