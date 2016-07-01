@@ -580,7 +580,7 @@ bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s,
         parent[v] = u;
         distance[v] = newDist;
         // TODO: try Dynamic Weighting instead of a constant overEstimateFactor
-        double heuristic = v.diagDistance2D(t);                // Lower bound for distance on a grid 
+        double heuristic = v.diagDistance2D(t);                 // Lower bound for distance on a grid 
         heuristic += upCost * std::max(0, t.z() - v.z());       // Minumum cost for increasing altitude
         heuristic += std::max(0, v.z() - t.z());                // Minumum cost for decreasing altitude
         // if (isNearWall(v)) {
@@ -634,7 +634,7 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
   distance[s] = 0.0;
   int numIter = 0;
 
-  std::clock_t    startTime;
+  std::clock_t startTime;
   startTime = std::clock();
   while (!pq.empty() && numIter < maxIterations) {
     NodeDistancePair nodeDistU = pq.top(); pq.pop();
@@ -649,11 +649,7 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
     }
     numIter++;
 
-    std::vector<CellDistancePair> neighbors;
-    getOpenNeighbors(u.cell, neighbors, true);
-    for (auto cellDistV : neighbors) {
-      Cell vCell = cellDistV.first;
-      Node v = Node(vCell, u.cell);
+    for (Node v : u.getNeighbors()) {
       double newDist = distance[u] + getEdgeCost(u, v); 
       double oldDist = inf;
       if (distance.find(v) != distance.end()) {
@@ -681,7 +677,6 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
   printf("Average iteration time: %f ms \n", (std::clock() - startTime) / (double)(CLOCKS_PER_SEC / 1000) / numIter);
 
   // Get the path by walking from t back to s (excluding s)
-  // TODO: function
   Node walker = bestGoalNode;
   while (walker != s) {
     path.push_back(walker.cell);

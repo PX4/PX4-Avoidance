@@ -41,6 +41,7 @@ class Cell {
   Cell getNeighborFromYaw(double yaw) const;
   std::vector<Cell> getFlowNeighbors() const;
   std::vector<Cell> getDiagonalNeighbors() const;
+  std::vector<Cell> getNeighbors() const;
 
   std::string asString() const;
   
@@ -76,6 +77,7 @@ template <>
 struct hash<avoidance::Cell> {
     std::size_t operator()(const avoidance::Cell & cell ) const {
         return (std::get<0>(cell.tpl) << 20) ^ (std::get<1>(cell.tpl) << 10) ^ std::get<2>(cell.tpl);
+      // return (std::get<0>(cell.tpl) * 18397) + (std::get<1>(cell.tpl) * 20483) + (std::get<2>(cell.tpl) * 29303);
     }
 };
 

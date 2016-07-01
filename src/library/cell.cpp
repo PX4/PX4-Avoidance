@@ -86,6 +86,20 @@ std::vector<Cell> Cell::getDiagonalNeighbors() const {
                           };
 }
 
+std::vector<Cell> Cell::getNeighbors() const {
+  return std::vector<Cell>{Cell(std::tuple<int,int,int>(x() + 1, y(), z())),
+                           Cell(std::tuple<int,int,int>(x() - 1, y(), z())),
+                           Cell(std::tuple<int,int,int>(x(), y() + 1, z())),
+                           Cell(std::tuple<int,int,int>(x(), y() - 1, z())),
+                           Cell(std::tuple<int,int,int>(x(), y(), z() + 1)),
+                           Cell(std::tuple<int,int,int>(x(), y(), z() - 1)),
+                           Cell(std::tuple<int,int,int>(x() + 1, y() + 1, z())),
+                           Cell(std::tuple<int,int,int>(x() - 1, y() + 1, z())),
+                           Cell(std::tuple<int,int,int>(x() + 1, y() - 1, z())),
+                           Cell(std::tuple<int,int,int>(x() - 1, y() - 1, z()))
+                          };
+}
+
 std::string Cell::asString() const {  
   std::string s = "(" + std::to_string(x()) + "," + std::to_string(y()) + "," + std::to_string(z()) + ")";
   return s;

@@ -14,6 +14,9 @@ class Node {
   Node(const Cell cell, const Cell parent)
       : cell(cell), parent(parent) {
   }
+
+  std::vector<Node> getNeighbors() const;
+
   Cell cell;
   Cell parent;
 };
@@ -47,6 +50,7 @@ template <>
 struct hash<avoidance::Node> {
     std::size_t operator()(const avoidance::Node & node ) const {
         return (std::hash<avoidance::Cell>()(node.cell) << 1) ^ std::hash<avoidance::Cell>()(node.parent);
+        // return std::hash<avoidance::Cell>()(node.cell) * 37 + std::hash<avoidance::Cell>()(node.parent) * 41;
     }
 };
 
