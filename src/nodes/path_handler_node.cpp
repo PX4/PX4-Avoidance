@@ -13,6 +13,7 @@ PathHandlerNode::PathHandlerNode() {
 
   mavros_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
+  three_point_path_publisher = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
 
   currentGoal.header.frame_id="/world";
   currentGoal.pose.position.x = 0.5;
@@ -48,6 +49,15 @@ PathHandlerNode::PathHandlerNode() {
 
     // Publish setpoint for vizualization
     current_waypoint_publisher.publish(setpoint);
+
+    // Publish three point message
+    if (path.size() > 1) {
+      nav_msgs::Path threePointMsg;
+      threePointMsg.header.frame_id="/world";
+      threePointMsg.poses = filterPathCorners(path);
+      threePointMsg.poses.resize(3);
+      three_point_path_publisher.publish(threePointMsg);
+    }
 
     setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
 
