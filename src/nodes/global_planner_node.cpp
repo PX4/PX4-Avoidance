@@ -135,13 +135,13 @@ void GlobalPlannerNode::PublishExploredCells() {
 
     // Just a hack to get the (almost) color spectrum depending on height
     // h=0 -> blue    h=0.5 -> green  h=1 -> red
-    // double h = (cell.zPos()-1.0) / 7.0;                   // height from 1 to 8 meters
+    // double h = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
     // double h = 0.5;                                    // single color (green)
     // risk from 0% to 100%, sqrt is used to increase difference in low risk
     double h = std::sqrt(global_planner.getRisk(cell));    
-    marker.color.r = h;
+    marker.color.r = std::max(0.0, 2*h-1);
     marker.color.g = 1.0 - 2.0 * std::abs(h - 0.5);
-    marker.color.b = 1.0 - h;
+    marker.color.b = std::max(0.0, 1.0 - 2*h);
     marker.color.a = 1.0;
 
     if (!global_planner.octree->search(cell.xPos(), cell.yPos(), cell.zPos())) {

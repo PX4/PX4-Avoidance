@@ -122,6 +122,32 @@ double pathLength(nav_msgs::Path & path) {
   return totalDist;
 }
 
+// Returns a path with only the corner points of msg
+std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped>& msg) {
+  std::vector<geometry_msgs::PoseStamped> corners = msg;
+  corners.clear();
+  if (msg.size() < 1) {
+    return corners;
+  }
+
+  int n = msg.size();
+  corners.push_back(msg.front());
+  for (int i=1; i < n-1; ++i) {
+    geometry_msgs::Point last = msg[i-1].pose.position;
+    geometry_msgs::Point curr = msg[i].pose.position;
+    geometry_msgs::Point next = msg[i+1].pose.position;
+    bool sameX = (next.x - curr.x) == (curr.x - last.x);
+    bool sameY = (next.y - curr.y) == (curr.y - last.y);
+    bool sameZ = (next.z - curr.z) == (curr.z - last.z);
+    if (!(sameX && sameY && sameZ)) {
+      corners.push_back(msg[i]);
+    }
+  }
+  corners.push_back(msg.back());
+  return corners;
+}
+
+
 double pathKineticEnergy(nav_msgs::Path & path) {
   if (path.poses.size() < 3) {
     return 0.0;
