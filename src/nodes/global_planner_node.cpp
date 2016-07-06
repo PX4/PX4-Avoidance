@@ -54,6 +54,12 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) 
     SetNewGoal(newGoal);
   }
 
+  else if (global_planner.goalIsBlocked) {
+    // Goal is blocked but there is no other goal in fileGoals
+    global_planner.stop();
+    PublishPath();
+  }
+
   // Keep track of and publish the actual travel trajectory
   if (numPositionMessages++ % 50 == 0) {
     rot_msg.header.frame_id = "/world";
