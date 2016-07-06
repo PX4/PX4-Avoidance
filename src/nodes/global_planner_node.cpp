@@ -56,8 +56,8 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) 
 
   else if (global_planner.goalIsBlocked) {
     // Goal is blocked but there is no other goal in fileGoals
-    global_planner.stop();
-    PublishPath();
+    ROS_INFO("  STOP  ");
+    SetNewGoal(Cell(global_planner.currPos));
   }
 
   // Keep track of and publish the actual travel trajectory

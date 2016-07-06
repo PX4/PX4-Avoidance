@@ -51,13 +51,15 @@ PathHandlerNode::PathHandlerNode() {
     current_waypoint_publisher.publish(setpoint);
 
     // Publish three point message
-    if (path.size() > 1) {
+    if (path.size() > 2) {
       nav_msgs::Path threePointMsg;
       threePointMsg.header.frame_id="/world";
       auto pathWithCurrPos = path;
       pathWithCurrPos.insert(pathWithCurrPos.begin(), currentGoal);
       threePointMsg.poses = filterPathCorners(pathWithCurrPos);
-      threePointMsg.poses.resize(3);
+      if (threePointMsg.poses.size() >= 3) {
+        threePointMsg.poses.resize(3);
+      }
       three_point_path_publisher.publish(threePointMsg);
     }
 
@@ -79,10 +81,10 @@ void PathHandlerNode::ReceiveMessage(const geometry_msgs::PoseStamped& pose_msg)
 void PathHandlerNode::ReceivePath(const nav_msgs::Path& msg) {
   speed = 1.0;
   path.clear();
-  for (auto p : msg.poses) {
-    path.push_back(p);
+  for (int i=2; i < msg.poses.size(); ++i) {
+    path.push_back(msg.poses[i]);
   }
-  if (path.size() > 0) {
+  if (path.size() > 1) {
     currentGoal = path[0];
   }
   else {

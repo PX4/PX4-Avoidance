@@ -49,13 +49,11 @@ void GlobalPlanner::setGoal(const Cell & goal) {
 
 // Sets path to be the current path
 void GlobalPlanner::setPath(const std::vector<Cell> & path) {
-  Cell s = path.front();
-  Cell parentOfS = s.getNeighborFromYaw(currYaw + M_PI); // The cell behind the start cell
-  currPathInfo = getPathInfo(path, Node(s, parentOfS));
+  currPathInfo = getPathInfo(path);
   currPath = path;
 
   pathCells.clear();
-  for (int i=1; i < path.size(); ++i) {
+  for (int i=2; i < path.size(); ++i) {
     Cell p = path[i];
     Cell lastP = path[i-1];
 
@@ -81,7 +79,7 @@ bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap & msg) {
 
   // Check if the risk of the current path has increased 
   if (!currPath.empty()) {
-    PathInfo newInfo = getPathInfo(currPath, Node(currPath[0], currPath[0]));
+    PathInfo newInfo = getPathInfo(currPath);
     if (newInfo.isBlocked || newInfo.risk > currPathInfo.risk + 10) {
       ROS_INFO("Risk increase");
       return false;
@@ -221,8 +219,11 @@ double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
 // Returns the total cost of the edge from u to v
 double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
   double distCost = getEdgeDist(u.cell, v.cell);
-  double smoothCost = smoothFactor * getTurnSmoothness(u, v);
   double riskCost = u.cell.distance3D(v.cell) * riskFactor * getRisk(v.cell);
+  double smoothCost = smoothFactor * getTurnSmoothness(u, v);
+  if (u.cell.distance3D(Cell(currPos)) < 3 && norm(currVel) > 1){
+    smoothCost *= 2;
+  }
   return distCost + riskCost + smoothCost;
 }
 
@@ -311,9 +312,8 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
   // Use actual position instead of the center of the cell
   double lastYaw = currYaw;
 
-  for (int i=1; i < currPath.size()-1; ++i) {
+  for (int i=0; i < currPath.size()-1; ++i) {
     Cell p = currPath[i];
-    Cell lastP = currPath[i-1];
     double newYaw = nextYaw(p, currPath[i+1], lastYaw);
     // if (newYaw != lastYaw) {   // only publish corner points
       pathMsg.poses.push_back(createPoseMsg(p, newYaw));
@@ -327,18 +327,17 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
 
 // Returns details of the cost of the path
 // TODO: should not depend on startNode
-PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path, const Node startNode) {
-  Node lastNode = startNode;
+PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path) {
   PathInfo pathInfo = {};
-  for(int i=1; i < path.size(); ++i) {
-    Node currNode = Node(path[i], lastNode.cell);
+  for(int i=2; i < path.size(); ++i) {
+    Node currNode = Node(path[i], path[i-1]);
+    Node lastNode = Node(path[i-1], path[i-2]);
     double cellRisk = getRisk(currNode.cell);
     pathInfo.cost += getEdgeCost(lastNode, currNode);
     pathInfo.dist += getEdgeDist(currNode.parent, currNode.cell);
     pathInfo.risk += riskFactor * cellRisk;
     pathInfo.isBlocked |= cellRisk > maxCellRisk;
     pathInfo.smoothness += smoothFactor * getTurnSmoothness(lastNode, currNode);
-    lastNode = currNode;
   }
   return pathInfo;
 }
@@ -458,14 +457,14 @@ bool GlobalPlanner::FindPath(std::vector<Cell> & path) {
     std::vector<Cell> newPath;
     bool foundNewPath;
     if (overEstimateFactor > 3) {
-      foundNewPath = FindPathOld(newPath, s, t, true);  // No need to search with smoothness
+      foundNewPath = FindPathOld(newPath, s, t, parentOfS, true);  // No need to search with smoothness
     } 
     else {
       foundNewPath = FindSmoothPath(newPath, s, t, parentOfS);
     }
 
     if (foundNewPath) {
-      PathInfo pathInfo = getPathInfo(newPath, Node(s, parentOfS));
+      PathInfo pathInfo = getPathInfo(newPath);
       printf("(cost: %2.2f, dist: %2.2f, risk: %2.2f, smooth: %2.2f) \n", pathInfo.cost, pathInfo.dist, pathInfo.risk, pathInfo.smoothness);
       if (pathInfo.cost < bestPathCost) {
         bestPathCost = pathInfo.cost;
@@ -483,22 +482,22 @@ bool GlobalPlanner::FindPath(std::vector<Cell> & path) {
   // Last resort, try 2d search at maxHeight
   if (!foundPath) {
     maxIterations = 5000;
-    foundPath = Find2DPath(path, s, t);
+    foundPath = Find2DPath(path, s, t, parentOfS);
   }
 
   return foundPath;
 }
 
 // Searches for a path from s to t at maxHeight, fills path if it finds one
-bool GlobalPlanner::Find2DPath(std::vector<Cell> & path, const Cell & s, Cell t) {
+bool GlobalPlanner::Find2DPath(std::vector<Cell> & path, const Cell & s, const Cell t, const Cell & startParent) {
   std::vector<Cell> upPath;
   Cell aboveS(Cell(s.x(), s.y(), maxHeight));
   Cell aboveT(Cell(t.x(), t.y(), maxHeight));
-  bool foundUpPath = FindPathOld(upPath, s, aboveS, true);
+  bool foundUpPath = FindPathOld(upPath, s, aboveS, s, true);
   std::vector<Cell> downPath;
-  bool foundDownPath = FindPathOld(downPath, aboveT, t, true);
+  bool foundDownPath = FindPathOld(downPath, aboveT, t, aboveT, true);
   std::vector<Cell> verticalPath;
-  bool foundVerticalPath = FindPathOld(verticalPath, aboveS, aboveT, false);
+  bool foundVerticalPath = FindPathOld(verticalPath, aboveS, aboveT, aboveS, false);
 
   if (foundUpPath && foundVerticalPath && foundDownPath) {
     path = upPath;
@@ -515,7 +514,7 @@ bool GlobalPlanner::Find2DPath(std::vector<Cell> & path, const Cell & s, Cell t)
 
 // A* to find a path from s to t, true iff it found a path
 bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s, 
-                                const Cell t, bool is3D) {
+                                const Cell t, const Cell & startParent, bool is3D) {
 
   // Initialize containers
   seen.clear();
@@ -576,7 +575,7 @@ bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s,
       }
     }
   }
-  printf("Average iteration time: %f ms \n", (std::clock() - startTime) / (double)(CLOCKS_PER_SEC / 1000) / numIter);
+  printf("Average iteration time: %2.1f µs \n", (std::clock() - startTime) / (double)(CLOCKS_PER_SEC / 1000000) / numIter);
 
   if (seen.find(t) == seen.end()) {
     // No path found
@@ -589,6 +588,9 @@ bool GlobalPlanner::FindPathOld(std::vector<Cell> & path, const Cell & s,
     path.push_back(walker);
     walker = parent[walker];
   }
+  path.push_back(s);
+  path.push_back(startParent);
+
   std::reverse(path.begin(),path.end());
 
   lastIterations = numIter;
@@ -656,7 +658,7 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
   if (bestGoalNode.cell != t) {
     return false;   // No path found
   }
-  printf("Average iteration time: %f ms \n", (std::clock() - startTime) / (double)(CLOCKS_PER_SEC / 1000) / numIter);
+  printf("Average iteration time: %2.1f µs \n", (std::clock() - startTime) / (double)(CLOCKS_PER_SEC / 1000000) / numIter);
 
   // Get the path by walking from t back to s (excluding s)
   Node walker = bestGoalNode;
@@ -664,7 +666,8 @@ bool GlobalPlanner::FindSmoothPath(std::vector<Cell> & path, const Cell & start,
     path.push_back(walker.cell);
     walker = parent[walker];
   }
-  path.push_back(walker.cell);
+  path.push_back(start);
+  path.push_back(startParent);
   std::reverse(path.begin(),path.end());
 
   // printPathStats(path, startParent, start, t, distance[bestGoalNode], distance);
