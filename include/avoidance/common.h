@@ -44,6 +44,10 @@ double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) 
   return sqrt(squared(diffX) + squared(diffY) + squared(diffZ));
 }
 
+double norm(geometry_msgs::Vector3 v) {
+  return std::sqrt(squared(v.x) + squared(v.y) + squared(v.z));
+}
+
 // Returns a weighted average of start and end, where ratio is the weight of start 
 double interpolate(double start, double end, double ratio) {
   return start + (end - start) * ratio;
