@@ -51,8 +51,8 @@ void GlobalPlanner::setGoal(const Cell & goal) {
 void GlobalPlanner::setPath(const std::vector<Cell> & path) {
   Cell s = path.front();
   Cell parentOfS = s.getNeighborFromYaw(currYaw + M_PI); // The cell behind the start cell
-  lastPathInfo = getPathInfo(path, Node(s, parentOfS));
-  lastPath = path;
+  currPathInfo = getPathInfo(path, Node(s, parentOfS));
+  currPath = path;
 
   pathCells.clear();
   for (int i=1; i < path.size(); ++i) {
@@ -69,51 +69,25 @@ void GlobalPlanner::setPath(const std::vector<Cell> & path) {
 }
 
 
-// TODO: May not need this function
 // Returns false iff current path has an obstacle
 // Going through the octomap can take more than 50 ms for 100m x 100m explored map 
 bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap & msg) {
-  bool currPathIsFree = true;
   riskCache.clear();
   octomap::AbstractOcTree* tree = octomap_msgs::msgToMap(msg);
   if (octree) {
     delete octree;
   }
   octree = dynamic_cast<octomap::OcTree*>(tree);
-  // if (tree) {
-  //   for(auto it = octree->begin_leafs(), end=octree->end_leafs(); it!= end; ++it) {
-  //     Cell cell(it.getCoordinate().x(), it.getCoordinate().y(), it.getCoordinate().z());
-  //     double cellProb = it->getValue(); 
-  //     occProb[cell] = cellProb;
-
-  //     if (cellProb > maxPathProb) {
-  //       // Cell is too risky to plan a new path through
-  //       occupied.insert(cell);
-  //       if (cellProb > maxBailProb && pathCells.find(cell) != pathCells.end()) {
-  //         // Cell is on path and is risky enough to abort mission
-  //         currPathIsFree = false;
-  //         printf("BAD CELL: %s \n", cell.asString().c_str());
-  //         pathCells.clear();  // TODO: is this ok?
-  //       }
-  //     }
-
-  //     if (it.getSize() > 2) {
-  //       // TODO: Need a loop for large leafs
-  //       printf("LARGE LEAF: %s: %2.3f %2.3f", cell.asString().c_str(), it.getSize(), it->getValue());
-  //     }
-  //   }
-  // }
-  // delete octree;
 
   // Check if the risk of the current path has increased 
-  if (!lastPath.empty()) {
-    PathInfo newInfo = getPathInfo(lastPath, Node(lastPath[0], lastPath[0]));
-    if (newInfo.risk > lastPathInfo.risk + 10) {
-      currPathIsFree = false;
-      printf("Risk increase");
+  if (!currPath.empty()) {
+    PathInfo newInfo = getPathInfo(currPath, Node(currPath[0], currPath[0]));
+    if (newInfo.isBlocked || newInfo.risk > currPathInfo.risk + 10) {
+      ROS_INFO("Risk increase");
+      return false;
     }
   }
-  return currPathIsFree;
+  return true;
 }
 
 // TODO: simplify and return neighbors
@@ -330,23 +304,23 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
   nav_msgs::Path pathMsg;
   pathMsg.header.frame_id="/world";
 
-  if (lastPath.size() == 0) {
+  if (currPath.size() == 0) {
     return pathMsg;
   }
 
   // Use actual position instead of the center of the cell
   double lastYaw = currYaw;
 
-  for (int i=1; i < lastPath.size()-1; ++i) {
-    Cell p = lastPath[i];
-    Cell lastP = lastPath[i-1];
-    double newYaw = nextYaw(p, lastPath[i+1], lastYaw);
+  for (int i=1; i < currPath.size()-1; ++i) {
+    Cell p = currPath[i];
+    Cell lastP = currPath[i-1];
+    double newYaw = nextYaw(p, currPath[i+1], lastYaw);
     // if (newYaw != lastYaw) {   // only publish corner points
       pathMsg.poses.push_back(createPoseMsg(p, newYaw));
     // }
     lastYaw = newYaw;
   }
-  Cell lastPoint = lastPath[lastPath.size()-1];   // Last point should have the same yaw as the previous point
+  Cell lastPoint = currPath[currPath.size()-1];   // Last point should have the same yaw as the previous point
   pathMsg.poses.push_back(createPoseMsg(lastPoint, lastYaw));
   return pathMsg;
 }
@@ -358,9 +332,11 @@ PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path, const Node s
   PathInfo pathInfo = {};
   for(int i=1; i < path.size(); ++i) {
     Node currNode = Node(path[i], lastNode.cell);
+    double cellRisk = getRisk(currNode.cell);
     pathInfo.cost += getEdgeCost(lastNode, currNode);
     pathInfo.dist += getEdgeDist(currNode.parent, currNode.cell);
-    pathInfo.risk += riskFactor * getRisk(currNode.cell);
+    pathInfo.risk += riskFactor * cellRisk;
+    pathInfo.isBlocked |= cellRisk > maxCellRisk;
     pathInfo.smoothness += smoothFactor * getTurnSmoothness(lastNode, currNode);
     lastNode = currNode;
   }
@@ -747,8 +723,13 @@ void GlobalPlanner::goBack() {
       break;
     }    
   }
-  lastPath = newPath;
+  currPath = newPath;
   goalPos = newPath[newPath.size()-1];
+}
+
+void GlobalPlanner::stop() {
+  ROS_INFO("  STOP  ");
+  setGoal(Cell(currPos));
 }
 
 } // namespace avoidance

@@ -25,7 +25,7 @@
 namespace avoidance {
 
 struct PathInfo {
-  bool foundPath;
+  bool isBlocked;
   double cost;
   double dist;
   double risk;
@@ -79,8 +79,8 @@ class GlobalPlanner {
   double inf = std::numeric_limits<double>::infinity();
   int maxIterations = 2000;
   int lastIterations = 0;
-  std::vector<Cell> lastPath;   // should be currPath
-  PathInfo lastPathInfo;
+  std::vector<Cell> currPath; 
+  PathInfo currPathInfo;
   bool goalIsBlocked = false;
   bool useRiskHeuristics = true;
   bool useSpeedUpHeuristics = true;
@@ -125,6 +125,7 @@ class GlobalPlanner {
   
   bool getGlobalPath();
   void goBack();
+  void stop();
 };
 
 } // namespace avoidance

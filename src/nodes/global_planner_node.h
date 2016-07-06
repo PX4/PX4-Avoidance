@@ -33,14 +33,13 @@ namespace avoidance {
 
 class GlobalPlannerNode {
  public:
-  std::vector<Cell> fileGoals;
+  std::vector<Cell> fileGoals;  // If a goal file is given, the intermediate goals are stored in fileGoals
   GlobalPlannerNode();
   ~GlobalPlannerNode();
 
  private:
   GlobalPlanner global_planner;
   geometry_msgs::Point goalPoint;
-  std::string namespace_;
   nav_msgs::Path actualPath;
 
   int numOctomapMessages = 0;
@@ -56,18 +55,10 @@ class GlobalPlannerNode {
   ros::Subscriber laser_sensor_sub_;
 
   // Publishers
-  // ros::Publisher cmd_multi_dof_joint_trajectory_pub_;
   ros::Publisher cmd_global_path_pub_;
   ros::Publisher cmd_actual_path_pub_;
   ros::Publisher cmd_explored_cells_pub_;
   ros::Publisher cmd_clicked_point_pub_;
-
-  // // lee_controler_publisher
-  // ros::Publisher wp_pub;
-  // // Mavros publisher
-  // ros::Publisher mavros_waypoint_publisher;
-  // // path_handler publisher
-  // ros::Publisher path_handler_publisher;
 
   void SetNewGoal(Cell goal);
   void VelocityCallback(const geometry_msgs::TwistStamped& msg);

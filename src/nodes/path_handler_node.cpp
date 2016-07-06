@@ -54,7 +54,9 @@ PathHandlerNode::PathHandlerNode() {
     if (path.size() > 1) {
       nav_msgs::Path threePointMsg;
       threePointMsg.header.frame_id="/world";
-      threePointMsg.poses = filterPathCorners(path);
+      auto pathWithCurrPos = path;
+      pathWithCurrPos.insert(pathWithCurrPos.begin(), currentGoal);
+      threePointMsg.poses = filterPathCorners(pathWithCurrPos);
       threePointMsg.poses.resize(3);
       three_point_path_publisher.publish(threePointMsg);
     }
