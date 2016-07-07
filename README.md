@@ -1,9 +1,11 @@
-# avoidance
+# Obstacle Detection and Avoidance
 ROS node for sensor fusion and avoidance
 
-## Install Prerequisites
+# Prerequisites
 
-Follow installation guide from http://dev.px4.io/ to install ROS Indigo, Gazebo, SITL and Mavros.
+## Default Installation for Ubuntu 14.04 and ROS Indigo
+
+Follow installation guide from http://dev.px4.io/ to install ROS Indigo, Gazebo, SITL and Mavros (from source).
 
 ```bash
 # Install PCL
@@ -17,8 +19,26 @@ sudo apt-get install libpcl-all
 sudo apt-get install ros-indigo-octomap ros-indigo-octomap-mapping
 rosdep install octomap_mapping
 rosmake octomap_mapping
-
 ```
+
+## Beta Installation for Ubuntu 16.04 and ROS Kinetic
+
+Follow installation guide from http://dev.px4.io/ to install ROS Kinetic, Gazebo, SITL and Mavros (from source).
+
+```bash
+# Install PCL
+sudo apt-get update
+sudo apt-get install libpcl1
+```
+
+```bash
+# Install the Octomap Library
+sudo apt-get install ros-kinetic-octomap-*
+rosdep install octomap
+rosmake octomap
+```
+
+# Building the Code
 
 Now clone the repository into the catkin workspace and build
 ```bash
@@ -32,7 +52,6 @@ export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:<catkin_directory>/src/detection/m
 
 ```bash
 roslaunch avoidance global_planner_sitl_mavros.launch
-
 ```
 
 If the drone does not follow the path properly, some tuning may be required in the file 
