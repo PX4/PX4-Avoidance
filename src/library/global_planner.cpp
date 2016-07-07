@@ -45,6 +45,7 @@ void GlobalPlanner::setGoal(const Cell & goal) {
   goingBack = false;
   goalIsBlocked = false;
   heuristicCache.clear();
+  bubbleRiskCache.clear();
 }
 
 // Sets path to be the current path
@@ -231,6 +232,8 @@ double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
 // Returns a heuristic for the cost of risk for going from u to goal
 // The heuristic is the cost of risk through unknown environment
 double GlobalPlanner::riskHeuristic(const Cell & u, const Cell & goal) {
+  return riskHeuristicReverseCache(u, goal);  // REVERSE_SEARCH
+
   if (u == goal) {
     return 0.0;
   }  
@@ -241,6 +244,20 @@ double GlobalPlanner::riskHeuristic(const Cell & u, const Cell & goal) {
   // TODO: instead of subtracting 1 from the xyDist, subtract 1 from the combined xy and z dist
   double goalRisk = getRisk(goal) * riskFactor;
   return xyRisk + zRisk + goalRisk;
+}
+
+double GlobalPlanner::riskHeuristicReverseCache(const Cell & u, const Cell & goal) {
+  if (bubbleRiskCache.find(u) != bubbleRiskCache.end()) {
+    return bubbleRiskCache[u];
+  }
+  if (u == goal) {
+    return 0.0;
+  }
+  double distToBubble = std::max(0.0, u.diagDistance3D(goal) - bubbleRadius);
+  double unexploredRisk = (1.0 + 6.0 * neighborRiskFlow) * explorePenalty * riskFactor; 
+  double heuristic = bubbleCost + distToBubble * unexploredRisk * heightPrior[u.z()];
+  // bubbleRiskCache[u] = heuristic;
+  return heuristic;
 }
 
 // Returns a heuristic for the cost of turning for going from u to goal
@@ -279,7 +296,7 @@ double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   if (heuristicCache.find(u) != heuristicCache.end()) {
     return heuristicCache[u];
   }
-  
+
   double heuristic = overEstimateFactor * u.cell.diagDistance2D(goal);
   heuristic += altitudeHeuristic(u.cell, goal);        // Lower bound cost due to altitude change
   heuristic += smoothnessHeuristic(u, goal);           // Lower bound cost due to turning  
@@ -292,6 +309,7 @@ double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   heuristicCache[u] = heuristic;
   return heuristic;
 }
+
 
 geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell cell, double yaw) {
   geometry_msgs::PoseStamped poseMsg;
@@ -432,9 +450,6 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
 }
 
 
-// TODO: Run search backwards to quickly find impossible scenarios and/or find exact heuristics for nodes close to goal
-// bool GlobalPlanner::isGoalBlocked() { }
-
 
 // Calls different search functions to find a path 
 bool GlobalPlanner::FindPath(std::vector<Cell> & path) {
@@ -452,6 +467,8 @@ bool GlobalPlanner::FindPath(std::vector<Cell> & path) {
   double bestPathCost = inf;
   overEstimateFactor = 2.0;
   maxIterations = 10000;
+
+  reverseSearch(t); // REVERSE_SEARCH
 
   while (overEstimateFactor >= 1.03 && maxIterations > lastIterations) {
     std::vector<Cell> newPath;
@@ -510,6 +527,40 @@ bool GlobalPlanner::Find2DPath(std::vector<Cell> & path, const Cell & s, const C
     return true;
   }
   return false;
+}
+
+// TODO: Run search backwards to quickly find impossible scenarios and/or find exact heuristics for nodes close to goal
+bool GlobalPlanner::reverseSearch(const Cell t) {
+  std::map<Cell, double> cost;
+  std::priority_queue<CellDistancePair, std::vector<CellDistancePair>, CompareDist> pq;
+  std::unordered_set<Cell> seenCells;
+  int numIter = 0;
+  cost[t] = getRisk(t);
+  pq.push(std::make_pair(t, cost[t]));
+
+  while (!pq.empty() && numIter++ < 100) {
+    CellDistancePair cellDistU = pq.top(); pq.pop();
+    Cell u = cellDistU.first;
+    if (seenCells.find(u) != seenCells.end()) {
+      continue;
+    }
+    seenCells.insert(u);
+    bubbleRiskCache[u] = cost[u];
+    bubbleCost = cost[u];
+    bubbleRadius = std::max(bubbleRadius, u.distance3D(t));
+    
+    for (Cell v : u.getNeighbors()) {
+      double newCost = cost[u] + u.distance3D(v) * riskFactor * getRisk(v);
+      double oldCost = inf;
+      if (cost.find(v) != cost.end()) {
+        oldCost = cost[v];  // TODO: Default dict
+      }
+      if (newCost < oldCost) {
+        cost[v] = newCost;
+        pq.push(std::make_pair(v, newCost));
+      }
+    }
+  }
 }
 
 // A* to find a path from s to t, true iff it found a path
