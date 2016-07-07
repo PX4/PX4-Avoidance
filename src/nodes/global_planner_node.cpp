@@ -130,6 +130,9 @@ void GlobalPlannerNode::PublishExploredCells() {
   
   id = 1;
   for (const auto cell : global_planner.seen) {
+  // for (auto const& x : global_planner.bubbleRiskCache) {
+    // Cell cell = x.first;
+
     visualization_msgs::Marker marker;
     marker.id = id++;
     marker.header.frame_id = "/world";
@@ -145,13 +148,14 @@ void GlobalPlannerNode::PublishExploredCells() {
     // double h = 0.5;                                    // single color (green)
     // risk from 0% to 100%, sqrt is used to increase difference in low risk
     double h = std::sqrt(global_planner.getRisk(cell));    
+    // double h = global_planner.getHeuristic(Node(cell, cell), global_planner.goalPos) / global_planner.currPathInfo.cost;    
+
     marker.color.r = std::max(0.0, 2*h-1);
     marker.color.g = 1.0 - 2.0 * std::abs(h - 0.5);
     marker.color.b = std::max(0.0, 1.0 - 2*h);
     marker.color.a = 1.0;
 
     if (!global_planner.octree->search(cell.xPos(), cell.yPos(), cell.zPos())) {
-    // if (global_planner.occProb.find(cell) != global_planner.occProb.end()) {
       // Unknown space
       marker.color.r = marker.color.g = marker.color.b = 0.2; // Dark gray
     }

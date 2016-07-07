@@ -36,6 +36,7 @@ class Cell {
   double distance2D(const Cell & b) const;
   double distance3D(const Cell & b) const;
   double diagDistance2D(const Cell & b) const;
+  double diagDistance3D(const Cell & b) const;
   double angle() const;
   
   Cell getNeighborFromYaw(double yaw) const;

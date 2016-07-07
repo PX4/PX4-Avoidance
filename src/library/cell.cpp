@@ -52,6 +52,11 @@ double Cell::diagDistance2D(const Cell & b) const {
   return (dx + dy) + (diagCost - 2) * std::min(dx, dy);
 }
 
+// Returns the minimum distance on the XY-grid, where you can move diagonally, to the center of the Cell
+double Cell::diagDistance3D(const Cell & b) const {
+  return diagDistance2D(b) + abs(zPos() - b.zPos());
+}
+
 // Returns the angle in the XY-plane between the Cell and the X-axis
 // Cell at position (0,1,1) has the angle PI / 2  
 double Cell::angle() const {
