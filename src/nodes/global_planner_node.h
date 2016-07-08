@@ -60,6 +60,8 @@ class GlobalPlannerNode {
   ros::Publisher cmd_explored_cells_pub_;
   ros::Publisher cmd_clicked_point_pub_;
 
+  tf::TransformListener listener;
+
   void SetNewGoal(Cell goal);
   void VelocityCallback(const geometry_msgs::TwistStamped& msg);
   void PositionCallback(const geometry_msgs::PoseStamped& msg);

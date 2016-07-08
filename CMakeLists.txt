@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  tf
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
@@ -106,7 +107,7 @@ find_package(octomap REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES global_planner cell node
-  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs tf
 #  DEPENDS system_lib
 )
 

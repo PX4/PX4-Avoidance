@@ -15,6 +15,8 @@ PathHandlerNode::PathHandlerNode() {
   current_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
 
+  listener.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
+
   currentGoal.header.frame_id="/world";
   currentGoal.pose.position.x = 0.5;
   currentGoal.pose.position.y = 0.5;
@@ -63,7 +65,8 @@ PathHandlerNode::PathHandlerNode() {
       three_point_path_publisher.publish(threePointMsg);
     }
 
-    setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
+    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
+    listener.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
 
     // Publish setpoint to Mavros
     mavros_waypoint_publisher.publish(setpoint);
@@ -95,8 +98,8 @@ void PathHandlerNode::ReceivePath(const nav_msgs::Path& msg) {
 void PathHandlerNode::PositionCallback(
     const geometry_msgs::PoseStamped& pose_msg) {
 
-  last_pos = pose_msg;
-  last_pos = rotatePoseMsgToWorld(last_pos); // 90 deg fix
+  // last_pos = rotatePoseMsgToWorld(last_pos); // 90 deg fix
+  listener.transformPose("world", ros::Time(0), pose_msg, "local_origin", last_pos);
 
   // Check if we are close enough to current goal to get the next part of the path
   if (path.size() > 0 && std::abs(currentGoal.pose.position.x - last_pos.pose.position.x) < 1 
