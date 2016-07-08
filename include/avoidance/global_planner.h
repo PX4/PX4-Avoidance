@@ -79,7 +79,6 @@ class GlobalPlanner {
   double upCost = 3.0;
   double downCost = 1.0;
   double searchTime = 1.0;      // The time it takes to find a path in worst case
-  double inf = std::numeric_limits<double>::infinity(); // TODO
   int maxIterations = 2000;
   int lastIterations = 0;
   std::vector<Cell> currPath; 
@@ -115,17 +114,17 @@ class GlobalPlanner {
   double altitudeHeuristic(const Cell & u, const Cell & goal);
   double getHeuristic(const Node & u, const Cell & goal);
   
-  geometry_msgs::PoseStamped createPoseMsg(const Cell cell, double yaw);
+  geometry_msgs::PoseStamped createPoseMsg(const Cell & cell, double yaw);
   nav_msgs::Path getPathMsg();
 
   PathInfo getPathInfo(const std::vector<Cell> & path);
-  void printPathStats(const std::vector<Cell> & path, const Cell startParent, const Cell start,
-                                   const Cell goal, double totalDistance, std::map<Node, double> & distance);
+  void printPathStats(const std::vector<Cell> & path, const Cell & startParent, const Cell & start,
+                                   const Cell & goal, double totalDistance, std::map<Node, double> & distance);
   
   bool FindPath(std::vector<Cell> & path);
-  bool Find2DPath(std::vector<Cell> & path, const Cell & s, const Cell t, const Cell & startParent);
-  bool reverseSearch(const Cell t);
-  bool FindPathOld(std::vector<Cell> & path, const Cell & s, const Cell t, const Cell & startParent, bool is3D);
+  bool Find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & startParent);
+  bool reverseSearch(const Cell & t);
+  bool FindPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & startParent, bool is3D);
   bool FindSmoothPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & parent);
   
   bool getGlobalPath();

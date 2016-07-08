@@ -37,6 +37,15 @@ double squared(T x) {
   return x * x;
 }
 
+// Returns Map[key] if it exists, defaultVal otherwise
+template <typename Key, typename Value, typename Map>
+Value getWithDefault(Map m, Key key, Value defaultVal) {
+  if (m.find(key) != m.end()) {
+    return m[key];
+  }
+  return defaultVal;
+}
+
 double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) {
   double diffX = a.pose.position.x - b.pose.position.x;
   double diffY = a.pose.position.y - b.pose.position.y;
