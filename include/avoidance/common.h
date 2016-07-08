@@ -21,12 +21,11 @@
 #ifndef GLOBAL_PLANNER_COMMON_H_
 #define GLOBAL_PLANNER_COMMON_H_
 
+#include <string>
+
 #include <nav_msgs/Path.h>
 #include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
 #include <geometry_msgs/PoseStamped.h>
-
- 
- 
 
 namespace avoidance {
 
@@ -44,6 +43,27 @@ Value getWithDefault(Map & m, const Key & key, const Value & defaultVal) {
     return m[key];
   }
   return defaultVal;
+}
+
+template <typename P>
+tf::Vector3 toTfVector3(P point) {
+  return tf::Vector3(point.x, point.y, point.z);
+}
+
+geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & listener,
+                      const std::string & targetFrame,
+                      const std::string & fixedFrame,
+                      const geometry_msgs::TwistStamped & msg) {
+
+  auto transformedMsg = msg;
+  geometry_msgs::Vector3Stamped before;
+  before.vector = msg.twist.linear;
+  before.header = msg.header;
+  geometry_msgs::Vector3Stamped after;
+  listener.transformVector(targetFrame, ros::Time(0), before,
+                           fixedFrame, after);
+  transformedMsg.twist.linear = after.vector;
+  return transformedMsg; 
 }
 
 double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) {

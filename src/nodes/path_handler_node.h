@@ -34,6 +34,8 @@ class PathHandlerNode {
   ros::Publisher current_waypoint_publisher;
   ros::Publisher three_point_path_publisher;
 
+  tf::TransformListener listener;
+
   void ReceiveMessage(const geometry_msgs::PoseStamped& pose_msg);
   void ReceivePath(const nav_msgs::Path& msg);
   void PositionCallback(const geometry_msgs::PoseStamped& pose_msg);
