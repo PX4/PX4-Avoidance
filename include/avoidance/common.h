@@ -39,7 +39,7 @@ double squared(T x) {
 
 // Returns Map[key] if it exists, defaultVal otherwise
 template <typename Key, typename Value, typename Map>
-Value getWithDefault(Map m, Key key, Value defaultVal) {
+Value getWithDefault(Map & m, const Key & key, const Value & defaultVal) {
   if (m.find(key) != m.end()) {
     return m[key];
   }
