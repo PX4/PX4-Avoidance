@@ -1,5 +1,8 @@
 #include "global_planner_node.h"
 
+#include <tf/transform_listener.h>
+#include <tf/tf.h>
+
 namespace avoidance {
 
 GlobalPlannerNode::GlobalPlannerNode() {
@@ -17,6 +20,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   cmd_explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
   actualPath.header.frame_id="/world";
+  listener.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() { }
@@ -32,14 +36,17 @@ void GlobalPlannerNode::SetNewGoal(Cell goal) {
 }
 
 void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped& msg) {
-  global_planner.currVel = msg.twist.linear;
-  global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
+  // global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
+
+  auto transformedMsg = transformTwistMsg(listener, "world", "local_origin", msg);
+  global_planner.currVel = transformedMsg.twist.linear;
 }
 
 void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) {
 
   auto rot_msg = msg;
-  rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
+  // rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
+  listener.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   global_planner.setPose(rot_msg);
 
   double distToGoal = global_planner.goalPos.manhattanDist(global_planner.currPos.x, global_planner.currPos.y, global_planner.currPos.z);
@@ -142,14 +149,14 @@ void GlobalPlannerNode::PublishExploredCells() {
     marker.action = visualization_msgs::Marker::ADD;
     marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
 
-    // Just a hack to get the (almost) color spectrum depending on height
-    // h=0 -> blue    h=0.5 -> green  h=1 -> red
     // double h = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
     // double h = 0.5;                                    // single color (green)
     // risk from 0% to 100%, sqrt is used to increase difference in low risk
     double h = std::sqrt(global_planner.getRisk(cell));    
     // double h = global_planner.getHeuristic(Node(cell, cell), global_planner.goalPos) / global_planner.currPathInfo.cost;    
 
+    // A hack to get the (almost) color spectrum depending on height
+    // h=0 -> blue    h=0.5 -> green  h=1 -> red
     marker.color.r = std::max(0.0, 2*h-1);
     marker.color.g = 1.0 - 2.0 * std::abs(h - 0.5);
     marker.color.b = std::max(0.0, 1.0 - 2*h);

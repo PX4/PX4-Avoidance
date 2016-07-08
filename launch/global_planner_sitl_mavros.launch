@@ -9,13 +9,14 @@
     <arg name="gcs_url" default="udp://:14550@:14555" />
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
+    <arg name="mavros_transformation" default="-1.58" />
 
 
     <param name="use_sim_time" value="true" />
 
     <!-- Transformations for the camera and the world -->
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
-          args="0 0 0 -1.58 0 0 world local_origin 100"/>    
+          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 100"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
           args="0 0 0 -1.58 0 -1.58 fcu camera_link 100"/>
 
