@@ -54,7 +54,7 @@ class GlobalPlanner {
   double bubbleRadius = 0;  // The maximum distance from a cell within the bubble to t
 
   std::unordered_set<Cell> seen;        // Cells that were explored in last search
-  std::unordered_set<Cell> occupied;    // Cells such that occProp[Cell] > maxPathProp
+  std::unordered_set<Cell> occupied;    // Cells which have at some point contained an obstacle point
   std::unordered_set<Cell> pathCells;   // Cells that are on current path, and may not be blocked
 
   // TODO: rename and remove not needed

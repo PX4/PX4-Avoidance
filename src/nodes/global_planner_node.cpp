@@ -1,18 +1,16 @@
 #include "global_planner_node.h"
 
-#include <tf/transform_listener.h>
-#include <tf/tf.h>
-
 namespace avoidance {
 
 GlobalPlannerNode::GlobalPlannerNode() {
   ros::NodeHandle nh;
 
   cmd_octomap_full_sub_ = nh.subscribe("/octomap_full", 1, &GlobalPlannerNode::OctomapFullCallback, this);
-  cmd_ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1,&GlobalPlannerNode::PositionCallback, this);
-  velocity_sub_ = nh.subscribe("/mavros/local_position/velocity", 1,&GlobalPlannerNode::VelocityCallback, this);
-  cmd_clicked_point_sub_ = nh.subscribe("/clicked_point", 1,&GlobalPlannerNode::ClickedPointCallback, this);
-  laser_sensor_sub_ = nh.subscribe("/scan", 1,&GlobalPlannerNode::LaserSensorCallback, this);
+  cmd_ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::PositionCallback, this);
+  velocity_sub_ = nh.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::VelocityCallback, this);
+  cmd_clicked_point_sub_ = nh.subscribe("/clicked_point", 1, &GlobalPlannerNode::ClickedPointCallback, this);
+  laser_sensor_sub_ = nh.subscribe("/scan", 1, &GlobalPlannerNode::LaserSensorCallback, this);
+  depth_camera_sub_ = nh.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::DepthCameraCallback, this);
 
   cmd_global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
   cmd_actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
@@ -94,9 +92,7 @@ void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan& msg) {
   }
 }
 
-void GlobalPlannerNode::OctomapFullCallback(
-    const octomap_msgs::Octomap& msg) {
-
+void GlobalPlannerNode::OctomapFullCallback(const octomap_msgs::Octomap& msg) {
   if (numOctomapMessages++ % 10 > 0) {
     return;     // We get too many of those messages. Only process 1/10 of them
   }
@@ -107,6 +103,32 @@ void GlobalPlannerNode::OctomapFullCallback(
     PlanPath();                               // Plan a whole new path
   }
 }
+
+// Go through obstacle points and store them
+void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2& msg) {
+  try {
+    ros::Time now = ros::Time::now();
+    listener.waitForTransform("/world", "/camera_link", now, ros::Duration(5.0));
+    tf::StampedTransform transform;
+    listener.lookupTransform("/world", "/camera_link", now, transform);
+    sensor_msgs::PointCloud2 msg2;
+    pcl_ros::transformPointCloud("/world", transform, msg, msg2);
+    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::fromROSMsg(msg2, cloud);
+
+    for (auto p : cloud) {
+      if (!isnan(p.x)) {
+        Cell occCell(p.x, p.y, p.z);
+        global_planner.occupied.insert(occCell);
+      }
+    }
+  }
+  catch (tf::TransformException const &ex) {
+    ROS_DEBUG("%s",ex.what());
+    ROS_WARN("Transformation not available");
+  }
+}
+
 
 void GlobalPlannerNode::PlanPath() {
   ROS_INFO("Start planning path.");

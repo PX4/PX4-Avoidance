@@ -165,12 +165,19 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
   octomap::OcTreeNode* node = octree->search(cell.xPos(), cell.yPos(), cell.zPos());
   // octomap::OcTreeNode* parent = octree->search(cell.xPos(), cell.yPos(), cell.zPos(), 15);
   if (node) {
-    // TODO: update in log-space
+    // TODO: posterior in log-space
     double logOdds = node->getValue();
     // double parentLogOdds = parent->getValue();
-    return posterior(heightPrior[cell.z()], octomap::probability(logOdds));
-    // return posterior(0.06, octomap::probability(logOdds));     // If the cell has been seen
+    double postProb = posterior(heightPrior[cell.z()], octomap::probability(logOdds));
+    // double postProb = posterior(0.06, octomap::probability(logOdds));     // If the cell has been seen
+    if (occupied.find(cell) != occupied.end()) {
+      // If an obstacle has at some point been spotted it is 'known space'
+      return postProb;
+    }
+    // No obstacle spotted (all measurements hint towards it being free)
+    return explorePenalty * postProb;
   }
+  // No measurements at all
   return explorePenalty * heightPrior[cell.z()];    // Risk for unexplored cells
 }
 
