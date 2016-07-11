@@ -12,11 +12,13 @@
 // #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
+#include <pcl_ros/transforms.h> // transformPointCloud
+#include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <std_msgs/ColorRGBA.h>
 #include <sensor_msgs/LaserScan.h>
-#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
+#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw  TransformListener
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
 
@@ -28,6 +30,8 @@
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/global_planner.h"
+
+
 
 namespace avoidance {
 
@@ -53,6 +57,7 @@ class GlobalPlannerNode {
   ros::Subscriber velocity_sub_;
   ros::Subscriber cmd_clicked_point_sub_;
   ros::Subscriber laser_sensor_sub_;
+  ros::Subscriber depth_camera_sub_;
 
   // Publishers
   ros::Publisher cmd_global_path_pub_;
@@ -69,6 +74,7 @@ class GlobalPlannerNode {
   void LaserSensorCallback(const sensor_msgs::LaserScan& msg);
   void OctomapCallback(const visualization_msgs::MarkerArray& msg);
   void OctomapFullCallback(const octomap_msgs::Octomap& msg);
+  void DepthCameraCallback(const sensor_msgs::PointCloud2& msg);
 
   void PlanPath();
 

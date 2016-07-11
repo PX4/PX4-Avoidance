@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   tf
+  pcl_ros
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
@@ -161,7 +162,7 @@ add_executable(mock_data_node src/nodes/mock_data_node.cpp)
 #   ${PCL_LIBRARIES}
 # )
 target_link_libraries(global_planner_node
-  global_planner cell node ${catkin_LIBRARIES})
+  global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(path_handler_node
   ${catkin_LIBRARIES})
 target_link_libraries(mock_data_node
