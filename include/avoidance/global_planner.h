@@ -119,7 +119,7 @@ class GlobalPlanner {
 
   PathInfo getPathInfo(const std::vector<Cell> & path);
   void printPathStats(const std::vector<Cell> & path, const Cell & startParent, const Cell & start,
-                                   const Cell & goal, double totalDistance, std::map<Node, double> & distance);
+                      const Cell & goal, double totalDistance, std::map<Node, double> & distance);
   
   bool FindPath(std::vector<Cell> & path);
   bool Find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & startParent);

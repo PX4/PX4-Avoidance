@@ -50,31 +50,31 @@ class GlobalPlannerNode {
   int numPositionMessages = 0;
 
   // Subscribers
-  ros::Subscriber cmd_waypoint_sub_;
-  ros::Subscriber cmd_octomap_sub_;
-  ros::Subscriber cmd_octomap_full_sub_;
-  ros::Subscriber cmd_ground_truth_sub_;
+  ros::Subscriber waypoint_sub_;
+  ros::Subscriber octomap_sub_;
+  ros::Subscriber octomap_full_sub_;
+  ros::Subscriber ground_truth_sub_;
   ros::Subscriber velocity_sub_;
-  ros::Subscriber cmd_clicked_point_sub_;
+  ros::Subscriber clicked_point_sub_;
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber depth_camera_sub_;
 
   // Publishers
-  ros::Publisher cmd_global_path_pub_;
-  ros::Publisher cmd_actual_path_pub_;
-  ros::Publisher cmd_explored_cells_pub_;
-  ros::Publisher cmd_clicked_point_pub_;
+  ros::Publisher global_path_pub_;
+  ros::Publisher actual_path_pub_;
+  ros::Publisher explored_cells_pub_;
+  ros::Publisher clicked_point_pub_;
 
-  tf::TransformListener listener;
+  tf::TransformListener listener_;
 
-  void SetNewGoal(Cell goal);
-  void VelocityCallback(const geometry_msgs::TwistStamped& msg);
-  void PositionCallback(const geometry_msgs::PoseStamped& msg);
-  void ClickedPointCallback(const geometry_msgs::PointStamped& msg);
-  void LaserSensorCallback(const sensor_msgs::LaserScan& msg);
-  void OctomapCallback(const visualization_msgs::MarkerArray& msg);
-  void OctomapFullCallback(const octomap_msgs::Octomap& msg);
-  void DepthCameraCallback(const sensor_msgs::PointCloud2& msg);
+  void SetNewGoal(const Cell & goal);
+  void VelocityCallback(const geometry_msgs::TwistStamped & msg);
+  void PositionCallback(const geometry_msgs::PoseStamped & msg);
+  void ClickedPointCallback(const geometry_msgs::PointStamped & msg);
+  void LaserSensorCallback(const sensor_msgs::LaserScan & msg);
+  void OctomapCallback(const visualization_msgs::MarkerArray & msg);
+  void OctomapFullCallback(const octomap_msgs::Octomap & msg);
+  void DepthCameraCallback(const sensor_msgs::PointCloud2 & msg);
 
   void PlanPath();
 

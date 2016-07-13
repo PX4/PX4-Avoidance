@@ -21,24 +21,24 @@ class PathHandlerNode {
 
  private:
   geometry_msgs::PoseStamped currentGoal;
-  geometry_msgs::PoseStamped last_pos;
+  geometry_msgs::PoseStamped lastPos;
   double speed = 1.0;
   double maxSpeed = 1.5;
 
   std::vector<geometry_msgs::PoseStamped> path;
 
-  ros::Subscriber cmd_trajectory_sub_;
-  ros::Subscriber cmd_ground_truth_sub_;
+  ros::Subscriber trajectory_sub_;
+  ros::Subscriber ground_truth_sub_;
 
-  ros::Publisher mavros_waypoint_publisher;
-  ros::Publisher current_waypoint_publisher;
-  ros::Publisher three_point_path_publisher;
+  ros::Publisher mavros_waypoint_publisher_;
+  ros::Publisher current_waypoint_publisher_;
+  ros::Publisher three_point_path_publisher_;
 
-  tf::TransformListener listener;
+  tf::TransformListener listener_;
 
-  void ReceiveMessage(const geometry_msgs::PoseStamped& pose_msg);
-  void ReceivePath(const nav_msgs::Path& msg);
-  void PositionCallback(const geometry_msgs::PoseStamped& pose_msg);
+  void ReceiveMessage(const geometry_msgs::PoseStamped & pose_msg);
+  void ReceivePath(const nav_msgs::Path & msg);
+  void PositionCallback(const geometry_msgs::PoseStamped & pose_msg);
 };
 
 } // namespace avoidance
