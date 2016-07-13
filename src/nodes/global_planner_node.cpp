@@ -5,46 +5,46 @@ namespace avoidance {
 GlobalPlannerNode::GlobalPlannerNode() {
   ros::NodeHandle nh;
 
-  cmd_octomap_full_sub_ = nh.subscribe("/octomap_full", 1, &GlobalPlannerNode::OctomapFullCallback, this);
-  cmd_ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::PositionCallback, this);
+  octomap_full_sub_ = nh.subscribe("/octomap_full", 1, &GlobalPlannerNode::OctomapFullCallback, this);
+  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::PositionCallback, this);
   velocity_sub_ = nh.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::VelocityCallback, this);
-  cmd_clicked_point_sub_ = nh.subscribe("/clicked_point", 1, &GlobalPlannerNode::ClickedPointCallback, this);
+  clicked_point_sub_ = nh.subscribe("/clicked_point", 1, &GlobalPlannerNode::ClickedPointCallback, this);
   laser_sensor_sub_ = nh.subscribe("/scan", 1, &GlobalPlannerNode::LaserSensorCallback, this);
   depth_camera_sub_ = nh.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::DepthCameraCallback, this);
 
-  cmd_global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
-  cmd_actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
-  cmd_clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
-  cmd_explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
+  global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
+  actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
+  clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
+  explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
   actualPath.header.frame_id="/world";
-  listener.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
+  listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() { }
 
-void GlobalPlannerNode::SetNewGoal(Cell goal) {
+void GlobalPlannerNode::SetNewGoal(const Cell & goal) {
   ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
   global_planner.setGoal(goal);
   geometry_msgs::PointStamped pointMsg;
   pointMsg.header.frame_id = "/world";
   pointMsg.point = goal.toPoint();
-  cmd_clicked_point_pub_.publish(pointMsg);
+  clicked_point_pub_.publish(pointMsg);
   PlanPath();
 }
 
-void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped& msg) {
+void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped & msg) {
   // global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
 
-  auto transformedMsg = transformTwistMsg(listener, "world", "local_origin", msg);
+  auto transformedMsg = transformTwistMsg(listener_, "world", "local_origin", msg);
   global_planner.currVel = transformedMsg.twist.linear;
 }
 
-void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) {
+void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg) {
 
   auto rot_msg = msg;
   // rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
-  listener.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
+  listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   global_planner.setPose(rot_msg);
 
   double distToGoal = global_planner.goalPos.manhattanDist(global_planner.currPos.x, global_planner.currPos.y, global_planner.currPos.z);
@@ -69,16 +69,16 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped& msg) 
   if (numPositionMessages++ % 50 == 0) {
     rot_msg.header.frame_id = "/world";
     actualPath.poses.push_back(rot_msg);
-    cmd_actual_path_pub_.publish(actualPath);
+    actual_path_pub_.publish(actualPath);
   }
 }
 
-void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped& msg) {
+void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped & msg) {
   SetNewGoal(Cell(msg.point.x, msg.point.y, 3.0));
 }
 
 
-void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan& msg) {
+void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan & msg) {
   double minRange = msg.range_max;
   for (double range : msg.ranges) {
     minRange = range < msg.range_min ? minRange : std::min(minRange, range);
@@ -92,7 +92,7 @@ void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan& msg) {
   }
 }
 
-void GlobalPlannerNode::OctomapFullCallback(const octomap_msgs::Octomap& msg) {
+void GlobalPlannerNode::OctomapFullCallback(const octomap_msgs::Octomap & msg) {
   if (numOctomapMessages++ % 10 > 0) {
     return;     // We get too many of those messages. Only process 1/10 of them
   }
@@ -105,17 +105,19 @@ void GlobalPlannerNode::OctomapFullCallback(const octomap_msgs::Octomap& msg) {
 }
 
 // Go through obstacle points and store them
-void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2& msg) {
+void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2 & msg) {
   try {
+    // Transform msg from camera frame to world frame
     ros::Time now = ros::Time::now();
-    listener.waitForTransform("/world", "/camera_link", now, ros::Duration(5.0));
+    listener_.waitForTransform("/world", "/camera_link", now, ros::Duration(5.0));
     tf::StampedTransform transform;
-    listener.lookupTransform("/world", "/camera_link", now, transform);
-    sensor_msgs::PointCloud2 msg2;
-    pcl_ros::transformPointCloud("/world", transform, msg, msg2);
-    pcl::PointCloud<pcl::PointXYZ> cloud;
-    pcl::fromROSMsg(msg2, cloud);
+    listener_.lookupTransform("/world", "/camera_link", now, transform);
+    sensor_msgs::PointCloud2 transformedMsg;
+    pcl_ros::transformPointCloud("/world", transform, msg, transformedMsg);
+    pcl::PointCloud<pcl::PointXYZ> cloud; // Easier to loop through pcl::PointCloud
+    pcl::fromROSMsg(transformedMsg, cloud); 
 
+    // Store the obstacle points
     for (auto p : cloud) {
       if (!isnan(p.x)) {
         Cell occCell(p.x, p.y, p.z);
@@ -123,12 +125,11 @@ void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2& msg)
       }
     }
   }
-  catch (tf::TransformException const &ex) {
+  catch (tf::TransformException const & ex) {
     ROS_DEBUG("%s",ex.what());
     ROS_WARN("Transformation not available");
   }
 }
-
 
 void GlobalPlannerNode::PlanPath() {
   ROS_INFO("Start planning path.");
@@ -143,7 +144,7 @@ void GlobalPlannerNode::PlanPath() {
 
 void GlobalPlannerNode::PublishPath() {
   auto pathMsg = global_planner.getPathMsg();
-  cmd_global_path_pub_.publish(pathMsg);
+  global_path_pub_.publish(pathMsg);
 }
 
 void GlobalPlannerNode::PublishExploredCells() {
@@ -190,7 +191,7 @@ void GlobalPlannerNode::PublishExploredCells() {
     }
     msg.markers.push_back(marker);
   }
-  cmd_explored_cells_pub_.publish(msg);
+  explored_cells_pub_.publish(msg);
 }
 
 } // namespace avoidance

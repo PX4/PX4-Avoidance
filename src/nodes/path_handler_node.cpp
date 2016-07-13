@@ -6,16 +6,14 @@ PathHandlerNode::PathHandlerNode() {
 
   ros::NodeHandle nh;
 
-  // cmd_trajectory_sub_ = nh.subscribe("/path_setpoint", 1, &PathHandlerNode::ReceiveMessage, this);
-  cmd_trajectory_sub_ = nh.subscribe("/global_path", 1, &PathHandlerNode::ReceivePath, this);
-  cmd_ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::PositionCallback, this);
-  // cmd_ground_truth_sub_ = nh.subscribe("/iris/ground_truth/pose", 1, &PathHandlerNode::PositionCallback, this);
+  trajectory_sub_ = nh.subscribe("/global_path", 1, &PathHandlerNode::ReceivePath, this);
+  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::PositionCallback, this);
 
-  mavros_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  current_waypoint_publisher = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
-  three_point_path_publisher = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
+  mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  current_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
+  three_point_path_publisher_ = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
 
-  listener.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
+  listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
 
   currentGoal.header.frame_id="/world";
   currentGoal.pose.position.x = 0.5;
@@ -26,7 +24,7 @@ PathHandlerNode::PathHandlerNode() {
   currentGoal.pose.orientation.y = 0.0;
   currentGoal.pose.orientation.z = 0.0;
   currentGoal.pose.orientation.w = 1.0;
-  last_pos = currentGoal;
+  lastPos = currentGoal;
 
   ros::Rate r(10);
   while(ros::ok())
@@ -34,9 +32,9 @@ PathHandlerNode::PathHandlerNode() {
     r.sleep();
     ros::spinOnce();
 
-    auto x = currentGoal.pose.position.x - last_pos.pose.position.x;
-    auto y = currentGoal.pose.position.y - last_pos.pose.position.y;
-    auto z = currentGoal.pose.position.z - last_pos.pose.position.z;
+    auto x = currentGoal.pose.position.x - lastPos.pose.position.x;
+    auto y = currentGoal.pose.position.y - lastPos.pose.position.y;
+    auto z = currentGoal.pose.position.z - lastPos.pose.position.z;
     tf::Vector3 vec(x,y,z);
 
     // If we are less than 1.0 away, then we should stop at the goal
@@ -45,12 +43,12 @@ PathHandlerNode::PathHandlerNode() {
     vec *= newLen;
 
     auto setpoint = currentGoal;  // The intermediate position sent to Mavros
-    setpoint.pose.position.x = last_pos.pose.position.x + vec.getX();
-    setpoint.pose.position.y = last_pos.pose.position.y + vec.getY();
-    setpoint.pose.position.z = last_pos.pose.position.z + vec.getZ();
+    setpoint.pose.position.x = lastPos.pose.position.x + vec.getX();
+    setpoint.pose.position.y = lastPos.pose.position.y + vec.getY();
+    setpoint.pose.position.z = lastPos.pose.position.z + vec.getZ();
 
     // Publish setpoint for vizualization
-    current_waypoint_publisher.publish(setpoint);
+    current_waypoint_publisher_.publish(setpoint);
 
     // Publish three point message
     if (path.size() > 2) {
@@ -62,26 +60,26 @@ PathHandlerNode::PathHandlerNode() {
       if (threePointMsg.poses.size() >= 3) {
         threePointMsg.poses.resize(3);
       }
-      three_point_path_publisher.publish(threePointMsg);
+      three_point_path_publisher_.publish(threePointMsg);
     }
 
     // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
-    listener.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
+    listener_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
 
     // Publish setpoint to Mavros
-    mavros_waypoint_publisher.publish(setpoint);
+    mavros_waypoint_publisher_.publish(setpoint);
   }
 }
 
 PathHandlerNode::~PathHandlerNode() { }
 
-void PathHandlerNode::ReceiveMessage(const geometry_msgs::PoseStamped& pose_msg) {
+void PathHandlerNode::ReceiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
 
   // Not in use
   currentGoal = pose_msg;
 }
 
-void PathHandlerNode::ReceivePath(const nav_msgs::Path& msg) {
+void PathHandlerNode::ReceivePath(const nav_msgs::Path & msg) {
   speed = 1.0;
   path.clear();
   for (int i=2; i < msg.poses.size(); ++i) {
@@ -96,19 +94,19 @@ void PathHandlerNode::ReceivePath(const nav_msgs::Path& msg) {
 }
 
 void PathHandlerNode::PositionCallback(
-    const geometry_msgs::PoseStamped& pose_msg) {
+    const geometry_msgs::PoseStamped & pose_msg) {
 
-  // last_pos = rotatePoseMsgToWorld(last_pos); // 90 deg fix
-  listener.transformPose("world", ros::Time(0), pose_msg, "local_origin", last_pos);
+  // lastPos = rotatePoseMsgToWorld(lastPos); // 90 deg fix
+  listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin", lastPos);
 
   // Check if we are close enough to current goal to get the next part of the path
-  if (path.size() > 0 && std::abs(currentGoal.pose.position.x - last_pos.pose.position.x) < 1 
-                      && std::abs(currentGoal.pose.position.y - last_pos.pose.position.y) < 1
-                      && std::abs(currentGoal.pose.position.z - last_pos.pose.position.z) < 1) {
+  if (path.size() > 0 && std::abs(currentGoal.pose.position.x - lastPos.pose.position.x) < 1 
+                      && std::abs(currentGoal.pose.position.y - lastPos.pose.position.y) < 1
+                      && std::abs(currentGoal.pose.position.z - lastPos.pose.position.z) < 1) {
 
     // TODO: get yawdiff(yaw1, yaw2)
     double yaw1 = tf::getYaw(currentGoal.pose.orientation);
-    double yaw2 = tf::getYaw(last_pos.pose.orientation);
+    double yaw2 = tf::getYaw(lastPos.pose.orientation);
     double yawDiff = std::abs(yaw2 - yaw1);
     yawDiff -= std::floor(yawDiff / (2*M_PI)) * (2*M_PI);
     double maxYawDiff = M_PI/8.0;
