@@ -14,7 +14,7 @@ namespace avoidance {
 class Cell {
  public:
   Cell();
-  Cell(std::tuple<int, int, int> newTpl);
+  Cell(std::tuple<int, int, int> new_tuple);
   Cell(double x, double y, double z);
   Cell(double x, double y);
   Cell(geometry_msgs::Point point);
@@ -47,13 +47,13 @@ class Cell {
   std::string asString() const;
   
   // Member variables
-  std::tuple<int, int, int> tpl;
-  static constexpr double scale = 1.0;
+  std::tuple<int, int, int> tpl_;
+  static constexpr double scale_ = 1.0;
 };
 
-inline bool operator==(const Cell & lhs, const Cell & rhs) {return lhs.tpl == rhs.tpl;}
+inline bool operator==(const Cell & lhs, const Cell & rhs) {return lhs.tpl_ == rhs.tpl_;}
 inline bool operator!=(const Cell & lhs, const Cell & rhs) {return !operator==(lhs,rhs);}
-inline bool operator< (const Cell & lhs, const Cell & rhs) {return lhs.tpl < rhs.tpl;}
+inline bool operator< (const Cell & lhs, const Cell & rhs) {return lhs.tpl_ < rhs.tpl_;}
 inline bool operator> (const Cell & lhs, const Cell & rhs) {return  operator< (rhs,lhs);}
 inline bool operator<=(const Cell & lhs, const Cell & rhs) {return !operator> (lhs,rhs);}
 inline bool operator>=(const Cell & lhs, const Cell & rhs) {return !operator< (lhs,rhs);}
@@ -77,8 +77,8 @@ namespace std {
 template <>
 struct hash<avoidance::Cell> {
     std::size_t operator()(const avoidance::Cell & cell ) const {
-        return (std::get<0>(cell.tpl) << 20) ^ (std::get<1>(cell.tpl) << 10) ^ std::get<2>(cell.tpl);
-      // return (std::get<0>(cell.tpl) * 18397) + (std::get<1>(cell.tpl) * 20483) + (std::get<2>(cell.tpl) * 29303);
+        return (std::get<0>(cell.tpl_) << 20) ^ (std::get<1>(cell.tpl_) << 10) ^ std::get<2>(cell.tpl_);
+      // return (std::get<0>(cell.tpl_) * 18397) + (std::get<1>(cell.tpl_) * 20483) + (std::get<2>(cell.tpl_) * 29303);
     }
 };
 

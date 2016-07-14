@@ -19,22 +19,20 @@ class MockDataNode {
   ~MockDataNode();
   void createWall(int dist, int width, int height);
   void sendClickedPoint();
-  void ReceivePath(const nav_msgs::Path& msg);
+  void ReceivePath(const nav_msgs::Path & msg);
   void sendMockData();
   
 
-  std::vector<float> points {5.5,-0.5,0.5, 5.5,0.5,0.5, 5.5,1.5,0.5,  
+  std::vector<float> points_ {5.5,-0.5,0.5, 5.5,0.5,0.5, 5.5,1.5,0.5,  
                              5.5,-0.5,1.5, 5.5,0.5,1.5, 5.5,1.5,1.5,
                              5.5,-0.5,2.5, 5.5,0.5,2.5, 5.5,1.5,2.5};
 
-  std::vector<float> pos {0.5, 0.5, 1.5};
-
  private:
-  ros::Subscriber path_subscriber;
+  ros::Subscriber path_sub_;
 
-  ros::Publisher local_position_publisher;
-  ros::Publisher depth_points_publisher;
-  ros::Publisher clicked_point_publisher;
+  ros::Publisher local_position_pub_;
+  ros::Publisher depth_points_pub_;
+  ros::Publisher clicked_point_pub_;
 };
 
 } // namespace avoidance

@@ -37,17 +37,16 @@ namespace avoidance {
 
 class GlobalPlannerNode {
  public:
-  std::vector<Cell> fileGoals;  // If a goal file is given, the intermediate goals are stored in fileGoals
+  std::vector<Cell> file_goals_;  // If a goal file is given, the intermediate goals are stored in file_goals_
   GlobalPlannerNode();
   ~GlobalPlannerNode();
 
  private:
-  GlobalPlanner global_planner;
-  geometry_msgs::Point goalPoint;
-  nav_msgs::Path actualPath;
+  GlobalPlanner global_planner_;
+  nav_msgs::Path actual_path_;
 
-  int numOctomapMessages = 0;
-  int numPositionMessages = 0;
+  int num_octomap_msg_ = 0;
+  int num_pos_msg_ = 0;
 
   // Subscribers
   ros::Subscriber waypoint_sub_;
