@@ -6,19 +6,19 @@ MockDataNode::MockDataNode() {
 
   ros::NodeHandle nh;
 
-  path_subscriber = nh.subscribe("/global_path", 1, &MockDataNode::ReceivePath, this);
+  path_sub_ = nh.subscribe("/global_path", 1, &MockDataNode::ReceivePath, this);
 
-  depth_points_publisher = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
-  local_position_publisher = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
-  clicked_point_publisher = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
+  depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
+  local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
+  clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
   
   createWall(5, 5, 6);
 
-  int loopNumber = 0;
+  int num_loops = 0;
   ros::Rate rate(1);
   while(ros::ok())
   {
-    if (loopNumber++ == 10) {
+    if (num_loops++ == 10) {
       sendClickedPoint();
     }
     sendMockData();
@@ -30,12 +30,12 @@ MockDataNode::MockDataNode() {
 MockDataNode::~MockDataNode() { }
 
 void MockDataNode::createWall(int dist, int width, int height) {
-  points.clear();
+  points_.clear();
   for (int i=-width; i <= width; ++i) {
     for (int j=0; j <= height; ++j) {
-      points.push_back(dist + 0.5);
-      points.push_back(i + 0.5);
-      points.push_back(j + 0.5);
+      points_.push_back(dist + 0.5);
+      points_.push_back(i + 0.5);
+      points_.push_back(j + 0.5);
     }
   }
 }
@@ -46,10 +46,10 @@ void MockDataNode::sendClickedPoint() {
   msg.point.x = 8.5;
   msg.point.y = 4.5;
   msg.point.z = 1.5;
-  clicked_point_publisher.publish(msg);
+  clicked_point_pub_.publish(msg);
 }
 
-void MockDataNode::ReceivePath(const nav_msgs::Path& msg) {
+void MockDataNode::ReceivePath(const nav_msgs::Path & msg) {
   for (auto p : msg.poses) {
     double x = p.pose.position.x;
     double y = p.pose.position.y;
@@ -83,7 +83,7 @@ void MockDataNode::sendMockData() {
   modifier.resize(100);
 
   // Define some raw data we'll put in the PointCloud2
-  int n = points.size() / 3;
+  int n = points_.size() / 3;
   uint8_t color_data[] = {40, 200, 120};
 
   // Define the iterators. When doing so, you define the Field you would like to iterate upon and
@@ -100,15 +100,15 @@ void MockDataNode::sendMockData() {
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(cloud_msg, "b");
   // Fill the PointCloud2
   for(size_t i=0; i<n; ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b) {
-     *iter_x = points[3*i+0];
-     *iter_y = points[3*i+1];
-     *iter_z = points[3*i+2];
+     *iter_x = points_[3*i+0];
+     *iter_y = points_[3*i+1];
+     *iter_z = points_[3*i+2];
      *iter_r = color_data[0];
      *iter_g = color_data[1];
      *iter_b = color_data[2];
   }
 
-  depth_points_publisher.publish(cloud_msg);
+  depth_points_pub_.publish(cloud_msg);
 
   // Send position
   geometry_msgs::PoseStamped pos;
@@ -117,7 +117,7 @@ void MockDataNode::sendMockData() {
   pos.pose.position.y = 2.5;
   pos.pose.position.z = 1.5;
   pos.pose.orientation.w = 1.0;
-  local_position_publisher.publish(pos);
+  local_position_pub_.publish(pos);
 
 
 }

@@ -36,13 +36,13 @@ double squared(T x) {
   return x * x;
 }
 
-// Returns Map[key] if it exists, defaultVal otherwise
+// Returns Map[key] if it exists, default_val otherwise
 template <typename Key, typename Value, typename Map>
-Value getWithDefault(Map & m, const Key & key, const Value & defaultVal) {
+Value getWithDefault(Map & m, const Key & key, const Value & default_val) {
   if (m.find(key) != m.end()) {
     return m[key];
   }
-  return defaultVal;
+  return default_val;
 }
 
 template <typename P>
@@ -51,19 +51,18 @@ tf::Vector3 toTfVector3(P point) {
 }
 
 geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & listener,
-                      const std::string & targetFrame,
-                      const std::string & fixedFrame,
-                      const geometry_msgs::TwistStamped & msg) {
+                                              const std::string & target_frame,
+                                              const std::string & fixed_frame,
+                                              const geometry_msgs::TwistStamped & msg) {
 
-  auto transformedMsg = msg;
+  auto transformed_msg = msg;
   geometry_msgs::Vector3Stamped before;
   before.vector = msg.twist.linear;
   before.header = msg.header;
   geometry_msgs::Vector3Stamped after;
-  listener.transformVector(targetFrame, ros::Time(0), before,
-                           fixedFrame, after);
-  transformedMsg.twist.linear = after.vector;
-  return transformedMsg; 
+  listener.transformVector(target_frame, ros::Time(0), before, fixed_frame, after);
+  transformed_msg.twist.linear = after.vector;
+  return transformed_msg;
 }
 
 double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) {
@@ -142,17 +141,17 @@ geometry_msgs::PoseStamped rotatePoseMsgToMavros(const geometry_msgs::PoseStampe
 
 double posterior(double p, double prior) {
   // p and prior are independent measurements of the same event
-  double isObst = p * prior;
-  double isNotObst = (1-p) * (1-prior);
-  return isObst / (isObst + isNotObst+0.0001);
+  double prob_obstacle = p * prior;
+  double prob_free = (1-p) * (1-prior);
+  return prob_obstacle / (prob_obstacle + prob_free+0.0001);
 }
 
 double pathLength(nav_msgs::Path & path) {
-  double totalDist = 0.0;
+  double total_dist = 0.0;
   for (int i=1; i < path.poses.size(); ++i) {
-    totalDist += distance(path.poses[i-1], path.poses[i]);
+    total_dist += distance(path.poses[i-1], path.poses[i]);
   }
-  return totalDist;
+  return total_dist;
 }
 
 // Returns a path with only the corner points of msg
@@ -169,10 +168,10 @@ std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geom
     geometry_msgs::Point last = msg[i-1].pose.position;
     geometry_msgs::Point curr = msg[i].pose.position;
     geometry_msgs::Point next = msg[i+1].pose.position;
-    bool sameX = (next.x - curr.x) == (curr.x - last.x);
-    bool sameY = (next.y - curr.y) == (curr.y - last.y);
-    bool sameZ = (next.z - curr.z) == (curr.z - last.z);
-    if (!(sameX && sameY && sameZ)) {
+    bool same_x = (next.x - curr.x) == (curr.x - last.x);
+    bool same_y = (next.y - curr.y) == (curr.y - last.y);
+    bool same_z = (next.z - curr.z) == (curr.z - last.z);
+    if (!(same_x && same_y && same_z)) {
       corners.push_back(msg[i]);
     }
   }
@@ -185,34 +184,32 @@ double pathKineticEnergy(nav_msgs::Path & path) {
   if (path.poses.size() < 3) {
     return 0.0;
   }
-  std::vector<double> velX;
-  std::vector<double> velY;
-  std::vector<double> velZ;
+  std::vector<double> vel_x;
+  std::vector<double> vel_y;
+  std::vector<double> vel_z;
   for (int i=1; i < path.poses.size(); ++i) {
-    velX.push_back(path.poses[i].pose.position.x - path.poses[i-1].pose.position.x);
-    velY.push_back(path.poses[i].pose.position.y - path.poses[i-1].pose.position.y);
-    velZ.push_back(path.poses[i].pose.position.z - path.poses[i-1].pose.position.z);
+    vel_x.push_back(path.poses[i].pose.position.x - path.poses[i-1].pose.position.x);
+    vel_y.push_back(path.poses[i].pose.position.y - path.poses[i-1].pose.position.y);
+    vel_z.push_back(path.poses[i].pose.position.z - path.poses[i-1].pose.position.z);
   }
 
-  double totalEnergy = 0.0;
-  for (int i=1; i < velX.size(); ++i) {
-    totalEnergy += std::abs(velX[i]*velX[i] - velX[i-1]*velX[i-1]);
-    totalEnergy += std::abs(velY[i]*velY[i] - velY[i-1]*velY[i-1]);
-    totalEnergy += std::abs(velZ[i]*velZ[i] - velZ[i-1]*velZ[i-1]);
+  double total_energy = 0.0;
+  for (int i=1; i < vel_x.size(); ++i) {
+    total_energy += std::abs(vel_x[i]*vel_x[i] - vel_x[i-1]*vel_x[i-1]);
+    total_energy += std::abs(vel_y[i]*vel_y[i] - vel_y[i-1]*vel_y[i-1]);
+    total_energy += std::abs(vel_z[i]*vel_z[i] - vel_z[i-1]*vel_z[i-1]);
   }
-
-  return totalEnergy;
+  return total_energy;
 }
 
-double pathEnergy(nav_msgs::Path & path, double upPenalty) {
-  // p and prior are independent measurements of the same event
-  double totalEnergy = 0.0;
+double pathEnergy(nav_msgs::Path & path, double up_penalty) {
+  double total_energy = 0.0;
   for (int i=1; i < path.poses.size(); ++i) {
-    totalEnergy += distance(path.poses[i-1], path.poses[i]);
-    double altitudeIncrease = path.poses[i].pose.position.z - path.poses[i-1].pose.position.z;
-    totalEnergy += std::max(0.0, upPenalty * altitudeIncrease);
+    total_energy += distance(path.poses[i-1], path.poses[i]);
+    double altitude_increase = path.poses[i].pose.position.z - path.poses[i-1].pose.position.z;
+    total_energy += std::max(0.0, up_penalty * altitude_increase);
   }
-  return totalEnergy;
+  return total_energy;
 }
 
 } // namespace avoidance

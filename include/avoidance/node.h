@@ -10,34 +10,32 @@ namespace avoidance {
   
 class Node {
  public:
-  Node() = default ;
-  Node(const Cell cell, const Cell parent)
-      : cell(cell), parent(parent) {
-  }
+  Node() = default;
+  Node(const Cell & cell, const Cell & parent) : cell_(cell), parent_(parent) {}
 
   std::vector<Node> getNeighbors() const;
 
-  Cell cell;
-  Cell parent;
+  Cell cell_;
+  Cell parent_;
 };
 
-inline bool operator==(const Node& lhs, const Node& rhs) {
-  return lhs.cell == rhs.cell && lhs.parent == rhs.parent;}
-inline bool operator< (const Node& lhs, const Node& rhs) {
-  return lhs.cell < rhs.cell || (lhs.cell == rhs.cell && lhs.parent < rhs.parent);}
-inline bool operator!=(const Node& lhs, const Node& rhs) {return !operator==(lhs,rhs);}
-inline bool operator> (const Node& lhs, const Node& rhs) {return  operator< (rhs,lhs);}
-inline bool operator<=(const Node& lhs, const Node& rhs) {return !operator> (lhs,rhs);}
-inline bool operator>=(const Node& lhs, const Node& rhs) {return !operator< (lhs,rhs);}
+inline bool operator==(const Node & lhs, const Node & rhs) {
+  return lhs.cell_ == rhs.cell_ && lhs.parent_ == rhs.parent_;}
+inline bool operator< (const Node & lhs, const Node & rhs) {
+  return lhs.cell_ < rhs.cell_ || (lhs.cell_ == rhs.cell_ && lhs.parent_ < rhs.parent_);}
+inline bool operator!=(const Node & lhs, const Node & rhs) {return !operator==(lhs, rhs);}
+inline bool operator> (const Node & lhs, const Node & rhs) {return  operator< (rhs, lhs);}
+inline bool operator<=(const Node & lhs, const Node & rhs) {return !operator> (lhs, rhs);}
+inline bool operator>=(const Node & lhs, const Node & rhs) {return !operator< (lhs, rhs);}
 
 typedef std::pair<Node, double> NodeDistancePair;
 
 class CompareDist {
  public:
-  bool operator()(const CellDistancePair n1, const CellDistancePair n2) {
+  bool operator()(const CellDistancePair & n1, const CellDistancePair & n2) {
     return n1.second > n2.second;
   }
-  bool operator()(const NodeDistancePair n1, const NodeDistancePair n2) {
+  bool operator()(const NodeDistancePair & n1, const NodeDistancePair & n2) {
     return n1.second > n2.second;
   }
 };
@@ -49,8 +47,8 @@ namespace std {
 template <>
 struct hash<avoidance::Node> {
     std::size_t operator()(const avoidance::Node & node ) const {
-        return (std::hash<avoidance::Cell>()(node.cell) << 1) ^ std::hash<avoidance::Cell>()(node.parent);
-        // return std::hash<avoidance::Cell>()(node.cell) * 37 + std::hash<avoidance::Cell>()(node.parent) * 41;
+        return (std::hash<avoidance::Cell>()(node.cell_) << 1) ^ std::hash<avoidance::Cell>()(node.parent_);
+        // return std::hash<avoidance::Cell>()(node.cell_) * 37 + std::hash<avoidance::Cell>()(node.parent_) * 41;
     }
 };
 
