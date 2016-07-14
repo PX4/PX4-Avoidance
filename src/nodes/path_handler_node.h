@@ -20,12 +20,12 @@ class PathHandlerNode {
   ~PathHandlerNode();
 
  private:
-  geometry_msgs::PoseStamped currentGoal;
-  geometry_msgs::PoseStamped lastPos;
-  double speed = 1.0;
-  double maxSpeed = 1.5;
+  geometry_msgs::PoseStamped current_goal_;
+  geometry_msgs::PoseStamped last_pos_;
+  double speed_ = 1.0;
+  double max_speed_ = 1.5;
 
-  std::vector<geometry_msgs::PoseStamped> path;
+  std::vector<geometry_msgs::PoseStamped> path_;
 
   ros::Subscriber trajectory_sub_;
   ros::Subscriber ground_truth_sub_;

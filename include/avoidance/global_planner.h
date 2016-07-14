@@ -25,7 +25,7 @@
 namespace avoidance {
 
 struct PathInfo {
-  bool isBlocked;
+  bool is_blocked;
   double cost;
   double dist;
   double risk;
@@ -34,71 +34,68 @@ struct PathInfo {
 
 class GlobalPlanner {
  public:
-  octomap::OcTree* octree = NULL;
-  std::vector<double> heightPrior { 1.0, 0.5, 0.3, 0.2, 0.1, 0.05, 0.01,
+  octomap::OcTree* octree_ = NULL;
+  std::vector<double> height_prior_ { 1.0, 0.5, 0.3, 0.2, 0.1, 0.05, 0.01,
                                     0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
-  // std::vector<double> heightPrior { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+  // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-  // std::vector<double> heightPrior { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
+  // std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
   //                                   0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001};
 
   // Needed to quickly estimate the risk of vertical movement
-  std::vector<double> accumulatedHeightPrior; // accumulatedHeightPrior[i] = sum(heightPrior[0:i])
+  std::vector<double> accumulated_height_prior_; // accumulated_height_prior_[i] = sum(height_prior_[0:i])
 
-  std::unordered_map<Cell, double> occProb;         // OctoMap probability of Cell being occupied
-  std::unordered_map<Cell, double> seenCount;       // number of times a cell was explored in last search
-  std::unordered_map<Cell, double> riskCache;       // Cache of getRisk(Cell)
-  std::unordered_map<Node, double> heuristicCache;  // Cache of getHeuristic(Node) (and later reverse search)
-  std::unordered_map<Cell, double> bubbleRiskCache; // Cache the risk of the safest path from Cell to t
-  double bubbleCost = 0.0;  // Minimum risk for the safest path from a cell outside of the bubble to t
-  double bubbleRadius = 0;  // The maximum distance from a cell within the bubble to t
+  std::unordered_map<Cell, double> seen_count_;       // number of times a cell was explored in last search
+  std::unordered_map<Cell, double> risk_cache_;       // Cache of getRisk(Cell)
+  std::unordered_map<Cell, double> bubble_risk_cache_; // Cache the risk of the safest path from Cell to t
+  std::unordered_map<Node, double> heuristic_cache_;  // Cache of getHeuristic(Node) (and later reverse search)
+  double bubble_cost_ = 0.0;  // Minimum risk for the safest path from a cell outside of the bubble to t
+  double bubble_radius_ = 0.0;  // The maximum distance from a cell within the bubble to t
 
-  std::unordered_set<Cell> seen;        // Cells that were explored in last search
-  std::unordered_set<Cell> occupied;    // Cells which have at some point contained an obstacle point
-  std::unordered_set<Cell> pathCells;   // Cells that are on current path, and may not be blocked
+  std::unordered_set<Cell> seen_;        // Cells that were explored in last search
+  std::unordered_set<Cell> occupied_;    // Cells which have at some point contained an obstacle point
+  std::unordered_set<Cell> path_cells_;   // Cells that are on current path, and may not be blocked
 
   // TODO: rename and remove not needed
-  std::vector<Cell> pathBack;
-  geometry_msgs::Point currPos;
-  double currYaw;
-  geometry_msgs::Vector3 currVel;
-  Cell goalPos = Cell(0.5, 0.5, 3.5);
-  bool goingBack = true;        // we start by just finding the start position
+  std::vector<Cell> path_back_;
+  geometry_msgs::Point curr_pos_;
+  double curr_yaw_;
+  geometry_msgs::Vector3 curr_vel_;
+  Cell goal_pos_ = Cell(0.5, 0.5, 3.5);
+  bool going_back_ = true;        // we start by just finding the start position
 
-  double overEstimateFactor = 4.0;
-  int minHeight = 1;
-  int maxHeight = 10;
-  double maxPathProb = 0.0;
-  double maxBailProb = 1.0;     // Must be >= 0 (50%) because of the fixed uniform prior in OctoMap
-  double maxCellRisk = 0.2;
-  double smoothFactor = 10.0;
-  double vertToHorCost = 1.0;   // The cost of changing between vertical and horizontal motion
-  double riskFactor = 500.0;
-  double neighborRiskFlow = 1.0;
-  double explorePenalty = 0.015;
-  double upCost = 3.0;
-  double downCost = 1.0;
-  double searchTime = 1.0;      // The time it takes to find a path in worst case
-  int maxIterations = 2000;
-  int lastIterations = 0;
-  std::vector<Cell> currPath; 
-  PathInfo currPathInfo;
-  bool goalIsBlocked = false;
-  bool useRiskHeuristics = true;
-  bool useSpeedUpHeuristics = true;
+  double overestimate_factor;
+  int min_altitude_ = 1;
+  int max_altitude_ = 10;
+  double max_cell_risk_ = 0.2;
+  double smooth_factor_ = 10.0;
+  double vert_to_hor_cost_ = 1.0;   // The cost of changing between vertical and horizontal motion
+  double risk_factor_ = 500.0;
+  double neighbor_risk_flow_ = 1.0;
+  double expore_penalty_ = 0.015;
+  double up_cost_ = 3.0;
+  double down_cost_ = 1.0;
+  double search_time_ = 1.0;      // The time it takes to find a path in worst case
+  int max_iterations_ = 2000;
+  int last_iterations_ = 0;
+  std::vector<Cell> curr_path_;
+  PathInfo curr_path_info_;
+  bool goal_is_blocked_ = false;
+  bool use_risk_heuristics_ = true;
+  bool use_speedup_heuristics_ = true;
 
   GlobalPlanner();
   ~GlobalPlanner();
 
   void calculateAccumulatedHeightPrior();
 
-  void setPose(const geometry_msgs::PoseStamped & newPose);
+  void setPose(const geometry_msgs::PoseStamped & new_pose);
   void setGoal(const Cell & goal);
   void setPath(const std::vector<Cell> & path);
 
   bool updateFullOctomap(const octomap_msgs::Octomap & msg);
   
-  void getOpenNeighbors(const Cell & cell, std::vector<CellDistancePair> & neighbors, bool is3D);
+  void getOpenNeighbors(const Cell & cell, std::vector<CellDistancePair> & neighbors, bool is_3D);
   bool isNearWall(const Cell & cell);
 
   double getEdgeDist(const Cell & u, const Cell & v);
@@ -118,14 +115,14 @@ class GlobalPlanner {
   nav_msgs::Path getPathMsg();
 
   PathInfo getPathInfo(const std::vector<Cell> & path);
-  void printPathStats(const std::vector<Cell> & path, const Cell & startParent, const Cell & start,
-                      const Cell & goal, double totalDistance, std::map<Node, double> & distance);
+  void printPathStats(const std::vector<Cell> & path, const Cell & start_parent, const Cell & start,
+                      const Cell & goal, double total_cost);
   
-  bool FindPath(std::vector<Cell> & path);
-  bool Find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & startParent);
+  bool findPath(std::vector<Cell> & path);
+  bool find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent);
   bool reverseSearch(const Cell & t);
-  bool FindPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & startParent, bool is3D);
-  bool FindSmoothPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & parent);
+  bool findPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent, bool is_3D);
+  bool findSmoothPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & parent);
   
   bool getGlobalPath();
   void goBack();

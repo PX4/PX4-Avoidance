@@ -3,10 +3,10 @@
 namespace avoidance {
 
 Cell::Cell() = default;
-Cell::Cell(std::tuple<int, int, int> newTpl)
-  : tpl(newTpl) {}
+Cell::Cell(std::tuple<int, int, int> new_tuple)
+  : tpl_(new_tuple) {}
 Cell::Cell(double x, double y, double z)
-  : tpl(floor(x / scale), floor(y / scale), floor(z / scale)) {}
+  : tpl_(floor(x / scale_), floor(y / scale_), floor(z / scale_)) {}
 Cell::Cell(double x, double y) 
   : Cell(x, y, 0.0) {}
 Cell::Cell(geometry_msgs::Point point) 
@@ -14,13 +14,13 @@ Cell::Cell(geometry_msgs::Point point)
 // Cell::Cell(Eigen::Vector3d point) 
   // : Cell(point[0], point[1], point[2])  {}
 
-int Cell::x() const {return std::get<0>(tpl);}
-int Cell::y() const {return std::get<1>(tpl);}
-int Cell::z() const {return std::get<2>(tpl);}
+int Cell::x() const {return std::get<0>(tpl_);}
+int Cell::y() const {return std::get<1>(tpl_);}
+int Cell::z() const {return std::get<2>(tpl_);}
 
-double Cell::xPos() const {return scale * x() + scale * 0.5;}
-double Cell::yPos() const {return scale * y() + scale * 0.5;}
-double Cell::zPos() const {return scale * z() + scale * 0.5;}
+double Cell::xPos() const {return scale_ * x() + scale_ * 0.5;}
+double Cell::yPos() const {return scale_ * y() + scale_ * 0.5;}
+double Cell::zPos() const {return scale_ * z() + scale_ * 0.5;}
 
 geometry_msgs::Point Cell::toPoint() const {
   geometry_msgs::Point point;
@@ -48,8 +48,8 @@ double Cell::distance3D(const Cell & b) const {
 double Cell::diagDistance2D(const Cell & b) const {
   double dx = abs(xPos() - b.xPos());
   double dy = abs(yPos() - b.yPos());
-  double diagCost = 1.41421356237;
-  return (dx + dy) + (diagCost - 2) * std::min(dx, dy);
+  double diag_cost = 1.41421356237;
+  return (dx + dy) + (diag_cost - 2) * std::min(dx, dy);
 }
 
 // Returns the minimum distance on the XY-grid, where you can move diagonally, to the center of the Cell
@@ -66,9 +66,9 @@ double Cell::angle() const {
 // Returns the neighboring cell in the yaw direction
 // E.g. if yaw == PI/4, then it returns Cell(x+1, y+1, z)
 Cell Cell::getNeighborFromYaw(double yaw) const {
-  int xDiff = 2 * scale * std::cos(yaw);
-  int yDiff = 2 * scale * std::sin(yaw);
-  return Cell(xPos() + xDiff, yPos() + yDiff, zPos());
+  int dx = 2 * scale_ * std::cos(yaw);
+  int dy = 2 * scale_ * std::sin(yaw);
+  return Cell(xPos() + dx, yPos() + dy, zPos());
 }
 
 // Returns the neighbors of the Cell whose risk influences the Cell

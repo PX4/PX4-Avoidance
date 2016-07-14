@@ -17,7 +17,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
   explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
-  actualPath.header.frame_id="/world";
+  actual_path_.header.frame_id="/world";
   listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
 }
 
@@ -25,7 +25,7 @@ GlobalPlannerNode::~GlobalPlannerNode() { }
 
 void GlobalPlannerNode::SetNewGoal(const Cell & goal) {
   ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
-  global_planner.setGoal(goal);
+  global_planner_.setGoal(goal);
   geometry_msgs::PointStamped pointMsg;
   pointMsg.header.frame_id = "/world";
   pointMsg.point = goal.toPoint();
@@ -34,10 +34,10 @@ void GlobalPlannerNode::SetNewGoal(const Cell & goal) {
 }
 
 void GlobalPlannerNode::VelocityCallback(const geometry_msgs::TwistStamped & msg) {
-  // global_planner.currVel = rotateToWorldCoordinates(global_planner.currVel); // 90 deg fix
+  // global_planner_.curr_vel_ = rotateToWorldCoordinates(global_planner_.curr_vel_); // 90 deg fix
 
-  auto transformedMsg = transformTwistMsg(listener_, "world", "local_origin", msg);
-  global_planner.currVel = transformedMsg.twist.linear;
+  auto transformed_msg = transformTwistMsg(listener_, "world", "local_origin", msg);
+  global_planner_.curr_vel_ = transformed_msg.twist.linear;
 }
 
 void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg) {
@@ -45,31 +45,31 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
   auto rot_msg = msg;
   // rot_msg = rotatePoseMsgToWorld(rot_msg); // 90 deg fix
   listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
-  global_planner.setPose(rot_msg);
+  global_planner_.setPose(rot_msg);
 
-  double distToGoal = global_planner.goalPos.manhattanDist(global_planner.currPos.x, global_planner.currPos.y, global_planner.currPos.z);
-  if (fileGoals.size() > 0 && (distToGoal < 1.0 || global_planner.goalIsBlocked)) {
+  double dist_to_goal = global_planner_.goal_pos_.manhattanDist(global_planner_.curr_pos_.x, global_planner_.curr_pos_.y, global_planner_.curr_pos_.z);
+  if (file_goals_.size() > 0 && (dist_to_goal < 1.0 || global_planner_.goal_is_blocked_)) {
     // If there is another goal and we are either at current goal or it is blocked, we set a new goal
-    if (!global_planner.goalIsBlocked) {
-      ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actualPath), pathEnergy(actualPath, global_planner.upCost));
-      ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner.goalPos.asString().c_str(), (int) fileGoals.size());
+    if (!global_planner_.goal_is_blocked_) {
+      ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
+      ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int) file_goals_.size());
     }
-    Cell newGoal = fileGoals.front();
-    fileGoals.erase(fileGoals.begin());
-    SetNewGoal(newGoal);
+    Cell new_goal = file_goals_.front();
+    file_goals_.erase(file_goals_.begin());
+    SetNewGoal(new_goal);
   }
 
-  else if (global_planner.goalIsBlocked) {
-    // Goal is blocked but there is no other goal in fileGoals
+  else if (global_planner_.goal_is_blocked_) {
+    // Goal is blocked but there is no other goal in file_goals_
     ROS_INFO("  STOP  ");
-    SetNewGoal(Cell(global_planner.currPos));
+    SetNewGoal(Cell(global_planner_.curr_pos_));
   }
 
   // Keep track of and publish the actual travel trajectory
-  if (numPositionMessages++ % 50 == 0) {
+  if (num_pos_msg_++ % 50 == 0) {
     rot_msg.header.frame_id = "/world";
-    actualPath.poses.push_back(rot_msg);
-    actual_path_pub_.publish(actualPath);
+    actual_path_.poses.push_back(rot_msg);
+    actual_path_pub_.publish(actual_path_);
   }
 }
 
@@ -79,25 +79,26 @@ void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped &
 
 
 void GlobalPlannerNode::LaserSensorCallback(const sensor_msgs::LaserScan & msg) {
-  double minRange = msg.range_max;
+  double min_range = msg.range_max;
   for (double range : msg.ranges) {
-    minRange = range < msg.range_min ? minRange : std::min(minRange, range);
+    // TODO: simplify
+    min_range = range < msg.range_min ? min_range : std::min(min_range, range);
   }
-  if (!global_planner.goingBack && minRange < 0.5) {
-    ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", minRange);
-    if (global_planner.pathBack.size() > 3) {
-      global_planner.goBack();
+  if (!global_planner_.going_back_ && min_range < 0.5) {
+    ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", min_range);
+    if (global_planner_.path_back_.size() > 3) {
+      global_planner_.goBack();
       PublishPath();
     }
   }
 }
 
 void GlobalPlannerNode::OctomapFullCallback(const octomap_msgs::Octomap & msg) {
-  if (numOctomapMessages++ % 10 > 0) {
+  if (num_octomap_msg_++ % 10 > 0) {
     return;     // We get too many of those messages. Only process 1/10 of them
   }
 
-  if (!global_planner.updateFullOctomap(msg)) {
+  if (!global_planner_.updateFullOctomap(msg)) {
     // Part of the current path is blocked
     ROS_INFO("  Path is bad, planning a new path \n");
     PlanPath();                               // Plan a whole new path
@@ -112,16 +113,16 @@ void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2 & msg
     listener_.waitForTransform("/world", "/camera_link", now, ros::Duration(5.0));
     tf::StampedTransform transform;
     listener_.lookupTransform("/world", "/camera_link", now, transform);
-    sensor_msgs::PointCloud2 transformedMsg;
-    pcl_ros::transformPointCloud("/world", transform, msg, transformedMsg);
+    sensor_msgs::PointCloud2 transformed_msg;
+    pcl_ros::transformPointCloud("/world", transform, msg, transformed_msg);
     pcl::PointCloud<pcl::PointXYZ> cloud; // Easier to loop through pcl::PointCloud
-    pcl::fromROSMsg(transformedMsg, cloud); 
+    pcl::fromROSMsg(transformed_msg, cloud); 
 
     // Store the obstacle points
     for (auto p : cloud) {
       if (!isnan(p.x)) {
-        Cell occCell(p.x, p.y, p.z);
-        global_planner.occupied.insert(occCell);
+        Cell occupied_cell(p.x, p.y, p.z);
+        global_planner_.occupied_.insert(occupied_cell);
       }
     }
   }
@@ -133,18 +134,18 @@ void GlobalPlannerNode::DepthCameraCallback(const sensor_msgs::PointCloud2 & msg
 
 void GlobalPlannerNode::PlanPath() {
   ROS_INFO("Start planning path.");
-  ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner.octree->memoryUsage() / 1000000.0);
-  bool foundPath = global_planner.getGlobalPath();
+  ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
+  bool found_path = global_planner_.getGlobalPath();
   PublishExploredCells();
-  if (!foundPath) {
+  if (!found_path) {
     ROS_INFO("Failed to find a path");
   }
   PublishPath();
 }
 
 void GlobalPlannerNode::PublishPath() {
-  auto pathMsg = global_planner.getPathMsg();
-  global_path_pub_.publish(pathMsg);
+  auto path_msg = global_planner_.getPathMsg();
+  global_path_pub_.publish(path_msg);
 }
 
 void GlobalPlannerNode::PublishExploredCells() {
@@ -159,8 +160,8 @@ void GlobalPlannerNode::PublishExploredCells() {
   msg.markers.push_back(marker);
   
   id = 1;
-  for (const auto cell : global_planner.seen) {
-  // for (auto const& x : global_planner.bubbleRiskCache) {
+  for (const auto cell : global_planner_.seen_) {
+  // for (auto const& x : global_planner_.bubble_risk_cache_) {
     // Cell cell = x.first;
 
     visualization_msgs::Marker marker;
@@ -175,8 +176,8 @@ void GlobalPlannerNode::PublishExploredCells() {
     // double h = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
     // double h = 0.5;                                    // single color (green)
     // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    double h = std::sqrt(global_planner.getRisk(cell));    
-    // double h = global_planner.getHeuristic(Node(cell, cell), global_planner.goalPos) / global_planner.currPathInfo.cost;    
+    double h = std::sqrt(global_planner_.getRisk(cell));
+    // double h = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost;
 
     // A hack to get the (almost) color spectrum depending on height
     // h=0 -> blue    h=0.5 -> green  h=1 -> red
@@ -185,7 +186,7 @@ void GlobalPlannerNode::PublishExploredCells() {
     marker.color.b = std::max(0.0, 1.0 - 2*h);
     marker.color.a = 1.0;
 
-    if (!global_planner.octree->search(cell.xPos(), cell.yPos(), cell.zPos())) {
+    if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
       // Unknown space
       marker.color.r = marker.color.g = marker.color.b = 0.2; // Dark gray
     }
@@ -210,10 +211,10 @@ int main(int argc, char** argv) {
       double x, y, z;
       // Only read complete waypoints.
       while (wp_file >> x >> y >> z) {
-        global_planner_node.fileGoals.push_back(avoidance::Cell(x, y, z));
+        global_planner_node.file_goals_.push_back(avoidance::Cell(x, y, z));
       }
       wp_file.close();
-      ROS_INFO("  Read %d waypoints.", global_planner_node.fileGoals.size());
+      ROS_INFO("  Read %d waypoints.", global_planner_node.file_goals_.size());
     }
     else {
       ROS_ERROR_STREAM("Unable to open goal file: " << args.at(1));
