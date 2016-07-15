@@ -453,7 +453,10 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
       found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
     } 
     else {
-      found_new_path = findSmoothPath(new_path, s, t, parent_of_s);
+      printf("\nNodeWithoutSmooth: \n");
+      found_new_path = findSmoothPath(new_path, NodeWithoutSmooth(s, parent_of_s), t);
+      printf("Node: \n");
+      found_new_path = findSmoothPath(new_path, Node(s, parent_of_s), t);
     }
 
     if (found_new_path) {
@@ -622,11 +625,9 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
 }  
 
 // A* to find a path from start to t, true iff it found a path
-bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const Cell & start, 
-                                   const Cell & t, const Cell & start_parent) {
+bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const Node & s, const Cell & t) {
 
   // Initialize containers
-  Node s = Node(start, start_parent);
   Node best_goal_node;
   seen_.clear();
   seen_count_.clear();
@@ -684,8 +685,8 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const Cell & start,
     path.push_back(walker.cell_);
     walker = parent[walker];
   }
-  path.push_back(start);
-  path.push_back(start_parent);
+  path.push_back(s.cell_);
+  path.push_back(s.parent_);
   std::reverse(path.begin(),path.end());
 
   // printPathStats(path, start_parent, start, t, distance[best_goal_node], distance);
