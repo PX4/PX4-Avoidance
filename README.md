@@ -43,10 +43,9 @@ rosmake octomap
 Now clone the repository into the catkin workspace and build
 ```bash
 # Source SITL and catkin
-cd <Firmware_dir>
-source integrationtests/setup_gazebo_ros.bash $(pwd)
 cd <catkin_directory>
 source devel/setup.bash
+source <Firmware_dir>/integrationtests/setup_gazebo_ros.bash <Firmware_dir>
 export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:<catkin_directory>/src/detection/models
 ```
 
