@@ -11,4 +11,30 @@ std::vector<Node> Node::getNeighbors() const {
   return neighbors;
 }
 
+// The number of 45 degree turns neede to go to other
+// Assumes that there is not both horizontal and vertical movement is needed
+double Node::getRotation(const Node & other) const {
+  double this_z_diff = cell_.z() - parent_.z();
+  double other_z_diff = other.cell_.z() - other.parent_.z();
+  if (this_z_diff != other_z_diff) {
+    // TODO: use vert_to_hor_cost_
+    return 1.0; // Change between horizontal and vertical movement
+  }
+  return getXYRotation(other);
+}
+
+double Node::getXYRotation(const Node & other) const {
+  double this_ang = (cell_ - parent_).angle();
+  double other_ang = (other.cell_ - other.parent_).angle();
+  double ang_diff = other_ang - this_ang;
+  ang_diff = std::fabs(angleToRange(ang_diff));   // Rotation needed
+  double num_45_deg_turns = ang_diff / (M_PI/4);  // Minimum number of 45-turns to goal
+  return num_45_deg_turns;
+}
+
+std::string Node::asString() const {
+  std::string s = "(" + cell_.asString() + " , " + parent_.asString() + ")";
+  return s;
+}
+
 } // namespace avoidance

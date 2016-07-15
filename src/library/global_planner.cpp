@@ -190,23 +190,8 @@ double GlobalPlanner::getRisk(const Cell & cell) {
 
 // Returns the amount of rotation needed to go from u to v
 double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
-  Cell u_diff = u.cell_ - u.parent_;
-  Cell v_diff = v.cell_ - v.parent_;
-
-  int num_45_deg_turns;
-  if (u_diff.x() == 0 && u_diff.y() == 0 && v_diff.x() == 0 && v_diff.y() == 0) {
-    num_45_deg_turns = 0;    // Maintaining vertical motion 
-  }
-  else if ((u_diff.x() == 0 && u_diff.y() == 0) || (v_diff.x() == 0 && v_diff.y() == 0)) {
-    num_45_deg_turns = vert_to_hor_cost_;    // Starting or ending vertical motion
-  }
-  else if (u_diff.x() == -v_diff.x() && u_diff.y() == -v_diff.y()){
-    num_45_deg_turns = 4;    // 180 degrees, the formula below doesn't work for this case 
-  }
-  else {
-    num_45_deg_turns = std::abs(u_diff.x() - v_diff.x()) + std::abs(u_diff.y() - v_diff.y());
-  }
-  return num_45_deg_turns * num_45_deg_turns;     // Squaring makes large turns more costly
+  double turn = u.getRotation(v);
+  return turn * turn;    // Squaring makes large turns more costly
 }
 
 // Returns the total cost of the edge from u to v
