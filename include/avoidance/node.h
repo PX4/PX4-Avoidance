@@ -14,6 +14,9 @@ class Node {
   Node(const Cell & cell, const Cell & parent) : cell_(cell), parent_(parent) {}
 
   std::vector<Node> getNeighbors() const;
+  double getRotation(const Node & other) const;
+  double getXYRotation(const Node & other) const;
+  std::string asString() const;
 
   Cell cell_;
   Cell parent_;
