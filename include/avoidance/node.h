@@ -13,23 +13,25 @@ class Node {
   Node() = default;
   Node(const Cell & cell, const Cell & parent) : cell_(cell), parent_(parent) {}
 
-  std::vector<Node> getNeighbors() const;
-  double getRotation(const Node & other) const;
-  double getXYRotation(const Node & other) const;
+  virtual bool isEqual(const Node & other) const;
+  virtual bool isSmaller(const Node & other) const;
+  virtual std::size_t hash() const;
+  virtual Node nextNode(const Cell & nextCell) const;
+  virtual std::vector<Node> getNeighbors() const;
+  virtual double getRotation(const Node & other) const;
+  virtual double getXYRotation(const Node & other) const;
   std::string asString() const;
 
   Cell cell_;
   Cell parent_;
 };
 
-inline bool operator==(const Node & lhs, const Node & rhs) {
-  return lhs.cell_ == rhs.cell_ && lhs.parent_ == rhs.parent_;}
-inline bool operator< (const Node & lhs, const Node & rhs) {
-  return lhs.cell_ < rhs.cell_ || (lhs.cell_ == rhs.cell_ && lhs.parent_ < rhs.parent_);}
-inline bool operator!=(const Node & lhs, const Node & rhs) {return !operator==(lhs, rhs);}
-inline bool operator> (const Node & lhs, const Node & rhs) {return  operator< (rhs, lhs);}
-inline bool operator<=(const Node & lhs, const Node & rhs) {return !operator> (lhs, rhs);}
-inline bool operator>=(const Node & lhs, const Node & rhs) {return !operator< (lhs, rhs);}
+bool operator==(const Node & lhs, const Node & rhs) {return lhs.isEqual(rhs);}
+bool operator< (const Node & lhs, const Node & rhs) {return lhs.isSmaller(rhs);}
+bool operator!=(const Node & lhs, const Node & rhs) {return !operator==(lhs, rhs);}
+bool operator> (const Node & lhs, const Node & rhs) {return  operator< (rhs, lhs);}
+bool operator<=(const Node & lhs, const Node & rhs) {return !operator> (lhs, rhs);}
+bool operator>=(const Node & lhs, const Node & rhs) {return !operator< (lhs, rhs);}
 
 typedef std::pair<Node, double> NodeDistancePair;
 
@@ -43,16 +45,37 @@ class CompareDist {
   }
 };
 
+class NodeWithoutSmooth : public Node {
+ public:
+  NodeWithoutSmooth() = default;
+  NodeWithoutSmooth(const Cell & cell, const Cell & parent) : Node(cell, parent) {}
+
+  bool isEqual(const Node & other) const {
+    return cell_ == other.cell_;
+  }
+
+  std::size_t hash() const {
+    return std::hash<avoidance::Cell>()(cell_);
+  }
+
+  Node nextNode(const Cell & nextCell) const {
+    return NodeWithoutSmooth(nextCell, cell_);
+  }
+
+  double getRotation(const Node & other) const {
+    return 0.0;
+  }
+};
+
 } // namespace avoidance
 
 namespace std {
 
 template <>
 struct hash<avoidance::Node> {
-    std::size_t operator()(const avoidance::Node & node ) const {
-        return (std::hash<avoidance::Cell>()(node.cell_) << 1) ^ std::hash<avoidance::Cell>()(node.parent_);
-        // return std::hash<avoidance::Cell>()(node.cell_) * 37 + std::hash<avoidance::Cell>()(node.parent_) * 41;
-    }
+  std::size_t operator()(const avoidance::Node & node) const {
+    return node.hash();
+  }
 };
 
 } // namespace std
