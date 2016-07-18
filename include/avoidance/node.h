@@ -16,8 +16,8 @@ class Node {
   virtual bool isEqual(const Node & other) const;
   virtual bool isSmaller(const Node & other) const;
   virtual std::size_t hash() const;
-  virtual Node nextNode(const Cell & nextCell) const;
-  virtual std::vector<Node> getNeighbors() const;
+  virtual std::shared_ptr<Node> nextNode(const Cell & nextCell) const;
+  virtual std::vector<std::shared_ptr<Node> > getNeighbors() const;
   virtual double getRotation(const Node & other) const;
   virtual double getXYRotation(const Node & other) const;
   std::string asString() const;
@@ -33,7 +33,9 @@ bool operator> (const Node & lhs, const Node & rhs) {return  operator< (rhs, lhs
 bool operator<=(const Node & lhs, const Node & rhs) {return !operator> (lhs, rhs);}
 bool operator>=(const Node & lhs, const Node & rhs) {return !operator< (lhs, rhs);}
 
+typedef std::shared_ptr<Node> NodePtr;
 typedef std::pair<Node, double> NodeDistancePair;
+typedef std::pair<NodePtr, double> PointerNodeDistancePair;
 
 class CompareDist {
  public:
@@ -41,6 +43,9 @@ class CompareDist {
     return n1.second > n2.second;
   }
   bool operator()(const NodeDistancePair & n1, const NodeDistancePair & n2) {
+    return n1.second > n2.second;
+  }
+  bool operator()(const PointerNodeDistancePair & n1, const PointerNodeDistancePair & n2) {
     return n1.second > n2.second;
   }
 };
@@ -58,8 +63,8 @@ class NodeWithoutSmooth : public Node {
     return std::hash<avoidance::Cell>()(cell_);
   }
 
-  Node nextNode(const Cell & nextCell) const {
-    return NodeWithoutSmooth(nextCell, cell_);
+  NodePtr nextNode(const Cell & nextCell) const {
+    return NodePtr(new NodeWithoutSmooth(nextCell, cell_));
   }
 
   double getRotation(const Node & other) const {
@@ -74,6 +79,13 @@ namespace std {
 template <>
 struct hash<avoidance::Node> {
   std::size_t operator()(const avoidance::Node & node) const {
+    return node.hash();
+  }
+};
+
+template <>
+struct hash<avoidance::NodeWithoutSmooth> {
+  std::size_t operator()(const avoidance::NodeWithoutSmooth & node) const {
     return node.hash();
   }
 };

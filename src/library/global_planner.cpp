@@ -453,10 +453,10 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
       found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
     } 
     else {
-      printf("\nNodeWithoutSmooth: \n");
-      found_new_path = findSmoothPath(new_path, NodeWithoutSmooth(s, parent_of_s), t);
-      printf("Node: \n");
-      found_new_path = findSmoothPath(new_path, Node(s, parent_of_s), t);
+      // printf("\nNodeWithoutSmooth: \n");
+      found_new_path = findSmoothPath(new_path, std::unique_ptr<Node>(new NodeWithoutSmooth(s, parent_of_s)), t);
+      // printf("Node: \n");
+      // found_new_path = findSmoothPath(new_path, std::unique_ptr<Node>(new Node(s, parent_of_s)), t);
     }
 
     if (found_new_path) {
@@ -625,17 +625,17 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
 }  
 
 // A* to find a path from start to t, true iff it found a path
-bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const Node & s, const Cell & t) {
+bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const Cell & t) {
 
   // Initialize containers
-  Node best_goal_node;
+  NodePtr best_goal_node;
   seen_.clear();
   seen_count_.clear();
 
-  std::unordered_set<Node> seen_nodes;
-  std::unordered_map<Node, Node> parent;
-  std::unordered_map<Node, double> distance;
-  std::priority_queue<NodeDistancePair, std::vector<NodeDistancePair>, CompareDist> pq;                 
+  std::unordered_set<NodePtr > seen_nodes;
+  std::unordered_map<NodePtr, NodePtr > parent;
+  std::unordered_map<NodePtr, double> distance;
+  std::priority_queue<PointerNodeDistancePair, std::vector<PointerNodeDistancePair>, CompareDist> pq;
   pq.push(std::make_pair(s, 0.0));
   distance[s] = 0.0;
   int num_iter = 0;
@@ -643,50 +643,47 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const Node & s, con
   std::clock_t start_time;
   start_time = std::clock();
   while (!pq.empty() && num_iter < max_iterations_) {
-    NodeDistancePair u_node_dist = pq.top(); pq.pop();
-    Node u = u_node_dist.first;
+    PointerNodeDistancePair u_node_dist = pq.top(); pq.pop();
+    NodePtr u = u_node_dist.first;
     if (seen_nodes.find(u) != seen_nodes.end()) {
       continue;
     }
     seen_nodes.insert(u);
-    if (u.cell_ == t) {
+    if (u->cell_ == t) {
       best_goal_node = u;
       break;  // Found a path
     }
     num_iter++;
 
-    for (Node v : u.getNeighbors()) {
-      double new_dist = distance[u] + getEdgeCost(u, v); 
+    for (NodePtr v : u->getNeighbors()) {
+      double new_dist = distance[u] + getEdgeCost(*u, *v);
       double old_dist = getWithDefault(distance, v, INFINITY);
       if (new_dist < old_dist) {
       // Found a better path to v, have to add v to the queue 
-        if (seen_count_.find(v.cell_) == seen_count_.end()) {
-          seen_count_[v.cell_] = 0.0;
-        }
         parent[v] = u;
         distance[v] = new_dist;
         // TODO: try Dynamic Weighting instead of a constant overestimate_factor
-        double overestimated_heuristic = new_dist + getHeuristic(v, t);
-        pq.push(NodeDistancePair(v, overestimated_heuristic));
-        seen_count_[v.cell_] += 1.0;
-        seen_.insert(v.cell_);
+        double overestimated_heuristic = new_dist + getHeuristic(*v, t);
+        pq.push(PointerNodeDistancePair(v, overestimated_heuristic));
+        seen_count_[v->cell_] = 1.0 + getWithDefault(seen_count_, v->cell_, 0.0);
+        seen_.insert(v->cell_);
       }
     }
   }
 
-  if (best_goal_node.cell_ != t) {
+  if (best_goal_node == nullptr || best_goal_node->cell_ != t) {
     return false;   // No path found
   }
   printf("Average iteration time: %2.1f µs \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter);
 
   // Get the path by walking from t back to s (excluding s)
-  Node walker = best_goal_node;
+  NodePtr walker = best_goal_node;
   while (walker != s) {
-    path.push_back(walker.cell_);
+    path.push_back(walker->cell_);
     walker = parent[walker];
   }
-  path.push_back(s.cell_);
-  path.push_back(s.parent_);
+  path.push_back(s->cell_);
+  path.push_back(s->parent_);
   std::reverse(path.begin(),path.end());
 
   // printPathStats(path, start_parent, start, t, distance[best_goal_node], distance);
