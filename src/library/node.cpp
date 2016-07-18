@@ -14,12 +14,12 @@ std::size_t Node::hash() const {
   // return std::hash<avoidance::Cell>()(node.cell_) * 37 + std::hash<avoidance::Cell>()(node.parent_) * 41;
 }
 
-Node Node::nextNode(const Cell & nextCell) const {
-  return Node(nextCell, cell_);
+NodePtr Node::nextNode(const Cell & nextCell) const {
+  return NodePtr(new Node(nextCell, cell_));
 }
 
-std::vector<Node> Node::getNeighbors() const {
-  std::vector<Node> neighbors;
+std::vector<NodePtr > Node::getNeighbors() const {
+  std::vector<NodePtr > neighbors;
   neighbors.reserve(10);
 	for (Cell neighborCell : cell_.getNeighbors()) {
 		neighbors.push_back(nextNode(neighborCell));

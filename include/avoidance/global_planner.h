@@ -122,7 +122,7 @@ class GlobalPlanner {
   bool find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent);
   bool reverseSearch(const Cell & t);
   bool findPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent, bool is_3D);
-  bool findSmoothPath(std::vector<Cell> & path, const Node & s, const Cell & t);
+  bool findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const Cell & t);
   
   bool getGlobalPath();
   void goBack();
