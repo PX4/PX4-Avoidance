@@ -72,6 +72,20 @@ class NodeWithoutSmooth : public Node {
   }
 };
 
+struct HashNodePtr {
+    std::size_t operator()(const std::shared_ptr<Node> & node_ptr) const
+    {
+        return node_ptr->hash();
+    }
+};
+
+struct EqualsNodePtr {
+    std::size_t operator()(const std::shared_ptr<Node> & node_ptr1, const std::shared_ptr<Node> & node_ptr2) const
+    {
+        return node_ptr1->isEqual(*node_ptr2);
+    }
+};
+
 } // namespace avoidance
 
 namespace std {

@@ -328,9 +328,9 @@ PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path) {
     Node curr_node = Node(path[i], path[i-1]);
     Node last_node = Node(path[i-1], path[i-2]);
     double cell_risk = getRisk(curr_node.cell_);
+    path_info.dist += getEdgeDist(last_node.cell_, curr_node.cell_);
+    path_info.risk += last_node.cell_.distance3D(curr_node.cell_) * risk_factor_ * cell_risk;
     path_info.cost += getEdgeCost(last_node, curr_node);
-    path_info.dist += getEdgeDist(curr_node.parent_, curr_node.cell_);
-    path_info.risk += risk_factor_ * cell_risk;
     path_info.is_blocked |= cell_risk > max_cell_risk_;
     path_info.smoothness += smooth_factor_ * getTurnSmoothness(last_node, curr_node);
   }
@@ -354,9 +354,9 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
   double total_risk_cost = 0.0;
   double total_alt_change_cost = 0.0;
   double total_smooth_cost = 0.0;
-  Node last_node = Node(start, start_parent);
-  for(int i=0; i < path.size(); ++i) {
-    Node curr_node = Node(path[i], last_node.cell_);
+  for(int i=2; i < path.size(); ++i) {
+    Node last_node = Node(path[i-1], path[i-2]);
+    Node curr_node = Node(path[i], path[i-1]);
     if (curr_node.cell_.z() - curr_node.parent_.z() == 0) {
       total_dist_cost += getEdgeDist(curr_node.parent_, curr_node.cell_);
     }
@@ -365,19 +365,19 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
     }
     total_risk_cost += risk_factor_ * getRisk(curr_node.cell_);
     total_smooth_cost += smooth_factor_ * getTurnSmoothness(last_node, curr_node);
-    last_node = curr_node;
   }
 
   double curr_cost = 0.0;
-  last_node = Node(start, start_parent);
 
+  Node first_node = Node(start, start_parent);
   printf("Cell:\t \tcurrCo \theuri \ttoGoal \tOvEst \t|| \tEdgeC  \tEdgeD \tEdgeR \tEdgeS \t||\theuris \t\tDist \t\tRisk  \t\tAlti   \t\tSmooth\n");
   printf("%s (parent) \n", start_parent.asString().c_str());
   printf("%s: \t%3.2f \t%3.2f \t%3.2f \t%3.2f \t|| \n", start.asString().c_str(), 
-          curr_cost, getHeuristic(last_node, goal), total_cost, total_cost / getHeuristic(last_node, goal));
+          curr_cost, getHeuristic(first_node, goal), total_cost, total_cost / getHeuristic(first_node, goal));
 
-  for(int i=0; i < path.size(); ++i) {
-    Node curr_node = Node(path[i], last_node.cell_);
+  for(int i=2; i < path.size(); ++i) {
+    Node last_node = Node(path[i-1], path[i-2]);
+    Node curr_node = Node(path[i], path[i-1]);
     curr_cost += getEdgeCost(last_node, curr_node);
     double heuristic = getHeuristic(curr_node, goal);
     double actual_cost = total_cost - curr_cost;
@@ -420,7 +420,6 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
       ROS_INFO("WTF? \n %f %f \n\n\n\n\n\n\n\n\n\n\n\n", angleToRange(5.5), angleToRange(-5.5));
     }
 
-    last_node = curr_node;
   }
   printf("\n\n");
 }
@@ -450,13 +449,11 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     std::vector<Cell> new_path;
     bool found_new_path;
     if (overestimate_factor > 3) {
-      found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
+      // found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
+      found_new_path = findSmoothPath(new_path, NodePtr(new NodeWithoutSmooth(s, parent_of_s)), t);
     } 
     else {
-      // printf("\nNodeWithoutSmooth: \n");
-      found_new_path = findSmoothPath(new_path, std::unique_ptr<Node>(new NodeWithoutSmooth(s, parent_of_s)), t);
-      // printf("Node: \n");
-      // found_new_path = findSmoothPath(new_path, std::unique_ptr<Node>(new Node(s, parent_of_s)), t);
+      found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
     }
 
     if (found_new_path) {
@@ -477,6 +474,7 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 
   // Last resort, try 2d search at max_altitude_
   if (!found_path) {
+    printf("No path found, search in 2D \n");
     max_iterations_ = 5000;
     found_path = find2DPath(path, s, t, parent_of_s);
   }
@@ -632,9 +630,9 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
   seen_.clear();
   seen_count_.clear();
 
-  std::unordered_set<NodePtr > seen_nodes;
-  std::unordered_map<NodePtr, NodePtr > parent;
-  std::unordered_map<NodePtr, double> distance;
+  std::unordered_set<NodePtr, HashNodePtr, EqualsNodePtr> seen_nodes;
+  std::unordered_map<NodePtr, NodePtr, HashNodePtr, EqualsNodePtr> parent;
+  std::unordered_map<NodePtr, double, HashNodePtr, EqualsNodePtr> distance;
   std::priority_queue<PointerNodeDistancePair, std::vector<PointerNodeDistancePair>, CompareDist> pq;
   pq.push(std::make_pair(s, 0.0));
   distance[s] = 0.0;
@@ -686,7 +684,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
   path.push_back(s->parent_);
   std::reverse(path.begin(),path.end());
 
-  // printPathStats(path, start_parent, start, t, distance[best_goal_node], distance);
+  // printPathStats(path, s->parent_, s->cell_, t, distance[best_goal_node]);
   last_iterations_ = num_iter;
   // ROS_INFO("Found path with %d iterations, itDistSquared: %.3f", num_iter, num_iter / squared(path.size()));
   printf("overestimate_factor: %2.2f, \t num_iter: %d \t path cost: %2.2f \t", overestimate_factor, num_iter, distance[best_goal_node]);
