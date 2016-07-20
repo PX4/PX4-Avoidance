@@ -6,7 +6,7 @@
     <arg name="world" default="test_city_2"/>
     <arg name="build" default="posix_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
-    <arg name="gcs_url" default="" />
+    <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="mavros_transformation" default="-1.58" />
