@@ -74,7 +74,7 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
 }
 
 void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped & msg) {
-  SetNewGoal(Cell(msg.point.x, msg.point.y, 3.0));
+  SetNewGoal(Cell(msg.point.x, msg.point.y, 2.0));
 }
 
 
