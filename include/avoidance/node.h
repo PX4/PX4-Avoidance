@@ -12,6 +12,7 @@ class Node {
  public:
   Node() = default;
   Node(const Cell & cell, const Cell & parent) : cell_(cell), parent_(parent) {}
+  virtual ~Node() = default;
 
   virtual bool isEqual(const Node & other) const;
   virtual bool isSmaller(const Node & other) const;
@@ -54,6 +55,7 @@ class NodeWithoutSmooth : public Node {
  public:
   NodeWithoutSmooth() = default;
   NodeWithoutSmooth(const Cell & cell, const Cell & parent) : Node(cell, parent) {}
+  ~NodeWithoutSmooth() = default;
 
   bool isEqual(const Node & other) const {
     return cell_ == other.cell_;
