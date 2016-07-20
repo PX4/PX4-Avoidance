@@ -272,7 +272,7 @@ double GlobalPlanner::altitudeHeuristic(const Cell & u, const Cell & goal) {
 double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
   // Only overestimate the distance
   if (heuristic_cache_.find(u) != heuristic_cache_.end()) {
-    return heuristic_cache_[u];
+    // return heuristic_cache_[u];    // TODO: Needs to account for different overestimating factors
   }
 
   double heuristic = overestimate_factor * u.cell_.diagDistance2D(goal);
@@ -448,7 +448,8 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
   while (overestimate_factor >= 1.03 && max_iterations_ > last_iterations_) {
     std::vector<Cell> new_path;
     bool found_new_path;
-    if (overestimate_factor > 3) {
+    if (overestimate_factor > 1.5) {
+      printf("Search without smoothness \n");
       // found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
       found_new_path = findSmoothPath(new_path, NodePtr(new NodeWithoutSmooth(s, parent_of_s)), t);
     } 
