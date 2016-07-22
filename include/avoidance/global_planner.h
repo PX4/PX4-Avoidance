@@ -61,7 +61,7 @@ class GlobalPlanner {
   geometry_msgs::Point curr_pos_;
   double curr_yaw_;
   geometry_msgs::Vector3 curr_vel_;
-  Cell goal_pos_ = Cell(0.5, 0.5, 3.5);
+  GoalCell goal_pos_ = GoalCell(0.5, 0.5, 3.5);
   bool going_back_ = true;        // we start by just finding the start position
 
   double overestimate_factor;
@@ -90,7 +90,7 @@ class GlobalPlanner {
   void calculateAccumulatedHeightPrior();
 
   void setPose(const geometry_msgs::PoseStamped & new_pose);
-  void setGoal(const Cell & goal);
+  void setGoal(const GoalCell & goal);
   void setPath(const std::vector<Cell> & path);
 
   bool updateFullOctomap(const octomap_msgs::Octomap & msg);
@@ -122,7 +122,7 @@ class GlobalPlanner {
   bool find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent);
   bool reverseSearch(const Cell & t);
   bool findPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent, bool is_3D);
-  bool findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const Cell & t);
+  bool findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const GoalCell & t);
   
   bool getGlobalPath();
   void goBack();
