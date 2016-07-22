@@ -23,7 +23,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
 
 GlobalPlannerNode::~GlobalPlannerNode() { }
 
-void GlobalPlannerNode::SetNewGoal(const Cell & goal) {
+void GlobalPlannerNode::SetNewGoal(const GoalCell & goal) {
   ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
   global_planner_.setGoal(goal);
   geometry_msgs::PointStamped pointMsg;
@@ -47,14 +47,14 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
   listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   global_planner_.setPose(rot_msg);
 
-  double dist_to_goal = global_planner_.goal_pos_.manhattanDist(global_planner_.curr_pos_.x, global_planner_.curr_pos_.y, global_planner_.curr_pos_.z);
-  if (file_goals_.size() > 0 && (dist_to_goal < 1.0 || global_planner_.goal_is_blocked_)) {
+  bool is_in_goal = global_planner_.goal_pos_.contains(Cell(global_planner_.curr_pos_));
+  if (file_goals_.size() > 0 && (is_in_goal || global_planner_.goal_is_blocked_)) {
     // If there is another goal and we are either at current goal or it is blocked, we set a new goal
     if (!global_planner_.goal_is_blocked_) {
       ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
       ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int) file_goals_.size());
     }
-    Cell new_goal = file_goals_.front();
+    GoalCell new_goal = file_goals_.front();
     file_goals_.erase(file_goals_.begin());
     SetNewGoal(new_goal);
   }
@@ -62,7 +62,7 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
   else if (global_planner_.goal_is_blocked_) {
     // Goal is blocked but there is no other goal in file_goals_
     ROS_INFO("  STOP  ");
-    SetNewGoal(Cell(global_planner_.curr_pos_));
+    SetNewGoal(GoalCell(global_planner_.curr_pos_));
   }
 
   // Keep track of and publish the actual travel trajectory
@@ -74,7 +74,7 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
 }
 
 void GlobalPlannerNode::ClickedPointCallback(const geometry_msgs::PointStamped & msg) {
-  SetNewGoal(Cell(msg.point.x, msg.point.y, 2.0));
+  SetNewGoal(GoalCell(msg.point.x, msg.point.y, 3.0));
 }
 
 
@@ -139,6 +139,16 @@ void GlobalPlannerNode::PlanPath() {
   PublishExploredCells();
   if (!found_path) {
     ROS_INFO("Failed to find a path");
+  }
+  else if (global_planner_.overestimate_factor > 1.3) {
+    int curr_path_length = global_planner_.curr_path_.size();
+    if (curr_path_length > 10) {
+      printf("\n ===== Half-way path ====== \n");
+      file_goals_.insert(file_goals_.begin(), global_planner_.goal_pos_);
+      Cell middle_cell = global_planner_.curr_path_[curr_path_length / 2];
+      SetNewGoal(GoalCell(middle_cell, curr_path_length / 4));
+      return;
+    }
   }
   PublishPath();
 }

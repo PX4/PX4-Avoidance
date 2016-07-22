@@ -37,7 +37,7 @@ namespace avoidance {
 
 class GlobalPlannerNode {
  public:
-  std::vector<Cell> file_goals_;  // If a goal file is given, the intermediate goals are stored in file_goals_
+  std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
   GlobalPlannerNode();
   ~GlobalPlannerNode();
 
@@ -66,7 +66,7 @@ class GlobalPlannerNode {
 
   tf::TransformListener listener_;
 
-  void SetNewGoal(const Cell & goal);
+  void SetNewGoal(const GoalCell & goal);
   void VelocityCallback(const geometry_msgs::TwistStamped & msg);
   void PositionCallback(const geometry_msgs::PoseStamped & msg);
   void ClickedPointCallback(const geometry_msgs::PointStamped & msg);

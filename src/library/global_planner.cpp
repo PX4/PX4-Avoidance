@@ -40,7 +40,7 @@ void GlobalPlanner::setPose(const geometry_msgs::PoseStamped & new_pose) {
 }
 
 // Sets a new mission goal, not used for temporary goals, e.g. goBack()
-void GlobalPlanner::setGoal(const Cell & goal) {
+void GlobalPlanner::setGoal(const GoalCell & goal) {
   goal_pos_ = goal;
   going_back_ = false;
   goal_is_blocked_ = false;
@@ -431,7 +431,7 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
   Cell s = Cell(curr_pos_.x + search_time_ * curr_vel_.x,
                 curr_pos_.y + search_time_ * curr_vel_.y,
                 curr_pos_.z + search_time_ * curr_vel_.z);
-  Cell t = goal_pos_;
+  GoalCell t = goal_pos_;
   Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
       
   ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
@@ -629,7 +629,7 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
 }  
 
 // A* to find a path from start to t, true iff it found a path
-bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const Cell & t) {
+bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const GoalCell & t) {
 
   // Initialize containers
   NodePtr best_goal_node;
@@ -653,7 +653,8 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
       continue;
     }
     seen_nodes.insert(u);
-    if (u->cell_ == t) {
+
+    if (t.contains(u->cell_)) {
       best_goal_node = u;
       break;  // Found a path
     }
@@ -675,7 +676,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
     }
   }
 
-  if (best_goal_node == nullptr || best_goal_node->cell_ != t) {
+  if (best_goal_node == nullptr || !t.contains(best_goal_node->cell_)) {
     return false;   // No path found
   }
   printf("Average iteration time: %2.1f µs \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter);
@@ -747,12 +748,12 @@ void GlobalPlanner::goBack() {
     }    
   }
   curr_path_ = new_path;
-  goal_pos_ = new_path[new_path.size()-1];
+  goal_pos_ = GoalCell(new_path[new_path.size()-1], 1.0);
 }
 
 void GlobalPlanner::stop() {
   ROS_INFO("  STOP  ");
-  setGoal(Cell(curr_pos_));
+  setGoal(GoalCell(curr_pos_));
 }
 
 } // namespace avoidance
