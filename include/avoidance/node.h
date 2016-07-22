@@ -51,6 +51,7 @@ class CompareDist {
   }
 };
 
+// Node that only represents 3D position, ignores parent
 class NodeWithoutSmooth : public Node {
  public:
   NodeWithoutSmooth() = default;
@@ -71,6 +72,32 @@ class NodeWithoutSmooth : public Node {
 
   double getRotation(const Node & other) const {
     return 0.0;
+  }
+};
+
+// Node represents 3D position, orientation and speed
+// TODO: Needs to check the risk of Cells between cell and parent
+class SpeedNode : public Node {
+ public:
+  SpeedNode() = default;
+  SpeedNode(const Cell & cell, const Cell & parent) : Node(cell, parent) {}
+  ~SpeedNode() = default;
+
+  NodePtr nextNode(const Cell & nextCell) const {
+    return NodePtr(new SpeedNode(nextCell, cell_));
+  }
+
+  std::vector<NodePtr > getNeighbors() const {
+    std::vector<NodePtr > neighbors;
+    Cell extrapolate_cell = (cell_ - parent_) + cell_;
+    neighbors.push_back(nextNode(extrapolate_cell));
+    for (Cell neighborCell : extrapolate_cell.getFlowNeighbors()) {
+      double dist = cell_.diagDistance3D(neighborCell);
+      if (dist > 0 && dist < 3.0) {
+        neighbors.push_back(nextNode(neighborCell));
+      }
+    }
+    return neighbors;
   }
 };
 
