@@ -87,7 +87,7 @@ class SpeedNode : public Node {
     return NodePtr(new SpeedNode(nextCell, cell_));
   }
 
-  std::vector<NodePtr > getNeighbors() const {
+  std::vector<NodePtr> getNeighbors() const {
     std::vector<NodePtr > neighbors;
     Cell extrapolate_cell = (cell_ - parent_) + cell_;
     neighbors.push_back(nextNode(extrapolate_cell));
