@@ -80,7 +80,7 @@ void PathHandlerNode::ReceiveMessage(const geometry_msgs::PoseStamped & pose_msg
 }
 
 void PathHandlerNode::ReceivePath(const nav_msgs::Path & msg) {
-  speed_ = 1.0;
+  speed_ = min_speed_;
   path_.clear();
   for (int i=2; i < msg.poses.size(); ++i) {
     path_.push_back(msg.poses[i]);
@@ -116,10 +116,10 @@ void PathHandlerNode::PositionCallback(const geometry_msgs::PoseStamped & pose_m
 
       // If we are keeping the same direction and height increase speed
       if (path_.size() > std::floor(speed_) && hasSameYawAndAltitude(current_goal_.pose, path_[std::floor(speed_)].pose)) {
-        speed_ = std::max(max_speed_, speed_+0.1);
+        speed_ = std::min(max_speed_, speed_+0.1);
       }
       else {
-        speed_ = 1.0;
+        speed_ = min_speed_;
       }
     }
 
