@@ -48,19 +48,19 @@ void GlobalPlannerNode::PositionCallback(const geometry_msgs::PoseStamped & msg)
   global_planner_.setPose(rot_msg);
 
   bool is_in_goal = global_planner_.goal_pos_.contains(Cell(global_planner_.curr_pos_));
-  if (file_goals_.size() > 0 && (is_in_goal || global_planner_.goal_is_blocked_)) {
+  if (waypoints_.size() > 0 && (is_in_goal || global_planner_.goal_is_blocked_)) {
     // If there is another goal and we are either at current goal or it is blocked, we set a new goal
     if (!global_planner_.goal_is_blocked_) {
       ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
-      ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int) file_goals_.size());
+      ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int) waypoints_.size());
     }
-    GoalCell new_goal = file_goals_.front();
-    file_goals_.erase(file_goals_.begin());
+    GoalCell new_goal = waypoints_.front();
+    waypoints_.erase(waypoints_.begin());
     SetNewGoal(new_goal);
   }
 
   else if (global_planner_.goal_is_blocked_) {
-    // Goal is blocked but there is no other goal in file_goals_
+    // Goal is blocked but there is no other goal in waypoints_
     ROS_INFO("  STOP  ");
     SetNewGoal(GoalCell(global_planner_.curr_pos_));
   }
@@ -144,7 +144,7 @@ void GlobalPlannerNode::PlanPath() {
     int curr_path_length = global_planner_.curr_path_.size();
     if (curr_path_length > 10) {
       printf("\n ===== Half-way path ====== \n");
-      file_goals_.insert(file_goals_.begin(), global_planner_.goal_pos_);
+      waypoints_.insert(waypoints_.begin(), global_planner_.goal_pos_);
       Cell middle_cell = global_planner_.curr_path_[curr_path_length / 2];
       SetNewGoal(GoalCell(middle_cell, curr_path_length / 4));
       return;
@@ -221,10 +221,10 @@ int main(int argc, char** argv) {
       double x, y, z;
       // Only read complete waypoints.
       while (wp_file >> x >> y >> z) {
-        global_planner_node.file_goals_.push_back(avoidance::Cell(x, y, z));
+        global_planner_node.waypoints_.push_back(avoidance::Cell(x, y, z));
       }
       wp_file.close();
-      ROS_INFO("  Read %d waypoints.", global_planner_node.file_goals_.size());
+      ROS_INFO("  Read %d waypoints.", global_planner_node.waypoints_.size());
     }
     else {
       ROS_ERROR_STREAM("Unable to open goal file: " << args.at(1));
