@@ -251,7 +251,7 @@ double GlobalPlanner::smoothnessHeuristic(const Node & u, const Cell & goal) {
   double goal_ang = (goal - u.cell_).angle();       // Direction of goal
   double ang_diff = goal_ang - u_ang;
   ang_diff = std::fabs(angleToRange(ang_diff));     // Rotation needed
-  int num_45_deg_turns = std::ceil(ang_diff / (M_PI/4) - 0.01);   // Minimum number of 45-turns to goal
+  double num_45_deg_turns = ang_diff / (M_PI/4);   // Minimum number of 45-turns to goal
 
   // If there is height difference we also need to change to vertical movement at least once 
   // TODO: simplify
@@ -440,8 +440,9 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 
   bool found_path = false;
   double best_path_cost = INFINITY;
+  double best_path_overestimate = INFINITY;
   overestimate_factor = 2.0;
-  max_iterations_ = 10000;
+  max_iterations_ = 20000;
 
   // reverseSearch(t); // REVERSE_SEARCH
 
@@ -455,13 +456,15 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     } 
     else {
       found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
+      // found_new_path = findSmoothPath(new_path, NodePtr(new SpeedNode(s, parent_of_s)), t);
     }
 
     if (found_new_path) {
       PathInfo path_info = getPathInfo(new_path);
       printf("(cost: %2.2f, dist: %2.2f, risk: %2.2f, smooth: %2.2f) \n", path_info.cost, path_info.dist, path_info.risk, path_info.smoothness);
-      if (path_info.cost < best_path_cost) {
+      if (path_info.cost <= best_path_cost) {
         best_path_cost = path_info.cost;
+        best_path_overestimate = overestimate_factor;
         path = new_path;
         found_path = true;
       }
@@ -478,8 +481,9 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     printf("No path found, search in 2D \n");
     max_iterations_ = 5000;
     found_path = find2DPath(path, s, t, parent_of_s);
+    best_path_overestimate = INFINITY;
   }
-
+  overestimate_factor = best_path_overestimate;
   return found_path;
 }
 
@@ -536,6 +540,7 @@ bool GlobalPlanner::reverseSearch(const Cell & t) {
       }
     }
   }
+  // TODO: return?
 }
 
 // A* to find a path from s to t, true iff it found a path
@@ -550,7 +555,7 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
   pq.push(std::make_pair(s, 0.0));
   distance[s] = 0.0;
   int num_iter = 0;
-  double min_dist_heuristics = INFINITY;
+  // double min_dist_heuristics = INFINITY;
 
   std::clock_t start_time;
   start_time = std::clock();
