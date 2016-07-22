@@ -70,6 +70,19 @@ inline Cell operator-(const Cell& lhs, const Cell& rhs) {
 typedef std::pair<Cell, double> CellDistancePair;
 
 
+// A GoalCell has a radius and can check if a position or another Cell is inside its radius
+class GoalCell : public Cell {
+ public:
+  GoalCell(Cell cell, double radius=1.0) : Cell(cell), radius_(radius) {}
+  GoalCell(double x, double y, double z, double radius=1.0) : Cell(x, y, z), radius_(radius) {}
+
+  bool contains(Cell cell) const {
+    return manhattanDist(cell.xPos(), cell.yPos(), cell.zPos()) < radius_;
+  }
+
+  double radius_;
+};
+
 } // namespace avoidance
 
 namespace std {
