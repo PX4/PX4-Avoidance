@@ -22,8 +22,9 @@ class PathHandlerNode {
  private:
   geometry_msgs::PoseStamped current_goal_;
   geometry_msgs::PoseStamped last_pos_;
-  double speed_ = 1.0;
-  double max_speed_ = 1.5;
+  double min_speed_ = 2.0;
+  double max_speed_ = 3.0;
+  double speed_ = min_speed_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
 
