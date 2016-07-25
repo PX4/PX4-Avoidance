@@ -6,7 +6,7 @@ PathHandlerNode::PathHandlerNode() {
 
   ros::NodeHandle nh;
 
-  trajectory_sub_ = nh.subscribe("/global_path", 1, &PathHandlerNode::ReceivePath, this);
+  trajectory_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::ReceivePath, this);
   ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::PositionCallback, this);
 
   mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
