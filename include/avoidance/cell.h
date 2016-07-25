@@ -48,7 +48,7 @@ class Cell {
   
   // Member variables
   std::tuple<int, int, int> tpl_;
-  static constexpr double scale_ = 1.0;   // Should be smaller than the octomap resolution
+  static constexpr double scale_ = 0.7=;   // Should be smaller than the octomap resolution
 };
 
 inline bool operator==(const Cell & lhs, const Cell & rhs) {return lhs.tpl_ == rhs.tpl_;}
@@ -73,14 +73,17 @@ typedef std::pair<Cell, double> CellDistancePair;
 // A GoalCell has a radius and can check if a position or another Cell is inside its radius
 class GoalCell : public Cell {
  public:
-  GoalCell(Cell cell, double radius=1.0) : Cell(cell), radius_(radius) {}
-  GoalCell(double x, double y, double z, double radius=1.0) : Cell(x, y, z), radius_(radius) {}
+  GoalCell(Cell cell, double radius=1.0, bool is_temporary=false) 
+         : Cell(cell), radius_(radius), is_temporary_(is_temporary) {}
+  GoalCell(double x, double y, double z, double radius=1.0, bool is_temporary=false) 
+         : Cell(x, y, z), radius_(radius), is_temporary_(is_temporary) {}
 
   bool contains(Cell cell) const {
     return manhattanDist(cell.xPos(), cell.yPos(), cell.zPos()) < radius_;
   }
 
   double radius_;
+  bool is_temporary_;
 };
 
 } // namespace avoidance
