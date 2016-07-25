@@ -440,9 +440,8 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 
   bool found_path = false;
   double best_path_cost = INFINITY;
-  double best_path_overestimate = INFINITY;
   overestimate_factor = 2.0;
-  max_iterations_ = 20000;
+  max_iterations_ = 5000;
 
   // reverseSearch(t); // REVERSE_SEARCH
 
@@ -455,16 +454,16 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
       found_new_path = findSmoothPath(new_path, NodePtr(new NodeWithoutSmooth(s, parent_of_s)), t);
     } 
     else {
-      found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
-      // found_new_path = findSmoothPath(new_path, NodePtr(new SpeedNode(s, parent_of_s)), t);
+      // found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
+      found_new_path = findSmoothPath(new_path, NodePtr(new SpeedNode(s, parent_of_s)), t);
     }
 
     if (found_new_path) {
       PathInfo path_info = getPathInfo(new_path);
       printf("(cost: %2.2f, dist: %2.2f, risk: %2.2f, smooth: %2.2f) \n", path_info.cost, path_info.dist, path_info.risk, path_info.smoothness);
-      if (path_info.cost <= best_path_cost) {
+      if (true || path_info.cost <= best_path_cost) {
+        // TODO: always use the newest path?
         best_path_cost = path_info.cost;
-        best_path_overestimate = overestimate_factor;
         path = new_path;
         found_path = true;
       }
@@ -481,9 +480,7 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     printf("No path found, search in 2D \n");
     max_iterations_ = 5000;
     found_path = find2DPath(path, s, t, parent_of_s);
-    best_path_overestimate = INFINITY;
   }
-  overestimate_factor = best_path_overestimate;
   return found_path;
 }
 
@@ -661,6 +658,9 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
     num_iter++;
 
     for (NodePtr v : u->getNeighbors()) {
+      if (v->cell_.zPos() > max_altitude_) {
+        continue;
+      }
       double new_dist = distance[u] + getEdgeCost(*u, *v);
       double old_dist = getWithDefault(distance, v, INFINITY);
       if (new_dist < old_dist) {
@@ -742,7 +742,7 @@ void GlobalPlanner::goBack() {
   // Follow the path back until the risk is low
   for (int i=1; i < new_path.size()-1; ++i){
     if (i > 5 && getRisk(new_path[i]) < 0.5) {
-      new_path.resize(i+1);                    // new_path is the last i+1 positions of path_back_
+      new_path.resize(i+1);                       // new_path is the last i+1 positions of path_back_
       path_back_.resize(path_back_.size()-i-2);   // Remove part of path_back_ that is also in new_path
       break;
     }    
