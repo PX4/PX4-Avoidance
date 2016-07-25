@@ -37,6 +37,7 @@ namespace avoidance {
 
 class GlobalPlannerNode {
  public:
+  // TODO: Deque instead of vector
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
   GlobalPlannerNode();
   ~GlobalPlannerNode();
@@ -60,9 +61,11 @@ class GlobalPlannerNode {
 
   // Publishers
   ros::Publisher global_path_pub_;
+  ros::Publisher global_temp_path_pub_;
   ros::Publisher actual_path_pub_;
   ros::Publisher explored_cells_pub_;
-  ros::Publisher clicked_point_pub_;
+  ros::Publisher global_goal_pub_;
+  ros::Publisher global_temp_goal_pub_;
 
   tf::TransformListener listener_;
 

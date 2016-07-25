@@ -32,7 +32,7 @@ class MockDataNode {
 
   ros::Publisher local_position_pub_;
   ros::Publisher depth_points_pub_;
-  ros::Publisher clicked_point_pub_;
+  ros::Publisher global_goal_pub_;
 };
 
 } // namespace avoidance

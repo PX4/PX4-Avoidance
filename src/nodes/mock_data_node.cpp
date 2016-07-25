@@ -10,7 +10,7 @@ MockDataNode::MockDataNode() {
 
   depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
   local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
-  clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
+  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
   
   createWall(5, 5, 6);
 
@@ -46,7 +46,7 @@ void MockDataNode::sendClickedPoint() {
   msg.point.x = 8.5;
   msg.point.y = 4.5;
   msg.point.z = 1.5;
-  clicked_point_pub_.publish(msg);
+  global_goal_pub_.publish(msg);
 }
 
 void MockDataNode::ReceivePath(const nav_msgs::Path & msg) {

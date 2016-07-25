@@ -13,8 +13,10 @@ GlobalPlannerNode::GlobalPlannerNode() {
   depth_camera_sub_ = nh.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::DepthCameraCallback, this);
 
   global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
+  global_temp_path_pub_ = nh.advertise<nav_msgs::Path>("/global_temp_path", 10);
   actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
-  clicked_point_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
+  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
+  global_temp_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_temp_goal", 10);
   explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
   actual_path_.header.frame_id="/world";
@@ -29,7 +31,11 @@ void GlobalPlannerNode::SetNewGoal(const GoalCell & goal) {
   geometry_msgs::PointStamped pointMsg;
   pointMsg.header.frame_id = "/world";
   pointMsg.point = goal.toPoint();
-  clicked_point_pub_.publish(pointMsg);
+  
+  global_temp_goal_pub_.publish(pointMsg);
+  if (!goal.is_temporary_){
+    global_goal_pub_.publish(pointMsg);
+  }
   PlanPath();
 }
 
@@ -137,16 +143,19 @@ void GlobalPlannerNode::PlanPath() {
   ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
   bool found_path = global_planner_.getGlobalPath();
   PublishExploredCells();
+
   if (!found_path) {
     ROS_INFO("Failed to find a path");
   }
-  else if (global_planner_.overestimate_factor > 1.3) {
+  else if (global_planner_.overestimate_factor > 1.05) {
     int curr_path_length = global_planner_.curr_path_.size();
     if (curr_path_length > 10) {
+      // TODO: decide on intermediate radius
       printf("\n ===== Half-way path ====== \n");
       waypoints_.insert(waypoints_.begin(), global_planner_.goal_pos_);
       Cell middle_cell = global_planner_.curr_path_[curr_path_length / 2];
-      SetNewGoal(GoalCell(middle_cell, curr_path_length / 4));
+      PublishPath();
+      SetNewGoal(GoalCell(middle_cell, curr_path_length / 4, true));
       return;
     }
   }
@@ -155,7 +164,10 @@ void GlobalPlannerNode::PlanPath() {
 
 void GlobalPlannerNode::PublishPath() {
   auto path_msg = global_planner_.getPathMsg();
-  global_path_pub_.publish(path_msg);
+  global_temp_path_pub_.publish(path_msg);
+  if (!global_planner_.goal_pos_.is_temporary_) {
+    global_path_pub_.publish(path_msg);
+  }
 }
 
 void GlobalPlannerNode::PublishExploredCells() {
