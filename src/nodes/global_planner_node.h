@@ -70,16 +70,18 @@ class GlobalPlannerNode {
   tf::TransformListener listener_;
 
   void SetNewGoal(const GoalCell & goal);
+  void PopNextGoal();
+  void PlanPath();
+  void SetIntermediateGoal();
+
   void VelocityCallback(const geometry_msgs::TwistStamped & msg);
   void PositionCallback(const geometry_msgs::PoseStamped & msg);
   void ClickedPointCallback(const geometry_msgs::PointStamped & msg);
   void LaserSensorCallback(const sensor_msgs::LaserScan & msg);
-  void OctomapCallback(const visualization_msgs::MarkerArray & msg);
   void OctomapFullCallback(const octomap_msgs::Octomap & msg);
   void DepthCameraCallback(const sensor_msgs::PointCloud2 & msg);
 
-  void PlanPath();
-
+  void PublishGoal(const GoalCell & goal);
   void PublishPath();
   void PublishExploredCells();
 };
