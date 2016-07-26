@@ -6,8 +6,8 @@ PathHandlerNode::PathHandlerNode() {
 
   ros::NodeHandle nh;
 
-  trajectory_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::ReceivePath, this);
-  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::PositionCallback, this);
+  trajectory_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
+  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
 
   mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
@@ -73,13 +73,13 @@ PathHandlerNode::PathHandlerNode() {
 
 PathHandlerNode::~PathHandlerNode() { }
 
-void PathHandlerNode::ReceiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
+void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
 
   // Not in use
   current_goal_ = pose_msg;
 }
 
-void PathHandlerNode::ReceivePath(const nav_msgs::Path & msg) {
+void PathHandlerNode::receivePath(const nav_msgs::Path & msg) {
   speed_ = min_speed_;
   path_.clear();
   for (int i=2; i < msg.poses.size(); ++i) {
@@ -93,7 +93,7 @@ void PathHandlerNode::ReceivePath(const nav_msgs::Path & msg) {
   }
 }
 
-void PathHandlerNode::PositionCallback(const geometry_msgs::PoseStamped & pose_msg) {
+void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_msg) {
 
   // last_pos_ = rotatePoseMsgToWorld(last_pos_); // 90 deg fix
   listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin", last_pos_);
