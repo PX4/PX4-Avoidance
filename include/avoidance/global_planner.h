@@ -35,8 +35,7 @@ struct PathInfo {
 class GlobalPlanner {
  public:
   octomap::OcTree* octree_ = NULL;
-  std::vector<double> height_prior_ { 1.0, 0.5, 0.3, 0.2, 0.1, 0.05, 0.01,
-                                    0.01, 0.01, 0.01, 0.01, 0.01, 0.01 };
+  std::vector<double> height_prior_ { 1.0, 0.5, 0.3, 0.2, 0.15, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
   // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
   // std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
@@ -69,13 +68,13 @@ class GlobalPlanner {
   int max_altitude_ = 10;
   double max_cell_risk_ = 0.2;
   double smooth_factor_ = 10.0;
-  double vert_to_hor_cost_ = 1.0;   // The cost of changing between vertical and horizontal motion
+  double vert_to_hor_cost_ = 0.5;   // The cost of changing between vertical and horizontal motion
   double risk_factor_ = 500.0;
   double neighbor_risk_flow_ = 1.0;
   double expore_penalty_ = 0.015;
-  double up_cost_ = 3.0;
+  double up_cost_ = 1.0;
   double down_cost_ = 1.0;
-  double search_time_ = 1.0;      // The time it takes to find a path in worst case
+  double search_time_ = 0.5;      // The time it takes to find a path in worst case
   int max_iterations_ = 2000;
   int last_iterations_ = 0;
   std::vector<Cell> curr_path_;
@@ -102,6 +101,7 @@ class GlobalPlanner {
   double getSingleCellRisk(const Cell & cell);
   bool isOccupied(const Cell & cell);
   double getRisk(const Cell & cell);
+  double getRisk(const Node & node);
   double getTurnSmoothness(const Node & u, const Node & v);
   double getEdgeCost(const Node & u, const Node & v);
 
