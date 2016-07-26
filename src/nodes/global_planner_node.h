@@ -69,21 +69,21 @@ class GlobalPlannerNode {
 
   tf::TransformListener listener_;
 
-  void SetNewGoal(const GoalCell & goal);
-  void PopNextGoal();
-  void PlanPath();
-  void SetIntermediateGoal();
+  void setNewGoal(const GoalCell & goal);
+  void popNextGoal();
+  void planPath();
+  void setIntermediateGoal();
 
-  void VelocityCallback(const geometry_msgs::TwistStamped & msg);
-  void PositionCallback(const geometry_msgs::PoseStamped & msg);
-  void ClickedPointCallback(const geometry_msgs::PointStamped & msg);
-  void LaserSensorCallback(const sensor_msgs::LaserScan & msg);
-  void OctomapFullCallback(const octomap_msgs::Octomap & msg);
-  void DepthCameraCallback(const sensor_msgs::PointCloud2 & msg);
+  void velocityCallback(const geometry_msgs::TwistStamped & msg);
+  void positionCallback(const geometry_msgs::PoseStamped & msg);
+  void clickedPointCallback(const geometry_msgs::PointStamped & msg);
+  void laserSensorCallback(const sensor_msgs::LaserScan & msg);
+  void octomapFullCallback(const octomap_msgs::Octomap & msg);
+  void depthCameraCallback(const sensor_msgs::PointCloud2 & msg);
 
-  void PublishGoal(const GoalCell & goal);
-  void PublishPath();
-  void PublishExploredCells();
+  void publishGoal(const GoalCell & goal);
+  void publishPath();
+  void publishExploredCells();
 };
 
 } // namespace avoidance

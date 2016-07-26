@@ -37,9 +37,9 @@ class PathHandlerNode {
 
   tf::TransformListener listener_;
 
-  void ReceiveMessage(const geometry_msgs::PoseStamped & pose_msg);
-  void ReceivePath(const nav_msgs::Path & msg);
-  void PositionCallback(const geometry_msgs::PoseStamped & pose_msg);
+  void receiveMessage(const geometry_msgs::PoseStamped & pose_msg);
+  void receivePath(const nav_msgs::Path & msg);
+  void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
 };
 
 } // namespace avoidance

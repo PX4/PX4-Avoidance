@@ -6,7 +6,7 @@ MockDataNode::MockDataNode() {
 
   ros::NodeHandle nh;
 
-  path_sub_ = nh.subscribe("/global_path", 1, &MockDataNode::ReceivePath, this);
+  path_sub_ = nh.subscribe("/global_path", 1, &MockDataNode::receivePath, this);
 
   depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
   local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
@@ -49,7 +49,7 @@ void MockDataNode::sendClickedPoint() {
   global_goal_pub_.publish(msg);
 }
 
-void MockDataNode::ReceivePath(const nav_msgs::Path & msg) {
+void MockDataNode::receivePath(const nav_msgs::Path & msg) {
   for (auto p : msg.poses) {
     double x = p.pose.position.x;
     double y = p.pose.position.y;
