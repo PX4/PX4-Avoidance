@@ -39,7 +39,7 @@ void GlobalPlanner::setPose(const geometry_msgs::PoseStamped & new_pose) {
   }
 }
 
-// Sets a new mission goal, not used for temporary goals, e.g. goBack()
+// Sets a new mission goal
 void GlobalPlanner::setGoal(const GoalCell & goal) {
   goal_pos_ = goal;
   going_back_ = false;
@@ -188,6 +188,23 @@ double GlobalPlanner::getRisk(const Cell & cell) {
   return risk;      
 }
 
+double GlobalPlanner::getRisk(const Node & node) {
+  int dx = node.cell_.x() - node.parent_.x();
+  int dy = node.cell_.y() - node.parent_.y();
+  int dz = node.cell_.z() - node.parent_.z();
+  int steps = std::max(std::abs(dx), std::max(std::abs(dy), std::abs(dz)));
+  double risk = 0.0;
+  
+  double x_step = (node.cell_.xPos() - node.parent_.xPos()) / steps;
+  double y_step = (node.cell_.yPos() - node.parent_.yPos()) / steps;
+  double z_step = (node.cell_.zPos() - node.parent_.zPos()) / steps;
+  for (int i = 1; i <= steps; ++i) {
+    Cell walker(node.parent_.xPos() + x_step * i, node.parent_.yPos() + y_step * i, node.parent_.zPos() + z_step * i);
+    risk += getRisk(walker) / steps;
+  }
+  return risk;
+}
+
 // Returns the amount of rotation needed to go from u to v
 double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
   double turn = u.getRotation(v);
@@ -197,7 +214,8 @@ double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
 // Returns the total cost of the edge from u to v
 double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
   double dist_cost = getEdgeDist(u.cell_, v.cell_);
-  double risk_cost = u.cell_.distance3D(v.cell_) * risk_factor_ * getRisk(v.cell_);
+  // double risk_cost = u.cell_.distance3D(v.cell_) * risk_factor_ * getRisk(v.cell_);
+  double risk_cost = u.cell_.distance3D(v.cell_) * risk_factor_ * getRisk(v);
   double smooth_cost = smooth_factor_ * getTurnSmoothness(u, v);
   if (u.cell_.distance3D(Cell(curr_pos_)) < 3 && norm(curr_vel_) > 1){
     smooth_cost *= 2;  // Penalty for a early turn when the velocity is high
