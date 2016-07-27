@@ -1,18 +1,9 @@
 <launch>
-    <arg name="headless" default="false"/>
-    <arg name="gui" default="true"/>
-    <arg name="ns" default="/"/>
-    <arg name="model" default="iris"/>
-    <arg name="world" default="test_city_2"/>
-    <arg name="build" default="posix_sitl_default"/>
-    <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
-    <arg name="gcs_url" default="udp://:14550@:14555" />
-    <arg name="tgt_system" default="1" />
-    <arg name="tgt_component" default="1" />
-
-
+    
     <!-- Global Planner -->
-    <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" args=""  />
+    <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" 
+          args="$(find avoidance)/resource/random_goals"  />
+    <!-- <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" /> -->
 
     <!-- OctoMap Server -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
