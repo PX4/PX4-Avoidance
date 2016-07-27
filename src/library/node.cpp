@@ -34,7 +34,7 @@ double Node::getRotation(const Node & other) const {
   double other_z_diff = other.cell_.z() - other.parent_.z();
   if (this_z_diff != other_z_diff) {
     // TODO: use vert_to_hor_cost_
-    return 1.0; // Change between horizontal and vertical movement
+    return 0.5; // Change between horizontal and vertical movement
   }
   return getXYRotation(other);
 }

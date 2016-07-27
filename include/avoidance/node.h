@@ -93,7 +93,7 @@ class SpeedNode : public Node {
     neighbors.push_back(nextNode(extrapolate_cell));
     for (Cell neighborCell : extrapolate_cell.getFlowNeighbors()) {
       double dist = cell_.diagDistance3D(neighborCell);
-      if (dist > 0 && dist < 3.0) {
+      if (dist > 0 && dist < 5.0) {
         neighbors.push_back(nextNode(neighborCell));
       }
     }
