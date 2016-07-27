@@ -463,15 +463,17 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 
   // reverseSearch(t); // REVERSE_SEARCH
 
+  printf("Search   \t iter_time \t overestimate \t num_iter \t path_cost \n");
   while (overestimate_factor >= 1.03 && max_iterations_ > last_iterations_) {
     std::vector<Cell> new_path;
     bool found_new_path;
     if (overestimate_factor > 1.5) {
-      printf("Search without smoothness \n");
+      printf("Without smooth\t");
       // found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
       found_new_path = findSmoothPath(new_path, NodePtr(new NodeWithoutSmooth(s, parent_of_s)), t);
     } 
     else {
+      printf("Speed search  \t");
       // found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
       found_new_path = findSmoothPath(new_path, NodePtr(new SpeedNode(s, parent_of_s)), t);
     }
@@ -499,6 +501,7 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     max_iterations_ = 5000;
     found_path = find2DPath(path, s, t, parent_of_s);
   }
+  
   return found_path;
 }
 
@@ -618,7 +621,7 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
       }
     }
   }
-  printf("Average iteration time: %2.1f µs \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter);
+  double average_iter_time = (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter;
 
   if (seen_.find(t) == seen_.end()) {
     // No path found
@@ -638,7 +641,7 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
 
   last_iterations_ = num_iter;
   // ROS_INFO("Found path with %d iterations, itDistSquared: %.3f", num_iter, num_iter / squared(path.size()));
-  printf("overestimate_factor: %2.2f, \t num_iter: %d \t path cost: %2.2f \t", overestimate_factor, num_iter, distance[t]);
+  printf("%2.2f \t\t %2.2f \t\t %d \t\t %2.2f \t", average_iter_time, overestimate_factor, num_iter, distance[t]);
   
   return true;
 }  
@@ -659,8 +662,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
   distance[s] = 0.0;
   int num_iter = 0;
 
-  std::clock_t start_time;
-  start_time = std::clock();
+  std::clock_t start_time = std::clock();
   while (!pq.empty() && num_iter < max_iterations_) {
     PointerNodeDistancePair u_node_dist = pq.top(); pq.pop();
     NodePtr u = u_node_dist.first;
@@ -697,7 +699,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
   if (best_goal_node == nullptr || !t.contains(best_goal_node->cell_)) {
     return false;   // No path found
   }
-  printf("Average iteration time: %2.1f µs \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter);
+  double average_iter_time = (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter;
 
   // Get the path by walking from t back to s (excluding s)
   NodePtr walker = best_goal_node;
@@ -708,12 +710,12 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
   path.push_back(s->cell_);
   path.push_back(s->parent_);
   std::reverse(path.begin(),path.end());
+  
+  last_iterations_ = num_iter;
 
   // printPathStats(path, s->parent_, s->cell_, t, distance[best_goal_node]);
-  last_iterations_ = num_iter;
   // ROS_INFO("Found path with %d iterations, itDistSquared: %.3f", num_iter, num_iter / squared(path.size()));
-  printf("overestimate_factor: %2.2f, \t num_iter: %d \t path cost: %2.2f \t", overestimate_factor, num_iter, distance[best_goal_node]);
-  
+  printf(" %2.1f µs \t %2.2f \t\t %d \t\t %2.2f \t", average_iter_time, overestimate_factor, num_iter, distance[best_goal_node]);
   return true;
 }
 
