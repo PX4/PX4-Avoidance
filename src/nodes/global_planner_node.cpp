@@ -50,10 +50,10 @@ void GlobalPlannerNode::popNextGoal() {
 
 // Plans a new path and publishes it
 void GlobalPlannerNode::planPath() {
-  ROS_INFO("Start planning path.");
+  std::clock_t start_time = std::clock();
   ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
   bool found_path = global_planner_.getGlobalPath();
-  
+
   // Publish even though no path is found
   publishExploredCells();
   publishPath();
@@ -66,6 +66,7 @@ void GlobalPlannerNode::planPath() {
     // The path is not good enough, set an intermediate goal on the path
     setIntermediateGoal();
   }
+  printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 // Sets a temporary goal on the path to the current goal
