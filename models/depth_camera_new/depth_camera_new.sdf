@@ -16,7 +16,7 @@
         </inertia>
       </inertial>
       <visual name="visual">
-        <pose>0 0 0 0 1.58 0</pose>
+        <pose>0 0 0 0 1.57 0</pose>
         <geometry>
           <mesh>
             <uri>model://depth_camera_new/meshes/hokuyo.dae</uri>
@@ -26,7 +26,7 @@
       <sensor name="depth_camera" type="depth">
         <update_rate>20</update_rate>
         <camera>
-          <horizontal_fov>1.09606677025</horizontal_fov>
+          <horizontal_fov>1.57</horizontal_fov>
           <image>
             <format>R8G8B8</format>
             <width>64</width>
