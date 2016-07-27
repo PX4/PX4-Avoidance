@@ -93,7 +93,7 @@ void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped & msg)
   global_planner_.setPose(rot_msg);
 
   // Check if a new goal is needed
-  bool is_in_goal = global_planner_.goal_pos_.contains(Cell(global_planner_.curr_pos_));
+  bool is_in_goal = global_planner_.goal_pos_.withinPositionRadius(global_planner_.curr_pos_);
   if (is_in_goal || global_planner_.goal_is_blocked_) {
     popNextGoal();
   }

@@ -75,11 +75,17 @@ class GoalCell : public Cell {
  public:
   GoalCell(Cell cell, double radius=1.0, bool is_temporary=false) 
          : Cell(cell), radius_(radius), is_temporary_(is_temporary) {}
+  
   GoalCell(double x, double y, double z, double radius=1.0, bool is_temporary=false) 
          : Cell(x, y, z), radius_(radius), is_temporary_(is_temporary) {}
 
-  bool contains(Cell cell) const {
-    return manhattanDist(cell.xPos(), cell.yPos(), cell.zPos()) < radius_;
+  bool withinPlanRadius(Cell cell) const {
+    return manhattanDist(cell.xPos(), cell.yPos(), cell.zPos()) < radius_ / 2.0;
+  }
+
+  template <typename P>
+  bool withinPositionRadius(P point) const {
+    return manhattanDist(point.x, point.y, point.z) < radius_;
   }
 
   double radius_;
