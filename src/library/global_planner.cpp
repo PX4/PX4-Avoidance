@@ -671,7 +671,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
     }
     seen_nodes.insert(u);
 
-    if (t.contains(u->cell_)) {
+    if (t.withinPlanRadius(u->cell_)) {
       best_goal_node = u;
       break;  // Found a path
     }
@@ -696,7 +696,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
     }
   }
 
-  if (best_goal_node == nullptr || !t.contains(best_goal_node->cell_)) {
+  if (best_goal_node == nullptr || !t.withinPlanRadius(best_goal_node->cell_)) {
     return false;   // No path found
   }
   double average_iter_time = (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter;
