@@ -2,6 +2,7 @@
 #define GLOBAL_PLANNER_NODE
 
 #include <string>
+#include <unordered_set>
 
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
@@ -19,6 +20,9 @@ class Node {
   virtual std::size_t hash() const;
   virtual std::shared_ptr<Node> nextNode(const Cell & nextCell) const;
   virtual std::vector<std::shared_ptr<Node> > getNeighbors() const;
+  virtual std::unordered_set<Cell> getCells() const;
+
+  virtual double getLength() const;
   virtual double getRotation(const Node & other) const;
   virtual double getXYRotation(const Node & other) const;
   std::string asString() const;
@@ -88,11 +92,11 @@ class SpeedNode : public Node {
   }
 
   std::vector<NodePtr> getNeighbors() const {
-    std::vector<NodePtr > neighbors;
+    std::vector<NodePtr> neighbors;
     Cell extrapolate_cell = (cell_ - parent_) + cell_;
     neighbors.push_back(nextNode(extrapolate_cell));
     for (Cell neighborCell : extrapolate_cell.getFlowNeighbors()) {
-      double dist = cell_.diagDistance3D(neighborCell);
+      double dist = cell_.distance3D(neighborCell);
       if (dist > 0 && dist < 5.0) {
         neighbors.push_back(nextNode(neighborCell));
       }

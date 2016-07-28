@@ -55,14 +55,9 @@ void GlobalPlanner::setPath(const std::vector<Cell> & path) {
 
   path_cells_.clear();
   for (int i=2; i < path.size(); ++i) {
-    Cell p = path[i];
-    Cell last_p = path[i-1];
-
-    path_cells_.insert(p);
-    if (p.x() != last_p.x() && p.y() != last_p.y()) {
-      // For diagonal edges we need the two common neighbors of p and last_p to be non occupied
-      path_cells_.insert(Cell(p.xPos(), last_p.yPos(), p.zPos()));
-      path_cells_.insert(Cell(last_p.xPos(), p.yPos(), p.zPos()));
+    Node node(path[i], path[i-1]);
+    for (Cell cell : node.getCells()) {
+      path_cells_.insert(cell);
     }
   }
 }
@@ -189,20 +184,12 @@ double GlobalPlanner::getRisk(const Cell & cell) {
 }
 
 double GlobalPlanner::getRisk(const Node & node) {
-  int dx = node.cell_.x() - node.parent_.x();
-  int dy = node.cell_.y() - node.parent_.y();
-  int dz = node.cell_.z() - node.parent_.z();
-  int steps = std::max(std::abs(dx), std::max(std::abs(dy), std::abs(dz)));
   double risk = 0.0;
-  
-  double x_step = (node.cell_.xPos() - node.parent_.xPos()) / steps;
-  double y_step = (node.cell_.yPos() - node.parent_.yPos()) / steps;
-  double z_step = (node.cell_.zPos() - node.parent_.zPos()) / steps;
-  for (int i = 1; i <= steps; ++i) {
-    Cell walker(node.parent_.xPos() + x_step * i, node.parent_.yPos() + y_step * i, node.parent_.zPos() + z_step * i);
-    risk += getRisk(walker) / steps;
+  std::unordered_set<Cell> nodeCells = node.getCells();
+  for (Cell cell : nodeCells) {
+    risk += getRisk(cell);
   }
-  return risk;
+  return risk / nodeCells.size() * node.getLength();
 }
 
 // Returns the amount of rotation needed to go from u to v
@@ -215,7 +202,7 @@ double GlobalPlanner::getTurnSmoothness(const Node & u, const Node & v) {
 double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
   double dist_cost = getEdgeDist(u.cell_, v.cell_);
   // double risk_cost = u.cell_.distance3D(v.cell_) * risk_factor_ * getRisk(v.cell_);
-  double risk_cost = u.cell_.distance3D(v.cell_) * risk_factor_ * getRisk(v);
+  double risk_cost = risk_factor_ * getRisk(v);
   double smooth_cost = smooth_factor_ * getTurnSmoothness(u, v);
   if (u.cell_.distance3D(Cell(curr_pos_)) < 3 && norm(curr_vel_) > 1){
     smooth_cost *= 2;  // Penalty for a early turn when the velocity is high
@@ -345,9 +332,9 @@ PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path) {
   for(int i=2; i < path.size(); ++i) {
     Node curr_node = Node(path[i], path[i-1]);
     Node last_node = Node(path[i-1], path[i-2]);
-    double cell_risk = getRisk(curr_node.cell_);
+    double cell_risk = getRisk(curr_node);
     path_info.dist += getEdgeDist(last_node.cell_, curr_node.cell_);
-    path_info.risk += last_node.cell_.distance3D(curr_node.cell_) * risk_factor_ * cell_risk;
+    path_info.risk += risk_factor_ * cell_risk;
     path_info.cost += getEdgeCost(last_node, curr_node);
     path_info.is_blocked |= cell_risk > max_cell_risk_;
     path_info.smoothness += smooth_factor_ * getTurnSmoothness(last_node, curr_node);
@@ -381,7 +368,7 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
     else {
       total_alt_change_cost += getEdgeDist(curr_node.parent_, curr_node.cell_);
     }
-    total_risk_cost += risk_factor_ * getRisk(curr_node.cell_);
+    total_risk_cost += risk_factor_ * getRisk(curr_node);
     total_smooth_cost += smooth_factor_ * getTurnSmoothness(last_node, curr_node);
   }
 
@@ -403,7 +390,7 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
 
     double edge_c = getEdgeCost(last_node, curr_node);
     double edge_d = getEdgeDist(curr_node.parent_, curr_node.cell_);
-    double edge_r = risk_factor_ * getRisk(curr_node.cell_);
+    double edge_r = risk_factor_ * getRisk(curr_node);
     double edge_s = smooth_factor_ * getTurnSmoothness(last_node, curr_node);
 
     if (curr_node.cell_.z() - curr_node.parent_.z() == 0) {
