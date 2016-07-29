@@ -55,21 +55,28 @@ double Node::getLength() const {
   return parent_.distance3D(cell_);
 }
 
-// The number of 45 degree turns neede to go to other
+// The number of 45 degree turns needed to go to other
 // Assumes that there is not both horizontal and vertical movement is needed
 double Node::getRotation(const Node & other) const {
   double this_z_diff = cell_.z() - parent_.z();
   double other_z_diff = other.cell_.z() - other.parent_.z();
-  if (this_z_diff != other_z_diff) {
+  double alt_diff = 0.0;
+  if ((this_z_diff == 0) ^ (other_z_diff == 0)) {
     // TODO: use vert_to_hor_cost_
-    return 0.5; // Change between horizontal and vertical movement
+    alt_diff = 0.5;
+    // return 0.5; // Change between horizontal and vertical movement
   }
-  return getXYRotation(other);
+  return alt_diff + getXYRotation(other);
 }
 
 double Node::getXYRotation(const Node & other) const {
-  double this_ang = (cell_ - parent_).angle();
-  double other_ang = (other.cell_ - other.parent_).angle();
+  Cell this_diff = (cell_ - parent_);
+  Cell other_diff = (other.cell_ - other.parent_);
+  if ((this_diff.x() == 0 && this_diff.y() == 0) || (other_diff.x() == 0 && this_diff.y() == 0)) {
+    return 0.0;   // Vertical movement
+  }
+  double this_ang = this_diff.angle();
+  double other_ang = other_diff.angle();
   double ang_diff = other_ang - this_ang;
   ang_diff = std::fabs(angleToRange(ang_diff));   // Rotation needed
   double num_45_deg_turns = ang_diff / (M_PI/4);  // Minimum number of 45-turns to goal
