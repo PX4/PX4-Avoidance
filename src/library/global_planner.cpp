@@ -133,12 +133,11 @@ bool GlobalPlanner::isNearWall(const Cell & cell){
 
 // The distance between two adjacent cells
 double GlobalPlanner::getEdgeDist(const Cell & u, const Cell & v) {
-  double z_diff = v.zPos() - u.zPos();
   double xy_diff = u.distance2D(v);
-  if (z_diff > 0) {
-    return xy_diff + z_diff * up_cost_;
-  }
-  return xy_diff + std::abs(z_diff) * down_cost_; 
+  double z_diff = v.zPos() - u.zPos();
+  double up_diff = up_cost_ * std::max(z_diff, 0.0);
+  double down_diff = down_cost_ * std::max(-z_diff, 0.0);
+  return xy_diff + up_diff + down_diff;
 }
 
 // Risk without looking at the neighbors
@@ -209,7 +208,6 @@ double GlobalPlanner::getEdgeCost(const Node & u, const Node & v) {
   }
   return dist_cost + risk_cost + smooth_cost;
 }
-
 
 // Returns a heuristic for the cost of risk for going from u to goal
 // The heuristic is the cost of risk through unknown environment
