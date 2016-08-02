@@ -26,16 +26,8 @@ rosmake octomap_mapping
 Follow installation guide from http://dev.px4.io/ to install ROS Kinetic, Gazebo, SITL and Mavros (from source).
 
 ```bash
-# Install PCL
 sudo apt-get update
-sudo apt-get install libpcl1
-```
-
-```bash
-# Install the Octomap Library
-sudo apt-get install ros-kinetic-octomap-*
-rosdep install octomap
-rosmake octomap
+sudo apt-get install libpcl1 ros-kinetic-octomap-*
 ```
 
 # Building the Code
@@ -43,11 +35,11 @@ rosmake octomap
 Now clone the repository into the catkin workspace and build
 ```bash
 # Source SITL and catkin
-cd <Firmware_dir>
+cd $HOME/catkin_ws/src/Firmware
 source integrationtests/setup_gazebo_ros.bash $(pwd)
-cd <catkin_directory>
+cd $HOME/catkin_ws
 source devel/setup.bash
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:<catkin_directory>/src/detection/models
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
 ```
 
 ```bash
