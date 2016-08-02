@@ -17,6 +17,8 @@ sudo apt-get install libpcl-all
 ```bash
 # Install the Octomap Library
 sudo apt-get install ros-indigo-octomap ros-indigo-octomap-mapping
+cd ~/catkin_ws/src
+git clone https://github.com/OctoMap/octomap_mapping.git
 rosdep install octomap_mapping
 rosmake octomap_mapping
 ```
@@ -28,6 +30,9 @@ Follow installation guide from http://dev.px4.io/ to install ROS Kinetic, Gazebo
 ```bash
 sudo apt-get update
 sudo apt-get install libpcl1 ros-kinetic-octomap-*
+cd ~/catkin_ws/src
+git clone https://github.com/OctoMap/octomap_mapping.git
+catkin_build
 ```
 
 # Building the Code
