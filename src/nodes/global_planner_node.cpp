@@ -51,7 +51,10 @@ void GlobalPlannerNode::popNextGoal() {
 // Plans a new path and publishes it
 void GlobalPlannerNode::planPath() {
   std::clock_t start_time = std::clock();
-  ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
+  if (global_planner_.octree_) {
+    ROS_INFO("OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
+  }
+
   bool found_path = global_planner_.getGlobalPath();
 
   // Publish even though no path is found
@@ -229,17 +232,18 @@ void GlobalPlannerNode::publishExploredCells() {
     marker.action = visualization_msgs::Marker::ADD;
     marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
 
-    // double h = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
-    // double h = 0.5;                                    // single color (green)
+    // double hue = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
+    // double hue = 0.5;                                    // single color (green)
     // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    double h = std::sqrt(global_planner_.getRisk(cell));
-    // double h = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost;
+    double cell_risk = global_planner_.getRisk(cell);
+    double hue = std::sqrt(cell_risk);
+    // double hue = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost;
 
     // A hack to get the (almost) color spectrum depending on height
-    // h=0 -> blue    h=0.5 -> green  h=1 -> red
-    marker.color.r = std::max(0.0, 2*h-1);
-    marker.color.g = 1.0 - 2.0 * std::abs(h - 0.5);
-    marker.color.b = std::max(0.0, 1.0 - 2*h);
+    // hue=0 -> blue    hue=0.5 -> green  hue=1 -> red
+    marker.color.r = std::max(0.0, 2*hue  - 1);
+    marker.color.g = 1.0 - 2.0 * std::abs(hue - 0.5);
+    marker.color.b = std::max(0.0, 1.0 - 2*hue);
     marker.color.a = 1.0;
 
     if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
