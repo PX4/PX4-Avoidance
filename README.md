@@ -40,10 +40,9 @@ catkin_build
 Now clone the repository into the catkin workspace and build
 ```bash
 # Source SITL and catkin
-cd $HOME/catkin_ws/src/Firmware
-source integrationtests/setup_gazebo_ros.bash $(pwd)
 cd $HOME/catkin_ws
 source devel/setup.bash
+source integrationtests/setup_gazebo_ros.bash $HOME/catkin_ws/src/Firmware
 export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
 ```
 
