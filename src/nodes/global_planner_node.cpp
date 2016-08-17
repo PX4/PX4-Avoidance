@@ -9,6 +9,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
   velocity_sub_ = nh.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
+  move_base_simple_sub_ = nh.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
   laser_sensor_sub_ = nh.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   depth_camera_sub_ = nh.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
 
@@ -106,8 +107,9 @@ void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped & msg)
       ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int) waypoints_.size());
       ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
   }
-  if (num_pos_msg_++ % 50 == 0) {
+  if (num_pos_msg_++ % 10 == 0) {
     // Keep track of and publish the actual travel trajectory
+    // ROS_INFO("Travelled path extended");
     rot_msg.header.frame_id = "/world";
     actual_path_.poses.push_back(rot_msg);
     actual_path_pub_.publish(actual_path_);
@@ -115,7 +117,11 @@ void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped & msg)
 }
 
 void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped & msg) {
-  setNewGoal(GoalCell(msg.point.x, msg.point.y, 3.0));
+  printPointInfo(msg.point.x, msg.point.y, msg.point.z);
+}
+
+void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
 }
 
 // If the laser senses something too close to current position, it is considered a crash
@@ -248,11 +254,21 @@ void GlobalPlannerNode::publishExploredCells() {
 
     if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
       // Unknown space
-      marker.color.r = marker.color.g = marker.color.b = 0.2; // Dark gray
+      marker.color.r = marker.color.g = marker.color.b = 0.2;   // Dark gray
     }
     msg.markers.push_back(marker);
   }
   explored_cells_pub_.publish(msg);
+}
+
+void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
+  Cell cell(x, y, z);
+  ROS_INFO("\nDEBUG INFO FOR %s", cell.asString().c_str());
+  ROS_INFO("getRisk: %2.2f", global_planner_.getRisk(cell));
+  ROS_INFO("singleCellRisk: %2.2f", global_planner_.getSingleCellRisk(cell));
+  for (Cell neighbor : cell.getFlowNeighbors()) {
+    ROS_INFO("  %s: %2.2f", neighbor.asString().c_str(), global_planner_.getSingleCellRisk(neighbor));
+  }
 }
 
 } // namespace avoidance

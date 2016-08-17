@@ -56,6 +56,7 @@ class GlobalPlannerNode {
   ros::Subscriber ground_truth_sub_;
   ros::Subscriber velocity_sub_;
   ros::Subscriber clicked_point_sub_;
+  ros::Subscriber move_base_simple_sub_;
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber depth_camera_sub_;
 
@@ -77,6 +78,7 @@ class GlobalPlannerNode {
   void velocityCallback(const geometry_msgs::TwistStamped & msg);
   void positionCallback(const geometry_msgs::PoseStamped & msg);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
+  void moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg);
   void laserSensorCallback(const sensor_msgs::LaserScan & msg);
   void octomapFullCallback(const octomap_msgs::Octomap & msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2 & msg);
@@ -84,6 +86,9 @@ class GlobalPlannerNode {
   void publishGoal(const GoalCell & goal);
   void publishPath();
   void publishExploredCells();
+
+  void printPointInfo(double x, double y, double z);
+
 };
 
 } // namespace avoidance
