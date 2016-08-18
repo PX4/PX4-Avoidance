@@ -262,12 +262,31 @@ void GlobalPlannerNode::publishExploredCells() {
 }
 
 void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
+  publishExploredCells();
   Cell cell(x, y, z);
-  ROS_INFO("\nDEBUG INFO FOR %s", cell.asString().c_str());
+  ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
   ROS_INFO("getRisk: %2.2f", global_planner_.getRisk(cell));
   ROS_INFO("singleCellRisk: %2.2f", global_planner_.getSingleCellRisk(cell));
-  for (Cell neighbor : cell.getFlowNeighbors()) {
-    ROS_INFO("  %s: %2.2f", neighbor.asString().c_str(), global_planner_.getSingleCellRisk(neighbor));
+  ROS_INFO("Neighbors:\n \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f", 
+            global_planner_.getSingleCellRisk(Cell(x, y+1, z)),
+            global_planner_.getSingleCellRisk(Cell(x-1, y, z)),
+            global_planner_.getSingleCellRisk(Cell(x+1, y, z)),
+            global_planner_.getSingleCellRisk(Cell(x, y-1, z)));
+
+  octomap::OcTreeNode* node = global_planner_.octree_->search(x, y, z);
+  if (node) {
+    double prob = octomap::probability(node->getValue());
+    double post_prob = posterior(global_planner_.height_prior_[cell.z()], prob);
+    ROS_INFO("prob: %2.2f \t post_prob: %2.2f", prob, post_prob);
+    if (global_planner_.occupied_.find(cell) != global_planner_.occupied_.end()) {
+      ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
+    }
+    else {
+      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner_.expore_penalty_ * post_prob);
+    }
+  }
+  else {
+    ROS_INFO("Cell not in tree, prob: %2.2f", global_planner_.expore_penalty_ * global_planner_.height_prior_[cell.z()]);
   }
 }
 
