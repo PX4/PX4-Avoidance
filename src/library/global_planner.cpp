@@ -142,7 +142,7 @@ double GlobalPlanner::getEdgeDist(const Cell & u, const Cell & v) {
 
 // Risk without looking at the neighbors
 double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
-  if (cell.z() < 1) {
+  if (cell.z() < 1 || !octree_) {
     return 1.0;   // Octomap does not keep track of the ground
   }
   octomap::OcTreeNode* node = octree_->search(cell.xPos(), cell.yPos(), cell.zPos());
@@ -155,6 +155,10 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
     // double post_prob = posterior(0.06, octomap::probability(log_odds));     // If the cell has been seen
     if (occupied_.find(cell) != occupied_.end()) {
       // If an obstacle has at some point been spotted it is 'known space'
+      return post_prob;
+    }
+    else if (log_odds > 0) {
+      // ROS_INFO("Cell %s is not in occupied_ but has > 50\% risk", cell.asString().c_str());
       return post_prob;
     }
     // No obstacle spotted (all measurements hint towards it being free)
