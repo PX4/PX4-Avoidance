@@ -36,7 +36,7 @@
       </axis>
     </joint>
 
-    <include>
+    <!-- <include>
       <uri>model://odometry_sensor</uri>
       <pose>-0.12 0.05 0 0 1.5708 1.5708</pose>
     </include>
@@ -51,6 +51,6 @@
         </limit>
       </axis>
     </joint>
-    
+     -->
   </model>
 </sdf>

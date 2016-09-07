@@ -6,6 +6,7 @@
 #include <math.h>           // abs floor
 #include <set>
 #include <stdio.h>
+#include <string>
 
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -38,12 +39,13 @@ namespace avoidance {
 class GlobalPlannerNode {
  public:
   // TODO: Deque instead of vector
+  GlobalPlanner global_planner_;
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
+  double goal_alt_inc_ = 1.0;
   GlobalPlannerNode();
   ~GlobalPlannerNode();
 
  private:
-  GlobalPlanner global_planner_;
   nav_msgs::Path actual_path_;
 
   int num_octomap_msg_ = 0;

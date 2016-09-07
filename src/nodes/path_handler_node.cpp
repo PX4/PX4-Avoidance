@@ -108,7 +108,8 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
     double yaw2 = tf::getYaw(last_pos_.pose.orientation);
     double yaw_diff = std::abs(yaw2 - yaw1);
     yaw_diff -= std::floor(yaw_diff / (2*M_PI)) * (2*M_PI);
-    double max_yaw_diff = M_PI/8.0;
+    // double max_yaw_diff = M_PI / 8.0;
+    double max_yaw_diff = M_PI / 4.0;
     if (yaw_diff < max_yaw_diff || yaw_diff  > 2*M_PI - max_yaw_diff){
       // If we are facing the right direction, then pop the first point of the path
       current_goal_ = path_[0];

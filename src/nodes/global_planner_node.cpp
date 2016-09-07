@@ -121,7 +121,8 @@ void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
-  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
+  // setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, global_planner_.curr_pos_.z + goal_alt_inc_, 1.5));
 }
 
 // If the laser senses something too close to current position, it is considered a crash
@@ -319,6 +320,31 @@ int main(int argc, char** argv) {
   }
   else {
     ROS_INFO("  No goal file given.");
+  }
+
+  if (args.size() > 2) {
+    std::ifstream wp_file(args.at(2).c_str());
+    if (wp_file.is_open()) {
+      std::string tmp;
+      wp_file >> tmp >> global_planner_node.global_planner_.smooth_factor_ 
+              >> tmp >> global_planner_node.global_planner_.risk_factor_ 
+              >> tmp >> global_planner_node.global_planner_.up_cost_ 
+              >> tmp >> global_planner_node.global_planner_.expore_penalty_ 
+              >> tmp >> global_planner_node.global_planner_.max_cell_risk_ 
+              >> tmp >> global_planner_node.global_planner_.neighbor_risk_flow_ 
+              >> tmp >> global_planner_node.goal_alt_inc_;
+      ROS_INFO("  Read parameters %2.2f \t %2.2f \t %2.2f \t %2.2f", 
+        global_planner_node.global_planner_.smooth_factor_, 
+        global_planner_node.global_planner_.risk_factor_, 
+        global_planner_node.global_planner_.up_cost_, 
+        global_planner_node.goal_alt_inc_);
+      wp_file.close();
+
+    }
+    else {
+      ROS_ERROR_STREAM("Unable to open parameter file: " << args.at(2));
+      return -1;
+    }
   }
 
   ros::spin();

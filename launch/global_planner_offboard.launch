@@ -1,0 +1,10 @@
+<launch>
+    
+    <!-- Global Planner -->
+    <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" 
+          args="$(find avoidance)/resource/random_goals $(find avoidance)/resource/parameter_file"  />
+    
+    <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" />
+
+
+</launch>
