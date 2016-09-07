@@ -1,0 +1,7 @@
+smooth_factor_		10.0
+risk_factor_		500.0
+up_cost_			300.0
+explore_penalty		0.005
+max_cell_risk_		0.2
+neighbor_risk_flow_	1.0
+goal_alt_inc		0.0

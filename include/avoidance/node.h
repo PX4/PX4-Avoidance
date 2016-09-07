@@ -95,7 +95,7 @@ class SpeedNode : public Node {
     std::vector<NodePtr> neighbors;
     Cell extrapolate_cell = (cell_ - parent_) + cell_;
     neighbors.push_back(nextNode(extrapolate_cell));
-    for (Cell neighborCell : extrapolate_cell.getFlowNeighbors()) {
+    for (Cell neighborCell : extrapolate_cell.getNeighbors()) {
       double dist = cell_.distance3D(neighborCell);
       if (dist > 0 && dist < 5.0) {
         neighbors.push_back(nextNode(neighborCell));
