@@ -439,7 +439,9 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
                 curr_pos_.y + search_time_ * curr_vel_.y,
                 curr_pos_.z + search_time_ * curr_vel_.z);
   GoalCell t = goal_pos_;
-  Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
+  // Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
+  Cell parent_of_s = s; 
+
       
   ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
   ROS_INFO("curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f",
@@ -714,7 +716,7 @@ bool GlobalPlanner::getGlobalPath() {
   Cell s = Cell(curr_pos_);
   Cell t = Cell(goal_pos_);
   
-  if (getRisk(t) > max_cell_risk_) {
+  if (false && getRisk(t) > max_cell_risk_) {
     // If goal is occupied, no path is published
     ROS_INFO("Goal position is occupied");
     goal_is_blocked_ = true;
@@ -723,8 +725,9 @@ bool GlobalPlanner::getGlobalPath() {
   else if (isOccupied(s)) {
     // If current position is occupied the way back is published
     ROS_INFO("Current position is occupied, going back.");
-    goBack();
-    return true;
+    // goBack();
+    // return true;
+    return false;
   }
   else {
     // Both current position and goal are free, try to find a path
