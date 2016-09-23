@@ -6,10 +6,14 @@
     <arg name="world" default="test_city_2"/>
     <arg name="build" default="posix_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+    <!-- <arg name="fcu_url" default="udp://:14547@localhost:14550"/> -->
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="mavros_transformation" default="-1.57" />
+    <arg name="est" default="lpe"/>
+    <arg name="vehicle" default="iris"/>
+    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -29,6 +33,10 @@
         args="posix-configs/SITL/init/rcS none gazebo $(arg model) $(find px4)/build_$(arg build)">
         <env name="no_sim" value="1" />
     </node>
+<!--     <node name="sitl" pkg="px4" type="px4" output="screen"
+        args="$(find px4) $(arg rcS)">
+    </node> -->
+
 
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
