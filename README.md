@@ -52,3 +52,18 @@ roslaunch avoidance global_planner_sitl_mavros.launch
 
 If the drone does not follow the path properly, some tuning may be required in the file 
 <Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris 
+
+
+# Running on Odroid
+Connect to the access point, name:px4_outdoor
+
+Log in to the Odroid
+```bash
+ssh odroid@192.168.2.239
+	password: odroid
+```
+
+roslaunch mavros px4.launch fcu_url:=/dev/ttySAC0:921600
+roslaunch uvc_ros_driver uvc_ros_driver.launch calibrationMode:=1
+roslaunch disparity_to_point_cloud d2pcloud.launch
+roslaunch avoidance global_planner_offboard.launch
