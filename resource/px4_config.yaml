@@ -148,8 +148,8 @@ image:
 # mocap_pose_estimate
 mocap:
   # select mocap source
-  use_tf: false   # ~mocap/tf
-  use_pose: true  # ~mocap/pose
+  use_tf: true   # ~mocap/tf
+  use_pose: false  # ~mocap/pose
 
 # px4flow
 px4flow:

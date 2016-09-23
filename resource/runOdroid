@@ -1,0 +1,21 @@
+#!/bin/bash
+
+gnome-terminal --tab -e "ssh -t odroid@odroid 'sleep 0; source ~/catkin_ws/devel/setup.bash; roscore; bash -i'" \
+               --tab -e "ssh -t odroid@odroid 'sleep 4; source ~/catkin_ws/devel/setup.bash; roslaunch mavros px4.launch fcu_url:=/dev/ttySAC0:921600; bash -i'" \
+               --tab -e "ssh -t odroid@odroid 'sleep 10; source ~/catkin_ws/devel/setup.bash; roslaunch uvc_ros_driver uvc_ros_driver.launch calibrationMode:=1; bash -i'" \
+               --tab -e "ssh -t odroid@odroid 'sleep 6; source ~/catkin_ws/devel/setup.bash; roslaunch disparity_to_point_cloud d2pcloud.launch; bash -i'" \
+               --tab -e "ssh -t odroid@odroid 'sleep 6; source ~/catkin_ws/devel/setup.bash; roslaunch avoidance global_planner_offboard.launch; bash -i'" \
+               --tab -e "ssh -t odroid@odroid 'sleep 1; source ~/catkin_ws/devel/setup.bash; cd bags/test; bash -i'"
+	       	   # --tab -e "ssh -t odroid@odroid 'sleep 3; source ~/catkin_ws/devel/setup.bash; rosrun topic_tools throttle messages /uvc_camera/cam_0/image_raw 6 /throttled_images; bash -i'" \
+	       	   # --tab -e "ssh -t odroid@odroid 'sleep 3; source ~/catkin_ws/devel/setup.bash; rosrun topic_tools throttle messages /uvc_camera/cam_1/image_raw 6 /throttled_depthmap; bash -i'" \
+	       	   # --tab -e "ssh -t odroid@odroid 'sleep 3; source ~/catkin_ws/devel/setup.bash; rosrun topic_tools throttle messages /omi_cam/point_cloud 4 /throttled_point_cloud; bash -i'" \
+               # --tab -e "ssh -t odroid@odroid 'sleep 7; source ~/catkin_ws/devel/setup.bash; rosrun avoidance global_planner_node; bash -i'" \
+               # --tab -e "ssh -t odroid@odroid 'sleep 3; source ~/catkin_ws/devel/setup.bash; rosrun topic_tools relay /vicon/testobj/testobj /vicon/object_villi/object_villi; bash -i'" \
+	       	   # --tab -e "ssh -t odroid@odroid 'sleep 3; source ~/catkin_ws/devel/setup.bash; rosrun topic_tools throttle messages /vicon/testobj/testobj 10 /mavros/mocap/tf; bash -i'" \
+               # --tab -e "ssh -t ait@vicon     'source ~/catkin_ws/devel/setup.bash; sleep 8; export ROS_MASTER_URI=http://192.168.2.239:11311; export ROS_IP=192.168.1.200; ros/launch_vicon_bridge.sh; bash -i'" \
+
+export ROS_MASTER_URI=http://odroid:11311;
+sleep 5;
+rviz;
+
+exit 0
