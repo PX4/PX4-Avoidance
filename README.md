@@ -63,7 +63,9 @@ ssh odroid@192.168.2.239
 	password: odroid
 ```
 
+```bash
 roslaunch mavros px4.launch fcu_url:=/dev/ttySAC0:921600
 roslaunch uvc_ros_driver uvc_ros_driver.launch calibrationMode:=1
 roslaunch disparity_to_point_cloud d2pcloud.launch
 roslaunch avoidance global_planner_offboard.launch
+```
