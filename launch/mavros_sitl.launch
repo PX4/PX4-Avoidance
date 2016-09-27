@@ -18,10 +18,7 @@
     <param name="use_sim_time" value="true" />
 
     <!-- Transformations for the camera and the world -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
-          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 100"/>
-    <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
-          args="0 0 0 -1.57 0 -1.57 fcu camera_link 100"/>
+
 
     <!-- Launch MAVROS posix SITL environment -->
 <!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
@@ -29,13 +26,9 @@
     </include> -->
 
     <!-- Start SITL -->
-    <node pkg="px4" type="sitl_run.sh" name="simulator" 
-        args="posix-configs/SITL/init/rcS none gazebo $(arg model) $(find px4)/build_$(arg build)">
-        <env name="no_sim" value="1" />
-    </node>
-<!--     <node name="sitl" pkg="px4" type="px4" output="screen"
+    <node name="sitl" pkg="px4" type="px4" output="screen"
         args="$(find px4) $(arg rcS)">
-    </node> -->
+    </node>
 
 
     <!-- Launch MavROS -->
