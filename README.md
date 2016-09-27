@@ -46,6 +46,14 @@ source integrationtests/setup_gazebo_ros.bash $HOME/catkin_ws/src/Firmware
 export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
 ```
 
+Make sure that the relevant Firmware directories are known by ROS and Gazebo
+```bash
+	# May or may not be needed, depends on the setup
+	source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/build_posix_sitl_default
+	# If ROS can't find PX4 or mavlink_sitl_gazebo, add the directories to ROS_PACKAGE_PATH, e.g.
+	export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:<Firmware_directory>
+``` 
+
 ```bash
 roslaunch avoidance global_planner_sitl_mavros.launch
 ```
