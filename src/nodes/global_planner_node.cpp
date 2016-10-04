@@ -178,7 +178,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2 & msg
 
     // Store the obstacle points
     for (auto p : cloud) {
-      if (!isnan(p.x)) {
+      if (!std::isnan(p.x)) {
         // TODO: Not all points end up here
         Cell occupied_cell(p.x, p.y, p.z);
         global_planner_.occupied_.insert(occupied_cell);

@@ -1364,7 +1364,7 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>4 0 0.2</size>
+              <size>4 5 0.2</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
