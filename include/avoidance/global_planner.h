@@ -35,11 +35,11 @@ struct PathInfo {
 class GlobalPlanner {
  public:
   octomap::OcTree* octree_ = NULL;
-  std::vector<double> height_prior_ {  1.0, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
+  // std::vector<double> height_prior_ {  1.0, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
   // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-  // std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
-  //                                   0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001};
+  std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
+                                    0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001};
 
   // Needed to quickly estimate the risk of vertical movement
   std::vector<double> accumulated_height_prior_; // accumulated_height_prior_[i] = sum(height_prior_[0:i])
@@ -68,7 +68,7 @@ class GlobalPlanner {
   int max_altitude_ = 10;
   double max_cell_risk_ = 0.2;
   double smooth_factor_ = 10.0;
-  double vert_to_hor_cost_ = 0.5;   // The cost of changing between vertical and horizontal motion (TODO: use it)
+  double vert_to_hor_cost_ = 1.0;   // The cost of changing between vertical and horizontal motion (TODO: use it)
   double risk_factor_ = 500.0;
   double neighbor_risk_flow_ = 1.0;
   double expore_penalty_ = 0.005;
