@@ -25,6 +25,7 @@ PathHandlerNode::PathHandlerNode() {
   current_goal_.pose.orientation.z = 0.0;
   current_goal_.pose.orientation.w = 1.0;
   last_pos_ = current_goal_;
+  last_goal_ = current_goal_;
 
   ros::Rate rate(10);
   while(ros::ok())
@@ -51,15 +52,18 @@ PathHandlerNode::PathHandlerNode() {
     current_waypoint_publisher_.publish(setpoint);
 
     // Publish three point message
-    if (path_.size() > 2) {
+    if (path_.size() > 0) {
       nav_msgs::Path three_point_msg;
       three_point_msg.header.frame_id="/world";
       auto path_with_curr_pos_ = path_;
       path_with_curr_pos_.insert(path_with_curr_pos_.begin(), current_goal_);
-      three_point_msg.poses = filterPathCorners(path_with_curr_pos_);
+      path_with_curr_pos_.insert(path_with_curr_pos_.begin(), last_goal_);
+      three_point_msg.poses = path_with_curr_pos_;
+      // three_point_msg.poses = filterPathCorners(path_with_curr_pos_);
       if (three_point_msg.poses.size() >= 3) {
         three_point_msg.poses.resize(3);
       }
+      three_point_msg = smoothPath(three_point_msg);
       three_point_path_publisher_.publish(three_point_msg);
     }
 
@@ -87,6 +91,7 @@ void PathHandlerNode::receivePath(const nav_msgs::Path & msg) {
   }
   if (path_.size() > 1) {
     current_goal_ = path_[0];
+    last_goal_ = current_goal_;
   }
   else {
     ROS_INFO("  Received empty path\n");
@@ -112,6 +117,7 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
     double max_yaw_diff = M_PI / 4.0;
     if (yaw_diff < max_yaw_diff || yaw_diff  > 2*M_PI - max_yaw_diff){
       // If we are facing the right direction, then pop the first point of the path
+      last_goal_ = current_goal_;
       current_goal_ = path_[0];
       path_.erase(path_.begin());
 

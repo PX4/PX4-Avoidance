@@ -50,6 +50,16 @@ tf::Vector3 toTfVector3(P point) {
   return tf::Vector3(point.x, point.y, point.z);
 }
 
+// Returns the point in the middle of the line segment between p1 and p2
+template <typename P>
+P middlePoint(P p1, P p2) {
+  P new_point;
+  new_point.x = (p1.x + p2.x) / 2.0;
+  new_point.y = (p1.y + p2.y) / 2.0;
+  new_point.z = (p1.z + p2.z) / 2.0;
+  return new_point;
+}
+
 geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & listener,
                                               const std::string & target_frame,
                                               const std::string & fixed_frame,
@@ -79,6 +89,44 @@ double norm(geometry_msgs::Vector3 v) {
 // Returns a weighted average of start and end, where ratio is the weight of start 
 double interpolate(double start, double end, double ratio) {
   return start + (end - start) * ratio;
+}
+
+// Returns a quadratic Bezier-curve starting in p0 and and ending in p2
+template <typename P>
+std::vector<P> threePointBezier(const P & p0, const P & p1, const P & p2, int num_steps = 10) {
+  std::vector<P> smooth;
+  for (int i=0; i <= num_steps; ++i) {
+    double t = ((double) i) / num_steps;
+    P new_point;
+    new_point.x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
+    new_point.y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
+    new_point.z = (1 - t) * (1 - t) * p0.z + 2 * (1 - t) * t * p1.z + t * t * p2.z;
+    smooth.push_back(new_point);
+  }
+  return smooth;
+}
+
+// Returns a path where corners are smoothed with quadratic Bezier-curves
+nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
+  if (path.poses.size() < 3) {
+    return path;
+  }
+  nav_msgs::Path smooth_path;
+  smooth_path.header = path.header;
+  for (int i=2; i < path.poses.size(); i++) {
+    geometry_msgs::Point p0 = path.poses[i-2].pose.position;
+    geometry_msgs::Point p1 = path.poses[i-1].pose.position;
+    geometry_msgs::Point p2 = path.poses[i].pose.position;
+    p0 = middlePoint(p0, p1);
+    p2 = middlePoint(p1, p2);
+    std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
+    for (auto point : smooth_turn) {
+      geometry_msgs::PoseStamped pose = path.poses[0];
+      pose.pose.position = point;
+      smooth_path.poses.push_back(pose);
+    }
+  }
+  return smooth_path;
 }
 
 // returns angle in the range [-pi, pi]

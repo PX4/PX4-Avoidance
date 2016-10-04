@@ -65,6 +65,7 @@ class GlobalPlannerNode {
   // Publishers
   ros::Publisher global_path_pub_;
   ros::Publisher global_temp_path_pub_;
+  ros::Publisher smooth_path_pub_;
   ros::Publisher actual_path_pub_;
   ros::Publisher explored_cells_pub_;
   ros::Publisher global_goal_pub_;

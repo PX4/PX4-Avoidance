@@ -16,6 +16,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
   global_temp_path_pub_ = nh.advertise<nav_msgs::Path>("/global_temp_path", 10);
   actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
+  smooth_path_pub_ = nh.advertise<nav_msgs::Path>("/smooth_path", 10);
   global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
   global_temp_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_temp_goal", 10);
   explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
@@ -212,6 +213,7 @@ void GlobalPlannerNode::publishPath() {
   if (!global_planner_.goal_pos_.is_temporary_) {
     global_path_pub_.publish(path_msg);
   }
+  smooth_path_pub_.publish(smoothPath(path_msg));
 }
 
 // Publish the cells that were explored in the last search
