@@ -38,7 +38,7 @@ class GlobalPlanner {
   // std::vector<double> height_prior_ {  1.0, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
   // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-  std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.833, 0.05, 0.33,
+  std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.0833, 0.05, 0.033,
                                     0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001};
 
   // Needed to quickly estimate the risk of vertical movement
@@ -68,18 +68,20 @@ class GlobalPlanner {
   int max_altitude_ = 10;
   double max_cell_risk_ = 0.2;
   double smooth_factor_ = 10.0;
-  double vert_to_hor_cost_ = 1.0;   // The cost of changing between vertical and horizontal motion (TODO: use it)
+  double vert_to_hor_cost_ = 1.0;     // The cost of changing between vertical and horizontal motion (TODO: use it)
   double risk_factor_ = 500.0;
   double neighbor_risk_flow_ = 1.0;
   double expore_penalty_ = 0.005;
   double up_cost_ = 3.0;
   double down_cost_ = 1.0;
-  double search_time_ = 0.5;      // The time it takes to find a path in worst case
+  double search_time_ = 0.5;            // The time it takes to find a path in worst case
   int max_iterations_ = 2000;
   int last_iterations_ = 0;
   std::vector<Cell> curr_path_;
   PathInfo curr_path_info_;
   bool goal_is_blocked_ = false;
+  bool goal_must_be_free_ = true;       // If false, the planner may try to find a path close to the goal
+  bool use_current_yaw_ = true;         // The current orientation is factored into the smoothness
   bool use_risk_heuristics_ = true;
   bool use_speedup_heuristics_ = true;
 
