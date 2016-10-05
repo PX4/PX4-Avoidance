@@ -122,8 +122,8 @@ void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
-  // setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
-  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, global_planner_.curr_pos_.z + goal_alt_inc_, 1.5));
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
+  // setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, global_planner_.curr_pos_.z + goal_alt_inc_, 1.5));
 }
 
 // If the laser senses something too close to current position, it is considered a crash
@@ -269,14 +269,20 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
   publishExploredCells();
   Cell cell(x, y, z);
   ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
+  ROS_INFO("Rist cost: %2.2f", global_planner_.risk_factor_ * global_planner_.getRisk(cell));
   ROS_INFO("getRisk: %2.2f", global_planner_.getRisk(cell));
   ROS_INFO("singleCellRisk: %2.2f", global_planner_.getSingleCellRisk(cell));
-  ROS_INFO("Neighbors:\n \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f", 
+  ROS_INFO("Neighbors:\n \t %2.2f \t \t \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f \t \t \t %2.2f", 
             global_planner_.getSingleCellRisk(Cell(x, y+1, z)),
+            global_planner_.getSingleCellRisk(Cell(x, y, z+1)),
             global_planner_.getSingleCellRisk(Cell(x-1, y, z)),
             global_planner_.getSingleCellRisk(Cell(x+1, y, z)),
-            global_planner_.getSingleCellRisk(Cell(x, y-1, z)));
+            global_planner_.getSingleCellRisk(Cell(x, y-1, z)),
+            global_planner_.getSingleCellRisk(Cell(x, y, z-1)));
 
+  double heuristics = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_);
+  ROS_INFO("Heuristics: %2.2f", heuristics);
+  
   octomap::OcTreeNode* node = global_planner_.octree_->search(x, y, z);
   if (node) {
     double prob = octomap::probability(node->getValue());
