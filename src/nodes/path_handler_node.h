@@ -2,6 +2,7 @@
 #define GLOBAL_PLANNER_PATH_HANDLER_NODE_H
 
 #include <math.h> // floor
+#include <map>
 #include <vector>
 
 #include <geometry_msgs/PoseStamped.h>
@@ -11,6 +12,8 @@
 #include <ros/ros.h>
 
 #include "avoidance/common.h" // hasSameYawAndAltitude
+#include "avoidance/PathWithRiskMsg.h"
+
 
 namespace avoidance {
 
@@ -28,8 +31,10 @@ class PathHandlerNode {
   double speed_ = min_speed_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
+  std::map<tf::Vector3, double> path_risk_;
 
-  ros::Subscriber trajectory_sub_;
+  ros::Subscriber path_sub_;
+  ros::Subscriber path_with_risk_sub_;
   ros::Subscriber ground_truth_sub_;
 
   ros::Publisher mavros_waypoint_publisher_;
@@ -40,7 +45,13 @@ class PathHandlerNode {
 
   void receiveMessage(const geometry_msgs::PoseStamped & pose_msg);
   void receivePath(const nav_msgs::Path & msg);
+  void receivePathWithRisk(const PathWithRiskMsg & msg);
   void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
+  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
+  void publishSetpoint();
+  void publishThreePointMsg();
+  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
+
 };
 
 } // namespace avoidance

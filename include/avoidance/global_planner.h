@@ -21,6 +21,8 @@
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/node.h"
+#include "avoidance/PathWithRiskMsg.h"
+
 
 namespace avoidance {
 
@@ -115,6 +117,7 @@ class GlobalPlanner {
   
   geometry_msgs::PoseStamped createPoseMsg(const Cell & cell, double yaw);
   nav_msgs::Path getPathMsg();
+  PathWithRiskMsg getPathWithRiskMsg();
 
   PathInfo getPathInfo(const std::vector<Cell> & path);
   void printPathStats(const std::vector<Cell> & path, const Cell & start_parent, const Cell & start,
