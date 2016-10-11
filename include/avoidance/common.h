@@ -46,18 +46,27 @@ Value getWithDefault(Map & m, const Key & key, const Value & default_val) {
 }
 
 template <typename P>
-tf::Vector3 toTfVector3(P point) {
+tf::Vector3 toTfVector3(const P & point) {
   return tf::Vector3(point.x, point.y, point.z);
 }
 
 // Returns the point in the middle of the line segment between p1 and p2
 template <typename P>
-P middlePoint(P p1, P p2) {
+P middlePoint(const P & p1, const P & p2) {
   P new_point;
   new_point.x = (p1.x + p2.x) / 2.0;
   new_point.y = (p1.y + p2.y) / 2.0;
   new_point.z = (p1.z + p2.z) / 2.0;
   return new_point;
+}
+
+template <typename P>
+double distance(const P & p1, const P & p2) {
+  return squared(p2.x - p1.x) + squared(p2.y - p1.y) + squared(p2.z - p1.z);
+}
+
+double distance(const geometry_msgs::PoseStamped & a, const geometry_msgs::PoseStamped & b) {
+  return distance(a.pose.position, b.pose.position);
 }
 
 geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & listener,
@@ -75,14 +84,7 @@ geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & list
   return transformed_msg;
 }
 
-double distance(geometry_msgs::PoseStamped & a, geometry_msgs::PoseStamped & b) {
-  double diffX = a.pose.position.x - b.pose.position.x;
-  double diffY = a.pose.position.y - b.pose.position.y;
-  double diffZ = a.pose.position.z - b.pose.position.z;
-  return sqrt(squared(diffX) + squared(diffY) + squared(diffZ));
-}
-
-double norm(geometry_msgs::Vector3 v) {
+double norm(const geometry_msgs::Vector3 & v) {
   return std::sqrt(squared(v.x) + squared(v.y) + squared(v.z));
 }
 
@@ -91,19 +93,25 @@ double interpolate(double start, double end, double ratio) {
   return start + (end - start) * ratio;
 }
 
+// Returns the point on the quadratic Bezier curve at time t (0 <= t <= 1)
+template <typename T>
+T quadraticBezier(T p0, T p1, T p2, double t) {
+  return ((1 - t) * (1 - t) * p0) + 2 * ((1 - t) * t * p1) + (t * t * p2);
+}
+
 // Returns a quadratic Bezier-curve starting in p0 and and ending in p2
 template <typename P>
 std::vector<P> threePointBezier(const P & p0, const P & p1, const P & p2, int num_steps = 10) {
-  std::vector<P> smooth;
+  std::vector<P> curve;
   for (int i=0; i <= num_steps; ++i) {
     double t = ((double) i) / num_steps;
     P new_point;
-    new_point.x = (1 - t) * (1 - t) * p0.x + 2 * (1 - t) * t * p1.x + t * t * p2.x;
-    new_point.y = (1 - t) * (1 - t) * p0.y + 2 * (1 - t) * t * p1.y + t * t * p2.y;
-    new_point.z = (1 - t) * (1 - t) * p0.z + 2 * (1 - t) * t * p1.z + t * t * p2.z;
-    smooth.push_back(new_point);
+    new_point.x = quadraticBezier(p0.x, p1.x, p2.x, t);
+    new_point.y = quadraticBezier(p0.y, p1.y, p2.y, t);
+    new_point.z = quadraticBezier(p0.z, p1.z, p2.z, t);
+    curve.push_back(new_point);
   }
-  return smooth;
+  return curve;
 }
 
 // Returns a path where corners are smoothed with quadratic Bezier-curves
@@ -111,19 +119,28 @@ nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
   if (path.poses.size() < 3) {
     return path;
   }
+  
+  // Repeat the first and last points to get the first half of the first edge 
+  // and the second half of the last edge
+  std::vector<geometry_msgs::PoseStamped> corner_points = path.poses;
+  corner_points.insert(corner_points.begin(), corner_points.front());
+  corner_points.push_back(corner_points.back());
+
   nav_msgs::Path smooth_path;
   smooth_path.header = path.header;
+
   for (int i=2; i < path.poses.size(); i++) {
     geometry_msgs::Point p0 = path.poses[i-2].pose.position;
     geometry_msgs::Point p1 = path.poses[i-1].pose.position;
     geometry_msgs::Point p2 = path.poses[i].pose.position;
     p0 = middlePoint(p0, p1);
     p2 = middlePoint(p1, p2);
+
     std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
     for (auto point : smooth_turn) {
-      geometry_msgs::PoseStamped pose = path.poses[0];
-      pose.pose.position = point;
-      smooth_path.poses.push_back(pose);
+      geometry_msgs::PoseStamped pose_msg = path.poses.front(); // Copy the original header info
+      pose_msg.pose.position = point;
+      smooth_path.poses.push_back(pose_msg);
     }
   }
   return smooth_path;
@@ -194,7 +211,7 @@ double posterior(double p, double prior) {
   return prob_obstacle / (prob_obstacle + prob_free+0.0001);
 }
 
-double pathLength(nav_msgs::Path & path) {
+double pathLength(const nav_msgs::Path & path) {
   double total_dist = 0.0;
   for (int i=1; i < path.poses.size(); ++i) {
     total_dist += distance(path.poses[i-1], path.poses[i]);
@@ -203,7 +220,7 @@ double pathLength(nav_msgs::Path & path) {
 }
 
 // Returns a path with only the corner points of msg
-std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped>& msg) {
+std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped> & msg) {
   std::vector<geometry_msgs::PoseStamped> corners = msg;
   corners.clear();
   if (msg.size() < 1) {
@@ -228,7 +245,7 @@ std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geom
 }
 
 
-double pathKineticEnergy(nav_msgs::Path & path) {
+double pathKineticEnergy(const nav_msgs::Path & path) {
   if (path.poses.size() < 3) {
     return 0.0;
   }
@@ -250,7 +267,7 @@ double pathKineticEnergy(nav_msgs::Path & path) {
   return total_energy;
 }
 
-double pathEnergy(nav_msgs::Path & path, double up_penalty) {
+double pathEnergy(const nav_msgs::Path & path, double up_penalty) {
   double total_energy = 0.0;
   for (int i=1; i < path.poses.size(); ++i) {
     total_energy += distance(path.poses[i-1], path.poses[i]);
