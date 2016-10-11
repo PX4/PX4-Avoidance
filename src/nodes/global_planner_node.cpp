@@ -208,6 +208,7 @@ void GlobalPlannerNode::publishGoal(const GoalCell & goal) {
 // Publish the current path
 void GlobalPlannerNode::publishPath() {
   auto path_msg = global_planner_.getPathMsg();
+  PathWithRiskMsg risk_msg = global_planner_.getPathWithRiskMsg();
   // Always publish as temporary to remove any obsolete temporary path
   global_temp_path_pub_.publish(path_msg);
   if (!global_planner_.goal_pos_.is_temporary_) {

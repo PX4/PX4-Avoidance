@@ -6,7 +6,8 @@ PathHandlerNode::PathHandlerNode() {
 
   ros::NodeHandle nh;
 
-  trajectory_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
+  path_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
+  path_with_risk_sub_ = nh.subscribe("/path_with_risk", 1, &PathHandlerNode::receivePath, this);
   ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
 
   mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
@@ -33,45 +34,8 @@ PathHandlerNode::PathHandlerNode() {
     rate.sleep();
     ros::spinOnce();
 
-    auto x = current_goal_.pose.position.x - last_pos_.pose.position.x;
-    auto y = current_goal_.pose.position.y - last_pos_.pose.position.y;
-    auto z = current_goal_.pose.position.z - last_pos_.pose.position.z;
-    tf::Vector3 vec(x,y,z);
-
-    // If we are less than 1.0 away, then we should stop at the goal
-    double new_len = vec.length() < 1.0 ? vec.length() : speed_;
-    vec.normalize();
-    vec *= new_len;
-
-    auto setpoint = current_goal_;  // The intermediate position sent to Mavros
-    setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
-    setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
-    setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
-
-    // Publish setpoint for vizualization
-    current_waypoint_publisher_.publish(setpoint);
-
-    // Publish three point message
-    if (path_.size() > 0) {
-      nav_msgs::Path three_point_msg;
-      three_point_msg.header.frame_id="/world";
-      auto path_with_curr_pos_ = path_;
-      path_with_curr_pos_.insert(path_with_curr_pos_.begin(), current_goal_);
-      path_with_curr_pos_.insert(path_with_curr_pos_.begin(), last_goal_);
-      three_point_msg.poses = path_with_curr_pos_;
-      // three_point_msg.poses = filterPathCorners(path_with_curr_pos_);
-      if (three_point_msg.poses.size() >= 3) {
-        three_point_msg.poses.resize(3);
-      }
-      three_point_msg = smoothPath(three_point_msg);
-      three_point_path_publisher_.publish(three_point_msg);
-    }
-
-    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
-    listener_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
-
-    // Publish setpoint to Mavros
-    mavros_waypoint_publisher_.publish(setpoint);
+    publishSetpoint();    
+    publishThreePointMsg();
   }
 }
 
@@ -84,17 +48,18 @@ void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg
 }
 
 void PathHandlerNode::receivePath(const nav_msgs::Path & msg) {
-  speed_ = min_speed_;
-  path_.clear();
-  for (int i=2; i < msg.poses.size(); ++i) {
-    path_.push_back(msg.poses[i]);
+  setCurrentPath(msg.poses);
+}
+
+void PathHandlerNode::receivePathWithRisk(const PathWithRiskMsg & msg) {
+  setCurrentPath(msg.poses);
+  if (msg.poses.size() != msg.risks.size()) {
+    ROS_INFO("PathWithRiskMsg error: risks must be the same size as poses.");
+    throw std::invalid_argument("PathWithRiskMsg error: risks must be the same size as poses.");
   }
-  if (path_.size() > 1) {
-    current_goal_ = path_[0];
-    last_goal_ = current_goal_;
-  }
-  else {
-    ROS_INFO("  Received empty path\n");
+  for (int i=0; i < msg.poses.size(); ++i) {
+    tf::Vector3 point = toTfVector3(msg.poses[i].pose.position);
+    path_risk_[point] = msg.risks[i];
   }
 }
 
@@ -123,14 +88,86 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
 
       // If we are keeping the same direction and height increase speed
       if (path_.size() > std::floor(speed_) && hasSameYawAndAltitude(current_goal_.pose, path_[std::floor(speed_)].pose)) {
-        speed_ = std::min(max_speed_, speed_+0.1);
+        speed_ = std::min(max_speed_, speed_ + 0.1);
       }
       else {
         speed_ = min_speed_;
       }
     }
-
   }
+}
+
+void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses) {
+  speed_ = min_speed_;
+  path_.clear();
+  path_risk_.clear();
+  
+  for (int i=2; i < poses.size(); ++i) {
+    path_.push_back(poses[i]);
+  }
+
+  if (path_.size() > 1) {
+    current_goal_ = path_[0];
+    last_goal_ = current_goal_;
+  }
+  else {
+    ROS_INFO("  Received empty path\n");
+  } 
+}
+
+void PathHandlerNode::publishSetpoint() {
+    auto x = current_goal_.pose.position.x - last_pos_.pose.position.x;
+    auto y = current_goal_.pose.position.y - last_pos_.pose.position.y;
+    auto z = current_goal_.pose.position.z - last_pos_.pose.position.z;
+    tf::Vector3 vec(x,y,z);
+
+    // If we are less than 1.0 away, then we should stop at the goal
+    double new_len = vec.length() < 1.0 ? vec.length() : speed_;
+    vec.normalize();
+    vec *= new_len;
+
+    auto setpoint = current_goal_;  // The intermediate position sent to Mavros
+    setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
+    setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
+    setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
+
+    // Publish setpoint for vizualization
+    current_waypoint_publisher_.publish(setpoint);
+
+    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
+    listener_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
+
+    // Publish setpoint to Mavros
+    mavros_waypoint_publisher_.publish(setpoint);
+}
+
+void PathHandlerNode::publishThreePointMsg() {
+  if (path_.size() > 0) {
+    nav_msgs::Path three_point_msg;
+    three_point_msg.header.frame_id="/world";
+    auto path_with_curr_pos_ = path_;
+    path_with_curr_pos_.insert(path_with_curr_pos_.begin(), current_goal_);
+    path_with_curr_pos_.insert(path_with_curr_pos_.begin(), last_goal_);
+    three_point_msg.poses = path_with_curr_pos_;
+    // three_point_msg.poses = filterPathCorners(path_with_curr_pos_);
+    if (three_point_msg.poses.size() >= 3) {
+      three_point_msg.poses.resize(3);
+    }
+    double risk = getRiskOfCurve(three_point_msg.poses);
+    three_point_msg = smoothPath(three_point_msg);
+    three_point_path_publisher_.publish(three_point_msg);
+  }
+}
+
+double PathHandlerNode::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses) {
+  double risk = 0.0;
+  for (auto pose_msg : poses) {
+    tf::Vector3 point = toTfVector3(pose_msg.pose.position);
+    if (path_risk_.find(point) != path_risk_.end()) {
+      risk += path_risk_[point];
+    }
+  }
+  return risk;
 }
 
 } // namespace avoidance 
