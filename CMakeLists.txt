@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
   tf
   pcl_ros
 )
@@ -50,11 +51,10 @@ find_package(octomap REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  PathWithRiskMsg.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -71,10 +71,11 @@ find_package(octomap REQUIRED)
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -108,7 +109,7 @@ find_package(octomap REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES global_planner cell node
-  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs tf
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs message_runtime tf
 #  DEPENDS system_lib
 )
 

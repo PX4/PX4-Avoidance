@@ -328,6 +328,19 @@ nav_msgs::Path GlobalPlanner::getPathMsg() {
   return path_msg;
 }
 
+PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
+  nav_msgs::Path path_msg = getPathMsg();
+  PathWithRiskMsg risk_msg;
+  risk_msg.header = path_msg.header;
+  risk_msg.poses = path_msg.poses;
+
+  for (auto pose : path_msg.poses) {
+    double risk = getRisk(Cell(pose.pose.position));
+    risk_msg.risks.push_back(risk);
+  }
+  return risk_msg;
+}
+
 // Returns details of the cost of the path
 PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell> & path) {
   PathInfo path_info = {};
