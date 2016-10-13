@@ -56,7 +56,7 @@ void GlobalPlanner::setPath(const std::vector<Cell> & path) {
   path_cells_.clear();
   for (int i=2; i < path.size(); ++i) {
     Node node(path[i], path[i-1]);
-    for (Cell cell : node.getCells()) {
+    for (const Cell & cell : node.getCells()) {
       path_cells_.insert(cell);
     }
   }
@@ -123,7 +123,7 @@ void GlobalPlanner::getOpenNeighbors(const Cell & cell,
 
 // Returns true if cell has an occupied neighbor 
 bool GlobalPlanner::isNearWall(const Cell & cell){
-  for (Cell neighbor : cell.getDiagonalNeighbors()) {
+  for (const Cell & neighbor : cell.getDiagonalNeighbors()) {
     if (isOccupied(neighbor)) {
       return true;
     }
@@ -178,7 +178,7 @@ double GlobalPlanner::getRisk(const Cell & cell) {
   }
 
   double risk = getSingleCellRisk(cell);
-  for (Cell neighbor : cell.getFlowNeighbors()) {
+  for (const Cell & neighbor : cell.getFlowNeighbors()) {
     risk += neighbor_risk_flow_ * getSingleCellRisk(neighbor);
   }
 
@@ -189,7 +189,7 @@ double GlobalPlanner::getRisk(const Cell & cell) {
 double GlobalPlanner::getRisk(const Node & node) {
   double risk = 0.0;
   std::unordered_set<Cell> nodeCells = node.getCells();
-  for (Cell cell : nodeCells) {
+  for (const Cell & cell : nodeCells) {
     risk += getRisk(cell);
   }
   return risk / nodeCells.size() * node.getLength();
@@ -334,7 +334,7 @@ PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
   risk_msg.header = path_msg.header;
   risk_msg.poses = path_msg.poses;
 
-  for (auto pose : path_msg.poses) {
+  for (const auto & pose : path_msg.poses) {
     double risk = getRisk(Cell(pose.pose.position));
     risk_msg.risks.push_back(risk);
   }
@@ -523,10 +523,10 @@ bool GlobalPlanner::find2DPath(std::vector<Cell> & path, const Cell & s, const C
 
   if (found_up_path && found_vert_path && found_down_path) {
     path = up_path;
-    for (Cell c : vert_path) {
+    for (const Cell & c : vert_path) {
       path.push_back(c);
     }
-    for (Cell c : down_path) {
+    for (const Cell & c : down_path) {
       path.push_back(c);
     }
     return true;
@@ -554,7 +554,7 @@ bool GlobalPlanner::reverseSearch(const Cell & t) {
     bubble_cost_ = cost[u];
     bubble_radius_ = std::max(bubble_radius_, u.distance3D(t));
 
-    for (Cell v : u.getNeighbors()) {
+    for (const Cell & v : u.getNeighbors()) {
       double new_cost = cost[u] + u.distance3D(v) * risk_factor_ * getRisk(v);
       double old_cost = getWithDefault(cost, v, INFINITY);
       if (new_cost < old_cost) {
@@ -598,7 +598,7 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
 
     std::vector<CellDistancePair> neighbors;
     getOpenNeighbors(u, neighbors, is_3D);
-    for (auto v_cell_dist : neighbors) {
+    for (const auto & v_cell_dist : neighbors) {
       Cell v = v_cell_dist.first;
       double edge_cost = v_cell_dist.second;   // Use getEdgeCost
       double risk = risk_factor_ * getRisk(v);
@@ -682,7 +682,7 @@ bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, 
     }
     num_iter++;
 
-    for (NodePtr v : u->getNeighbors()) {
+    for (const NodePtr & v : u->getNeighbors()) {
       if (v->cell_.zPos() > max_altitude_) {
         continue;
       }

@@ -178,7 +178,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2 & msg
     pcl::fromROSMsg(transformed_msg, cloud); 
 
     // Store the obstacle points
-    for (auto p : cloud) {
+    for (const auto & p : cloud) {
       if (!std::isnan(p.x)) {
         // TODO: Not all points end up here
         Cell occupied_cell(p.x, p.y, p.z);
@@ -230,7 +230,7 @@ void GlobalPlannerNode::publishExploredCells() {
   msg.markers.push_back(marker);
   
   id = 1;
-  for (const auto cell : global_planner_.seen_) {
+  for (const auto & cell : global_planner_.seen_) {
   // for (auto const& x : global_planner_.bubble_risk_cache_) {
     // Cell cell = x.first;
 

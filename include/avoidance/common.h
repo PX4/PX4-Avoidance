@@ -137,7 +137,7 @@ nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
     p2 = middlePoint(p1, p2);
 
     std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
-    for (auto point : smooth_turn) {
+    for (const auto & point : smooth_turn) {
       geometry_msgs::PoseStamped pose_msg = path.poses.front(); // Copy the original header info
       pose_msg.pose.position = point;
       smooth_path.poses.push_back(pose_msg);
