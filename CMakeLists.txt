@@ -54,6 +54,7 @@ find_package(octomap REQUIRED)
 add_message_files(
   FILES
   PathWithRiskMsg.msg
+  ThreePointMsg.msg
 )
 
 ## Generate services in the 'srv' folder

@@ -13,6 +13,7 @@
 
 #include "avoidance/common.h" // hasSameYawAndAltitude
 #include "avoidance/PathWithRiskMsg.h"
+#include "avoidance/ThreePointMsg.h"
 
 
 namespace avoidance {
@@ -40,6 +41,7 @@ class PathHandlerNode {
   ros::Publisher mavros_waypoint_publisher_;
   ros::Publisher current_waypoint_publisher_;
   ros::Publisher three_point_path_publisher_;
+  ros::Publisher three_point_msg_publisher_;
 
   tf::TransformListener listener_;
 
