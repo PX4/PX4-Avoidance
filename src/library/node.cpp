@@ -21,7 +21,7 @@ NodePtr Node::nextNode(const Cell & nextCell) const {
 std::vector<NodePtr> Node::getNeighbors() const {
   std::vector<NodePtr > neighbors;
   neighbors.reserve(10);
-	for (Cell neighborCell : cell_.getNeighbors()) {
+	for (const Cell & neighborCell : cell_.getNeighbors()) {
 		neighbors.push_back(nextNode(neighborCell));
 	}
   return neighbors;
