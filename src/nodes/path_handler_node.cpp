@@ -142,26 +142,24 @@ void PathHandlerNode::publishSetpoint() {
     mavros_waypoint_publisher_.publish(setpoint);
 }
 
+// Send a 3-point message representing the current path
 void PathHandlerNode::publishThreePointMsg() {
   if (path_.size() > 0) {
+    // Send the three points as a path message
     nav_msgs::Path three_point_path;
     three_point_path.header.frame_id="/world";
-    auto path_with_curr_pos_ = path_;
-    path_with_curr_pos_.insert(path_with_curr_pos_.begin(), current_goal_);
-    path_with_curr_pos_.insert(path_with_curr_pos_.begin(), last_goal_);
-    three_point_path.poses = path_with_curr_pos_;
-    // three_point_path.poses = filterPathCorners(path_with_curr_pos_);
-    three_point_path.poses.resize(3);
+    three_point_path.poses = {last_goal_, current_goal_, path_.front()};
     three_point_path = smoothPath(three_point_path);
+    double risk = getRiskOfCurve(three_point_path.poses);
     three_point_path_publisher_.publish(three_point_path);
 
-    double risk = getRiskOfCurve(three_point_path.poses);
+    // Send the three points as a ThreePointMessage
     ThreePointMsg three_point_msg;
-    three_point_msg.prev = three_point_path.poses[0].pose.position;
-    three_point_msg.ctrl = three_point_path.poses[1].pose.position;
-    three_point_msg.next = three_point_path.poses[2].pose.position;
-    three_point_msg.max_acc = 1.0 - risk;
-    three_point_msg.acc_per_err = 0.5 + risk;
+    three_point_msg.prev = last_goal_.pose.position;
+    three_point_msg.ctrl = current_goal_.pose.position;
+    three_point_msg.next = path_.front().pose.position;
+    three_point_msg.max_acc = risk;
+    three_point_msg.acc_per_err = risk;
   }
 }
 
