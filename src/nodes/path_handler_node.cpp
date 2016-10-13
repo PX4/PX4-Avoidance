@@ -13,6 +13,7 @@ PathHandlerNode::PathHandlerNode() {
   mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
+  three_point_msg_publisher_ = nh.advertise<nav_msgs::Path>("/three_point_msg", 10);
 
   listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
 
@@ -143,25 +144,30 @@ void PathHandlerNode::publishSetpoint() {
 
 void PathHandlerNode::publishThreePointMsg() {
   if (path_.size() > 0) {
-    nav_msgs::Path three_point_msg;
-    three_point_msg.header.frame_id="/world";
+    nav_msgs::Path three_point_path;
+    three_point_path.header.frame_id="/world";
     auto path_with_curr_pos_ = path_;
     path_with_curr_pos_.insert(path_with_curr_pos_.begin(), current_goal_);
     path_with_curr_pos_.insert(path_with_curr_pos_.begin(), last_goal_);
-    three_point_msg.poses = path_with_curr_pos_;
-    // three_point_msg.poses = filterPathCorners(path_with_curr_pos_);
-    if (three_point_msg.poses.size() >= 3) {
-      three_point_msg.poses.resize(3);
-    }
-    double risk = getRiskOfCurve(three_point_msg.poses);
-    three_point_msg = smoothPath(three_point_msg);
-    three_point_path_publisher_.publish(three_point_msg);
+    three_point_path.poses = path_with_curr_pos_;
+    // three_point_path.poses = filterPathCorners(path_with_curr_pos_);
+    three_point_path.poses.resize(3);
+    three_point_path = smoothPath(three_point_path);
+    three_point_path_publisher_.publish(three_point_path);
+
+    double risk = getRiskOfCurve(three_point_path.poses);
+    ThreePointMsg three_point_msg;
+    three_point_msg.prev = three_point_path.poses[0].pose.position;
+    three_point_msg.ctrl = three_point_path.poses[1].pose.position;
+    three_point_msg.next = three_point_path.poses[2].pose.position;
+    three_point_msg.max_acc = 1.0 - risk;
+    three_point_msg.acc_per_err = 0.5 + risk;
   }
 }
 
 double PathHandlerNode::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses) {
   double risk = 0.0;
-  for (auto pose_msg : poses) {
+  for (const auto & pose_msg : poses) {
     tf::Vector3 point = toTfVector3(pose_msg.pose.position);
     if (path_risk_.find(point) != path_risk_.end()) {
       risk += path_risk_[point];
