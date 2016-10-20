@@ -64,6 +64,30 @@ If the drone does not follow the path properly, some tuning may be required in t
 <Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris 
 
 
+# Simulating stereo-vision
+To simulate obstacle avoidance with stereo-cameras, make sure `stereo-image-proc` is installed
+```bash
+	# Install stereo-image-proc
+	sudo apt-get install ros-$ROS_DISTRO-stereo-image-proc
+	# Launch simulation
+	roslaunch avoidance global_planner_stereo.launch
+```
+Simulated stereo-vision is prone to errors due to artificial texture, which may make obstacles appear extreamly close to the camera. For best results choose a more natural [world](https://github.com/AurelienRoy/ardupilot_sitl_gazebo_plugin/tree/master/ardupilot_sitl_gazebo_plugin/worlds/outdoor_village).
+
+The disparity map from `stereo-image-proc` is published as a
+[stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message either run
+```bash
+	rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
+```
+or to publish the DisparityImage as a simple sensor_msgs/Image, run 
+```bash
+	rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
+```
+Now the disparity map can be visualized by rviz or rqt under the topic /stereo/disparity_image.
+
+
+
+
 # Running on Odroid
 Connect to the access point, name:px4_outdoor
 

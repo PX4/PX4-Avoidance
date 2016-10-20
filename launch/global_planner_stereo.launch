@@ -7,4 +7,7 @@
 
     <node ns="stereo" pkg="stereo_image_proc" 
           type="stereo_image_proc" name="stereo_image_proc"/>
+
+    <!-- <node name="disparity_image_transform" pkg="topic_tools" type="transform"
+      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" /> -->
 </launch>
