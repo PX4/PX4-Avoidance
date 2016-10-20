@@ -1,5 +1,8 @@
 <launch>
     <arg name="mavros_transformation" default="0" />
+    <arg name="model" default="iris_depth_camera" />
+    <arg name="world" default="test_city_2" />
+    <arg name="point_cloud_topic" default="/camera/depth/points"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -9,10 +12,15 @@
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
     <!-- Mavros and Sitl -->
-    <include file="$(find avoidance)/launch/mavros_sitl.launch" />
-    
+    <include file="$(find avoidance)/launch/mavros_sitl.launch" >
+        <arg name="model" value="$(arg model)" />
+        <arg name="world" value="$(arg world)" />
+    </include>
+
     <!-- Global planner -->
-    <include file="$(find avoidance)/launch/global_planner_octomap.launch" />
+    <include file="$(find avoidance)/launch/global_planner_octomap.launch" >
+        <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
+    </include>
     <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" />
 
     <!-- RViz -->

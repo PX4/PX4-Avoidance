@@ -2,7 +2,7 @@
     <arg name="headless" default="false"/>
     <arg name="gui" default="true"/>
     <arg name="ns" default="/"/>
-    <arg name="model" default="iris"/>
+    <arg name="model" default="iris_depth_camera"/>
     <arg name="world" default="test_city_2"/>
     <arg name="build" default="posix_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
@@ -53,6 +53,6 @@
 
     <!-- Spawn iris with depth camera -->
     <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-sdf -database iris_depth_camera -model iris_depth_camera">
+          args="-sdf -database $(arg model) -model $(arg model)">
     </node>
 </launch>

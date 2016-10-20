@@ -1,4 +1,5 @@
 <launch>
+    <arg name="point_cloud_topic" default="/camera/depth/points"/>
     
     <!-- Global Planner -->
     <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" 
@@ -25,6 +26,6 @@
         <param name="height_map" value="false" />
         <param name="publish_free_space" value="false" />
         <!-- data source to integrate (PointCloud2) -->
-        <remap from="cloud_in" to="/camera/depth/points" respawn="true" />
+        <remap from="cloud_in" to="$(arg point_cloud_topic)" />
     </node>
 </launch>
