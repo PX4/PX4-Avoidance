@@ -28,8 +28,9 @@ class PathHandlerNode {
   geometry_msgs::PoseStamped last_goal_;
   geometry_msgs::PoseStamped last_pos_;
   double min_speed_ = 2.0;
-  double max_speed_ = 2.1;
+  double max_speed_ = 2.5;
   double speed_ = min_speed_;
+  bool three_point_mode_ = true;
 
   std::vector<geometry_msgs::PoseStamped> path_;
   std::map<tf::Vector3, double> path_risk_;
@@ -45,14 +46,19 @@ class PathHandlerNode {
 
   tf::TransformListener listener_;
 
+  // Methods
+  bool shouldPublishThreePoints();
+  bool isCloseToGoal();
+  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
+  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
+  // Callbacks
   void receiveMessage(const geometry_msgs::PoseStamped & pose_msg);
   void receivePath(const nav_msgs::Path & msg);
   void receivePathWithRisk(const PathWithRiskMsg & msg);
   void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
-  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
+  // Publishers
   void publishSetpoint();
   void publishThreePointMsg();
-  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
 
 };
 

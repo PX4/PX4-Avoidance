@@ -35,15 +35,64 @@ PathHandlerNode::PathHandlerNode() {
     rate.sleep();
     ros::spinOnce();
 
-    publishSetpoint();    
-    publishThreePointMsg();
+    if (shouldPublishThreePoints()) {
+      publishThreePointMsg();
+    }
+    else {
+      publishSetpoint();
+    }
   }
 }
 
 PathHandlerNode::~PathHandlerNode() { }
 
-void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
+bool PathHandlerNode::shouldPublishThreePoints() {
+  return three_point_mode_;
+}
 
+bool PathHandlerNode::isCloseToGoal() {
+  if (shouldPublishThreePoints()) {
+    // For three point messages we send a new message when we are close to the end
+    return distance(last_pos_.pose.position, current_goal_.pose.position) + 0.5
+         > distance(last_pos_.pose.position, path_.front().pose.position);
+    // return distance(last_pos_.pose.position, path_.front().pose.position) < 1.0;
+    
+  }
+
+  return std::abs(current_goal_.pose.position.x - last_pos_.pose.position.x) < 1 
+      && std::abs(current_goal_.pose.position.y - last_pos_.pose.position.y) < 1
+      && std::abs(current_goal_.pose.position.z - last_pos_.pose.position.z) < 1;
+}
+
+double PathHandlerNode::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses) {
+  double risk = 0.0;
+  for (const auto & pose_msg : poses) {
+    tf::Vector3 point = toTfVector3(pose_msg.pose.position);
+    if (path_risk_.find(point) != path_risk_.end()) {
+      risk += path_risk_[point];
+    }
+  }
+  return risk;
+}
+
+void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses) {
+  speed_ = min_speed_;
+  path_.clear();
+  path_risk_.clear();
+  
+  if (poses.size() < 2) {
+    ROS_INFO("  Received empty path\n");
+    return;
+  }
+  last_goal_ = poses[0];
+  current_goal_ = poses[1];
+
+  for (int i=2; i < poses.size(); ++i) {
+    path_.push_back(poses[i]);
+  }
+}
+
+void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
   // Not in use
   current_goal_ = pose_msg;
 }
@@ -70,17 +119,14 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
   listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin", last_pos_);
 
   // Check if we are close enough to current goal to get the next part of the path
-  if (path_.size() > 0 && std::abs(current_goal_.pose.position.x - last_pos_.pose.position.x) < 1 
-                      && std::abs(current_goal_.pose.position.y - last_pos_.pose.position.y) < 1
-                      && std::abs(current_goal_.pose.position.z - last_pos_.pose.position.z) < 1) {
-
+  if (path_.size() > 0 && isCloseToGoal()) {
     // TODO: get yawdiff(yaw1, yaw2)
     double yaw1 = tf::getYaw(current_goal_.pose.orientation);
     double yaw2 = tf::getYaw(last_pos_.pose.orientation);
     double yaw_diff = std::abs(yaw2 - yaw1);
+    // Transform yaw_diff to [0, 2*pi]
     yaw_diff -= std::floor(yaw_diff / (2*M_PI)) * (2*M_PI);
-    // double max_yaw_diff = M_PI / 8.0;
-    double max_yaw_diff = M_PI / 4.0;
+    double max_yaw_diff = M_PI / 1.0;
     if (yaw_diff < max_yaw_diff || yaw_diff  > 2*M_PI - max_yaw_diff){
       // If we are facing the right direction, then pop the first point of the path
       last_goal_ = current_goal_;
@@ -96,24 +142,6 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
       }
     }
   }
-}
-
-void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses) {
-  speed_ = min_speed_;
-  path_.clear();
-  path_risk_.clear();
-  
-  for (int i=2; i < poses.size(); ++i) {
-    path_.push_back(poses[i]);
-  }
-
-  if (path_.size() > 1) {
-    current_goal_ = path_[0];
-    last_goal_ = current_goal_;
-  }
-  else {
-    ROS_INFO("  Received empty path\n");
-  } 
 }
 
 void PathHandlerNode::publishSetpoint() {
@@ -144,34 +172,31 @@ void PathHandlerNode::publishSetpoint() {
 
 // Send a 3-point message representing the current path
 void PathHandlerNode::publishThreePointMsg() {
-  if (path_.size() > 0) {
-    // Send the three points as a path message
-    nav_msgs::Path three_point_path;
-    three_point_path.header.frame_id="/world";
-    three_point_path.poses = {last_goal_, current_goal_, path_.front()};
-    three_point_path = smoothPath(three_point_path);
-    double risk = getRiskOfCurve(three_point_path.poses);
-    three_point_path_publisher_.publish(three_point_path);
-
-    // Send the three points as a ThreePointMessage
-    ThreePointMsg three_point_msg;
-    three_point_msg.prev = last_goal_.pose.position;
-    three_point_msg.ctrl = current_goal_.pose.position;
-    three_point_msg.next = path_.front().pose.position;
-    three_point_msg.max_acc = risk;
-    three_point_msg.acc_per_err = risk;
+  geometry_msgs::PoseStamped next_goal;
+  if (!path_.empty()){
+    next_goal = path_.front();
+  } 
+  else {
+    next_goal = current_goal_;
   }
-}
+  nav_msgs::Path three_point_path;
+  three_point_path.header.frame_id="/world";
+  three_point_path.poses = {last_goal_, current_goal_, next_goal};
+  three_point_path.poses[0].pose.position = middlePoint(last_goal_.pose.position, 
+                                                        current_goal_.pose.position);
+  three_point_path.poses[2].pose.position = middlePoint(current_goal_.pose.position, 
+                                                        next_goal.pose.position);
+  // three_point_path = smoothPath(three_point_path);
+  double risk = getRiskOfCurve(three_point_path.poses);
+  three_point_path_publisher_.publish(three_point_path);
 
-double PathHandlerNode::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses) {
-  double risk = 0.0;
-  for (const auto & pose_msg : poses) {
-    tf::Vector3 point = toTfVector3(pose_msg.pose.position);
-    if (path_risk_.find(point) != path_risk_.end()) {
-      risk += path_risk_[point];
-    }
-  }
-  return risk;
+  // Send the three points as a ThreePointMessage
+  ThreePointMsg three_point_msg;
+  three_point_msg.prev = last_goal_.pose.position;
+  three_point_msg.ctrl = current_goal_.pose.position;
+  three_point_msg.next = path_.front().pose.position;
+  three_point_msg.max_acc = risk;
+  three_point_msg.acc_per_err = risk;
 }
 
 } // namespace avoidance 
