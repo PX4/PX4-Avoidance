@@ -33,9 +33,11 @@ sudo apt-get install libpcl1
 
 ```bash
 # Install the Octomap Library
-sudo apt-get install ros-kinetic-octomap-*
-rosdep install octomap
-rosmake octomap
+sudo apt-get install ros-kinetic-octomap ros-kinetic-octomap-mapping
+
+# If octomap-mapping is not found, then it needs to be compiled from source
+cd <catkin_directory>/src
+git clone https://github.com/OctoMap/octomap_mapping.git
 ```
 
 # Building the Code
