@@ -71,7 +71,12 @@ To simulate obstacle avoidance with stereo-cameras, make sure `stereo-image-proc
 	roslaunch avoidance global_planner_stereo.launch
 ```
 Simulated stereo-vision is prone to errors due to artificial texture, which may make obstacles appear extremly close to the camera. For best results choose a more natural [world](https://github.com/AurelienRoy/ardupilot_sitl_gazebo_plugin/tree/master/ardupilot_sitl_gazebo_plugin/worlds/outdoor_village).
-
+```bash
+	git clone https://github.com/AurelienRoy/^Cdupilot_sitl_gazebo_plugin.git
+	export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin/meshes/meshes_outdoor
+	export GAZEBO_RESOURCE_PATH="$GAZEBO_RESOURCE_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin" 
+```
+ 
 The disparity map from `stereo-image-proc` is published as a
 [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message, either run
 ```bash
