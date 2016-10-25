@@ -43,7 +43,6 @@ class GlobalPlannerNode {
   // TODO: Deque instead of vector
   GlobalPlanner global_planner_;
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
-  double goal_alt_inc_ = 1.0;
   GlobalPlannerNode();
   ~GlobalPlannerNode();
 
@@ -55,6 +54,10 @@ class GlobalPlannerNode {
 
   int num_octomap_msg_ = 0;
   int num_pos_msg_ = 0;
+
+  // Dynamic Reconfiguration
+  double clicked_goal_alt_;
+  double clicked_goal_radius_;
 
   // Subscribers
   ros::Subscriber waypoint_sub_;
