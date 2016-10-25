@@ -14,6 +14,7 @@ PathHandlerNode::PathHandlerNode() {
   readParams();
   
   // Subscribe to topics
+  direct_goal_sub_ = nh_.subscribe("/initialpose", 1, &PathHandlerNode::receiveDirectGoal, this);
   path_sub_ = nh_.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
   path_with_risk_sub_ = nh_.subscribe("/path_with_risk", 1, &PathHandlerNode::receivePath, this);
   ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
@@ -98,32 +99,41 @@ void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStampe
 
 void PathHandlerNode::dynamicReconfigureCallback(avoidance::PathHandlerNodeConfig & config, 
                                                  uint32_t level) {
-  three_point_mode_ = config.three_point_mode;
-  min_speed_ = config.min_speed;
-  max_speed_ = config.max_speed;
-
+  ignore_path_messages_ = config.ignore_path_messages_;
+  three_point_mode_ = config.three_point_mode_;
+  min_speed_ = config.min_speed_;
+  max_speed_ = config.max_speed_;
+  direct_goal_alt_ = config.direct_goal_alt_;
   // Reset speed_
   speed_ = min_speed_;
 }
 
-void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
-  // Not in use
-  current_goal_ = pose_msg;
+void PathHandlerNode::receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped & msg) {
+  // Receive a goal without planning
+  current_goal_.pose = msg.pose.pose;
+  current_goal_.pose.position.z = direct_goal_alt_;   // Direct goal is 2D
+  current_goal_.header = msg.header;
+  std::vector<geometry_msgs::PoseStamped> path_with_direct_goal {current_goal_, current_goal_, current_goal_};
+  setCurrentPath(path_with_direct_goal);
 }
 
 void PathHandlerNode::receivePath(const nav_msgs::Path & msg) {
-  setCurrentPath(msg.poses);
+  if (!ignore_path_messages_) {
+    setCurrentPath(msg.poses);
+  }
 }
 
 void PathHandlerNode::receivePathWithRisk(const PathWithRiskMsg & msg) {
-  setCurrentPath(msg.poses);
-  if (msg.poses.size() != msg.risks.size()) {
-    ROS_INFO("PathWithRiskMsg error: risks must be the same size as poses.");
-    throw std::invalid_argument("PathWithRiskMsg error: risks must be the same size as poses.");
-  }
-  for (int i=0; i < msg.poses.size(); ++i) {
-    tf::Vector3 point = toTfVector3(msg.poses[i].pose.position);
-    path_risk_[point] = msg.risks[i];
+  if (!ignore_path_messages_) {
+    setCurrentPath(msg.poses);
+    if (msg.poses.size() != msg.risks.size()) {
+      ROS_INFO("PathWithRiskMsg error: risks must be the same size as poses.");
+      throw std::invalid_argument("PathWithRiskMsg error: risks must be the same size as poses.");
+    }
+    for (int i=0; i < msg.poses.size(); ++i) {
+      tf::Vector3 point = toTfVector3(msg.poses[i].pose.position);
+      path_risk_[point] = msg.risks[i];
+    }
   }
 }
 

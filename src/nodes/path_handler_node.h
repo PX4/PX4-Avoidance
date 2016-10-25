@@ -34,18 +34,21 @@ class PathHandlerNode {
   geometry_msgs::Point start_pos_;
   double start_yaw_;
   // Parameters (Dynamic Reconfiguration)
-  double min_speed_;
-  double speed_ = min_speed_;
   bool three_point_mode_;
+  bool ignore_path_messages_;
+  double min_speed_;
+  double max_speed_;
+  double direct_goal_alt_;
   
+  double speed_ = min_speed_;
   geometry_msgs::PoseStamped current_goal_;
   geometry_msgs::PoseStamped last_goal_;
   geometry_msgs::PoseStamped last_pos_;
-  double max_speed_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
   std::map<tf::Vector3, double> path_risk_;
 
+  ros::Subscriber direct_goal_sub_;
   ros::Subscriber path_sub_;
   ros::Subscriber path_with_risk_sub_;
   ros::Subscriber ground_truth_sub_;
@@ -65,7 +68,7 @@ class PathHandlerNode {
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
   // Callbacks
   void dynamicReconfigureCallback(avoidance::PathHandlerNodeConfig & config, uint32_t level);
-  void receiveMessage(const geometry_msgs::PoseStamped & pose_msg);
+  void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped & msg);
   void receivePath(const nav_msgs::Path & msg);
   void receivePathWithRisk(const PathWithRiskMsg & msg);
   void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
