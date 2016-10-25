@@ -3,23 +3,27 @@
 namespace avoidance {
 
 GlobalPlannerNode::GlobalPlannerNode() {
-  ros::NodeHandle nh;
+  nh_ = ros::NodeHandle("~"); 
 
-  octomap_full_sub_ = nh.subscribe("/octomap_full", 1, &GlobalPlannerNode::octomapFullCallback, this);
-  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
-  velocity_sub_ = nh.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
-  clicked_point_sub_ = nh.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
-  move_base_simple_sub_ = nh.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
-  laser_sensor_sub_ = nh.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
-  depth_camera_sub_ = nh.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
+  dynamic_reconfigure::Server<avoidance::GlobalPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
+  server_.setCallback(f);
 
-  global_path_pub_ = nh.advertise<nav_msgs::Path>("/global_path", 10);
-  global_temp_path_pub_ = nh.advertise<nav_msgs::Path>("/global_temp_path", 10);
-  actual_path_pub_ = nh.advertise<nav_msgs::Path>("/actual_path", 10);
-  smooth_path_pub_ = nh.advertise<nav_msgs::Path>("/smooth_path", 10);
-  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
-  global_temp_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/global_temp_goal", 10);
-  explored_cells_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
+  octomap_full_sub_ = nh_.subscribe("/octomap_full", 1, &GlobalPlannerNode::octomapFullCallback, this);
+  ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
+  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
+  clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
+  move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
+  laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
+  depth_camera_sub_ = nh_.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
+
+  global_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_path", 10);
+  global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
+  actual_path_pub_ = nh_.advertise<nav_msgs::Path>("/actual_path", 10);
+  smooth_path_pub_ = nh_.advertise<nav_msgs::Path>("/smooth_path", 10);
+  global_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
+  global_temp_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/global_temp_goal", 10);
+  explored_cells_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
   actual_path_.header.frame_id="/world";
   listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
@@ -85,6 +89,26 @@ void GlobalPlannerNode::setIntermediateGoal() {
   }
 }
 
+void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeConfig & config, 
+                                                   uint32_t level) {
+  global_planner_.min_altitude_ = config.min_altitude_;
+  global_planner_.max_altitude_ = config.max_altitude_;
+  global_planner_.max_cell_risk_ = config.max_cell_risk_;
+  global_planner_.smooth_factor_ = config.smooth_factor_;
+  global_planner_.vert_to_hor_cost_ = config.vert_to_hor_cost_;
+  global_planner_.risk_factor_ = config.risk_factor_;
+  global_planner_.neighbor_risk_flow_ = config.neighbor_risk_flow_;
+  global_planner_.expore_penalty_ = config.expore_penalty_;
+  global_planner_.up_cost_ = config.up_cost_;
+  global_planner_.down_cost_ = config.down_cost_;
+  global_planner_.search_time_ = config.search_time_;
+  global_planner_.max_iterations_ = config.max_iterations_;
+  global_planner_.goal_must_be_free_ = config.goal_must_be_free_;
+  global_planner_.use_current_yaw_ = config.use_current_yaw_;
+  global_planner_.use_risk_heuristics_ = config.use_risk_heuristics_;
+  global_planner_.use_speedup_heuristics_ = config.use_speedup_heuristics_;
+}
+
 void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped & msg) {
   auto transformed_msg = transformTwistMsg(listener_, "world", "local_origin", msg); // 90 deg fix
   global_planner_.curr_vel_ = transformed_msg.twist.linear;
@@ -122,7 +146,7 @@ void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
-  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0));
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0, 0.5));
   // setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, global_planner_.curr_pos_.z + goal_alt_inc_, 1.5));
 }
 

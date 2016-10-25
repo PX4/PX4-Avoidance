@@ -50,6 +50,13 @@ tf::Vector3 toTfVector3(const P & point) {
   return tf::Vector3(point.x, point.y, point.z);
 }
 
+template <typename P>
+void setPointCoordinates(P & point, double x, double y, double z) {
+  point.x = x;
+  point.y = y;
+  point.z = z;
+}
+
 // Returns the point in the middle of the line segment between p1 and p2
 template <typename P>
 P middlePoint(const P & p1, const P & p2) {
@@ -58,6 +65,24 @@ P middlePoint(const P & p1, const P & p2) {
   new_point.y = (p1.y + p2.y) / 2.0;
   new_point.z = (p1.z + p2.z) / 2.0;
   return new_point;
+}
+
+template <typename P>
+P addPoints(const P & p1, const P & p2) {
+  P new_p;
+  new_p.x = p1.x + p2.x;
+  new_p.y = p1.y + p2.y;
+  new_p.z = p1.z + p2.z;
+  return new_p;
+}
+
+template <typename P>
+P subtractPoints(const P & p1, const P & p2) {
+  P new_p;
+  new_p.x = p1.x - p2.x;
+  new_p.y = p1.y - p2.y;
+  new_p.z = p1.z - p2.z;
+  return new_p;
 }
 
 template <typename P>
