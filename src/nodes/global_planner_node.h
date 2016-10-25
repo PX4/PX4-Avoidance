@@ -48,6 +48,9 @@ class GlobalPlannerNode {
   ~GlobalPlannerNode();
 
  private:
+  ros::NodeHandle nh_;
+  dynamic_reconfigure::Server<avoidance::GlobalPlannerNodeConfig> server_;
+  
   nav_msgs::Path actual_path_;
 
   int num_octomap_msg_ = 0;
@@ -80,6 +83,7 @@ class GlobalPlannerNode {
   void planPath();
   void setIntermediateGoal();
 
+  void dynamicReconfigureCallback(avoidance::GlobalPlannerNodeConfig & config, uint32_t level);
   void velocityCallback(const geometry_msgs::TwistStamped & msg);
   void positionCallback(const geometry_msgs::PoseStamped & msg);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);

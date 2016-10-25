@@ -10,6 +10,8 @@
 #include <unordered_map>  
 #include <unordered_set>  
 
+
+#include <dynamic_reconfigure/server.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
 
@@ -18,6 +20,7 @@
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/Octomap.h>
 
+#include <avoidance/GlobalPlannerNodeConfig.h>
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/node.h"
@@ -41,7 +44,9 @@ class GlobalPlanner {
   // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
   std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.0833, 0.05, 0.033,
-                                    0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001};
+                                    0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001,
+                                    0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 
+                                    0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
 
   // Needed to quickly estimate the risk of vertical movement
   std::vector<double> accumulated_height_prior_; // accumulated_height_prior_[i] = sum(height_prior_[0:i])
@@ -66,6 +71,11 @@ class GlobalPlanner {
   bool going_back_ = true;        // we start by just finding the start position
 
   double overestimate_factor;
+  int last_iterations_ = 0;
+  std::vector<Cell> curr_path_;
+  PathInfo curr_path_info_;
+  
+  // Parameters
   int min_altitude_ = 1;
   int max_altitude_ = 10;
   double max_cell_risk_ = 0.2;
@@ -78,9 +88,6 @@ class GlobalPlanner {
   double down_cost_ = 1.0;
   double search_time_ = 0.5;            // The time it takes to find a path in worst case
   int max_iterations_ = 2000;
-  int last_iterations_ = 0;
-  std::vector<Cell> curr_path_;
-  PathInfo curr_path_info_;
   bool goal_is_blocked_ = false;
   bool goal_must_be_free_ = true;       // If false, the planner may try to find a path close to the goal
   bool use_current_yaw_ = true;         // The current orientation is factored into the smoothness

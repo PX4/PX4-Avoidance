@@ -5,13 +5,16 @@
 #include <map>
 #include <vector>
 
+#include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <nav_msgs/Path.h>
 #include <tf/transform_datatypes.h>  // getYaw
 #include <ros/ros.h>
 
 #include "avoidance/common.h" // hasSameYawAndAltitude
+#include <avoidance/PathHandlerNodeConfig.h>
 #include "avoidance/PathWithRiskMsg.h"
 #include "avoidance/ThreePointMsg.h"
 
@@ -24,13 +27,21 @@ class PathHandlerNode {
   ~PathHandlerNode();
 
  private:
+  ros::NodeHandle nh_;
+  dynamic_reconfigure::Server<avoidance::PathHandlerNodeConfig> server_;
+
+  // Parameters (Rosparam)
+  geometry_msgs::Point start_pos_;
+  double start_yaw_;
+  // Parameters (Dynamic Reconfiguration)
+  double min_speed_;
+  double speed_ = min_speed_;
+  bool three_point_mode_;
+  
   geometry_msgs::PoseStamped current_goal_;
   geometry_msgs::PoseStamped last_goal_;
   geometry_msgs::PoseStamped last_pos_;
-  double min_speed_ = 2.0;
-  double max_speed_ = 2.5;
-  double speed_ = min_speed_;
-  bool three_point_mode_ = true;
+  double max_speed_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
   std::map<tf::Vector3, double> path_risk_;
@@ -47,11 +58,13 @@ class PathHandlerNode {
   tf::TransformListener listener_;
 
   // Methods
+  void readParams();
   bool shouldPublishThreePoints();
   bool isCloseToGoal();
   double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
   // Callbacks
+  void dynamicReconfigureCallback(avoidance::PathHandlerNodeConfig & config, uint32_t level);
   void receiveMessage(const geometry_msgs::PoseStamped & pose_msg);
   void receivePath(const nav_msgs::Path & msg);
   void receivePathWithRisk(const PathWithRiskMsg & msg);
@@ -59,7 +72,6 @@ class PathHandlerNode {
   // Publishers
   void publishSetpoint();
   void publishThreePointMsg();
-
 };
 
 } // namespace avoidance

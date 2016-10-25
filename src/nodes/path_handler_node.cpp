@@ -3,32 +3,34 @@
 namespace avoidance {
 
 PathHandlerNode::PathHandlerNode() {
+  nh_ = ros::NodeHandle("~"); 
 
-  ros::NodeHandle nh;
+  // Set up Dynamic Reconfigure Server
+  dynamic_reconfigure::Server<avoidance::PathHandlerNodeConfig>::CallbackType f;
+  f = boost::bind(&PathHandlerNode::dynamicReconfigureCallback, this, _1, _2);
+  server_.setCallback(f);
 
-  path_sub_ = nh.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
-  path_with_risk_sub_ = nh.subscribe("/path_with_risk", 1, &PathHandlerNode::receivePath, this);
-  ground_truth_sub_ = nh.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
+  // Read 
+  readParams();
+  
+  // Subscribe to topics
+  path_sub_ = nh_.subscribe("/global_temp_path", 1, &PathHandlerNode::receivePath, this);
+  path_with_risk_sub_ = nh_.subscribe("/path_with_risk", 1, &PathHandlerNode::receivePath, this);
+  ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
 
-  mavros_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  current_waypoint_publisher_ = nh.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
-  three_point_path_publisher_ = nh.advertise<nav_msgs::Path>("/three_point_path", 10);
-  three_point_msg_publisher_ = nh.advertise<nav_msgs::Path>("/three_point_msg", 10);
+  // Advertice topics
+  mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
+  three_point_path_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
+  three_point_msg_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_msg", 10);
 
-  listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
-
+  // Initialize goal
   current_goal_.header.frame_id="/world";
-  current_goal_.pose.position.x = 0.5;
-  current_goal_.pose.position.y = 0.5;
-  current_goal_.pose.position.z = 3.5;
-
-  current_goal_.pose.orientation.x = 0.0;
-  current_goal_.pose.orientation.y = 0.0;
-  current_goal_.pose.orientation.z = 0.0;
-  current_goal_.pose.orientation.w = 1.0;
-  last_pos_ = current_goal_;
+  current_goal_.pose.position =  start_pos_;
+  current_goal_.pose.orientation =  tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
 
+  listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
   ros::Rate rate(10);
   while(ros::ok())
   {
@@ -46,6 +48,12 @@ PathHandlerNode::PathHandlerNode() {
 
 PathHandlerNode::~PathHandlerNode() { }
 
+void PathHandlerNode::readParams() {
+  nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
+  nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
+  nh_.param<double>("start_pos_z", start_pos_.z, 2.5);
+}
+
 bool PathHandlerNode::shouldPublishThreePoints() {
   return three_point_mode_;
 }
@@ -56,12 +64,8 @@ bool PathHandlerNode::isCloseToGoal() {
     return distance(last_pos_.pose.position, current_goal_.pose.position) + 0.5
          > distance(last_pos_.pose.position, path_.front().pose.position);
     // return distance(last_pos_.pose.position, path_.front().pose.position) < 1.0;
-    
   }
-
-  return std::abs(current_goal_.pose.position.x - last_pos_.pose.position.x) < 1 
-      && std::abs(current_goal_.pose.position.y - last_pos_.pose.position.y) < 1
-      && std::abs(current_goal_.pose.position.z - last_pos_.pose.position.z) < 1;
+  return distance(current_goal_, last_pos_) < 1.5;
 }
 
 double PathHandlerNode::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses) {
@@ -90,6 +94,16 @@ void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStampe
   for (int i=2; i < poses.size(); ++i) {
     path_.push_back(poses[i]);
   }
+}
+
+void PathHandlerNode::dynamicReconfigureCallback(avoidance::PathHandlerNodeConfig & config, 
+                                                 uint32_t level) {
+  three_point_mode_ = config.three_point_mode;
+  min_speed_ = config.min_speed;
+  max_speed_ = config.max_speed;
+
+  // Reset speed_
+  speed_ = min_speed_;
 }
 
 void PathHandlerNode::receiveMessage(const geometry_msgs::PoseStamped & pose_msg) {
@@ -145,11 +159,9 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
 }
 
 void PathHandlerNode::publishSetpoint() {
-    auto x = current_goal_.pose.position.x - last_pos_.pose.position.x;
-    auto y = current_goal_.pose.position.y - last_pos_.pose.position.y;
-    auto z = current_goal_.pose.position.z - last_pos_.pose.position.z;
-    tf::Vector3 vec(x,y,z);
-
+    // Vector pointing from current position to the current goal
+    tf::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, 
+                                                 last_pos_.pose.position));
     // If we are less than 1.0 away, then we should stop at the goal
     double new_len = vec.length() < 1.0 ? vec.length() : speed_;
     vec.normalize();
