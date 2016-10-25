@@ -91,6 +91,7 @@ void GlobalPlannerNode::setIntermediateGoal() {
 
 void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeConfig & config, 
                                                    uint32_t level) {
+  // global_planner_
   global_planner_.min_altitude_ = config.min_altitude_;
   global_planner_.max_altitude_ = config.max_altitude_;
   global_planner_.max_cell_risk_ = config.max_cell_risk_;
@@ -107,6 +108,10 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   global_planner_.use_current_yaw_ = config.use_current_yaw_;
   global_planner_.use_risk_heuristics_ = config.use_risk_heuristics_;
   global_planner_.use_speedup_heuristics_ = config.use_speedup_heuristics_;
+  
+  // global_planner_node
+  clicked_goal_alt_ = config.clicked_goal_alt_;
+  clicked_goal_radius_ = config.clicked_goal_radius_;
 }
 
 void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped & msg) {
@@ -146,8 +151,7 @@ void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
-  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 3.0, 0.5));
-  // setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, global_planner_.curr_pos_.z + goal_alt_inc_, 1.5));
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, clicked_goal_alt_, clicked_goal_radius_));
 }
 
 // If the laser senses something too close to current position, it is considered a crash
@@ -353,31 +357,6 @@ int main(int argc, char** argv) {
   }
   else {
     ROS_INFO("  No goal file given.");
-  }
-
-  if (args.size() > 2) {
-    std::ifstream wp_file(args.at(2).c_str());
-    if (wp_file.is_open()) {
-      std::string tmp;
-      wp_file >> tmp >> global_planner_node.global_planner_.smooth_factor_ 
-              >> tmp >> global_planner_node.global_planner_.risk_factor_ 
-              >> tmp >> global_planner_node.global_planner_.up_cost_ 
-              >> tmp >> global_planner_node.global_planner_.expore_penalty_ 
-              >> tmp >> global_planner_node.global_planner_.max_cell_risk_ 
-              >> tmp >> global_planner_node.global_planner_.neighbor_risk_flow_ 
-              >> tmp >> global_planner_node.goal_alt_inc_;
-      ROS_INFO("  Read parameters %2.2f \t %2.2f \t %2.2f \t %2.2f", 
-        global_planner_node.global_planner_.smooth_factor_, 
-        global_planner_node.global_planner_.risk_factor_, 
-        global_planner_node.global_planner_.up_cost_, 
-        global_planner_node.goal_alt_inc_);
-      wp_file.close();
-
-    }
-    else {
-      ROS_ERROR_STREAM("Unable to open parameter file: " << args.at(2));
-      return -1;
-    }
   }
 
   ros::spin();
