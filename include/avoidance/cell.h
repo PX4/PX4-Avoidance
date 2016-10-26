@@ -11,6 +11,8 @@
 
 namespace avoidance {
 
+double CELL_SCALE = 1.0;
+
 class Cell {
  public:
   Cell();
@@ -48,7 +50,6 @@ class Cell {
   
   // Member variables
   std::tuple<int, int, int> tpl_;
-  static constexpr double scale_ = 1.0;   // Should be smaller or equal than the octomap resolution
 };
 
 inline bool operator==(const Cell & lhs, const Cell & rhs) {return lhs.tpl_ == rhs.tpl_;}
