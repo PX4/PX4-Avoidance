@@ -1,4 +1,5 @@
 <launch>
+    <arg name="use_three_point_msg" default="false"/>
     <arg name="point_cloud_topic" default="/camera/depth/points"/>
     <arg name="start_pos_x" default="0.5" />
     <arg name="start_pos_y" default="0.5" />
@@ -12,6 +13,14 @@
         <param name="start_pos_z" value="$(arg start_pos_z)" />
     </node>
     
+    <!-- A node that streams the relevant path information to Mavros-->
+    <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" >
+        <param name="three_point_mode_" value="$(arg use_three_point_msg)" />
+        <param name="start_pos_x" value="$(arg start_pos_x)" />
+        <param name="start_pos_y" value="$(arg start_pos_y)" />
+        <param name="start_pos_z" value="$(arg start_pos_z)" />
+    </node>
+
     <!-- OctoMap Server -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
         <param name="resolution" value="1.0" />
