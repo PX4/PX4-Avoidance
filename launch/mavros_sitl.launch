@@ -30,7 +30,6 @@
         args="$(find px4) $(arg rcS)">
     </node>
 
-
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
         <include file="$(find mavros)/launch/node.launch">
