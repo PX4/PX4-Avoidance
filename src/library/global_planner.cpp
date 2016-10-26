@@ -145,8 +145,9 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
   if (cell.z() < 1 || !octree_) {
     return 1.0;   // Octomap does not keep track of the ground
   }
-  octomap::OcTreeNode* node = octree_->search(cell.xPos(), cell.yPos(), cell.zPos());
-  // octomap::OcTreeNode* parent = octree_->search(cell.xPos(), cell.yPos(), cell.zPos(), 15);
+  // octomap::OcTreeNode* node = octree_->search(cell.xPos(), cell.yPos(), cell.zPos());
+  int octree_depth = std::min(16, 17 - int(CELL_SCALE + 0.1));
+  octomap::OcTreeNode* node = octree_->search(cell.xPos(), cell.yPos(), cell.zPos(), octree_depth);
   if (node) {
     // TODO: posterior in log-space
     double log_odds = node->getValue();
@@ -443,8 +444,6 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
   }
   printf("\n\n");
 }
-
-
 
 // Calls different search functions to find a path 
 bool GlobalPlanner::findPath(std::vector<Cell> & path) {
