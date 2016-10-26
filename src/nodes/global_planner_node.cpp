@@ -5,10 +5,15 @@ namespace avoidance {
 GlobalPlannerNode::GlobalPlannerNode() {
   nh_ = ros::NodeHandle("~"); 
 
+  // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<avoidance::GlobalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
+  // Read Ros parameters
+  readParams();
+
+  // Subscribers
   octomap_full_sub_ = nh_.subscribe("/octomap_full", 1, &GlobalPlannerNode::octomapFullCallback, this);
   ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
@@ -17,6 +22,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   depth_camera_sub_ = nh_.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
 
+  // Publishers
   global_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_path", 10);
   global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
   actual_path_pub_ = nh_.advertise<nav_msgs::Path>("/actual_path", 10);
@@ -30,6 +36,15 @@ GlobalPlannerNode::GlobalPlannerNode() {
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() { }
+
+// Read Ros parameters
+void GlobalPlannerNode::readParams() {
+  double x, y, z;
+  nh_.param<double>("start_pos_x", x, 0.5);
+  nh_.param<double>("start_pos_y", y, 0.5);
+  nh_.param<double>("start_pos_z", z, 3.5);
+  global_planner_.goal_pos_ = GoalCell(x, y, z);
+}
 
 // Sets a new goal, plans a path to it and publishes some info
 void GlobalPlannerNode::setNewGoal(const GoalCell & goal) {
