@@ -127,6 +127,11 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   // global_planner_node
   clicked_goal_alt_ = config.clicked_goal_alt_;
   clicked_goal_radius_ = config.clicked_goal_radius_;
+
+  // cell
+  if (level == 2){
+    CELL_SCALE = config.CELL_SCALE;
+  }
 }
 
 void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped & msg) {
