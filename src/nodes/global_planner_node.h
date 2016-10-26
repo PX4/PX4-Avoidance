@@ -81,6 +81,8 @@ class GlobalPlannerNode {
 
   tf::TransformListener listener_;
 
+  void readParams();
+  
   void setNewGoal(const GoalCell & goal);
   void popNextGoal();
   void planPath();

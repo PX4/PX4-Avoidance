@@ -10,7 +10,7 @@ PathHandlerNode::PathHandlerNode() {
   f = boost::bind(&PathHandlerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  // Read 
+  // Read Ros parameters
   readParams();
   
   // Subscribe to topics
@@ -52,7 +52,7 @@ PathHandlerNode::~PathHandlerNode() { }
 void PathHandlerNode::readParams() {
   nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
   nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
-  nh_.param<double>("start_pos_z", start_pos_.z, 2.5);
+  nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
 }
 
 bool PathHandlerNode::shouldPublishThreePoints() {
@@ -104,6 +104,7 @@ void PathHandlerNode::dynamicReconfigureCallback(avoidance::PathHandlerNodeConfi
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   direct_goal_alt_ = config.direct_goal_alt_;
+  
   // Reset speed_
   speed_ = min_speed_;
 }
