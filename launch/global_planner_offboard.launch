@@ -1,10 +1,10 @@
 <launch>
-    
-    <!-- Global Planner -->
-    <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" 
-          args="$(find avoidance)/resource/random_goals $(find avoidance)/resource/parameter_file"  />
-    
-    <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" />
-
-
+     <!-- Global planner -->
+    <include file="$(find avoidance)/launch/global_planner_octomap.launch" >
+        <arg name="point_cloud_topic" value="/omi_cam/point_cloud" />
+    </include>
+    <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" >
+        <param name="use_three_point_msg" value="false" />
+        <param name="start_pos_z" value="2.5" />
+    </node>
 </launch>
