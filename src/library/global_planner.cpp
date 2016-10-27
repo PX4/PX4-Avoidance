@@ -474,13 +474,29 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
   printf("\n\n");
 }
 
+// Chooses the node-type of the search
+NodePtr GlobalPlanner::getStartNode(const Cell & start, 
+                                    const Cell & parent, 
+                                    const std::string & type) {
+      if (type == "Node") {
+        return NodePtr(new Node(start, parent));
+      } 
+      if (type == "NodeWithoutSmooth") {
+        return NodePtr(new NodeWithoutSmooth(start, parent));
+      }
+      if (type == "SpeedNode") {
+        return NodePtr(new SpeedNode(start, parent));
+      }
+}
+
 // Calls different search functions to find a path 
 bool GlobalPlanner::findPath(std::vector<Cell> & path) {
   Cell s = Cell(curr_pos_.x + search_time_ * curr_vel_.x,
                 curr_pos_.y + search_time_ * curr_vel_.y,
                 curr_pos_.z + search_time_ * curr_vel_.z);
   GoalCell t = goal_pos_;
-  Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
+  // Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
+  Cell parent_of_s = Cell(curr_pos_);
   if (!use_current_yaw_) {
     Cell parent_of_s = s;   // Ignore the current yaw 
   }
@@ -503,12 +519,14 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     if (overestimate_factor > 1.5) {
       printf("Without smooth\t");
       // found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
-      found_new_path = findSmoothPath(new_path, NodePtr(new NodeWithoutSmooth(s, parent_of_s)), t);
+      NodePtr start_node = getStartNode(s, parent_of_s, "NodeWithoutSmooth");
+      found_new_path = findSmoothPath(new_path, start_node, t);
     } 
     else {
       printf("Speed search  \t");
       // found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
-      found_new_path = findSmoothPath(new_path, NodePtr(new SpeedNode(s, parent_of_s)), t);
+      NodePtr start_node = getStartNode(s, parent_of_s, default_node_type_);
+      found_new_path = findSmoothPath(new_path, start_node, t);
     }
 
     if (found_new_path) {

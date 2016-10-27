@@ -79,6 +79,7 @@ class NodeWithoutSmooth : public Node {
   }
 };
 
+double SPEEDNODE_RADIUS = 5.0;
 // Node represents 3D position, orientation and speed
 // TODO: Needs to check the risk of Cells between cell and parent
 class SpeedNode : public Node {
@@ -97,7 +98,7 @@ class SpeedNode : public Node {
     neighbors.push_back(nextNode(extrapolate_cell));
     for (const Cell & neighborCell : extrapolate_cell.getNeighbors()) {
       double dist = cell_.distance3D(neighborCell);
-      if (dist > 0 && dist < 5.0) {
+      if (dist > 0 && dist < SPEEDNODE_RADIUS) {
         neighbors.push_back(nextNode(neighborCell));
       }
     }

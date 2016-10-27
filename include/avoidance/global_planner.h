@@ -93,6 +93,7 @@ class GlobalPlanner {
   bool use_current_yaw_ = true;         // The current orientation is factored into the smoothness
   bool use_risk_heuristics_ = true;
   bool use_speedup_heuristics_ = true;
+  std::string default_node_type_ = "SpeedNode";
 
   GlobalPlanner();
   ~GlobalPlanner();
@@ -132,6 +133,7 @@ class GlobalPlanner {
   void printPathStats(const std::vector<Cell> & path, const Cell & start_parent, const Cell & start,
                       const Cell & goal, double total_cost);
   
+  NodePtr getStartNode(const Cell & start, const Cell & parent, const std::string & type);
   bool findPath(std::vector<Cell> & path);
   bool find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent);
   bool reverseSearch(const Cell & t);
