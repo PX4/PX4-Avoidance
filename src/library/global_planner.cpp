@@ -4,8 +4,8 @@ namespace avoidance {
 
 // Returns the XY-angle between u and v, or if v is directly above/below u, it returns last_yaw 
 double nextYaw(Cell u, Cell v, double last_yaw) {
-  int dx = v.x() - u.x();
-  int dy = v.y() - u.y();
+  int dx = v.xIndex() - u.xIndex();
+  int dy = v.yIndex() - u.yIndex();
   if (dx == 0 && dy == 0) {
     return last_yaw;   // Going up or down
   }
@@ -18,13 +18,13 @@ GlobalPlanner::GlobalPlanner()  {
 GlobalPlanner::~GlobalPlanner() {}
 
 
-// Fills accumulated_height_prior_ such that accumulated_height_prior_[i] = sum(height_prior_[0:i])
+// Fills accumulated_alt_prior_ such that accumulated_alt_prior_[i] = sum(alt_prior_[0:i])
 // Used to get the pior risk of vertical movement
 void GlobalPlanner::calculateAccumulatedHeightPrior() {
   double sum = 0.0;
-  for (double p : height_prior_) {
+  for (double p : alt_prior_) {
     sum += p;
-    accumulated_height_prior_.push_back(sum);
+    accumulated_alt_prior_.push_back(sum);
   }
 }
 
@@ -90,9 +90,9 @@ void GlobalPlanner::getOpenNeighbors(const Cell & cell,
                                      std::vector<CellDistancePair> & neighbors,
                                      bool is_3D) {
   // It's long because it uses the minimum number of 'if's 
-  double x = cell.x();
-  double y = cell.y();
-  double z = cell.z();
+  double x = cell.xIndex();
+  double y = cell.yIndex();
+  double z = cell.zIndex();
   Cell forw = Cell(std::tuple<int,int,int>(x+1, y, z));
   Cell back = Cell(std::tuple<int,int,int>(x-1, y, z));
   Cell left = Cell(std::tuple<int,int,int>(x, y-1, z));
@@ -142,7 +142,7 @@ double GlobalPlanner::getEdgeDist(const Cell & u, const Cell & v) {
 
 // Risk without looking at the neighbors
 double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
-  if (cell.z() < 1 || !octree_) {
+  if (cell.zIndex() < 1 || !octree_) {
     return 1.0;   // Octomap does not keep track of the ground
   }
   // octomap::OcTreeNode* node = octree_->search(cell.xPos(), cell.yPos(), cell.zPos());
@@ -152,7 +152,7 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
     // TODO: posterior in log-space
     double log_odds = node->getValue();
     // double parentLogOdds = parent->getValue();
-    double post_prob = posterior(height_prior_[cell.z()], octomap::probability(log_odds));
+    double post_prob = posterior(getAltPrior(cell), octomap::probability(log_odds));
     // double post_prob = posterior(0.06, octomap::probability(log_odds));     // If the cell has been seen
     if (occupied_.find(cell) != occupied_.end()) {
       // If an obstacle has at some point been spotted it is 'known space'
@@ -166,7 +166,11 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
     return expore_penalty_ * post_prob;
   }
   // No measurements at all
-  return expore_penalty_ * height_prior_[cell.z()];    // Risk for unexplored cells
+  return expore_penalty_ * getAltPrior(cell);    // Risk for unexplored cells
+}
+
+double GlobalPlanner::getAltPrior(const Cell & cell) {
+  return alt_prior_[cell.zIndex()];
 }
 
 bool GlobalPlanner::isOccupied(const Cell & cell) {
@@ -224,8 +228,9 @@ double GlobalPlanner::riskHeuristic(const Cell & u, const Cell & goal) {
   }  
   double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_;  
   double xy_dist = u.diagDistance2D(goal) - 1.0;   // XY distance excluding the goal cell
-  double xy_risk = xy_dist * unexplored_risk * height_prior_[u.z()];
-  double z_risk = std::abs(accumulated_height_prior_[u.z()] - accumulated_height_prior_[goal.z()]) * unexplored_risk;
+  double xy_risk = xy_dist * unexplored_risk * getAltPrior(u);
+  double z_risk = unexplored_risk * std::abs(accumulated_alt_prior_[u.zIndex()] - 
+                                             accumulated_alt_prior_[goal.zIndex()]);
   // TODO: instead of subtracting 1 from the xy_dist, subtract 1 from the combined xy and z dist
   double goal_risk = getRisk(goal) * risk_factor_;
   return xy_risk + z_risk + goal_risk;
@@ -240,17 +245,17 @@ double GlobalPlanner::riskHeuristicReverseCache(const Cell & u, const Cell & goa
   }
   double dist_to_bubble = std::max(0.0, u.diagDistance3D(goal) - bubble_radius_);
   double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_; 
-  double heuristic = bubble_cost_ + dist_to_bubble * unexplored_risk * height_prior_[u.z()];
+  double heuristic = bubble_cost_ + dist_to_bubble * unexplored_risk * getAltPrior(u);
   // bubble_risk_cache_[u] = heuristic;
   return heuristic;
 }
 
 // Returns a heuristic for the cost of turning for going from u to goal
 double GlobalPlanner::smoothnessHeuristic(const Node & u, const Cell & goal) {
-  if (u.cell_.x() == goal.x() && u.cell_.y() == goal.y()) { 
+  if (u.cell_.xIndex() == goal.xIndex() && u.cell_.yIndex() == goal.yIndex()) { 
     return 0.0;     // directly above or below the goal
   }
-  if (u.cell_.x() == u.parent_.x() && u.cell_.y() == u.parent_.y()) { 
+  if (u.cell_.xIndex() == u.parent_.xIndex() && u.cell_.yIndex() == u.parent_.yIndex()) { 
     // Vertical motion not directly above or below the goal, must change to horizontal movement
     return smooth_factor_ * vert_to_hor_cost_;     
   }
@@ -263,14 +268,14 @@ double GlobalPlanner::smoothnessHeuristic(const Node & u, const Cell & goal) {
 
   // If there is height difference we also need to change to vertical movement at least once 
   // TODO: simplify
-  int altitude_change = (u.cell_.z() == goal.z()) ? 0 : 1;
+  int altitude_change = (u.cell_.zIndex() == goal.zIndex()) ? 0 : 1;
 
   return smooth_factor_ * (num_45_deg_turns + altitude_change);
 }
 
 // Returns a heuristic for the cost of reaching the altitude of goal
 double GlobalPlanner::altitudeHeuristic(const Cell & u, const Cell & goal) {
-  double diff = goal.z() - u.z();
+  double diff = goal.zIndex() - u.zIndex();
   // Either multiply by up_cost_ or down_cost_, depending on if we are belove or above the goal
   double cost = (diff > 0) ? (up_cost_ * std::abs(diff)) : (down_cost_ * std::abs(diff));
   return cost;
@@ -378,7 +383,7 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
   for(int i=2; i < path.size(); ++i) {
     Node last_node = Node(path[i-1], path[i-2]);
     Node curr_node = Node(path[i], path[i-1]);
-    if (curr_node.cell_.z() - curr_node.parent_.z() == 0) {
+    if (curr_node.cell_.zIndex() - curr_node.parent_.zIndex() == 0) {
       total_dist_cost += getEdgeDist(curr_node.parent_, curr_node.cell_);
     }
     else {
@@ -409,7 +414,7 @@ void GlobalPlanner::printPathStats(const std::vector<Cell> & path,
     double edge_r = risk_factor_ * getRisk(curr_node);
     double edge_s = smooth_factor_ * getTurnSmoothness(last_node, curr_node);
 
-    if (curr_node.cell_.z() - curr_node.parent_.z() == 0) {
+    if (curr_node.cell_.zIndex() - curr_node.parent_.zIndex() == 0) {
       total_dist_cost -= edge_d;
     }
     else {
@@ -512,8 +517,8 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 // Searches for a path from s to t at max_altitude_, fills path if it finds one
 bool GlobalPlanner::find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent) {
   std::vector<Cell> up_path;
-  Cell above_s(Cell(s.x(), s.y(), max_altitude_));
-  Cell above_t(Cell(t.x(), t.y(), max_altitude_));
+  Cell above_s(Cell(s.xIndex(), s.yIndex(), max_altitude_));
+  Cell above_t(Cell(t.xIndex(), t.yIndex(), max_altitude_));
   bool found_up_path = findPathOld(up_path, s, above_s, s, true);
   std::vector<Cell> down_path;
   bool found_down_path = findPathOld(down_path, above_t, t, above_t, true);
@@ -612,8 +617,8 @@ bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s,
         distance[v] = new_dist;
         // TODO: try Dynamic Weighting instead of a constant overestimate_factor
         double heuristic = v.diagDistance2D(t);                 // Lower bound for distance on a grid 
-        heuristic += up_cost_ * std::max(0, t.z() - v.z());       // Minumum cost for increasing altitude
-        heuristic += std::max(0, v.z() - t.z());                // Minumum cost for decreasing altitude
+        heuristic += up_cost_ * std::max(0, t.zIndex() - v.zIndex());       // Minumum cost for increasing altitude
+        heuristic += std::max(0, v.zIndex() - t.zIndex());                // Minumum cost for decreasing altitude
         // if (isNearWall(v)) {
         //   heuristic -= 10;
         // }

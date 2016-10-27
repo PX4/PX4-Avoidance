@@ -23,9 +23,9 @@ class Cell {
   // Cell(Eigen::Vector3d point);
 
   // Get the indices of the Cell
-  int x() const;
-  int y() const;
-  int z() const;
+  int xIndex() const;
+  int yIndex() const;
+  int zIndex() const;
 
   // Get the coordinates of the center-point of the Cell 
   double xPos() const;
@@ -60,11 +60,15 @@ inline bool operator<=(const Cell & lhs, const Cell & rhs) {return !operator> (l
 inline bool operator>=(const Cell & lhs, const Cell & rhs) {return !operator< (lhs,rhs);}
 
 inline Cell operator+(const Cell& lhs, const Cell& rhs) {
-  Cell res(std::tuple<int, int, int>(lhs.x() + rhs.x(), lhs.y() + rhs.y(), lhs.z() + rhs.z()));
+  Cell res(std::tuple<int, int, int>(lhs.xIndex() + rhs.xIndex(), 
+                                     lhs.yIndex() + rhs.yIndex(), 
+                                     lhs.zIndex() + rhs.zIndex()));
   return res;
 }
 inline Cell operator-(const Cell& lhs, const Cell& rhs) {
-  Cell res(std::tuple<int, int, int>(lhs.x() - rhs.x(), lhs.y() - rhs.y(), lhs.z() - rhs.z()));
+  Cell res(std::tuple<int, int, int>(lhs.xIndex() - rhs.xIndex(), 
+                                     lhs.yIndex() - rhs.yIndex(), 
+                                     lhs.zIndex() - rhs.zIndex()));
   return res;
 }
 

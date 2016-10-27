@@ -29,9 +29,9 @@ std::vector<NodePtr> Node::getNeighbors() const {
 
 std::unordered_set<Cell> Node::getCells() const {
   std::unordered_set<Cell> cells;
-  int dx = cell_.x() - parent_.x();
-  int dy = cell_.y() - parent_.y();
-  int dz = cell_.z() - parent_.z();
+  int dx = cell_.xIndex() - parent_.xIndex();
+  int dy = cell_.yIndex() - parent_.yIndex();
+  int dz = cell_.zIndex() - parent_.zIndex();
 
   int steps = 2 * std::max(std::abs(dx), std::max(std::abs(dy), std::abs(dz)));
   
@@ -58,8 +58,8 @@ double Node::getLength() const {
 // The number of 45 degree turns needed to go to other
 // Assumes that there is not both horizontal and vertical movement is needed
 double Node::getRotation(const Node & other) const {
-  double this_z_diff = cell_.z() - parent_.z();
-  double other_z_diff = other.cell_.z() - other.parent_.z();
+  double this_z_diff = cell_.zIndex() - parent_.zIndex();
+  double other_z_diff = other.cell_.zIndex() - other.parent_.zIndex();
   double alt_diff = 0.0;
   if ((this_z_diff == 0) ^ (other_z_diff == 0)) {
     // TODO: use vert_to_hor_cost_
@@ -72,7 +72,7 @@ double Node::getRotation(const Node & other) const {
 double Node::getXYRotation(const Node & other) const {
   Cell this_diff = (cell_ - parent_);
   Cell other_diff = (other.cell_ - other.parent_);
-  if ((this_diff.x() == 0 && this_diff.y() == 0) || (other_diff.x() == 0 && this_diff.y() == 0)) {
+  if ((this_diff.xIndex() == 0 && this_diff.yIndex() == 0) || (other_diff.xIndex() == 0 && this_diff.yIndex() == 0)) {
     return 0.0;   // Vertical movement
   }
   double this_ang = this_diff.angle();

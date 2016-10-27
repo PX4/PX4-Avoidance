@@ -40,16 +40,16 @@ struct PathInfo {
 class GlobalPlanner {
  public:
   octomap::OcTree* octree_ = NULL;
-  // std::vector<double> height_prior_ {  1.0, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
-  // std::vector<double> height_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
+  // std::vector<double> alt_prior_ {  1.0, 0.1, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05, 0.05};
+  // std::vector<double> alt_prior_ { 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1,
   //                                   0.1, 0.1, 0.1, 0.1, 0.1, 0.1};
-  std::vector<double> height_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.0833, 0.05, 0.033,
+  std::vector<double> alt_prior_ { 1.0, 0.2, 0.1333, 0.1, 0.0833, 0.05, 0.033,
                                     0.025, 0.0166, 0.0125, 0.001, 0.001, 0.001,
                                     0.001, 0.001, 0.001, 0.001, 0.001, 0.001, 
                                     0.001, 0.001, 0.001, 0.001, 0.001, 0.001};
 
   // Needed to quickly estimate the risk of vertical movement
-  std::vector<double> accumulated_height_prior_; // accumulated_height_prior_[i] = sum(height_prior_[0:i])
+  std::vector<double> accumulated_alt_prior_; // accumulated_alt_prior_[i] = sum(alt_prior_[0:i])
 
   std::unordered_map<Cell, double> seen_count_;       // number of times a cell was explored in last search
   std::unordered_map<Cell, double> risk_cache_;       // Cache of getRisk(Cell)
@@ -110,6 +110,7 @@ class GlobalPlanner {
 
   double getEdgeDist(const Cell & u, const Cell & v);
   double getSingleCellRisk(const Cell & cell);
+  double getAltPrior(const Cell & cell);
   bool isOccupied(const Cell & cell);
   double getRisk(const Cell & cell);
   double getRisk(const Node & node);
