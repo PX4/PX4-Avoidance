@@ -137,8 +137,7 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   // node
   if (level == 4) {
     SPEEDNODE_RADIUS = config.SPEEDNODE_RADIUS;
-    std::vector<std::string> node_types {"Node", "NodeWithoutSmooth", "SpeedNode"};
-    global_planner_.default_node_type_ = node_types[config.default_node_type_];
+    global_planner_.default_node_type_ = config.default_node_type_;
   }
 }
 
