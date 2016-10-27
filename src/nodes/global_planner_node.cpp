@@ -335,17 +335,19 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
   octomap::OcTreeNode* node = global_planner_.octree_->search(x, y, z);
   if (node) {
     double prob = octomap::probability(node->getValue());
-    double post_prob = posterior(global_planner_.height_prior_[cell.z()], prob);
+    double post_prob = posterior(global_planner_.getAltPrior(cell), prob);
     ROS_INFO("prob: %2.2f \t post_prob: %2.2f", prob, post_prob);
     if (global_planner_.occupied_.find(cell) != global_planner_.occupied_.end()) {
       ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
     }
     else {
-      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner_.expore_penalty_ * post_prob);
+      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", 
+        global_planner_.expore_penalty_ * post_prob);
     }
   }
   else {
-    ROS_INFO("Cell not in tree, prob: %2.2f", global_planner_.expore_penalty_ * global_planner_.height_prior_[cell.z()]);
+    ROS_INFO("Cell not in tree, prob: %2.2f", 
+      global_planner_.expore_penalty_ * global_planner_.getAltPrior(cell));
   }
 }
 

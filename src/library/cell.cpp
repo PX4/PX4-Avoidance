@@ -14,13 +14,13 @@ Cell::Cell(geometry_msgs::Point point)
 // Cell::Cell(Eigen::Vector3d point) 
   // : Cell(point[0], point[1], point[2])  {}
 
-int Cell::x() const {return std::get<0>(tpl_);}
-int Cell::y() const {return std::get<1>(tpl_);}
-int Cell::z() const {return std::get<2>(tpl_);}
+int Cell::xIndex() const {return std::get<0>(tpl_);}
+int Cell::yIndex() const {return std::get<1>(tpl_);}
+int Cell::zIndex() const {return std::get<2>(tpl_);}
 
-double Cell::xPos() const {return CELL_SCALE * (x() + 0.5);}
-double Cell::yPos() const {return CELL_SCALE * (y() + 0.5);}
-double Cell::zPos() const {return CELL_SCALE * (z() + 0.5);}
+double Cell::xPos() const {return CELL_SCALE * (xIndex() + 0.5);}
+double Cell::yPos() const {return CELL_SCALE * (yIndex() + 0.5);}
+double Cell::zPos() const {return CELL_SCALE * (zIndex() + 0.5);}
 
 geometry_msgs::Point Cell::toPoint() const {
   geometry_msgs::Point point;
@@ -60,7 +60,7 @@ double Cell::diagDistance3D(const Cell & b) const {
 // Returns the angle in the XY-plane between the Cell and the X-axis
 // Cell at position (0,1,1) has the angle PI / 2  
 double Cell::angle() const {
-  return atan2(y(), x());
+  return atan2(yIndex(), xIndex());
 }
 
 // Returns the neighboring cell in the yaw direction
@@ -73,40 +73,42 @@ Cell Cell::getNeighborFromYaw(double yaw) const {
 
 // Returns the neighbors of the Cell whose risk influences the Cell
 std::vector<Cell> Cell::getFlowNeighbors() const {
-  return std::vector<Cell>{Cell(std::tuple<int,int,int>(x() + 1, y(), z())),  
-                           Cell(std::tuple<int,int,int>(x() - 1, y(), z())),  
-                           Cell(std::tuple<int,int,int>(x(), y() + 1, z())),  
-                           Cell(std::tuple<int,int,int>(x(), y() - 1, z())),  
-                           Cell(std::tuple<int,int,int>(x(), y(), z() + 1)),  
-                           Cell(std::tuple<int,int,int>(x(), y(), z() - 1))
+  return std::vector<Cell>{Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex(), zIndex())),  
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex(), zIndex())),  
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex() + 1, zIndex())),  
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex() - 1, zIndex())),  
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex(), zIndex() + 1)),  
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex(), zIndex() - 1))
                           };
 }
 
 // Returns the neighbors of the Cell that are diagonal to the cell in the XY-plane
 std::vector<Cell> Cell::getDiagonalNeighbors() const {
-  return std::vector<Cell>{Cell(std::tuple<int,int,int>(x() + 1, y() + 1, z())),
-                           Cell(std::tuple<int,int,int>(x() - 1, y() + 1, z())),
-                           Cell(std::tuple<int,int,int>(x() + 1, y() - 1, z())),
-                           Cell(std::tuple<int,int,int>(x() - 1, y() - 1, z()))
+  return std::vector<Cell>{Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex() + 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex() + 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex() - 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex() - 1, zIndex()))
                           };
 }
 
 std::vector<Cell> Cell::getNeighbors() const {
-  return std::vector<Cell>{Cell(std::tuple<int,int,int>(x() + 1, y(), z())),
-                           Cell(std::tuple<int,int,int>(x() - 1, y(), z())),
-                           Cell(std::tuple<int,int,int>(x(), y() + 1, z())),
-                           Cell(std::tuple<int,int,int>(x(), y() - 1, z())),
-                           Cell(std::tuple<int,int,int>(x(), y(), z() + 1)),
-                           Cell(std::tuple<int,int,int>(x(), y(), z() - 1)),
-                           Cell(std::tuple<int,int,int>(x() + 1, y() + 1, z())),
-                           Cell(std::tuple<int,int,int>(x() - 1, y() + 1, z())),
-                           Cell(std::tuple<int,int,int>(x() + 1, y() - 1, z())),
-                           Cell(std::tuple<int,int,int>(x() - 1, y() - 1, z()))
+  return std::vector<Cell>{Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex(), zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex(), zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex() + 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex() - 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex(), zIndex() + 1)),
+                           Cell(std::tuple<int,int,int>(xIndex(), yIndex(), zIndex() - 1)),
+                           Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex() + 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex() + 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() + 1, yIndex() - 1, zIndex())),
+                           Cell(std::tuple<int,int,int>(xIndex() - 1, yIndex() - 1, zIndex()))
                           };
 }
 
 std::string Cell::asString() const {  
-  std::string s = "(" + std::to_string(x()) + "," + std::to_string(y()) + "," + std::to_string(z()) + ")";
+  std::string s = "(" + std::to_string(xIndex()) + "," + 
+                        std::to_string(yIndex()) + "," + 
+                        std::to_string(zIndex()) + ")";
   return s;
 }
 
