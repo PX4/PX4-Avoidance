@@ -1,6 +1,8 @@
 <launch>
+    <arg name="use_three_point_msg" default="false" />
+    
     <include file="$(find avoidance)/launch/global_planner_sitl_mavros.launch" >
-        <arg name="use_three_point_msg" value="false" />
+        <arg name="use_three_point_msg" value="$(arg use_three_point_msg)" />
         <arg name="use_stereo_simulation" value="true" />
         <arg name="point_cloud_topic" value="/stereo/points2" />
         <arg name="model" value="iris_stereo_camera" />
