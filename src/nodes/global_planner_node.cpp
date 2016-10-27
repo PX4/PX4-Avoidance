@@ -130,8 +130,15 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   clicked_goal_radius_ = config.clicked_goal_radius_;
 
   // cell
-  if (level == 2){
+  if (level == 2) {
     CELL_SCALE = config.CELL_SCALE;
+  }
+
+  // node
+  if (level == 4) {
+    SPEEDNODE_RADIUS = config.SPEEDNODE_RADIUS;
+    std::vector<std::string> node_types {"Node", "NodeWithoutSmooth", "SpeedNode"};
+    global_planner_.default_node_type_ = node_types[config.default_node_type_];
   }
 }
 
