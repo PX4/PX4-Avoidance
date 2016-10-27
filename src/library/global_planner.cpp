@@ -9,7 +9,7 @@ double nextYaw(Cell u, Cell v, double last_yaw) {
   if (dx == 0 && dy == 0) {
     return last_yaw;   // Going up or down
   }
-  return atan2(dy, dx);
+  return std::atan2(dy, dx);
 }
 
 GlobalPlanner::GlobalPlanner()  {
@@ -198,6 +198,30 @@ double GlobalPlanner::getRisk(const Node & node) {
     risk += getRisk(cell);
   }
   return risk / nodeCells.size() * node.getLength();
+}
+
+// Returns the risk of the quadratic Bezier curve defined by poses
+// TODO: think about this
+double GlobalPlanner::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & msg) {
+  if (msg.size() != 3) {
+    ROS_INFO("Bezier msg must have 3 points");
+    return -1;
+  }
+
+  // Estimate the length of the curve, TODO: check if this makes sense
+  double length = distance(msg[0], msg[1]) + distance(msg[1], msg[2]);
+  int num_steps = std::ceil(length / CELL_SCALE);
+  // Calculate points on the curve, around one point per cell
+  auto points = threePointBezier(msg[0].pose.position,
+                                msg[1].pose.position,
+                                msg[2].pose.position,
+                                num_steps);
+
+  double risk = 0.0;
+  for (auto point : points) {
+    risk += getRisk(Cell(point));
+  }
+  return risk * CELL_SCALE;
 }
 
 // Returns the amount of rotation needed to go from u to v

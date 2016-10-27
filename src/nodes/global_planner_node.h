@@ -60,12 +60,12 @@ class GlobalPlannerNode {
   double clicked_goal_radius_;
 
   // Subscribers
-  ros::Subscriber waypoint_sub_;
   ros::Subscriber octomap_sub_;
   ros::Subscriber octomap_full_sub_;
   ros::Subscriber ground_truth_sub_;
   ros::Subscriber velocity_sub_;
   ros::Subscriber clicked_point_sub_;
+  ros::Subscriber three_point_sub_;
   ros::Subscriber move_base_simple_sub_;
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber depth_camera_sub_;
@@ -92,6 +92,7 @@ class GlobalPlannerNode {
   void velocityCallback(const geometry_msgs::TwistStamped & msg);
   void positionCallback(const geometry_msgs::PoseStamped & msg);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
+  void threePointCallback(const nav_msgs::Path & msg);
   void moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg);
   void laserSensorCallback(const sensor_msgs::LaserScan & msg);
   void octomapFullCallback(const octomap_msgs::Octomap & msg);

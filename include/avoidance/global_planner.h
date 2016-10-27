@@ -114,6 +114,7 @@ class GlobalPlanner {
   bool isOccupied(const Cell & cell);
   double getRisk(const Cell & cell);
   double getRisk(const Node & node);
+  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & msg);
   double getTurnSmoothness(const Node & u, const Node & v);
   double getEdgeCost(const Node & u, const Node & v);
 
