@@ -18,6 +18,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
+  three_point_sub_ = nh_.subscribe("/three_point_path", 1, &GlobalPlannerNode::threePointCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
   laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   depth_camera_sub_ = nh_.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
@@ -168,6 +169,11 @@ void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped & msg)
 
 void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped & msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
+}
+
+void GlobalPlannerNode::threePointCallback(const nav_msgs::Path & msg) {
+  double risk = global_planner_.getRiskOfCurve(msg.poses);
+  // ROS_INFO("Risk of curve: %2.2f \n", risk);
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
