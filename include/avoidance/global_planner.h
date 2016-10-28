@@ -127,6 +127,7 @@ class GlobalPlanner {
   
   geometry_msgs::PoseStamped createPoseMsg(const Cell & cell, double yaw);
   nav_msgs::Path getPathMsg();
+  nav_msgs::Path getPathMsg(const std::vector<Cell> & path);
   PathWithRiskMsg getPathWithRiskMsg();
 
   PathInfo getPathInfo(const std::vector<Cell> & path);

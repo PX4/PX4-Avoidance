@@ -54,6 +54,7 @@ class GlobalPlannerNode {
 
   int num_octomap_msg_ = 0;
   int num_pos_msg_ = 0;
+  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
 
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
@@ -71,6 +72,9 @@ class GlobalPlannerNode {
   ros::Subscriber depth_camera_sub_;
 
   // Publishers
+  ros::Publisher three_points_pub_;
+  ros::Publisher three_points_smooth_pub_;
+  ros::Publisher three_points_revised_pub_;
   ros::Publisher global_path_pub_;
   ros::Publisher global_temp_path_pub_;
   ros::Publisher smooth_path_pub_;
