@@ -170,7 +170,8 @@ double GlobalPlanner::getSingleCellRisk(const Cell & cell) {
 }
 
 double GlobalPlanner::getAltPrior(const Cell & cell) {
-  return alt_prior_[cell.zIndex()];
+  // return alt_prior_[cell.zIndex()];
+  return alt_prior_[std::round(cell.zPos())];
 }
 
 bool GlobalPlanner::isOccupied(const Cell & cell) {
@@ -215,13 +216,13 @@ double GlobalPlanner::getRiskOfCurve(const std::vector<geometry_msgs::PoseStampe
   auto points = threePointBezier(msg[0].pose.position,
                                 msg[1].pose.position,
                                 msg[2].pose.position,
-                                num_steps);
+                                2 * num_steps);
 
   double risk = 0.0;
   for (auto point : points) {
     risk += getRisk(Cell(point));
   }
-  return risk * CELL_SCALE;
+  return risk;
 }
 
 // Returns the amount of rotation needed to go from u to v
@@ -335,25 +336,29 @@ geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell & cell, doubl
 }
 
 nav_msgs::Path GlobalPlanner::getPathMsg() {
+  return getPathMsg(curr_path_);
+}
+
+nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell> & path) {
   nav_msgs::Path path_msg;
   path_msg.header.frame_id="/world";
 
-  if (curr_path_.size() == 0) {
+  if (path.size() == 0) {
     return path_msg;
   }
 
   // Use actual position instead of the center of the cell
   double last_yaw = curr_yaw_;
 
-  for (int i=0; i < curr_path_.size()-1; ++i) {
-    Cell p = curr_path_[i];
-    double new_yaw = nextYaw(p, curr_path_[i+1], last_yaw);
+  for (int i=0; i < path.size()-1; ++i) {
+    Cell p = path[i];
+    double new_yaw = nextYaw(p, path[i+1], last_yaw);
     // if (new_yaw != last_yaw) {   // only publish corner points
       path_msg.poses.push_back(createPoseMsg(p, new_yaw));
     // }
     last_yaw = new_yaw;
   }
-  Cell last_point = curr_path_[curr_path_.size()-1];   // Last point should have the same yaw as the previous point
+  Cell last_point = path[path.size()-1];   // Last point should have the same yaw as the previous point
   path_msg.poses.push_back(createPoseMsg(last_point, last_yaw));
   return path_msg;
 }

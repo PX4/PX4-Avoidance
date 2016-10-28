@@ -36,6 +36,11 @@ double squared(T x) {
   return x * x;
 }
 
+// Returns a weighted average of start and end, where ratio is the weight of start 
+double interpolate(double start, double end, double ratio) {
+  return start + (end - start) * ratio;
+}
+
 // Returns Map[key] if it exists, default_val otherwise
 template <typename Key, typename Value, typename Map>
 Value getWithDefault(Map & m, const Key & key, const Value & default_val) {
@@ -57,14 +62,26 @@ void setPointCoordinates(P & point, double x, double y, double z) {
   point.z = z;
 }
 
+template <typename P>
+double norm(const P & p) {
+  return std::sqrt(squared(p.x) + squared(p.y) + squared(p.z));
+}
+
+// Returns a point between p1 and p2, ratio should be between 0 and 1
+// ratio=0 -> p1, ratio=1 -> p2
+template <typename P>
+P interpolate(const P & p1, const P & p2, double ratio) {
+  P new_point;
+  new_point.x = interpolate(p1.x, p2.x, ratio);
+  new_point.y = interpolate(p1.y, p2.y, ratio);
+  new_point.z = interpolate(p1.z, p2.z, ratio);
+  return new_point;
+}
+
 // Returns the point in the middle of the line segment between p1 and p2
 template <typename P>
 P middlePoint(const P & p1, const P & p2) {
-  P new_point;
-  new_point.x = (p1.x + p2.x) / 2.0;
-  new_point.y = (p1.y + p2.y) / 2.0;
-  new_point.z = (p1.z + p2.z) / 2.0;
-  return new_point;
+  return interpolate(p1, p2, 0.5);
 }
 
 template <typename P>
@@ -107,15 +124,6 @@ geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & list
   listener.transformVector(target_frame, ros::Time(0), before, fixed_frame, after);
   transformed_msg.twist.linear = after.vector;
   return transformed_msg;
-}
-
-double norm(const geometry_msgs::Vector3 & v) {
-  return std::sqrt(squared(v.x) + squared(v.y) + squared(v.z));
-}
-
-// Returns a weighted average of start and end, where ratio is the weight of start 
-double interpolate(double start, double end, double ratio) {
-  return start + (end - start) * ratio;
 }
 
 // Returns the point on the quadratic Bezier curve at time t (0 <= t <= 1)

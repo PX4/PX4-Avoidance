@@ -18,12 +18,15 @@ GlobalPlannerNode::GlobalPlannerNode() {
   ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
-  three_point_sub_ = nh_.subscribe("/three_point_path", 1, &GlobalPlannerNode::threePointCallback, this);
+  three_point_sub_ = nh_.subscribe("/three_points", 1, &GlobalPlannerNode::threePointCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
   laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   depth_camera_sub_ = nh_.subscribe("/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
 
   // Publishers
+  three_points_pub_ = nh_.advertise<nav_msgs::Path>("/three_points", 10);
+  three_points_smooth_pub_ = nh_.advertise<nav_msgs::Path>("/three_points_smooth", 10);
+  three_points_revised_pub_ = nh_.advertise<nav_msgs::Path>("/three_points_revised", 10);
   global_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_path", 10);
   global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
   actual_path_pub_ = nh_.advertise<nav_msgs::Path>("/actual_path", 10);
@@ -175,15 +178,46 @@ void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped & msg)
 
 void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped & msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
+
+  geometry_msgs::PoseStamped pose;
+  pose.header = msg.header;
+  pose.pose.position = msg.point;
+  pose.pose.position.z = global_planner_.curr_pos_.z;
+  last_clicked_points.push_back(pose);
+  if (last_clicked_points.size() >= 3) {
+    nav_msgs::Path three_points;
+    three_points.header = msg.header;
+    three_points.poses = last_clicked_points;
+    last_clicked_points.clear();
+    three_points_pub_.publish(three_points);
+    three_points_smooth_pub_.publish(smoothPath(three_points));
+    double risk = global_planner_.getRiskOfCurve(three_points.poses);
+    ROS_INFO("Risk of curve: %2.2f \n", risk);
+  }
 }
 
 void GlobalPlannerNode::threePointCallback(const nav_msgs::Path & msg) {
   double risk = global_planner_.getRiskOfCurve(msg.poses);
-  // ROS_INFO("Risk of curve: %2.2f \n", risk);
+  ROS_INFO("Risk of curve: %2.2f \n", risk);
+
+  nav_msgs::Path new_msg;
+  new_msg.header = msg.header;
+  if (risk > 1.0) {
+    // Current path is too risky, propose an alternative
+    std::vector<Cell> new_path;
+    Cell parent(msg.poses[0].pose.position);
+    Cell s = Cell(interpolate(msg.poses[0].pose.position, msg.poses[1].pose.position, 0.25));
+    Cell t = GoalCell(Cell(msg.poses[2].pose.position), 5.0);
+    auto start_node = global_planner_.getStartNode(s, parent, "SpeedNode");
+    bool found_path = global_planner_.findSmoothPath(new_path, start_node, t);
+    new_msg = global_planner_.getPathMsg(new_path);
+  }
+  three_points_revised_pub_.publish(smoothPath(new_msg));
 }
 
 void GlobalPlannerNode::moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg) {
-  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, clicked_goal_alt_, clicked_goal_radius_));
+  setNewGoal(GoalCell(msg.pose.position.x, msg.pose.position.y, 
+                      clicked_goal_alt_, clicked_goal_radius_));
 }
 
 // If the laser senses something too close to current position, it is considered a crash
