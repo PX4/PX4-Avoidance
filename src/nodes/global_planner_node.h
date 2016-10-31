@@ -20,14 +20,15 @@
 #include <std_msgs/ColorRGBA.h>
 #include <sensor_msgs/LaserScan.h>
 #include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw  TransformListener
-#include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include <octomap/octomap.h>
 #include <octomap/OcTree.h>
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/Octomap.h>
 
+#include "avoidance/analysis.h"
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/global_planner.h"
