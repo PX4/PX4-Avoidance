@@ -327,74 +327,30 @@ void GlobalPlannerNode::publishExploredCells() {
   for (const auto & cell : global_planner_.seen_) {
   // for (auto const& x : global_planner_.bubble_risk_cache_) {
     // Cell cell = x.first;
-
-    visualization_msgs::Marker marker;
-    marker.id = id++;
-    marker.header.frame_id = "/world";
-    marker.header.stamp = ros::Time();
-    marker.pose.position = cell.toPoint();
-    marker.type = visualization_msgs::Marker::CUBE;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.scale.x = marker.scale.y = marker.scale.z = 0.1;
-
+    
     // double hue = (cell.zPos()-1.0) / 7.0;                // height from 1 to 8 meters
     // double hue = 0.5;                                    // single color (green)
-    // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    double cell_risk = global_planner_.getRisk(cell);
-    double hue = std::sqrt(cell_risk);
     // double hue = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost;
-
-    // A hack to get the (almost) color spectrum depending on height
-    // hue=0 -> blue    hue=0.5 -> green  hue=1 -> red
-    marker.color.r = std::max(0.0, 2*hue  - 1);
-    marker.color.g = 1.0 - 2.0 * std::abs(hue - 0.5);
-    marker.color.b = std::max(0.0, 1.0 - 2*hue);
-    marker.color.a = 1.0;
-
+    // The color is the square root of the risk, shows difference in low risk
+    double hue = std::sqrt(global_planner_.getRisk(cell));
+    auto color = spectralColor(hue);
     if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
       // Unknown space
-      marker.color.r = marker.color.g = marker.color.b = 0.2;   // Dark gray
+      color.r = color.g = color.b = 0.2;   // Dark gray
     }
+    visualization_msgs::Marker marker = createMarker(id++, cell.toPoint(), color);
+
+    // risk from 0% to 100%, sqrt is used to increase difference in low risk
     msg.markers.push_back(marker);
   }
   explored_cells_pub_.publish(msg);
 }
 
+// Prints information about the point, mostly the risk of the containing cell
 void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
+  // Update explored cells
   publishExploredCells();
-  Cell cell(x, y, z);
-  ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
-  ROS_INFO("Rist cost: %2.2f", global_planner_.risk_factor_ * global_planner_.getRisk(cell));
-  ROS_INFO("getRisk: %2.2f", global_planner_.getRisk(cell));
-  ROS_INFO("singleCellRisk: %2.2f", global_planner_.getSingleCellRisk(cell));
-  ROS_INFO("Neighbors:\n \t %2.2f \t \t \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f \t \t \t %2.2f", 
-            global_planner_.getSingleCellRisk(Cell(x, y+1, z)),
-            global_planner_.getSingleCellRisk(Cell(x, y, z+1)),
-            global_planner_.getSingleCellRisk(Cell(x-1, y, z)),
-            global_planner_.getSingleCellRisk(Cell(x+1, y, z)),
-            global_planner_.getSingleCellRisk(Cell(x, y-1, z)),
-            global_planner_.getSingleCellRisk(Cell(x, y, z-1)));
-
-  double heuristics = global_planner_.getHeuristic(Node(cell, cell), global_planner_.goal_pos_);
-  ROS_INFO("Heuristics: %2.2f", heuristics);
-  
-  octomap::OcTreeNode* node = global_planner_.octree_->search(x, y, z);
-  if (node) {
-    double prob = octomap::probability(node->getValue());
-    double post_prob = posterior(global_planner_.getAltPrior(cell), prob);
-    ROS_INFO("prob: %2.2f \t post_prob: %2.2f", prob, post_prob);
-    if (global_planner_.occupied_.find(cell) != global_planner_.occupied_.end()) {
-      ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
-    }
-    else {
-      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", 
-        global_planner_.expore_penalty_ * post_prob);
-    }
-  }
-  else {
-    ROS_INFO("Cell not in tree, prob: %2.2f", 
-      global_planner_.expore_penalty_ * global_planner_.getAltPrior(cell));
-  }
+  printPointStats(&global_planner_, x, y, z);
 }
 
 } // namespace avoidance

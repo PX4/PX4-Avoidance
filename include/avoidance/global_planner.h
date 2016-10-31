@@ -129,10 +129,7 @@ class GlobalPlanner {
   nav_msgs::Path getPathMsg();
   nav_msgs::Path getPathMsg(const std::vector<Cell> & path);
   PathWithRiskMsg getPathWithRiskMsg();
-
   PathInfo getPathInfo(const std::vector<Cell> & path);
-  void printPathStats(const std::vector<Cell> & path, const Cell & start_parent, const Cell & start,
-                      const Cell & goal, double total_cost);
   
   NodePtr getStartNode(const Cell & start, const Cell & parent, const std::string & type);
   bool findPath(std::vector<Cell> & path);

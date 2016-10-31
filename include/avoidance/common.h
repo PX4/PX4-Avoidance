@@ -23,9 +23,11 @@
 
 #include <string>
 
-#include <nav_msgs/Path.h>
-#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
 #include <geometry_msgs/PoseStamped.h>
+#include <nav_msgs/Path.h>
+#include <std_msgs/ColorRGBA.h>
+#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
+#include <visualization_msgs/Marker.h>
 
 namespace avoidance {
 
@@ -145,6 +147,31 @@ std::vector<P> threePointBezier(const P & p0, const P & p1, const P & p2, int nu
     curve.push_back(new_point);
   }
   return curve;
+}
+
+// Returns a spectral color between red (0.0) and blue (1.0)
+std_msgs::ColorRGBA spectralColor(double hue, double alpha=1.0) {
+  std_msgs::ColorRGBA color;
+  color.r = std::max(0.0, 2*hue  - 1);
+  color.g = 1.0 - 2.0 * std::abs(hue - 0.5);
+  color.b = std::max(0.0, 1.0 - 2*hue);
+  color.a = alpha;
+  return color;
+}
+
+template <typename Point, typename Color>
+visualization_msgs::Marker createMarker(int id, Point position, Color color, 
+                                        double scale=0.1, std::string frame_id="/world") {
+  visualization_msgs::Marker marker;
+  marker.id = id;
+  marker.header.frame_id = frame_id;
+  marker.header.stamp = ros::Time();
+  marker.pose.position = position;
+  marker.type = visualization_msgs::Marker::CUBE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.scale.x = marker.scale.y = marker.scale.z = scale;
+  marker.color = color;
+  return marker;
 }
 
 // Returns a path where corners are smoothed with quadratic Bezier-curves
