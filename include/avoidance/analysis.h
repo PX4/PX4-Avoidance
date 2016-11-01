@@ -1,4 +1,6 @@
-#include "avoidance/global_planner.h"
+#ifndef GLOBAL_PLANNER_ANALYSIS_H_
+#define GLOBAL_PLANNER_ANALYSIS_H_
+
 #include "avoidance/cell.h"
 #include "avoidance/node.h"
 
@@ -6,8 +8,8 @@
 
 namespace avoidance {
 
-
 // Print information about all the costs and heuristics on the path
+template <typename GlobalPlanner>
 void printPathStats(GlobalPlanner * global_planner,
                     const std::vector<Cell> & path, 
                     const Cell & start_parent, const Cell & start,
@@ -97,6 +99,7 @@ void printPathStats(GlobalPlanner * global_planner,
 }
 
 // Print information about a point, mostly the risk of the containing Cell
+template <typename GlobalPlanner>
 void printPointStats(GlobalPlanner * global_planner, double x, double y, double z) {
   Cell cell(x, y, z);
   ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
@@ -134,3 +137,5 @@ void printPointStats(GlobalPlanner * global_planner, double x, double y, double 
 }
 
 } // namespace avoidance
+
+#endif /* GLOBAL_PLANNER_ANALYSIS_H_ */

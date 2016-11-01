@@ -149,6 +149,10 @@ std::vector<P> threePointBezier(const P & p0, const P & p1, const P & p2, int nu
   return curve;
 }
 
+double clocksToMicroSec(std::clock_t start, std::clock_t end) {
+  return (end - start) / (double)(CLOCKS_PER_SEC / 1000000);
+}
+
 // Returns a spectral color between red (0.0) and blue (1.0)
 std_msgs::ColorRGBA spectralColor(double hue, double alpha=1.0) {
   std_msgs::ColorRGBA color;

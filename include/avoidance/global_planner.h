@@ -21,21 +21,16 @@
 #include <octomap_msgs/Octomap.h>
 
 #include <avoidance/GlobalPlannerNodeConfig.h>
+#include "avoidance/analysis.h"
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/node.h"
+#include "avoidance/search_tools.h"
+#include "avoidance/visitor.h"
 #include "avoidance/PathWithRiskMsg.h"
 
 
 namespace avoidance {
-
-struct PathInfo {
-  bool is_blocked;
-  double cost;
-  double dist;
-  double risk;
-  double smoothness;
-};
 
 class GlobalPlanner {
  public:
@@ -51,14 +46,12 @@ class GlobalPlanner {
   // Needed to quickly estimate the risk of vertical movement
   std::vector<double> accumulated_alt_prior_; // accumulated_alt_prior_[i] = sum(alt_prior_[0:i])
 
-  std::unordered_map<Cell, double> seen_count_;       // number of times a cell was explored in last search
   std::unordered_map<Cell, double> risk_cache_;       // Cache of getRisk(Cell)
   std::unordered_map<Cell, double> bubble_risk_cache_; // Cache the risk of the safest path from Cell to t
   std::unordered_map<Node, double> heuristic_cache_;  // Cache of getHeuristic(Node) (and later reverse search)
   double bubble_cost_ = 0.0;  // Minimum risk for the safest path from a cell outside of the bubble to t
   double bubble_radius_ = 0.0;  // The maximum distance from a cell within the bubble to t
 
-  std::unordered_set<Cell> seen_;        // Cells that were explored in last search
   std::unordered_set<Cell> occupied_;    // Cells which have at some point contained an obstacle point
   std::unordered_set<Cell> path_cells_;   // Cells that are on current path, and may not be blocked
 
@@ -70,12 +63,13 @@ class GlobalPlanner {
   GoalCell goal_pos_ = GoalCell(0.5, 0.5, 3.5);
   bool going_back_ = true;        // we start by just finding the start position
 
-  double overestimate_factor;
-  int last_iterations_ = 0;
+  double overestimate_factor_ = max_overestimate_factor_;
   std::vector<Cell> curr_path_;
   PathInfo curr_path_info_;
+  SearchVisitor<std::unordered_set<Cell>, std::unordered_map<Cell, double> > visitor_;
   
-  // Parameters
+  
+  // Dynamic reconfigure parameters
   int min_altitude_ = 1;
   int max_altitude_ = 10;
   double max_cell_risk_ = 0.2;
@@ -87,6 +81,8 @@ class GlobalPlanner {
   double up_cost_ = 3.0;
   double down_cost_ = 1.0;
   double search_time_ = 0.5;            // The time it takes to find a path in worst case
+  double min_overestimate_factor_ = 1.03;
+  double max_overestimate_factor_ = 2.0;
   int max_iterations_ = 2000;
   bool goal_is_blocked_ = false;
   bool goal_must_be_free_ = true;       // If false, the planner may try to find a path close to the goal
@@ -113,6 +109,7 @@ class GlobalPlanner {
   double getSingleCellRisk(const Cell & cell);
   double getAltPrior(const Cell & cell);
   bool isOccupied(const Cell & cell);
+  bool isLegal(const Node & node);
   double getRisk(const Cell & cell);
   double getRisk(const Node & node);
   double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & msg);
@@ -133,10 +130,6 @@ class GlobalPlanner {
   
   NodePtr getStartNode(const Cell & start, const Cell & parent, const std::string & type);
   bool findPath(std::vector<Cell> & path);
-  bool find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent);
-  bool reverseSearch(const Cell & t);
-  bool findPathOld(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent, bool is_3D);
-  bool findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const GoalCell & t);
   
   bool getGlobalPath();
   void goBack();
