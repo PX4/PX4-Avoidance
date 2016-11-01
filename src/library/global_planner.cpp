@@ -1,5 +1,4 @@
 #include "avoidance/global_planner.h"
-#include "avoidance/analysis.h"
 
 namespace avoidance {
 
@@ -179,6 +178,10 @@ bool GlobalPlanner::isOccupied(const Cell & cell) {
   return getSingleCellRisk(cell) > 0.5;
 }
 
+bool GlobalPlanner::isLegal(const Node & node) {
+  return node.cell_.zPos() < max_altitude_ && getRisk(node) < max_cell_risk_;
+}
+
 double GlobalPlanner::getRisk(const Cell & cell) {
   if (risk_cache_.find(cell) != risk_cache_.end()) {
     return risk_cache_[cell];
@@ -309,19 +312,19 @@ double GlobalPlanner::altitudeHeuristic(const Cell & u, const Cell & goal) {
 
 // Returns a heuristic of going from u to goal
 double GlobalPlanner::getHeuristic(const Node & u, const Cell & goal) {
-  // Only overestimate the distance
   if (heuristic_cache_.find(u) != heuristic_cache_.end()) {
     // return heuristic_cache_[u];    // TODO: Needs to account for different overestimating factors
   }
 
-  double heuristic = overestimate_factor * u.cell_.diagDistance2D(goal);
+  // Only overestimate the distance
+  double heuristic = overestimate_factor_ * u.cell_.diagDistance2D(goal);
   heuristic += altitudeHeuristic(u.cell_, goal);        // Lower bound cost due to altitude change
   heuristic += smoothnessHeuristic(u, goal);           // Lower bound cost due to turning  
   if (use_risk_heuristics_){
     heuristic += riskHeuristic(u.cell_, goal);          // Risk through a straight-line path of unexplored space
   }
   if (use_speedup_heuristics_) {
-    heuristic += seen_count_[u.cell_];
+    heuristic += visitor_.seen_count_[u.cell_];
   }
   heuristic_cache_[u] = heuristic;
   return heuristic;
@@ -426,29 +429,28 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
 
   bool found_path = false;
   double best_path_cost = INFINITY;
-  overestimate_factor = 2.0;
-  max_iterations_ = 5000;
+  overestimate_factor_ = max_overestimate_factor_;
+  int iter_left = max_iterations_;
+  int last_iter = 0;
 
   // reverseSearch(t); // REVERSE_SEARCH
 
-  printf("Search   \t iter_time \t overestimate \t num_iter \t path_cost \n");
-  while (overestimate_factor >= 1.03 && max_iterations_ > last_iterations_) {
+  printf("Search              iter_time overest   num_iter  path_cost \n");
+  while (overestimate_factor_ >= min_overestimate_factor_ && iter_left > last_iter) {
     std::vector<Cell> new_path;
-    bool found_new_path;
-    if (overestimate_factor > 1.5) {
-      printf("Without smooth\t");
+    SearchInfo search_info;
+    std::string node_type = default_node_type_;
+    if (overestimate_factor_ > 1.5) {
+      // Use a cheap search for higher overestimate
       // found_new_path = findPathOld(new_path, s, t, parent_of_s, true);  // No need to search with smoothness
-      NodePtr start_node = getStartNode(s, parent_of_s, "NodeWithoutSmooth");
-      found_new_path = findSmoothPath(new_path, start_node, t);
-    } 
-    else {
-      printf("Speed search  \t");
-      // found_new_path = findSmoothPath(new_path, NodePtr(new Node(s, parent_of_s)), t);
-      NodePtr start_node = getStartNode(s, parent_of_s, default_node_type_);
-      found_new_path = findSmoothPath(new_path, start_node, t);
+      node_type = "NodeWithoutSmooth";
     }
 
-    if (found_new_path) {
+    NodePtr start_node = getStartNode(s, parent_of_s, node_type);
+    search_info = findSmoothPath(this, new_path, start_node, t, iter_left, visitor_);
+    printSearchInfo(search_info, node_type, overestimate_factor_);
+
+    if (search_info.found_path) {
       PathInfo path_info = getPathInfo(new_path);
       printf("(cost: %2.2f, dist: %2.2f, risk: %2.2f, smooth: %2.2f) \n", path_info.cost, path_info.dist, path_info.risk, path_info.smoothness);
       if (true || path_info.cost <= best_path_cost) {
@@ -461,233 +463,21 @@ bool GlobalPlanner::findPath(std::vector<Cell> & path) {
     else {
       break;
     }
-      max_iterations_ -= last_iterations_;
-      overestimate_factor = (overestimate_factor - 1.0) / 4.0 + 1.0;
+    last_iter = search_info.num_iter;
+    iter_left -= last_iter;
+    overestimate_factor_ = (overestimate_factor_ - 1.0) / 4.0 + 1.0;
   }
 
   // Last resort, try 2d search at max_altitude_
   if (!found_path) {
     printf("No path found, search in 2D \n");
     max_iterations_ = 5000;
-    found_path = find2DPath(path, s, t, parent_of_s);
+    found_path = find2DPath(this, path, s, t, parent_of_s, max_altitude_);
   }
   
   return found_path;
 }
 
-// Searches for a path from s to t at max_altitude_, fills path if it finds one
-bool GlobalPlanner::find2DPath(std::vector<Cell> & path, const Cell & s, const Cell & t, const Cell & start_parent) {
-  std::vector<Cell> up_path;
-  Cell above_s(Cell(s.xIndex(), s.yIndex(), max_altitude_));
-  Cell above_t(Cell(t.xIndex(), t.yIndex(), max_altitude_));
-  bool found_up_path = findPathOld(up_path, s, above_s, s, true);
-  std::vector<Cell> down_path;
-  bool found_down_path = findPathOld(down_path, above_t, t, above_t, true);
-  std::vector<Cell> vert_path;
-  bool found_vert_path = findPathOld(vert_path, above_s, above_t, above_s, false);
-
-  if (found_up_path && found_vert_path && found_down_path) {
-    path = up_path;
-    for (const Cell & c : vert_path) {
-      path.push_back(c);
-    }
-    for (const Cell & c : down_path) {
-      path.push_back(c);
-    }
-    return true;
-  }
-  return false;
-}
-
-// TODO: Run search backwards to quickly find impossible scenarios and/or find exact heuristics for nodes close to goal
-bool GlobalPlanner::reverseSearch(const Cell & t) {
-  std::map<Cell, double> cost;
-  std::priority_queue<CellDistancePair, std::vector<CellDistancePair>, CompareDist> pq;
-  std::unordered_set<Cell> seen_cells;
-  int num_iter = 0;
-  cost[t] = getRisk(t);
-  pq.push(std::make_pair(t, cost[t]));
-
-  while (!pq.empty() && num_iter++ < 100) {
-    CellDistancePair u_cell_dist = pq.top(); pq.pop();
-    Cell u = u_cell_dist.first;
-    if (seen_cells.find(u) != seen_cells.end()) {
-      continue;
-    }
-    seen_cells.insert(u);
-    bubble_risk_cache_[u] = cost[u];
-    bubble_cost_ = cost[u];
-    bubble_radius_ = std::max(bubble_radius_, u.distance3D(t));
-
-    for (const Cell & v : u.getNeighbors()) {
-      double new_cost = cost[u] + u.distance3D(v) * risk_factor_ * getRisk(v);
-      double old_cost = getWithDefault(cost, v, INFINITY);
-      if (new_cost < old_cost) {
-        cost[v] = new_cost;
-        pq.push(std::make_pair(v, new_cost));
-      }
-    }
-  }
-  // TODO: return?
-}
-
-// A* to find a path from s to t, true iff it found a path
-bool GlobalPlanner::findPathOld(std::vector<Cell> & path, const Cell & s, 
-                                const Cell & t, const Cell & start_parent, bool is_3D) {
-
-  // Initialize containers
-  seen_.clear();
-  std::map<Cell, Cell> parent;
-  std::map<Cell, double> distance;
-  std::priority_queue<CellDistancePair, std::vector<CellDistancePair>, CompareDist> pq;                 
-  pq.push(std::make_pair(s, 0.0));
-  distance[s] = 0.0;
-  int num_iter = 0;
-  // double min_dist_heuristics = INFINITY;
-
-  std::clock_t start_time;
-  start_time = std::clock();
-  // Search until all reachable cells have been found, it runs out of time or t is found,
-  while (!pq.empty() && num_iter < max_iterations_) {
-    CellDistancePair u_cell_dist = pq.top(); pq.pop();
-    Cell u = u_cell_dist.first;
-    double d = distance[u];
-    if (seen_.find(u) != seen_.end()) {
-      continue;
-    }
-    seen_.insert(u);
-    num_iter++;
-    if (u == t) {
-      break;  // Found a path
-    }
-
-    std::vector<CellDistancePair> neighbors;
-    getOpenNeighbors(u, neighbors, is_3D);
-    for (const auto & v_cell_dist : neighbors) {
-      Cell v = v_cell_dist.first;
-      double edge_cost = v_cell_dist.second;   // Use getEdgeCost
-      double risk = risk_factor_ * getRisk(v);
-      if (risk > risk_factor_ * max_cell_risk_ && v != t) {
-        continue;
-      }
-      double new_dist = d + edge_cost + risk;
-      double old_dist = getWithDefault(distance, v, INFINITY);
-      if (new_dist < old_dist) {
-        // Found a better path to v, have to add v to the queue 
-        parent[v] = u;
-        distance[v] = new_dist;
-        // TODO: try Dynamic Weighting instead of a constant overestimate_factor
-        double heuristic = v.diagDistance2D(t);                 // Lower bound for distance on a grid 
-        heuristic += up_cost_ * std::max(0, t.zIndex() - v.zIndex());       // Minumum cost for increasing altitude
-        heuristic += std::max(0, v.zIndex() - t.zIndex());                // Minumum cost for decreasing altitude
-        // if (isNearWall(v)) {
-        //   heuristic -= 10;
-        // }
-        // if (v.diagDistance2D(t) < min_dist_heuristics) {
-        //   heuristic -= 20;
-        // }
-        double overestimated_heuristic = new_dist + overestimate_factor * heuristic;
-        pq.push(std::make_pair(v, overestimated_heuristic));
-      }
-    }
-  }
-  double average_iter_time = (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter;
-
-  if (seen_.find(t) == seen_.end()) {
-    // No path found
-    return false;
-  }
-
-  // Get the path by walking from t back to s
-  Cell walker = t;
-  while (walker != s) {
-    path.push_back(walker);
-    walker = parent[walker];
-  }
-  path.push_back(s);
-  path.push_back(start_parent);
-
-  std::reverse(path.begin(),path.end());
-
-  last_iterations_ = num_iter;
-  // ROS_INFO("Found path with %d iterations, itDistSquared: %.3f", num_iter, num_iter / squared(path.size()));
-  printf("%2.2f \t\t %2.2f \t\t %d \t\t %2.2f \t", average_iter_time, overestimate_factor, num_iter, distance[t]);
-  
-  return true;
-}  
-
-// A* to find a path from start to t, true iff it found a path
-bool GlobalPlanner::findSmoothPath(std::vector<Cell> & path, const NodePtr & s, const GoalCell & t) {
-
-  // Initialize containers
-  NodePtr best_goal_node;
-  seen_.clear();
-  seen_count_.clear();
-
-  std::unordered_set<NodePtr, HashNodePtr, EqualsNodePtr> seen_nodes;
-  std::unordered_map<NodePtr, NodePtr, HashNodePtr, EqualsNodePtr> parent;
-  std::unordered_map<NodePtr, double, HashNodePtr, EqualsNodePtr> distance;
-  std::priority_queue<PointerNodeDistancePair, std::vector<PointerNodeDistancePair>, CompareDist> pq;
-  pq.push(std::make_pair(s, 0.0));
-  distance[s] = 0.0;
-  int num_iter = 0;
-
-  std::clock_t start_time = std::clock();
-  while (!pq.empty() && num_iter < max_iterations_) {
-    PointerNodeDistancePair u_node_dist = pq.top(); pq.pop();
-    NodePtr u = u_node_dist.first;
-    if (seen_nodes.find(u) != seen_nodes.end()) {
-      continue;
-    }
-    seen_nodes.insert(u);
-
-    if (t.withinPlanRadius(u->cell_)) {
-      best_goal_node = u;
-      break;  // Found a path
-    }
-    num_iter++;
-
-    for (const NodePtr & v : u->getNeighbors()) {
-      if (v->cell_.zPos() > max_altitude_) {
-        continue;
-      }
-      double new_dist = distance[u] + getEdgeCost(*u, *v);
-      double old_dist = getWithDefault(distance, v, INFINITY);
-      if (new_dist < old_dist) {
-      // Found a better path to v, have to add v to the queue 
-        parent[v] = u;
-        distance[v] = new_dist;
-        // TODO: try Dynamic Weighting instead of a constant overestimate_factor
-        double overestimated_heuristic = new_dist + getHeuristic(*v, t);
-        pq.push(PointerNodeDistancePair(v, overestimated_heuristic));
-        seen_count_[v->cell_] = 1.0 + getWithDefault(seen_count_, v->cell_, 0.0);
-        seen_.insert(v->cell_);
-      }
-    }
-  }
-
-  if (best_goal_node == nullptr || !t.withinPlanRadius(best_goal_node->cell_)) {
-    return false;   // No path found
-  }
-  double average_iter_time = (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000000) / num_iter;
-
-  // Get the path by walking from t back to s (excluding s)
-  NodePtr walker = best_goal_node;
-  while (walker != s) {
-    path.push_back(walker->cell_);
-    walker = parent[walker];
-  }
-  path.push_back(s->cell_);
-  path.push_back(s->parent_);
-  std::reverse(path.begin(),path.end());
-  
-  last_iterations_ = num_iter;
-
-  printPathStats(this, path, s->parent_, s->cell_, t, distance[best_goal_node]);
-  // ROS_INFO("Found path with %d iterations, itDistSquared: %.3f", num_iter, num_iter / squared(path.size()));
-  printf(" %2.1f µs \t %2.2f \t\t %d \t\t %2.2f \t", average_iter_time, overestimate_factor, num_iter, distance[best_goal_node]);
-  return true;
-}
 
 // Returns true iff a path needs to be published, either a new path or a path back
 // The path is then stored in this.pathMsg

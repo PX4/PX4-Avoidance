@@ -90,7 +90,7 @@ void GlobalPlannerNode::planPath() {
     // TODO: popNextGoal(), instead of checking if goal_is_blocked in positionCallback?
     ROS_INFO("Failed to find a path");
   }
-  else if (global_planner_.overestimate_factor > 1.05) {
+  else if (global_planner_.overestimate_factor_ > 1.05) {
     // The path is not good enough, set an intermediate goal on the path
     setIntermediateGoal();
   }
@@ -122,6 +122,8 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   global_planner_.up_cost_ = config.up_cost_;
   global_planner_.down_cost_ = config.down_cost_;
   global_planner_.search_time_ = config.search_time_;
+  global_planner_.min_overestimate_factor_ = config.min_overestimate_factor_;
+  global_planner_.max_overestimate_factor_ = config.max_overestimate_factor_;
   global_planner_.max_iterations_ = config.max_iterations_;
   global_planner_.goal_must_be_free_ = config.goal_must_be_free_;
   global_planner_.use_current_yaw_ = config.use_current_yaw_;
@@ -209,7 +211,7 @@ void GlobalPlannerNode::threePointCallback(const nav_msgs::Path & msg) {
     Cell s = Cell(interpolate(msg.poses[0].pose.position, msg.poses[1].pose.position, 0.25));
     Cell t = GoalCell(Cell(msg.poses[2].pose.position), 5.0);
     auto start_node = global_planner_.getStartNode(s, parent, "SpeedNode");
-    bool found_path = global_planner_.findSmoothPath(new_path, start_node, t);
+    auto search_res = findSmoothPath(&global_planner_, new_path, start_node, t);
     new_msg = global_planner_.getPathMsg(new_path);
   }
   three_points_revised_pub_.publish(smoothPath(new_msg));
@@ -324,7 +326,7 @@ void GlobalPlannerNode::publishExploredCells() {
   msg.markers.push_back(marker);
   
   id = 1;
-  for (const auto & cell : global_planner_.seen_) {
+  for (const auto & cell : global_planner_.visitor_.seen_) {
   // for (auto const& x : global_planner_.bubble_risk_cache_) {
     // Cell cell = x.first;
     
