@@ -32,6 +32,8 @@
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/global_planner.h"
+#include "avoidance/search_tools.h"
+#include "avoidance/visitor.h"
 #include "avoidance/PathWithRiskMsg.h"
 
 

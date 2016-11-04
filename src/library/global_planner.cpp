@@ -413,12 +413,12 @@ NodePtr GlobalPlanner::getStartNode(const Cell & start,
 
 // Calls different search functions to find a path 
 bool GlobalPlanner::findPath(std::vector<Cell> & path) {
-  Cell s = Cell(curr_pos_.x + search_time_ * curr_vel_.x,
-                curr_pos_.y + search_time_ * curr_vel_.y,
-                curr_pos_.z + search_time_ * curr_vel_.z);
+  // s = curr_pos + (search_time_ * curr_vel_)
+  Cell s(addPoints(curr_pos_, scalePoint(curr_vel_, search_time_)));
   GoalCell t = goal_pos_;
   // Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell
-  Cell parent_of_s = Cell(curr_pos_);
+  // Cell parent_of_s = Cell(curr_pos_);
+  Cell parent_of_s(subtractPoints(curr_pos_, scalePoint(curr_vel_, search_time_)));
   if (!use_current_yaw_) {
     Cell parent_of_s = s;   // Ignore the current yaw 
   }
