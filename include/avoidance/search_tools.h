@@ -38,14 +38,58 @@ void printSearchInfo(SearchInfo info, std::string node_type="Node", double overe
         std::setw(10) << 0.0;
 }
 
+// Returns a simpler path without increasing the cost much. It iteratively removes the vertices
+// which can be removed without increasing the cost by more than simplify_margin
+template <typename GlobalPlanner>
+std::vector<Cell> simplifyPath(GlobalPlanner * global_planner, std::vector<Cell> & path,
+                               double simplify_margin = 1.01, double max_iter = 100) {
+  
+  // Start with the original path
+  std::vector<Cell> curr_path = path;
+  for (int j=0; j < 100; ++j) {
+    // The first two vertices cannot be removed
+    std::vector<Cell> simple_path {curr_path[0], curr_path[1]};
+    int i=3;
+    for (; i < curr_path.size(); i+=2) {
+      Node parent(curr_path[i-2], curr_path[i-3]);
+      Node u(curr_path[i-1], curr_path[i-2]);
+      Node v(curr_path[i], curr_path[i-1]);
+      Node w(curr_path[i], curr_path[i-2]);
+      // w is the new edge instead of u and v
+      double curr_cost = global_planner->getEdgeCost(parent, u) + 
+                         global_planner->getEdgeCost(u,v);
+      double new_cost = global_planner->getEdgeCost(parent,w);
+      if (new_cost > simplify_margin * curr_cost) {
+        // The cost of w is too high, can't simplify this part of the path
+        simple_path.push_back(curr_path[i-1]);
+      }
+      simple_path.push_back(curr_path[i]);
+    }
+
+    // Make sure to add the last vertex  
+    if (i == curr_path.size()) {
+      simple_path.push_back(curr_path[i-1]);
+    }
+
+    if (simple_path.size() == curr_path.size()) {
+      // Last iteration didn't remove any vertices, can't simplify more
+      break;
+    }
+    curr_path = simple_path;
+  }
+  return curr_path;
+}
+
 template <typename GlobalPlanner>
 SearchInfo findSmoothPath(GlobalPlanner * global_planner, 
                     std::vector<Cell> & path, const NodePtr & s, const GoalCell & t,
                     int max_iterations = 2000) {
+
   NullVisitor visitor;
   return findSmoothPath(global_planner, path, s, t, max_iterations, visitor);
 }
 
+// A* to find a path from start to t, true iff it found a path
 template <typename GlobalPlanner, typename Visitor>
 SearchInfo findSmoothPath(GlobalPlanner * global_planner, 
                     std::vector<Cell> & path, const NodePtr & s, const GoalCell & t,
