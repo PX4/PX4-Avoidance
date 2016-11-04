@@ -86,21 +86,30 @@ P middlePoint(const P & p1, const P & p2) {
   return interpolate(p1, p2, 0.5);
 }
 
-template <typename P>
-P addPoints(const P & p1, const P & p2) {
-  P new_p;
+template <typename P1, typename P2>
+P1 addPoints(const P1 & p1, const P2 & p2) {
+  P1 new_p;
   new_p.x = p1.x + p2.x;
   new_p.y = p1.y + p2.y;
   new_p.z = p1.z + p2.z;
   return new_p;
 }
 
-template <typename P>
-P subtractPoints(const P & p1, const P & p2) {
-  P new_p;
+template <typename P1, typename P2>
+P1 subtractPoints(const P1 & p1, const P2 & p2) {
+  P1 new_p;
   new_p.x = p1.x - p2.x;
   new_p.y = p1.y - p2.y;
   new_p.z = p1.z - p2.z;
+  return new_p;
+}
+
+template <typename P, typename Float>
+P scalePoint(const P & point, Float scalar) {
+  P new_p;
+  new_p.x = scalar * point.x;
+  new_p.y = scalar * point.y;
+  new_p.z = scalar * point.z;
   return new_p;
 }
 
@@ -184,15 +193,13 @@ nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
     return path;
   }
   
-  // Repeat the first and last points to get the first half of the first edge 
-  // and the second half of the last edge
-  std::vector<geometry_msgs::PoseStamped> corner_points = path.poses;
-  corner_points.insert(corner_points.begin(), corner_points.front());
-  corner_points.push_back(corner_points.back());
 
   nav_msgs::Path smooth_path;
   smooth_path.header = path.header;
 
+  // Repeat the first and last points to get the first half of the first edge 
+  // and the second half of the last edge
+  smooth_path.poses.push_back((path.poses.front()));
   for (int i=2; i < path.poses.size(); i++) {
     geometry_msgs::Point p0 = path.poses[i-2].pose.position;
     geometry_msgs::Point p1 = path.poses[i-1].pose.position;
@@ -207,6 +214,7 @@ nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
       smooth_path.poses.push_back(pose_msg);
     }
   }
+  smooth_path.poses.push_back((path.poses.back()));
   return smooth_path;
 }
 
