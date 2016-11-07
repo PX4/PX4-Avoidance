@@ -28,6 +28,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw 
 #include <visualization_msgs/Marker.h>
+#include <math.h>   // sqrt
 
 namespace avoidance {
 
@@ -115,7 +116,7 @@ P scalePoint(const P & point, Float scalar) {
 
 template <typename P>
 double distance(const P & p1, const P & p2) {
-  return squared(p2.x - p1.x) + squared(p2.y - p1.y) + squared(p2.z - p1.z);
+  return sqrt(squared(p2.x - p1.x) + squared(p2.y - p1.y) + squared(p2.z - p1.z));
 }
 
 double distance(const geometry_msgs::PoseStamped & a, const geometry_msgs::PoseStamped & b) {
