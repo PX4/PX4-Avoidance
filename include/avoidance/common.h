@@ -65,9 +65,14 @@ void setPointCoordinates(P & point, double x, double y, double z) {
   point.z = z;
 }
 
+template <typename T>
+T norm(T x, T y, T z) {
+  return sqrt(squared(x) + squared(y) + squared(z));
+}
+
 template <typename P>
 double norm(const P & p) {
-  return std::sqrt(squared(p.x) + squared(p.y) + squared(p.z));
+  return norm(p.x, p.y, p.z);
 }
 
 // Returns a point between p1 and p2, ratio should be between 0 and 1
@@ -116,7 +121,7 @@ P scalePoint(const P & point, Float scalar) {
 
 template <typename P>
 double distance(const P & p1, const P & p2) {
-  return sqrt(squared(p2.x - p1.x) + squared(p2.y - p1.y) + squared(p2.z - p1.z));
+  return norm((p2.x - p1.x), (p2.y - p1.y), (p2.z - p1.z));
 }
 
 double distance(const geometry_msgs::PoseStamped & a, const geometry_msgs::PoseStamped & b) {
@@ -136,27 +141,6 @@ geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener & list
   listener.transformVector(target_frame, ros::Time(0), before, fixed_frame, after);
   transformed_msg.twist.linear = after.vector;
   return transformed_msg;
-}
-
-// Returns the point on the quadratic Bezier curve at time t (0 <= t <= 1)
-template <typename T>
-T quadraticBezier(T p0, T p1, T p2, double t) {
-  return ((1 - t) * (1 - t) * p0) + 2 * ((1 - t) * t * p1) + (t * t * p2);
-}
-
-// Returns a quadratic Bezier-curve starting in p0 and and ending in p2
-template <typename P>
-std::vector<P> threePointBezier(const P & p0, const P & p1, const P & p2, int num_steps = 10) {
-  std::vector<P> curve;
-  for (int i=0; i <= num_steps; ++i) {
-    double t = ((double) i) / num_steps;
-    P new_point;
-    new_point.x = quadraticBezier(p0.x, p1.x, p2.x, t);
-    new_point.y = quadraticBezier(p0.y, p1.y, p2.y, t);
-    new_point.z = quadraticBezier(p0.z, p1.z, p2.z, t);
-    curve.push_back(new_point);
-  }
-  return curve;
 }
 
 double clocksToMicroSec(std::clock_t start, std::clock_t end) {
@@ -186,37 +170,6 @@ visualization_msgs::Marker createMarker(int id, Point position, Color color,
   marker.scale.x = marker.scale.y = marker.scale.z = scale;
   marker.color = color;
   return marker;
-}
-
-// Returns a path where corners are smoothed with quadratic Bezier-curves
-nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
-  if (path.poses.size() < 3) {
-    return path;
-  }
-  
-
-  nav_msgs::Path smooth_path;
-  smooth_path.header = path.header;
-
-  // Repeat the first and last points to get the first half of the first edge 
-  // and the second half of the last edge
-  smooth_path.poses.push_back((path.poses.front()));
-  for (int i=2; i < path.poses.size(); i++) {
-    geometry_msgs::Point p0 = path.poses[i-2].pose.position;
-    geometry_msgs::Point p1 = path.poses[i-1].pose.position;
-    geometry_msgs::Point p2 = path.poses[i].pose.position;
-    p0 = middlePoint(p0, p1);
-    p2 = middlePoint(p1, p2);
-
-    std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
-    for (const auto & point : smooth_turn) {
-      geometry_msgs::PoseStamped pose_msg = path.poses.front(); // Copy the original header info
-      pose_msg.pose.position = point;
-      smooth_path.poses.push_back(pose_msg);
-    }
-  }
-  smooth_path.poses.push_back((path.poses.back()));
-  return smooth_path;
 }
 
 // returns angle in the range [-pi, pi]
