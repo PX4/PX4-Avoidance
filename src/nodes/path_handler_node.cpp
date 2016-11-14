@@ -142,7 +142,6 @@ void PathHandlerNode::receivePathWithRisk(const PathWithRiskMsg & msg) {
 
 void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_msg) {
 
-  // last_pos_ = rotatePoseMsgToWorld(last_pos_); // 90 deg fix
   listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin", last_pos_);
 
   // Check if we are close enough to current goal to get the next part of the path
@@ -188,7 +187,6 @@ void PathHandlerNode::publishSetpoint() {
     // Publish setpoint for vizualization
     current_waypoint_publisher_.publish(setpoint);
 
-    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
     listener_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
 
     // Publish setpoint to Mavros
