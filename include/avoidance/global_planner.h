@@ -21,13 +21,14 @@
 #include <octomap_msgs/Octomap.h>
 
 #include <avoidance/GlobalPlannerNodeConfig.h>
+#include "avoidance/PathWithRiskMsg.h"
 #include "avoidance/analysis.h"
+#include "avoidance/bezier.h"
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
 #include "avoidance/node.h"
 #include "avoidance/search_tools.h"
 #include "avoidance/visitor.h"
-#include "avoidance/PathWithRiskMsg.h"
 
 
 namespace avoidance {

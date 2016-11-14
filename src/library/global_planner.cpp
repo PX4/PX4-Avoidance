@@ -220,11 +220,13 @@ double GlobalPlanner::getRiskOfCurve(const std::vector<geometry_msgs::PoseStampe
   auto points = threePointBezier(msg[0].pose.position,
                                 msg[1].pose.position,
                                 msg[2].pose.position,
-                                2 * num_steps);
+                                4 * num_steps);
 
   double risk = 0.0;
+  visitor_.seen_.clear();
   for (auto point : points) {
     risk += getRisk(Cell(point));
+    visitor_.seen_.insert(Cell(point));
   }
   return risk;
 }
@@ -413,7 +415,7 @@ NodePtr GlobalPlanner::getStartNode(const Cell & start,
 
 // Calls different search functions to find a path 
 bool GlobalPlanner::findPath(std::vector<Cell> & path) {
-  // s = curr_pos + (search_time_ * curr_vel_)
+  // Start from a position thats a bit ahead [s = curr_pos + (search_time_ * curr_vel_)]
   Cell s(addPoints(curr_pos_, scalePoint(curr_vel_, search_time_)));
   GoalCell t = goal_pos_;
   // Cell parent_of_s = s.getNeighborFromYaw(curr_yaw_ + M_PI); // The cell behind the start cell

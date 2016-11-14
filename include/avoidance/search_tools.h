@@ -6,9 +6,10 @@
 #include "avoidance/cell.h"
 #include "avoidance/node.h"
 #include "avoidance/visitor.h"
+#include "avoidance/bezier.h"
 
 
-// This file consists mostly of ugly debug functions which contain no logic 
+// This file consists of general search tools
 
 namespace avoidance {
 
@@ -38,11 +39,44 @@ void printSearchInfo(SearchInfo info, std::string node_type="Node", double overe
         std::setw(10) << 0.0;
 }
 
+// Returns a path where corners are smoothed with quadratic Bezier-curves
+nav_msgs::Path smoothPath(const nav_msgs::Path & path) {
+  if (path.poses.size() < 3) {
+    return path;
+  }
+  
+  nav_msgs::Path smooth_path;
+  smooth_path.header = path.header;
+
+  // Repeat the first and last points to get the first half of the first edge 
+  // and the second half of the last edge
+  smooth_path.poses.push_back((path.poses.front()));
+  for (int i=2; i < path.poses.size(); i++) {
+    geometry_msgs::Point p0 = path.poses[i-2].pose.position;
+    geometry_msgs::Point p1 = path.poses[i-1].pose.position;
+    geometry_msgs::Point p2 = path.poses[i].pose.position;
+    p0 = middlePoint(p0, p1);
+    p2 = middlePoint(p1, p2);
+
+    std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
+    for (const auto & point : smooth_turn) {
+      geometry_msgs::PoseStamped pose_msg = path.poses.front(); // Copy the original header info
+      pose_msg.pose.position = point;
+      smooth_path.poses.push_back(pose_msg);
+    }
+  }
+  smooth_path.poses.push_back((path.poses.back()));
+  return smooth_path;
+}
+
 // Returns a simpler path without increasing the cost much. It iteratively removes the vertices
 // which can be removed without increasing the cost by more than simplify_margin
 template <typename GlobalPlanner>
-std::vector<Cell> simplifyPath(GlobalPlanner * global_planner, std::vector<Cell> & path,
-                               double simplify_margin = 1.01, double max_iter = 100) {
+std::vector<Cell> simplifyPath(GlobalPlanner * global_planner, 
+                               std::vector<Cell> & path,
+                               double simplify_margin = 1.01, 
+                               double max_iter = 100,
+                               bool decelerate_at_end = true) {
   
   // Start with the original path
   std::vector<Cell> curr_path = path;
@@ -76,6 +110,11 @@ std::vector<Cell> simplifyPath(GlobalPlanner * global_planner, std::vector<Cell>
       break;
     }
     curr_path = simple_path;
+  }
+
+  if (decelerate_at_end) {
+    // Doubling the last point gives a triplet which stops at the end
+    curr_path.push_back(curr_path.back());
   }
   return curr_path;
 }
