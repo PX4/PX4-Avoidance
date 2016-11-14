@@ -93,6 +93,23 @@ void bezierFromTwoPoints(const P & start, const P & end,
   msgs = {acc_msg, max_vel_msg, decel_msg};
 }
 
+// Puts the control point between start and end such that the acceleration matches the speeds
+template <typename P, typename BezierMsg>
+void bezierFromTwoSpeeds(const P & start, const P & end,
+                         double start_speed, double end_speed, 
+                         BezierMsg & msg) {
+
+  double avg_speed = (start_speed + end_speed) / 2.0;
+  double distance = distance(start, end);
+  double duration = distance / avg_speed;
+
+  // start_speed = 2*c*avg_speed
+  double c = start_speed / (2.0 * avg_speed);
+  P ctrl = interpolate(start, end, c);
+  fillBezierMsg(msg, start, ctrl, end, duration);
+}
+
+
 // The time it takes to accelerate from p0 to p1, starting with no velocity at p0
 template <typename P>
 double getDuration(const P & p0, const P & p1, double acc) {
@@ -101,11 +118,38 @@ double getDuration(const P & p0, const P & p1, double acc) {
 }
 
 template <typename P>
-double getAcceleration(const P & p0, const P & p1, const P & p2) {
+double getAccelerationMagnitude(const P & p0, const P & p1, const P & p2, double duration) {
   double dx = quadraticBezierAcc(p0.x, p1.x, p2.x);
   double dy = quadraticBezierAcc(p0.y, p1.y, p2.y);
   double dz = quadraticBezierAcc(p0.z, p1.z, p2.z);
-  return sqrt(dx*dx + dy*dy + dz*dz);
+  return sqrt(dx*dx + dy*dy + dz*dz) / duration*duration;
+}
+
+template <typename BezierMsg>
+void pathToTriplets(const nav_msgs::Path & path, 
+                    std::vector<BezierMsg> triplets,
+                    std::vector<double> speed) {
+
+  if (path.poses.size() < 3) {
+    return path;
+  }
+
+  // Extract the points from path, duplicate the first and last point to indicate 
+  // acceleration at the beginning and deceleration at the end 
+  std::vector<geometry_msgs::Point> points;
+  points.push_back(path.poses.front().pose.position);
+  for (auto pose : path.poses) {
+    points.push_back(pose.pose.position);
+  }
+  points.push_back(path.poses.back().pose.position);
+
+  for (int i=1; i < path.poses.size(); i++) {
+    geometry_msgs::Point prev = middlePoint(points[i-1], points[i]);
+    geometry_msgs::Point ctrl = points[i];
+    geometry_msgs::Point next = middlePoint(points[i], points[i+1]);;
+    BezierMsg msg;
+    fillBezierMsg(msg, prev, ctrl, next, 1.0);
+  }
 }
 
 } // namespace avoidance
