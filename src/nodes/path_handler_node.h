@@ -16,7 +16,9 @@
 #include "avoidance/common.h" // hasSameYawAndAltitude
 #include <avoidance/PathHandlerNodeConfig.h>
 #include "avoidance/PathWithRiskMsg.h"
+
 #include "avoidance/ThreePointMsg.h"
+#include <mavros_msgs/AvoidanceTriplet.h>
 
 
 namespace avoidance {
@@ -38,6 +40,7 @@ class PathHandlerNode {
   bool ignore_path_messages_;
   double min_speed_;
   double max_speed_;
+  double three_point_speed_;
   double direct_goal_alt_;
   
   double speed_ = min_speed_;
@@ -57,6 +60,7 @@ class PathHandlerNode {
   ros::Publisher current_waypoint_publisher_;
   ros::Publisher three_point_path_publisher_;
   ros::Publisher three_point_msg_publisher_;
+  ros::Publisher avoidance_triplet_msg_publisher_;
 
   tf::TransformListener listener_;
 
