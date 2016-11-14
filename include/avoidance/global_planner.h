@@ -26,6 +26,7 @@
 #include "avoidance/bezier.h"
 #include "avoidance/cell.h"
 #include "avoidance/common.h"
+#include "avoidance/common_ros.h"
 #include "avoidance/node.h"
 #include "avoidance/search_tools.h"
 #include "avoidance/visitor.h"

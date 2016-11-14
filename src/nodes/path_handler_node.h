@@ -13,7 +13,8 @@
 #include <tf/transform_datatypes.h>  // getYaw
 #include <ros/ros.h>
 
-#include "avoidance/common.h" // hasSameYawAndAltitude
+#include "avoidance/common.h" 
+#include "avoidance/common_ros.h"
 #include <avoidance/PathHandlerNodeConfig.h>
 #include "avoidance/PathWithRiskMsg.h"
 

@@ -93,7 +93,8 @@ void bezierFromTwoPoints(const P & start, const P & end,
   msgs = {acc_msg, max_vel_msg, decel_msg};
 }
 
-// Puts the control point between start and end such that the acceleration matches the speeds
+// Puts the control point between start and end such that the acceleration
+// and the duration matches the speeds
 template <typename P, typename BezierMsg>
 void bezierFromTwoSpeeds(const P & start, const P & end,
                          double start_speed, double end_speed, 
@@ -102,9 +103,7 @@ void bezierFromTwoSpeeds(const P & start, const P & end,
   double avg_speed = (start_speed + end_speed) / 2.0;
   double distance = distance(start, end);
   double duration = distance / avg_speed;
-
-  // start_speed = 2*c*avg_speed
-  double c = start_speed / (2.0 * avg_speed);
+  double c = start_speed / (start_speed + end_speed);
   P ctrl = interpolate(start, end, c);
   fillBezierMsg(msg, start, ctrl, end, duration);
 }
