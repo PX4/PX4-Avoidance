@@ -36,7 +36,7 @@ GlobalPlannerNode::GlobalPlannerNode() {
   explored_cells_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
 
   actual_path_.header.frame_id="/world";
-  listener_.waitForTransform("/local_origin","/world", ros::Time(0), ros::Duration(3.0));
+  listener_.waitForTransform("/fcu","/world", ros::Time(0), ros::Duration(3.0));
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() { }
@@ -133,6 +133,8 @@ void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeC
   // global_planner_node
   clicked_goal_alt_ = config.clicked_goal_alt_;
   clicked_goal_radius_ = config.clicked_goal_radius_;
+  simplify_iterations_ = config.simplify_iterations_;
+  simplify_margin_ = config.simplify_margin_;
 
   // cell
   if (level == 2) {
@@ -192,7 +194,7 @@ void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &
     three_points.poses = last_clicked_points;
     last_clicked_points.clear();
     three_points_pub_.publish(three_points);
-    three_points_smooth_pub_.publish(smoothPath(three_points));
+    three_points_smooth_pub_.publish(threePointBezier(three_points));
     double risk = global_planner_.getRiskOfCurve(three_points.poses);
     ROS_INFO("Risk of curve: %2.2f \n", risk);
   }
@@ -311,6 +313,12 @@ void GlobalPlannerNode::publishPath() {
     global_path_pub_.publish(path_msg);
   }
   smooth_path_pub_.publish(smoothPath(path_msg));
+  
+  auto simple_path = simplifyPath(&global_planner_, global_planner_.curr_path_, 
+                                  simplify_iterations_, simplify_margin_);
+  auto simple_path_msg = global_planner_.getPathMsg(simple_path);
+  global_temp_path_pub_.publish(simple_path_msg);
+  smooth_path_pub_.publish(smoothPath(simple_path_msg));
 }
 
 // Publish the cells that were explored in the last search

@@ -62,6 +62,8 @@ class GlobalPlannerNode {
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
   double clicked_goal_radius_;
+  int simplify_iterations_;
+  double simplify_margin_;
 
   // Subscribers
   ros::Subscriber octomap_sub_;
