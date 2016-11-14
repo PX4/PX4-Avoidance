@@ -154,7 +154,6 @@ add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXP
 # add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(global_planner_node src/nodes/global_planner_node.cpp)
 add_executable(path_handler_node src/nodes/path_handler_node.cpp)
-add_executable(mock_data_node src/nodes/mock_data_node.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -168,8 +167,6 @@ add_executable(mock_data_node src/nodes/mock_data_node.cpp)
 target_link_libraries(global_planner_node
   global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(path_handler_node
-  ${catkin_LIBRARIES})
-target_link_libraries(mock_data_node
   ${catkin_LIBRARIES})
 
 #############
