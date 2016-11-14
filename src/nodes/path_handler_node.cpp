@@ -23,7 +23,8 @@ PathHandlerNode::PathHandlerNode() {
   mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
-  three_point_msg_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_msg", 10);
+  three_point_msg_publisher_ = nh_.advertise<avoidance::ThreePointMsg>("/three_point_msg", 10);
+  avoidance_triplet_msg_publisher_ = nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet", 10);
 
   // Initialize goal
   current_goal_.header.frame_id="/world";
@@ -103,6 +104,7 @@ void PathHandlerNode::dynamicReconfigureCallback(avoidance::PathHandlerNodeConfi
   three_point_mode_ = config.three_point_mode_;
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
+  three_point_speed_ = config.three_point_speed_;
   direct_goal_alt_ = config.direct_goal_alt_;
   
   // Reset speed_
@@ -159,12 +161,12 @@ void PathHandlerNode::positionCallback(const geometry_msgs::PoseStamped & pose_m
       path_.erase(path_.begin());
 
       // If we are keeping the same direction and height increase speed
-      if (path_.size() > std::floor(speed_) && hasSameYawAndAltitude(current_goal_.pose, path_[std::floor(speed_)].pose)) {
-        speed_ = std::min(max_speed_, speed_ + 0.1);
-      }
-      else {
-        speed_ = min_speed_;
-      }
+      // if (path_.size() > std::floor(speed_) && hasSameYawAndAltitude(current_goal_.pose, path_[std::floor(speed_)].pose)) {
+      //   speed_ = std::min(max_speed_, speed_ + 0.1);
+      // }
+      // else {
+      //   speed_ = min_speed_;
+      // }
     }
   }
 }
@@ -210,16 +212,30 @@ void PathHandlerNode::publishThreePointMsg() {
   three_point_path.poses[2].pose.position = middlePoint(current_goal_.pose.position, 
                                                         next_goal.pose.position);
   // three_point_path = smoothPath(three_point_path);
-  double risk = getRiskOfCurve(three_point_path.poses);
   three_point_path_publisher_.publish(three_point_path);
 
+  double risk = getRiskOfCurve(three_point_path.poses);
   // Send the three points as a ThreePointMessage
   ThreePointMsg three_point_msg;
   three_point_msg.prev = last_goal_.pose.position;
   three_point_msg.ctrl = current_goal_.pose.position;
   three_point_msg.next = path_.front().pose.position;
+  double speed = distance(three_point_msg.prev, three_point_msg.next);
+  three_point_msg.duration = std::max(1.0, speed / max_speed_) * three_point_speed_;
+  // three_point_msg.duration = 1.0;
   three_point_msg.max_acc = risk;
   three_point_msg.acc_per_err = risk;
+  three_point_msg_publisher_.publish(three_point_msg);
+
+  mavros_msgs::AvoidanceTriplet avoidance_triplet;
+  avoidance_triplet.prev = last_goal_.pose.position;
+  avoidance_triplet.ctrl = current_goal_.pose.position;
+  avoidance_triplet.next = path_.front().pose.position;
+  avoidance_triplet.duration = std::max(1.0, speed / 3.0);
+  // avoidance_triplet.duration = 1.0;
+  avoidance_triplet.max_acc = risk;
+  avoidance_triplet.acc_per_err = risk;
+  avoidance_triplet_msg_publisher_.publish(avoidance_triplet);
 }
 
 } // namespace avoidance 
