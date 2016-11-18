@@ -12,6 +12,11 @@
       <ambient>0.4 0.4 0.4 1</ambient>
       <background>0.7 0.7 0.7 1</background>
       <shadows>1</shadows>
+      <sky>
+        <clouds>
+          <speed>1</speed>
+        </clouds>
+      </sky>
     </scene>
  <physics name='default_physics' default='0' type='ode'>
       <gravity>0 0 -9.8066</gravity>
@@ -230,17 +235,17 @@
     <include>
       <name>pine_tree_4</name>
       <uri>model://pine_tree</uri>
-      <pose>28 -5 0.17   0 0 0</pose>
+      <pose>20 -5 0   0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_5</name>
       <uri>model://pine_tree</uri>
-      <pose>19 13 1.58   0 0 0</pose>
+      <pose>19 9 0   0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_6</name>
       <uri>model://pine_tree</uri>
-      <pose>31 -2.4 0   0 0 0</pose>
+      <pose>16 -2.4 0   0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_7</name>
@@ -250,14 +255,62 @@
     <include>
       <name>pine_tree_8</name>
       <uri>model://pine_tree</uri>
-      <pose>75.3 30 -1.44  0 0 0</pose>
+      <pose>16 13 0  0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_9</name>
       <uri>model://pine_tree</uri>
       <pose>16 -11.5 0  0 0 0</pose>
     </include>
+
+    <include>
+      <name>powerline_model_1</name>
+      <uri>model://powerlineLong_model</uri>
+      <pose>7.65 6.12 4.5  0 0 -0.651</pose>
+    </include>
+
+
+    <include>
+      <name>lampLine_model_1</name>
+      <uri>model://lampWithLines_model</uri>
+      <pose>-5.672 -0.487 4.38  0 0 -0.7726</pose>
+    </include>
+<!--
+     <include>
+      <name>powerline_model_2</name>
+      <uri>model://powerline_model</uri>
+      <pose>3.93 4.38 -0.05  0 0 -0.5</pose>
+    </include>
+
+  
+
+    <include>
+      <name>line_1</name>
+      <uri>model://line_model</uri>
+      <pose>5.89 5.55 4.07  0 0 -0.5</pose>
+    </include>
     
+    <include>
+      <name>line_2</name>
+      <uri>model://line_model</uri>
+      <pose>16.42 -0.168 4.07  0 0 -0.5</pose>
+    </include>
+
+     <include>
+      <name>line_3</name>
+      <uri>model://line_model</uri>
+      <pose>3 5.55 4.07  0 0 -0.5</pose>
+    </include>
+    
+    <include>
+      <name>line_4</name>
+      <uri>model://line_model</uri>
+      <pose>20 -0.168 4.07  0 0 -0.5</pose>
+    </include>
+ -->
+
+
+
     <!-- Roads & Garage ways -->
     <road name="main_street">
       <width>4</width>
@@ -305,5 +358,9 @@
         </script>
       </material>
     </road>
+ 
+    
+ 
+
   </world>
 </sdf>
