@@ -1,11 +1,23 @@
 <launch>
     <include file="$(find avoidance)/launch/global_planner_sitl_mavros.launch" >
         <arg name="model" value="iris_stereo_camera" />
-        <!-- <arg name="world" value="outdoor_village" /> -->
+        <arg name="world" value="outdoor_village" />
         <arg name="point_cloud_topic" value="/stereo/points2" />
     </include>
 
+
     <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
+
+    
+    <node ns="stereoV" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_procV"/> 
+
+    <include file="$(find disparity_to_point_cloud)/launch/depth_map_fusion.launch" >
+    </include>
+
+  <!--  <include file="$(find disparity_to_point_cloud)/launch/d2pcloud.launch">
+    </include> -->
+  
+  
 
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
     <!-- <node name="disparity_image_transform" pkg="topic_tools" type="transform"
