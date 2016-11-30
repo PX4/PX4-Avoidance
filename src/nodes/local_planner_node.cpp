@@ -2,29 +2,36 @@
 
 LocalPlannerNode::LocalPlannerNode() {
 
-	pointcloud_sub_ = nh_.subscribe("/omi_cam/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
-
+	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/omi_cam/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
+	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+	// /mavros/local_position/pose  ground_truth/pose
 }
 
 LocalPlannerNode::~LocalPlannerNode(){}
 
+void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped input){
+	std::cout << "set pose call" << std::endl;
+	local_planner.setPose(input);
+}
+
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 input){
 
-	 pcl::PointCloud<pcl::PointXYZ> complete_cloud;
-     sensor_msgs::PointCloud2 pc2cloud_world;
-      
-     std::cout << "point cloud callback" << std::endl; 
-     std::cout << "frame id " << input.header.frame_id << " header stamp " << input.header.stamp << std::endl;
+	pcl::PointCloud<pcl::PointXYZ> complete_cloud;
+    sensor_msgs::PointCloud2 pc2cloud_world;
 
-     tf_listener->waitForTransform("/world", input.header.frame_id, input.header.stamp, ros::Duration(1.0));
-    /* std::cout << "wait for transform " << std::endl;
-     pcl_ros::transformPointCloud("/world", input, pc2cloud_world, *tf_listener);
-     
-     std::cout << "pointcloud transformed" << std::endl; 
 
-     pcl::fromROSMsg(pc2cloud_world, complete_cloud); */
+    tf_listener_.waitForTransform("/world", input.header.frame_id, input.header.stamp, ros::Duration(1.0));
+    tf::StampedTransform transform;
+    tf_listener_.lookupTransform("/world", input.header.frame_id, input.header.stamp, transform);
+    pcl_ros::transformPointCloud("/world", transform, input, pc2cloud_world);
+    pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
+    local_planner.filterPointCloud(complete_cloud);
 
-	  //local_planner.filterPointCloud(complete_cloud);
+   // if(local_planner.obstacleAhead() && local_planner.init!=0 && !brake_test) {
+	local_planner.createPolarHistogram();
+//	}
+
+
 }
 
 int main(int argc, char** argv) {
@@ -37,4 +44,4 @@ int main(int argc, char** argv) {
 }
 
 
- 
+ 	

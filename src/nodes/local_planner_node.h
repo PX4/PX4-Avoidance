@@ -17,6 +17,8 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 
+#include "local_planner.h"
+
 
 class LocalPlannerNode{
 
@@ -26,17 +28,20 @@ public:
 
 private:
 	ros::NodeHandle nh_;
+	LocalPlanner local_planner;
 
 	//subscribers
 	ros::Subscriber pointcloud_sub_ ;
+	ros::Subscriber pose_sub_ ; 
 
 
 	//publishers
 	ros::Publisher local_pointcloud_pub_;
 	ros::Publisher front_pointcloud_pub_;
 
-	tf::TransformListener *tf_listener;
+    tf::TransformListener tf_listener_;
 
+    void positionCallback(const geometry_msgs::PoseStamped input);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 input);
 };
 
