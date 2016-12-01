@@ -11,11 +11,15 @@
 #include <pcl_ros/point_cloud.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
+
 #include <tf/transform_listener.h>
+
 #include <geometry_msgs/TransformStamped.h>
 
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
+
+#include <nav_msgs/GridCells.h>
 
 #include "local_planner.h"
 
@@ -38,11 +42,17 @@ private:
 	//publishers
 	ros::Publisher local_pointcloud_pub_;
 	ros::Publisher front_pointcloud_pub_;
+	ros::Publisher cached_pointcloud_pub_ ;
+	ros::Publisher path_candidates_pub_;
+    ros::Publisher path_rejected_pub_;
+    ros::Publisher path_blocked_pub_;
+	ros::Publisher path_selected_pub_;
 
     tf::TransformListener tf_listener_;
 
     void positionCallback(const geometry_msgs::PoseStamped input);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 input);
+	void publishAll();
 };
 
 

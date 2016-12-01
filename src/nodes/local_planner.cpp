@@ -1,6 +1,6 @@
 #include "local_planner.h"
 
-LocalPlanner::LocalPlanner(): polar_histogram(grid_length, grid_length) {}
+LocalPlanner::LocalPlanner() {}
 
 LocalPlanner::~LocalPlanner() {}
 
@@ -9,7 +9,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped input) {
   pose.y = input.pose.position.y ;
   pose.z = input.pose.position.z ; 
 
-  std::cout << "pose:" << pose.x << pose.y << pose.z << std::endl;
 //  setVelocity(input.header.stamp);
   previous_pose_x = pose.x ;
   previous_pose_z = pose.z ;
@@ -107,17 +106,35 @@ float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
    return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z) );
 }
 
+bool LocalPlanner::obstacleAhead() { 
+  	float dist_y =  abs(pose.y - goal.y);
+  	float dist_z =  abs(pose.z - goal.z);
+	if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake) { 
+    	if(!first_brake) {   
+      		first_brake = true; 
+      		obs.x = pose.x+front_x ;
+      		obs.y = pose.y;
+      		obs.z = pose.z;
+      		stop_pose.x = pose.x;
+      		stop_pose.y = pose.y;
+      		stop_pose.z = pose.z;
+    	}
+		return true;
+  	}
+	else {
+		first_brake = false;
+    	return false;
+   	}  
+}
+
 void LocalPlanner::createPolarHistogram() {  
 
 	float bbx_rad = (max.x-min.x)*sqrt(2)/2; 
   	float dist;
  
-  	polar_histogram.setZero();
+  	 polar_histogram.setZero();
 
   	std::cout << "polar_histogram created " << std::endl;
-  	std::cout << polar_histogram.get(20,23) << std::endl;
-  	std::cout << polar_histogram.get(35,35) << std::endl;
- 
 
   	pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
     
@@ -127,8 +144,6 @@ void LocalPlanner::createPolarHistogram() {
     	temp.y = it->y;
     	temp.z = it->z;
     	dist = distance2d(pose,temp);
-
-    	std::cout << dist << std::endl;
    
     	if(dist < bbx_rad) { 
       		int beta_z = floor((atan2(temp.x-pose.x,temp.y-pose.y)*180.0/PI)); //azimuthal angle
@@ -137,13 +152,257 @@ void LocalPlanner::createPolarHistogram() {
       		beta_z = beta_z + (alpha_res - beta_z%alpha_res);
       		beta_e = beta_e + (alpha_res - beta_e%alpha_res); 
       
-      		int e = (180+beta_e)/alpha_res - 1 ;
-      		int z = (180+beta_z)/alpha_res - 1 ;
-
-      		std::cout << "e " << e << " z " << z  << std::endl;
-      		std::cout << polar_histogram.get(e,z) << std::endl;
+      		int e = (180+beta_e)/alpha_res - 1;
+      		int z = (180+beta_z)/alpha_res - 1;
 
       		polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
+      		std::cout << polar_histogram.get(e,z) << std::endl;
     	}
  	}
+}
+
+void LocalPlanner::findFreeDirections() {
+
+  int n = floor(40/alpha_res); //n+1 - angular window size
+  int a = 0, b = 0;
+  int sum = 0, pathID = 1;
+  bool free = true;
+  bool corner = false;
+  geometry_msgs::Point p;
+
+  path_candidates.cells.clear();
+  path_candidates.header.stamp = ros::Time::now();
+  path_candidates.header.frame_id = "/world";
+  path_candidates.cell_width = alpha_res;
+  path_candidates.cell_height = alpha_res;
+
+  path_rejected.cells.clear();
+  path_rejected.header.stamp = ros::Time::now();
+  path_rejected.header.frame_id = "/world";
+  path_rejected.cell_width = alpha_res;
+  path_rejected.cell_height = alpha_res;
+
+  path_blocked.cells.clear();
+  path_blocked.header.stamp = ros::Time::now();
+  path_blocked.header.frame_id = "/world";
+  path_blocked.cell_width = alpha_res;
+  path_blocked.cell_height = alpha_res;
+
+  path_selected.cells.clear();
+  path_selected.header.stamp = ros::Time::now();
+  path_selected.header.frame_id = "/world";
+  path_selected.cell_width = alpha_res;
+  path_selected.cell_height = alpha_res;
+
+
+  for(int e= 0; e<grid_length; e++) {
+    for(int z= 0; z<grid_length; z++) {  
+        for(int i=e-n; i<=e+n; i++) {
+            for(int j=z-n;j<=z+n;j++) {
+                free = true;
+                corner = false;
+
+                //Case 1 - i < 0
+                if(i<0 && j>=0 && j<grid_length) {
+                    a = -i;
+                    b = grid_length-j-1;
+                }
+                //Case 2 - j < 0
+                else if(j<0 && i>=0 && i<grid_length) {
+                    b = j+grid_length;
+                } 
+                //Case 3 - i >= grid_length
+                else if(i>=grid_length && j>=0 && j<grid_length) {
+                    a = grid_length-(i%(grid_length-1));
+                    b = grid_length-j-1;
+                }
+                //Case 4 - j >= grid_length
+                else if(j>=grid_length && i>=0 && i<grid_length) {
+                    b = j%grid_length;
+                }
+                else if( i>=0 && i<grid_length && j>=0 && j<grid_length) {
+                    a = i;
+                    b = j;
+                }
+                else {
+                    corner = true;
+                }
+
+                if(!corner) {
+                    if(polar_histogram.get(a,b) != 0) {
+                    	free = false;
+                    // ROS_INFO(" in the path loop %f %d %d", Hist_polar_binary[a][b] , a, b ) ;
+                     	break;
+                    } 
+                }
+            }
+            
+            if(!free)
+                break;
+            }
+               
+           	if(free) {		
+            	p.x = e*alpha_res+alpha_res-180;  
+            	p.y = z*alpha_res+alpha_res-180;
+            	p.z = 0;
+            	path_candidates.cells.push_back(p);  
+            }
+            else if(!free && polar_histogram.get(e,z) != 0) {
+            	p.x = e*alpha_res+alpha_res-180;  
+            	p.y = z*alpha_res+alpha_res-180;
+            	p.z = 0;
+            	path_rejected.cells.push_back(p);  
+            	std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
+           	}
+           	else {
+            	p.x = e*alpha_res+alpha_res-180;  
+            	p.y = z*alpha_res+alpha_res-180;
+            	p.z = 0;
+            	path_blocked.cells.push_back(p);   
+            	std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl;   
+            }
+      	} 
+    }
+
+    ROS_INFO(" Path_candidates calculated");
+
+
+   
+}
+
+geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
+  	geometry_msgs::Vector3Stamped waypoint;
+  	waypoint.header.stamp = ros::Time::now();
+  	waypoint.header.frame_id = "/world";
+  	if(velocity_x > 1.4) {
+    	rad = waypoint_radius_param*velocity_x;
+      	if(rad==0)
+        	rad=1;
+    	}
+  	else
+    	rad = 1;
+
+  	waypoint.vector.x = pose.x+ rad*cos(e*(PI/180))*sin(z*(PI/180));
+  	waypoint.vector.y = pose.y+ rad*cos(e*(PI/180))*cos(z*(PI/180));
+  	waypoint.vector.z = pose.z+ rad*sin(e*(PI/180));
+
+  	return waypoint;
+}
+
+double LocalPlanner::costFunction(int e, int z) {
+
+  double cost;
+  int goal_z = floor(atan2(goal.x-pose.x,goal.y-pose.y)*180.0/PI); //azimuthal angle
+  int goal_e = floor(atan2(goal.z-pose.z,sqrt((goal.x-pose.x)*(goal.x-pose.x)+(goal.y-pose.y)*(goal.y-pose.y)))*180.0/PI);//elevation angle
+
+  waypt = getWaypointFromAngle(e,z);
+  
+  geometry_msgs::Point p;
+  p.x = waypt.vector.x;
+  p.y = waypt.vector.y;
+  p.z = waypt.vector.z;
+
+  if(velocity_x > 1.4 && braking_param ) {
+    double obs_dist = distance2d(p,obs);
+    double energy_waypoint = 0.5*1.56*velocity_x*velocity_x + 1.56*9.81*waypt.vector.z;
+    double energy_threshold = 0.5*1.56*3*3 + 1.56*9.81*goal.z;
+    double energy_diff = energy_waypoint-energy_threshold;
+    double ke_diff =  0.5*1.56*velocity_x*velocity_x - 0.5*1.56*1.4*1.4;
+    double pe_diff =  1.56*9.81*pose.z - 1.56*9.81*goal.z;
+
+    cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(waypt.vector.x-pose.x) + z_brake_cost_param*pe_diff*(waypt.vector.z-pose.z);
+
+  }
+  else {
+  	if(velocity_x < 1.4)
+  	first_brake = false;
+  
+  	if(e>-50) {
+  		cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
+  	}
+  	else
+  		cost = 10000;
+  }
+
+  return cost;  
+}
+
+void LocalPlanner::calculateCostMap() {
+
+    int e = 0, z = 0;
+    double cost_path; 
+    float small ; int small_i;
+
+    for(int i=0; i<path_candidates.cells.size(); i++) {  
+        e = path_candidates.cells[i].x;
+       	z = path_candidates.cells[i].y;
+       	if(init == 0) {
+       		p1.x = e;
+       		p1.y = z;
+      	}
+      
+       	cost_path = costFunction(e,z);
+     
+      	if(i == 0) {
+        	small = cost_path;
+        	small_i = i;
+      	}
+
+        if(cost_path<small) {
+        	small = cost_path;
+        	small_i = i ;
+      	}  
+    }
+    
+    p1.x = path_candidates.cells[small_i].x;
+    p1.y = path_candidates.cells[small_i].y;
+    p1.z = path_candidates.cells[small_i].z;
+    path_selected.cells.push_back(p1);
+
+   	ROS_INFO(" min_e - %f min_z- %f min_cost %f", p1.x,p1.y, small);
+
+}
+
+void LocalPlanner::getNextWaypoint() {
+  	waypt = getWaypointFromAngle(p1.x,p1.y);
+ 
+  	if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
+    	waypt.vector.x = pose.x-0.2;
+    //waypt.vector.y = pose.y;
+    	waypt.vector.z = pose.z+ 0.2;
+    	p1.x = 0;
+    	p1.y = 0;
+    	ROS_INFO(" Too close to the obstacle. Going back");
+  	}
+   	if(velocity_x>1.4 && pose.z>0.5) { 
+    
+    //waypt.vector.x = stop_pose.x;
+   	 	waypt.vector.y = 0; //stop_pose.y;
+    //waypt.vector.z = stop_pose.z;
+    	ROS_INFO(" Braking !! ");
+    	p1.x = 0;
+    	p1.y = 0;
+  	}
+}
+
+bool LocalPlanner::checkForCollision() {
+  	bool avoid = false;
+  	geometry_msgs::Point temp;
+  	geometry_msgs::Point p;
+  	p.x = waypt.vector.x;
+  	p.y = waypt.vector.y;
+  	p.z = waypt.vector.z;
+
+  	pcl::PointCloud<pcl::PointXYZ>::iterator it;
+  	for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
+    	temp.x = it->x;
+    	temp.y = it->y;
+    	temp.z = it->z;
+     
+    	if(distance2d(p,temp)< 0.5 && init != 0) { 
+     		avoid = true;
+     		break;
+    	}
+  	}  
+  	return avoid;
 }
