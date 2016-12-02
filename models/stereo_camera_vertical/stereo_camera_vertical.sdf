@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 <sdf version="1.5">
-  <model name="stereo_camera_new">
+  <model name="stereo_camera_vertical">
     <pose>0 0 0.035 0 0 0</pose>
     <link name="link">
       <inertial>
@@ -61,10 +61,10 @@
             <stddev>0.007</stddev>
           </noise>
         </camera>
-        <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
+        <plugin name="stereo_camera_controllerV" filename="libgazebo_ros_multicamera.so">
           <alwaysOn>true</alwaysOn>
           <updateRate>0.0</updateRate>
-          <cameraName>stereo</cameraName>
+          <cameraName>stereoV</cameraName>
           <imageTopicName>image_raw</imageTopicName>
           <cameraInfoTopicName>camera_info</cameraInfoTopicName>
           <frameName>camera_link</frameName>
