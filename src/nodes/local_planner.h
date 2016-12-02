@@ -86,7 +86,7 @@ public:
 	float rad = 1;
 
 	double previous_pose_x, previous_pose_z;
-	double velocity_x;
+	double velocity_x, velocity_z;
 	double path_y_tolerance_param = 0.2;
 	double path_z_tolerance_param = 0.7;
 	double waypoint_radius_param = 0.25;
@@ -94,6 +94,11 @@ public:
 	double z_brake_cost_param = 8.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
+	double goal_x_param = 1.0;
+	double goal_y_param = 0.0;
+	double goal_z_param = 2.5;
+	double wavefront_param = 0.9;
+	double fall_height;
 
 	Histogram polar_histogram;
 
@@ -110,6 +115,8 @@ public:
 	
 	void setPose(const geometry_msgs::PoseStamped input);
 	void setLimits();
+	void setVelocity(ros::Time);
+	void setGoal();
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
 	bool obstacleAhead();
 	void createPolarHistogram();
@@ -119,6 +126,7 @@ public:
 	void calculateCostMap();
 	void getNextWaypoint();
 	bool checkForCollision();
+	void cropPointCloud();
 
 };
 

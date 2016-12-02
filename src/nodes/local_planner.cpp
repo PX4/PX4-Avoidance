@@ -9,18 +9,27 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped input) {
   pose.y = input.pose.position.y ;
   pose.z = input.pose.position.z ; 
 
-//  setVelocity(input.header.stamp);
+  setVelocity(input.header.stamp);
   previous_pose_x = pose.x ;
   previous_pose_z = pose.z ;
   last_pose_time = input.header.stamp;
- // setGoal();
+  setGoal();
   setLimits();
 
  // octomapCloud.crop(octomap::point3d(min_cache.x,min_cache.y,min_cache.z),octomap::point3d(half_cache.x,half_cache.y,half_cache.z)); 
 }
 
+void LocalPlanner::setVelocity(ros::Time current) {
+
+  double dt = (current-last_pose_time).toSec();
+  velocity_x = (pose.x - previous_pose_x)/dt ;
+  velocity_z = (pose.z - previous_pose_z)/dt ;
+  fall_height = velocity_x*velocity_x/(2*9.81);
+
+}
+
 void LocalPlanner::setLimits() { 
-  //front_x = wavefront_param*velocity_x;
+  front_x = wavefront_param*velocity_x;
   //if(front_x<=4.5)
   //  front_x = 4.5;
   min.x = pose.x- min_x;
@@ -45,6 +54,12 @@ void LocalPlanner::setLimits() {
   half_cache.y = pose.y + max_cache_y;
   half_cache.z = pose.z + max_cache_z;
   
+}
+
+void LocalPlanner::setGoal() {
+  	goal.x = pose.x + goal_x_param;
+  	goal.y = goal_y_param;
+  	goal.z = goal_z_param; 
 }
 
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
@@ -405,4 +420,17 @@ bool LocalPlanner::checkForCollision() {
     	}
   	}  
   	return avoid;
+}
+
+void LocalPlanner::cropPointCloud() {  
+  octomap::point3d half_min_cache;
+  octomap::point3d half_max_cache;
+  half_min_cache.x() = waypt.vector.x - min_cache_x;
+  half_min_cache.y() = waypt.vector.y - min_cache_y;
+  half_min_cache.z() = waypt.vector.z - min_cache_z;
+  half_max_cache.x() = waypt.vector.x;
+  half_max_cache.y() = waypt.vector.y + max_cache_y;
+  half_max_cache.z() = waypt.vector.z + max_cache_z;
+
+  octomapCloud.crop(half_min_cache, half_max_cache); 
 }
