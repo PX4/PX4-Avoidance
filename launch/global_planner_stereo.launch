@@ -14,11 +14,11 @@
     <include file="$(find disparity_to_point_cloud)/launch/depth_map_fusion.launch" >
     </include>
 
-  <!--  <include file="$(find disparity_to_point_cloud)/launch/d2pcloud.launch">
-    </include> -->
+    <include file="$(find disparity_to_point_cloud)/launch/d2pcloud.launch">
+    </include>  
   
+   <node name="local_planner_node" pkg="avoidance" type="local_planner_node" />
   
-
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
     <!-- <node name="disparity_image_transform" pkg="topic_tools" type="transform"
       args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" /> -->
