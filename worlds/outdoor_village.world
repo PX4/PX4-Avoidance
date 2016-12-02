@@ -107,9 +107,9 @@
     </include>
     -->
     
-    <include>
+ <!--   <include>
       <uri>model://playfield_heightmap_1</uri>
-    </include>
+    </include> -->
     
     <include>
       <name>house_2</name>
