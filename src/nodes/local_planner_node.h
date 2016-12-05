@@ -27,6 +27,8 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h> 
 
+#include <Eigen/Core>
+
 #include "local_planner.h"
 
 
@@ -62,6 +64,12 @@ private:
     ros::Publisher path_blocked_pub_;
 	ros::Publisher path_selected_pub_;
 	ros::Publisher marker_pub_;
+	ros::Publisher waypoint_pub_;
+    ros::Publisher path_pub_;
+    ros::Publisher path_ideal_pub_;
+
+
+
 
     tf::TransformListener tf_listener_;
 

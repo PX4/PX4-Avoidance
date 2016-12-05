@@ -13,6 +13,11 @@ LocalPlannerNode::LocalPlannerNode() {
     path_selected_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_selected", 1);
     marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization_marker", 1);
 
+    waypoint_pub_ = nh_.advertise<geometry_msgs::Vector3Stamped>("/new_waypoint", 10);
+    path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 10);
+    path_ideal_pub_ = nh_.advertise<nav_msgs::Path>("/path_ideal", 10);
+
+
 
 }
 
@@ -80,22 +85,31 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 input){
 	pcl::PointCloud<pcl::PointXYZ> complete_cloud;
     sensor_msgs::PointCloud2 pc2cloud_world;
 
-
-    tf_listener_.waitForTransform("/world", input.header.frame_id, input.header.stamp, ros::Duration(1.0));
+    tf_listener_.waitForTransform("/world", input.header.frame_id, input.header.stamp, ros::Duration(0.5));
     tf::StampedTransform transform;
     tf_listener_.lookupTransform("/world", input.header.frame_id, input.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, input, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
     local_planner.filterPointCloud(complete_cloud);
 
-   // if(local_planner.obstacleAhead() && local_planner.init!=0 && !brake_test) {
-	local_planner.createPolarHistogram();
-	local_planner.findFreeDirections();
-//	local_planner.calculateCostMap();
-//	local_planner.getNextWaypoint();
-//	}
+    std::cout << "local_planner" << local_planner.obstacleAhead() << " " << local_planner.init << std::endl;
+   if(local_planner.obstacleAhead() && local_planner.init!=0) {
+        printf("dentro if \n");
+	    local_planner.createPolarHistogram();
+	    local_planner.findFreeDirections();
+	    local_planner.calculateCostMap();
+        //local_planner.getNextWaypoint();
+	}
 
 	publishAll();
+
+    local_planner.cropPointCloud(); 
+
+
+    if(local_planner.init == 0) { 
+        ros::Duration(2).sleep();
+        local_planner.init =1;
+    }
 
 
 }
@@ -107,12 +121,23 @@ void LocalPlannerNode::publishAll() {
            	local_planner.pose.y,
 			local_planner.pose.z);
 
+     Eigen::Vector3d desired_position(local_planner.waypt.vector.x, local_planner.waypt.vector.y, local_planner.waypt.vector.z);
+    ROS_INFO("Publishing waypoint: [%f, %f, %f].",
+           desired_position.x(),
+           desired_position.y(),
+           desired_position.z());
+
+
+
 	local_pointcloud_pub_.publish(local_planner.final_cloud);
 	path_candidates_pub_.publish(local_planner.path_candidates);
     path_rejected_pub_.publish(local_planner.path_rejected);
     path_blocked_pub_.publish(local_planner.path_blocked);
-	//path_selected_pub_.publish(local_planner.path_selected);
-
+	path_selected_pub_.publish(local_planner.path_selected);
+    waypoint_pub_.publish(local_planner.waypt);
+    path_pub_.publish(path_actual);
+    path_ideal_pub_.publish(path_ideal);
+   
 	pose_array_pub_.publish(pose_array);
 
 	publishMarker();

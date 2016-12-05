@@ -32,6 +32,8 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 
+
+
 #define PI 3.14159265
 #define alpha_res 10
 #define grid_length 360/alpha_res
@@ -94,8 +96,8 @@ public:
 	double z_brake_cost_param = 8.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
-	double goal_x_param = 1.0;
-	double goal_y_param = 0.0;
+	double goal_x_param = 18.0;
+	double goal_y_param = 8.0;
 	double goal_z_param = 2.5;
 	double wavefront_param = 0.9;
 	double fall_height;
@@ -107,7 +109,6 @@ public:
 	nav_msgs::GridCells path_rejected;
 	nav_msgs::GridCells path_blocked;
 
-	
 	
 
 	LocalPlanner();

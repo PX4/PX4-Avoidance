@@ -26,12 +26,13 @@ void LocalPlanner::setVelocity(ros::Time current) {
   velocity_z = (pose.z - previous_pose_z)/dt ;
   fall_height = velocity_x*velocity_x/(2*9.81);
 
+
 }
 
 void LocalPlanner::setLimits() { 
   front_x = wavefront_param*velocity_x;
-  //if(front_x<=4.5)
-  //  front_x = 4.5;
+  if(front_x<=4.5)
+    front_x = 4.5;
   min.x = pose.x- min_x;
   min.y = pose.y- min_y;
   min.z = pose.z- min_z;
@@ -53,6 +54,9 @@ void LocalPlanner::setLimits() {
   half_cache.x = pose.x;
   half_cache.y = pose.y + max_cache_y;
   half_cache.z = pose.z + max_cache_z;
+
+
+ // printf("back %f front %f \n",back.x, front.x);
   
 }
 
@@ -102,7 +106,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   		sor.setMeanK (5);
   		sor.setStddevMulThresh (0.5);
   		sor.filter(final_cloud);
-  		std::cout << "outliers removed" << std::endl;
+
+
+
 
   	}
   	else
@@ -124,6 +130,7 @@ float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
 bool LocalPlanner::obstacleAhead() { 
   	float dist_y =  abs(pose.y - goal.y);
   	float dist_z =  abs(pose.z - goal.z);
+    printf("obstacle %d, dist y %f dist z %d, first brake %d \n", obstacle, dist_y, dist_z, first_brake);
 	if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake) { 
     	if(!first_brake) {   
       		first_brake = true; 
@@ -147,9 +154,7 @@ void LocalPlanner::createPolarHistogram() {
 	float bbx_rad = (max.x-min.x)*sqrt(2)/2; 
   	float dist;
  
-  	 polar_histogram.setZero();
-
-  	std::cout << "polar_histogram created " << std::endl;
+  	polar_histogram.setZero();
 
   	pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
     
@@ -171,7 +176,6 @@ void LocalPlanner::createPolarHistogram() {
       		int z = (180+beta_z)/alpha_res - 1;
 
       		polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
-      		std::cout << polar_histogram.get(e,z) << std::endl;
     	}
  	}
 }
