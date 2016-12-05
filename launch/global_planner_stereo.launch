@@ -6,10 +6,22 @@
     </include>
 
 
-    <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
+    <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
+        <param name="stereo_algorithm" type="double" value="1.0" />
+        <param name="correlation_window_size" type="double" value="19.0" />
+        <param name="uniqueness_ratio" type="double" value="40.0" />
+        <param name="speckle_size" type="double" value="400.0" />
+        <param name="speckle_range" type="double" value="2.0" />
+    </node>
 
     
-    <node ns="stereoV" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_procV"/> 
+    <node ns="stereoV" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_procV">
+        <param name="stereo_algorithm" type="double" value="1.0" />
+        <param name="correlation_window_size" type="double" value="19.0" />
+        <param name="uniqueness_ratio" type="double" value="40.0" />
+        <param name="speckle_size" type="double" value="400.0" />
+        <param name="speckle_range" type="double" value="2.0" />
+    </node> 
 
     <include file="$(find disparity_to_point_cloud)/launch/depth_map_fusion.launch" >
     </include>
@@ -17,9 +29,19 @@
     <include file="$(find disparity_to_point_cloud)/launch/d2pcloud.launch">
     </include>  
   
-   <node name="local_planner_node" pkg="avoidance" type="local_planner_node" />
+   <!-- <node name="local_planner_node" pkg="avoidance" type="local_planner_node" /> -->
   
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
-    <!-- <node name="disparity_image_transform" pkg="topic_tools" type="transform"
-      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" /> -->
+
+    <!-- rosrun topic_tools transform /stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image' -->
+
+  <!--  <node name="transform" pkg="topic_tools" type="transform" 
+      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" />
+
+       <node name="transformV" pkg="topic_tools" type="transform"
+      args="/stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image'" /> -->
+
+
+
+
 </launch>
