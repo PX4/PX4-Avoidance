@@ -28,8 +28,10 @@
 
     <include file="$(find disparity_to_point_cloud)/launch/d2pcloud.launch">
     </include>  
-  
+
    <!-- <node name="local_planner_node" pkg="avoidance" type="local_planner_node" /> -->
+
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/planning.rviz" />
   
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
 
