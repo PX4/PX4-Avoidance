@@ -22,6 +22,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 
 #include <nav_msgs/GridCells.h>
+#include <nav_msgs/Path.h>
 
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/Octomap.h>
@@ -67,6 +68,7 @@ class LocalPlanner {
 
 public:
 	pcl::PointCloud<pcl::PointXYZ> final_cloud;
+	sensor_msgs::PointCloud2 final_cloud_pc2;
 	
 	octomap::Pointcloud octomapCloud;
 
@@ -76,7 +78,8 @@ public:
 
 	geometry_msgs::Point pose, min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
 	geometry_msgs::Point p1;
-	geometry_msgs::Vector3Stamped waypt;
+	geometry_msgs::Vector3Stamped waypt, last_waypt;
+	nav_msgs::Path path_msg;
 
 	ros::Time last_pose_time;
 
@@ -101,6 +104,7 @@ public:
 	double goal_z_param = 2.5;
 	double wavefront_param = 0.9;
 	double fall_height;
+	double curr_yaw;
 
 	Histogram polar_histogram;
 
@@ -128,6 +132,10 @@ public:
 	void getNextWaypoint();
 	bool checkForCollision();
 	void cropPointCloud();
+
+	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
+	double nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
+	void getPathMsg();
 
 };
 

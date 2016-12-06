@@ -8,6 +8,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped input) {
   pose.x = input.pose.position.x ;
   pose.y = input.pose.position.y ;
   pose.z = input.pose.position.z ; 
+  curr_yaw = tf::getYaw(input.pose.orientation);
 
   setVelocity(input.header.stamp);
   previous_pose_x = pose.x ;
@@ -121,6 +122,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     final_cloud.width = final_cloud.points.size();
     std::cout << "final cloud width " << final_cloud.width << std::endl;
     final_cloud.height = 1; 
+
+    pcl::toROSMsg(final_cloud, final_cloud_pc2);
+
 }
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -383,6 +387,7 @@ void LocalPlanner::calculateCostMap() {
 }
 
 void LocalPlanner::getNextWaypoint() {
+
   	waypt = getWaypointFromAngle(p1.x,p1.y);
  
   	if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
@@ -402,7 +407,42 @@ void LocalPlanner::getNextWaypoint() {
     	p1.x = 0;
     	p1.y = 0;
   	}
+
+    last_waypt = waypt;
 }
+
+geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
+  geometry_msgs::PoseStamped pose_msg;
+  pose_msg.header.stamp = ros::Time::now();
+  pose_msg.header.frame_id="/world";
+  pose_msg.pose.position.x = waypt.vector.x;
+  pose_msg.pose.position.y = waypt.vector.y;
+  pose_msg.pose.position.z = waypt.vector.z;
+  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+  return pose_msg;
+}
+
+double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw) {
+  int dx = v.vector.x - u.vector.x;
+  int dy = v.vector.y - u.vector.y;
+  if (dx == 0 && dy == 0) {
+    return last_yaw;   // Going up or down
+  }
+  return atan2(dy, dx);
+}
+
+void LocalPlanner::getPathMsg() {
+
+  path_msg.header.frame_id="/world";
+
+  double last_yaw = curr_yaw;
+  double new_yaw = nextYaw(last_waypt, waypt, last_yaw);
+
+  path_msg.poses.push_back(createPoseMsg(waypt, new_yaw));
+
+  curr_yaw = new_yaw;
+}
+
 
 bool LocalPlanner::checkForCollision() {
   	bool avoid = false;
