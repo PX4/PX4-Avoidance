@@ -4,7 +4,8 @@ LocalPlannerNode::LocalPlannerNode() {
 
 	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/omi_cam/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
-	// /mavros/local_position/pose  ground_truth/pose
+	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+
 	pose_array_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/pose_array",1);
 	local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
     front_pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/front_pointcloud", 1);
@@ -18,16 +19,26 @@ LocalPlannerNode::LocalPlannerNode() {
     path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
     path_ideal_pub_ = nh_.advertise<nav_msgs::Path>("/path_ideal", 1);
 
+    mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+    current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
+    local_planner.setGoal();
 
 }
 
 LocalPlannerNode::~LocalPlannerNode(){}
 
-void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped input){
+void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
 	
-	local_planner.setPose(input);
-	fillPath(input);
+    auto rot_msg = msg;
+    tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
+	local_planner.setPose(rot_msg);
+	fillPath(rot_msg);
+}
+
+void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
+    auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
+    local_planner.curr_vel = transformed_msg;
 }
 
 void LocalPlannerNode::fillPath(const geometry_msgs::PoseStamped input) {
@@ -59,7 +70,7 @@ void LocalPlannerNode::publishMarker() {
     marker.id = i++;
     marker.type = visualization_msgs::Marker::ARROW;
     marker.action = visualization_msgs::Marker::ADD;
-    marker.points.push_back(local_planner.pose);
+    marker.points.push_back(local_planner.pose.pose.position);
 
     geometry_msgs::Point p;
     p.x = local_planner.waypt.vector.x;
@@ -98,15 +109,19 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 input){
          ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
     }
 
-    std::cout << "local_planner" << local_planner.obstacleAhead() << " " << local_planner.init << std::endl;
+    printf("obstacle ahead %d \n", local_planner.obstacleAhead());
    if(local_planner.obstacleAhead() && local_planner.init!=0) {
-        printf("dentro if \n");
 	    local_planner.createPolarHistogram();
 	    local_planner.findFreeDirections();
 	    local_planner.calculateCostMap();
         local_planner.getNextWaypoint();
         local_planner.getPathMsg();
 	}
+   else{
+       local_planner.goFast();
+       local_planner.getPathMsg();
+       
+   }
 
 	publishAll();
 
@@ -124,16 +139,11 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 input){
 void LocalPlannerNode::publishAll() {
 
 	ROS_INFO("Current pose: [%f, %f, %f].",
-           	local_planner.pose.x,
-           	local_planner.pose.y,
-			local_planner.pose.z);
+           	local_planner.pose.pose.position.x,
+           	local_planner.pose.pose.position.y,
+			local_planner.pose.pose.position.z);
 
-     Eigen::Vector3d desired_position(local_planner.waypt.vector.x, local_planner.waypt.vector.y, local_planner.waypt.vector.z);
-    ROS_INFO("Publishing waypoint: [%f, %f, %f].",
-           desired_position.x(),
-           desired_position.y(),
-           desired_position.z());
-
+    
 
 
 	local_pointcloud_pub_.publish(local_planner.final_cloud);
@@ -147,6 +157,10 @@ void LocalPlannerNode::publishAll() {
     path_ideal_pub_.publish(path_ideal);
    
 	pose_array_pub_.publish(pose_array);
+
+    current_waypoint_pub_.publish(local_planner.waypt_p);
+    tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p, "world", local_planner.waypt_p);
+    mavros_waypoint_pub_.publish(local_planner.waypt_p);
 
 	publishMarker();
 

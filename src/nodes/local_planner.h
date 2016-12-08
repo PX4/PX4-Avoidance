@@ -20,6 +20,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/Twist.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
@@ -32,6 +33,7 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
+#include "avoidance/common.h"
 
 
 
@@ -72,13 +74,15 @@ public:
 	
 	octomap::Pointcloud octomapCloud;
 
-	bool obstacle;
+	bool prima_posizione = true;
+	bool obstacle = false;
 	bool first_brake = false;
 	bool braking_param = false;  
 
-	geometry_msgs::Point pose, min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
+	geometry_msgs::Point min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
+	geometry_msgs::PoseStamped pose, waypt_p; 
+	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal;
 	geometry_msgs::Point p1;
-	geometry_msgs::Vector3Stamped waypt, last_waypt;
 	nav_msgs::Path path_msg;
 
 	ros::Time last_pose_time;
@@ -90,8 +94,9 @@ public:
 	float min_cache_x = 2.5, max_cache_x = 2.5, min_cache_y = 2.5, max_cache_y = 2.5, min_cache_z = 2.5, max_cache_z = 2.5; 
 	float rad = 1;
 
-	double previous_pose_x, previous_pose_z;
-	double velocity_x, velocity_z;
+	double previous_pose_x, previous_pose_y, previous_pose_z;
+	double velocity_x, velocity_y, velocity_z;
+	geometry_msgs::TwistStamped curr_vel;
 	double path_y_tolerance_param = 0.2;
 	double path_z_tolerance_param = 0.7;
 	double waypoint_radius_param = 0.25;
@@ -100,11 +105,12 @@ public:
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
 	double goal_x_param = 18.0;
-	double goal_y_param = 8.0;
-	double goal_z_param = 2.5;
+	double goal_y_param = 0.0;
+	double goal_z_param = 3.5;
 	double wavefront_param = 0.9;
 	double fall_height;
-	double curr_yaw;
+	double curr_yaw, last_yaw;
+	double fast_waypoint_update_param = 0.4;
 
 	Histogram polar_histogram;
 
@@ -118,7 +124,7 @@ public:
 	LocalPlanner();
 	~LocalPlanner();
 	
-	void setPose(const geometry_msgs::PoseStamped input);
+	void setPose(const geometry_msgs::PoseStamped msg);
 	void setLimits();
 	void setVelocity(ros::Time);
 	void setGoal();
@@ -132,10 +138,13 @@ public:
 	void getNextWaypoint();
 	bool checkForCollision();
 	void cropPointCloud();
-
+	void goFast();
+	void goAhead();
 	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
 	double nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
 	void getPathMsg();
+	//geometry_msgs::PoseStamped publishSetPoint();
+	void publishWaypoint(float x, float y, float z);
 
 };
 

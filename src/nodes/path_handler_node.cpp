@@ -20,7 +20,7 @@ PathHandlerNode::PathHandlerNode() {
   ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &PathHandlerNode::positionCallback, this);
 
   // Advertice topics
-  mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local2", 10);
   current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
   three_point_msg_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_msg", 10);

@@ -31,6 +31,8 @@
 
 #include "local_planner.h"
 
+#include "avoidance/common.h"
+
 
 class LocalPlannerNode{
 
@@ -52,6 +54,7 @@ private:
 	//subscribers
 	ros::Subscriber pointcloud_sub_ ;
 	ros::Subscriber pose_sub_ ; 
+	ros::Subscriber velocity_sub_ ;
 
 
 	//publishers
@@ -68,13 +71,16 @@ private:
     ros::Publisher path_pub_;
     ros::Publisher path_ideal_pub_;
 
+    ros::Publisher mavros_waypoint_pub_;
+  	ros::Publisher current_waypoint_pub_;
 
 
 
     tf::TransformListener tf_listener_;
 
-    void positionCallback(const geometry_msgs::PoseStamped input);
+    void positionCallback(const geometry_msgs::PoseStamped msg);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 input);
+	void velocityCallback(const geometry_msgs::TwistStamped msg);
 	void publishAll();
 	void fillPath(const geometry_msgs::PoseStamped);
 	void publishMarker();
