@@ -42,6 +42,11 @@ void LocalPlanner::setVelocity(ros::Time current) {
   velocity_y = curr_vel.twist.linear.y;
   velocity_z = curr_vel.twist.linear.z;
   fall_height = velocity_x*velocity_x/(2*9.81);
+
+  ROS_INFO("Speed: [%f, %f, %f].",
+           velocity_x,
+           velocity_y,
+           velocity_z);
 }
 
 void LocalPlanner::setLimits() { 
@@ -207,7 +212,7 @@ void LocalPlanner::createPolarHistogram() {
     	if(dist < bbx_rad) { 
       		int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
       		int beta_e = floor((atan2(temp.z-pose.pose.position.z,sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI));//elevation angle
-    
+          
       		beta_z = beta_z + (alpha_res - beta_z%alpha_res);
       		beta_e = beta_e + (alpha_res - beta_e%alpha_res); 
       
@@ -215,6 +220,7 @@ void LocalPlanner::createPolarHistogram() {
       		int z = (180+beta_z)/alpha_res - 1;
 
       		polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
+
     	}
  	}
 }
@@ -353,22 +359,23 @@ double LocalPlanner::costFunction(int e, int z) {
   int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
   int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);//elevation angle
 
-  waypt = getWaypointFromAngle(e,z);
+  geometry_msgs::Vector3Stamped ww;
+  ww = getWaypointFromAngle(e,z);
   
   geometry_msgs::Point p;
-  p.x = waypt.vector.x;
-  p.y = waypt.vector.y;
-  p.z = waypt.vector.z;
+  p.x = ww.vector.x;
+  p.y = ww.vector.y;
+  p.z = ww.vector.z;
 
   if(velocity_x > 1.4 && braking_param ) {
     double obs_dist = distance2d(p,obs);
-    double energy_waypoint = 0.5*1.56*velocity_x*velocity_x + 1.56*9.81*waypt.vector.z;
+    double energy_waypoint = 0.5*1.56*velocity_x*velocity_x + 1.56*9.81*ww.vector.z;
     double energy_threshold = 0.5*1.56*3*3 + 1.56*9.81*goal.z;
     double energy_diff = energy_waypoint-energy_threshold;
     double ke_diff =  0.5*1.56*velocity_x*velocity_x - 0.5*1.56*1.4*1.4;
     double pe_diff =  1.56*9.81*pose.pose.position.z - 1.56*9.81*goal.z;
 
-    cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(waypt.vector.x-pose.pose.position.x) + z_brake_cost_param*pe_diff*(waypt.vector.z-pose.pose.position.z);
+    cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x) + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
 
   }
   else {
@@ -423,25 +430,34 @@ void LocalPlanner::calculateCostMap() {
 
 void LocalPlanner::getNextWaypoint() {
 
-  	waypt = getWaypointFromAngle(p1.x,p1.y);
- 
-  	if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
-    	waypt.vector.x = pose.pose.position.x-0.2;
+  	setpoint = getWaypointFromAngle(p1.x,p1.y);
+
+    if (withinGoalRadius() || !first_reach){
+      ROS_INFO("Goal Reached: Hoovering");
+      waypt.vector.x = pose.pose.position.x;
+      waypt.vector.y = pose.pose.position.y;
+      waypt.vector.z = pose.pose.position.z;
+    }
+    else{
+      waypt = setpoint;
+  	  if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
+    	  waypt.vector.x = pose.pose.position.x-0.2;
     //waypt.vector.y = pose.y;
-    	waypt.vector.z = pose.pose.position.z+ 0.2;
-    	p1.x = 0;
-    	p1.y = 0;
-    	ROS_INFO(" Too close to the obstacle. Going back");
-  	}
-   	if(velocity_x>1.4 && pose.pose.position.z>0.5) { 
+    	  waypt.vector.z = pose.pose.position.z+ 0.2;
+    	  p1.x = 0;
+    	  p1.y = 0;
+    	  ROS_INFO(" Too close to the obstacle. Going back");
+  	  }
+   	  if(velocity_x>1.4 && pose.pose.position.z>0.5) { 
     
     //waypt.vector.x = stop_pose.x;
-   	 	waypt.vector.y = 0; //stop_pose.y;global_path_pub
+   	 	  waypt.vector.y = 0; //stop_pose.y;global_path_pub
     //waypt.vector.z = stop_pose.z;
-    	ROS_INFO(" Braking !! ");
-    	p1.x = 0;
-    	p1.y = 0;
-  	}
+    	  ROS_INFO(" Braking !! ");
+    	  p1.x = 0;
+    	  p1.y = 0;
+  	  }
+    }
 
     Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
     ROS_INFO("Publishing waypoint: [%f, %f, %f].",
@@ -479,19 +495,63 @@ bool LocalPlanner::checkForCollision() {
     return avoid;
 }
 
-void LocalPlanner::goFast()
-{
-   waypt.vector.x = waypt.vector.x + fast_waypoint_update_param;
-   waypt.vector.y = goal.y;
-   waypt.vector.z = goal.z;
+void LocalPlanner::goFast(){
 
-   Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
+    geometry_msgs::Vector3Stamped w_alt;
+  if (withinGoalRadius() || !first_reach){
+
+    ROS_INFO("Goal Reached: Hoovering");
+    waypt.vector.x = waypt_stop.pose.position.x;
+    waypt.vector.y = waypt_stop.pose.position.y;
+    waypt.vector.z = waypt_stop.pose.position.z;
+  }
+  else {
+s
+    w_alt.vector.x = waypt.vector.x + fast_waypoint_update_param;
+    w_alt.vector.y = goal.y;
+    w_alt.vector.z = goal.z;
+    printf("alternativa %f %f %f \n", w_alt.vector.x, w_alt.vector.y, w_alt.vector.z);
+
+  double speed = 2.0;
+  tf::Vector3 vec;
+  vec.setX(goal.x - pose.pose.position.x);
+  vec.setY(goal.y - pose.pose.position.y);
+  vec.setZ(goal.z - pose.pose.position.z);
+  double new_len = vec.length() < 1.0 ? vec.length() : speed;
+  vec.normalize();
+  vec *= new_len;
+  waypt.vector.x = pose.pose.position.x + vec.getX();
+  waypt.vector.y = pose.pose.position.y + vec.getY();
+  waypt.vector.z = pose.pose.position.z + vec.getZ(); 
+
+  }
+
+  Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
   ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].",
            desired_position.x(),
            desired_position.y(),
            desired_position.z());
 
     last_waypt = waypt;
+
+}
+
+bool LocalPlanner::withinGoalRadius(){
+
+  geometry_msgs::Point a;
+  a.x = std::abs(goal.x - pose.pose.position.x); 
+  a.y = std::abs(goal.y - pose.pose.position.y);
+  a.z = std::abs(goal.z - pose.pose.position.z);;
+  printf("dist %f %f %f \n", a.x, a.y, a.z);
+  if(a.x < 0.5 && a.y < 0.5 && a.z < 0.5){
+    if (first_reach){
+      waypt_stop = pose;
+      first_reach = false;
+    }
+    return true;
+  }
+  else
+    return false;
 
 }
 

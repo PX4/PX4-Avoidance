@@ -74,13 +74,13 @@ public:
 	
 	octomap::Pointcloud octomapCloud;
 
-	bool prima_posizione = true;
+	bool first_reach = true;
 	bool obstacle = false;
 	bool first_brake = false;
 	bool braking_param = false;  
 
 	geometry_msgs::Point min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
-	geometry_msgs::PoseStamped pose, waypt_p; 
+	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p; 
 	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal;
 	geometry_msgs::Point p1;
 	nav_msgs::Path path_msg;
@@ -104,8 +104,8 @@ public:
 	double z_brake_cost_param = 8.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
-	double goal_x_param = 18.0;
-	double goal_y_param = 0.0;
+	double goal_x_param = 18;
+	double goal_y_param = 6;
 	double goal_z_param = 3.5;
 	double wavefront_param = 0.9;
 	double fall_height;
@@ -145,6 +145,7 @@ public:
 	void getPathMsg();
 	//geometry_msgs::PoseStamped publishSetPoint();
 	void publishWaypoint(float x, float y, float z);
+	bool withinGoalRadius();
 
 };
 
