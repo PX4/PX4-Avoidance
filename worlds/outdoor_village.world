@@ -107,9 +107,9 @@
     </include>
     -->
     
- <!--   <include>
+<!--     <include>
       <uri>model://playfield_heightmap_1</uri>
-    </include> -->
+    </include>  -->
     
     <include>
       <name>house_2</name>
@@ -275,6 +275,19 @@
       <uri>model://lampWithLines_model</uri>
       <pose>-5.672 -0.487 4.38  0 0 -0.7726</pose>
     </include>
+
+    <include>
+      <name>lampLine_model_2</name>
+      <uri>model://lampWithLines_model</uri>
+      <pose>13.34 -7.5 4.38  0 0 0</pose>
+    </include>
+
+    <include>
+      <name>powerline_model_2</name>
+      <uri>model://powerlineLong_model</uri>
+      <pose>11.86 11.65 4.5  0 0 -0.651</pose>
+    </include>
+
 <!--
      <include>
       <name>powerline_model_2</name>
@@ -307,7 +320,7 @@
       <uri>model://line_model</uri>
       <pose>20 -0.168 4.07  0 0 -0.5</pose>
     </include>
- -->
+
 
 
 
