@@ -10,6 +10,7 @@ LocalPlanner::LocalPlanner() {
    // current_goal.pose.orientation = tf::createQuaternionMsgFromYaw(strat_yaw);
     last_goal = current_goal;
 
+
 }
 
 LocalPlanner::~LocalPlanner() {}
@@ -22,7 +23,9 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   //pose.y = input.pose.position.y ;
 
   //pose.z = input.pose.position.z ; 
-  curr_yaw = tf::getYaw(msg.pose.orientation);
+  if (set_first_yaw){
+    curr_yaw = tf::getYaw(msg.pose.orientation); 
+  }
 
   setVelocity(msg.header.stamp);
   previous_pose_x = pose.pose.position.x;
@@ -37,16 +40,21 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 
 void LocalPlanner::setVelocity(ros::Time current) {
 
+ 
 //  double dt = (current-last_pose_time).toSec();
   velocity_x = curr_vel.twist.linear.x;
   velocity_y = curr_vel.twist.linear.y;
   velocity_z = curr_vel.twist.linear.z;
   fall_height = velocity_x*velocity_x/(2*9.81);
 
-  ROS_INFO("Speed: [%f, %f, %f].",
+  if (counter % 4 == 0){ //too many msgs, publish 1 in 4.
+    
+    ROS_INFO("Speed: [%f, %f, %f].",
            velocity_x,
            velocity_y,
            velocity_z);
+  }
+  counter++;
 }
 
 void LocalPlanner::setLimits() { 
@@ -161,7 +169,7 @@ bool LocalPlanner::obstacleAhead() {
   	float dist_y =  abs(pose.pose.position.y - goal.y);
   	float dist_z =  abs(pose.pose.position.z - goal.z);
     
-    if(obstacle) { //} && dist_y>path_y_tolerance_param &&  dist_z >path_z_tolerance_param){
+    if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake){
       first_brake = true; 
           obs.x = pose.pose.position.x+front_x ;
           obs.y = pose.pose.position.y;
@@ -316,14 +324,14 @@ void LocalPlanner::findFreeDirections() {
             	p.y = z*alpha_res+alpha_res-180;
             	p.z = 0;
             	path_rejected.cells.push_back(p);  
-            	std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
+            	//std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
            	}
            	else {
             	p.x = e*alpha_res+alpha_res-180;  
             	p.y = z*alpha_res+alpha_res-180;
             	p.z = 0;
             	path_blocked.cells.push_back(p);   
-            	std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl;   
+            	//std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl;   
             }
       	} 
     }
@@ -376,6 +384,11 @@ double LocalPlanner::costFunction(int e, int z) {
     double pe_diff =  1.56*9.81*pose.pose.position.z - 1.56*9.81*goal.z;
 
     cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x) + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
+    // double kin_x = 0.5*1.56*velocity_x*velocity_x*(ww.vector.x-pose.pose.position.x);
+    // double kin_y = 0.5*1.56*velocity_y*velocity_y*(ww.vector.y-pose.pose.position.y);
+    // double kin_z = 0.5*1.56*velocity_z*velocity_z*(ww.vector.z-pose.pose.position.z);
+
+    //  cost = (1/obs_dist)  + x_brake_cost_param*kin_x + x_brake_cost_param*kin_y + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
 
   }
   else {
@@ -430,13 +443,14 @@ void LocalPlanner::calculateCostMap() {
 
 void LocalPlanner::getNextWaypoint() {
 
+    last_waypt = waypt;
   	setpoint = getWaypointFromAngle(p1.x,p1.y);
 
     if (withinGoalRadius() || !first_reach){
       ROS_INFO("Goal Reached: Hoovering");
-      waypt.vector.x = pose.pose.position.x;
-      waypt.vector.y = pose.pose.position.y;
-      waypt.vector.z = pose.pose.position.z;
+      waypt.vector.x = waypt_stop.pose.position.x;
+      waypt.vector.y = waypt_stop.pose.position.y;
+      waypt.vector.z = waypt_stop.pose.position.z;
     }
     else{
       waypt = setpoint;
@@ -446,7 +460,7 @@ void LocalPlanner::getNextWaypoint() {
     	  waypt.vector.z = pose.pose.position.z+ 0.2;
     	  p1.x = 0;
     	  p1.y = 0;
-    	  ROS_INFO(" Too close to the obstacle. Going back");
+    	  ROS_INFO(" Too close to the obstacle. Going back %f %f",waypt.vector.x, waypt.vector.z);
   	  }
    	  if(velocity_x>1.4 && pose.pose.position.z>0.5) { 
     
@@ -465,7 +479,7 @@ void LocalPlanner::getNextWaypoint() {
            desired_position.y(),
            desired_position.z());
 
-    last_waypt = waypt;
+    
 
   //  publishWaypoint(waypt.vector.x, waypt.vector.y, waypt.vector.z);*/
 
@@ -506,11 +520,10 @@ void LocalPlanner::goFast(){
     waypt.vector.z = waypt_stop.pose.position.z;
   }
   else {
-s
-    w_alt.vector.x = waypt.vector.x + fast_waypoint_update_param;
-    w_alt.vector.y = goal.y;
-    w_alt.vector.z = goal.z;
-    printf("alternativa %f %f %f \n", w_alt.vector.x, w_alt.vector.y, w_alt.vector.z);
+
+    // waypt.vector.x = waypt.vector.x + fast_waypoint_update_param;
+    // waypt.vector.y = goal.y;
+    // waypt.vector.z = goal.z;
 
   double speed = 2.0;
   tf::Vector3 vec;
@@ -518,11 +531,13 @@ s
   vec.setY(goal.y - pose.pose.position.y);
   vec.setZ(goal.z - pose.pose.position.z);
   double new_len = vec.length() < 1.0 ? vec.length() : speed;
+  
   vec.normalize();
   vec *= new_len;
   waypt.vector.x = pose.pose.position.x + vec.getX();
   waypt.vector.y = pose.pose.position.y + vec.getY();
   waypt.vector.z = pose.pose.position.z + vec.getZ(); 
+  // printf("alt %f %f %f \n", w_alt.vector.x, w_alt.vector.y, w_alt.vector.z);
 
   }
 
@@ -542,7 +557,7 @@ bool LocalPlanner::withinGoalRadius(){
   a.x = std::abs(goal.x - pose.pose.position.x); 
   a.y = std::abs(goal.y - pose.pose.position.y);
   a.z = std::abs(goal.z - pose.pose.position.z);;
-  printf("dist %f %f %f \n", a.x, a.y, a.z);
+  
   if(a.x < 0.5 && a.y < 0.5 && a.z < 0.5){
     if (first_reach){
       waypt_stop = pose;
@@ -598,8 +613,7 @@ void LocalPlanner::getPathMsg() {
   curr_pose.vector.x = pose.pose.position.x;
   curr_pose.vector.y = pose.pose.position.y;
   curr_pose.vector.z = pose.pose.position.z;
-  double new_yaw = nextYaw(last_waypt, waypt, last_yaw);
-
+  double new_yaw = nextYaw(curr_pose, waypt, last_yaw);
   waypt_p = createPoseMsg(waypt, new_yaw);
 
   path_msg.poses.push_back(waypt_p);
@@ -612,30 +626,30 @@ void LocalPlanner::goAhead() {
  // double yaw_1 = tf::getYaw(current_goal.pose.orientation);
  // double yaw_2 = tf::getYaw(pose.pose.orientation);
 
-  last_goal = current_goal;
+//   last_goal = current_goal;
 
-  double speed = 2.0;
-  tf::Vector3 vec;
-  vec.setX(current_goal.vector.x - pose.pose.position.x);
-  vec.setY(current_goal.vector.y - pose.pose.position.y);
-  vec.setZ(current_goal.vector.z - pose.pose.position.z);
+//   double speed = 2.0;
+//   tf::Vector3 vec;
+//   vec.setX(current_goal.vector.x - pose.pose.position.x);
+//   vec.setY(current_goal.vector.y - pose.pose.position.y);
+//   vec.setZ(current_goal.vector.z - pose.pose.position.z);
 
-  // = avoidance::toTfVector3(avoidance::subtractPoints(current_goal.vector, pose.pose.position));
-    // If we are less than 1.0 away, then we should stop at the goal
+//   // = avoidance::toTfVector3(avoidance::subtractPoints(current_goal.vector, pose.pose.position));
+//     // If we are less than 1.0 away, then we should stop at the goal
 
-  double new_len = vec.length() < 1.0 ? vec.length() : speed;
-  vec.normalize();
-  vec *= new_len;
+//   double new_len = vec.length() < 1.0 ? vec.length() : speed;
+//   vec.normalize();
+//   vec *= new_len;
 
-//  setpoint = current_goal;  // The intermediate position sent to Mavros
-  current_goal.vector.x = pose.pose.position.x + vec.getX();
-  current_goal.vector.y = pose.pose.position.y + vec.getY();
-  current_goal.vector.z = pose.pose.position.z + vec.getZ(); 
+// //  setpoint = current_goal;  // The intermediate position sent to Mavros
+//   current_goal.vector.x = pose.pose.position.x + vec.getX();
+//   current_goal.vector.y = pose.pose.position.y + vec.getY();
+//   current_goal.vector.z = pose.pose.position.z + vec.getZ(); 
 
-  publishWaypoint(pose.pose.position.x + vec.getX(), pose.pose.position.y + vec.getY(), pose.pose.position.z + vec.getZ());
+//   publishWaypoint(pose.pose.position.x + vec.getX(), pose.pose.position.y + vec.getY(), pose.pose.position.z + vec.getZ());
 
 
-  ROS_INFO("GO AHEAD publishing waypoint [%f, %f, %f].", setpoint.vector.x,  setpoint.vector.y,  setpoint.vector.z);
+//   ROS_INFO("GO AHEAD publishing waypoint [%f, %f, %f].", setpoint.vector.x,  setpoint.vector.y,  setpoint.vector.z);
     // Publish setpoint for vizualization
 //  current_waypoint_publisher_.publish(setpoint);
 

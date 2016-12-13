@@ -81,6 +81,7 @@ private:
     void positionCallback(const geometry_msgs::PoseStamped msg);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 input);
 	void velocityCallback(const geometry_msgs::TwistStamped msg);
+	void readParams();
 	void publishAll();
 	void fillPath(const geometry_msgs::PoseStamped);
 	void publishMarker();

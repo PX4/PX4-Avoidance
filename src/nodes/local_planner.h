@@ -78,6 +78,7 @@ public:
 	bool obstacle = false;
 	bool first_brake = false;
 	bool braking_param = false;  
+	bool set_first_yaw = true;
 
 	geometry_msgs::Point min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
 	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p; 
@@ -88,6 +89,7 @@ public:
 	ros::Time last_pose_time;
 
 	int init = 0;
+	int counter = 0;
 
 	float min_x = 1.5, max_x = 1.5, min_y = 1.5, max_y = 1.5, min_z = 1.5, max_z = 1.5; 
 	float back_x = 0, front_x = 4.5, back_y = 0.6, front_y = 0.6, back_z = 0.6, front_z = 0.6;
@@ -104,9 +106,9 @@ public:
 	double z_brake_cost_param = 8.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
-	double goal_x_param = 18;
-	double goal_y_param = 6;
-	double goal_z_param = 3.5;
+	double goal_x_param;
+	double goal_y_param;
+	double goal_z_param;
 	double wavefront_param = 0.9;
 	double fall_height;
 	double curr_yaw, last_yaw;
