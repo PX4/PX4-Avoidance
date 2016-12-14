@@ -45,18 +45,9 @@ void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
 
 void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 18);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 6);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 4);
+  nh_.param<double>("goal_y_param", local_planner.goal_y_param, -2.85);
+  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
 
-   // if (!nh_.getParam("goal_x_param", local_planner.goal_x_param)) {
-   //    ROS_WARN("Failed to load parameter goal_x_param");
-   //  }
-   // if (!nh_.getParam("goal_y_param", local_planner.goal_y_param)) {
-   //    ROS_WARN("Failed to load parameter goal_y_param");
-   //  }
-   //  if (!nh_.getParam("goal_z_param", local_planner.goal_z_param)) {
-   //    ROS_WARN("Failed to load parameter goal_z_param");
-   //  }
 }
 
 void LocalPlannerNode::fillPath(const geometry_msgs::PoseStamped input) {
@@ -132,12 +123,12 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 input){
 	    local_planner.createPolarHistogram();
 	    local_planner.findFreeDirections();
 	    local_planner.calculateCostMap();
-        local_planner.getNextWaypoint();
-        local_planner.getPathMsg();
+      local_planner.getNextWaypoint();
+      local_planner.getPathMsg();
 	}
    else{
-       local_planner.goFast();
-       local_planner.getPathMsg();
+      local_planner.goFast();
+      local_planner.getPathMsg();
        
    }
 
@@ -166,10 +157,10 @@ void LocalPlannerNode::publishAll() {
 
 	local_pointcloud_pub_.publish(local_planner.final_cloud);
   front_pointcloud_pub_.publish(local_planner.final_cloud_pc2);
-	path_candidates_pub_.publish(local_planner.path_candidates);
-    path_rejected_pub_.publish(local_planner.path_rejected);
-    path_blocked_pub_.publish(local_planner.path_blocked);
-	path_selected_pub_.publish(local_planner.path_selected);
+	path_candidates_pub_.publish(local_planner.Ppath_candidates);
+    path_rejected_pub_.publish(local_planner.Ppath_rejected);
+    path_blocked_pub_.publish(local_planner.Ppath_blocked);
+	path_selected_pub_.publish(local_planner.Ppath_selected);
     waypoint_pub_.publish(local_planner.path_msg);
     path_pub_.publish(path_actual);
     path_ideal_pub_.publish(path_ideal);

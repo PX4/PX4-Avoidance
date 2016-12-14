@@ -58,9 +58,10 @@ void LocalPlanner::setVelocity(ros::Time current) {
 }
 
 void LocalPlanner::setLimits() { 
-//  front_x = wavefront_param*velocity_x;
- // if(front_x<=4.5)
- //   front_x = 4.5;
+ front_x = wavefront_param*velocity_x;
+ if(front_x<=4.5)
+   front_x = 4.5;
+ 
   min.x = pose.pose.position.x- min_x;
   min.y = pose.pose.position.y- min_y;
   min.z = pose.pose.position.z- min_z;
@@ -126,12 +127,13 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 	if(front_cloud.points.size()>1) {    
     	obstacle = true;
 
+
     	octomap::Pointcloud::iterator oc_it;
 		for (oc_it = octomapCloud.begin(); oc_it != octomapCloud.end(); ++oc_it) {
-			//std::cout << "iterator" << std::endl;
+			 //  printf("[%f %f %f] ",oc_it->x(),oc_it->y(),oc_it->z() );
       		if((oc_it->x())<max.x&&(oc_it->x())>min.x&&(oc_it->y())<max.y&&(oc_it->y())>min.y&&(oc_it->z())<max.z&&(oc_it->z())>min.z) {
         		cloud->points.push_back(pcl::PointXYZ(oc_it->x(),oc_it->y(),oc_it->z()));
-        		//std::cout << "cloud->points push back" << std::endl;
+        		
       		}
    		}
  
@@ -158,7 +160,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     final_cloud.height = 1; 
 
     pcl::toROSMsg(final_cloud, final_cloud_pc2);
-
 }
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -177,6 +178,7 @@ bool LocalPlanner::obstacleAhead() {
           stop_pose.x = pose.pose.position.x;
           stop_pose.y = pose.pose.position.y;
           stop_pose.z = pose.pose.position.z;
+          return true;
     }
     else{
       first_brake = false;
@@ -241,6 +243,7 @@ void LocalPlanner::findFreeDirections() {
   bool free = true;
   bool corner = false;
   geometry_msgs::Point p;
+  geometry_msgs::Point Pp;
 
   path_candidates.cells.clear();
   path_candidates.header.stamp = ros::Time::now();
@@ -265,6 +268,30 @@ void LocalPlanner::findFreeDirections() {
   path_selected.header.frame_id = "/world";
   path_selected.cell_width = alpha_res;
   path_selected.cell_height = alpha_res;
+
+  Ppath_candidates.cells.clear();
+  Ppath_candidates.header.stamp = ros::Time::now();
+  Ppath_candidates.header.frame_id = "/world";
+  Ppath_candidates.cell_width = 1;
+  Ppath_candidates.cell_height = 1;
+
+  Ppath_rejected.cells.clear();
+  Ppath_rejected.header.stamp = ros::Time::now();
+  Ppath_rejected.header.frame_id = "/world";
+  Ppath_rejected.cell_width = 1;
+  Ppath_rejected.cell_height = 1;
+
+  Ppath_blocked.cells.clear();
+  Ppath_blocked.header.stamp = ros::Time::now();
+  Ppath_blocked.header.frame_id = "/world";
+  Ppath_blocked.cell_width = 1;
+  Ppath_blocked.cell_height = 1;
+
+  Ppath_selected.cells.clear();
+  Ppath_selected.header.stamp = ros::Time::now();
+  Ppath_selected.header.frame_id = "/world";
+  Ppath_selected.cell_width = 1;
+  Ppath_selected.cell_height = 1;
 
 
   for(int e= 0; e<grid_length; e++) {
@@ -314,24 +341,25 @@ void LocalPlanner::findFreeDirections() {
             }
                
            	if(free) {		
-            	p.x = e*alpha_res+alpha_res-180;  
-            	p.y = z*alpha_res+alpha_res-180;
-            	p.z = 0;
-            	path_candidates.cells.push_back(p);  
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.z = 0;                          Pp.z = 0;
+            	path_candidates.cells.push_back(p);  Ppath_candidates.cells.push_back(Pp);  
             }
             else if(!free && polar_histogram.get(e,z) != 0) {
-            	p.x = e*alpha_res+alpha_res-180;  
-            	p.y = z*alpha_res+alpha_res-180;
-            	p.z = 0;
-            	path_rejected.cells.push_back(p);  
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.z = 0;                          Pp.z = 0;
+            	path_rejected.cells.push_back(p);  Ppath_rejected.cells.push_back(Pp);  
             	//std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
            	}
            	else {
-            	p.x = e*alpha_res+alpha_res-180;  
-            	p.y = z*alpha_res+alpha_res-180;
-            	p.z = 0;
-            	path_blocked.cells.push_back(p);   
-            	//std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl;   
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.z = 0;                          Pp.z = 0;
+            	path_blocked.cells.push_back(p);  Ppath_blocked.cells.push_back(Pp);
+            	std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl; 
+              std::cout << "x " <<  Pp.x << " y " << Pp.y << std::endl;
             }
       	} 
     }
@@ -436,6 +464,12 @@ void LocalPlanner::calculateCostMap() {
     p1.y = path_candidates.cells[small_i].y;
     p1.z = path_candidates.cells[small_i].z;
     path_selected.cells.push_back(p1);
+
+    geometry_msgs::Point Pp1;
+    Pp1.x = Ppath_candidates.cells[small_i].x;
+    Pp1.y = Ppath_candidates.cells[small_i].y;
+    Pp1.z = Ppath_candidates.cells[small_i].z;
+    Ppath_selected.cells.push_back(Pp1);
 
    	ROS_INFO(" min_e - %f min_z- %f min_cost %f", p1.x,p1.y, small);
 

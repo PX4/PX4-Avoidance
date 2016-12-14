@@ -121,6 +121,11 @@ public:
 	nav_msgs::GridCells path_rejected;
 	nav_msgs::GridCells path_blocked;
 
+	nav_msgs::GridCells Ppath_candidates;
+	nav_msgs::GridCells Ppath_selected;
+	nav_msgs::GridCells Ppath_rejected;
+	nav_msgs::GridCells Ppath_blocked;
+
 	
 
 	LocalPlanner();
