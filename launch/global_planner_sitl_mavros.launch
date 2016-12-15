@@ -4,8 +4,8 @@
     <arg name="world" default="test_city_2" />
     <arg name="point_cloud_topic" default="/camera/depth/points"/>
     <arg name="use_three_point_msg" default="false"/>
-    <arg name="start_pos_x" default="18" />
-    <arg name="start_pos_y" default="0" />
+    <arg name="start_pos_x" default="0.5" />
+    <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
 
     <param name="use_sim_time" value="true" />
