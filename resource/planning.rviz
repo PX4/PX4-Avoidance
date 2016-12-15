@@ -235,7 +235,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.100000001
       Style: Flat Squares
-      Topic: /stereo/points2
+      Topic: /omi_cam/point_cloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
