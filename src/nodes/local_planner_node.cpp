@@ -1,6 +1,7 @@
 #include "local_planner_node.h"
 
 LocalPlannerNode::LocalPlannerNode() {
+   nh_ = ros::NodeHandle("~"); 
 
 	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/omi_cam/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
@@ -8,22 +9,21 @@ LocalPlannerNode::LocalPlannerNode() {
 
 	pose_array_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/pose_array",1);
 	local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
-    front_pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/front_pointcloud", 1);
 	path_candidates_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_candidates", 1);
-    path_rejected_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_rejected", 1);
-    path_blocked_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_blocked", 1);
-    path_selected_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_selected", 1);
-    marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization_marker", 1);
+  path_rejected_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_rejected", 1);
+  path_blocked_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_blocked", 1);
+  path_selected_pub_ = nh_.advertise<nav_msgs::GridCells>("/path_selected", 1);
+  marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization_marker", 1);
 
-    waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
-    path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
-    path_ideal_pub_ = nh_.advertise<nav_msgs::Path>("/path_ideal", 1);
+  waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
+  path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
+  path_ideal_pub_ = nh_.advertise<nav_msgs::Path>("/path_ideal", 1);
 
-    mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-    current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
+  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
-    readParams();
-    local_planner.setGoal();
+  readParams();
+  local_planner.setGoal();
 
 
 }
@@ -32,25 +32,28 @@ LocalPlannerNode::~LocalPlannerNode(){}
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
 	
-    auto rot_msg = msg;
-    tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
+  auto rot_msg = msg;
+  tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
 	local_planner.setPose(rot_msg);
 	fillPath(rot_msg);
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-    auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
-    local_planner.curr_vel = transformed_msg;
+
+  auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
+  local_planner.curr_vel = transformed_msg;
 }
 
 void LocalPlannerNode::readParams() {
+
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 18);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, -2.85);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+  nh_.param<double>("goal_y_param", local_planner.goal_y_param, -5);
+  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 2.5);
 
 }
 
 void LocalPlannerNode::fillPath(const geometry_msgs::PoseStamped input) {
+
     path_actual.header.stamp = input.header.stamp;
     path_ideal.header.stamp = input.header.stamp;
     path_actual.header.frame_id = input.header.frame_id;
@@ -72,6 +75,7 @@ void LocalPlannerNode::fillPath(const geometry_msgs::PoseStamped input) {
 }
 
 void LocalPlannerNode::publishMarker() {
+
     visualization_msgs::Marker marker;
     marker.header.frame_id = "world";
     marker.header.stamp = ros::Time::now();
@@ -156,20 +160,19 @@ void LocalPlannerNode::publishAll() {
 
 
 	local_pointcloud_pub_.publish(local_planner.final_cloud);
-  front_pointcloud_pub_.publish(local_planner.final_cloud_pc2);
 	path_candidates_pub_.publish(local_planner.Ppath_candidates);
-    path_rejected_pub_.publish(local_planner.Ppath_rejected);
-    path_blocked_pub_.publish(local_planner.Ppath_blocked);
+  path_rejected_pub_.publish(local_planner.Ppath_rejected);
+  path_blocked_pub_.publish(local_planner.Ppath_blocked);
 	path_selected_pub_.publish(local_planner.Ppath_selected);
-    waypoint_pub_.publish(local_planner.path_msg);
-    path_pub_.publish(path_actual);
-    path_ideal_pub_.publish(path_ideal);
+  waypoint_pub_.publish(local_planner.path_msg);
+  path_pub_.publish(path_actual);
+  path_ideal_pub_.publish(path_ideal);
    
 	pose_array_pub_.publish(pose_array);
 
-    current_waypoint_pub_.publish(local_planner.waypt_p);
-    tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p, "world", local_planner.waypt_p);
-    mavros_waypoint_pub_.publish(local_planner.waypt_p);
+  current_waypoint_pub_.publish(local_planner.waypt_p);
+  tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p, "world", local_planner.waypt_p);
+  mavros_waypoint_pub_.publish(local_planner.waypt_p);
 
 	publishMarker();
 

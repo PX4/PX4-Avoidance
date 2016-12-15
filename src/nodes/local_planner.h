@@ -70,7 +70,6 @@ class LocalPlanner {
 
 public:
 	pcl::PointCloud<pcl::PointXYZ> final_cloud;
-	sensor_msgs::PointCloud2 final_cloud_pc2;
 	
 	octomap::Pointcloud octomapCloud;
 
@@ -90,6 +89,7 @@ public:
 
 	int init = 0;
 	int counter = 0;
+	int cost_type;
 
 	float min_x = 1.5, max_x = 1.5, min_y = 1.5, max_y = 1.5, min_z = 1.5, max_z = 1.5; 
 	float back_x = 0, front_x = 4.5, back_y = 0.6, front_y = 0.6, back_z = 0.6, front_z = 0.6;

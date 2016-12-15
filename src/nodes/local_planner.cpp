@@ -159,7 +159,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     std::cout << "final cloud width " << final_cloud.width << " obstacle " << obstacle << std::endl;
     final_cloud.height = 1; 
 
-    pcl::toROSMsg(final_cloud, final_cloud_pc2);
 }
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -339,27 +338,33 @@ void LocalPlanner::findFreeDirections() {
             if(!free)
                 break;
             }
+
+            if(velocity_x > 1.4) {
+              rad = waypoint_radius_param*velocity_x;
+              if(rad==0)
+                rad=1;
+            }
+            else
+              rad = 1;
                
            	if(free) {		
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
             	p.z = 0;                          Pp.z = 0;
             	path_candidates.cells.push_back(p);  Ppath_candidates.cells.push_back(Pp);  
             }
             else if(!free && polar_histogram.get(e,z) != 0) {
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
             	p.z = 0;                          Pp.z = 0;
             	path_rejected.cells.push_back(p);  Ppath_rejected.cells.push_back(Pp);  
             	//std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
            	}
            	else {
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x = (e*alpha_res+alpha_res-180)/10;
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y = (z*alpha_res+alpha_res-180)/10;
+            	p.x = e*alpha_res+alpha_res-180;  Pp.x =  round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
+            	p.y = z*alpha_res+alpha_res-180;  Pp.y =  round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
             	p.z = 0;                          Pp.z = 0;
             	path_blocked.cells.push_back(p);  Ppath_blocked.cells.push_back(Pp);
-            	std::cout << "x " << p.x << " y " << p.y << " blocked" << std::endl; 
-              std::cout << "x " <<  Pp.x << " y " << Pp.y << std::endl;
             }
       	} 
     }
@@ -403,7 +408,7 @@ double LocalPlanner::costFunction(int e, int z) {
   p.y = ww.vector.y;
   p.z = ww.vector.z;
 
-  if(velocity_x > 1.4 && braking_param ) {
+  if(velocity_x > 1.4 && braking_param ) { // non entra mai qui dentro
     double obs_dist = distance2d(p,obs);
     double energy_waypoint = 0.5*1.56*velocity_x*velocity_x + 1.56*9.81*ww.vector.z;
     double energy_threshold = 0.5*1.56*3*3 + 1.56*9.81*goal.z;
@@ -412,6 +417,10 @@ double LocalPlanner::costFunction(int e, int z) {
     double pe_diff =  1.56*9.81*pose.pose.position.z - 1.56*9.81*goal.z;
 
     cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x) + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
+    cost_type=1;
+    
+  //  printf("%d %d %d \n", 1/obs_dist, x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x), z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z));
+
     // double kin_x = 0.5*1.56*velocity_x*velocity_x*(ww.vector.x-pose.pose.position.x);
     // double kin_y = 0.5*1.56*velocity_y*velocity_y*(ww.vector.y-pose.pose.position.y);
     // double kin_z = 0.5*1.56*velocity_z*velocity_z*(ww.vector.z-pose.pose.position.z);
@@ -425,7 +434,9 @@ double LocalPlanner::costFunction(int e, int z) {
   
   	if(e>-50) {
   		cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
-  	}
+    //  printf("%f %f \n", sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)), sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)));
+      cost_type=2;
+    }
   	else
   		cost = 10000;
   }
@@ -471,7 +482,7 @@ void LocalPlanner::calculateCostMap() {
     Pp1.z = Ppath_candidates.cells[small_i].z;
     Ppath_selected.cells.push_back(Pp1);
 
-   	ROS_INFO(" min_e - %f min_z- %f min_cost %f", p1.x,p1.y, small);
+   	ROS_INFO(" min_e - %f min_z- %f min_cost %f cost_type %d", p1.x,p1.y, small, cost_type);
 
 }
 
