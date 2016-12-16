@@ -146,13 +146,12 @@ public:
 	bool checkForCollision();
 	void cropPointCloud();
 	void goFast();
-	void goAhead();
 	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
 	double nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
 	void getPathMsg();
 	//geometry_msgs::PoseStamped publishSetPoint();
-	void publishWaypoint(float x, float y, float z);
 	bool withinGoalRadius();
+	void publishPathCells(int e, int z, int path_type);
 
 };
 

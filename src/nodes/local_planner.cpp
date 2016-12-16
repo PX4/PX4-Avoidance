@@ -1,14 +1,14 @@
 #include "local_planner.h"
 
 LocalPlanner::LocalPlanner() {
-    current_goal.vector.x = goal_x_param;
-    current_goal.vector.y = goal_y_param;
-    current_goal.vector.z = goal_z_param;
-    current_goal.header.frame_id = "/world";
-    current_goal.header.stamp = ros::Time::now();
+  current_goal.vector.x = goal_x_param;
+  current_goal.vector.y = goal_y_param;
+  current_goal.vector.z = goal_z_param;
+  current_goal.header.frame_id = "/world";
+  current_goal.header.stamp = ros::Time::now();
    // double strat_yaw = 0;
    // current_goal.pose.orientation = tf::createQuaternionMsgFromYaw(strat_yaw);
-    last_goal = current_goal;
+  last_goal = current_goal;
 
 
 }
@@ -40,7 +40,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 
 void LocalPlanner::setVelocity(ros::Time current) {
 
- 
 //  double dt = (current-last_pose_time).toSec();
   velocity_x = curr_vel.twist.linear.x;
   velocity_y = curr_vel.twist.linear.y;
@@ -48,18 +47,15 @@ void LocalPlanner::setVelocity(ros::Time current) {
   fall_height = velocity_x*velocity_x/(2*9.81);
 
   if (counter % 4 == 0){ //too many msgs, publish 1 in 4.
-    
-    ROS_INFO("Speed: [%f, %f, %f].",
-           velocity_x,
-           velocity_y,
-           velocity_z);
+    ROS_INFO("Speed: [%f, %f, %f].", velocity_x, velocity_y, velocity_z);
   }
   counter++;
 }
 
 void LocalPlanner::setLimits() { 
- front_x = wavefront_param*velocity_x;
- if(front_x<=4.5)
+
+  front_x = wavefront_param*velocity_x;
+  if(front_x<=4.5)
    front_x = 4.5;
  
   min.x = pose.pose.position.x- min_x;
@@ -107,82 +103,71 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   	final_cloud.points.clear();
 
-  	//std::cout << "complete cloud size " << complete_cloud.points.size();
-
 	for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
       // Check if the point is invalid
-    	if (!std::isnan (pcl_it->x) && !std::isnan (pcl_it->y) && !std::isnan (pcl_it->z)) {
-   			if((pcl_it->x)<max_cache.x&&(pcl_it->x)>min_cache.x&&(pcl_it->y)<max_cache.y&&(pcl_it->y)>min_cache.y&&(pcl_it->z)<max_cache.z&&(pcl_it->z)>min_cache.z) {
-        		octomapCloud.push_back(pcl_it->x, pcl_it->y, pcl_it->z);
-        		//std::cout << "octomapCloud push back" << std::endl;
-      		}
+    if (!std::isnan (pcl_it->x) && !std::isnan (pcl_it->y) && !std::isnan (pcl_it->z)) {
+   		if((pcl_it->x)<max_cache.x&&(pcl_it->x)>min_cache.x&&(pcl_it->y)<max_cache.y&&(pcl_it->y)>min_cache.y&&(pcl_it->z)<max_cache.z&&(pcl_it->z)>min_cache.z) {
+        octomapCloud.push_back(pcl_it->x, pcl_it->y, pcl_it->z);
+      }
       
-      		if((pcl_it->x)<front.x&&(pcl_it->x)>back.x&&(pcl_it->y)<front.y&&(pcl_it->y)>back.y&&(pcl_it->z)<front.z&&(pcl_it->z)>back.z) {
-        		front_cloud.points.push_back(pcl::PointXYZ(pcl_it->x,pcl_it->y,pcl_it->z));
-        		//std::cout << "front_cloud push back" << std::endl;
-      		}
-    	}
+      if((pcl_it->x)<front.x&&(pcl_it->x)>back.x&&(pcl_it->y)<front.y&&(pcl_it->y)>back.y&&(pcl_it->z)<front.z&&(pcl_it->z)>back.z) {
+        front_cloud.points.push_back(pcl::PointXYZ(pcl_it->x,pcl_it->y,pcl_it->z));		
+      }
+    }
 	}
 
 	if(front_cloud.points.size()>1) {    
-    	obstacle = true;
-
-
-    	octomap::Pointcloud::iterator oc_it;
+    obstacle = true;
+    octomap::Pointcloud::iterator oc_it;
 		for (oc_it = octomapCloud.begin(); oc_it != octomapCloud.end(); ++oc_it) {
-			 //  printf("[%f %f %f] ",oc_it->x(),oc_it->y(),oc_it->z() );
-      		if((oc_it->x())<max.x&&(oc_it->x())>min.x&&(oc_it->y())<max.y&&(oc_it->y())>min.y&&(oc_it->z())<max.z&&(oc_it->z())>min.z) {
-        		cloud->points.push_back(pcl::PointXYZ(oc_it->x(),oc_it->y(),oc_it->z()));
-        		
-      		}
-   		}
+			if((oc_it->x())<max.x&&(oc_it->x())>min.x&&(oc_it->y())<max.y&&(oc_it->y())>min.y&&(oc_it->z())<max.z&&(oc_it->z())>min.z) {
+        cloud->points.push_back(pcl::PointXYZ(oc_it->x(),oc_it->y(),oc_it->z()));
+      }
+   	}
  
-  		pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-  		sor.setInputCloud(cloud);
-  		sor.setMeanK (5);
-  		sor.setStddevMulThresh (0.5);
-  		sor.filter(final_cloud);
+  	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+  	sor.setInputCloud(cloud);
+  	sor.setMeanK (5);
+  	sor.setStddevMulThresh (0.5);
+  	sor.filter(final_cloud);
+  }
+  else {
+    obstacle = false;
+  }
 
+  final_cloud.header.stamp =  complete_cloud.header.stamp;
+  final_cloud.header.frame_id = complete_cloud.header.frame_id;
+  final_cloud.width = final_cloud.points.size();
+  final_cloud.height = 1; 
 
-
-
-  	}
-  	else {
-    	obstacle = false;
-    }
-   
-    ROS_INFO(" Cloud transformed");
-
-    final_cloud.header.stamp =  complete_cloud.header.stamp;
-    final_cloud.header.frame_id = complete_cloud.header.frame_id;
-    final_cloud.width = final_cloud.points.size();
-    std::cout << "final cloud width " << final_cloud.width << " obstacle " << obstacle << std::endl;
-    final_cloud.height = 1; 
+  ROS_INFO(" Cloud transformed, width %d", final_cloud.width);
 
 }
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
-   return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z) );
+
+  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z) );
 }
 
 bool LocalPlanner::obstacleAhead() { 
-  	float dist_y =  abs(pose.pose.position.y - goal.y);
-  	float dist_z =  abs(pose.pose.position.z - goal.z);
+
+  float dist_y =  abs(pose.pose.position.y - goal.y);
+  float dist_z =  abs(pose.pose.position.z - goal.z);
     
-    if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake){
-      first_brake = true; 
-          obs.x = pose.pose.position.x+front_x ;
-          obs.y = pose.pose.position.y;
-          obs.z = pose.pose.position.z;
-          stop_pose.x = pose.pose.position.x;
-          stop_pose.y = pose.pose.position.y;
-          stop_pose.z = pose.pose.position.z;
-          return true;
-    }
-    else{
-      first_brake = false;
-      return false;
-    }
+  if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake){
+    first_brake = true; 
+    obs.x = pose.pose.position.x+front_x ;
+    obs.y = pose.pose.position.y;
+    obs.z = pose.pose.position.z;
+    stop_pose.x = pose.pose.position.x;
+    stop_pose.y = pose.pose.position.y;
+    stop_pose.z = pose.pose.position.z;
+    return true;
+  }
+  else{
+    first_brake = false;
+    return false;
+  }
 
 /*	if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake) { 
     	if(!first_brake) {   
@@ -205,32 +190,31 @@ bool LocalPlanner::obstacleAhead() {
 void LocalPlanner::createPolarHistogram() {  
 
 	float bbx_rad = (max.x-min.x)*sqrt(2)/2; 
-  	float dist;
+  float dist;
+  geometry_msgs::Point temp; 
  
-  	polar_histogram.setZero();
-
-  	pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
+  polar_histogram.setZero();
+  pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
     
-  	for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {   
-    	geometry_msgs::Point temp; 
-    	temp.x= it->x;
-    	temp.y = it->y;
-    	temp.z = it->z;
-    	dist = distance2d(pose.pose.position,temp);
+  for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {   
+    temp.x= it->x;
+    temp.y = it->y;
+    temp.z = it->z;
+    dist = distance2d(pose.pose.position,temp);
    
-    	if(dist < bbx_rad) { 
-      		int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
-      		int beta_e = floor((atan2(temp.z-pose.pose.position.z,sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI));//elevation angle
+    if(dist < bbx_rad) { 
+      int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
+      int beta_e = floor((atan2(temp.z-pose.pose.position.z,sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI));//elevation angle
           
-      		beta_z = beta_z + (alpha_res - beta_z%alpha_res);
-      		beta_e = beta_e + (alpha_res - beta_e%alpha_res); 
+      beta_z = beta_z + (alpha_res - beta_z%alpha_res);
+      beta_e = beta_e + (alpha_res - beta_e%alpha_res); 
       
-      		int e = (180+beta_e)/alpha_res - 1;
-      		int z = (180+beta_z)/alpha_res - 1;
+      int e = (180+beta_e)/alpha_res - 1;
+      int z = (180+beta_z)/alpha_res - 1;
 
-      		polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
+      polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
 
-    	}
+    }
  	}
 }
 
@@ -297,6 +281,7 @@ void LocalPlanner::findFreeDirections() {
     for(int z= 0; z<grid_length; z++) {  
         for(int i=e-n; i<=e+n; i++) {
             for(int j=z-n;j<=z+n;j++) {
+                
                 free = true;
                 corner = false;
 
@@ -348,50 +333,70 @@ void LocalPlanner::findFreeDirections() {
               rad = 1;
                
            	if(free) {		
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
-            	p.z = 0;                          Pp.z = 0;
-            	path_candidates.cells.push_back(p);  Ppath_candidates.cells.push_back(Pp);  
+            	p.x = e*alpha_res+alpha_res-180; 
+            	p.y = z*alpha_res+alpha_res-180; 
+            	p.z = 0;                         
+            	path_candidates.cells.push_back(p);   
+              publishPathCells(e, z, 0);
             }
             else if(!free && polar_histogram.get(e,z) != 0) {
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
-            	p.z = 0;                          Pp.z = 0;
-            	path_rejected.cells.push_back(p);  Ppath_rejected.cells.push_back(Pp);  
-            	//std::cout << "x " << p.x << " y " << p.y << " rejected" << std::endl;    
+            	p.x = e*alpha_res+alpha_res-180;  
+            	p.y = z*alpha_res+alpha_res-180; 
+            	p.z = 0;                         
+            	path_rejected.cells.push_back(p);  
+            	publishPathCells(e, z, 1); 
            	}
            	else {
-            	p.x = e*alpha_res+alpha_res-180;  Pp.x =  round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
-            	p.y = z*alpha_res+alpha_res-180;  Pp.y =  round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
-            	p.z = 0;                          Pp.z = 0;
-            	path_blocked.cells.push_back(p);  Ppath_blocked.cells.push_back(Pp);
+            	p.x = e*alpha_res+alpha_res-180;  
+            	p.y = z*alpha_res+alpha_res-180; 
+            	p.z = 0;                         
+             	path_blocked.cells.push_back(p); 
+              publishPathCells(e, z, 2);
             }
       	} 
     }
 
     ROS_INFO(" Path_candidates calculated");
-
-
-   
+  
 }
 
+void LocalPlanner::publishPathCells(int e, int z, int path_type){
+  geometry_msgs::Point p;
+  p.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
+  p.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
+  p.z = 0;
+
+  if(path_type == 0){
+    Ppath_candidates.cells.push_back(p);
+  }
+  if (path_type == 1){
+    Ppath_rejected.cells.push_back(p);
+  }    
+  if (path_type == 2){
+    Ppath_blocked.cells.push_back(p);
+  }     
+                      
+}
+
+
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
-  	geometry_msgs::Vector3Stamped waypoint;
-  	waypoint.header.stamp = ros::Time::now();
-  	waypoint.header.frame_id = "/world";
-  	if(velocity_x > 1.4) {
-    	rad = waypoint_radius_param*velocity_x;
-      	if(rad==0)
-        	rad=1;
-    	}
+  	
+  geometry_msgs::Vector3Stamped waypoint;
+  waypoint.header.stamp = ros::Time::now();
+  waypoint.header.frame_id = "/world";
+  if(velocity_x > 1.4) {
+    rad = waypoint_radius_param*velocity_x;
+    if(rad==0)
+      rad=1;
+    }
   	else
     	rad = 1;
 
-  	waypoint.vector.x = pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180));
-  	waypoint.vector.y = pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180));
-  	waypoint.vector.z = pose.pose.position.z+ rad*sin(e*(PI/180));
+  waypoint.vector.x = pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180));
+  waypoint.vector.y = pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180));
+  waypoint.vector.z = pose.pose.position.z+ rad*sin(e*(PI/180));
 
-  	return waypoint;
+  return waypoint;
 }
 
 double LocalPlanner::costFunction(int e, int z) {
@@ -434,7 +439,11 @@ double LocalPlanner::costFunction(int e, int z) {
   
   	if(e>-50) {
   		cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
-    //  printf("%f %f \n", sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)), sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)));
+      
+      float cost_temp =  0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z +  (1.56*9.81*e)/10;
+
+      printf("[%f %f %f %f %f] ", cost, cost_temp, cost+cost_temp, 3 * 0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z, (1.56*9.81*e)/5);
+      cost = cost + cost_temp;
       cost_type=2;
     }
   	else
@@ -523,11 +532,6 @@ void LocalPlanner::getNextWaypoint() {
            desired_position.x(),
            desired_position.y(),
            desired_position.z());
-
-    
-
-  //  publishWaypoint(waypt.vector.x, waypt.vector.y, waypt.vector.z);*/
-
  
 }
 
@@ -666,81 +670,6 @@ void LocalPlanner::getPathMsg() {
   curr_yaw = new_yaw;
 } 
 
-void LocalPlanner::goAhead() {
-
- // double yaw_1 = tf::getYaw(current_goal.pose.orientation);
- // double yaw_2 = tf::getYaw(pose.pose.orientation);
-
-//   last_goal = current_goal;
-
-//   double speed = 2.0;
-//   tf::Vector3 vec;
-//   vec.setX(current_goal.vector.x - pose.pose.position.x);
-//   vec.setY(current_goal.vector.y - pose.pose.position.y);
-//   vec.setZ(current_goal.vector.z - pose.pose.position.z);
-
-//   // = avoidance::toTfVector3(avoidance::subtractPoints(current_goal.vector, pose.pose.position));
-//     // If we are less than 1.0 away, then we should stop at the goal
-
-//   double new_len = vec.length() < 1.0 ? vec.length() : speed;
-//   vec.normalize();
-//   vec *= new_len;
-
-// //  setpoint = current_goal;  // The intermediate position sent to Mavros
-//   current_goal.vector.x = pose.pose.position.x + vec.getX();
-//   current_goal.vector.y = pose.pose.position.y + vec.getY();
-//   current_goal.vector.z = pose.pose.position.z + vec.getZ(); 
-
-//   publishWaypoint(pose.pose.position.x + vec.getX(), pose.pose.position.y + vec.getY(), pose.pose.position.z + vec.getZ());
-
-
-//   ROS_INFO("GO AHEAD publishing waypoint [%f, %f, %f].", setpoint.vector.x,  setpoint.vector.y,  setpoint.vector.z);
-    // Publish setpoint for vizualization
-//  current_waypoint_publisher_.publish(setpoint);
-
-    // setpoint = rotatePoseMsgToMavros(setpoint); // 90 deg fix
- // listener_tf_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
-
-    // Publish setpoint to Mavros
-//  mavros_waypoint_publisher_.publish(setpoint);  
-
-
-} 
 
 
 
-
-
-/*    waypt.vector.x = pose.pose.position.x+0.2;
-    waypt.vector.y = pose.pose.position.y+0.2;
-    waypt.vector.z = pose.pose.position.z;
-
-    last_yaw = curr_yaw;
-    geometry_msgs::Vector3Stamped curr_pose;
-  curr_pose.vector.x = pose.pose.position.x;
-  curr_pose.vector.y = pose.pose.position.y;
-  curr_pose.vector.z = pose.pose.position.z;
-    double new_yaw = nextYaw(last_waypt, waypt, last_yaw);
-    path_msg.poses.push_back(createPoseMsg(waypt, new_yaw));
-    last_waypt = waypt;
-
-
-    Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
-    ROS_INFO("GO AHEAD Publishing waypoint: [%f, %f, %f].",
-           desired_position.x(),
-           desired_position.y(),
-           desired_position.z());
-} */
-
-
-
-
-
-void LocalPlanner::publishWaypoint(float x, float y, float z){
-
-  setpoint.header.stamp = ros::Time::now();
-  setpoint.header.frame_id = "/world";
-  setpoint.vector.x = x;
-  setpoint.vector.y = y;
-  setpoint.vector.z = z;
-}

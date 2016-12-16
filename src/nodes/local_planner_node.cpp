@@ -46,9 +46,9 @@ void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
 
 void LocalPlannerNode::readParams() {
 
-  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 18);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, -5);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 2.5);
+  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
+  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
+  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3);
 
 }
 
