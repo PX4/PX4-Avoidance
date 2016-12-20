@@ -80,7 +80,7 @@ public:
 	bool set_first_yaw = true;
 
 	geometry_msgs::Point min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
-	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p; 
+	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p, last_waypt_p; 
 	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal;
 	geometry_msgs::Point p1;
 	nav_msgs::Path path_msg;
@@ -99,6 +99,9 @@ public:
 	double previous_pose_x, previous_pose_y, previous_pose_z;
 	double velocity_x, velocity_y, velocity_z;
 	geometry_msgs::TwistStamped curr_vel;
+	double speed = 2.0;
+	double min_speed = 2.0;
+	double max_speed = 3.0;
 	double path_y_tolerance_param = 0.2;
 	double path_z_tolerance_param = 0.7;
 	double waypoint_radius_param = 0.25;
@@ -152,6 +155,8 @@ public:
 	//geometry_msgs::PoseStamped publishSetPoint();
 	bool withinGoalRadius();
 	void publishPathCells(int e, int z, int path_type);
+	void checkSpeed();
+	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 
 };
 

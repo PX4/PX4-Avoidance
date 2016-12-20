@@ -128,7 +128,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
   	sor.setInputCloud(cloud);
   	sor.setMeanK (5);
-  	sor.setStddevMulThresh (0.5);
+  	sor.setStddevMulThresh (1);
   	sor.filter(final_cloud);
   }
   else {
@@ -440,10 +440,10 @@ double LocalPlanner::costFunction(int e, int z) {
   	if(e>-50) {
   		cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
       
-      float cost_temp =  0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z +  (1.56*9.81*e)/10;
+   //   float cost_temp =  0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z +  (1.56*9.81*e)/10;
 
-      printf("[%f %f %f %f %f] ", cost, cost_temp, cost+cost_temp, 3 * 0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z, (1.56*9.81*e)/5);
-      cost = cost + cost_temp;
+   //   printf("[%f %f %f %f %f] ", cost, cost_temp, cost+cost_temp, 3 * 0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z, (1.56*9.81*e)/5);
+    //  cost = cost + cost_temp;
       cost_type=2;
     }
   	else
@@ -509,8 +509,21 @@ void LocalPlanner::getNextWaypoint() {
     else{
       waypt = setpoint;
   	  if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
-    	  waypt.vector.x = pose.pose.position.x-0.2;
-    //waypt.vector.y = pose.y;
+
+       //  tf::Vector3 vec;
+       //  vec.setX(goal.x - pose.pose.position.x);
+       //  vec.setY(goal.y - pose.pose.position.y);
+       //  vec.setZ(goal.z - pose.pose.position.z);
+       // // double new_len = vec.length() < 1.0 ? vec.length() : speed;
+       //  vec.normalize();
+       //  vec *= 0.2;
+  
+       //  waypt.vector.x = pose.pose.position.x - vec.getX();
+       //  waypt.vector.y = pose.pose.position.y + vec.getY();
+       //  waypt.vector.z = pose.pose.position.z + vec.getZ();
+
+     	  waypt.vector.x = pose.pose.position.x-0.2;
+    // //waypt.vector.y = pose.y;
     	  waypt.vector.z = pose.pose.position.z+ 0.2;
     	  p1.x = 0;
     	  p1.y = 0;
@@ -560,7 +573,6 @@ bool LocalPlanner::checkForCollision() {
 
 void LocalPlanner::goFast(){
 
-    geometry_msgs::Vector3Stamped w_alt;
   if (withinGoalRadius() || !first_reach){
 
     ROS_INFO("Goal Reached: Hoovering");
@@ -574,21 +586,20 @@ void LocalPlanner::goFast(){
     // waypt.vector.y = goal.y;
     // waypt.vector.z = goal.z;
 
-  double speed = 2.0;
+  
   tf::Vector3 vec;
   vec.setX(goal.x - pose.pose.position.x);
   vec.setY(goal.y - pose.pose.position.y);
   vec.setZ(goal.z - pose.pose.position.z);
   double new_len = vec.length() < 1.0 ? vec.length() : speed;
-  
   vec.normalize();
   vec *= new_len;
+  
   waypt.vector.x = pose.pose.position.x + vec.getX();
   waypt.vector.y = pose.pose.position.y + vec.getY();
-  waypt.vector.z = pose.pose.position.z + vec.getZ(); 
-  // printf("alt %f %f %f \n", w_alt.vector.x, w_alt.vector.y, w_alt.vector.z);
+  waypt.vector.z = pose.pose.position.z + vec.getZ();
 
-  }
+}
 
   Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
   ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].",
@@ -599,6 +610,8 @@ void LocalPlanner::goFast(){
     last_waypt = waypt;
 
 }
+
+
 
 bool LocalPlanner::withinGoalRadius(){
 
@@ -641,6 +654,7 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
   pose_msg.pose.position.y = waypt.vector.y;
   pose_msg.pose.position.z = waypt.vector.z;
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+  ROS_INFO("yaw %f", yaw);
   return pose_msg;
 }
 
@@ -656,7 +670,7 @@ double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vec
 void LocalPlanner::getPathMsg() {
 
   path_msg.header.frame_id="/world";
-
+  last_waypt_p = waypt_p;
   last_yaw = curr_yaw;
   geometry_msgs::Vector3Stamped curr_pose;
   curr_pose.vector.x = pose.pose.position.x;
@@ -664,11 +678,31 @@ void LocalPlanner::getPathMsg() {
   curr_pose.vector.z = pose.pose.position.z;
   double new_yaw = nextYaw(curr_pose, waypt, last_yaw);
   waypt_p = createPoseMsg(waypt, new_yaw);
-
   path_msg.poses.push_back(waypt_p);
-
   curr_yaw = new_yaw;
+
+  checkSpeed();
 } 
+
+void LocalPlanner::checkSpeed(){
+
+  if (hasSameYawAndAltitude(last_waypt_p, waypt_p) && !obstacleAhead()){
+    speed = std::min(max_speed, speed+ 0.1);
+  }
+  else{
+    speed = min_speed;
+  }
+
+  printf("SPEED %f \n", speed);
+}
+
+bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
+
+  return msg1.pose.orientation.z >= 0.9*msg2.pose.orientation.z && msg1.pose.orientation.z <= 1.1*msg2.pose.orientation.z 
+         && msg1.pose.orientation.w >= 0.9*msg2.pose.orientation.w && msg1.pose.orientation.w <= 1.1*msg2.pose.orientation.w
+         && msg1.pose.position.z >= 0.9*msg2.pose.position.z && msg1.pose.position.z <= 1.1*msg2.pose.position.z;
+
+}
 
 
 
