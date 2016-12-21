@@ -27,12 +27,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     curr_yaw = tf::getYaw(msg.pose.orientation); 
   }
 
-  setVelocity(msg.header.stamp);
-  previous_pose_x = pose.pose.position.x;
-  previous_pose_y = pose.pose.position.y;
-  previous_pose_z = pose.pose.position.z;
-  last_pose_time = msg.header.stamp;
-  
+  setVelocity(msg.header.stamp);  
   setLimits();
 
  // octomapCloud.crop(octomap::point3d(min_cache.x,min_cache.y,min_cache.z),octomap::point3d(half_cache.x,half_cache.y,half_cache.z)); 
@@ -40,11 +35,9 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 
 void LocalPlanner::setVelocity(ros::Time current) {
 
-//  double dt = (current-last_pose_time).toSec();
   velocity_x = curr_vel.twist.linear.x;
   velocity_y = curr_vel.twist.linear.y;
   velocity_z = curr_vel.twist.linear.z;
-  fall_height = velocity_x*velocity_x/(2*9.81);
 
   if (counter % 4 == 0){ //too many msgs, publish 1 in 4.
     ROS_INFO("Speed: [%f, %f, %f].", velocity_x, velocity_y, velocity_z);
@@ -388,9 +381,9 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
     rad = waypoint_radius_param*velocity_x;
     if(rad==0)
       rad=1;
-    }
-  	else
-    	rad = 1;
+  }
+  else
+    rad = 1;
 
   waypoint.vector.x = pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180));
   waypoint.vector.y = pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180));
@@ -510,21 +503,21 @@ void LocalPlanner::getNextWaypoint() {
       waypt = setpoint;
   	  if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
 
-       //  tf::Vector3 vec;
-       //  vec.setX(goal.x - pose.pose.position.x);
-       //  vec.setY(goal.y - pose.pose.position.y);
-       //  vec.setZ(goal.z - pose.pose.position.z);
-       // // double new_len = vec.length() < 1.0 ? vec.length() : speed;
-       //  vec.normalize();
-       //  vec *= 0.2;
-  
-       //  waypt.vector.x = pose.pose.position.x - vec.getX();
-       //  waypt.vector.y = pose.pose.position.y + vec.getY();
-       //  waypt.vector.z = pose.pose.position.z + vec.getZ();
+        tf::Vector3 vec;
+        vec.setX(goal.x - pose.pose.position.x);
+        vec.setY(goal.y - pose.pose.position.y);
+        vec.setZ(goal.z - pose.pose.position.z);
+       // double new_len = vec.length() < 1.0 ? vec.length() : speed;
+        vec.normalize();
+        vec *= 0.5;
 
-     	  waypt.vector.x = pose.pose.position.x-0.2;
-    // //waypt.vector.y = pose.y;
-    	  waypt.vector.z = pose.pose.position.z+ 0.2;
+        waypt.vector.x = pose.pose.position.x + vec.getX();
+        waypt.vector.y = pose.pose.position.y + vec.getY();
+        waypt.vector.z = pose.pose.position.z + vec.getZ();
+
+    //  	  waypt.vector.x = pose.pose.position.x-0.2;
+    // // //waypt.vector.y = pose.y;
+    // 	  waypt.vector.z = pose.pose.position.z+ 0.2;
     	  p1.x = 0;
     	  p1.y = 0;
     	  ROS_INFO(" Too close to the obstacle. Going back %f %f",waypt.vector.x, waypt.vector.z);
@@ -659,11 +652,17 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
 }
 
 double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw) {
-  int dx = v.vector.x - u.vector.x;
-  int dy = v.vector.y - u.vector.y;
+  double dx = v.vector.x - u.vector.x;
+  double dy = v.vector.y - u.vector.y;
+
   if (dx == 0 && dy == 0) {
     return last_yaw;   // Going up or down
   }
+
+  if (withinGoalRadius() || !first_reach){
+    return last_yaw;
+  }
+
   return atan2(dy, dx);
 }
 

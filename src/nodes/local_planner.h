@@ -85,8 +85,6 @@ public:
 	geometry_msgs::Point p1;
 	nav_msgs::Path path_msg;
 
-	ros::Time last_pose_time;
-
 	int init = 0;
 	int counter = 0;
 	int cost_type;
@@ -96,7 +94,6 @@ public:
 	float min_cache_x = 2.5, max_cache_x = 2.5, min_cache_y = 2.5, max_cache_y = 2.5, min_cache_z = 2.5, max_cache_z = 2.5; 
 	float rad = 1;
 
-	double previous_pose_x, previous_pose_y, previous_pose_z;
 	double velocity_x, velocity_y, velocity_z;
 	geometry_msgs::TwistStamped curr_vel;
 	double speed = 2.0;
@@ -113,7 +110,6 @@ public:
 	double goal_y_param;
 	double goal_z_param;
 	double wavefront_param = 0.9;
-	double fall_height;
 	double curr_yaw, last_yaw;
 	double fast_waypoint_update_param = 0.4;
 
