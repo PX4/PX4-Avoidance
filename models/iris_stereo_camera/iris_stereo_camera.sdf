@@ -12,7 +12,7 @@
 
     <include>
       <uri>model://stereo_camera_vertical</uri>
-      <pose>0.135 0.035 0 1.5708 0 0</pose>
+      <pose>0.1 0.035 0.035 1.5708 0 0</pose>
       <name>vertical</name>
     </include>
 
@@ -40,7 +40,7 @@
       </axis>
     </joint>
 
-        <include>
+     <!--    <include>
       <uri>model://depth_camera_new</uri>
       <pose>0.1 0 0 0 0 0</pose>
     </include>
@@ -71,7 +71,7 @@
         </limit>
       </axis>
     </joint>
-
+ -->
 
 <!--    <include>
       <uri>model://stereo_camera_new</uri>

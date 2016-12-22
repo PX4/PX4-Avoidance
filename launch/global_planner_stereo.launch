@@ -32,13 +32,11 @@
     </include>
 
      <node name="local_planner_node" pkg="avoidance" type="local_planner_node" >
-        <param name="goal_x_param" value="12" />
-        <param name="goal_y_param" value="11" />
+        <param name="goal_x_param" value="9" />
+        <param name="goal_y_param" value="13" />
         <param name="goal_z_param" value="3.5" />
     </node>
         
-    
-    <!-- <node name="local_planner_node" pkg="avoidance" type="local_planner_node" /> -->
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/planning.rviz" />
   
