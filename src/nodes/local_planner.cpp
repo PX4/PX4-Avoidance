@@ -317,7 +317,7 @@ void LocalPlanner::findFreeDirections() {
                 break;
             }
 
-            if(velocity_x > 1.4) {
+            if(velocity_x > 1.4) {  //1.4
               rad = waypoint_radius_param*velocity_x;
               if(rad==0)
                 rad=1;
@@ -338,6 +338,7 @@ void LocalPlanner::findFreeDirections() {
             	p.z = 0;                         
             	path_rejected.cells.push_back(p);  
             	publishPathCells(e, z, 1); 
+              
            	}
            	else {
             	p.x = e*alpha_res+alpha_res-180;  
@@ -345,10 +346,11 @@ void LocalPlanner::findFreeDirections() {
             	p.z = 0;                         
              	path_blocked.cells.push_back(p); 
               publishPathCells(e, z, 2);
+              
             }
       	} 
     }
-
+    printf("\n");
     ROS_INFO(" Path_candidates calculated");
   
 }
@@ -363,10 +365,10 @@ void LocalPlanner::publishPathCells(int e, int z, int path_type){
     Ppath_candidates.cells.push_back(p);
   }
   if (path_type == 1){
-    Ppath_rejected.cells.push_back(p);
+    Ppath_rejected.cells.push_back(p); 
   }    
   if (path_type == 2){
-    Ppath_blocked.cells.push_back(p);
+    Ppath_blocked.cells.push_back(p); 
   }     
                       
 }
@@ -377,7 +379,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
   geometry_msgs::Vector3Stamped waypoint;
   waypoint.header.stamp = ros::Time::now();
   waypoint.header.frame_id = "/world";
-  if(velocity_x > 1.4) {
+  if(velocity_x > 1.4) { //1.4
     rad = waypoint_radius_param*velocity_x;
     if(rad==0)
       rad=1;
@@ -501,19 +503,21 @@ void LocalPlanner::getNextWaypoint() {
     }
     else{
       waypt = setpoint;
-  	  if(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { 
-
-        tf::Vector3 vec;
-        vec.setX(goal.x - pose.pose.position.x);
-        vec.setY(goal.y - pose.pose.position.y);
-        vec.setZ(goal.z - pose.pose.position.z);
+      tf::Vector3 vec;
+      vec.setX(goal.x - pose.pose.position.x);
+      vec.setY(goal.y - pose.pose.position.y);
+      vec.setZ(goal.z - pose.pose.position.z);
        // double new_len = vec.length() < 1.0 ? vec.length() : speed;
-        vec.normalize();
-        vec *= 0.5;
+      vec.normalize();
+      vec *= 1.0;
 
+  	  if (checkForCollision() || waypt.vector.z < 0.5) {//(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { //1.4 
+        // <0.5 fa evitare i birilli in basso
+                         
         waypt.vector.x = pose.pose.position.x + vec.getX();
         waypt.vector.y = pose.pose.position.y + vec.getY();
         waypt.vector.z = pose.pose.position.z + vec.getZ();
+      
 
     //  	  waypt.vector.x = pose.pose.position.x-0.2;
     // // //waypt.vector.y = pose.y;
@@ -522,10 +526,16 @@ void LocalPlanner::getNextWaypoint() {
     	  p1.y = 0;
     	  ROS_INFO(" Too close to the obstacle. Going back %f %f",waypt.vector.x, waypt.vector.z);
   	  }
-   	  if(velocity_x>1.4 && pose.pose.position.z>0.5) { 
+      
+   	  if(checkForCollision() && pose.pose.position.z>0.5) { //(velocity_x>1.4 && pose.pose.position.z>0.5) { 
+
+        waypt.vector.x = pose.pose.position.x - vec.getX(); // quando waypt>0.5 e vecX>0 hai bisogno di sottare 
+        waypt.vector.y = pose.pose.position.y - vec.getY(); // vecX e vecY alla pose se no crash nello'soatcolo
+        waypt.vector.z = pose.pose.position.z + vec.getZ();
+
     
     //waypt.vector.x = stop_pose.x;
-   	 	  waypt.vector.y = 0; //stop_pose.y;global_path_pub
+   	 	 //// waypt.vector.y = 0; //stop_pose.y;global_path_pub
     //waypt.vector.z = stop_pose.z;
     	  ROS_INFO(" Braking !! ");
     	  p1.x = 0;
@@ -544,23 +554,38 @@ void LocalPlanner::getNextWaypoint() {
 bool LocalPlanner::checkForCollision() {
     bool avoid = false;
     geometry_msgs::Point temp;
-    geometry_msgs::Point p;
+    geometry_msgs::Point p, p_pose;
     p.x = waypt.vector.x;
     p.y = waypt.vector.y;
     p.z = waypt.vector.z;
+    p_pose.x = pose.pose.position.x;
+    p_pose.y = pose.pose.position.y;
+    p_pose.z = pose.pose.position.z;
+   
 
     pcl::PointCloud<pcl::PointXYZ>::iterator it;
     for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
       temp.x = it->x;
       temp.y = it->y;
       temp.z = it->z;
-     
+
+      if (distance2d(p_pose,temp) < min_dist_pose){
+        min_dist_pose = distance2d(p_pose,temp);
+      }
+
+       if (distance2d(p,temp) < min_dist){
+        min_dist = distance2d(p,temp);
+      }
+      
+
       if(distance2d(p,temp)< 0.5 && init != 0) { 
-        printf("distance(p,temp)<0.5 \n");
+        printf("distance(p,temp)<1 \n");
         avoid = true;
         break;
       }
     }  
+
+    printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose);
     return avoid;
 }
 

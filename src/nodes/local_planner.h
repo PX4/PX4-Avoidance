@@ -113,6 +113,9 @@ public:
 	double curr_yaw, last_yaw;
 	double fast_waypoint_update_param = 0.4;
 
+	 double min_dist = 1000;
+    double min_dist_pose = 1000;
+
 	Histogram polar_histogram;
 
 	nav_msgs::GridCells path_candidates;
