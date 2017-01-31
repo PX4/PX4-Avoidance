@@ -118,29 +118,59 @@ Visualization Manager:
     - Alpha: 1
       Buffer Length: 1
 
-      Class: rviz/GridCells
-      Color: 255; 0; 0
+      Class: rviz/MarkerArray
       Enabled: true
-      Name: GridCells
-      Topic: /path_blocked
-      Unreliable: false
-      Value: true
+      Marker Topic: /selected_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
     - Alpha: 1
-      Class: rviz/GridCells
-      Color: 204; 41; 204
+      Class: rviz/MarkerArray
       Enabled: true
-      Name: GridCells
-      Topic: /path_selected
-      Unreliable: false
-      Value: true
+      Marker Topic: /extended_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
     - Alpha: 1
-      Class: rviz/GridCells
-      Color: 0; 0; 255
+      Class: rviz/MarkerArray
       Enabled: true
-      Name: GridCells
-      Topic: /path_rejected
-      Unreliable: false
-      Value: true
+      Marker Topic: /rejected_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /blocked_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Class: rviz/MarkerArray
+      Enabled: false
+      Marker Topic: /candidates_marker
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
+    - Alpha: 1
+      Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /goal_position
+      Name: MarkerArray
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: false
     - Alpha: 1
 
       Class: rviz/Path
@@ -209,8 +239,8 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+
     - Alpha: 1
-    
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
         Max Value: 10
@@ -235,7 +265,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.100000001
       Style: Flat Squares
-      Topic: /omi_cam/point_cloud
+      Topic: /local_pointcloud
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
