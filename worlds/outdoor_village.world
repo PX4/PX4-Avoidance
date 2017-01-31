@@ -288,6 +288,12 @@
       <pose>3.662 10.927 4.5  0 0 -0.010</pose>
     </include>
 
+    <include>
+      <name>simple_line</name>
+      <uri>model://line_model</uri>
+      <pose>53 9 4.5  0 0 -1.51</pose>
+    </include>
+
 <!--
      <include>
       <name>powerline_model_2</name>
