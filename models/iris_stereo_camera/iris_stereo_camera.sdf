@@ -40,7 +40,7 @@
       </axis>
     </joint>
 
-     <!--    <include>
+ <!--        <include>
       <uri>model://depth_camera_new</uri>
       <pose>0.1 0 0 0 0 0</pose>
     </include>
@@ -70,8 +70,8 @@
           <lower>0</lower>
         </limit>
       </axis>
-    </joint>
- -->
+    </joint> -->
+
 
 <!--    <include>
       <uri>model://stereo_camera_new</uri>

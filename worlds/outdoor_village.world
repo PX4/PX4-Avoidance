@@ -115,18 +115,21 @@
       <name>house_2</name>
       <uri>model://house_2</uri>
       <pose>4 -7 0   0 0 0</pose>
+      <scale>3.0 3.0 3.0</scale>
     </include>
     
     <include>
       <name>house_2_2</name>
       <uri>model://house_2</uri>
       <pose>-12 8 0   0 0 1.5707</pose>
+      <scale>2.0 2.0 2.0</scale>
     </include>
     
     <include>
       <name>house_1</name>
       <uri>model://house_1</uri>
       <pose>-10 -12 0   0 0 3.1415</pose>
+      <scale>2.0 2.0 2.0</scale>
     </include>
     
     <include>
@@ -266,33 +269,29 @@
     <include>
       <name>powerline_model_1</name>
       <uri>model://powerlineLong_model</uri>
-      <pose>7.65 6.12 4.5  0 0 -0.651</pose>
+      <pose>7.65 6.12 11.6  0 0 -0.651</pose>
     </include>
 
 
     <include>
       <name>lampLine_model_1</name>
       <uri>model://lampWithLines_model</uri>
-      <pose>-5.672 -0.487 4.38  0 0 -0.7726</pose>
+      <pose>-5.672 -0.487 11.6  0 0 -0.7726</pose>
     </include>
 
     <include>
       <name>lampLine_model_2</name>
       <uri>model://lampWithLines_model</uri>
-      <pose>16.3479 -11.02824 4.38  0 0 0</pose>
+      <pose>16.3479 -11.02824 11.6  0 0 0</pose>
     </include>
 
     <include>
       <name>powerline_model_2</name>
       <uri>model://powerlineLong_model</uri>
-      <pose>3.662 10.927 4.5  0 0 -0.010</pose>
+      <pose>3.662 10.927 11.6  0 0 -0.010</pose>
     </include>
 
-    <include>
-      <name>simple_line</name>
-      <uri>model://line_model</uri>
-      <pose>53 9 4.5  0 0 -1.51</pose>
-    </include>
+ 
 
 <!--
      <include>

@@ -59,7 +59,7 @@
       <uri>model://grass_plane</uri>
     </include>
 
-        <include>
+    <include>
       <name>powerline_model_1</name>
       <uri>model://powerlineLong_model</uri>
       <pose>8.69 15.3 11.96  0 0 -0.651</pose>
@@ -84,16 +84,16 @@
       <pose>40.4 12.02 11.9  0 0 1.02</pose>
     </include>
 
-    <include>
+    <!-- <include>
       <name>simple_line</name>
       <uri>model://line_model</uri>
       <pose>20 0 8.5  0 0 -1.51</pose>
-    </include>
-
- <!--    <include>
+    </include> -->
+<!-- 
+    <include>
       <name>speed_limit_sign</name>
       <uri>model://speed_limit_sign</uri>
-      <pose>6.5 2.4 0   0 0 1.5707</pose>
+      <pose>60 -2.5 7.5 0 0 1.5707</pose>
     </include> -->
 
     <model name='asphalt_plane'>
@@ -141,6 +141,7 @@
       </link>
       <pose>30 0 0 0 0 0</pose>
     </model>
+
 
   
 

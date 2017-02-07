@@ -19,7 +19,7 @@
         <geometry>
           <mesh>
             <uri>/home/pixhawk/catkin_ws/src/detection/models/powelineLong.dae</uri>
-            <scale>0.15 0.15 0.15</scale>
+            <scale>0.4 0.4 0.4</scale>
           </mesh>
         </geometry>
         <material>

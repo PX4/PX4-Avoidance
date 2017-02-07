@@ -19,7 +19,7 @@
         <geometry>
           <mesh>
             <uri>/home/pixhawk/catkin_ws/src/detection/models/line_model/line.dae</uri>
-            <scale>0.15 0.15 0.15</scale>
+            <scale>0.7 0.7 0.7</scale>
           </mesh>
         </geometry>
         <material>
