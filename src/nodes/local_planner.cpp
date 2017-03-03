@@ -1,17 +1,6 @@
 #include "local_planner.h"
 
-LocalPlanner::LocalPlanner() {
-  current_goal.vector.x = goal_x_param;
-  current_goal.vector.y = goal_y_param;
-  current_goal.vector.z = goal_z_param;
-  current_goal.header.frame_id = "/world";
-  current_goal.header.stamp = ros::Time::now();
-   // double strat_yaw = 0;
-   // current_goal.pose.orientation = tf::createQuaternionMsgFromYaw(strat_yaw);
-  last_goal = current_goal;
-
-
-}
+LocalPlanner::LocalPlanner() {}
 
 LocalPlanner::~LocalPlanner() {}
 
@@ -19,113 +8,108 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose.header = msg.header;
   pose.pose.position = msg.pose.position;
   pose.pose.orientation = msg.pose.orientation;
-  //pose.x = input.pose.position.x ;
-  //pose.y = input.pose.position.y ;
 
-  //pose.z = input.pose.position.z ; 
   if (set_first_yaw){
     curr_yaw = tf::getYaw(msg.pose.orientation); 
   }
 
-  setVelocity(msg.header.stamp);  
-  setLimits();
-
- // octomapCloud.crop(octomap::point3d(min_cache.x,min_cache.y,min_cache.z),octomap::point3d(half_cache.x,half_cache.y,half_cache.z)); 
+  setVelocity();  
+  setLimitsBoundingBox(); 
 }
 
-void LocalPlanner::setVelocity(ros::Time current) {
+void LocalPlanner::setVelocity() {
 
   velocity_x = curr_vel.twist.linear.x;
   velocity_y = curr_vel.twist.linear.y;
   velocity_z = curr_vel.twist.linear.z;
+  velocity_mod = sqrt(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2));
 
-  if (counter % 4 == 0){ //too many msgs, publish 1 in 4.
-    ROS_INFO("Speed: [%f, %f, %f].", velocity_x, velocity_y, velocity_z);
-  }
-  counter++;
 }
 
-void LocalPlanner::setLimits() { 
+void LocalPlanner::setLimitsBoundingBox() { 
 
-  front_x = wavefront_param*velocity_x;
-  if(front_x<=4.5)
-   front_x = 4.5;
- 
-  min.x = pose.pose.position.x- min_x;
-  min.y = pose.pose.position.y- min_y;
-  min.z = pose.pose.position.z- min_z;
-  max.x = pose.pose.position.x + max_x;
-  max.y = pose.pose.position.y + max_y;
-  max.z= pose.pose.position.z + max_z;
-  front.x = pose.pose.position.x + front_x;
-  front.y = pose.pose.position.y + front_y;
-  front.z = pose.pose.position.z + front_z;
-  back.x = pose.pose.position.x - back_x;
-  back.y = pose.pose.position.y - back_y;
-  back.z = pose.pose.position.z - back_z;
-  min_cache.x = pose.pose.position.x - min_cache_x;
-  min_cache.y = pose.pose.position.y - min_cache_y;
-  min_cache.z = pose.pose.position.z - min_cache_z;
-  max_cache.x = pose.pose.position.x + max_cache_x;
-  max_cache.y = pose.pose.position.y + max_cache_y;
-  max_cache.z = pose.pose.position.z + max_cache_z;
-  half_cache.x = pose.pose.position.x;
-  half_cache.y = pose.pose.position.y + max_cache_y;
-  half_cache.z = pose.pose.position.z + max_cache_z;
-
-
- // printf("back %f front %f \n",back.x, front.x);
+  min_box.x = pose.pose.position.x - min_box_x;
+  min_box.y = pose.pose.position.y - min_box_y;
+  min_box.z = pose.pose.position.z - min_box_z;
+  max_box.x = pose.pose.position.x + max_box_x;
+  max_box.y = pose.pose.position.y + max_box_y;
+  max_box.z = pose.pose.position.z + max_box_z;
   
 }
 
 void LocalPlanner::setGoal() {
-  	goal.x = goal_x_param;
-  	goal.y = goal_y_param;
-  	goal.z = goal_z_param;
+  goal.x = goal_x_param;
+  goal.y = goal_y_param;
+  goal.z = goal_z_param;
 
-
-    ROS_INFO("===== Set Goal ======: [%f, %f, %f].",
-           goal.x,
-           goal.y,
-           goal.z);
+  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal.x, goal.y, goal.z);
 }
 
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
-	pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  	pcl::PointCloud<pcl::PointXYZ> front_cloud;
-  	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
-  	final_cloud.points.clear();
 
-	for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
+  std::clock_t start_time = std::clock();
+  pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
+  pcl::PointCloud<pcl::PointXYZ> front_cloud;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+  final_cloud.points.clear();
+  float min_distance = 1000;
+  float distance;
+
+  for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
       // Check if the point is invalid
-    if (!std::isnan (pcl_it->x) && !std::isnan (pcl_it->y) && !std::isnan (pcl_it->z)) {
-   		if((pcl_it->x)<max_cache.x&&(pcl_it->x)>min_cache.x&&(pcl_it->y)<max_cache.y&&(pcl_it->y)>min_cache.y&&(pcl_it->z)<max_cache.z&&(pcl_it->z)>min_cache.z) {
-        octomapCloud.push_back(pcl_it->x, pcl_it->y, pcl_it->z);
-      }
-      
-      if((pcl_it->x)<front.x&&(pcl_it->x)>back.x&&(pcl_it->y)<front.y&&(pcl_it->y)>back.y&&(pcl_it->z)<front.z&&(pcl_it->z)>back.z) {
-        front_cloud.points.push_back(pcl::PointXYZ(pcl_it->x,pcl_it->y,pcl_it->z));		
+    if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
+      if((pcl_it->x)<max_box.x && (pcl_it->x)>min_box.x && (pcl_it->y)<max_box.y && (pcl_it->y)>min_box.y && (pcl_it->z)<max_box.z && (pcl_it->z)>min_box.z) {
+        cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));  
+        final_cloud.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z)); 
+        distance = sqrt(pow(pose.pose.position.x-pcl_it->x,2) + pow(pose.pose.position.y-pcl_it->y,2) + pow(pose.pose.position.z-pcl_it->z,2));
+        if (distance < min_distance){
+          min_distance = distance;
+        } 
       }
     }
-	}
+  }
+  
 
-	if(front_cloud.points.size()>1) {    
+  if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {    
     obstacle = true;
-    octomap::Pointcloud::iterator oc_it;
-		for (oc_it = octomapCloud.begin(); oc_it != octomapCloud.end(); ++oc_it) {
-			if((oc_it->x())<max.x&&(oc_it->x())>min.x&&(oc_it->y())<max.y&&(oc_it->y())>min.y&&(oc_it->z())<max.z&&(oc_it->z())>min.z) {
-        cloud->points.push_back(pcl::PointXYZ(oc_it->x(),oc_it->y(),oc_it->z()));
-      }
-   	}
- 
-  	pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-  	sor.setInputCloud(cloud);
-  	sor.setMeanK (5);
-  	sor.setStddevMulThresh (1);
-  	sor.filter(final_cloud);
+    // estimation normal to the powerline
+    // if (pose.pose.position.z > 1.5 && cloud->points.size()>3){
+    //   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
+    //   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
+    //   pcl::SACSegmentation<pcl::PointXYZ> seg;
+    //   seg.setOptimizeCoefficients (true);
+    //   seg.setModelType(pcl::SACMODEL_PLANE);
+    //   seg.setMethodType(pcl::SAC_RANSAC);
+    //   seg.setDistanceThreshold (0.01);
+
+    //   seg.setInputCloud(cloud);
+    //   seg.segment (*inliers, *coefficients);
+
+    //   if (inliers->indices.size () == 0) {
+    //     PCL_ERROR ("Could not estimate a planar model for the given dataset.");
+    //   } 
+
+    //   std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
+    //                                   << coefficients->values[1] << " "
+    //                                   << coefficients->values[2] << " "
+    //                                   << coefficients->values[4] << std::endl;    
+    //   coef1 = coefficients->values[0];  coef2 = coefficients->values[1];
+    //   coef3 = coefficients->values[2];  coef4 = coefficients->values[3];
+      
+    // }
+
+    // statistical outlier removal
+    // std::clock_t start_removal = std::clock();
+    // pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    // sor.setInputCloud(cloud);
+    // sor.setMeanK (5);
+    // sor.setStddevMulThresh (0.5);
+    // sor.filter(final_cloud);
+    // printf("Filtering time %2.2f ms \n", (std::clock() - start_removal) / (double)(CLOCKS_PER_SEC / 1000));
   }
   else {
     obstacle = false;
+    printf("Obstacle False min distance %f decel distance %f \n", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
   }
 
   final_cloud.header.stamp =  complete_cloud.header.stamp;
@@ -133,13 +117,15 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud.width = final_cloud.points.size();
   final_cloud.height = 1; 
 
-  ROS_INFO(" Cloud transformed, width %d", final_cloud.width);
+
+  ROS_INFO(" Cloud transformed, width %d, time: %2.2f ms", final_cloud.width, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+
 
 }
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
 
-  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z) );
+  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z));
 }
 
 bool LocalPlanner::obstacleAhead() { 
@@ -147,18 +133,10 @@ bool LocalPlanner::obstacleAhead() {
   float dist_y =  abs(pose.pose.position.y - goal.y);
   float dist_z =  abs(pose.pose.position.z - goal.z);
     
-  if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake){
-    first_brake = true; 
-    obs.x = pose.pose.position.x+front_x ;
-    obs.y = pose.pose.position.y;
-    obs.z = pose.pose.position.z;
-    stop_pose.x = pose.pose.position.x;
-    stop_pose.y = pose.pose.position.y;
-    stop_pose.z = pose.pose.position.z;
+  if(obstacle){ //|| dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param
     return true;
   }
   else{
-    first_brake = false;
     return false;
   }
 
@@ -182,12 +160,14 @@ bool LocalPlanner::obstacleAhead() {
 
 void LocalPlanner::createPolarHistogram() {  
 
-	float bbx_rad = (max.x-min.x)*sqrt(2)/2; 
+  std::clock_t start_time = std::clock();
+  float bbx_rad = (max_box.x-min_box.x)*sqrt(2)/2; 
   float dist;
   geometry_msgs::Point temp; 
  
   polar_histogram.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
+
     
   for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {   
     temp.x= it->x;
@@ -196,30 +176,39 @@ void LocalPlanner::createPolarHistogram() {
     dist = distance2d(pose.pose.position,temp);
    
     if(dist < bbx_rad) { 
-      int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
-      int beta_e = floor((atan2(temp.z-pose.pose.position.z,sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI));//elevation angle
-          
-      beta_z = beta_z + (alpha_res - beta_z%alpha_res);
-      beta_e = beta_e + (alpha_res - beta_e%alpha_res); 
+      int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //(-180. +180]
+      int beta_e = floor((atan((temp.z-pose.pose.position.z)/sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI)); //(-90.+90)
       
-      int e = (180+beta_e)/alpha_res - 1;
-      int z = (180+beta_z)/alpha_res - 1;
+
+      beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
+      beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
+      
+      int e = (90+beta_e)/alpha_res - 1; //[0,17]
+      int z = (180+beta_z)/alpha_res - 1; //[0,35]
 
       polar_histogram.set(e,z,polar_histogram.get(e,z)+1);
 
     }
- 	}
+  }
+
+  printf("Polar histogram created in %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 void LocalPlanner::findFreeDirections() {
 
-  int n = floor(40/alpha_res); //n+1 - angular window size
+  std::clock_t start_time = std::clock();
+  int n = floor(20/alpha_res); //safety radius
   int a = 0, b = 0;
-  int sum = 0, pathID = 1;
   bool free = true;
   bool corner = false;
   geometry_msgs::Point p;
   geometry_msgs::Point Pp;
+  std::vector<int> azimuthal_length(grid_length_z, 0);
+  std::vector<int> elevation_length(grid_length_e, 0);
+  std::vector<int> blocked_az(grid_length_z, 0);
+  std::vector<int> blocked_el(grid_length_e, 0);
+  std::vector<int> azimuthal_length_pos;
+  extension_points.clear();
 
   path_candidates.cells.clear();
   path_candidates.header.stamp = ros::Time::now();
@@ -239,11 +228,17 @@ void LocalPlanner::findFreeDirections() {
   path_blocked.cell_width = alpha_res;
   path_blocked.cell_height = alpha_res;
 
-  path_selected.cells.clear();
+//  path_selected.cells.clear();
   path_selected.header.stamp = ros::Time::now();
   path_selected.header.frame_id = "/world";
   path_selected.cell_width = alpha_res;
   path_selected.cell_height = alpha_res;
+
+  path_extended.cells.clear();
+  path_extended.header.stamp = ros::Time::now();
+  path_extended.header.frame_id = "/world";
+  path_extended.cell_width = alpha_res;
+  path_extended.cell_height = alpha_res;
 
   Ppath_candidates.cells.clear();
   Ppath_candidates.header.stamp = ros::Time::now();
@@ -270,98 +265,210 @@ void LocalPlanner::findFreeDirections() {
   Ppath_selected.cell_height = 1;
 
 
-  for(int e= 0; e<grid_length; e++) {
-    for(int z= 0; z<grid_length; z++) {  
-        for(int i=e-n; i<=e+n; i++) {
-            for(int j=z-n;j<=z+n;j++) {
+  for(int e= 0; e<grid_length_e; e++) {
+    for(int z= 0; z<grid_length_z; z++) {  
+      for(int i=e-n; i<=e+n; i++) {
+        for(int j=z-n;j<=z+n;j++) {
                 
-                free = true;
-                corner = false;
+          free = true;
+          corner = false;
 
-                //Case 1 - i < 0
-                if(i<0 && j>=0 && j<grid_length) {
-                    a = -i;
-                    b = grid_length-j-1;
-                }
-                //Case 2 - j < 0
-                else if(j<0 && i>=0 && i<grid_length) {
-                    b = j+grid_length;
-                } 
-                //Case 3 - i >= grid_length
-                else if(i>=grid_length && j>=0 && j<grid_length) {
-                    a = grid_length-(i%(grid_length-1));
-                    b = grid_length-j-1;
-                }
-                //Case 4 - j >= grid_length
-                else if(j>=grid_length && i>=0 && i<grid_length) {
-                    b = j%grid_length;
-                }
-                else if( i>=0 && i<grid_length && j>=0 && j<grid_length) {
-                    a = i;
-                    b = j;
-                }
-                else {
-                    corner = true;
-                }
+          //Case 1 - i < 0
+          if(i<0 && j>=0 && j<grid_length_z) {
+            a = -i;
+            b = grid_length_z-j-1;
+          }
+          //Case 2 - j < 0
+          else if(j<0 && i>=0 && i<grid_length_e) {
+            b = j+grid_length_z;
+          } 
+          //Case 3 - i >= grid_length
+          else if(i>=grid_length_e && j>=0 && j<grid_length_z) {
+            a = grid_length_e-(i%(grid_length_e-1));
+            b = grid_length_z-j-1;
+          }
+          //Case 4 - j >= grid_length
+          else if(j>=grid_length_z && i>=0 && i<grid_length_e) {
+            b = j%grid_length_z;
+          }
+          else if( i>=0 && i<grid_length_e && j>=0 && j<grid_length_z) {
+            a = i;
+            b = j;
+          }
+          else {
+            corner = true;
+          }
 
-                if(!corner) {
-                    if(polar_histogram.get(a,b) != 0) {
-                    	free = false;
-                    // ROS_INFO(" in the path loop %f %d %d", Hist_polar_binary[a][b] , a, b ) ;
-                     	break;
-                    } 
-                }
-            }
+          if(!corner) {
+            if(polar_histogram.get(a,b) != 0) {
+              free = false;
+              break;
+            } 
+          }
+        }
             
-            if(!free)
-                break;
-            }
+        if(!free)
+          break;
+      }
 
-            if(velocity_x > 1.4) {  //1.4
-              rad = waypoint_radius_param*velocity_x;
-              if(rad==0)
-                rad=1;
-            }
-            else
-              rad = 1;
-               
-           	if(free) {		
-            	p.x = e*alpha_res+alpha_res-180; 
-            	p.y = z*alpha_res+alpha_res-180; 
-            	p.z = 0;                         
-            	path_candidates.cells.push_back(p);   
-              publishPathCells(e, z, 0);
-            }
-            else if(!free && polar_histogram.get(e,z) != 0) {
-            	p.x = e*alpha_res+alpha_res-180;  
-            	p.y = z*alpha_res+alpha_res-180; 
-            	p.z = 0;                         
-            	path_rejected.cells.push_back(p);  
-            	publishPathCells(e, z, 1); 
-              
-           	}
-           	else {
-            	p.x = e*alpha_res+alpha_res-180;  
-            	p.y = z*alpha_res+alpha_res-180; 
-            	p.z = 0;                         
-             	path_blocked.cells.push_back(p); 
-              publishPathCells(e, z, 2);
-              
-            }
-      	} 
-    }
-    printf("\n");
-    ROS_INFO(" Path_candidates calculated");
+
+      if(free) {    
+        p.x = e*alpha_res+alpha_res-90; 
+        p.y = z*alpha_res+alpha_res-180; 
+        p.z = 0;                         
+        path_candidates.cells.push_back(p);   
+        publishPathCells(p.x, p.y, 0);      
+      }
+      else if(!free && polar_histogram.get(e,z) != 0) {
+        azimuthal_length[z] = 1;
+        elevation_length[e] = 1;
+        p.x = e*alpha_res+alpha_res-90;  
+        p.y = z*alpha_res+alpha_res-180; 
+        p.z = 0;                         
+        path_rejected.cells.push_back(p);  
+        publishPathCells(p.x, p.y, 1);       
+      }
+      else {
+        blocked_az[z] = 1;
+        blocked_el[e] = 1;
+        p.x = e*alpha_res+alpha_res-90;  
+        p.y = z*alpha_res+alpha_res-180; 
+        p.z = 0;                         
+        path_blocked.cells.push_back(p); 
+        publishPathCells(p.x, p.y, 2);               
+      }
+    } 
+  }
+   
+  int e,z;
+  //std::vector<float> x_cloud, y_cloud, z_cloud;
+  //double minVal, maxVal;
+   
+  if (pose.pose.position.z > 1.5){
+    if (cv::countNonZero(azimuthal_length)>= 6){
+
+      // pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
+      // for (pcl_it = final_cloud.begin(); pcl_it != final_cloud.end(); ++pcl_it) {
+      //   x_cloud.push_back(pcl_it->x);
+      //   y_cloud.push_back(pcl_it->y);
+      //   z_cloud.push_back(pcl_it->z);
+      // }
+
+      // cv::meanStdDev(y_cloud, mean_y, stddev_y);
+      // cv::meanStdDev(z_cloud, mean_z, stddev_z);
+      // cv::meanStdDev(x_cloud, mean_x, stddev_x);
+      // printf("Mean Values [%f %f %f] \n", mean_x[0], mean_y[0], mean_z[0]);
+      // printf("Std Values [%f %f %f] \n", stddev_x[0], stddev_y[0], stddev_z[0]);
+
+      // double minVal, maxVal;
+      // cv::minMaxLoc(x_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
+      // cv::minMaxLoc(y_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
+      // cv::minMaxLoc(z_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
+     
+      // ext_p1.x = mean_x[0]; ext_p2.x = mean_x[0];
+      // ext_p1.y = mean_y[0]-73.0; ext_p2.y = mean_y[0]+73.0;
+      // ext_p1.z = mean_z[0]; ext_p2.z = mean_z[0];
+
+      // ext_p1.x = (-coef2*ext_p1.y - coef3*ext_p1.z - coef4)/coef1;
+      // ext_p2.x = (-coef2*ext_p2.y - coef3*ext_p2.z - coef4)/coef1;
+      // extension_points.push_back(ext_p1);
+      // extension_points.push_back(ext_p2);
+      // int beta_z = floor((atan2(ext_p1.x-pose.pose.position.x,ext_p1.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
+      // int low_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
+      // beta_z = floor((atan2(ext_p2.x-pose.pose.position.x,ext_p2.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
+      // int high_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
+      // if (high_boundary < low_boundary){
+      //   int temp = low_boundary;
+      //   low_boundary = high_boundary;
+      //   high_boundary = temp;
+      // }
+     // printf("high %d low %d \n", high_boundary-180, low_boundary-180); 
+
   
+        //beta_z = floor((atan2(2.12,0)*180.0/PI)); 
+       // beta_z = beta_z + (alpha_res - beta_z%alpha_res);
+
+      std::vector<int> idx_non_zeros;
+
+      for (int c=0; c<azimuthal_length.size(); c++){
+        if (azimuthal_length[c]==1)
+          idx_non_zeros.push_back(c);
+      }
+        
+      
+      z = idx_non_zeros[floor(idx_non_zeros.size()/2)];
+      int beta_z = z*alpha_res+alpha_res-180;
+
+      int high_boundary = beta_z + 140;
+      high_boundary = (high_boundary > 180) ? (-180 + (high_boundary%180))+180 : high_boundary+180;
+      int low_boundary = beta_z - 130;
+      low_boundary = (low_boundary < -170) ? (180 - std::abs(low_boundary)%180)+180 : low_boundary+180;
+
+      if (high_boundary < low_boundary){
+        int temp = low_boundary;
+        low_boundary = high_boundary;
+        high_boundary = temp;
+      }
+      printf("beta_z %d (%d) high %d (%d) low %d (%d) \n",beta_z+180, beta_z, high_boundary, high_boundary-180, low_boundary, low_boundary-180); 
+
+      for (int i=0; i<grid_length_e; i++){
+        if (elevation_length[i]==1){ //|| blocked_el[i]==1){
+          e = i*alpha_res+alpha_res-90;
+          
+          for (int k=0; k<grid_length_z; k++){
+            z = k*alpha_res+alpha_res-180;
+            if ((beta_z+180) > low_boundary && (beta_z+180) < high_boundary){
+              if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
+                p.x = e; p.y = z; p.z = 0;
+                path_blocked.cells.push_back(p);
+                p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); 
+                p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
+                p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+                path_extended.cells.push_back(p); 
+              //  printf("caso 1 extended z %d \n", z+180);
+
+                for(int t=0; t<path_candidates.cells.size(); t++){
+                  if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
+                    path_candidates.cells.erase(path_candidates.cells.begin()+t);
+                  }
+                }
+              }
+            }
+            else {
+              if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
+                p.x = e; p.y = z; p.z = 0;
+                path_blocked.cells.push_back(p);
+                p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); 
+                p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
+                p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+                path_extended.cells.push_back(p); 
+               // printf("caso 2 extended z %d \n", z+180);
+
+                for(int t=0; t<path_candidates.cells.size(); t++){
+                  if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
+                    path_candidates.cells.erase(path_candidates.cells.begin()+t);
+                  }
+                }
+              }
+            }
+          } 
+        }
+      }
+    }
+   }
+  printf("candidates %d blocked %d rejetced %d \n", path_candidates.cells.size(), path_blocked.cells.size(), path_rejected.cells.size());
+  ROS_INFO(" Path_candidates calculated in %2.2f ms",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
-void LocalPlanner::publishPathCells(int e, int z, int path_type){
+void LocalPlanner::publishPathCells(double e, double z, int path_type){
   geometry_msgs::Point p;
-  p.x = round(pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180)));
-  p.y = round(pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180)));
-  p.z = 0;
+ 
+  p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); //round
+  p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
+  p.z = pose.pose.position.z + rad*sin(e*(PI/180));
 
   if(path_type == 0){
+    p.x = e; p.y = z; p.z=0;
     Ppath_candidates.cells.push_back(p);
   }
   if (path_type == 1){
@@ -369,9 +476,10 @@ void LocalPlanner::publishPathCells(int e, int z, int path_type){
   }    
   if (path_type == 2){
     Ppath_blocked.cells.push_back(p); 
-  }     
-                      
+    
+  }                      
 }
+
 
 
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
@@ -379,27 +487,22 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
   geometry_msgs::Vector3Stamped waypoint;
   waypoint.header.stamp = ros::Time::now();
   waypoint.header.frame_id = "/world";
-  if(velocity_x > 1.4) { //1.4
-    rad = waypoint_radius_param*velocity_x;
-    if(rad==0)
-      rad=1;
-  }
-  else
-    rad = 1;
+ 
+  waypoint.vector.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180));
+  waypoint.vector.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
+  waypoint.vector.z = pose.pose.position.z + rad*sin(e*(PI/180));
 
-  waypoint.vector.x = pose.pose.position.x+ rad*cos(e*(PI/180))*sin(z*(PI/180));
-  waypoint.vector.y = pose.pose.position.y+ rad*cos(e*(PI/180))*cos(z*(PI/180));
-  waypoint.vector.z = pose.pose.position.z+ rad*sin(e*(PI/180));
 
   return waypoint;
 }
+
 
 double LocalPlanner::costFunction(int e, int z) {
 
   double cost;
   int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
-  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);//elevation angle
-
+  int goal_e = floor(atan((goal.z-pose.pose.position.z)/sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);//elevation angle
+  int index;
   geometry_msgs::Vector3Stamped ww;
   ww = getWaypointFromAngle(e,z);
   
@@ -407,186 +510,249 @@ double LocalPlanner::costFunction(int e, int z) {
   p.x = ww.vector.x;
   p.y = ww.vector.y;
   p.z = ww.vector.z;
-
-  if(velocity_x > 1.4 && braking_param ) { // non entra mai qui dentro
-    double obs_dist = distance2d(p,obs);
-    double energy_waypoint = 0.5*1.56*velocity_x*velocity_x + 1.56*9.81*ww.vector.z;
-    double energy_threshold = 0.5*1.56*3*3 + 1.56*9.81*goal.z;
-    double energy_diff = energy_waypoint-energy_threshold;
-    double ke_diff =  0.5*1.56*velocity_x*velocity_x - 0.5*1.56*1.4*1.4;
-    double pe_diff =  1.56*9.81*pose.pose.position.z - 1.56*9.81*goal.z;
-
-    cost = (1/obs_dist)  + x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x) + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
-    cost_type=1;
-    
-  //  printf("%d %d %d \n", 1/obs_dist, x_brake_cost_param*ke_diff*(ww.vector.x-pose.pose.position.x), z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z));
-
-    // double kin_x = 0.5*1.56*velocity_x*velocity_x*(ww.vector.x-pose.pose.position.x);
-    // double kin_y = 0.5*1.56*velocity_y*velocity_y*(ww.vector.y-pose.pose.position.y);
-    // double kin_z = 0.5*1.56*velocity_z*velocity_z*(ww.vector.z-pose.pose.position.z);
-
-    //  cost = (1/obs_dist)  + x_brake_cost_param*kin_x + x_brake_cost_param*kin_y + z_brake_cost_param*pe_diff*(ww.vector.z-pose.pose.position.z);
-
-  }
-  else {
-  	if(velocity_x < 1.4)
-  	first_brake = false;
   
-  	if(e>-50) {
-  		cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
-      
-   //   float cost_temp =  0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z +  (1.56*9.81*e)/10;
-
-   //   printf("[%f %f %f %f %f] ", cost, cost_temp, cost+cost_temp, 3 * 0.5*1.56*(velocity_x*velocity_x + velocity_y*velocity_y)*z, (1.56*9.81*e)/5);
-    //  cost = cost + cost_temp;
-      cost_type=2;
-    }
-  	else
-  		cost = 10000;
-  }
-
+  cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
+  double height_cost = std::abs(accumulated_height_prior[std::round(p.z)]-accumulated_height_prior[std::round(goal.z)])*17.5;
+  int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
+  int curr_e = floor(atan2(0,0)*180.0/PI);
+  double dist =  sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
+  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
+  double potential_energy = 1.56*9.81*std::abs(e-goal_e);
+  cost = cost + height_cost;
   return cost;  
 }
 
+double LocalPlanner::goalHeuristic(int e, int z){
+
+  int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
+  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
+
+  printf("distance: %f with param: %f \n",sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)), goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)));
+  return goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z));
+}
+
+double LocalPlanner::smoothnessHeuristic(int e, int z){
+
+  float x = path_selected.cells[path_selected.cells.size()-2].x;
+  float y = path_selected.cells[path_selected.cells.size()-2].y;
+  printf("smooth: %f with param: %f \n", sqrt(pow(x-e,2) + pow(y-z,2)), smooth_cost_param*sqrt(pow(x-e,2) + pow(y-z,2)));
+  return smooth_cost_param*sqrt(pow(x-e,2) + pow(y-z,2));
+}
+
+double LocalPlanner::kineticHeuristic(int e, int z){
+
+  int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
+  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
+  int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
+  int curr_e = floor(atan2(0,0)*180.0/PI);
+  double dist = sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
+  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
+  printf("Kinetic Energy %f ", kinetic_energy);
+  return kinetic_energy;
+
+}
+
+double LocalPlanner::potentialHeuristic(int e, int z){
+
+  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
+  double potential_energy = 1.56*9.81*std::abs(e-goal_e); //std::abs(e-atan2(0,0));
+  printf("Potential Energy %f   (goal_e %d)\n", potential_energy, goal_e);
+  return potential_energy;
+
+}
+
+
+double LocalPlanner::altitudeHeuristic(geometry_msgs::Vector3Stamped w){
+
+  printf("prior waypt %f prior goal %f \n", accumulated_height_prior[std::round(w.vector.z)],accumulated_height_prior[std::round(goal.z)]);
+  printf("total height prior %d \n",std::abs(accumulated_height_prior[std::round(w.vector.z)]-accumulated_height_prior[std::round(goal.z)])*17.5);
+  return std::abs(accumulated_height_prior[std::round(w.vector.z)]-accumulated_height_prior[std::round(goal.z)])*17.5;
+  // double altitude_diff = goal.z - w.vector.z;
+  // double altitude_cost = (altitude_diff>0) ? (3.0*std::abs(altitude_diff)) : (1.0*std::abs(altitude_diff));
+  // printf("altitude_cost: %d \n", altitude_cost);
+  // return altitude_cost;
+
+}
+
+double LocalPlanner::trajectoryHeuristic(geometry_msgs::Vector3Stamped w){
+
+  geometry_msgs::Vector3Stamped curr_pose, g;
+  curr_pose.vector.x = pose.pose.position.x;
+  curr_pose.vector.y = pose.pose.position.y;
+  curr_pose.vector.z = pose.pose.position.z;
+  g.vector.x = goal.x;
+  g.vector.y = goal.y;
+  g.vector.z = goal.z;
+  double current_angle = nextYaw(curr_pose, w, 0.0);
+  double goal_angle = nextYaw(curr_pose, g, 0.0);
+  double angle_diff = goal_angle - current_angle;
+  angle_diff = std::fabs(avoidance::angleToRange(angle_diff));
+  double num_45_deg_turns = angle_diff / (PI/4);
+  int altitude_change = (std::round(w.vector.z) == std::round(goal.z)) ? 0 : 1; 
+  double smoothness_cost = 10.0*(num_45_deg_turns + altitude_change);
+
+  printf("trajectory_cost %f    number of turns %f \n", smoothness_cost, num_45_deg_turns);
+
+  return smoothness_cost;
+}
+
+double LocalPlanner::distanceHeuristic(geometry_msgs::Vector3Stamped w){
+  double xy_dist = sqrt(pow(goal.x-w.vector.x,2) + pow(goal.y-w.vector.y,2));
+  double unexplored_risk = 7.0*0.005*500;
+  double xy_cost = xy_dist * unexplored_risk * height_prior[std::round(w.vector.z)];
+  double z_cost = std::abs(accumulated_height_prior[std::round(w.vector.z)] - accumulated_height_prior[std::round(goal.z)]) * unexplored_risk;
+  double travel_cost = xy_cost + z_cost;
+  printf("xy_dist %f xy_cost %f z_cost %f tot %f \n",xy_dist,xy_cost,z_cost,travel_cost);
+  return travel_cost;
+}
+
+double LocalPlanner::distance3DHeuristic(geometry_msgs::Vector3Stamped w){
+  double cost_distance = sqrt(pow(goal.x-w.vector.x,2) + pow(goal.y-w.vector.y,2) + pow(goal.z-w.vector.z,2));
+  printf("3d cost distance %f \n", cost_distance);
+  return cost_distance;
+}
+
+
+
 void LocalPlanner::calculateCostMap() {
 
-    int e = 0, z = 0;
-    double cost_path; 
-    float small ; int small_i;
+  std::clock_t start_time = std::clock();
+  int e = 0, z = 0;
+  double cost_path; 
+  float small ; int small_i;
+  std::vector<float> cost_candidates(path_candidates.cells.size());
 
-    for(int i=0; i<path_candidates.cells.size(); i++) {  
-        e = path_candidates.cells[i].x;
-       	z = path_candidates.cells[i].y;
-       	if(init == 0) {
-       		p1.x = e;
-       		p1.y = z;
-      	}
+  printf("p1.x %f p1.y %f \n", p1.x, p1.y);
+
+  for(int i=0; i<path_candidates.cells.size(); i++) {  
+    e = path_candidates.cells[i].x;
+   	z = path_candidates.cells[i].y;
+   	if(init == 0) {
+   		p1.x = e;
+   		p1.y = z;
+   	}
       
-       	cost_path = costFunction(e,z);
-     
-      	if(i == 0) {
-        	small = cost_path;
-        	small_i = i;
-      	}
+   	cost_path = costFunction(e,z);
+    cost_candidates[i]=(cost_path);
 
-        if(cost_path<small) {
-        	small = cost_path;
-        	small_i = i ;
-      	}  
-    }
+   	if(i == 0) {
+     	small = cost_path;
+     	small_i = i;
+   	}
+
+    if(cost_path<small) {
+     	small = cost_path;
+     	small_i = i ;
+   	}  
+  }
+
+  cv::sortIdx(cost_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
     
-    p1.x = path_candidates.cells[small_i].x;
-    p1.y = path_candidates.cells[small_i].y;
-    p1.z = path_candidates.cells[small_i].z;
-    path_selected.cells.push_back(p1);
+  p1.x = path_candidates.cells[small_i].x;
+  p1.y = path_candidates.cells[small_i].y;
+  p1.z = path_candidates.cells[small_i].z;
+  path_selected.cells.push_back(p1);
+    
 
-    geometry_msgs::Point Pp1;
-    Pp1.x = Ppath_candidates.cells[small_i].x;
-    Pp1.y = Ppath_candidates.cells[small_i].y;
-    Pp1.z = Ppath_candidates.cells[small_i].z;
-    Ppath_selected.cells.push_back(Pp1);
+  geometry_msgs::Point Pp1;
+  Pp1.x = pose.pose.position.x + rad*cos(p1.x*(PI/180))*sin(p1.y*(PI/180)); //round
+  Pp1.y = pose.pose.position.y + rad*cos(p1.x*(PI/180))*cos(p1.y*(PI/180));
+  Pp1.z = pose.pose.position.z + rad*sin(p1.x*(PI/180));
+  Ppath_selected.cells.push_back(Pp1);
 
-   	ROS_INFO(" min_e - %f min_z- %f min_cost %f cost_type %d", p1.x,p1.y, small, cost_type);
+  for(int i=0; i<10; i++){
+    e = path_candidates.cells[cost_idx_sorted[i]].x;
+    z = path_candidates.cells[cost_idx_sorted[i]].y;
+    printf("e %d z %d -> ",e,z);
+    printf("%f \n", cost_candidates[cost_idx_sorted[i]]);
+  }
+
+  ROS_INFO("Selected Direction: e  %f  z  %f  min_cost  %f  in %2.2f ms", p1.x,p1.y, small, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
 }
 
 void LocalPlanner::getNextWaypoint() {
+ 
+  setpoint = getWaypointFromAngle(p1.x,p1.y);
+   
+  if (withinGoalRadius() || !first_reach){
+    ROS_INFO("Goal Reached: Hoovering");
+    waypt.vector.x = waypt_stop.pose.position.x;
+    waypt.vector.y = waypt_stop.pose.position.y;
+    waypt.vector.z = waypt_stop.pose.position.z;
+  }
+  else{
+    geometry_msgs::Vector3Stamped setpoint_temp, setpoint_temp2;
+     
+    tf::Vector3 vec;
+    vec.setX(goal.x - pose.pose.position.x);
+    vec.setY(goal.y - pose.pose.position.y);
+    vec.setZ(goal.z - pose.pose.position.z);
+    // double new_len = vec.length() < 1.0 ? vec.length() : speed;
+    vec.normalize();
+    vec *= 1.0;
+      
+ 	  if(checkForCollision() && pose.pose.position.z>0.5) { //(velocity_x>1.4 && pose.pose.position.z>0.5) { 
+      vec *= 5;
+      waypt.vector.x = 0.0; //pose.pose.position.x - vec.getX(); 
+      waypt.vector.y = 0.0; //pose.pose.position.y - vec.getY(); 
+      waypt.vector.z = setpoint.vector.z;
 
-    last_waypt = waypt;
-  	setpoint = getWaypointFromAngle(p1.x,p1.y);
-
-    if (withinGoalRadius() || !first_reach){
-      ROS_INFO("Goal Reached: Hoovering");
-      waypt.vector.x = waypt_stop.pose.position.x;
-      waypt.vector.y = waypt_stop.pose.position.y;
-      waypt.vector.z = waypt_stop.pose.position.z;
-    }
+   	  ROS_INFO(" Braking !! vecX %f vecY %f vecZ %f ", vec.getX(),vec.getY(),vec.getZ());
+   	  p1.x = 0;
+   	  p1.y = 0;
+      path_selected.cells[path_selected.cells.size()-1].x = 0;
+      path_selected.cells[path_selected.cells.size()-1].y = 0;
+ 	  }
     else{
       waypt = setpoint;
-      tf::Vector3 vec;
-      vec.setX(goal.x - pose.pose.position.x);
-      vec.setY(goal.y - pose.pose.position.y);
-      vec.setZ(goal.z - pose.pose.position.z);
-       // double new_len = vec.length() < 1.0 ? vec.length() : speed;
-      vec.normalize();
-      vec *= 1.0;
-
-  	  if (checkForCollision() || waypt.vector.z < 0.5) {//(((waypt.vector.z<0.5) || checkForCollision()) && velocity_x<1.4 ) { //1.4 
-        // <0.5 fa evitare i birilli in basso
-                         
-        waypt.vector.x = pose.pose.position.x + vec.getX();
-        waypt.vector.y = pose.pose.position.y + vec.getY();
-        waypt.vector.z = pose.pose.position.z + vec.getZ();
-      
-
-    //  	  waypt.vector.x = pose.pose.position.x-0.2;
-    // // //waypt.vector.y = pose.y;
-    // 	  waypt.vector.z = pose.pose.position.z+ 0.2;
-    	  p1.x = 0;
-    	  p1.y = 0;
-    	  ROS_INFO(" Too close to the obstacle. Going back %f %f",waypt.vector.x, waypt.vector.z);
-  	  }
-      
-   	  if(checkForCollision() && pose.pose.position.z>0.5) { //(velocity_x>1.4 && pose.pose.position.z>0.5) { 
-
-        waypt.vector.x = pose.pose.position.x - vec.getX(); // quando waypt>0.5 e vecX>0 hai bisogno di sottare 
-        waypt.vector.y = pose.pose.position.y - vec.getY(); // vecX e vecY alla pose se no crash nello'soatcolo
-        waypt.vector.z = pose.pose.position.z + vec.getZ();
-
-    
-    //waypt.vector.x = stop_pose.x;
-   	 	 //// waypt.vector.y = 0; //stop_pose.y;global_path_pub
-    //waypt.vector.z = stop_pose.z;
-    	  ROS_INFO(" Braking !! ");
-    	  p1.x = 0;
-    	  p1.y = 0;
-  	  }
     }
+  }
 
-    Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
-    ROS_INFO("Publishing waypoint: [%f, %f, %f].",
-           desired_position.x(),
-           desired_position.y(),
-           desired_position.z());
+  ROS_INFO("Publishing waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
  
 }
 
+
 bool LocalPlanner::checkForCollision() {
-    bool avoid = false;
-    geometry_msgs::Point temp;
-    geometry_msgs::Point p, p_pose;
-    p.x = waypt.vector.x;
-    p.y = waypt.vector.y;
-    p.z = waypt.vector.z;
-    p_pose.x = pose.pose.position.x;
-    p_pose.y = pose.pose.position.y;
-    p_pose.z = pose.pose.position.z;
-   
 
-    pcl::PointCloud<pcl::PointXYZ>::iterator it;
-    for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
-      temp.x = it->x;
-      temp.y = it->y;
-      temp.z = it->z;
+  bool avoid = false;
+  geometry_msgs::Point temp;
+  geometry_msgs::Point p, p_pose;
+  p.x = setpoint.vector.x;
+  p.y = setpoint.vector.y;
+  p.z = setpoint.vector.z;
+  p_pose.x = pose.pose.position.x;
+  p_pose.y = pose.pose.position.y;
+  p_pose.z = pose.pose.position.z;
+  double min_dist = 1000;
+  min_dist_pose_obst = 1000.0;
 
-      if (distance2d(p_pose,temp) < min_dist_pose){
-        min_dist_pose = distance2d(p_pose,temp);
-      }
 
-       if (distance2d(p,temp) < min_dist){
-        min_dist = distance2d(p,temp);
-      }
+  pcl::PointCloud<pcl::PointXYZ>::iterator it;
+  for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
+    temp.x = it->x;
+    temp.y = it->y;
+    temp.z = it->z;
+
+    if (distance2d(p_pose,temp) < min_dist_pose_obst){
+      min_dist_pose_obst = distance2d(p_pose,temp);
+    }
+
+    if (distance2d(p,temp) < min_dist){
+      min_dist = distance2d(p,temp);
+    }
       
 
-      if(distance2d(p,temp)< 0.5 && init != 0) { 
-        printf("distance(p,temp)<1 \n");
-        avoid = true;
-        break;
-      }
-    }  
-
-    printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose);
-    return avoid;
+    if(distance2d(p_pose,temp)< 0.5 && init != 0) { 
+      printf("distance(p,temp)<0.5 \n");
+      avoid = true;
+      break;
+    }
+  }  
+  
+  printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose_obst);
+  return avoid;
 }
 
 void LocalPlanner::goFast(){
@@ -599,33 +765,21 @@ void LocalPlanner::goFast(){
     waypt.vector.z = waypt_stop.pose.position.z;
   }
   else {
-
-    // waypt.vector.x = waypt.vector.x + fast_waypoint_update_param;
-    // waypt.vector.y = goal.y;
-    // waypt.vector.z = goal.z;
+    tf::Vector3 vec;
+    vec.setX(goal.x - pose.pose.position.x);
+    vec.setY(goal.y - pose.pose.position.y);
+    vec.setZ(goal.z - pose.pose.position.z);
+    double new_len = vec.length() < 1.0 ? vec.length() : speed;
+    vec.normalize();
+    vec *= new_len;
+  
+    waypt.vector.x = pose.pose.position.x + vec.getX();
+    waypt.vector.y = pose.pose.position.y + vec.getY();
+    waypt.vector.z = pose.pose.position.z + vec.getZ();
+ }
 
   
-  tf::Vector3 vec;
-  vec.setX(goal.x - pose.pose.position.x);
-  vec.setY(goal.y - pose.pose.position.y);
-  vec.setZ(goal.z - pose.pose.position.z);
-  double new_len = vec.length() < 1.0 ? vec.length() : speed;
-  vec.normalize();
-  vec *= new_len;
-  
-  waypt.vector.x = pose.pose.position.x + vec.getX();
-  waypt.vector.y = pose.pose.position.y + vec.getY();
-  waypt.vector.z = pose.pose.position.z + vec.getZ();
-
-}
-
-  Eigen::Vector3d desired_position(waypt.vector.x, waypt.vector.y, waypt.vector.z);
-  ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].",
-           desired_position.x(),
-           desired_position.y(),
-           desired_position.z());
-
-    last_waypt = waypt;
+  ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
 
 }
 
@@ -650,19 +804,6 @@ bool LocalPlanner::withinGoalRadius(){
 
 }
 
-void LocalPlanner::cropPointCloud() {  
-  octomap::point3d half_min_cache;
-  octomap::point3d half_max_cache;
-  half_min_cache.x() = waypt.vector.x - min_cache_x;
-  half_min_cache.y() = waypt.vector.y - min_cache_y;
-  half_min_cache.z() = waypt.vector.z - min_cache_z;
-  half_max_cache.x() = waypt.vector.x;
-  half_max_cache.y() = waypt.vector.y + max_cache_y;
-  half_max_cache.z() = waypt.vector.z + max_cache_z;
-
-  octomapCloud.crop(half_min_cache, half_max_cache); 
-}
-
 
 geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
   geometry_msgs::PoseStamped pose_msg;
@@ -680,7 +821,7 @@ double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vec
   double dx = v.vector.x - u.vector.x;
   double dy = v.vector.y - u.vector.y;
 
-  if (dx == 0 && dy == 0) {
+  if (round(dx) == 0 && round(dy) == 0) {
     return last_yaw;   // Going up or down
   }
 
@@ -700,18 +841,30 @@ void LocalPlanner::getPathMsg() {
   curr_pose.vector.x = pose.pose.position.x;
   curr_pose.vector.y = pose.pose.position.y;
   curr_pose.vector.z = pose.pose.position.z;
-  double new_yaw = nextYaw(curr_pose, waypt, last_yaw);
+  //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
+  if(reach_altitude==0){ 
+    if(round(curr_pose.vector.x)!=round(0.0) || round(curr_pose.vector.y)!=round(0.0) || floor(curr_pose.vector.z)!=floor(goal_z_param-0.5)){
+      waypt.vector.x = 0.0;
+      waypt.vector.y = 0.0;
+      waypt.vector.z = goal.z;
+    }
+    else{
+       reach_altitude=1;
+    printf("Reached altitude %f, now going towards the goal. \n\n",pose.pose.position.z);
+    }
+  }
+
+  double new_yaw = nextYaw(curr_pose, waypt, last_yaw); 
   waypt_p = createPoseMsg(waypt, new_yaw);
   path_msg.poses.push_back(waypt_p);
   curr_yaw = new_yaw;
-
   checkSpeed();
 } 
 
 void LocalPlanner::checkSpeed(){
 
   if (hasSameYawAndAltitude(last_waypt_p, waypt_p) && !obstacleAhead()){
-    speed = std::min(max_speed, speed+ 0.1);
+    speed = std::min(max_speed, speed + 0.1);
   }
   else{
     speed = min_speed;
@@ -722,9 +875,9 @@ void LocalPlanner::checkSpeed(){
 
 bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
 
-  return msg1.pose.orientation.z >= 0.9*msg2.pose.orientation.z && msg1.pose.orientation.z <= 1.1*msg2.pose.orientation.z 
-         && msg1.pose.orientation.w >= 0.9*msg2.pose.orientation.w && msg1.pose.orientation.w <= 1.1*msg2.pose.orientation.w
-         && msg1.pose.position.z >= 0.9*msg2.pose.position.z && msg1.pose.position.z <= 1.1*msg2.pose.position.z;
+  return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z) 
+         && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
+         && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
 
 }
 

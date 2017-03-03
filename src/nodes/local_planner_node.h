@@ -55,6 +55,7 @@ private:
 	ros::Subscriber pointcloud_sub_ ;
 	ros::Subscriber pose_sub_ ; 
 	ros::Subscriber velocity_sub_ ;
+	ros::Subscriber clicked_point_sub_;
 
 
 	//publishers
@@ -62,10 +63,6 @@ private:
 	ros::Publisher local_pointcloud_pub_;
 	ros::Publisher front_pointcloud_pub_;
 	ros::Publisher cached_pointcloud_pub_ ;
-	ros::Publisher path_candidates_pub_;
-    ros::Publisher path_rejected_pub_;
-    ros::Publisher path_blocked_pub_;
-	ros::Publisher path_selected_pub_;
 	ros::Publisher marker_pub_;
 	ros::Publisher waypoint_pub_;
     ros::Publisher path_pub_;
@@ -74,18 +71,37 @@ private:
     ros::Publisher mavros_waypoint_pub_;
   	ros::Publisher current_waypoint_pub_;
 
-
+  	ros::Publisher marker_rejected_pub_;
+  	ros::Publisher marker_blocked_pub_;
+  	ros::Publisher marker_candidates_pub_;
+  	ros::Publisher marker_selected_pub_;
+  	ros::Publisher marker_extended_pub_;
+  	ros::Publisher marker_goal_pub_;
+  	ros::Publisher marker_normal_pub_;
+  	int blocked_id = 0;
+  	int rejected_id = 0;
+  	int candidates_id = 0;
+  	int selected_id = 0;
+  	int extended_id = 0;
 
     tf::TransformListener tf_listener_;
 
     void positionCallback(const geometry_msgs::PoseStamped msg);
-	void pointCloudCallback(const sensor_msgs::PointCloud2 input);
+	void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
 	void velocityCallback(const geometry_msgs::TwistStamped msg);
 	void readParams();
 	void publishAll();
-	void fillPath(const geometry_msgs::PoseStamped);
-	void publishMarker();
-
+	void publishPath(const geometry_msgs::PoseStamped msg);
+	void publishMarkerBlocked();
+	void publishMarkerRejected();
+	void publishMarkerCandidates();
+	void publishMarkerSelected();
+	void publishMarkerExtended();
+	void clickedPointCallback(const geometry_msgs::PointStamped & msg);
+	void printPointInfo(double x, double y, double z);
+	void publishGoal();
+	void publishNormalToPowerline();
+	
 
 };
 

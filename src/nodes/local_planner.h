@@ -36,16 +36,25 @@
 #include "avoidance/common.h"
 
 
+#include <pcl/ModelCoefficients.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/crop_box.h>
+
 
 #define PI 3.14159265
 #define alpha_res 10
-#define grid_length 360/alpha_res
+#define grid_length_z 360/alpha_res
+#define grid_length_e 180/alpha_res
 
 float distance2d(geometry_msgs::Point a, geometry_msgs::Point b);
 
 class Histogram 
 { 
-	int array[grid_length][grid_length];
+	int array[grid_length_e][grid_length_z];
 
 	public: 
 
@@ -70,51 +79,43 @@ class LocalPlanner {
 
 public:
 	pcl::PointCloud<pcl::PointXYZ> final_cloud;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ahead;
 	
 	octomap::Pointcloud octomapCloud;
 
 	bool first_reach = true;
-	bool obstacle = false;
-	bool first_brake = false;
-	bool braking_param = false;  
+	bool obstacle = false; 
 	bool set_first_yaw = true;
+	bool reach_altitude = false;
 
-	geometry_msgs::Point min, max, min_cache, max_cache, front, back, half_cache, goal, obs, stop_pose;
+	geometry_msgs::Point min_box, max_box, goal, obs;
 	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p, last_waypt_p; 
-	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal;
+	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal, not_smooth_wp;
 	geometry_msgs::Point p1;
+	geometry_msgs::TwistStamped curr_vel;
+	geometry_msgs::Point ext_p1, ext_p2;
+
 	nav_msgs::Path path_msg;
 
 	int init = 0;
-	int counter = 0;
 	int cost_type;
 
-	float min_x = 1.5, max_x = 1.5, min_y = 1.5, max_y = 1.5, min_z = 1.5, max_z = 1.5; 
-	float back_x = 0, front_x = 4.5, back_y = 0.6, front_y = 0.6, back_z = 0.6, front_z = 0.6;
-	float min_cache_x = 2.5, max_cache_x = 2.5, min_cache_y = 2.5, max_cache_y = 2.5, min_cache_z = 2.5, max_cache_z = 2.5; 
-	float rad = 1;
+	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 10.0, max_box_y = 10.0, min_box_z = 2.0, max_box_z = 2.0; 
+	float rad = 1.0;
 
-	double velocity_x, velocity_y, velocity_z;
-	geometry_msgs::TwistStamped curr_vel;
+	double velocity_x, velocity_y, velocity_z, velocity_mod;
 	double speed = 2.0;
 	double min_speed = 2.0;
 	double max_speed = 3.0;
-	double path_y_tolerance_param = 0.2;
-	double path_z_tolerance_param = 0.7;
-	double waypoint_radius_param = 0.25;
-	double x_brake_cost_param = 2.0;
-	double z_brake_cost_param = 8.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
 	double goal_x_param;
 	double goal_y_param;
 	double goal_z_param;
-	double wavefront_param = 0.9;
 	double curr_yaw, last_yaw;
-	double fast_waypoint_update_param = 0.4;
-
-	 double min_dist = 1000;
-    double min_dist_pose = 1000;
+	double deceleration_limit = 1.5*9.8066;
+	double min_dist_pose_obst;
+	 
 
 	Histogram polar_histogram;
 
@@ -122,6 +123,7 @@ public:
 	nav_msgs::GridCells path_selected;
 	nav_msgs::GridCells path_rejected;
 	nav_msgs::GridCells path_blocked;
+	nav_msgs::GridCells path_extended;
 
 	nav_msgs::GridCells Ppath_candidates;
 	nav_msgs::GridCells Ppath_selected;
@@ -129,13 +131,26 @@ public:
 	nav_msgs::GridCells Ppath_blocked;
 
 	
+    std::vector<int> cost_idx_sorted;
+
+  //  std::vector<float> heigh_prior{0.0, 0.0098, 0.0927, 0.473, 1.1746, 2.0522, 3.259, 7.106, 13.777, 20.41, 27.59, 35.16};
+	std::vector<float> accumulated_height_prior{0.0, 0.000098, 0.000927, 0.0473, 0.011746, 0.020522, 0.03259, 0.07106, 0.13777, 0.2041, 0.2759, 0.3516};
+    std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
+
+    std::vector<geometry_msgs::Point> extension_points;
+    float coef1, coef2, coef3, coef4;
+
+    cv::Scalar mean_x, mean_y, mean_z;
+    cv::Scalar stddev_x, stddev_y, stddev_z;
+    
+
 
 	LocalPlanner();
 	~LocalPlanner();
 	
 	void setPose(const geometry_msgs::PoseStamped msg);
-	void setLimits();
-	void setVelocity(ros::Time);
+	void setLimitsBoundingBox();
+	void setVelocity();
 	void setGoal();
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
 	bool obstacleAhead();
@@ -146,17 +161,22 @@ public:
 	void calculateCostMap();
 	void getNextWaypoint();
 	bool checkForCollision();
-	void cropPointCloud();
 	void goFast();
 	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
 	double nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
 	void getPathMsg();
-	//geometry_msgs::PoseStamped publishSetPoint();
 	bool withinGoalRadius();
-	void publishPathCells(int e, int z, int path_type);
+	void publishPathCells(double e, double z, int path_type);
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
-
+	double goalHeuristic(int e, int z);
+	double smoothnessHeuristic(int e, int z);
+	double altitudeHeuristic(geometry_msgs::Vector3Stamped w);
+	double trajectoryHeuristic(geometry_msgs::Vector3Stamped w);
+	double distanceHeuristic(geometry_msgs::Vector3Stamped w);
+	double distance3DHeuristic(geometry_msgs::Vector3Stamped w);
+	double kineticHeuristic(int e, int z);
+	double potentialHeuristic(int e, int z);
 };
 
 
