@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
+find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -127,6 +128,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OCTOMAP_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 link_libraries(${OCTOMAP_LIBRARIES})
 
@@ -143,17 +145,23 @@ add_library(node
 add_library(global_planner
   src/library/global_planner.cpp
 )
+add_library(local_planner
+  src/nodes/local_planner.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(global_planner_node src/nodes/global_planner_node.cpp)
 add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 add_executable(mock_data_node src/nodes/mock_data_node.cpp)
+add_executable(local_planner_node src/nodes/local_planner_node.cpp)
+
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -170,6 +178,10 @@ target_link_libraries(path_handler_node
   ${catkin_LIBRARIES})
 target_link_libraries(mock_data_node
   ${catkin_LIBRARIES})
+target_link_libraries(local_planner_node
+  local_planner
+  ${catkin_LIBRARIES} ${OpenCV_LIBS})  
+  
 
 #############
 ## Install ##
