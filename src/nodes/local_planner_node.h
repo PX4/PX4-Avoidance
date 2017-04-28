@@ -85,6 +85,8 @@ private:
   	int extended_id = 0;
 
     tf::TransformListener tf_listener_;
+    
+    std::vector<float> algo_time;
 
     void positionCallback(const geometry_msgs::PoseStamped msg);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 msg);

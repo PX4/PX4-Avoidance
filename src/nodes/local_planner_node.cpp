@@ -339,27 +339,6 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z){
   printf("----- Point: %f %f %f -----\n",x,y,z);
   printf("Elevation %d Azimuth %d %d \n",e,az,azz);
 
-  double goal_cost = local_planner.goalHeuristic(e,az);
-  double smooth_cost = local_planner.smoothnessHeuristic(e,az);
-
-  printf("Cost: %f \n", goal_cost+smooth_cost);
-
- printf("\n");
-
-  geometry_msgs::Vector3Stamped w;
-  w.vector.x = x;
-  w.vector.y = y;
-  w.vector.z = z;
-  double alt_cost = local_planner.altitudeHeuristic(w);
-  // double traj_cost = local_planner.trajectoryHeuristic(w);
-  // double dist_cost = local_planner.distanceHeuristic(w);
-  // double dist3d_cost = local_planner.distance3DHeuristic(w);
- double kin_cost = local_planner.kineticHeuristic(e,az);
- double pot_cost = local_planner.potentialHeuristic(e,az);
-
- printf("Kin+Pot %f \n", kin_cost+pot_cost);
-//  printf("Cost: %f \n", goal_cost+smooth_cost+kin_cost+pot_cost);
-  printf("Cost %f \n", goal_cost+smooth_cost+alt_cost+kin_cost+pot_cost);
   printf("-------------------------------------------- \n");
 }
 
@@ -368,43 +347,52 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
 	pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
-    try{
-        tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
-        tf::StampedTransform transform;
-        tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
-        pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
-        pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
-        local_planner.filterPointCloud(complete_cloud);
-    }
-    catch(tf::TransformException& ex){
-         ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
-    }
+  try{
+    tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
+    tf::StampedTransform transform;
+    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+    pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
+    pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
+    local_planner.filterPointCloud(complete_cloud);
+  }
+  catch(tf::TransformException& ex){
+    ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
+  }
 
-    printf("obstacleAhead %d init %d \n", local_planner.obstacleAhead(), local_planner.init);    
-   if(local_planner.obstacleAhead() && local_planner.init!=0) {
-	    local_planner.createPolarHistogram();
-	    local_planner.findFreeDirections();
-	    local_planner.calculateCostMap();
-      local_planner.getNextWaypoint();
-      local_planner.getPathMsg();
+  if(local_planner.obstacleAhead() && local_planner.init!=0) {
+    printf("There is an Obstacle Ahead \n");
+	  local_planner.createPolarHistogram();
+	  local_planner.findFreeDirections();
+	  local_planner.calculateCostMap();
+    local_planner.getNextWaypoint();
+    local_planner.getPathMsg();
 	}
-   else{
-      local_planner.goFast();
-      local_planner.getPathMsg();
-       
-   }
+  else{
+    printf("There isn't any Obstacle Ahead \n");
+    local_planner.goFast();
+    local_planner.getPathMsg();     
+  }
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  if (local_planner.withinGoalRadius() && local_planner.first_reach){
+    cv::Scalar mean, std;
+    printf("----------------------------------- \n");
+    cv::meanStdDev(algo_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.cloud_time, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.polar_time, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.free_time, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.cost_time, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.collision_time, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
+    printf("----------------------------------- \n");
+  }
 
-	publishAll();
+  publishAll();
 
-    
-
-    if(local_planner.init == 0) { 
-        ros::Duration(2).sleep();
-        local_planner.init =1;
-    }
-
+  if(local_planner.init == 0) { 
+    ros::Duration(2).sleep();
+    local_planner.init =1;
+  }
 
 }
 

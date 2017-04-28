@@ -88,7 +88,7 @@ public:
 	bool set_first_yaw = true;
 	bool reach_altitude = false;
 
-	geometry_msgs::Point min_box, max_box, goal, obs;
+	geometry_msgs::Point min_box, max_box, goal;
 	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p, last_waypt_p; 
 	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal, not_smooth_wp;
 	geometry_msgs::Point p1;
@@ -100,7 +100,7 @@ public:
 	int init = 0;
 	int cost_type;
 
-	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 10.0, max_box_y = 10.0, min_box_z = 2.0, max_box_z = 2.0; 
+	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 6.5, max_box_y = 6.5, min_box_z = 2.0, max_box_z = 2.0; 
 	float rad = 1.0;
 
 	double velocity_x, velocity_y, velocity_z, velocity_mod;
@@ -109,6 +109,7 @@ public:
 	double max_speed = 3.0;
 	double goal_cost_param = 2.0;
 	double smooth_cost_param = 1.5;
+	double prior_cost_param = 17.5;
 	double goal_x_param;
 	double goal_y_param;
 	double goal_z_param;
@@ -134,7 +135,8 @@ public:
     std::vector<int> cost_idx_sorted;
 
   //  std::vector<float> heigh_prior{0.0, 0.0098, 0.0927, 0.473, 1.1746, 2.0522, 3.259, 7.106, 13.777, 20.41, 27.59, 35.16};
-	std::vector<float> accumulated_height_prior{0.0, 0.000098, 0.000927, 0.0473, 0.011746, 0.020522, 0.03259, 0.07106, 0.13777, 0.2041, 0.2759, 0.3516};
+	//std::vector<float> accumulated_height_prior{0.0, 0.000098, 0.000927, 0.0473, 0.011746, 0.020522, 0.03259, 0.07106, 0.13777, 0.2041, 0.2759, 0.3516};
+    std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
 
     std::vector<geometry_msgs::Point> extension_points;
@@ -142,6 +144,8 @@ public:
 
     cv::Scalar mean_x, mean_y, mean_z;
     cv::Scalar stddev_x, stddev_y, stddev_z;
+
+    std::vector<float> cloud_time, polar_time, free_time, cost_time, collision_time;
     
 
 
@@ -169,14 +173,6 @@ public:
 	void publishPathCells(double e, double z, int path_type);
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
-	double goalHeuristic(int e, int z);
-	double smoothnessHeuristic(int e, int z);
-	double altitudeHeuristic(geometry_msgs::Vector3Stamped w);
-	double trajectoryHeuristic(geometry_msgs::Vector3Stamped w);
-	double distanceHeuristic(geometry_msgs::Vector3Stamped w);
-	double distance3DHeuristic(geometry_msgs::Vector3Stamped w);
-	double kineticHeuristic(int e, int z);
-	double potentialHeuristic(int e, int z);
 };
 
 

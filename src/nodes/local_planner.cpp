@@ -119,7 +119,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
 
   ROS_INFO(" Cloud transformed, width %d, time: %2.2f ms", final_cloud.width, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
+  cloud_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
 }
 
@@ -129,9 +129,6 @@ float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
 }
 
 bool LocalPlanner::obstacleAhead() { 
-
-  float dist_y =  abs(pose.pose.position.y - goal.y);
-  float dist_z =  abs(pose.pose.position.z - goal.z);
     
   if(obstacle){ //|| dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param
     return true;
@@ -139,23 +136,6 @@ bool LocalPlanner::obstacleAhead() {
   else{
     return false;
   }
-
-/*	if(obstacle || dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param || first_brake) { 
-    	if(!first_brake) {   
-      		first_brake = true; 
-      		obs.x = pose.x+front_x ;
-      		obs.y = pose.y;
-      		obs.z = pose.z;
-      		stop_pose.x = pose.x;
-      		stop_pose.y = pose.y;
-      		stop_pose.z = pose.z;
-    	}
-		return true;
-  	}
-	else {
-		first_brake = false;
-    	return false;
-   	}  */
 }
 
 void LocalPlanner::createPolarHistogram() {  
@@ -178,7 +158,6 @@ void LocalPlanner::createPolarHistogram() {
     if(dist < bbx_rad) { 
       int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //(-180. +180]
       int beta_e = floor((atan((temp.z-pose.pose.position.z)/sqrt((temp.x-pose.pose.position.x)*(temp.x-pose.pose.position.x)+(temp.y-pose.pose.position.y)*(temp.y-pose.pose.position.y)))*180.0/PI)); //(-90.+90)
-      
 
       beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
       beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
@@ -192,6 +171,7 @@ void LocalPlanner::createPolarHistogram() {
   }
 
   printf("Polar histogram created in %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  polar_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 void LocalPlanner::findFreeDirections() {
@@ -458,6 +438,7 @@ void LocalPlanner::findFreeDirections() {
    }
   printf("candidates %d blocked %d rejetced %d \n", path_candidates.cells.size(), path_blocked.cells.size(), path_rejected.cells.size());
   ROS_INFO(" Path_candidates calculated in %2.2f ms",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 void LocalPlanner::publishPathCells(double e, double z, int path_type){
@@ -479,8 +460,6 @@ void LocalPlanner::publishPathCells(double e, double z, int path_type){
     
   }                      
 }
-
-
 
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
   	
@@ -511,108 +490,18 @@ double LocalPlanner::costFunction(int e, int z) {
   p.y = ww.vector.y;
   p.z = ww.vector.z;
   
-  cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)) + smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)) ; //Best working cost function
-  double height_cost = std::abs(accumulated_height_prior[std::round(p.z)]-accumulated_height_prior[std::round(goal.z)])*17.5;
-  int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
-  int curr_e = floor(atan2(0,0)*180.0/PI);
-  double dist =  sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
-  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
-  double potential_energy = 1.56*9.81*std::abs(e-goal_e);
-  cost = cost + height_cost;
+  double distance_cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z));
+  double smooth_cost = smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)); 
+  double height_cost = std::abs(accumulated_height_prior[std::round(p.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
+  printf("%f %f %f \n", distance_cost, smooth_cost, height_cost);
+ // int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
+//  int curr_e = floor(atan2(0,0)*180.0/PI);
+//  double dist =  sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
+//  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
+//  double potential_energy = 1.56*9.81*std::abs(e-goal_e);
+  cost = distance_cost + smooth_cost + height_cost;
   return cost;  
 }
-
-double LocalPlanner::goalHeuristic(int e, int z){
-
-  int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
-  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
-
-  printf("distance: %f with param: %f \n",sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)), goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z)));
-  return goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z));
-}
-
-double LocalPlanner::smoothnessHeuristic(int e, int z){
-
-  float x = path_selected.cells[path_selected.cells.size()-2].x;
-  float y = path_selected.cells[path_selected.cells.size()-2].y;
-  printf("smooth: %f with param: %f \n", sqrt(pow(x-e,2) + pow(y-z,2)), smooth_cost_param*sqrt(pow(x-e,2) + pow(y-z,2)));
-  return smooth_cost_param*sqrt(pow(x-e,2) + pow(y-z,2));
-}
-
-double LocalPlanner::kineticHeuristic(int e, int z){
-
-  int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
-  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
-  int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
-  int curr_e = floor(atan2(0,0)*180.0/PI);
-  double dist = sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
-  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
-  printf("Kinetic Energy %f ", kinetic_energy);
-  return kinetic_energy;
-
-}
-
-double LocalPlanner::potentialHeuristic(int e, int z){
-
-  int goal_e = floor(atan2(goal.z-pose.pose.position.z,sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);
-  double potential_energy = 1.56*9.81*std::abs(e-goal_e); //std::abs(e-atan2(0,0));
-  printf("Potential Energy %f   (goal_e %d)\n", potential_energy, goal_e);
-  return potential_energy;
-
-}
-
-
-double LocalPlanner::altitudeHeuristic(geometry_msgs::Vector3Stamped w){
-
-  printf("prior waypt %f prior goal %f \n", accumulated_height_prior[std::round(w.vector.z)],accumulated_height_prior[std::round(goal.z)]);
-  printf("total height prior %d \n",std::abs(accumulated_height_prior[std::round(w.vector.z)]-accumulated_height_prior[std::round(goal.z)])*17.5);
-  return std::abs(accumulated_height_prior[std::round(w.vector.z)]-accumulated_height_prior[std::round(goal.z)])*17.5;
-  // double altitude_diff = goal.z - w.vector.z;
-  // double altitude_cost = (altitude_diff>0) ? (3.0*std::abs(altitude_diff)) : (1.0*std::abs(altitude_diff));
-  // printf("altitude_cost: %d \n", altitude_cost);
-  // return altitude_cost;
-
-}
-
-double LocalPlanner::trajectoryHeuristic(geometry_msgs::Vector3Stamped w){
-
-  geometry_msgs::Vector3Stamped curr_pose, g;
-  curr_pose.vector.x = pose.pose.position.x;
-  curr_pose.vector.y = pose.pose.position.y;
-  curr_pose.vector.z = pose.pose.position.z;
-  g.vector.x = goal.x;
-  g.vector.y = goal.y;
-  g.vector.z = goal.z;
-  double current_angle = nextYaw(curr_pose, w, 0.0);
-  double goal_angle = nextYaw(curr_pose, g, 0.0);
-  double angle_diff = goal_angle - current_angle;
-  angle_diff = std::fabs(avoidance::angleToRange(angle_diff));
-  double num_45_deg_turns = angle_diff / (PI/4);
-  int altitude_change = (std::round(w.vector.z) == std::round(goal.z)) ? 0 : 1; 
-  double smoothness_cost = 10.0*(num_45_deg_turns + altitude_change);
-
-  printf("trajectory_cost %f    number of turns %f \n", smoothness_cost, num_45_deg_turns);
-
-  return smoothness_cost;
-}
-
-double LocalPlanner::distanceHeuristic(geometry_msgs::Vector3Stamped w){
-  double xy_dist = sqrt(pow(goal.x-w.vector.x,2) + pow(goal.y-w.vector.y,2));
-  double unexplored_risk = 7.0*0.005*500;
-  double xy_cost = xy_dist * unexplored_risk * height_prior[std::round(w.vector.z)];
-  double z_cost = std::abs(accumulated_height_prior[std::round(w.vector.z)] - accumulated_height_prior[std::round(goal.z)]) * unexplored_risk;
-  double travel_cost = xy_cost + z_cost;
-  printf("xy_dist %f xy_cost %f z_cost %f tot %f \n",xy_dist,xy_cost,z_cost,travel_cost);
-  return travel_cost;
-}
-
-double LocalPlanner::distance3DHeuristic(geometry_msgs::Vector3Stamped w){
-  double cost_distance = sqrt(pow(goal.x-w.vector.x,2) + pow(goal.y-w.vector.y,2) + pow(goal.z-w.vector.z,2));
-  printf("3d cost distance %f \n", cost_distance);
-  return cost_distance;
-}
-
-
 
 void LocalPlanner::calculateCostMap() {
 
@@ -633,7 +522,7 @@ void LocalPlanner::calculateCostMap() {
    	}
       
    	cost_path = costFunction(e,z);
-    cost_candidates[i]=(cost_path);
+   // cost_candidates[i]=(cost_path);
 
    	if(i == 0) {
      	small = cost_path;
@@ -646,7 +535,7 @@ void LocalPlanner::calculateCostMap() {
    	}  
   }
 
-  cv::sortIdx(cost_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+//  cv::sortIdx(cost_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
     
   p1.x = path_candidates.cells[small_i].x;
   p1.y = path_candidates.cells[small_i].y;
@@ -660,14 +549,15 @@ void LocalPlanner::calculateCostMap() {
   Pp1.z = pose.pose.position.z + rad*sin(p1.x*(PI/180));
   Ppath_selected.cells.push_back(Pp1);
 
-  for(int i=0; i<10; i++){
-    e = path_candidates.cells[cost_idx_sorted[i]].x;
-    z = path_candidates.cells[cost_idx_sorted[i]].y;
-    printf("e %d z %d -> ",e,z);
-    printf("%f \n", cost_candidates[cost_idx_sorted[i]]);
-  }
+  // for(int i=0; i<10; i++){
+  //   e = path_candidates.cells[cost_idx_sorted[i]].x;
+  //   z = path_candidates.cells[cost_idx_sorted[i]].y;
+  //   printf("e %d z %d -> ",e,z);
+  //   printf("%f \n", cost_candidates[cost_idx_sorted[i]]);
+  // }
 
   ROS_INFO("Selected Direction: e  %f  z  %f  min_cost  %f  in %2.2f ms", p1.x,p1.y, small, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  cost_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
 }
 
@@ -716,17 +606,18 @@ void LocalPlanner::getNextWaypoint() {
 
 bool LocalPlanner::checkForCollision() {
 
+  std::clock_t start_time = std::clock();
   bool avoid = false;
   geometry_msgs::Point temp;
   geometry_msgs::Point p, p_pose;
-  p.x = setpoint.vector.x;
-  p.y = setpoint.vector.y;
-  p.z = setpoint.vector.z;
+  //p.x = setpoint.vector.x;
+  //p.y = setpoint.vector.y;
+  //p.z = setpoint.vector.z;
   p_pose.x = pose.pose.position.x;
   p_pose.y = pose.pose.position.y;
   p_pose.z = pose.pose.position.z;
-  double min_dist = 1000;
-  min_dist_pose_obst = 1000.0;
+//  double min_dist = 1000;
+//  min_dist_pose_obst = 1000.0;
 
 
   pcl::PointCloud<pcl::PointXYZ>::iterator it;
@@ -734,24 +625,15 @@ bool LocalPlanner::checkForCollision() {
     temp.x = it->x;
     temp.y = it->y;
     temp.z = it->z;
-
-    if (distance2d(p_pose,temp) < min_dist_pose_obst){
-      min_dist_pose_obst = distance2d(p_pose,temp);
-    }
-
-    if (distance2d(p,temp) < min_dist){
-      min_dist = distance2d(p,temp);
-    }
       
-
     if(distance2d(p_pose,temp)< 0.5 && init != 0) { 
       printf("distance(p,temp)<0.5 \n");
       avoid = true;
       break;
     }
   }  
-  
-  printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose_obst);
+  collision_time.push_back((std::clock() - start_time) / (double(CLOCKS_PER_SEC / 1000)));
+ // printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose_obst);
   return avoid;
 }
 
@@ -813,7 +695,6 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
   pose_msg.pose.position.y = waypt.vector.y;
   pose_msg.pose.position.z = waypt.vector.z;
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-  ROS_INFO("yaw %f", yaw);
   return pose_msg;
 }
 
@@ -870,7 +751,6 @@ void LocalPlanner::checkSpeed(){
     speed = min_speed;
   }
 
-  printf("SPEED %f \n", speed);
 }
 
 bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
