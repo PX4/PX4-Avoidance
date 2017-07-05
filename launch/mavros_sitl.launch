@@ -11,7 +11,7 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="mavros_transformation" default="-1.57" />
-    <arg name="est" default="lpe"/>
+    <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
     <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
 
