@@ -42,27 +42,47 @@ Now clone the repository into the catkin workspace and build
 # Source SITL and catkin
 cd $HOME/catkin_ws
 source devel/setup.bash
-source integrationtests/setup_gazebo_ros.bash $HOME/catkin_ws/src/Firmware
 export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
+source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/<build_directory>
 ```
 
-Make sure that the relevant Firmware directories are known by ROS and Gazebo
+In the last step, make sure to use absolute paths. For example: 
+`source ~/catkin_ws/src/Firmware/Tools/setup_gazebo.bash ~/catkin_ws/src/Firmware/ ~/catkin_ws/src/Firmware/build_posix_sitl_default/`
+
+
+If ROS can't find PX4 or mavlink_sitl_gazebo, add the directories to ROS_PACKAGE_PATH, e.g.
 ```bash
-# May or may not be needed, depends on the setup
-source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/build_posix_sitl_default
-# If ROS can't find PX4 or mavlink_sitl_gazebo, add the directories to ROS_PACKAGE_PATH, e.g.
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:<Firmware_directory>
 ``` 
+
+# Running the Planner in Simulation
 
 ```bash
 roslaunch avoidance global_planner_sitl_mavros.launch
 ```
 
+You should now see the drone unarmed on the ground. To start flying, arm the drone and put it into offboard-mode.
+
+```bash
+# In another terminal
+rosrun mavros mavsys mode -c OFFBOARD 
+rosrun mavros mavsafety arm 
+gz camera --camera-name=gzclient_camera --follow=iris # [Optional] to make Gazebo follow the drone
+```
+
+Now the ROS-node */path_handler_node* continuously publishes positions to the topic */mavros/setpoint_position/local*.
+Initially the drone should just hover at 3.5m altitude. 
+To change the position without avoidance set the position with *2D Pose Estimate* in rviz.
+
+To plan a new path set a new goal with *2D Nav Goal* in rviz. The the planned path should show up in rviz and the drone should follow the path.
+
 If the drone does not follow the path properly, some tuning may be required in the file 
-<Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris
+*<Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris*
+
+If the planner is not working there are some parameters that can be tuned in *rqt reconfigure*
 
 
-# Simulating stereo-vision
+## Simulating stereo-vision
 To simulate obstacle avoidance with stereo-cameras `stereo-image-proc` is must be installed.
 ```bash
 # Launch simulation
@@ -86,6 +106,34 @@ rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_ms
 ```
 Now the disparity map can be visualized by rviz or rqt under the topic /stereo/disparity_image.
 
+
+# Running the Planner on Hardware
+
+The global planner uses the octomap_servers to get probabilistic information about the evironment.
+The octomap_server needs a stream of point-clouds to generate the accumulated data.
+
+## Generating Point-clouds from Depth-maps
+
+In case the point-cloud stream already exists, this step can be skipped.
+
+Assuming there already exists a stream of depth-maps on the ROS-topic <depthmap_topic>, we need to generate a corresponding stream of depth-maps.
+Start by following the instructions from [PX4/disparity_to_point_cloud](https://github.com/PX4/disparity_to_point_cloud).
+Now run the point-cloud generation with the parameters for the camera intrinsics:
+
+```bash
+rosrun disparity_to_point_cloud disparity_to_point_cloud_node \
+    fx_:=fx fy_:=fy cx_:=cx cy_:=cy base_line_:=base_line disparity:=<depthmap_topic>
+```
+
+A stream of point-clouds should now be published to */point_cloud*.
+
+## Running the planner
+
+The planner can then be run can be run with
+
+```bash
+roslaunch avoidance global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
+```  
 
 # Running on Odroid
 
