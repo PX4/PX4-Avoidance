@@ -87,20 +87,6 @@ rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_ms
 Now the disparity map can be visualized by rviz or rqt under the topic /stereo/disparity_image.
 
 
-
-
 # Running on Odroid
-Connect to the access point, name:px4_outdoor
 
-Log in to the Odroid
-```bash
-ssh odroid@192.168.2.239
-password: odroid
-```
-
-```bash
-roslaunch mavros px4.launch fcu_url:=/dev/ttySAC0:921600
-roslaunch uvc_ros_driver uvc_ros_driver.launch calibrationMode:=1
-roslaunch disparity_to_point_cloud d2pcloud.launch
-roslaunch avoidance global_planner_offboard.launch
-```
+Read the [Running on Odroid](https://github.com/PX4/avoidance/blob/master/resource/odroid/) instructions
