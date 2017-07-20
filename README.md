@@ -21,6 +21,8 @@ cd ~/catkin_ws/src
 git clone https://github.com/OctoMap/octomap_mapping.git
 rosdep install octomap_mapping
 rosmake octomap_mapping
+# Clone the repository
+git clone https://github.com/PX4/avoidance.git
 ```
 
 ## Beta Installation for Ubuntu 16.04 and ROS Kinetic
@@ -32,32 +34,32 @@ sudo apt-get update
 sudo apt-get install libpcl1 ros-kinetic-octomap-*
 cd ~/catkin_ws/src
 git clone https://github.com/OctoMap/octomap_mapping.git
-catkin build
-```
-
-# Building the Code
-
-Now clone the repository into the catkin workspace and build
-```bash
-cd ~/catkin_ws/src
 git clone https://github.com/PX4/avoidance.git
-catkin build
-# Source SITL and catkin
-source ../devel/setup.bash
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/avoidance/models
-source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/<build_directory>
 ```
 
-In the last step, make sure to use absolute paths. For example:
-`source ~/catkin_ws/src/Firmware/Tools/setup_gazebo.bash ~/catkin_ws/src/Firmware/ ~/catkin_ws/src/Firmware/build_posix_sitl_default/`
+# Running the Planner in Simulation
 
+## Building the Code
+
+```bash
+# Source SITL and catkin
+. ~/catkin_ws/devel/setup.bash
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/models
+cd <Firmware_directory>
+. $PWD/Tools/setup_gazebo.bash $PWD $PWD/<build_directory>
+make posix_sitl_default gazebo
+```
+
+Now close Gazebo, the last line is just to generate necessary SDF-files.
+
+```bash
+catkin build
+```
 
 If ROS can't find PX4 or mavlink_sitl_gazebo, add the directories to ROS_PACKAGE_PATH, e.g.
 ```bash
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:<Firmware_directory>
 ```
-
-# Running the Planner in Simulation
 
 ```bash
 roslaunch avoidance global_planner_sitl_mavros.launch
@@ -110,6 +112,11 @@ Now the disparity map can be visualized by rviz or rqt under the topic /stereo/d
 
 
 # Running the Planner on Hardware
+
+Start by building the code:
+```bash
+catkin build
+```
 
 The global planner uses the octomap_servers to get probabilistic information about the evironment.
 The octomap_server needs a stream of point-clouds to generate the accumulated data.
