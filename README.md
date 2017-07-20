@@ -44,7 +44,7 @@ git clone https://github.com/PX4/avoidance.git
 catkin build
 # Source SITL and catkin
 source ../devel/setup.bash
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/avoidance/models
 source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/<build_directory>
 ```
 
