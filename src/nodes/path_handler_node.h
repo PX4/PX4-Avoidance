@@ -19,7 +19,7 @@
 #include "avoidance/PathWithRiskMsg.h"
 
 #include "avoidance/ThreePointMsg.h"
-#include <mavros_msgs/AvoidanceTriplet.h>
+// #include <mavros_msgs/AvoidanceTriplet.h>
 
 
 namespace avoidance {

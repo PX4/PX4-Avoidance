@@ -24,7 +24,7 @@ PathHandlerNode::PathHandlerNode() {
   current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
   three_point_msg_publisher_ = nh_.advertise<avoidance::ThreePointMsg>("/three_point_msg", 10);
-  avoidance_triplet_msg_publisher_ = nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet", 10);
+  // avoidance_triplet_msg_publisher_ = nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet", 10);
 
   // Initialize goal
   current_goal_.header.frame_id="/world";
@@ -225,15 +225,15 @@ void PathHandlerNode::publishThreePointMsg() {
   three_point_msg.acc_per_err = risk;
   three_point_msg_publisher_.publish(three_point_msg);
 
-  mavros_msgs::AvoidanceTriplet avoidance_triplet;
-  avoidance_triplet.prev = last_goal_.pose.position;
-  avoidance_triplet.ctrl = current_goal_.pose.position;
-  avoidance_triplet.next = path_.front().pose.position;
-  avoidance_triplet.duration = std::max(1.0, speed / 3.0);
-  // avoidance_triplet.duration = 1.0;
-  avoidance_triplet.max_acc = risk;
-  avoidance_triplet.acc_per_err = risk;
-  avoidance_triplet_msg_publisher_.publish(avoidance_triplet);
+  // mavros_msgs::AvoidanceTriplet avoidance_triplet;
+  // avoidance_triplet.prev = last_goal_.pose.position;
+  // avoidance_triplet.ctrl = current_goal_.pose.position;
+  // avoidance_triplet.next = path_.front().pose.position;
+  // avoidance_triplet.duration = std::max(1.0, speed / 3.0);
+  // // avoidance_triplet.duration = 1.0;
+  // avoidance_triplet.max_acc = risk;
+  // avoidance_triplet.acc_per_err = risk;
+  // avoidance_triplet_msg_publisher_.publish(avoidance_triplet);
 }
 
 } // namespace avoidance 
