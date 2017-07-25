@@ -25,7 +25,7 @@ gnome-terminal --tab -e "ssh -t odroid@odroid 'sleep 0;  . ~/.bash_ros; roscore;
                --tab -e "ssh -t odroid@odroid 'sleep 1;  . ~/.bash_ros; cd bags; bash -i'"
 
 export ROS_MASTER_URI=http://odroid:11311;
-export ROS_IP=192.168.2.250;
+export ROS_IP=$(hostname -I);
 sleep 10;
 rviz &
 rosrun rqt_reconfigure rqt_reconfigure
