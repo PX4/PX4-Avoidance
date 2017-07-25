@@ -85,7 +85,7 @@ std::vector<Cell> simplifyPath(GlobalPlanner * global_planner,
   
   // Start with the original path
   std::vector<Cell> curr_path = path;
-  for (int j=0; j < 100; ++j) {
+  for (int j=0; j < max_iter; ++j) {
     // The first two vertices cannot be removed
     std::vector<Cell> simple_path {curr_path[0], curr_path[1]};
     int i=3;
