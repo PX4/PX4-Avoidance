@@ -21,6 +21,8 @@ cd ~/catkin_ws/src
 git clone https://github.com/OctoMap/octomap_mapping.git
 rosdep install octomap_mapping
 rosmake octomap_mapping
+# Clone the repository
+git clone https://github.com/PX4/avoidance.git
 ```
 
 ## Beta Installation for Ubuntu 16.04 and ROS Kinetic
@@ -32,30 +34,32 @@ sudo apt-get update
 sudo apt-get install libpcl1 ros-kinetic-octomap-*
 cd ~/catkin_ws/src
 git clone https://github.com/OctoMap/octomap_mapping.git
-catkin_build
+git clone https://github.com/PX4/avoidance.git
 ```
 
-# Building the Code
+# Running the Planner in Simulation
 
-Now clone the repository into the catkin workspace and build
+## Building the Code
+
 ```bash
 # Source SITL and catkin
-cd $HOME/catkin_ws
-source devel/setup.bash
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:$HOME/catkin_ws/src/detection/models
-source <Firmware_directory>/Tools/setup_gazebo.bash <Firmware_directory> <Firmware_directory>/<build_directory>
+. ~/catkin_ws/devel/setup.bash
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/models
+cd <Firmware_directory>
+. $PWD/Tools/setup_gazebo.bash $PWD $PWD/<build_directory>
+make posix_sitl_default gazebo
 ```
 
-In the last step, make sure to use absolute paths. For example: 
-`source ~/catkin_ws/src/Firmware/Tools/setup_gazebo.bash ~/catkin_ws/src/Firmware/ ~/catkin_ws/src/Firmware/build_posix_sitl_default/`
+Now close Gazebo, the last line is just to generate necessary SDF-files.
 
+```bash
+catkin build
+```
 
 If ROS can't find PX4 or mavlink_sitl_gazebo, add the directories to ROS_PACKAGE_PATH, e.g.
 ```bash
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:<Firmware_directory>
-``` 
-
-# Running the Planner in Simulation
+```
 
 ```bash
 roslaunch avoidance global_planner_sitl_mavros.launch
@@ -65,18 +69,18 @@ You should now see the drone unarmed on the ground. To start flying, arm the dro
 
 ```bash
 # In another terminal
-rosrun mavros mavsys mode -c OFFBOARD 
-rosrun mavros mavsafety arm 
+rosrun mavros mavsys mode -c OFFBOARD
+rosrun mavros mavsafety arm
 gz camera --camera-name=gzclient_camera --follow=iris # [Optional] to make Gazebo follow the drone
 ```
 
 Now the ROS-node */path_handler_node* continuously publishes positions to the topic */mavros/setpoint_position/local*.
-Initially the drone should just hover at 3.5m altitude. 
+Initially the drone should just hover at 3.5m altitude.
 To change the position without avoidance set the position with *2D Pose Estimate* in rviz.
 
 To plan a new path set a new goal with *2D Nav Goal* in rviz. The the planned path should show up in rviz and the drone should follow the path.
 
-If the drone does not follow the path properly, some tuning may be required in the file 
+If the drone does not follow the path properly, some tuning may be required in the file
 *<Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris*
 
 If the planner is not working there are some parameters that can be tuned in *rqt reconfigure*
@@ -92,15 +96,15 @@ Simulated stereo-vision is prone to errors due to artificial texture, which may 
 ```bash
 git clone https://github.com/AurelienRoy/ardupilot_sitl_gazebo_plugin.git
 export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin/meshes/meshes_outdoor
-export GAZEBO_RESOURCE_PATH="$GAZEBO_RESOURCE_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin" 
+export GAZEBO_RESOURCE_PATH="$GAZEBO_RESOURCE_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin"
 ```
- 
+
 The disparity map from `stereo-image-proc` is published as a
 [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message, either run
 ```bash
 rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
 ```
-or publish the DisparityImage as a simple sensor_msgs/Image 
+or publish the DisparityImage as a simple sensor_msgs/Image
 ```bash
 rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
 ```
@@ -108,6 +112,11 @@ Now the disparity map can be visualized by rviz or rqt under the topic /stereo/d
 
 
 # Running the Planner on Hardware
+
+Start by building the code:
+```bash
+catkin build
+```
 
 The global planner uses the octomap_servers to get probabilistic information about the evironment.
 The octomap_server needs a stream of point-clouds to generate the accumulated data.
