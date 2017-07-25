@@ -22,6 +22,8 @@ but keep in mind that some ROS-topics will not be compatible between different R
 
 Add the ip address of the odroid to */etc/hosts* under the name odroid.
 
+Also make sure to share keys with the odroid such that it is possible to login with ssh without typing a password
+
 Run the [runOdroid](https://github.com/PX4/avoidance/blob/master/resource/odroid/runOdroid) 
 script from a laptop to connect to the odroid and launch the ROS-nodes. 
 Set a '2D Nav Goal' in rviz to send a goal to the planner, you should now see the planned path in rviz.
