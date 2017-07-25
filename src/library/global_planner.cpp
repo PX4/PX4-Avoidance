@@ -535,8 +535,8 @@ void GlobalPlanner::goBack() {
 }
 
 void GlobalPlanner::stop() {
-  ROS_INFO("  STOP  ");
   setGoal(GoalCell(curr_pos_));
+  setPath({curr_pos_});
 }
 
 
