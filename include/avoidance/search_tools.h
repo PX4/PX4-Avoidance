@@ -77,6 +77,11 @@ std::vector<Cell> simplifyPath(GlobalPlanner * global_planner,
                                double simplify_margin = 1.01, 
                                double max_iter = 100,
                                bool decelerate_at_end = true) {
+
+  if (path.size() < 3) {
+    // Can not simplify a trivial path
+    return path;
+  }
   
   // Start with the original path
   std::vector<Cell> curr_path = path;
