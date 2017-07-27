@@ -5,7 +5,7 @@ ROS node for sensor fusion and avoidance
 
 ## Default Installation for Ubuntu 14.04 and ROS Indigo
 
-Follow installation guide from http://dev.px4.io/ to install ROS Indigo, Gazebo, SITL and Mavros (from source).
+Follow installation guide from http://dev.px4.io/ to install ROS Indigo and Mavros (from source).
 
 ```bash
 # Install PCL
@@ -27,7 +27,7 @@ git clone https://github.com/PX4/avoidance.git
 
 ## Beta Installation for Ubuntu 16.04 and ROS Kinetic
 
-Follow installation guide from http://dev.px4.io/ to install ROS Kinetic, Gazebo, SITL and Mavros (from source).
+Follow installation guide from http://dev.px4.io/ to install ROS Kinetic and Mavros (from source).
 
 ```bash
 sudo apt-get update
@@ -38,6 +38,8 @@ git clone https://github.com/PX4/avoidance.git
 ```
 
 # Running the Planner in Simulation
+
+Follow installation guide from http://dev.px4.io/ to install Gazebo and SITL.
 
 ## Building the Code
 
@@ -113,11 +115,6 @@ Now the disparity map can be visualized by rviz or rqt under the topic /stereo/d
 
 # Running the Planner on Hardware
 
-Start by building the code:
-```bash
-catkin build
-```
-
 The global planner uses the octomap_servers to get probabilistic information about the evironment.
 The octomap_server needs a stream of point-clouds to generate the accumulated data.
 
@@ -141,6 +138,7 @@ A stream of point-clouds should now be published to */point_cloud*.
 The planner can then be run can be run with
 
 ```bash
+catkin build
 roslaunch avoidance global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
 ```  
 
