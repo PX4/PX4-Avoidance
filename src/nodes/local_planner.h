@@ -173,6 +173,7 @@ public:
 	void publishPathCells(double e, double z, int path_type);
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
+	geometry_msgs::Point fromPolarToCartesian(int e, int z);
 };
 
 
