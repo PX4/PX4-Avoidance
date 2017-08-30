@@ -401,9 +401,7 @@ void LocalPlanner::findFreeDirections() {
               if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
                 p.x = e; p.y = z; p.z = 0;
                 path_blocked.cells.push_back(p);
-                p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); 
-                p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
-                p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+                p = fromPolarToCartesian(e, z);
                 path_extended.cells.push_back(p); 
               //  printf("caso 1 extended z %d \n", z+180);
 
@@ -418,9 +416,7 @@ void LocalPlanner::findFreeDirections() {
               if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
                 p.x = e; p.y = z; p.z = 0;
                 path_blocked.cells.push_back(p);
-                p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); 
-                p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
-                p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+                p = fromPolarToCartesian(e, z);
                 path_extended.cells.push_back(p); 
                // printf("caso 2 extended z %d \n", z+180);
 
@@ -441,12 +437,20 @@ void LocalPlanner::findFreeDirections() {
   free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
-void LocalPlanner::publishPathCells(double e, double z, int path_type){
+geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z){
+
   geometry_msgs::Point p;
- 
   p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); //round
   p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
   p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+
+  return p;
+
+}
+
+void LocalPlanner::publishPathCells(double e, double z, int path_type){
+
+  geometry_msgs::Point p = fromPolarToCartesian((int)e, (int)z);
 
   if(path_type == 0){
     p.x = e; p.y = z; p.z=0;
@@ -463,13 +467,15 @@ void LocalPlanner::publishPathCells(double e, double z, int path_type){
 
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
   	
+  geometry_msgs::Point p = fromPolarToCartesian(e, z);
+
   geometry_msgs::Vector3Stamped waypoint;
   waypoint.header.stamp = ros::Time::now();
   waypoint.header.frame_id = "/world";
- 
-  waypoint.vector.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180));
-  waypoint.vector.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
-  waypoint.vector.z = pose.pose.position.z + rad*sin(e*(PI/180));
+
+  waypoint.vector.x = p.x;
+  waypoint.vector.y = p.y;
+  waypoint.vector.z = p.z;
 
 
   return waypoint;
@@ -542,11 +548,7 @@ void LocalPlanner::calculateCostMap() {
   p1.z = path_candidates.cells[small_i].z;
   path_selected.cells.push_back(p1);
     
-
-  geometry_msgs::Point Pp1;
-  Pp1.x = pose.pose.position.x + rad*cos(p1.x*(PI/180))*sin(p1.y*(PI/180)); //round
-  Pp1.y = pose.pose.position.y + rad*cos(p1.x*(PI/180))*cos(p1.y*(PI/180));
-  Pp1.z = pose.pose.position.z + rad*sin(p1.x*(PI/180));
+  geometry_msgs::Point Pp1 = fromPolarToCartesian((int)p1.x, (int)p1.y);
   Ppath_selected.cells.push_back(Pp1);
 
   // for(int i=0; i<10; i++){
@@ -662,10 +664,7 @@ void LocalPlanner::goFast(){
 
   
   ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
-
 }
-
-
 
 bool LocalPlanner::withinGoalRadius(){
 
@@ -722,6 +721,7 @@ void LocalPlanner::getPathMsg() {
   curr_pose.vector.x = pose.pose.position.x;
   curr_pose.vector.y = pose.pose.position.y;
   curr_pose.vector.z = pose.pose.position.z;
+
   //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
   if(reach_altitude==0){ 
     if(round(curr_pose.vector.x)!=round(0.0) || round(curr_pose.vector.y)!=round(0.0) || floor(curr_pose.vector.z)!=floor(goal_z_param-0.5)){
