@@ -174,6 +174,14 @@ void LocalPlanner::createPolarHistogram() {
   polar_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
+void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
+  cell->cells.clear();
+  cell->header.stamp = ros::Time::now();
+  cell->header.frame_id = "/world";
+  cell->cell_width = alpha_res;
+  cell->cell_height = alpha_res;
+}
+
 void LocalPlanner::findFreeDirections() {
 
   std::clock_t start_time = std::clock();
@@ -190,60 +198,15 @@ void LocalPlanner::findFreeDirections() {
   std::vector<int> azimuthal_length_pos;
   extension_points.clear();
 
-  path_candidates.cells.clear();
-  path_candidates.header.stamp = ros::Time::now();
-  path_candidates.header.frame_id = "/world";
-  path_candidates.cell_width = alpha_res;
-  path_candidates.cell_height = alpha_res;
-
-  path_rejected.cells.clear();
-  path_rejected.header.stamp = ros::Time::now();
-  path_rejected.header.frame_id = "/world";
-  path_rejected.cell_width = alpha_res;
-  path_rejected.cell_height = alpha_res;
-
-  path_blocked.cells.clear();
-  path_blocked.header.stamp = ros::Time::now();
-  path_blocked.header.frame_id = "/world";
-  path_blocked.cell_width = alpha_res;
-  path_blocked.cell_height = alpha_res;
-
-//  path_selected.cells.clear();
-  path_selected.header.stamp = ros::Time::now();
-  path_selected.header.frame_id = "/world";
-  path_selected.cell_width = alpha_res;
-  path_selected.cell_height = alpha_res;
-
-  path_extended.cells.clear();
-  path_extended.header.stamp = ros::Time::now();
-  path_extended.header.frame_id = "/world";
-  path_extended.cell_width = alpha_res;
-  path_extended.cell_height = alpha_res;
-
-  Ppath_candidates.cells.clear();
-  Ppath_candidates.header.stamp = ros::Time::now();
-  Ppath_candidates.header.frame_id = "/world";
-  Ppath_candidates.cell_width = 1;
-  Ppath_candidates.cell_height = 1;
-
-  Ppath_rejected.cells.clear();
-  Ppath_rejected.header.stamp = ros::Time::now();
-  Ppath_rejected.header.frame_id = "/world";
-  Ppath_rejected.cell_width = 1;
-  Ppath_rejected.cell_height = 1;
-
-  Ppath_blocked.cells.clear();
-  Ppath_blocked.header.stamp = ros::Time::now();
-  Ppath_blocked.header.frame_id = "/world";
-  Ppath_blocked.cell_width = 1;
-  Ppath_blocked.cell_height = 1;
-
-  Ppath_selected.cells.clear();
-  Ppath_selected.header.stamp = ros::Time::now();
-  Ppath_selected.header.frame_id = "/world";
-  Ppath_selected.cell_width = 1;
-  Ppath_selected.cell_height = 1;
-
+  initGridCells(&path_candidates);
+  initGridCells(&path_rejected);
+  initGridCells(&path_blocked);
+  initGridCells(&path_selected);
+  initGridCells(&path_extended);
+  initGridCells(&Ppath_candidates);
+  initGridCells(&Ppath_rejected);
+  initGridCells(&Ppath_blocked);
+  initGridCells(&Ppath_selected);
 
   for(int e= 0; e<grid_length_e; e++) {
     for(int z= 0; z<grid_length_z; z++) {  
