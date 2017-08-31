@@ -159,6 +159,7 @@ public:
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
 	bool obstacleAhead();
 	void createPolarHistogram();
+	void initGridCells(nav_msgs::GridCells *cell);
 	void findFreeDirections();
 	geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);
 	double costFunction(int e, int z);
