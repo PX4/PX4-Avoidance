@@ -7,8 +7,7 @@ LocalPlannerNode::LocalPlannerNode() {
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
 	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
- 
-	pose_array_pub_ = nh_.advertise<geometry_msgs::PoseArray>("/pose_array",1);
+
 	local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   //marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization_marker", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
@@ -21,7 +20,6 @@ LocalPlannerNode::LocalPlannerNode() {
 
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
-  path_ideal_pub_ = nh_.advertise<nav_msgs::Path>("/path_ideal", 1);
 
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
