@@ -59,14 +59,12 @@ private:
 
 
 	//publishers
-	ros::Publisher pose_array_pub_;
 	ros::Publisher local_pointcloud_pub_;
 	ros::Publisher front_pointcloud_pub_;
 	ros::Publisher cached_pointcloud_pub_ ;
 	ros::Publisher marker_pub_;
 	ros::Publisher waypoint_pub_;
     ros::Publisher path_pub_;
-    ros::Publisher path_ideal_pub_;
 
     ros::Publisher mavros_waypoint_pub_;
   	ros::Publisher current_waypoint_pub_;
