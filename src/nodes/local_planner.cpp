@@ -123,9 +123,13 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
 }
 
-float distance2d(geometry_msgs::Point a, geometry_msgs::Point b) {
+float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
 
-  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) +(a.z-b.z)*(a.z-b.z));
+  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) + (a.z-b.z)*(a.z-b.z));
+}
+
+float distance2DPolar(int e1, int z1, int e2, int z2){
+  return sqrt(pow((e1-e2),2) + pow((z1-z2),2));
 }
 
 bool LocalPlanner::obstacleAhead() { 
@@ -150,10 +154,10 @@ void LocalPlanner::createPolarHistogram() {
 
     
   for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {   
-    temp.x= it->x;
+    temp.x = it->x;
     temp.y = it->y;
     temp.z = it->z;
-    dist = distance2d(pose.pose.position,temp);
+    dist = distance3DCartesian(pose.pose.position,temp);
    
     if(dist < bbx_rad) { 
       int beta_z = floor((atan2(temp.x-pose.pose.position.x,temp.y-pose.pose.position.y)*180.0/PI)); //(-180. +180]
@@ -459,10 +463,10 @@ double LocalPlanner::costFunction(int e, int z) {
   p.y = ww.vector.y;
   p.z = ww.vector.z;
   
-  double distance_cost = goal_cost_param*sqrt((goal_e-e)*(goal_e-e)+(goal_z-z)*(goal_z-z));
-  double smooth_cost = smooth_cost_param*sqrt((p1.x-e)*(p1.x-e)+(p1.y-z)*(p1.y-z)); 
+  double distance_cost = goal_cost_param * distance2DPolar(goal_e, goal_z, e, z);
+  double smooth_cost = smooth_cost_param * distance2DPolar(p1.x, p1.y, e, z);
   double height_cost = std::abs(accumulated_height_prior[std::round(p.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
-  printf("%f %f %f \n", distance_cost, smooth_cost, height_cost);
+ // printf("%f %f %f \n", distance_cost, smooth_cost, height_cost);
  // int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
 //  int curr_e = floor(atan2(0,0)*180.0/PI);
 //  double dist =  sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
@@ -575,15 +579,9 @@ bool LocalPlanner::checkForCollision() {
   bool avoid = false;
   geometry_msgs::Point temp;
   geometry_msgs::Point p, p_pose;
-  //p.x = setpoint.vector.x;
-  //p.y = setpoint.vector.y;
-  //p.z = setpoint.vector.z;
   p_pose.x = pose.pose.position.x;
   p_pose.y = pose.pose.position.y;
   p_pose.z = pose.pose.position.z;
-//  double min_dist = 1000;
-//  min_dist_pose_obst = 1000.0;
-
 
   pcl::PointCloud<pcl::PointXYZ>::iterator it;
   for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
@@ -591,7 +589,7 @@ bool LocalPlanner::checkForCollision() {
     temp.y = it->y;
     temp.z = it->z;
       
-    if(distance2d(p_pose,temp)< 0.5 && init != 0) { 
+    if(distance3DCartesian(p_pose,temp)< 0.5 && init != 0) { 
       printf("distance(p,temp)<0.5 \n");
       avoid = true;
       break;
