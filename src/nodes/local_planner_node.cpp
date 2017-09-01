@@ -58,11 +58,9 @@ void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
     path_actual.poses.push_back(msg);
 }
 
-void LocalPlannerNode::publishMarkerBlocked() {
+void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green, float blue){
 
-  visualization_msgs::MarkerArray marker_blocked;
   visualization_msgs::Marker m;
-
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
@@ -73,184 +71,58 @@ void LocalPlannerNode::publishMarkerBlocked() {
   m.color.a = 1.0;
   m.lifetime = ros::Duration();
   m.id = 0;
-  marker_blocked.markers.push_back(m);
+  marker->markers.push_back(m);
 
-  blocked_id=1;
-  for (int i=0; i<local_planner.Ppath_blocked.cells.size(); i++){
+  for (int i=0; i < path.cells.size(); i++){
 
-    m.id = blocked_id;
+    m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
     geometry_msgs::Point p;
-    p.x = local_planner.Ppath_blocked.cells[i].x;
-    p.y = local_planner.Ppath_blocked.cells[i].y;
-    p.z = local_planner.Ppath_blocked.cells[i].z;
+    p.x = path.cells[i].x;
+    p.y = path.cells[i].y;
+    p.z = path.cells[i].z;
     m.pose.position = p;
 
-    m.color.r = 0.0;
-    m.color.g = 0.0;
-    m.color.b = 1.0;
+    m.color.r = red;
+    m.color.g = green;
+    m.color.b = blue;
 
-    marker_blocked.markers.push_back(m);
-    blocked_id++;
-      
+    marker->markers.push_back(m);
   } 
+}
 
+void LocalPlannerNode::publishMarkerBlocked() {
+
+  visualization_msgs::MarkerArray marker_blocked;
+  initMarker(&marker_blocked, local_planner.Ppath_blocked, 0.0, 0.0, 1.0);
   marker_blocked_pub_.publish(marker_blocked);
 }
 
 void LocalPlannerNode::publishMarkerRejected() {
 
   visualization_msgs::MarkerArray marker_rejected;
-  visualization_msgs::Marker m;
-
-  m.header.frame_id = "world";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.a = 1.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker_rejected.markers.push_back(m);
-
-  rejected_id=1;
-  for (int i=0; i<local_planner.Ppath_rejected.cells.size(); i++){
-
-    m.id = rejected_id;
-    m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p;
-    p.x = local_planner.Ppath_rejected.cells[i].x;
-    p.y = local_planner.Ppath_rejected.cells[i].y;
-    p.z = local_planner.Ppath_rejected.cells[i].z;
-    m.pose.position = p;
-
-    m.color.r = 1.0;
-    m.color.g = 0.0;
-    m.color.b = 0.0;
-
-    marker_rejected.markers.push_back(m);
-    rejected_id++;
-  } 
-
+  initMarker(&marker_rejected, local_planner.Ppath_rejected, 1.0, 0.0, 0.0);
   marker_rejected_pub_.publish(marker_rejected);
 }
 
 void LocalPlannerNode::publishMarkerCandidates(){
 
   visualization_msgs::MarkerArray marker_candidates;
-  visualization_msgs::Marker m;
-
-  m.header.frame_id = "world";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.a = 1.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker_candidates.markers.push_back(m);
-
-  candidates_id = 1;
-  for (int i=0; i<local_planner.Ppath_candidates.cells.size(); i++){
-
-    m.id = candidates_id;
-    m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p;
-    p.x = local_planner.Ppath_candidates.cells[i].x;
-    p.y = local_planner.Ppath_candidates.cells[i].y;
-    p.z = local_planner.Ppath_candidates.cells[i].z;
-    m.pose.position = p;
-        
-    m.color.r = 0.0;
-    m.color.g = 1.0;
-    m.color.b = 0.0;
-
-    marker_candidates.markers.push_back(m);
-    candidates_id++;
-  } 
-
+  initMarker(&marker_candidates, local_planner.Ppath_candidates, 0.0, 1.0, 0.0);
   marker_candidates_pub_.publish(marker_candidates);
 }
 
 void LocalPlannerNode::publishMarkerSelected(){
 
   visualization_msgs::MarkerArray marker_selected;
-  visualization_msgs::Marker m;
-
-  m.header.frame_id = "world";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.a = 1.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker_selected.markers.push_back(m);
-
-  selected_id = 1;
-  for (int i=0; i<local_planner.Ppath_selected.cells.size(); i++){
-
-    m.id = selected_id;
-    m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p;
-    p.x = local_planner.Ppath_selected.cells[i].x;
-    p.y = local_planner.Ppath_selected.cells[i].y;
-    p.z = local_planner.Ppath_selected.cells[i].z;
-    m.pose.position = p;
-      
-    m.color.r = 0.8;
-    m.color.g = 0.16;
-    m.color.b = 0.8;
-
-    marker_selected.markers.push_back(m);
-    selected_id++;
-  } 
-
+  initMarker(&marker_selected, local_planner.Ppath_selected, 0.8, 0.16, 0.8);
   marker_selected_pub_.publish(marker_selected);
 }
 
 void LocalPlannerNode::publishMarkerExtended(){
 
   visualization_msgs::MarkerArray marker_extended;
-  visualization_msgs::Marker m;
-
-  m.header.frame_id = "world";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.a = 1.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker_extended.markers.push_back(m);
-
-  extended_id = 1;
-  for (int i=0; i<local_planner.path_extended.cells.size(); i++){
-
-    m.id = extended_id;
-    m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p;
-    p.x = local_planner.path_extended.cells[i].x;
-    p.y = local_planner.path_extended.cells[i].y;
-    p.z = local_planner.path_extended.cells[i].z;
-    m.pose.position = p;
-
-    m.color.r = 0.5;
-    m.color.g = 0.5;
-    m.color.b = 0.5;
-
-    marker_extended.markers.push_back(m);
-    extended_id++;
-  } 
-
+  initMarker(&marker_extended, local_planner.path_extended, 0.5, 0.5, 0.5);
   marker_extended_pub_.publish(marker_extended);
 }
 
