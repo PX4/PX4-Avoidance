@@ -109,7 +109,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   }
   else {
     obstacle = false;
-    printf("Obstacle False min distance %f decel distance %f \n", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
+    ROS_INFO("False positive obstacle at distance %2.2fm. Minimum decelleration distance possible %2.2fm.", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
   }
 
   final_cloud.header.stamp =  complete_cloud.header.stamp;
@@ -118,7 +118,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud.height = 1; 
 
 
-  ROS_INFO(" Cloud transformed, width %d, time: %2.2f ms", final_cloud.width, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Point cloud cropped im %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cloud_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
 }
@@ -174,7 +174,7 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-  printf("Polar histogram created in %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   polar_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -399,8 +399,7 @@ void LocalPlanner::findFreeDirections() {
       }
     }
    }
-  printf("candidates %d blocked %d rejetced %d \n", path_candidates.cells.size(), path_blocked.cells.size(), path_rejected.cells.size());
-  ROS_INFO(" Path_candidates calculated in %2.2f ms",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -525,7 +524,7 @@ void LocalPlanner::calculateCostMap() {
   //   printf("%f \n", cost_candidates[cost_idx_sorted[i]]);
   // }
 
-  ROS_INFO("Selected Direction: e  %f  z  %f  min_cost  %f  in %2.2f ms", p1.x,p1.y, small, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p1.x, (int)p1.y, small, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
 }
@@ -557,7 +556,7 @@ void LocalPlanner::getNextWaypoint() {
       waypt.vector.y = 0.0; //pose.pose.position.y - vec.getY(); 
       waypt.vector.z = setpoint.vector.z;
 
-   	  ROS_INFO(" Braking !! vecX %f vecY %f vecZ %f ", vec.getX(),vec.getY(),vec.getZ());
+   	  ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
    	  p1.x = 0;
    	  p1.y = 0;
       path_selected.cells[path_selected.cells.size()-1].x = 0;
@@ -568,7 +567,7 @@ void LocalPlanner::getNextWaypoint() {
     }
   }
 
-  ROS_INFO("Publishing waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
+  ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
  
 }
 
@@ -590,7 +589,6 @@ bool LocalPlanner::checkForCollision() {
     temp.z = it->z;
       
     if(distance3DCartesian(p_pose,temp)< 0.5 && init != 0) { 
-      printf("distance(p,temp)<0.5 \n");
       avoid = true;
       break;
     }
@@ -604,7 +602,7 @@ void LocalPlanner::goFast(){
 
   if (withinGoalRadius() || !first_reach){
 
-    ROS_INFO("Goal Reached: Hoovering");
+    ROS_INFO("Goal reached: hoovering.");
     waypt.vector.x = waypt_stop.pose.position.x;
     waypt.vector.y = waypt_stop.pose.position.y;
     waypt.vector.z = waypt_stop.pose.position.z;
@@ -624,7 +622,7 @@ void LocalPlanner::goFast(){
  }
 
   
-  ROS_INFO("GO FAST Publishing waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
+  ROS_INFO("Go fast selected waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
 }
 
 bool LocalPlanner::withinGoalRadius(){
