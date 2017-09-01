@@ -551,9 +551,10 @@ bool LocalPlanner::withinGoalRadius(){
   geometry_msgs::Point a;
   a.x = std::abs(goal.x - pose.pose.position.x); 
   a.y = std::abs(goal.y - pose.pose.position.y);
-  a.z = std::abs(goal.z - pose.pose.position.z);;
+  a.z = std::abs(goal.z - pose.pose.position.z);
+  float goal_acceptance_radius = 0.5f;
   
-  if(a.x < 0.5 && a.y < 0.5 && a.z < 0.5){
+  if(a.x < goal_acceptance_radius && a.y < goal_acceptance_radius && a.z < goal_acceptance_radius){
     if (first_reach){
       waypt_stop = pose;
       first_reach = false;
@@ -562,11 +563,11 @@ bool LocalPlanner::withinGoalRadius(){
   }
   else
     return false;
-
 }
 
 
 geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
+  
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id="/world";
