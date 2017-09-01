@@ -675,6 +675,19 @@ double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vec
   return atan2(dy, dx);
 }
 
+void LocalPlanner::reachGoalAltitudeFirst(){
+
+  if (pose.pose.position.z < (goal_z_param - 0.5)) {
+      waypt.vector.x = 0.0;
+      waypt.vector.y = 0.0;
+      waypt.vector.z = goal.z;
+  } else {
+    reach_altitude = true;
+    printf("Reached altitude %f, now going towards the goal. \n\n",pose.pose.position.z);
+    getPathMsg();
+  }
+}
+
 void LocalPlanner::getPathMsg() {
 
   path_msg.header.frame_id="/world";
@@ -686,16 +699,8 @@ void LocalPlanner::getPathMsg() {
   curr_pose.vector.z = pose.pose.position.z;
 
   //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
-  if(reach_altitude==0){ 
-    if(round(curr_pose.vector.x)!=round(0.0) || round(curr_pose.vector.y)!=round(0.0) || floor(curr_pose.vector.z)!=floor(goal_z_param-0.5)){
-      waypt.vector.x = 0.0;
-      waypt.vector.y = 0.0;
-      waypt.vector.z = goal.z;
-    }
-    else{
-       reach_altitude=1;
-    printf("Reached altitude %f, now going towards the goal. \n\n",pose.pose.position.z);
-    }
+  if(!reach_altitude){
+    reachGoalAltitudeFirst();
   }
 
   double new_yaw = nextYaw(curr_pose, waypt, last_yaw); 
