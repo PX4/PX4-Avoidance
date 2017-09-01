@@ -322,21 +322,12 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped & 
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z){
  
-  double rad = 1.0;
-  int e = std::round(180/PI*asin((z-local_planner.pose.pose.position.z)/rad));
-  float t = (x-local_planner.pose.pose.position.x)/(rad*cos(PI/180*e));
-  if (t==1.0)
-    t=0.99999999999;
-  int az = std::round(180/PI*asin(t));
-  int azz = std::round(180/PI*acos(t));
-
-  az = az + (alpha_res - az%alpha_res); //[-170,+190]
-  azz = azz + (alpha_res - azz%alpha_res); //[-170,+190]
-  e = e + (alpha_res - e%alpha_res); //[-80,+90]
+  float radius = 1.0;
+  float theta = atan2(y, x);
+  float phi = acos(z / radius);
 
   printf("----- Point: %f %f %f -----\n",x,y,z);
-  printf("Elevation %d Azimuth %d %d \n",e,az,azz);
-
+  printf("Elevation %f Azimuth %f \n",theta, phi);
   printf("-------------------------------------------- \n");
 }
 
