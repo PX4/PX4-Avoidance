@@ -50,7 +50,8 @@
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
 
-float distance2d(geometry_msgs::Point a, geometry_msgs::Point b);
+float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
+float distance2DPolar(int e1, int z1, int e2, int z2);
 
 class Histogram 
 { 
