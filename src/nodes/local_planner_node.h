@@ -92,6 +92,7 @@ private:
 	void readParams();
 	void publishAll();
 	void publishPath(const geometry_msgs::PoseStamped msg);
+	void initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green , float blue);
 	void publishMarkerBlocked();
 	void publishMarkerRejected();
 	void publishMarkerCandidates();
