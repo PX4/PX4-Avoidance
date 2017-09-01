@@ -72,40 +72,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {    
     obstacle = true;
-    // estimation normal to the powerline
-    // if (pose.pose.position.z > 1.5 && cloud->points.size()>3){
-    //   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-    //   pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-    //   pcl::SACSegmentation<pcl::PointXYZ> seg;
-    //   seg.setOptimizeCoefficients (true);
-    //   seg.setModelType(pcl::SACMODEL_PLANE);
-    //   seg.setMethodType(pcl::SAC_RANSAC);
-    //   seg.setDistanceThreshold (0.01);
-
-    //   seg.setInputCloud(cloud);
-    //   seg.segment (*inliers, *coefficients);
-
-    //   if (inliers->indices.size () == 0) {
-    //     PCL_ERROR ("Could not estimate a planar model for the given dataset.");
-    //   } 
-
-    //   std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
-    //                                   << coefficients->values[1] << " "
-    //                                   << coefficients->values[2] << " "
-    //                                   << coefficients->values[4] << std::endl;    
-    //   coef1 = coefficients->values[0];  coef2 = coefficients->values[1];
-    //   coef3 = coefficients->values[2];  coef4 = coefficients->values[3];
-      
-    // }
-
-    // statistical outlier removal
-    // std::clock_t start_removal = std::clock();
-    // pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    // sor.setInputCloud(cloud);
-    // sor.setMeanK (5);
-    // sor.setStddevMulThresh (0.5);
-    // sor.filter(final_cloud);
-    // printf("Filtering time %2.2f ms \n", (std::clock() - start_removal) / (double)(CLOCKS_PER_SEC / 1000));
   }
   else {
     obstacle = false;
@@ -134,10 +100,9 @@ float distance2DPolar(int e1, int z1, int e2, int z2){
 
 bool LocalPlanner::obstacleAhead() { 
     
-  if(obstacle){ //|| dist_y>path_y_tolerance_param ||  dist_z >path_z_tolerance_param
+  if(obstacle){
     return true;
-  }
-  else{
+  } else{
     return false;
   }
 }
@@ -288,52 +253,9 @@ void LocalPlanner::findFreeDirections() {
   }
    
   int e,z;
-  //std::vector<float> x_cloud, y_cloud, z_cloud;
-  //double minVal, maxVal;
    
   if (pose.pose.position.z > 1.5){
     if (cv::countNonZero(azimuthal_length)>= 6){
-
-      // pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-      // for (pcl_it = final_cloud.begin(); pcl_it != final_cloud.end(); ++pcl_it) {
-      //   x_cloud.push_back(pcl_it->x);
-      //   y_cloud.push_back(pcl_it->y);
-      //   z_cloud.push_back(pcl_it->z);
-      // }
-
-      // cv::meanStdDev(y_cloud, mean_y, stddev_y);
-      // cv::meanStdDev(z_cloud, mean_z, stddev_z);
-      // cv::meanStdDev(x_cloud, mean_x, stddev_x);
-      // printf("Mean Values [%f %f %f] \n", mean_x[0], mean_y[0], mean_z[0]);
-      // printf("Std Values [%f %f %f] \n", stddev_x[0], stddev_y[0], stddev_z[0]);
-
-      // double minVal, maxVal;
-      // cv::minMaxLoc(x_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
-      // cv::minMaxLoc(y_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
-      // cv::minMaxLoc(z_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
-     
-      // ext_p1.x = mean_x[0]; ext_p2.x = mean_x[0];
-      // ext_p1.y = mean_y[0]-73.0; ext_p2.y = mean_y[0]+73.0;
-      // ext_p1.z = mean_z[0]; ext_p2.z = mean_z[0];
-
-      // ext_p1.x = (-coef2*ext_p1.y - coef3*ext_p1.z - coef4)/coef1;
-      // ext_p2.x = (-coef2*ext_p2.y - coef3*ext_p2.z - coef4)/coef1;
-      // extension_points.push_back(ext_p1);
-      // extension_points.push_back(ext_p2);
-      // int beta_z = floor((atan2(ext_p1.x-pose.pose.position.x,ext_p1.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
-      // int low_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
-      // beta_z = floor((atan2(ext_p2.x-pose.pose.position.x,ext_p2.y-pose.pose.position.y)*180.0/PI)); //azimuthal angle
-      // int high_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
-      // if (high_boundary < low_boundary){
-      //   int temp = low_boundary;
-      //   low_boundary = high_boundary;
-      //   high_boundary = temp;
-      // }
-     // printf("high %d low %d \n", high_boundary-180, low_boundary-180); 
-
-  
-        //beta_z = floor((atan2(2.12,0)*180.0/PI)); 
-       // beta_z = beta_z + (alpha_res - beta_z%alpha_res);
 
       std::vector<int> idx_non_zeros;
 
@@ -341,7 +263,6 @@ void LocalPlanner::findFreeDirections() {
         if (azimuthal_length[c]==1)
           idx_non_zeros.push_back(c);
       }
-        
       
       z = idx_non_zeros[floor(idx_non_zeros.size()/2)];
       int beta_z = z*alpha_res+alpha_res-180;
@@ -356,7 +277,7 @@ void LocalPlanner::findFreeDirections() {
         low_boundary = high_boundary;
         high_boundary = temp;
       }
-      printf("beta_z %d (%d) high %d (%d) low %d (%d) \n",beta_z+180, beta_z, high_boundary, high_boundary-180, low_boundary, low_boundary-180); 
+    //  printf("beta_z %d (%d) high %d (%d) low %d (%d) \n",beta_z+180, beta_z, high_boundary, high_boundary-180, low_boundary, low_boundary-180); 
 
       for (int i=0; i<grid_length_e; i++){
         if (elevation_length[i]==1){ //|| blocked_el[i]==1){
@@ -483,7 +404,7 @@ void LocalPlanner::calculateCostMap() {
   float small ; int small_i;
   std::vector<float> cost_candidates(path_candidates.cells.size());
 
-  printf("p1.x %f p1.y %f \n", p1.x, p1.y);
+ // printf("p1.x %f p1.y %f \n", p1.x, p1.y);
 
   for(int i=0; i<path_candidates.cells.size(); i++) {  
     e = path_candidates.cells[i].x;
