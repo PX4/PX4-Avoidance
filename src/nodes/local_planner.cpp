@@ -178,10 +178,6 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_blocked);
   initGridCells(&path_selected);
   initGridCells(&path_extended);
-  initGridCells(&Ppath_candidates);
-  initGridCells(&Ppath_rejected);
-  initGridCells(&Ppath_blocked);
-  initGridCells(&Ppath_selected);
 
   for(int e= 0; e<grid_length_e; e++) {
     for(int z= 0; z<grid_length_z; z++) {  
@@ -234,8 +230,7 @@ void LocalPlanner::findFreeDirections() {
         p.x = e*alpha_res+alpha_res-90; 
         p.y = z*alpha_res+alpha_res-180; 
         p.z = 0;                         
-        path_candidates.cells.push_back(p);   
-        publishPathCells(p.x, p.y, 0);      
+        path_candidates.cells.push_back(p);        
       }
       else if(!free && polar_histogram.get(e,z) != 0) {
         azimuthal_length[z] = 1;
@@ -243,8 +238,7 @@ void LocalPlanner::findFreeDirections() {
         p.x = e*alpha_res+alpha_res-90;  
         p.y = z*alpha_res+alpha_res-180; 
         p.z = 0;                         
-        path_rejected.cells.push_back(p);  
-        publishPathCells(p.x, p.y, 1);       
+        path_rejected.cells.push_back(p);        
       }
       else {
         blocked_az[z] = 1;
@@ -252,14 +246,15 @@ void LocalPlanner::findFreeDirections() {
         p.x = e*alpha_res+alpha_res-90;  
         p.y = z*alpha_res+alpha_res-180; 
         p.z = 0;                         
-        path_blocked.cells.push_back(p); 
-        publishPathCells(p.x, p.y, 2);               
+        path_blocked.cells.push_back(p);                
       }
     } 
   }
-   
+  
+  // extend rejected path cells in the 2D polar histogram when the UAV altitude is greater than 1.5m and 
+  // when the obstacle is longer than 60 degrees. The obstacle becomes 270 degree long, leaving only 90 degrees 
+  // behind the UAV heading free
   int e,z;
-   
   if (pose.pose.position.z > 1.5){
     if (cv::countNonZero(azimuthal_length)>= 6){
 
@@ -283,21 +278,18 @@ void LocalPlanner::findFreeDirections() {
         low_boundary = high_boundary;
         high_boundary = temp;
       }
-    //  printf("beta_z %d (%d) high %d (%d) low %d (%d) \n",beta_z+180, beta_z, high_boundary, high_boundary-180, low_boundary, low_boundary-180); 
 
       for (int i=0; i<grid_length_e; i++){
-        if (elevation_length[i]==1){ //|| blocked_el[i]==1){
+        if (elevation_length[i]==1){
           e = i*alpha_res+alpha_res-90;
           
           for (int k=0; k<grid_length_z; k++){
             z = k*alpha_res+alpha_res-180;
             if ((beta_z+180) > low_boundary && (beta_z+180) < high_boundary){
-              if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
+              if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
                 p.x = e; p.y = z; p.z = 0;
                 path_blocked.cells.push_back(p);
-                p = fromPolarToCartesian(e, z);
                 path_extended.cells.push_back(p); 
-              //  printf("caso 1 extended z %d \n", z+180);
 
                 for(int t=0; t<path_candidates.cells.size(); t++){
                   if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
@@ -307,12 +299,10 @@ void LocalPlanner::findFreeDirections() {
               }
             }
             else {
-              if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) { // && (blocked_az[k]==0 || blocked_el[i]==0)){ 
+              if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
                 p.x = e; p.y = z; p.z = 0;
                 path_blocked.cells.push_back(p);
-                p = fromPolarToCartesian(e, z);
                 path_extended.cells.push_back(p); 
-               // printf("caso 2 extended z %d \n", z+180);
 
                 for(int t=0; t<path_candidates.cells.size(); t++){
                   if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
@@ -326,6 +316,7 @@ void LocalPlanner::findFreeDirections() {
       }
     }
    }
+
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
@@ -340,22 +331,6 @@ geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z){
   return p;
 
 }
-
-void LocalPlanner::publishPathCells(double e, double z, int path_type){
-
-  geometry_msgs::Point p = fromPolarToCartesian((int)e, (int)z);
-
-  if(path_type == 0){
-    p.x = e; p.y = z; p.z=0;
-    Ppath_candidates.cells.push_back(p);
-  }
-  if (path_type == 1){
-    Ppath_rejected.cells.push_back(p); 
-  }    
-  if (path_type == 2){
-    Ppath_blocked.cells.push_back(p); 
-    
-  }                      
 }
 
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
@@ -442,7 +417,6 @@ void LocalPlanner::calculateCostMap() {
   path_selected.cells.push_back(p1);
     
   geometry_msgs::Point Pp1 = fromPolarToCartesian((int)p1.x, (int)p1.y);
-  Ppath_selected.cells.push_back(Pp1);
 
   // for(int i=0; i<10; i++){
   //   e = path_candidates.cells[cost_idx_sorted[i]].x;
