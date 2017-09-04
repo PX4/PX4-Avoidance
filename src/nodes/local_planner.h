@@ -125,12 +125,6 @@ public:
 	nav_msgs::GridCells path_blocked;
 	nav_msgs::GridCells path_extended;
 
-	nav_msgs::GridCells Ppath_candidates;
-	nav_msgs::GridCells Ppath_selected;
-	nav_msgs::GridCells Ppath_rejected;
-	nav_msgs::GridCells Ppath_blocked;
-
-	
     std::vector<int> cost_idx_sorted;
 
   //  std::vector<float> heigh_prior{0.0, 0.0098, 0.0927, 0.473, 1.1746, 2.0522, 3.259, 7.106, 13.777, 20.41, 27.59, 35.16};
@@ -171,7 +165,6 @@ public:
 	void reachGoalAltitudeFirst();
 	void getPathMsg();
 	bool withinGoalRadius();
-	void publishPathCells(double e, double z, int path_type);
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	geometry_msgs::Point fromPolarToCartesian(int e, int z);
