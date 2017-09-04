@@ -172,6 +172,7 @@ void LocalPlanner::findFreeDirections() {
   std::vector<int> blocked_el(grid_length_e, 0);
   std::vector<int> azimuthal_length_pos;
   extension_points.clear();
+  cost_path_candidates.clear();
 
   initGridCells(&path_candidates);
   initGridCells(&path_rejected);
@@ -231,6 +232,7 @@ void LocalPlanner::findFreeDirections() {
         p.y = z*alpha_res+alpha_res-180; 
         p.z = 0;                         
         path_candidates.cells.push_back(p);        
+        cost_path_candidates.push_back(costFunction((int)p.x, (int)p.y));
       }
       else if(!free && polar_histogram.get(e,z) != 0) {
         azimuthal_length[z] = 1;
@@ -294,6 +296,7 @@ void LocalPlanner::findFreeDirections() {
                 for(int t=0; t<path_candidates.cells.size(); t++){
                   if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
                     path_candidates.cells.erase(path_candidates.cells.begin()+t);
+                    cost_path_candidates.erase(cost_path_candidates.begin()+t);
                   }
                 }
               }
@@ -307,6 +310,7 @@ void LocalPlanner::findFreeDirections() {
                 for(int t=0; t<path_candidates.cells.size(); t++){
                   if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
                     path_candidates.cells.erase(path_candidates.cells.begin()+t);
+                    cost_path_candidates.erase(cost_path_candidates.begin()+t);
                   }
                 }
               }
@@ -377,61 +381,21 @@ double LocalPlanner::costFunction(int e, int z) {
   return cost;  
 }
 
+
 void LocalPlanner::calculateCostMap() {
-
   std::clock_t start_time = std::clock();
-  int e = 0, z = 0;
-  double cost_path; 
-  float small ; int small_i;
-  std::vector<float> cost_candidates(path_candidates.cells.size());
-
- // printf("p1.x %f p1.y %f \n", p1.x, p1.y);
-
-  for(int i=0; i<path_candidates.cells.size(); i++) {  
-    e = path_candidates.cells[i].x;
-   	z = path_candidates.cells[i].y;
-   	if(init == 0) {
-   		p1.x = e;
-   		p1.y = z;
-   	}
-      
-   	cost_path = costFunction(e,z);
-   // cost_candidates[i]=(cost_path);
-
-   	if(i == 0) {
-     	small = cost_path;
-     	small_i = i;
-   	}
-
-    if(cost_path<small) {
-     	small = cost_path;
-     	small_i = i ;
-   	}  
-  }
-
-//  cv::sortIdx(cost_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+  cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
     
-  p1.x = path_candidates.cells[small_i].x;
-  p1.y = path_candidates.cells[small_i].y;
-  p1.z = path_candidates.cells[small_i].z;
+  p1.x = path_candidates.cells[cost_idx_sorted[0]].x;
+  p1.y = path_candidates.cells[cost_idx_sorted[0]].y;
+  p1.z = path_candidates.cells[cost_idx_sorted[0]].z;
   path_selected.cells.push_back(p1);
-    
-  geometry_msgs::Point Pp1 = fromPolarToCartesian((int)p1.x, (int)p1.y);
 
-  // for(int i=0; i<10; i++){
-  //   e = path_candidates.cells[cost_idx_sorted[i]].x;
-  //   z = path_candidates.cells[cost_idx_sorted[i]].y;
-  //   printf("e %d z %d -> ",e,z);
-  //   printf("%f \n", cost_candidates[cost_idx_sorted[i]]);
-  // }
-
-  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p1.x, (int)p1.y, small, (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p1.x, (int)p1.y, cost_path_candidates[cost_idx_sorted[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
 }
 
 void LocalPlanner::getNextWaypoint() {
- 
   setpoint = getWaypointFromAngle(p1.x,p1.y);
    
   if (withinGoalRadius() || !first_reach){
