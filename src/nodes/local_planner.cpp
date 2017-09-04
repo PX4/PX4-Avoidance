@@ -46,10 +46,8 @@ void LocalPlanner::setGoal() {
 }
 
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
-
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  pcl::PointCloud<pcl::PointXYZ> front_cloud;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud.points.clear();
   float min_distance = 1000;
@@ -60,7 +58,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
       if((pcl_it->x)<max_box.x && (pcl_it->x)>min_box.x && (pcl_it->y)<max_box.y && (pcl_it->y)>min_box.y && (pcl_it->z)<max_box.z && (pcl_it->z)>min_box.z) {
         cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));  
-        final_cloud.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z)); 
         distance = sqrt(pow(pose.pose.position.x-pcl_it->x,2) + pow(pose.pose.position.y-pcl_it->y,2) + pow(pose.pose.position.z-pcl_it->z,2));
         if (distance < min_distance){
           min_distance = distance;
@@ -68,25 +65,34 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       }
     }
   }
-  
 
-  if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {    
-    obstacle = true;
-  }
-  else {
-    obstacle = false;
-    ROS_INFO("False positive obstacle at distance %2.2fm. Minimum decelleration distance possible %2.2fm.", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
+  // statistical outlier removal
+  if (cloud->points.size() > 0) {
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(cloud);
+    sor.setMeanK (20);
+    sor.setStddevMulThresh (1.0);
+    sor.filter(*cloud);
+
+    // filter out obstacles that are smaller than 160 points and that are at a distance greater than
+    // how much space the UAV needs to travel to stop in front of it when at maximum decelleration
+    if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {
+      obstacle = true;
+    }
+    else {
+      obstacle = false;
+      ROS_INFO("False positive obstacle at distance %2.2fm. Minimum decelleration distance possible %2.2fm.", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
+    }
   }
 
   final_cloud.header.stamp =  complete_cloud.header.stamp;
   final_cloud.header.frame_id = complete_cloud.header.frame_id;
-  final_cloud.width = final_cloud.points.size();
+  final_cloud.width = cloud->points.size();
   final_cloud.height = 1; 
+  final_cloud.points = cloud->points;
 
-
-  ROS_INFO("Point cloud cropped im %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud.width);
   cloud_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
