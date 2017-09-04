@@ -77,10 +77,10 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
 
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p;
-    p.x = path.cells[i].x;
-    p.y = path.cells[i].y;
-    p.z = path.cells[i].z;
+    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y);
+    // p.x = path.cells[i].x;
+    // p.y = path.cells[i].y;
+    // p.z = path.cells[i].z;
     m.pose.position = p;
 
     m.color.r = red;
@@ -92,35 +92,30 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
 }
 
 void LocalPlannerNode::publishMarkerBlocked() {
-
   visualization_msgs::MarkerArray marker_blocked;
-  initMarker(&marker_blocked, local_planner.Ppath_blocked, 0.0, 0.0, 1.0);
+  initMarker(&marker_blocked, local_planner.path_blocked, 0.0, 0.0, 1.0);
   marker_blocked_pub_.publish(marker_blocked);
 }
 
 void LocalPlannerNode::publishMarkerRejected() {
-
   visualization_msgs::MarkerArray marker_rejected;
-  initMarker(&marker_rejected, local_planner.Ppath_rejected, 1.0, 0.0, 0.0);
+  initMarker(&marker_rejected, local_planner.path_rejected, 1.0, 0.0, 0.0);
   marker_rejected_pub_.publish(marker_rejected);
 }
 
 void LocalPlannerNode::publishMarkerCandidates(){
-
   visualization_msgs::MarkerArray marker_candidates;
-  initMarker(&marker_candidates, local_planner.Ppath_candidates, 0.0, 1.0, 0.0);
+  initMarker(&marker_candidates, local_planner.path_candidates, 0.0, 1.0, 0.0);
   marker_candidates_pub_.publish(marker_candidates);
 }
 
 void LocalPlannerNode::publishMarkerSelected(){
-
   visualization_msgs::MarkerArray marker_selected;
-  initMarker(&marker_selected, local_planner.Ppath_selected, 0.8, 0.16, 0.8);
+  initMarker(&marker_selected, local_planner.path_selected, 0.8, 0.16, 0.8);
   marker_selected_pub_.publish(marker_selected);
 }
 
 void LocalPlannerNode::publishMarkerExtended(){
-
   visualization_msgs::MarkerArray marker_extended;
   initMarker(&marker_extended, local_planner.path_extended, 0.5, 0.5, 0.5);
   marker_extended_pub_.publish(marker_extended);
