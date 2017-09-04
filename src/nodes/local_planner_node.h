@@ -56,6 +56,7 @@ private:
 	ros::Subscriber pose_sub_ ; 
 	ros::Subscriber velocity_sub_ ;
 	ros::Subscriber clicked_point_sub_;
+	ros::Subscriber clicked_goal_sub_;
 
 
 	//publishers
@@ -99,6 +100,7 @@ private:
 	void publishMarkerSelected();
 	void publishMarkerExtended();
 	void clickedPointCallback(const geometry_msgs::PointStamped & msg);
+	void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
 	void printPointInfo(double x, double y, double z);
 	void publishGoal();
 	void publishNormalToPowerline();
