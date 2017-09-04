@@ -79,10 +79,8 @@ class Histogram
 class LocalPlanner {
 
 public:
-	pcl::PointCloud<pcl::PointXYZ> final_cloud;
-	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_ahead;
 	
-	octomap::Pointcloud octomapCloud;
+	pcl::PointCloud<pcl::PointXYZ> final_cloud;
 
 	bool first_reach = true;
 	bool obstacle = false; 
