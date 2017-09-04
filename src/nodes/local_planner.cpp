@@ -398,11 +398,11 @@ void LocalPlanner::calculateCostMap() {
 void LocalPlanner::getNextWaypoint() {
   setpoint = getWaypointFromAngle(p1.x,p1.y);
    
-  if (withinGoalRadius() || !first_reach){
+  if (withinGoalRadius()){
     ROS_INFO("Goal Reached: Hoovering");
-    waypt.vector.x = waypt_stop.pose.position.x;
-    waypt.vector.y = waypt_stop.pose.position.y;
-    waypt.vector.z = waypt_stop.pose.position.z;
+    waypt.vector.x = goal.x;
+    waypt.vector.y = goal.y;
+    waypt.vector.z = goal.z;
   }
   else{
     geometry_msgs::Vector3Stamped setpoint_temp, setpoint_temp2;
@@ -465,12 +465,12 @@ bool LocalPlanner::checkForCollision() {
 
 void LocalPlanner::goFast(){
 
-  if (withinGoalRadius() || !first_reach){
+  if (withinGoalRadius()){
 
     ROS_INFO("Goal reached: hoovering.");
-    waypt.vector.x = waypt_stop.pose.position.x;
-    waypt.vector.y = waypt_stop.pose.position.y;
-    waypt.vector.z = waypt_stop.pose.position.z;
+    waypt.vector.x = goal.x;
+    waypt.vector.y = goal.y;
+    waypt.vector.z = goal.z;
   }
   else {
     tf::Vector3 vec;
@@ -491,7 +491,6 @@ void LocalPlanner::goFast(){
 }
 
 bool LocalPlanner::withinGoalRadius(){
-
   geometry_msgs::Point a;
   a.x = std::abs(goal.x - pose.pose.position.x); 
   a.y = std::abs(goal.y - pose.pose.position.y);
@@ -499,10 +498,6 @@ bool LocalPlanner::withinGoalRadius(){
   float goal_acceptance_radius = 0.5f;
   
   if(a.x < goal_acceptance_radius && a.y < goal_acceptance_radius && a.z < goal_acceptance_radius){
-    if (first_reach){
-      waypt_stop = pose;
-      first_reach = false;
-    }
     return true;
   }
   else
@@ -511,7 +506,6 @@ bool LocalPlanner::withinGoalRadius(){
 
 
 geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
-  
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id="/world";
@@ -530,7 +524,7 @@ double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vec
     return last_yaw;   // Going up or down
   }
 
-  if (withinGoalRadius() || !first_reach){
+  if (withinGoalRadius()){
     return last_yaw;
   }
 
@@ -538,7 +532,6 @@ double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vec
 }
 
 void LocalPlanner::reachGoalAltitudeFirst(){
-
   if (pose.pose.position.z < (goal_z_param - 0.5)) {
       waypt.vector.x = 0.0;
       waypt.vector.y = 0.0;
