@@ -7,6 +7,7 @@ LocalPlannerNode::LocalPlannerNode() {
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
 	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
+  clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
 	local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   //marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray>( "/visualization_marker", 1);
@@ -183,8 +184,14 @@ void LocalPlannerNode::publishNormalToPowerline(){
   }
 }
 
-void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped & msg){
+void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg){
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
+}
+
+void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg){
+  local_planner.goal_x_param = msg.pose.position.x;
+  local_planner.goal_y_param = msg.pose.position.y;
+  local_planner.setGoal();
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z){
