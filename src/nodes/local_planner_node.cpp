@@ -240,7 +240,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  if (local_planner.withinGoalRadius() && local_planner.first_reach){
+  if (local_planner.withinGoalRadius()){
     cv::Scalar mean, std;
     printf("----------------------------------- \n");
     cv::meanStdDev(algo_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
