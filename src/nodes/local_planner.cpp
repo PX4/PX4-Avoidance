@@ -498,9 +498,9 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
 }
 
 // calculate the yaw for the next waypoint 
-double LocalPlanner::nextYaw(geometry_msgs::Vector3Stamped u, geometry_msgs::Vector3Stamped v, double last_yaw) {
-  double dx = v.vector.x - u.vector.x;
-  double dy = v.vector.y - u.vector.y;
+double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw) {
+  double dx = v.vector.x - u.pose.position.x;
+  double dy = v.vector.y - u.pose.position.y;
 
   if (round(dx) == 0 && round(dy) == 0) {
     return last_yaw;   // Going up or down
@@ -533,17 +533,13 @@ void LocalPlanner::getPathMsg() {
   path_msg.header.frame_id="/world";
   last_waypt_p = waypt_p;
   last_yaw = curr_yaw;
-  geometry_msgs::Vector3Stamped curr_pose;
-  curr_pose.vector.x = pose.pose.position.x;
-  curr_pose.vector.y = pose.pose.position.y;
-  curr_pose.vector.z = pose.pose.position.z;
 
   //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
   if(!reach_altitude){
     reachGoalAltitudeFirst();
   }
 
-  double new_yaw = nextYaw(curr_pose, waypt, last_yaw); 
+  double new_yaw = nextYaw(pose, waypt, last_yaw); 
   waypt_p = createPoseMsg(waypt, new_yaw);
   path_msg.poses.push_back(waypt_p);
   curr_yaw = new_yaw;
