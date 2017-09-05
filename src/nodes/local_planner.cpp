@@ -434,25 +434,12 @@ void LocalPlanner::getNextWaypoint() {
 bool LocalPlanner::checkForCollision() {
   std::clock_t start_time = std::clock();
   bool avoid = false;
-  geometry_msgs::Point temp;
-  geometry_msgs::Point p, p_pose;
-  p_pose.x = pose.pose.position.x;
-  p_pose.y = pose.pose.position.y;
-  p_pose.z = pose.pose.position.z;
-
-  pcl::PointCloud<pcl::PointXYZ>::iterator it;
-  for( it = final_cloud.begin(); it != final_cloud.end(); ++it) {
-    temp.x = it->x;
-    temp.y = it->y;
-    temp.z = it->z;
       
-    if(distance3DCartesian(p_pose,temp)< 0.5 && init != 0) { 
-      avoid = true;
-      break;
-    }
-  }  
+  if(min_distance < 0.5f && init != 0) { 
+    avoid = true;
+  }
+ 
   collision_time.push_back((std::clock() - start_time) / (double(CLOCKS_PER_SEC / 1000)));
- // printf("min dist %f min dist pose %f \n\n", min_dist, min_dist_pose_obst);
   return avoid;
 }
 
@@ -460,7 +447,6 @@ bool LocalPlanner::checkForCollision() {
 void LocalPlanner::goFast(){
 
   if (withinGoalRadius()){
-
     ROS_INFO("Goal reached: hoovering.");
     waypt.vector.x = goal.x;
     waypt.vector.y = goal.y;
