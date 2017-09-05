@@ -170,6 +170,7 @@ public:
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	geometry_msgs::Point fromPolarToCartesian(int e, int z);
+	void extendPowerline();
 };
 
 
