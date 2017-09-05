@@ -526,17 +526,53 @@ void LocalPlanner::reachGoalAltitudeFirst(){
   }
 }
 
-void LocalPlanner::getPathMsg() {
+// smooth trajectory by liming the maximim accelleration possible
+geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
+  geometry_msgs::Vector3Stamped smooth_waypt;
+  std::clock_t t = std::clock();
+  float dt = (t - t_prev) / (float)(CLOCKS_PER_SEC);
+  dt = dt > 0.0f ? dt : 0.004f;
+  t_prev = t;
+  Eigen::Vector2f vel_xy(curr_vel.twist.linear.x, curr_vel.twist.linear.y);
+  Eigen::Vector2f vel_waypt_xy((waypt.vector.x - last_waypt_p.pose.position.x) / dt, (waypt.vector.y - last_waypt_p.pose.position.y) / dt);
+  Eigen::Vector2f vel_waypt_xy_prev((last_waypt_p.pose.position.x - last_last_waypt_p.pose.position.x) / dt, (last_waypt_p.pose.position.y - last_last_waypt_p.pose.position.y) / dt);
+  Eigen::Vector2f acc_waypt_xy((vel_waypt_xy - vel_waypt_xy_prev) / dt);
+
+  if (acc_waypt_xy.norm() > (acc_waypt_xy.norm() / 2.0f)) {
+    vel_xy = (acc_waypt_xy.norm() / 2.0f) * acc_waypt_xy.normalized() * dt + vel_waypt_xy_prev;
+  }
+
+  float acc_waypt_z = (waypt.vector.z - last_waypt_p.pose.position.z) / dt;
+  float max_acc_z, vel_z;
+  float vel_waypt_z_prev = (last_waypt_p.pose.position.z - last_last_waypt_p.pose.position.z) / dt;
+
+  max_acc_z = (acc_waypt_z < 0.0f) ? -(6.0) : (6.0);
+  if (fabsf(acc_waypt_z) > fabsf(max_acc_z)) {
+    vel_z = max_acc_z * dt + vel_waypt_z_prev;
+  }
+
+  smooth_waypt.vector.x = last_waypt_p.pose.position.x + vel_xy(0) * dt;
+  smooth_waypt.vector.y = last_waypt_p.pose.position.y + vel_xy(1) * dt;
+  smooth_waypt.vector.z = last_waypt_p.pose.position.z + vel_z * dt;
+
+  ROS_INFO("Smothed waypoint: [%f %f %f].", smooth_waypt.vector.x, smooth_waypt.vector.y, smooth_waypt.vector.z);
+  return smooth_waypt;
+}
 
 // create the message that is sent to the UAV
 void LocalPlanner::getPathMsg() {
   path_msg.header.frame_id="/world";
+  last_last_waypt_p = last_waypt_p;
   last_waypt_p = waypt_p;
   last_yaw = curr_yaw;
 
   //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
   if(!reach_altitude){
     reachGoalAltitudeFirst();
+  } else {
+      if(!withinGoalRadius() && (pose.pose.position.z > 1.5)){
+        waypt = smoothWaypoint();
+      }
   }
 
   double new_yaw = nextYaw(pose, waypt, last_yaw); 
