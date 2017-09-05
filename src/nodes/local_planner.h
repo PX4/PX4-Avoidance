@@ -100,7 +100,7 @@ public:
 	int init = 0;
 	int cost_type;
 
-	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 6.5, max_box_y = 6.5, min_box_z = 2.0, max_box_z = 2.0; 
+	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 10.0, max_box_y = 10.0, min_box_z = 2.0, max_box_z = 2.0; 
 	float rad = 1.0;
 
 	double velocity_x, velocity_y, velocity_z, velocity_mod;
