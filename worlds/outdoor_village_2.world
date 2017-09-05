@@ -62,7 +62,7 @@
      <include>
       <name>simple_line</name>
       <uri>model://line_model</uri>
-      <pose>20 0 8.5  0 0 -1.51</pose>
+      <pose>40 0 10  0 0 -1.51</pose>
     </include>
 
 
