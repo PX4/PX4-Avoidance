@@ -88,8 +88,8 @@ public:
 	bool reach_altitude = false;
 
 	geometry_msgs::Point min_box, max_box, goal;
-	geometry_msgs::PoseStamped pose, waypt_stop, waypt_p, last_waypt_p; 
-	geometry_msgs::Vector3Stamped waypt, last_waypt, setpoint, current_goal, last_goal, not_smooth_wp;
+	geometry_msgs::PoseStamped pose, waypt_p, last_waypt_p, last_last_waypt_p; 
+	geometry_msgs::Vector3Stamped waypt, last_waypt;
 	geometry_msgs::Point p1;
 	geometry_msgs::TwistStamped curr_vel;
 	geometry_msgs::Point ext_p1, ext_p2;
