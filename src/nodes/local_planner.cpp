@@ -52,7 +52,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud.points.clear();
-  float min_distance = 1000;
+  min_distance = 1000.0f;
   float distance;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {

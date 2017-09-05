@@ -115,6 +115,7 @@ public:
 	double curr_yaw, last_yaw;
 	double deceleration_limit = 1.5*9.8066;
 	double min_dist_pose_obst;
+	float min_distance;
 	 
 
 	Histogram polar_histogram;
