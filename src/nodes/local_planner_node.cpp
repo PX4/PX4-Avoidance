@@ -78,9 +78,6 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
     geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y);
-    // p.x = path.cells[i].x;
-    // p.y = path.cells[i].y;
-    // p.z = path.cells[i].z;
     m.pose.position = p;
 
     m.color.r = red;
