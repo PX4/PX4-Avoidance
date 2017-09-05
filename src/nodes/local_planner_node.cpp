@@ -17,10 +17,8 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_extended_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/extended_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   marker_normal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/normal_powerline", 1);
-
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
-
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
@@ -31,7 +29,6 @@ LocalPlannerNode::LocalPlannerNode() {
 LocalPlannerNode::~LocalPlannerNode(){}
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
-	
   auto rot_msg = msg;
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
 	local_planner.setPose(rot_msg);
@@ -39,27 +36,23 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-
   auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
   local_planner.curr_vel = transformed_msg;
 }
 
 void LocalPlannerNode::readParams() {
-
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
   nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
   nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
-
     path_actual.header.stamp = msg.header.stamp;
     path_actual.header.frame_id = msg.header.frame_id;
     path_actual.poses.push_back(msg);
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green, float blue){
-
   visualization_msgs::Marker m;
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
@@ -122,27 +115,26 @@ void LocalPlannerNode::publishGoal(){
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
-    m.header.frame_id = "world";
-    m.header.stamp = ros::Time::now();
-    m.type = visualization_msgs::Marker::SPHERE;
-    m.action = visualization_msgs::Marker::ADD;
-    m.scale.x = 0.5;
-    m.scale.y = 0.5;
-    m.scale.z = 0.5;
-    m.color.a = 1.0;
-    m.color.r = 1.0;
-    m.color.g = 1.0;
-    m.color.b = 0.0;
-    m.lifetime = ros::Duration();
-    m.id = 0;
-    m.pose.position = local_planner.goal;
-    marker_goal.markers.push_back(m);
-    marker_goal_pub_.publish(marker_goal);  
+  m.header.frame_id = "world";
+  m.header.stamp = ros::Time::now();
+  m.type = visualization_msgs::Marker::SPHERE;
+  m.action = visualization_msgs::Marker::ADD;
+  m.scale.x = 0.5;
+  m.scale.y = 0.5;
+  m.scale.z = 0.5;
+  m.color.a = 1.0;
+  m.color.r = 1.0;
+  m.color.g = 1.0;
+  m.color.b = 0.0;
+  m.lifetime = ros::Duration();
+  m.id = 0;
+  m.pose.position = local_planner.goal;
+  marker_goal.markers.push_back(m);
+  marker_goal_pub_.publish(marker_goal);  
 }
 
 
 void LocalPlannerNode::publishNormalToPowerline(){
-
   visualization_msgs::MarkerArray marker_normal;
   visualization_msgs::Marker m;
 
@@ -259,7 +251,6 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
 }
 
 void LocalPlannerNode::publishAll() {
-
   ROS_INFO("Current pose: [%f, %f, %f].", local_planner.pose.pose.position.x, local_planner.pose.pose.position.y, local_planner.pose.pose.position.z);
   ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x, local_planner.velocity_y, local_planner.velocity_z, local_planner.velocity_mod);
 
