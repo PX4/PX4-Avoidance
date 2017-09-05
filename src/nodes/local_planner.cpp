@@ -320,7 +320,23 @@ void LocalPlanner::findFreeDirections() {
         }
       }
     }
+   } else{
+    for (int i = 0; i < 9; ++i) {
+      for(int k=0; k<36 ; ++k){
+        p.x = i*alpha_res+alpha_res-90;
+        p.y = k*alpha_res+alpha_res-180;
+        p.z = 0.0f;
+        path_blocked.cells.push_back(p);
+
+        for(int t=0; t<path_candidates.cells.size(); t++){
+          if(path_candidates.cells[t].x==p.x && path_candidates.cells[t].y==p.y){
+            path_candidates.cells.erase(path_candidates.cells.begin()+t);
+            cost_path_candidates.erase(cost_path_candidates.begin()+t);
+          }
+        }
+      }
    }
+ }
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
