@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <math.h> 
+#include <Eigen/Dense>
 
 #include <ros/ros.h>
 
@@ -141,7 +142,8 @@ public:
     cv::Scalar stddev_x, stddev_y, stddev_z;
 
     std::vector<float> cloud_time, polar_time, free_time, cost_time, collision_time;
-    
+
+    std::clock_t t_prev = 0.0f;
 
 
 	LocalPlanner();
@@ -165,6 +167,7 @@ public:
 	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
 	double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
 	void reachGoalAltitudeFirst();
+	geometry_msgs::Vector3Stamped smoothWaypoint();
 	void getPathMsg();
 	bool withinGoalRadius();
 	void checkSpeed();
