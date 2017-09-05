@@ -184,7 +184,7 @@ Visualization Manager:
         X: 0
         Y: 0
         Z: 0
-      Topic: /actual_path
+      Topic: /path_actual
       Unreliable: false
       Value: true
     - Alpha: 1
