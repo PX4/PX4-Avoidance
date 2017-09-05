@@ -171,21 +171,7 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
-    - Alpha: 1
 
-      Class: rviz/Path
-      Color: 255; 0; 255
-      Enabled: true
-      Line Style: Lines
-      Line Width: 0.0299999993
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Topic: /smooth_path
-      Unreliable: false
-      Value: true
     - Alpha: 1
       Buffer Length: 1
       Class: rviz/Path
@@ -214,21 +200,6 @@ Visualization Manager:
         Y: 0
         Z: 0
       Topic: /waypoint
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Buffer Length: 1
-      Class: rviz/Path
-      Color: 0; 255; 0
-      Enabled: true
-      Line Style: Billboards
-      Line Width: 0.0299999993
-      Name: Path
-      Offset:
-        X: 0
-        Y: 0
-        Z: 0
-      Topic: /three_point_path
       Unreliable: false
       Value: true
     - Class: rviz/MarkerArray
