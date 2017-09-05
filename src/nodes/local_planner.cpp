@@ -353,26 +353,21 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
 // cost function according to all free directions found in the 2D polar histogram are ranked
 double LocalPlanner::costFunction(int e, int z) {
   double cost;
-  int goal_z = floor(atan2(goal.x-pose.pose.position.x,goal.y-pose.pose.position.y)*180.0/PI); //azimuthal angle
-  int goal_e = floor(atan((goal.z-pose.pose.position.z)/sqrt((goal.x-pose.pose.position.x)*(goal.x-pose.pose.position.x)+(goal.y-pose.pose.position.y)*(goal.y-pose.pose.position.y)))*180.0/PI);//elevation angle
-  int index;
-  geometry_msgs::Vector3Stamped ww;
-  ww = getWaypointFromAngle(e,z);
-  
-  geometry_msgs::Point p;
-  p.x = ww.vector.x;
-  p.y = ww.vector.y;
-  p.z = ww.vector.z;
+  int goal_z = floor(atan2(goal.x - pose.pose.position.x, goal.y - pose.pose.position.y)*180.0 / PI); //azimuthal angle
+  int goal_e = floor(atan((goal.z-pose.pose.position.z) / sqrt(pow((goal.x-pose.pose.position.x), 2) + pow((goal.y-pose.pose.position.y), 2)))*180.0 / PI);//elevation angle
+  geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
   
   double distance_cost = goal_cost_param * distance2DPolar(goal_e, goal_z, e, z);
   double smooth_cost = smooth_cost_param * distance2DPolar(p1.x, p1.y, e, z);
-  double height_cost = std::abs(accumulated_height_prior[std::round(p.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
- // printf("%f %f %f \n", distance_cost, smooth_cost, height_cost);
- // int curr_z = floor(atan2(0,0)*180.0/PI); //azimuthal angle
-//  int curr_e = floor(atan2(0,0)*180.0/PI);
-//  double dist =  sqrt(pow(e-goal_e,2) + pow(z-goal_z,2)); //sqrt(pow(e-curr_e,2) + pow(z-curr_z,2));
-//  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2))*std::abs(dist);
-//  double potential_energy = 1.56*9.81*std::abs(e-goal_e);
+  double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
+// alternative cost to prefer higher altitudes
+  // int t = std::round(p.z) + e;
+  // t = t < 0 ? 0 : t;
+  // t = t > 21 ? 21 : t;
+  // double height_cost = std::abs(accumulated_height_prior[t])*prior_cost_param*10.0;
+  double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2));
+  double potential_energy = 1.56*9.81*std::abs(e-goal_e);
+  printf("e %d z %d cost %f %f %f\n", e,z,distance_cost, smooth_cost, height_cost);
   cost = distance_cost + smooth_cost + height_cost;
   return cost;  
 }
