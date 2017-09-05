@@ -390,7 +390,7 @@ void LocalPlanner::calculateCostMap() {
 // check that the selected direction is really free and transform it into a waypoint. Otherwise break not 
 //to collide with an obstacle
 void LocalPlanner::getNextWaypoint() {
-  setpoint = getWaypointFromAngle(p1.x,p1.y);
+  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(p1.x,p1.y);
    
   if (withinGoalRadius()){
     ROS_INFO("Goal Reached: Hoovering");
