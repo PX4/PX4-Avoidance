@@ -415,20 +415,9 @@ void LocalPlanner::getNextWaypoint() {
     waypt.vector.z = goal.z;
   }
   else{
-    geometry_msgs::Vector3Stamped setpoint_temp, setpoint_temp2;
-     
-    tf::Vector3 vec;
-    vec.setX(goal.x - pose.pose.position.x);
-    vec.setY(goal.y - pose.pose.position.y);
-    vec.setZ(goal.z - pose.pose.position.z);
-    // double new_len = vec.length() < 1.0 ? vec.length() : speed;
-    vec.normalize();
-    vec *= 1.0;
-      
- 	  if(checkForCollision() && pose.pose.position.z>0.5) { //(velocity_x>1.4 && pose.pose.position.z>0.5) { 
-      vec *= 5;
-      waypt.vector.x = 0.0; //pose.pose.position.x - vec.getX(); 
-      waypt.vector.y = 0.0; //pose.pose.position.y - vec.getY(); 
+ 	  if(checkForCollision() && pose.pose.position.z>0.5) {
+      waypt.vector.x = 0.0; 
+      waypt.vector.y = 0.0;
       waypt.vector.z = setpoint.vector.z;
 
    	  ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
