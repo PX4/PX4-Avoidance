@@ -194,18 +194,21 @@ void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z){
- 
-  float radius = 1.0;
-  float theta = atan2(y, x);
-  float phi = acos(z / radius);
+  int beta_z = floor((atan2(x - local_planner.pose.pose.position.x, y - local_planner.pose.pose.position.y)*180.0/PI)); //(-180. +180]
+  int beta_e = floor((atan((z - local_planner.pose.pose.position.z) / sqrt((x - local_planner.pose.pose.position.x)*(x - local_planner.pose.pose.position.x) + (y - local_planner.pose.pose.position.y) * (y - local_planner.pose.pose.position.y)))*180.0/PI)); //(-90.+90)
+
+  beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
+  beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
+
+  float cost = local_planner.costFunction(beta_e-10, beta_z-10);
 
   printf("----- Point: %f %f %f -----\n",x,y,z);
-  printf("Elevation %f Azimuth %f \n",theta, phi);
+  printf("Elevation %d Azimuth %d \n",beta_e, beta_z);
+  printf("Cost %f \n", cost);
   printf("-------------------------------------------- \n");
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
-
 	pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
