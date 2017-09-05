@@ -1,7 +1,7 @@
 <launch>
     <include file="$(find avoidance)/launch/global_planner_sitl_mavros.launch" >
         <arg name="model" value="iris_stereo_camera" />
-        <arg name="world" value="outdoor_village" />
+        <arg name="world" value="outdoor_village_3" />
         <arg name="point_cloud_topic" value="/stereo/points2" />
     </include>
 
@@ -11,7 +11,7 @@
         <param name="correlation_window_size" type="double" value="19.0" />
         <param name="disparity_range" type="double" value="32.0" />
         <param name="uniqueness_ratio" type="double" value="40.0" />
-        <param name="speckle_size" type="double" value="400.0" />
+        <param name="speckle_size" type="double" value="1000.0" />
         <param name="speckle_range" type="double" value="2.0" />
     </node>
 
@@ -21,7 +21,7 @@
         <param name="correlation_window_size" type="double" value="19.0" />
         <param name="disparity_range" type="double" value="32.0" />
         <param name="uniqueness_ratio" type="double" value="40.0" />
-        <param name="speckle_size" type="double" value="400.0" />
+        <param name="speckle_size" type="double" value="1000.0" />
         <param name="speckle_range" type="double" value="2.0" />
     </node> 
 
@@ -32,9 +32,9 @@
     </include>
 
      <node name="local_planner_node" pkg="avoidance" type="local_planner_node" >
-        <param name="goal_x_param" value="9" />
-        <param name="goal_y_param" value="13" />
-        <param name="goal_z_param" value="3.5" />
+        <param name="goal_x_param" value="46" />
+        <param name="goal_y_param" value="42"/>
+        <param name="goal_z_param" value="8" />
     </node>
         
 
