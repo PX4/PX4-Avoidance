@@ -41,7 +41,7 @@ void LocalPlanner::setGoal() {
   goal.x = goal_x_param;
   goal.y = goal_y_param;
   goal.z = goal_z_param;
-
+  reached_goal = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal.x, goal.y, goal.z);
 }
 
@@ -484,6 +484,10 @@ bool LocalPlanner::withinGoalRadius(){
   float goal_acceptance_radius = 0.5f;
   
   if(a.x < goal_acceptance_radius && a.y < goal_acceptance_radius && a.z < goal_acceptance_radius){
+    if(!reached_goal){
+      yaw_reached_goal = tf::getYaw(pose.pose.orientation); 
+    }
+    reached_goal = true;
     return true;
   }
   else
@@ -511,8 +515,8 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
     return last_yaw;   // Going up or down
   }
 
-  if (withinGoalRadius()){
-    return last_yaw;
+  if (reached_goal){
+    return yaw_reached_goal;
   }
 
   return atan2(dy, dx);
@@ -575,7 +579,7 @@ void LocalPlanner::getPathMsg() {
   if(!reach_altitude){
     reachGoalAltitudeFirst();
   } else {
-      if(!withinGoalRadius() && (pose.pose.position.z > 1.5)){
+      if(!reached_goal && (pose.pose.position.z > 1.5)){
         waypt = smoothWaypoint();
       }
   }
