@@ -12,7 +12,6 @@ Panels:
     Name: Selection
   - Class: rviz/Tool Properties
     Expanded:
-      - /2D Pose Estimate1
       - /2D Nav Goal1
       - /Publish Point1
     Name: Tool Properties
@@ -48,23 +47,6 @@ Visualization Manager:
       Plane Cell Count: 36
       Reference Frame: <Fixed Frame>
       Value: true
-    - Alpha: 0.699999988
-      Class: rviz/Map
-      Color Scheme: map
-      Draw Behind: false
-      Enabled: true
-      Name: Map
-      Topic: /projected_map
-      Unreliable: false
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /occupied_cells_vis_array
-      Name: MarkerArray
-      Namespaces:
-        map: true
-      Queue Size: 100
-      Value: true
     - Alpha: 1
       Axes Length: 1
       Axes Radius: 0.100000001
@@ -93,26 +75,6 @@ Visualization Manager:
       Shaft Radius: 0.0500000007
       Shape: Arrow
       Topic: /current_setpoint
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.200000003
-      Topic: /global_goal
-      Unreliable: false
-      Value: true
-    - Alpha: 1
-      Class: rviz/PointStamped
-      Color: 204; 41; 204
-      Enabled: true
-      History Length: 1
-      Name: PointStamped
-      Radius: 0.200000003
-      Topic: /global_temp_goal
       Unreliable: false
       Value: true
     - Alpha: 1
@@ -202,14 +164,6 @@ Visualization Manager:
       Topic: /waypoint
       Unreliable: false
       Value: true
-    - Class: rviz/MarkerArray
-      Enabled: false
-      Marker Topic: /explored_cells
-      Name: MarkerArray
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: false
 
     - Alpha: 1
       Autocompute Intensity Bounds: true
@@ -254,8 +208,6 @@ Visualization Manager:
     - Class: rviz/Select
     - Class: rviz/FocusCamera
     - Class: rviz/Measure
-    - Class: rviz/SetInitialPose
-      Topic: /initialpose
     - Class: rviz/SetGoal
       Topic: /move_base_simple/goal
     - Class: rviz/PublishPoint
