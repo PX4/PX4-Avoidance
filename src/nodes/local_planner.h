@@ -87,6 +87,7 @@ public:
 	bool obstacle = false; 
 	bool set_first_yaw = true;
 	bool reach_altitude = false;
+	bool reached_goal = false;
 
 	geometry_msgs::Point min_box, max_box, goal;
 	geometry_msgs::PoseStamped pose, waypt_p, last_waypt_p, last_last_waypt_p; 
@@ -117,7 +118,7 @@ public:
 	double deceleration_limit = 1.5*9.8066;
 	double min_dist_pose_obst;
 	float min_distance;
-	 
+	double yaw_reached_goal;
 
 	Histogram polar_histogram;
 
