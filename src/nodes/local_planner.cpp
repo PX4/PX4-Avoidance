@@ -383,7 +383,6 @@ double LocalPlanner::costFunction(int e, int z) {
   // double height_cost = std::abs(accumulated_height_prior[t])*prior_cost_param*10.0;
   double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x,2) + pow(velocity_y,2) + pow(velocity_z,2));
   double potential_energy = 1.56*9.81*std::abs(e-goal_e);
-  printf("e %d z %d cost %f %f %f\n", e,z,distance_cost, smooth_cost, height_cost);
   cost = distance_cost + smooth_cost + height_cost;
   return cost;  
 }
