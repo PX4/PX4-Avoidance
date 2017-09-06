@@ -551,18 +551,19 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
     vel_xy = (acc_waypt_xy.norm() / 2.0f) * acc_waypt_xy.normalized() * dt + vel_waypt_xy_prev;
   }
 
-  float acc_waypt_z = (waypt.vector.z - last_waypt_p.pose.position.z) / dt;
+  float vel_waypt_z = (waypt.vector.z - last_waypt_p.pose.position.z) / dt;
   float max_acc_z, vel_z;
   float vel_waypt_z_prev = (last_waypt_p.pose.position.z - last_last_waypt_p.pose.position.z) / dt;
+  float acc_waypt_z = (vel_waypt_z - vel_waypt_z_prev) / dt;
 
-  max_acc_z = (acc_waypt_z < 0.0f) ? -(6.0) : (6.0);
+  max_acc_z = (acc_waypt_z < 0.0f) ? -(1.0) : (1.0);
   if (fabsf(acc_waypt_z) > fabsf(max_acc_z)) {
     vel_z = max_acc_z * dt + vel_waypt_z_prev;
   }
 
   smooth_waypt.vector.x = last_waypt_p.pose.position.x + vel_xy(0) * dt;
   smooth_waypt.vector.y = last_waypt_p.pose.position.y + vel_xy(1) * dt;
-  smooth_waypt.vector.z = last_waypt_p.pose.position.z + vel_z * dt;
+  smooth_waypt.vector.z = waypt.vector.z;
 
   ROS_INFO("Smothed waypoint: [%f %f %f].", smooth_waypt.vector.x, smooth_waypt.vector.y, smooth_waypt.vector.z);
   return smooth_waypt;
