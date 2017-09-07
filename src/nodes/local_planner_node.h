@@ -45,9 +45,6 @@ private:
 	LocalPlanner local_planner;
 
 	nav_msgs::Path path_actual;
-    nav_msgs::Path path_ideal;
-    visualization_msgs::MarkerArray marker_array;
-	geometry_msgs::PoseArray pose_array;
 
 	int i = 0 ;
 
@@ -66,10 +63,8 @@ private:
 	ros::Publisher marker_pub_;
 	ros::Publisher waypoint_pub_;
     ros::Publisher path_pub_;
-
     ros::Publisher mavros_waypoint_pub_;
   	ros::Publisher current_waypoint_pub_;
-
   	ros::Publisher marker_rejected_pub_;
   	ros::Publisher marker_blocked_pub_;
   	ros::Publisher marker_candidates_pub_;
@@ -77,11 +72,6 @@ private:
   	ros::Publisher marker_extended_pub_;
   	ros::Publisher marker_goal_pub_;
   	ros::Publisher marker_normal_pub_;
-  	int blocked_id = 0;
-  	int rejected_id = 0;
-  	int candidates_id = 0;
-  	int selected_id = 0;
-  	int extended_id = 0;
 
     tf::TransformListener tf_listener_;
     
