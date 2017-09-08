@@ -181,36 +181,40 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_selected);
   initGridCells(&path_extended);
 
-  for(int e= 0; e<grid_length_e; e++) {
-    for(int z= 0; z<grid_length_z; z++) {  
-      for(int i=e-n; i<=e+n; i++) {
-        for(int j=z-n;j<=z+n;j++) {
+  for(int e = 0; e < grid_length_e; e++) {
+    for(int z = 0; z < grid_length_z; z++) {  
+      for(int i = (e-n); i <= (e+n); i++) {
+        for(int j = (z-n); j <= (z+n); j++) {
                 
           free = true;
           corner = false;
 
-          //Case 1 - i < 0
-          if(i<0 && j>=0 && j<grid_length_z) {
+          // Elevation index < 0 
+          if(i < 0 && j >= 0 && j < grid_length_z) {
             a = -i;
-            b = grid_length_z-j-1;
+            b = grid_length_z - j - 1;
           }
-          //Case 2 - j < 0
-          else if(j<0 && i>=0 && i<grid_length_e) {
+          // Azimuth index < 0
+          else if(j < 0 && i >= 0 && i < grid_length_e) {
             b = j+grid_length_z;
           } 
-          //Case 3 - i >= grid_length
-          else if(i>=grid_length_e && j>=0 && j<grid_length_z) {
-            a = grid_length_e-(i%(grid_length_e-1));
-            b = grid_length_z-j-1;
+          // Elevation index > grid_length_e
+          else if(i >= grid_length_e && j >= 0 && j < grid_length_z) {
+            a = grid_length_e - (i % (grid_length_e - 1));
+            b = grid_length_z - j - 1;
           }
-          //Case 4 - j >= grid_length
-          else if(j>=grid_length_z && i>=0 && i<grid_length_e) {
-            b = j%grid_length_z;
+          // Azimuth index > grid_length_z
+          else if(j >= grid_length_z && i >= 0 && i < grid_length_e) {
+            b = j % grid_length_z;
           }
-          else if( i>=0 && i<grid_length_e && j>=0 && j<grid_length_z) {
+          // Elevation and Azimuth index both within histogram
+          else if( i >= 0 && i < grid_length_e && j >= 0 && j < grid_length_z) {
             a = i;
             b = j;
           }
+          // Elevation and azimuth index both < 0 OR elevation index > grid_length_e and azimuth index <> grid_length_z
+          // OR elevation index < 0 and azimuth index > grid_length_z OR elevation index > grid_length_e and azimuth index < 0.
+          // These cells are not part of the polar histogram.
           else {
             corner = true;
           }
@@ -227,10 +231,9 @@ void LocalPlanner::findFreeDirections() {
           break;
       }
 
-
       if(free) {    
-        p.x = e*alpha_res+alpha_res-90;
-        p.y = z*alpha_res+alpha_res-180;
+        p.x = e * alpha_res + alpha_res - 90;
+        p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
         path_candidates.cells.push_back(p);
         cost_path_candidates.push_back(costFunction((int)p.x, (int)p.y));
@@ -238,16 +241,16 @@ void LocalPlanner::findFreeDirections() {
       else if(!free && polar_histogram.get(e,z) != 0) {
         azimuthal_length[z] = 1;
         elevation_length[e] = 1;
-        p.x = e*alpha_res+alpha_res-90;
-        p.y = z*alpha_res+alpha_res-180;
+        p.x = e * alpha_res + alpha_res - 90;
+        p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
         path_rejected.cells.push_back(p);
       }
       else {
         blocked_az[z] = 1;
         blocked_el[e] = 1;
-        p.x = e*alpha_res+alpha_res-90;
-        p.y = z*alpha_res+alpha_res-180;
+        p.x = e * alpha_res + alpha_res - 90;
+        p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
         path_blocked.cells.push_back(p);
       }
