@@ -83,7 +83,7 @@ public:
 	geometry_msgs::Point min_box, max_box, goal;
 	geometry_msgs::PoseStamped pose, waypt_p, last_waypt_p, last_last_waypt_p; 
 	geometry_msgs::Vector3Stamped waypt, last_waypt;
-	geometry_msgs::Point p1, ext_p1, ext_p2;
+	geometry_msgs::Point ext_p1, ext_p2;
 	geometry_msgs::TwistStamped curr_vel;
 
 	nav_msgs::Path path_msg;
@@ -92,6 +92,7 @@ public:
 	nav_msgs::GridCells path_rejected;
 	nav_msgs::GridCells path_blocked;
 	nav_msgs::GridCells path_extended;
+	nav_msgs::GridCells path_waypoints;
 
 	int init = 0;
 
