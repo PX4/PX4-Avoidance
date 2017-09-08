@@ -43,6 +43,7 @@ void LocalPlanner::setGoal() {
   goal.z = goal_z_param;
   reached_goal = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal.x, goal.y, goal.z);
+  initGridCells(&path_waypoints);
 }
 
 // trim the point cloud so that only points inside the bounding box are considered and
@@ -68,7 +69,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  // statistical outlier removal
+  // statistical outlier removal (really slow)
   if (cloud->points.size() > 0) {
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(cloud);
@@ -156,6 +157,7 @@ void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
   cell->header.frame_id = "/world";
   cell->cell_width = alpha_res;
   cell->cell_height = alpha_res;
+  cell->cells = {};
 }
 
 // search for free directions in the 2D polar histogram with a moving window approach
@@ -377,9 +379,10 @@ double LocalPlanner::costFunction(int e, int z) {
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
   
   double distance_cost = goal_cost_param * distance2DPolar(goal_e, goal_z, e, z);
-  double smooth_cost = smooth_cost_param * distance2DPolar(p1.x, p1.y, e, z);
+  int waypoint_index = path_waypoints.cells.size();
+  double smooth_cost = smooth_cost_param * distance2DPolar(path_waypoints.cells[waypoint_index-1].x, path_waypoints.cells[waypoint_index-1].y, e, z);
   double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
-// alternative cost to prefer higher altitudes
+  // alternative cost to prefer higher altitudes
   // int t = std::round(p.z) + e;
   // t = t < 0 ? 0 : t;
   // t = t > 21 ? 21 : t;
@@ -395,21 +398,24 @@ double LocalPlanner::costFunction(int e, int z) {
 void LocalPlanner::calculateCostMap() {
   std::clock_t start_time = std::clock();
   cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
-    
-  p1.x = path_candidates.cells[cost_idx_sorted[0]].x;
-  p1.y = path_candidates.cells[cost_idx_sorted[0]].y;
-  p1.z = path_candidates.cells[cost_idx_sorted[0]].z;
-  path_selected.cells.push_back(p1);
+  
+  geometry_msgs::Point p;
+  p.x = path_candidates.cells[cost_idx_sorted[0]].x;
+  p.y = path_candidates.cells[cost_idx_sorted[0]].y;
+  p.z = path_candidates.cells[cost_idx_sorted[0]].z;
+  path_selected.cells.push_back(p);
+  path_waypoints.cells.push_back(p);
 
-  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p1.x, (int)p1.y, cost_path_candidates[cost_idx_sorted[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates[cost_idx_sorted[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 // check that the selected direction is really free and transform it into a waypoint. Otherwise break not 
 //to collide with an obstacle
 void LocalPlanner::getNextWaypoint() {
-  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(p1.x,p1.y);
-   
+  int waypoint_index = path_waypoints.cells.size();
+  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(path_waypoints.cells[waypoint_index-1].x, path_waypoints.cells[waypoint_index-1].y);
+
   if (withinGoalRadius()){
     ROS_INFO("Goal Reached: Hoovering");
     waypt.vector.x = goal.x;
@@ -423,10 +429,11 @@ void LocalPlanner::getNextWaypoint() {
       waypt.vector.z = setpoint.vector.z;
 
    	  ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
-   	  p1.x = 0;
-   	  p1.y = 0;
       path_selected.cells[path_selected.cells.size()-1].x = 0;
       path_selected.cells[path_selected.cells.size()-1].y = 0;
+
+      path_waypoints.cells[path_waypoints.cells.size()-1].x = 90;
+      path_waypoints.cells[path_waypoints.cells.size()-1].y = 90;
  	  }
     else{
       waypt = setpoint;
@@ -471,6 +478,10 @@ void LocalPlanner::goFast(){
     waypt.vector.x = pose.pose.position.x + vec.getX();
     waypt.vector.y = pose.pose.position.y + vec.getY();
     waypt.vector.z = pose.pose.position.z + vec.getZ();
+
+    // fill direction as straight ahead
+    geometry_msgs::Point p; p.x = 90; p.y = 90; p.z = 0;
+    path_waypoints.cells.push_back(p);
  }
 
   
