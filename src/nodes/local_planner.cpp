@@ -328,6 +328,7 @@ void LocalPlanner::findFreeDirections() {
    } else{
     for (int i = 0; i < 9; ++i) {
       for(int k=0; k<36 ; ++k){
+        // fill entire lower half of the histogram
         p.x = i*alpha_res+alpha_res-90;
         p.y = k*alpha_res+alpha_res-180;
         p.z = 0.0f;
