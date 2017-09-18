@@ -1,0 +1,21 @@
+<launch>
+    <arg name="mavros_transformation" default="0" />
+    <arg name="model" default="iris_depth_camera" />
+    <arg name="world" default="outdoor_village_3" />
+    <arg name="point_cloud_topic" default="/camera/depth/points"/>
+
+    <param name="use_sim_time" value="true" />
+
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
+    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
+          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
+          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
+
+    <!-- Mavros and Sitl -->
+    <include file="$(find avoidance)/launch/mavros_sitl.launch" >
+        <arg name="model" value="$(arg model)" />
+        <arg name="world" value="$(arg world)" />
+    </include>
+
+</launch>
