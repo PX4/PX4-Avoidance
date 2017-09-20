@@ -31,7 +31,7 @@
 
 #include "local_planner.h"
 
-#include "avoidance/common.h"
+#include "avoidance/common_ros.h"
 
 
 class LocalPlannerNode{
