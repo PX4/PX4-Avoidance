@@ -1,0 +1,12 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7bf3dd9..0f2a478 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -14,7 +14,6 @@ find_package(catkin REQUIRED COMPONENTS
+   message_generation
+   tf
+   pcl_ros
+-  mavros
+ )
+ find_package(PCL 1.7 REQUIRED)
+ find_package(octomap REQUIRED)
