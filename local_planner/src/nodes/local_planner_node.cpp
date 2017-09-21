@@ -17,6 +17,8 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
+  bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -76,7 +78,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
   for (int i=0; i < path.cells.size(); i++) {
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y);
+    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, local_planner.rad);
     m.pose.position = p;
 
     m.color.r = red;
@@ -186,7 +188,6 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
-
   try {
     tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
