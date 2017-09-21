@@ -298,19 +298,19 @@
 
     <include>
       <name>lampLine_model_1</name>
-      <uri>model://lampWithLines_model</uri>
+      <uri>model://lamp_with_lines</uri>
       <pose>32.44 -15 11.6 0 0 0</pose>
     </include>
 
     <include>
       <name>lampLine_model_2</name>
-      <uri>model://lampWithLines_model</uri>
+      <uri>model://lamp_with_lines</uri>
       <pose>42.489 54.364 11.6 0 0 -3.12</pose>
     </include>
 
     <include>
       <name>powerline_model_1</name>
-      <uri>model://powerlineLong_model</uri>
+      <uri>model://powerline</uri>
       <pose>14.98 35.44 11.96  0 0 -1.03</pose>
     </include>
 
