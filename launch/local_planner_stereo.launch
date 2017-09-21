@@ -1,0 +1,28 @@
+<launch>
+    <include file="$(find avoidance)/launch/local_planner_sitl_mavros.launch" >
+        <arg name="model" value="iris_depth_camera" />
+        <arg name="world" value="outdoor_village_3" />
+        <arg name="point_cloud_topic" value="/camera/depth/points" />
+    </include>
+
+
+     <node name="local_planner_node" pkg="avoidance" type="local_planner_node" >
+        <param name="goal_x_param" value="46" />
+        <param name="goal_y_param" value="42"/>
+        <param name="goal_z_param" value="8" />
+    </node>
+        
+
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/local_planning.rviz" />
+  
+    <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
+
+    <!-- rosrun topic_tools transform /stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image' -->
+
+  <!--  <node name="transform" pkg="topic_tools" type="transform" 
+      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" />
+
+       <node name="transformV" pkg="topic_tools" type="transform"
+      args="/stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image'" /> -->
+
+</launch>
