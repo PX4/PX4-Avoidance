@@ -33,6 +33,14 @@ In order to develop in good conditions, it is always nice to compile the code on
 * `mavros-avoidance` is based on `mavros` and obviously runs mavros.
 * `avoidance-node` runs the actual avoidance system, composed of different nodes (including the octomap one).
 
+First, build the `mavros` image, as `mavros-avoidance` depends on it. The goal is to have the mavros image on the Docker hub in the future.
+
+    $ docker-compose build mavros
+
+As described [above](#run-the-demo), you need to open access to your X server:
+
+    $ xhost +local:root
+
 Running the full simulation can be done by running both `avoidance-node` and `sitl-avoidance-gui`, which will in turn run `mavros-avoidance` and `sitl-avoidance-server` because they depend on them:
 
     $ docker-compose up avoidance-node sitl-avoidance-gui
