@@ -5,6 +5,9 @@
         <param name="goal_y_param" value="42"/>
         <param name="goal_z_param" value="8" />
     </node>
+    
+    <include file="$(find realsense_camera)/launch/r200_nodelet_modify_params.launch" >
+    </include>
         
 
     <!-- <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/local_planning.rviz" /> -->
