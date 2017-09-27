@@ -14,7 +14,7 @@
     <arg name="world" default="outdoor_village_3" />
     <arg name="point_cloud_topic" default="/camera/depth/points"/>
 
-    <param name="use_sim_time" value="true" />
+    <param name="use_sim_time" value="false" />
 
     <!--<node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" /> -->
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
