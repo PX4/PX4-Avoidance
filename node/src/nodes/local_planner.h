@@ -36,6 +36,9 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/crop_box.h>
 
+#include <avoidance/LocalPlannerNodeConfig.h>
+#include <dynamic_reconfigure/server.h>
+
 
 #define PI 3.14159265
 #define alpha_res 10

@@ -4,7 +4,7 @@
 #include <iostream>
 #include <math.h> 
 
-
+#include <boost/bind.hpp>
 #include <sensor_msgs/PointCloud2.h>
 #include <pcl_ros/transforms.h> // transformPointCloud
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -34,6 +34,7 @@
 #include "avoidance/common_ros.h"
 
 
+
 class LocalPlannerNode{
 
 public: 
@@ -43,6 +44,8 @@ public:
 private:
 	ros::NodeHandle nh_;
 	LocalPlanner local_planner;
+
+	dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
 
 	nav_msgs::Path path_actual;
 
@@ -77,6 +80,7 @@ private:
     
     std::vector<float> algo_time;
 
+    void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
     void positionCallback(const geometry_msgs::PoseStamped msg);
 	void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
 	void velocityCallback(const geometry_msgs::TwistStamped msg);

@@ -3,6 +3,11 @@
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~"); 
 
+  // Set up Dynamic Reconfigure Server
+    dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+    f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
+    server_.setCallback(f);
+
 	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/camera/depth/points", 1, &LocalPlannerNode::pointCloudCallback, this);
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
 	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
@@ -268,6 +273,16 @@ void LocalPlannerNode::publishAll() {
   publishMarkerExtended();
   publishGoal();
 //  publishNormalToPowerline();
+}
+
+void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
+                                                   uint32_t level) {
+  local_planner.min_box_x= config.min_box_x;
+  local_planner.max_box_x= config.max_box_x;
+  local_planner.min_box_y= config.min_box_y;
+  local_planner.max_box_y= config.max_box_y;
+  local_planner.min_box_z= config.min_box_z;
+  local_planner.max_box_z= config.max_box_z;
 }
 
 int main(int argc, char** argv) {
