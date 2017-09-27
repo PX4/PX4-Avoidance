@@ -35,7 +35,7 @@
     <!-- <arg name="mavros_transformation" default="-1.57" /> -->
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
-    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
+    <!-- <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/> -->
 
 
     <!-- Launch MAVROS posix SITL environment -->
