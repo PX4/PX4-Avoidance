@@ -98,6 +98,7 @@ generate_messages(
 generate_dynamic_reconfigure_options(
   cfg/path_handler_node.cfg
   cfg/global_planner_node.cfg
+  cfg/local_planner_node.cfg
 )
 
 ###################################
