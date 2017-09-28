@@ -207,23 +207,23 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
   try{
-	printf("Checkpoint1 \n");
+	ROS_INFO("Checkpoint1 \n");
     tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
     tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
-    printf("Checkpoint2 \n");
+    ROS_INFO("Checkpoint2 \n");
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
     local_planner.filterPointCloud(complete_cloud);
-    printf("Checkpoint3 \n");
+    ROS_INFO("Checkpoint3 \n");
   }
   catch(tf::TransformException& ex){
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
-  printf("Checkpoint4 \n");
+  ROS_INFO("Checkpoint4 \n");
   if(local_planner.obstacleAhead() && local_planner.init!=0) {
-	printf("Checkpoint5 \n");
-    printf("There is an Obstacle Ahead \n");
+	ROS_INFO("Checkpoint5 \n");
+	ROS_INFO("There is an Obstacle Ahead \n");
 	local_planner.createPolarHistogram();
 	local_planner.findFreeDirections();
 	local_planner.calculateCostMap();
@@ -231,13 +231,13 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
     local_planner.getPathMsg();
 	}
   else{
-	  printf("Checkpoint6 \n");
+	  ROS_INFO("Checkpoint6 \n");
     printf("There isn't any Obstacle Ahead \n");
     local_planner.goFast();
     local_planner.getPathMsg();     
   }
 
-  printf("Checkpoint7 \n");
+  ROS_INFO("Checkpoint7 \n");
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -253,7 +253,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
     printf("----------------------------------- \n");
   }
 
-  printf("Checkpoint8 \n");
+  ROS_INFO("Checkpoint8 \n");
   publishAll();
 
   if(local_planner.init == 0) { 
