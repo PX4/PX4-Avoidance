@@ -4,17 +4,17 @@ LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~"); 
 
   // Set up Dynamic Reconfigure Server
-    dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
-    f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
-    server_.setCallback(f);
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
+  server_.setCallback(f);
 
-	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/camera/depth/points", 1, &LocalPlannerNode::pointCloudCallback, this);
-	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
-	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/camera/depth/points", 1, &LocalPlannerNode::pointCloudCallback, this);
+  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
-	local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -36,8 +36,8 @@ LocalPlannerNode::~LocalPlannerNode(){}
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
   auto rot_msg = msg;
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
-	local_planner.setPose(rot_msg);
-	publishPath(rot_msg);
+  local_planner.setPose(rot_msg);
+  publishPath(rot_msg);
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
@@ -52,9 +52,9 @@ void LocalPlannerNode::readParams() {
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
-    path_actual.header.stamp = msg.header.stamp;
-    path_actual.header.frame_id = msg.header.frame_id;
-    path_actual.poses.push_back(msg);
+  path_actual.header.stamp = msg.header.stamp;
+  path_actual.header.frame_id = msg.header.frame_id;
+  path_actual.poses.push_back(msg);
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green, float blue){
@@ -203,34 +203,41 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z){
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
-	pcl::PointCloud<pcl::PointXYZ> complete_cloud;
+  pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
   try{
+	printf("Checkpoint1 \n");
     tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
     tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+    printf("Checkpoint2 \n");
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
     local_planner.filterPointCloud(complete_cloud);
+    printf("Checkpoint3 \n");
   }
   catch(tf::TransformException& ex){
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
-
+  printf("Checkpoint4 \n");
   if(local_planner.obstacleAhead() && local_planner.init!=0) {
+	printf("Checkpoint5 \n");
     printf("There is an Obstacle Ahead \n");
-	  local_planner.createPolarHistogram();
-	  local_planner.findFreeDirections();
-	  local_planner.calculateCostMap();
+	local_planner.createPolarHistogram();
+	local_planner.findFreeDirections();
+	local_planner.calculateCostMap();
     local_planner.getNextWaypoint();
     local_planner.getPathMsg();
 	}
   else{
+	  printf("Checkpoint6 \n");
     printf("There isn't any Obstacle Ahead \n");
     local_planner.goFast();
     local_planner.getPathMsg();     
   }
+
+  printf("Checkpoint7 \n");
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -246,6 +253,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
     printf("----------------------------------- \n");
   }
 
+  printf("Checkpoint8 \n");
   publishAll();
 
   if(local_planner.init == 0) { 
@@ -259,14 +267,14 @@ void LocalPlannerNode::publishAll() {
   ROS_INFO("Current pose: [%f, %f, %f].", local_planner.pose.pose.position.x, local_planner.pose.pose.position.y, local_planner.pose.pose.position.z);
   ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x, local_planner.velocity_y, local_planner.velocity_z, local_planner.velocity_mod);
 
-	local_pointcloud_pub_.publish(local_planner.final_cloud);
+  local_pointcloud_pub_.publish(local_planner.final_cloud);
   waypoint_pub_.publish(local_planner.path_msg);
   path_pub_.publish(path_actual);
   current_waypoint_pub_.publish(local_planner.waypt_p);
   tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p, "world", local_planner.waypt_p);
   mavros_waypoint_pub_.publish(local_planner.waypt_p); 
 
-	publishMarkerBlocked();
+  publishMarkerBlocked();
   publishMarkerCandidates();
   publishMarkerRejected();
   publishMarkerSelected();
