@@ -27,6 +27,13 @@
         <arg name="world" value="$(arg world)" />
     </include>
 
+    <!--Realsense Camera Node -->
+    <group if ="$(eval arg('model') =='iris_realsense_camera')">
+       <include file="$(find realsense_camera)/launch/r200_nodelet_rgbd.launch" >
+       </include>
+       <node pkg="tf" type="static_transform_publisher" name="map_to_camera_tf" args="0.0 0.0 0.0 0.0 0.0 0.0 /map /camera_link 100" />
+    </group>
+
     <!-- Global planner -->
     <include file="$(find avoidance)/launch/global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
