@@ -15,6 +15,7 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -213,6 +214,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud); 
     local_planner.filterPointCloud(complete_cloud);
+    transformed_cloud_ = complete_cloud;
   }
   catch(tf::TransformException& ex){
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
@@ -259,6 +261,7 @@ void LocalPlannerNode::publishAll() {
   ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x, local_planner.velocity_y, local_planner.velocity_z, local_planner.velocity_mod);
 
   local_pointcloud_pub_.publish(local_planner.final_cloud);
+  transformed_pointcloud_pub_.publish(transformed_cloud_);
   waypoint_pub_.publish(local_planner.path_msg);
   path_pub_.publish(path_actual);
   current_waypoint_pub_.publish(local_planner.waypt_p);
