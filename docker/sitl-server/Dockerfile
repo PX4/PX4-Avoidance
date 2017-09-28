@@ -16,7 +16,7 @@ RUN git -C ${FIRMWARE_DIR} submodule update --init --recursive
 COPY docker/sitl-server/dontrun_sitl_run.patch /tmp/dontrun_sitl_run.sh
 RUN git -C ${FIRMWARE_DIR} apply /tmp/dontrun_sitl_run.sh
 
-COPY . ${AVOIDANCE_DIR}
+COPY node ${AVOIDANCE_DIR}
 COPY docker/sitl-server/px4_gazebo.launch ${WORKSPACE_DIR}
 
 ENV GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}:${AVOIDANCE_DIR}/models
