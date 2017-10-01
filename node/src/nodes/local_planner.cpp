@@ -69,24 +69,32 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  // statistical outlier removal (really slow)
-  if (cloud->points.size() > 0) {
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud);
-    sor.setMeanK (20);
-    sor.setStddevMulThresh (1.0);
-    sor.filter(*cloud);
+  if (!demo) {
+    // statistical outlier removal (really slow)
+    if (cloud->points.size() > 0) {
+      pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+      sor.setInputCloud(cloud);
+      sor.setMeanK (20);
+      sor.setStddevMulThresh (1.0);
+      sor.filter(*cloud);
 
-    // filter out obstacles that are smaller than 160 points and that are at a distance greater than
-    // how much space the UAV needs to travel to stop in front of it when at maximum decelleration
-    if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {
+      // filter out obstacles that are smaller than 160 points and that are at a distance greater than
+      // how much space the UAV needs to travel to stop in front of it when at maximum decelleration
+     if(cloud->points.size() > 160 && (min_distance > pow(velocity_mod,2)/(2*deceleration_limit) + 0.5)) {
       obstacle = true;
-    }
-    else {
+     } else {
       obstacle = false;
       ROS_INFO("False positive obstacle at distance %2.2fm. Minimum decelleration distance possible %2.2fm.", min_distance, pow(velocity_mod,2)/(2*deceleration_limit) + 0.5);
+      }
+    }
+  } else {
+    if (cloud->points.size() > 0){
+      obstacle = true;
+    } else {
+      obstacle = false;
     }
   }
+  
 
   final_cloud.header.stamp =  complete_cloud.header.stamp;
   final_cloud.header.frame_id = complete_cloud.header.frame_id;
@@ -108,8 +116,18 @@ float distance2DPolar(int e1, int z1, int e2, int z2){
 
 bool LocalPlanner::obstacleAhead() { 
   if(obstacle){
+    if (demo) {
+      goal.x = -1.0f;
+      goal.y = 0.0f;
+      goal.z = 1.5f;
+    }
     return true;
   } else{
+    if (demo){
+      goal.x = 0.0f;
+      goal.y = 0.0f;
+      goal.z = 1.5f;
+    }
     return false;
   }
 }
@@ -258,91 +276,6 @@ void LocalPlanner::findFreeDirections() {
       }
     } 
   }
-  
-  // extend rejected path cells in the 2D polar histogram when the UAV altitude is greater than 1.5m and 
-  // when the obstacle is longer than 60 degrees. The obstacle becomes 270 degree long, leaving only 90 degrees 
-  // behind the UAV heading free
-  int e,z;
-  if (pose.pose.position.z > 1.5){
-    if (cv::countNonZero(azimuthal_length)>= 6){
-
-      std::vector<int> idx_non_zeros;
-
-      for (int c=0; c<azimuthal_length.size(); c++){
-        if (azimuthal_length[c]==1)
-          idx_non_zeros.push_back(c);
-      }
-      
-      z = idx_non_zeros[floor(idx_non_zeros.size()/2)];
-      int beta_z = z*alpha_res+alpha_res-180;
-
-      int high_boundary = beta_z + 140;
-      high_boundary = (high_boundary > 180) ? (-180 + (high_boundary%180))+180 : high_boundary+180;
-      int low_boundary = beta_z - 130;
-      low_boundary = (low_boundary < -170) ? (180 - std::abs(low_boundary)%180)+180 : low_boundary+180;
-
-      if (high_boundary < low_boundary){
-        int temp = low_boundary;
-        low_boundary = high_boundary;
-        high_boundary = temp;
-      }
-
-      for (int i=0; i<grid_length_e; i++){
-        if (elevation_length[i]==1){
-          e = i*alpha_res+alpha_res-90;
-          
-          for (int k=0; k<grid_length_z; k++){
-            z = k*alpha_res+alpha_res-180;
-            if ((beta_z+180) > low_boundary && (beta_z+180) < high_boundary){
-              if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
-                p.x = e; p.y = z; p.z = 0;
-                path_blocked.cells.push_back(p);
-                path_extended.cells.push_back(p); 
-
-                for(int t=0; t<path_candidates.cells.size(); t++){
-                  if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
-                    path_candidates.cells.erase(path_candidates.cells.begin()+t);
-                    cost_path_candidates.erase(cost_path_candidates.begin()+t);
-                  }
-                }
-              }
-            }
-            else {
-              if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
-                p.x = e; p.y = z; p.z = 0;
-                path_blocked.cells.push_back(p);
-                path_extended.cells.push_back(p); 
-
-                for(int t=0; t<path_candidates.cells.size(); t++){
-                  if(path_candidates.cells[t].x==e && path_candidates.cells[t].y==z){
-                    path_candidates.cells.erase(path_candidates.cells.begin()+t);
-                    cost_path_candidates.erase(cost_path_candidates.begin()+t);
-                  }
-                }
-              }
-            }
-          } 
-        }
-      }
-    }
-   } else{
-    for (int i = 0; i < 9; ++i) {
-      for(int k=0; k<36 ; ++k){
-        // fill entire lower half of the histogram
-        p.x = i*alpha_res+alpha_res-90;
-        p.y = k*alpha_res+alpha_res-180;
-        p.z = 0.0f;
-        path_blocked.cells.push_back(p);
-
-        for(int t=0; t<path_candidates.cells.size(); t++){
-          if(path_candidates.cells[t].x==p.x && path_candidates.cells[t].y==p.y){
-            path_candidates.cells.erase(path_candidates.cells.begin()+t);
-            cost_path_candidates.erase(cost_path_candidates.begin()+t);
-          }
-        }
-      }
-   }
- }
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -398,16 +331,25 @@ double LocalPlanner::costFunction(int e, int z) {
 // calculate the free direction which has the smallest cost for the UAV to travel to
 void LocalPlanner::calculateCostMap() {
   std::clock_t start_time = std::clock();
-  cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
-  
   geometry_msgs::Point p;
-  p.x = path_candidates.cells[cost_idx_sorted[0]].x;
-  p.y = path_candidates.cells[cost_idx_sorted[0]].y;
-  p.z = path_candidates.cells[cost_idx_sorted[0]].z;
+
+  if (demo){
+    // go backwards 1m
+    p.x = 0.0f;
+    p.y = -90.0f;
+    p.z = 0.0f;
+    ROS_INFO("Selected path (e, z) = (%d, %d) ", (int)p.x, (int)p.y);
+  } else {
+    cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+    p.x = path_candidates.cells[cost_idx_sorted[0]].x;
+    p.y = path_candidates.cells[cost_idx_sorted[0]].y;
+    p.z = path_candidates.cells[cost_idx_sorted[0]].z;
+    ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates[cost_idx_sorted[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  }
+  
   path_selected.cells.push_back(p);
   path_waypoints.cells.push_back(p);
 
-  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates[cost_idx_sorted[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -424,21 +366,30 @@ void LocalPlanner::getNextWaypoint() {
     waypt.vector.z = goal.z;
   }
   else{
+
  	  if(checkForCollision() && pose.pose.position.z>0.5) {
-      waypt.vector.x = 0.0; 
-      waypt.vector.y = 0.0;
-      waypt.vector.z = setpoint.vector.z;
+      if (demo){
+        waypt.vector.x = pose.pose.position.x - 0.5f; 
+        waypt.vector.y = pose.pose.position.y;
+        waypt.vector.z = pose.pose.position.z;
 
-   	  ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
-      path_selected.cells[path_selected.cells.size()-1].x = 0;
-      path_selected.cells[path_selected.cells.size()-1].y = 0;
+      } else {
+        waypt.vector.x = 0.0; 
+        waypt.vector.y = 0.0;
+        waypt.vector.z = setpoint.vector.z;
+      }
 
-      path_waypoints.cells[path_waypoints.cells.size()-1].x = 90;
-      path_waypoints.cells[path_waypoints.cells.size()-1].y = 90;
- 	  }
-    else{
+ 	    ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
+      path_selected.cells[path_selected.cells.size()-1].x = 0.0f;
+      path_selected.cells[path_selected.cells.size()-1].y = -90.0f;
+      
+
+      path_waypoints.cells[path_waypoints.cells.size()-1].x = 0.0f;
+      path_waypoints.cells[path_waypoints.cells.size()-1].y = 90.0f;
+	  } else{
       waypt = setpoint;
     }
+    
   }
 
   ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt.vector.x, waypt.vector.y, waypt.vector.z);
@@ -481,7 +432,7 @@ void LocalPlanner::goFast(){
     waypt.vector.z = pose.pose.position.z + vec.getZ();
 
     // fill direction as straight ahead
-    geometry_msgs::Point p; p.x = 90; p.y = 90; p.z = 0;
+    geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
     path_waypoints.cells.push_back(p);
  }
 
@@ -599,7 +550,12 @@ void LocalPlanner::getPathMsg() {
       }
   }
 
-  double new_yaw = nextYaw(pose, waypt, last_yaw); 
+  double new_yaw;
+  if(!demo) {
+  new_yaw = nextYaw(pose, waypt, last_yaw);
+  } else {
+    new_yaw = curr_yaw;
+  } 
   waypt_p = createPoseMsg(waypt, new_yaw);
   path_msg.poses.push_back(waypt_p);
   curr_yaw = new_yaw;
