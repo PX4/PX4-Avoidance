@@ -6,9 +6,9 @@
     </include>
 
      <node name="local_planner_node" pkg="avoidance" type="local_planner_node" >
-        <param name="goal_x_param" value="46" />
-        <param name="goal_y_param" value="42"/>
-        <param name="goal_z_param" value="8" />
+        <param name="goal_x_param" value="0" />
+        <param name="goal_y_param" value="0"/>
+        <param name="goal_z_param" value="1.5" />
     </node>
         
 
