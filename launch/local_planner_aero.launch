@@ -13,13 +13,12 @@
     <!-- <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/local_planning.rviz" /> -->
     
     <arg name="mavros_transformation" default="0" />
-    <arg name="model" default="iris_depth_camera" />
-    <arg name="world" default="outdoor_village_3" />
     <arg name="point_cloud_topic" default="/camera/depth/points"/>
 
     <param name="use_sim_time" value="false" />
 
     <!-- <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" /> -->
+    
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
           args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
@@ -43,16 +42,6 @@
     <!-- <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/> -->
 
 
-    <!-- Launch MAVROS posix SITL environment -->
-<!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
-        <arg name="world" value="$(arg world)"/>
-    </include> -->
-
-    <!-- Start SITL -->
-<!--     <node name="sitl" pkg="px4" type="px4" output="screen"
-        args="$(find px4) $(arg rcS)">
-    </node> -->
-
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
         <include file="$(find mavros)/launch/node.launch">
@@ -65,17 +54,12 @@
             <arg name="tgt_component" value="$(arg tgt_component)" />
         </include>
     </group>
+    
+        <!-- Launch MAVROS posix SITL environment -->
+<!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
+        <arg name="world" value="$(arg world)"/>
+    </include> -->
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     

@@ -16,6 +16,7 @@ LocalPlannerNode::LocalPlannerNode() {
 
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
+  bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -275,6 +276,29 @@ void LocalPlannerNode::publishAll() {
   publishMarkerExtended();
   publishGoal();
 //  publishNormalToPowerline();
+
+
+  visualization_msgs::Marker box;
+  box.header.frame_id = "local_origin";
+  box.header.stamp = ros::Time();
+  box.id = 0;
+  box.type = visualization_msgs::Marker::CUBE;
+  box.action = visualization_msgs::Marker::ADD;
+  box.pose.position.x = local_planner.pose.pose.position.x;
+  box.pose.position.y = local_planner.pose.pose.position.y;
+  box.pose.position.z = local_planner.pose.pose.position.z;
+  box.pose.orientation.x = 0.0;
+  box.pose.orientation.y = 0.0;
+  box.pose.orientation.z = 0.0;
+  box.pose.orientation.w = 1.0;
+  box.scale.x = 2*local_planner.max_box.x;
+  box.scale.y = 2*local_planner.max_box.y;
+  box.scale.z = 2*local_planner.max_box.z;
+  box.color.a = 0.5;
+  box.color.r = 0.0;
+  box.color.g = 1.0;
+  box.color.b = 0.0;
+  bounding_box_pub_.publish(box);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,

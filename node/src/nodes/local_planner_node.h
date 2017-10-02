@@ -63,6 +63,7 @@ private:
 	//publishers
 	ros::Publisher local_pointcloud_pub_;
 	ros::Publisher transformed_pointcloud_pub_;
+	ros::Publisher bounding_box_pub_;
 	ros::Publisher front_pointcloud_pub_;
 	ros::Publisher cached_pointcloud_pub_ ;
 	ros::Publisher marker_pub_;
