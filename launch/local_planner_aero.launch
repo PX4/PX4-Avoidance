@@ -58,11 +58,7 @@
         </include>
     </group> -->
     
-	<group ns="$(arg ns)">
-        <include file="$(find mavros)/launch/px4.launch">
-            <arg name="fcu_url" value="$(arg fcu_url)" />
-        </include>
-    </group>
+
     
         <!-- Launch MAVROS posix SITL environment -->
 <!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
