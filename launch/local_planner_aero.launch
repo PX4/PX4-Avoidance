@@ -46,7 +46,7 @@
 
 
     <!-- Launch MavROS -->
-    <group ns="$(arg ns)">
+    <!-- <group ns="$(arg ns)">
         <include file="$(find mavros)/launch/node.launch">
             <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
             <!-- Need to change the config file to get the tf topic and get local position in terms of local origin -->
@@ -56,7 +56,7 @@
             <arg name="tgt_system" value="$(arg tgt_system)" />
             <arg name="tgt_component" value="$(arg tgt_component)" />
         </include>
-    </group>
+    </group> -->
    
     
     <include file="$(find mavros)/launch/px4.launch" >
