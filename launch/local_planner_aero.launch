@@ -31,7 +31,8 @@
     <!-- <arg name="build" default="posix_sitl_default"/> -->
     <!-- <arg name="fcu_url" default="udp://:14540@localhost:14557"/> -->
     <!-- <arg name="fcu_url" default="udp://:14547@localhost:14550"/> -->
-    <arg name="fcu_url" value="/dev/ttyS1:921600"/>
+    <arg name="fcu_url" value="tcp://172.17.0.1:5760"/>
+    <arg name="system_id" value="2"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
