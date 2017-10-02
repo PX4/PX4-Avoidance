@@ -221,7 +221,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
   if(local_planner.obstacleAhead() && local_planner.init!=0) {
-	ROS_INFO("There is an Obstacle Ahead \n");
+    ROS_INFO("There is an Obstacle Ahead \n");
 	local_planner.createPolarHistogram();
 	local_planner.findFreeDirections();
 	local_planner.calculateCostMap();
@@ -299,6 +299,9 @@ void LocalPlannerNode::publishAll() {
   box.color.g = 1.0;
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
+  ROS_INFO("Box size x: %f", local_planner.max_box.x);
+  ROS_INFO("Box size y: %f", local_planner.max_box.y);
+  ROS_INFO("Box size z: %f", local_planner.max_box.z);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,

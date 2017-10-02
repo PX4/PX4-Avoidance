@@ -24,7 +24,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
     <node pkg="tf" type="static_transform_publisher" name="camera_to_world" 
-          args="0 0 0 1 0 0 local_origin fcu 10"/>
+          args="0 0 0 0 0 0 local_origin fcu 10"/>
 
     <!-- Mavros and Sitl -->
     <arg name="headless" default="false"/>
