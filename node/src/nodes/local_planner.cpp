@@ -73,7 +73,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-
   if (!demo) {
     // statistical outlier removal (really slow)
     if (cloud->points.size() > 0) {
