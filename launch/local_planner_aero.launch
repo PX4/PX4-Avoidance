@@ -39,7 +39,6 @@
     <!-- <arg name="mavros_transformation" default="-1.57" /> -->
     <arg name="est" default="ekf2"/>
     <arg name="vehicle" default="iris"/>
-    <!-- <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/> -->
 
 
     <!-- Launch MavROS -->
@@ -54,25 +53,6 @@
             <arg name="tgt_component" value="$(arg tgt_component)" />
         </include>
     </group>
-    
-        <!-- Launch MAVROS posix SITL environment -->
-<!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
-        <arg name="world" value="$(arg world)"/>
-    </include> -->
-
-    
-    
-    
-    
   
-    <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
-
-    <!-- rosrun topic_tools transform /stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image' -->
-
-  <!--  <node name="transform" pkg="topic_tools" type="transform" 
-      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" />
-
-       <node name="transformV" pkg="topic_tools" type="transform"
-      args="/stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image'" /> -->
 
 </launch>
