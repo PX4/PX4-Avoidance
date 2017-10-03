@@ -419,21 +419,32 @@ void LocalPlanner::goFast(){
     waypt.vector.z = goal.z;
   }
   else {
-    tf::Vector3 vec;
-    vec.setX(goal.x - pose.pose.position.x);
-    vec.setY(goal.y - pose.pose.position.y);
-    vec.setZ(goal.z - pose.pose.position.z);
-    double new_len = vec.length() < 1.0 ? vec.length() : speed;
-    vec.normalize();
-    vec *= new_len;
-  
-    waypt.vector.x = pose.pose.position.x + vec.getX();
-    waypt.vector.y = pose.pose.position.y + vec.getY();
-    waypt.vector.z = pose.pose.position.z + vec.getZ();
+    if (demo) {
+      geometry_msgs::Point p;
+      p.x = 0.0f;
+      p.y = 90.0f;
+      p.z = 0.0f;
+      ROS_INFO("Selected path (e, z) = (%d, %d) ", (int)p.x, (int)p.y);
+      path_waypoints.cells.push_back(p);
+      int waypoint_index = path_waypoints.cells.size();
+      waypt = getWaypointFromAngle(path_waypoints.cells[waypoint_index-1].x, path_waypoints.cells[waypoint_index-1].y);
+    } else {
+      tf::Vector3 vec;
+      vec.setX(goal.x - pose.pose.position.x);
+      vec.setY(goal.y - pose.pose.position.y);
+      vec.setZ(goal.z - pose.pose.position.z);
+      double new_len = vec.length() < 1.0 ? vec.length() : speed;
+      vec.normalize();
+      vec *= new_len;
+    
+      waypt.vector.x = pose.pose.position.x + vec.getX();
+      waypt.vector.y = pose.pose.position.y + vec.getY();
+      waypt.vector.z = pose.pose.position.z + vec.getZ();
 
-    // fill direction as straight ahead
-    geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
-    path_waypoints.cells.push_back(p);
+      // fill direction as straight ahead
+      geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
+      path_waypoints.cells.push_back(p);
+    }
  }
 
   
