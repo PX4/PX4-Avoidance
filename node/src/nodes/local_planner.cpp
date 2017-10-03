@@ -55,6 +55,10 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud.points.clear();
   min_distance = 1000.0f;
   float distance;
+  //output position
+  ROS_INFO["Position: %d, %d, %d", pose.pose.position.x, pose.pose.position.y, pose.pose.position.z];
+  ROS_INFO["Min box: %d, %d, %d", min_box.x, min_box.y, min_box.z];
+  ROS_INFO["Max box: %d, %d, %d", max_box.x, max_box.y, max_box.z];
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
       // Check if the point is invalid
