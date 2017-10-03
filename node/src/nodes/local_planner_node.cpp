@@ -36,6 +36,7 @@ LocalPlannerNode::LocalPlannerNode() {
 LocalPlannerNode::~LocalPlannerNode(){}
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg){
+  ROS_INFO("Position Callback");
   auto rot_msg = msg;
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   local_planner.setPose(rot_msg);
@@ -205,6 +206,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z){
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
+  ROS_INFO("Pointcloud Callback");
   pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
