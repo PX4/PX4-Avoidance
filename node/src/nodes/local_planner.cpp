@@ -72,6 +72,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       }
     }
   }
+  ROS_INFO("Got min dist");
+
 
   if (!demo) {
     // statistical outlier removal (really slow)
@@ -98,7 +100,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       obstacle = false;
     }
   }
-  
 
   final_cloud.header.stamp =  complete_cloud.header.stamp;
   final_cloud.header.frame_id = complete_cloud.header.frame_id;
