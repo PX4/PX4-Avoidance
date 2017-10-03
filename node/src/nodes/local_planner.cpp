@@ -72,7 +72,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       }
     }
   }
-  ROS_INFO("Got min dist");
 
 
   if (!demo) {
