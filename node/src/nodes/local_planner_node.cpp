@@ -302,9 +302,6 @@ void LocalPlannerNode::publishAll() {
   box.color.g = 1.0;
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
-  ROS_INFO("Box size x: %f", local_planner.max_box.x);
-  ROS_INFO("Box size y: %f", local_planner.max_box.y);
-  ROS_INFO("Box size z: %f", local_planner.max_box.z);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
