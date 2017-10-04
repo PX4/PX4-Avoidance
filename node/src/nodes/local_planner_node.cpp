@@ -206,7 +206,9 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z){
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg){
-  ROS_INFO("Got new pointcloud! Time stamp: %f",msg.header.stamp);
+  ROS_INFO("Pointcloud header stamp: %d",msg.header.stamp);
+  ROS_INFO("Pointcloud header stamp.sec: %d",msg.header.stamp.sec);
+  ROS_INFO("Pointcloud header stamp.nsec: %d",msg.header.stamp.nsec);
   ROS_INFO(msg.header.frame_id.c_str());
   pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
