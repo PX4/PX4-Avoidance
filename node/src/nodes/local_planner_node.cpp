@@ -296,9 +296,9 @@ void LocalPlannerNode::publishAll() {
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = 2*local_planner.max_box.x;
-  box.scale.y = 2*local_planner.max_box.y;
-  box.scale.z = 2*local_planner.max_box.z;
+  box.scale.x = (local_planner.max_box_x+local_planner.min_box_x)/2;
+  box.scale.y = (local_planner.max_box_y+local_planner.min_box_y)/2;
+  box.scale.z = (local_planner.max_box_z+local_planner.min_box_z)/2;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
