@@ -63,9 +63,10 @@ RUN apt-get update && \
 # Prepare and build avoidance
 COPY node ${AVOIDANCE_DIR}
 
+# NOTE: catkin build fails the first time (maybe the modules have to be built in the right order?)
 RUN ["/bin/bash", "-c", "\
     source /opt/ros/kinetic/setup.bash && \
-    catkin build -w ${CATKIN_WS} \
+    catkin build -w ${CATKIN_WS}; catkin build -w ${CATKIN_WS} \
 "]
 
 # Checkout and build Firmware
@@ -86,7 +87,7 @@ ENV QT_X11_NO_MITSHM=1
 
 RUN ["/bin/bash", "-c", " \
     cd ${FIRMWARE_DIR} && \
-    . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build_posix_sitl_default && \
+    . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build/posix_sitl_default && \
     DONT_RUN=1 make posix_sitl_default gazebo \
 "]
 
@@ -95,6 +96,6 @@ CMD ["/bin/bash", "-c", " \
     source /opt/ros/kinetic/setup.bash && \
     source ${CATKIN_WS}/devel/setup.bash && \
     export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:${FIRMWARE_DIR} && \
-    . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build_posix_sitl_default && \
+    . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build/posix_sitl_default && \
     roslaunch avoidance global_planner_sitl_mavros.launch \
 "]

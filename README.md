@@ -71,7 +71,9 @@ git clone https://github.com/PX4/avoidance.git
 catkin build -w ~/catkin_ws
 ```
 
-Note that you can build it in release mode this way:
+If it fails, try to build again. It seems like it sometimes fails in an undeterministic way.
+
+Note that you can build the node in release mode this way:
 
 ```bash
 catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
@@ -102,7 +104,7 @@ export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/node/mod
 export QT_X11_NO_MITSHM=1
 
 # Setup some more Gazebo-related environment variables
-. ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build_posix_sitl_default
+. ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/posix_sitl_default
 
 # Build and run simulation
 make posix_sitl_default gazebo
