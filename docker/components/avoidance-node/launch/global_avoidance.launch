@@ -9,8 +9,9 @@
     <arg name="start_pos_x" default="0.5" />
     <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
+    <arg name="use_sim_time" default = "false" />
 
-    <param name="use_sim_time" value="true" />
+    <param name="use_sim_time" value="$(arg use_sim_time)" />
 
     <!-- Ros transformation -->
     <node pkg="tf" type="static_transform_publisher" name="tf_local_origin"

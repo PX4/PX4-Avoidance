@@ -1,31 +1,20 @@
-version: '3'
+version: '2.1'
 services:
-    ubuntu-avoidance:
-        build:
-            context: ..
-            dockerfile: docker/ubuntu/Dockerfile
-        privileged: true
-        environment:
-            - DISPLAY=${DISPLAY}
-        volumes:
-            - /tmp/.X11-unix:/tmp/.X11-unix:ro
     mavros:
         build: ./mavros/
         ports:
             - "11311:11311"
     mavros-avoidance:
         build:
-            context: ..
-            dockerfile: docker/mavros-avoidance/Dockerfile
+            context: ../..
+            dockerfile: docker/components/mavros-avoidance/Dockerfile
         command: "fcu_url:=\"udp://:14540@sitl-avoidance-server:14557\""
         ports:
             - "11311:11311"
     sitl-avoidance-server:
         build:
-            context: ..
-            dockerfile: docker/sitl-server/Dockerfile
-        depends_on:
-            - mavros-avoidance
+            context: ../..
+            dockerfile: docker/components/sitl-server/Dockerfile
         ports:
             - "14556:14556/udp"
             - "14557:14557/udp"
@@ -37,8 +26,6 @@ services:
             - /tmp/.X11-unix:/tmp/.X11-unix:ro
     sitl-avoidance-gui:
         build: ./sitl-gui/
-        depends_on:
-            - sitl-avoidance-server
         privileged: true
         environment:
             - DISPLAY=${DISPLAY}
@@ -46,8 +33,7 @@ services:
             - /tmp/.X11-unix:/tmp/.X11-unix:ro
     avoidance-node:
         build:
-            context: ..
-            dockerfile: docker/avoidance-node/Dockerfile
-        depends_on:
-            - sitl-avoidance-server
-            - mavros-avoidance
+            context: ../..
+            dockerfile: docker/components/avoidance-node/Dockerfile
+    realsense-node:
+        build: ./realsense-node/
