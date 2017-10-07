@@ -10,18 +10,6 @@
         <param name="goal_y_param" value="42"/>
         <param name="goal_z_param" value="8" />
     </node>
-        
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find avoidance)/resource/local_planning.rviz" />
-  
-    <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
-
-    <!-- rosrun topic_tools transform /stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image' -->
-
-  <!--  <node name="transform" pkg="topic_tools" type="transform" 
-      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" />
-
-       <node name="transformV" pkg="topic_tools" type="transform"
-      args="/stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image'" /> -->
-
 </launch>
