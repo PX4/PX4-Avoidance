@@ -2,39 +2,30 @@
 #define GLOBAL_PLANNER_LOCAL_PLANNER_NODE_H
 
 #include <iostream>
-#include <math.h> 
-
-
-#include <sensor_msgs/PointCloud2.h>
-#include <pcl_ros/transforms.h> // transformPointCloud
-#include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
-#include <pcl_ros/point_cloud.h>
-#include <ros/callback_queue.h>
-#include <ros/ros.h>
-
-#include <tf/transform_listener.h>
-
-#include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseArray.h>
-
-#include <std_msgs/Bool.h>
-#include <std_msgs/Float64.h>
-
-#include <nav_msgs/GridCells.h>
-#include <nav_msgs/Path.h>
-
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h> 
+#include <math.h>
 
 #include <Eigen/Core>
-
-#include "local_planner.h"
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseArray.h>
+#include <geometry_msgs/TransformStamped.h>
+#include <nav_msgs/GridCells.h>
+#include <nav_msgs/Path.h>
+#include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h> // transformPointCloud
+#include <ros/callback_queue.h>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Float64.h>
+#include <tf/transform_listener.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 #include "avoidance/common_ros.h"
+#include "local_planner.h"
 
-
-class LocalPlannerNode{
+class LocalPlannerNode {
 
 public:
   LocalPlannerNode();
