@@ -80,9 +80,6 @@ RUN apt-get update && \
                        python-jinja2 \
                        protobuf-compiler
 
-COPY docker/ubuntu/dontrun_sitl_run.patch /tmp
-RUN git -C ${FIRMWARE_DIR} apply /tmp/dontrun_sitl_run.patch
-
 ENV QT_X11_NO_MITSHM=1
 
 RUN ["/bin/bash", "-c", " \
