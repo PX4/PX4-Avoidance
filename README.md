@@ -298,3 +298,97 @@ roslaunch avoidance global_planner_offboard.launch point_cloud_topic:=<point_clo
 # Running on Odroid
 
 Read the [Running on Odroid](https://github.com/PX4/avoidance/blob/master/resource/odroid/) instructions
+
+# Running the Local Planner on Intel Aero
+## Setup the Aero
+
+Connect the drone to the laptob with a USB cable. Connect to the drone over the terminal.
+
+```bash
+ssh root@intel-aero.local
+```
+
+To download items on the drone, shut down the drone hotspot and connect to the internet (use to same net as your laptop uses).
+
+```bash
+nmcli c down hotspot
+nmcli modify hotspot connection.autoconnect no
+nmcli dev wifi
+nmcli wifi connect <network_name> password <network_password>
+```
+
+Download and run ROS docker image:
+
+```bash
+docker run -it  - -privileged ros
+```
+
+Install additional features in ROS container.
+
+```bash
+apt-get update
+apt-get install python-catkin-tools
+mkdir -p ~/catkin_ws/src
+apt-get install ros-kinetic-mavros iproute2 ros-kinetic-image-view openssh-client
+apt-get install libpcl1 ros-kinetic-octomap-*
+apt-get install ros-kinetic-librealsense ros-kinetic-realsense-camera
+apt-get install net-tools
+wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+./install_geographiclib_datasets.sh
+```
+
+Clone the code to the Aero
+
+```bash
+cd ~/catkin\_ws/src
+git clone https://github.com/PX4/avoidance.git
+git clone https://github.com/PX4/Firmware.git
+cd Firmware
+git submodule update - -intit - -recursive
+apt-get install libopencv-dev  python-jinja2 protobuf-compiler
+cd ~/catkin_ws/src/avoidance
+git fetch
+git checkout -b demo_aero origin/demo_aero
+```
+
+Save the ROS container (needs to be executed outside the docker in another terminal):
+
+```bash
+docker commit <container ID> mycontainer/ros
+```
+
+## Run the Local Planner
+
+To see drone outputs on the laptop, the ROS processes have to be able to communicate. Open two terminals on the laptop. On one ssh to the drone and run the ROS container with the flag --net=host to be able to see all host networks.
+
+```bash
+\textit{docker run -it --privileged --net=host mycontainer/ros}\\
+```
+
+Type in both terminals (on the laptop and in the ros container) ifconfig to see the networks. Now set the ROS_IP and ROS_MASTER_URI.
+
+laptop terminal:
+
+```bash
+export ROS_IP=<laptop IP>
+export ROS_MASTER_URI=http://<drone IP>:11311
+```
+
+Ros container terminal:
+
+```bash
+export ROS_IP=<drone IP>
+export ROS_MASTER_URI=http://<drone IP>:11311
+```
+
+Build and start the planner in the drone terminal
+
+```bash
+cd catkin_ws
+catkin build avoidance
+source devel/setup.bash
+roslaunch avoidance local_planner_aero.launch
+```
+In the laptop terminal start RViz to see the drone outputs
+
+
