@@ -7,6 +7,7 @@
     </node>
     
     <include file="$(find realsense_camera)/launch/r200_nodelet_modify_params.launch" >
+    	<arg name="enable_pointcloud" value="true" />
     </include>
         
 

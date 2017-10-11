@@ -344,7 +344,7 @@ cd ~/catkin_ws/src
 git clone https://github.com/PX4/avoidance.git
 git clone https://github.com/PX4/Firmware.git
 cd Firmware
-git submodule update --intit --recursive
+git submodule update --init --recursive
 apt-get install libopencv-dev  python-jinja2 protobuf-compiler
 cd ~/catkin_ws/src/avoidance
 git fetch
