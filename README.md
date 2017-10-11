@@ -320,7 +320,7 @@ nmcli wifi connect <network_name> password <network_password>
 Download and run ROS docker image:
 
 ```bash
-docker run -it  - -privileged ros
+docker run -it  --privileged ros
 ```
 
 Install additional features in ROS container.
@@ -340,11 +340,11 @@ wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/inst
 Clone the code to the Aero
 
 ```bash
-cd ~/catkin\_ws/src
+cd ~/catkin_ws/src
 git clone https://github.com/PX4/avoidance.git
 git clone https://github.com/PX4/Firmware.git
 cd Firmware
-git submodule update - -intit - -recursive
+git submodule update --intit --recursive
 apt-get install libopencv-dev  python-jinja2 protobuf-compiler
 cd ~/catkin_ws/src/avoidance
 git fetch
@@ -362,7 +362,7 @@ docker commit <container ID> mycontainer/ros
 To see drone outputs on the laptop, the ROS processes have to be able to communicate. Open two terminals on the laptop. On one ssh to the drone and run the ROS container with the flag --net=host to be able to see all host networks.
 
 ```bash
-\textit{docker run -it --privileged --net=host mycontainer/ros}\\
+docker run -it --privileged --net=host mycontainer/ros
 ```
 
 Type in both terminals (on the laptop and in the ros container) ifconfig to see the networks. Now set the ROS_IP and ROS_MASTER_URI.
