@@ -3,9 +3,11 @@ ROS node for sensor fusion and obstacle avoidance.
 
 # Quick Start with Docker
 
-A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up ubuntu-avoidance`. The purpose of this container is to be a demo of the simulation. If you want to leverage docker in your development environment, check the "[Developing with Docker](docker#developing-with-docker)" section.
+A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation, as a demo. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up` from the right folder. Find the corresponding instructions [here](docker/demo).
 
-To quickly run the demo in docker, follow the instructions [here](docker#running-the-demo).
+For __deployment__ instructions, check "[Deploying with Docker](docker#deploying-with-docker)".
+
+If you want to leverage docker in your __development__ environment, check the "[Developing with Docker](docker#developing-with-docker)" section.
 
 # Prerequisites
 
