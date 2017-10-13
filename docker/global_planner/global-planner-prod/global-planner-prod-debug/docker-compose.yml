@@ -25,3 +25,9 @@ services:
             - ROS_MASTER_URI=http://mavros-avoidance:11311
         tty: true
         command: global_avoidance.launch use_sim_time:=false
+    alpinevpn:
+        extends:
+            file: ../../../components/components.yml
+            service: alpinevpn
+        environment:
+            - VPN_SERVER_IP=192.168.7.2

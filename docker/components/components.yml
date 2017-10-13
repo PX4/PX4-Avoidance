@@ -37,3 +37,8 @@ services:
             dockerfile: docker/components/avoidance-node/Dockerfile
     realsense-node:
         build: ./realsense-node/
+    alpinevpn:
+        build: ./alpinevpn/
+        ports:
+            - "1194:1194/udp"
+        privileged: true
