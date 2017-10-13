@@ -15,7 +15,7 @@ RUN git clone https://github.com/PX4/Firmware.git ${FIRMWARE_DIR}
 RUN git -C ${FIRMWARE_DIR} submodule update --init --recursive
 
 COPY node ${AVOIDANCE_DIR}
-COPY docker/sitl-server/px4_gazebo.launch ${WORKSPACE_DIR}
+COPY docker/components/sitl-server/px4_gazebo.launch ${WORKSPACE_DIR}
 
 ENV GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}:${AVOIDANCE_DIR}/models
 

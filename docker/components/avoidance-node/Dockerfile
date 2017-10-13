@@ -1,17 +1,18 @@
 FROM ros:kinetic-ros-base
 
 RUN apt-get update && \
-    apt-get install -y python-catkin-tools \
+    apt-get install -y libopencv-dev \
+                       python-catkin-tools \
                        ros-kinetic-octomap \
                        ros-kinetic-octomap-mapping
 
 COPY node /root/catkin_ws/src/avoidance
-COPY docker/avoidance-node/cmakelists.patch /root/cmakelists.patch
+COPY docker/components/avoidance-node/cmakelists.patch /root/cmakelists.patch
 RUN git -C /root/catkin_ws/src/avoidance apply /root/cmakelists.patch
 
-COPY docker/avoidance-node/avoidance.launch /root/avoidance.launch
+COPY docker/components/avoidance-node/launch /root/launch
 
-COPY docker/avoidance-node/entrypoint.sh /root/entrypoint.sh
+COPY docker/components/avoidance-node/entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
 
 RUN ["/bin/bash", "-c", "\
@@ -22,3 +23,4 @@ RUN ["/bin/bash", "-c", "\
 ENV ROS_MASTER_URI http://mavros-avoidance:11311
 
 ENTRYPOINT ["/root/entrypoint.sh"]
+CMD global_avoidance.launch use_sim_time:="false"
