@@ -1,11 +1,13 @@
 #include "local_planner_node.h"
 
+#include <string>
+
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
 
   readParams();
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/camera/depth/points", 1, &LocalPlannerNode::pointCloudCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(local_planner.depth_points_topic_param, 1, &LocalPlannerNode::pointCloudCallback, this);
   pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
@@ -29,6 +31,14 @@ LocalPlannerNode::LocalPlannerNode() {
 
 LocalPlannerNode::~LocalPlannerNode() {}
 
+void LocalPlannerNode::readParams() {
+  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
+  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
+  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+
+  nh_.param<std::string>("depth_points_topic", local_planner.depth_points_topic_param, "/camera/depth/points");
+}
+
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   auto rot_msg = msg;
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
@@ -39,12 +49,6 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
   auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
   local_planner.curr_vel = transformed_msg;
-}
-
-void LocalPlannerNode::readParams() {
-  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {

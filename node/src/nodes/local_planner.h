@@ -2,8 +2,9 @@
 #define GLOBAL_PLANNER_LOCAL_PLANNER_H
 
 #include <iostream>
-#include <math.h> 
 #include <Eigen/Dense>
+#include <math.h>
+#include <string>
 
 #include <ros/ros.h>
 
@@ -71,7 +72,6 @@ class Histogram
 class LocalPlanner {
 
 public:
-	
 	pcl::PointCloud<pcl::PointXYZ> final_cloud;
 
 	bool first_reach = true;
@@ -114,6 +114,7 @@ public:
 	double deceleration_limit = 1.5*9.8066;
 	double min_dist_pose_obst;
 	double yaw_reached_goal;
+	std::string depth_points_topic_param;
 
 	Histogram polar_histogram;
 
