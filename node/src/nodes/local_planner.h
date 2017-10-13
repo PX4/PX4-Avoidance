@@ -2,8 +2,8 @@
 #define GLOBAL_PLANNER_LOCAL_PLANNER_H
 
 #include <iostream>
-#include <math.h> 
 #include <Eigen/Dense>
+#include <math.h>
 
 #include <ros/ros.h>
 
@@ -71,7 +71,6 @@ class Histogram
 class LocalPlanner {
 
 public:
-	
 	pcl::PointCloud<pcl::PointXYZ> final_cloud;
 
 	bool first_reach = true;

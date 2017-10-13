@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <math.h>
+#include <string>
 
 #include <Eigen/Core>
 #include <geometry_msgs/Point.h>
@@ -41,7 +42,7 @@ private:
 
   // Subscribers
   ros::Subscriber pointcloud_sub_ ;
-  ros::Subscriber pose_sub_ ; 
+  ros::Subscriber pose_sub_ ;
   ros::Subscriber velocity_sub_ ;
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
@@ -66,6 +67,8 @@ private:
   tf::TransformListener tf_listener_;
 
   std::vector<float> algo_time;
+
+  std::string depth_points_topic_;
 
   void positionCallback(const geometry_msgs::PoseStamped msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
