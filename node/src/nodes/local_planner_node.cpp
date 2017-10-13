@@ -44,6 +44,7 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
   nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
   nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+  nh_.param<bool>("demo_mode", local_planner.demo, false);
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {

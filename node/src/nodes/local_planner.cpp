@@ -15,7 +15,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   }
 
   setVelocity();  
-  setLimitsBoundingBox(); 
+  setLimitsBoundingBox();
 }
 
 // update UAV velocity

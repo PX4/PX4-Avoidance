@@ -9,6 +9,7 @@
         <param name="goal_x_param" value="0" />
         <param name="goal_y_param" value="0"/>
         <param name="goal_z_param" value="1.5" />
+        <param name="demo_mode" value="true" />
     </node>
         
 

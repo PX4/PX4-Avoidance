@@ -79,7 +79,7 @@ public:
 	bool set_first_yaw = true;
 	bool reach_altitude = false;
 	bool reached_goal = false;
-	bool demo = true;
+	bool demo;
 
 	geometry_msgs::Point min_box, max_box, goal;
 	geometry_msgs::PoseStamped pose, waypt_p, last_waypt_p, last_last_waypt_p; 
