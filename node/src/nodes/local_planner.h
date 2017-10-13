@@ -79,6 +79,7 @@ public:
 	bool set_first_yaw = true;
 	bool reach_altitude = false;
 	bool reached_goal = false;
+	bool demo;
 
 	geometry_msgs::Point min_box, max_box, goal;
 	geometry_msgs::PoseStamped pose, waypt_p, last_waypt_p, last_last_waypt_p; 
@@ -96,7 +97,7 @@ public:
 
 	int init = 0;
 
-	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 10.0, max_box_y = 10.0, min_box_z = 2.0, max_box_z = 2.0; 
+	float min_box_x = 2.0, max_box_x = 2.0, min_box_y = 2.0, max_box_y = 2.0, min_box_z = 0.5, max_box_z = 0.5; 
 	float rad = 1.0;
 	float min_distance;
 

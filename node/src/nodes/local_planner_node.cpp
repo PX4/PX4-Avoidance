@@ -3,7 +3,7 @@
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~"); 
 
-	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/omi_cam/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
+	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>("/camera/depth/points", 1, &LocalPlannerNode::pointCloudCallback, this);
 	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
 	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
@@ -44,6 +44,7 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
   nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
   nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+  nh_.param<bool>("demo_mode", local_planner.demo, false);
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
