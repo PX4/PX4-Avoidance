@@ -98,17 +98,17 @@ public:
 
 	int init = 0;
 
-	float min_box_x = 10.0, max_box_x = 10.0, min_box_y = 10.0, max_box_y = 10.0, min_box_z = 2.0, max_box_z = 2.0; 
-	float rad = 1.0;
+	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
+	double rad_;
 	float min_distance;
 
 	double velocity_x, velocity_y, velocity_z, velocity_mod;
 	double speed = 2.0;
-	double min_speed = 2.0;
-	double max_speed = 3.0;
-	double goal_cost_param = 2.0;
-	double smooth_cost_param = 1.5;
-	double prior_cost_param = 17.5;
+	double min_speed_;
+	double max_speed_;
+	double goal_cost_param_;
+	double smooth_cost_param_;
+	double prior_cost_param_;
 	double goal_x_param;
 	double goal_y_param;
 	double goal_z_param;

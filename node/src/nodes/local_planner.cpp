@@ -28,12 +28,12 @@ void LocalPlanner::setVelocity() {
 
 // update bounding box limit coordinates around a new UAV pose
 void LocalPlanner::setLimitsBoundingBox() { 
-  min_box.x = pose.pose.position.x - min_box_x;
-  min_box.y = pose.pose.position.y - min_box_y;
-  min_box.z = pose.pose.position.z - min_box_z;
-  max_box.x = pose.pose.position.x + max_box_x;
-  max_box.y = pose.pose.position.y + max_box_y;
-  max_box.z = pose.pose.position.z + max_box_z;
+  min_box.x = pose.pose.position.x - min_box_x_;
+  min_box.y = pose.pose.position.y - min_box_y_;
+  min_box.z = pose.pose.position.z - min_box_z_;
+  max_box.x = pose.pose.position.x + max_box_x_;
+  max_box.y = pose.pose.position.y + max_box_y_;
+  max_box.z = pose.pose.position.z + max_box_z_;
 }
 
 // set mission goal 
@@ -351,9 +351,9 @@ void LocalPlanner::findFreeDirections() {
 // transform polar coordinates into Cartesian coordinates
 geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z){
   geometry_msgs::Point p;
-  p.x = pose.pose.position.x + rad*cos(e*(PI/180))*sin(z*(PI/180)); //round
-  p.y = pose.pose.position.y + rad*cos(e*(PI/180))*cos(z*(PI/180));
-  p.z = pose.pose.position.z + rad*sin(e*(PI/180));
+  p.x = pose.pose.position.x + rad_*cos(e*(PI/180))*sin(z*(PI/180)); //round
+  p.y = pose.pose.position.y + rad_*cos(e*(PI/180))*cos(z*(PI/180));
+  p.z = pose.pose.position.z + rad_*sin(e*(PI/180));
 
   return p;
 }
@@ -379,10 +379,10 @@ double LocalPlanner::costFunction(int e, int z) {
   int goal_e = floor(atan((goal.z-pose.pose.position.z) / sqrt(pow((goal.x-pose.pose.position.x), 2) + pow((goal.y-pose.pose.position.y), 2)))*180.0 / PI);//elevation angle
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
   
-  double distance_cost = goal_cost_param * distance2DPolar(goal_e, goal_z, e, z);
+  double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
   int waypoint_index = path_waypoints.cells.size();
-  double smooth_cost = smooth_cost_param * distance2DPolar(path_waypoints.cells[waypoint_index-1].x, path_waypoints.cells[waypoint_index-1].y, e, z);
-  double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param*10.0;
+  double smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints.cells[waypoint_index-1].x, path_waypoints.cells[waypoint_index-1].y, e, z);
+  double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal.z)])*prior_cost_param_*10.0;
   // alternative cost to prefer higher altitudes
   // int t = std::round(p.z) + e;
   // t = t < 0 ? 0 : t;
@@ -608,10 +608,10 @@ void LocalPlanner::getPathMsg() {
 
 void LocalPlanner::checkSpeed(){
   if (hasSameYawAndAltitude(last_waypt_p, waypt_p) && !obstacleAhead()){
-    speed = std::min(max_speed, speed + 0.1);
+    speed = std::min(max_speed_, speed + 0.1);
   }
   else{
-    speed = min_speed;
+    speed = min_speed_;
   }
 }
 

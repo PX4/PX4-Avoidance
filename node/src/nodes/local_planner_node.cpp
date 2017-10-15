@@ -278,12 +278,18 @@ void LocalPlannerNode::publishAll() {
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
                                                    uint32_t level) {
-  local_planner.min_box_x= config.min_box_x;
-  local_planner.max_box_x= config.max_box_x;
-  local_planner.min_box_y= config.min_box_y;
-  local_planner.max_box_y= config.max_box_y;
-  local_planner.min_box_z= config.min_box_z;
-  local_planner.max_box_z= config.max_box_z;
+  local_planner.min_box_x_ = config.min_box_x_;
+  local_planner.max_box_x_ = config.max_box_x_;
+  local_planner.min_box_y_ = config.min_box_y_;
+  local_planner.max_box_y_ = config.max_box_y_;
+  local_planner.min_box_z_ = config.min_box_z_;
+  local_planner.max_box_z_ = config.max_box_z_;
+  local_planner.rad_ = config.rad_;
+  local_planner.goal_cost_param_ = config.goal_cost_param_;
+  local_planner.smooth_cost_param_ = config.smooth_cost_param_;
+  local_planner.prior_cost_param_ = config.prior_cost_param_;
+  local_planner.min_speed_ = config.min_speed_;
+  local_planner.max_speed_ = config.max_speed_;
 }
 
 int main(int argc, char** argv) {
