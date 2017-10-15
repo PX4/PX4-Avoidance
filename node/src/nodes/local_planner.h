@@ -113,8 +113,6 @@ public:
 	double goal_y_param;
 	double goal_z_param;
 	double curr_yaw, last_yaw;
-	double deceleration_limit = 1.5*9.8066;
-	double min_dist_pose_obst;
 	double yaw_reached_goal;
 
 	Histogram polar_histogram;

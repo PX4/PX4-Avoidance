@@ -55,6 +55,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud.points.clear();
   min_distance = 1000.0f;
   float distance;
+  double deceleration_limit = 1.5*9.8066;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
       // Check if the point is invalid
