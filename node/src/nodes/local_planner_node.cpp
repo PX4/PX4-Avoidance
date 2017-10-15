@@ -54,8 +54,7 @@ void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
   local_planner.curr_vel = transformed_msg;
 }
 
-<<<<<<< 1db35dcb1f44b77ec3959e1b094ea190a13e5eb7
-=======
+
 void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
   nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
@@ -63,7 +62,6 @@ void LocalPlannerNode::readParams() {
   nh_.param<std::string>("point_cloud_topic", point_cloud_topic_, std::string("/camera/depth/points"));
 }
 
->>>>>>> swap to depth camera and set the point cloud subscription through a param
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
   path_actual.header.stamp = msg.header.stamp;
   path_actual.header.frame_id = msg.header.frame_id;
