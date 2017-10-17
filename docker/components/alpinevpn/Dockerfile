@@ -3,10 +3,12 @@ FROM alpine
 RUN apk update && \
 	apk add openvpn iptables socat curl openssl
 
-ADD ./bin /sbin
+COPY crypto/* /etc/openvpn/
+COPY conf/udp1194.conf /home/root/
 
-VOLUME /etc/openvpn
+COPY entrypoint.sh /home/root/entrypoint.sh
+RUN chmod +x /home/root/entrypoint.sh
 
-EXPOSE 1194/udp 8080/tcp
+EXPOSE 1194/udp
 
-CMD run
+ENTRYPOINT /home/root/entrypoint.sh
