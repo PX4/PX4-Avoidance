@@ -7,9 +7,6 @@ RUN apt-get update && \
                        ros-kinetic-octomap-mapping
 
 COPY node /root/catkin_ws/src/avoidance
-COPY docker/components/avoidance-node/cmakelists.patch /root/cmakelists.patch
-RUN git -C /root/catkin_ws/src/avoidance apply /root/cmakelists.patch
-
 COPY docker/components/avoidance-node/launch /root/launch
 
 COPY docker/components/avoidance-node/entrypoint.sh /root/entrypoint.sh
