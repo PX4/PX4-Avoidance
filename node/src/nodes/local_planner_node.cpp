@@ -298,6 +298,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.prior_cost_param_ = config.prior_cost_param_;
   local_planner.min_speed_ = config.min_speed_;
   local_planner.max_speed_ = config.max_speed_;
+  local_planner.max_accel_z_ = config.max_accel_z_;
 }
 
 int main(int argc, char** argv) {

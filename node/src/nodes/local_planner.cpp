@@ -571,7 +571,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
   float vel_waypt_z_prev = (last_waypt_p.pose.position.z - last_last_waypt_p.pose.position.z) / dt;
   float acc_waypt_z = (vel_waypt_z - vel_waypt_z_prev) / dt;
 
-  max_acc_z = (acc_waypt_z < 0.0f) ? -(1.0) : (1.0);
+  max_acc_z = (acc_waypt_z < 0.0f) ? -(max_accel_z_) : (max_accel_z_);
   if (fabsf(acc_waypt_z) > fabsf(max_acc_z)) {
     vel_z = max_acc_z * dt + vel_waypt_z_prev;
   }
