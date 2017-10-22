@@ -5,6 +5,8 @@
 #include <math.h>
 #include <string>
 
+
+#include <boost/bind.hpp>
 #include <Eigen/Core>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -70,6 +72,9 @@ private:
 
   std::string depth_points_topic_;
 
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
+
+  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void positionCallback(const geometry_msgs::PoseStamped msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
@@ -87,6 +92,7 @@ private:
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishNormalToPowerline();
+
 };
 
 #endif // GLOBAL_PLANNER_LOCAL_PLANNER_NODE_H

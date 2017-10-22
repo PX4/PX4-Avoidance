@@ -5,9 +5,14 @@ LocalPlannerNode::LocalPlannerNode() {
 
   readParams();
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
-  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
-  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+  // Set up Dynamic Reconfigure Server
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
+  server_.setCallback(f);
+
+	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
@@ -30,9 +35,9 @@ LocalPlannerNode::LocalPlannerNode() {
 LocalPlannerNode::~LocalPlannerNode() {}
 
 void LocalPlannerNode::readParams() {
-  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+  nh_.param<double>("goal_x_param", local_planner.goal_x_param_, 9);
+  nh_.param<double>("goal_y_param", local_planner.goal_y_param_, 13);
+  nh_.param<double>("goal_z_param", local_planner.goal_z_param_, 3.5);
 
   nh_.param<std::string>("depth_points_topic", depth_points_topic_, "/camera/depth/points");
 }
@@ -46,7 +51,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
   auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
-  local_planner.curr_vel = transformed_msg;
+  local_planner.curr_vel_ = transformed_msg;
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
@@ -85,31 +90,31 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
 
 void LocalPlannerNode::publishMarkerBlocked() {
   visualization_msgs::MarkerArray marker_blocked;
-  initMarker(&marker_blocked, local_planner.path_blocked, 0.0, 0.0, 1.0);
+  initMarker(&marker_blocked, local_planner.path_blocked_, 0.0, 0.0, 1.0);
   marker_blocked_pub_.publish(marker_blocked);
 }
 
 void LocalPlannerNode::publishMarkerRejected() {
   visualization_msgs::MarkerArray marker_rejected;
-  initMarker(&marker_rejected, local_planner.path_rejected, 1.0, 0.0, 0.0);
+  initMarker(&marker_rejected, local_planner.path_rejected_, 1.0, 0.0, 0.0);
   marker_rejected_pub_.publish(marker_rejected);
 }
 
 void LocalPlannerNode::publishMarkerCandidates() {
   visualization_msgs::MarkerArray marker_candidates;
-  initMarker(&marker_candidates, local_planner.path_candidates, 0.0, 1.0, 0.0);
+  initMarker(&marker_candidates, local_planner.path_candidates_, 0.0, 1.0, 0.0);
   marker_candidates_pub_.publish(marker_candidates);
 }
 
 void LocalPlannerNode::publishMarkerSelected() {
   visualization_msgs::MarkerArray marker_selected;
-  initMarker(&marker_selected, local_planner.path_selected, 0.8, 0.16, 0.8);
+  initMarker(&marker_selected, local_planner.path_selected_, 0.8, 0.16, 0.8);
   marker_selected_pub_.publish(marker_selected);
 }
 
 void LocalPlannerNode::publishMarkerExtended() {
   visualization_msgs::MarkerArray marker_extended;
-  initMarker(&marker_extended, local_planner.path_extended, 0.5, 0.5, 0.5);
+  initMarker(&marker_extended, local_planner.path_extended_, 0.5, 0.5, 0.5);
   marker_extended_pub_.publish(marker_extended);
 }
 
@@ -130,7 +135,7 @@ void LocalPlannerNode::publishGoal() {
   m.color.b = 0.0;
   m.lifetime = ros::Duration();
   m.id = 0;
-  m.pose.position = local_planner.goal;
+  m.pose.position = local_planner.goal_;
   marker_goal.markers.push_back(m);
   marker_goal_pub_.publish(marker_goal);
 }
@@ -179,14 +184,14 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &m
 }
 
 void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg) {
-  local_planner.goal_x_param = msg.pose.position.x;
-  local_planner.goal_y_param = msg.pose.position.y;
+  local_planner.goal_x_param_ = msg.pose.position.x;
+  local_planner.goal_y_param_ = msg.pose.position.y;
   local_planner.setGoal();
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
-  int beta_z = floor((atan2(x - local_planner.pose.pose.position.x, y - local_planner.pose.pose.position.y)*180.0/PI)); //(-180. +180]
-  int beta_e = floor((atan((z - local_planner.pose.pose.position.z) / sqrt((x - local_planner.pose.pose.position.x)*(x - local_planner.pose.pose.position.x) + (y - local_planner.pose.pose.position.y) * (y - local_planner.pose.pose.position.y)))*180.0/PI)); //(-90.+90)
+  int beta_z = floor((atan2(x - local_planner.pose_.pose.position.x, y - local_planner.pose_.pose.position.y)*180.0/PI)); //(-180. +180]
+  int beta_e = floor((atan((z - local_planner.pose_.pose.position.z) / sqrt((x - local_planner.pose_.pose.position.x)*(x - local_planner.pose_.pose.position.x) + (y - local_planner.pose_.pose.position.y) * (y - local_planner.pose_.pose.position.y)))*180.0/PI)); //(-90.+90)
 
   beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
   beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
@@ -235,11 +240,11 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     cv::Scalar mean, std;
     printf("----------------------------------- \n");
     cv::meanStdDev(algo_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.cloud_time, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.polar_time, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.free_time, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.cost_time, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.collision_time, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.cloud_time_, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.polar_time_, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.free_time_, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.cost_time_, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(local_planner.collision_time_, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
     printf("----------------------------------- \n");
   }
 
@@ -252,15 +257,15 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
 }
 
 void LocalPlannerNode::publishAll() {
-  ROS_INFO("Current pose: [%f, %f, %f].", local_planner.pose.pose.position.x, local_planner.pose.pose.position.y, local_planner.pose.pose.position.z);
-  ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x, local_planner.velocity_y, local_planner.velocity_z, local_planner.velocity_mod);
+  ROS_INFO("Current pose: [%f, %f, %f].", local_planner.pose_.pose.position.x, local_planner.pose_.pose.position.y, local_planner.pose_.pose.position.z);
+  ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x_, local_planner.velocity_y_, local_planner.velocity_z_, local_planner.velocity_mod_);
 
-  local_pointcloud_pub_.publish(local_planner.final_cloud);
-  waypoint_pub_.publish(local_planner.path_msg);
+  local_pointcloud_pub_.publish(local_planner.final_cloud_);
+  waypoint_pub_.publish(local_planner.path_msg_);
   path_pub_.publish(path_actual);
-  current_waypoint_pub_.publish(local_planner.waypt_p);
-  tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p, "world", local_planner.waypt_p);
-  mavros_waypoint_pub_.publish(local_planner.waypt_p);
+  current_waypoint_pub_.publish(local_planner.waypt_p_);
+  tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p_, "world", local_planner.waypt_p_);
+  mavros_waypoint_pub_.publish(local_planner.waypt_p_);
 
   publishMarkerBlocked();
   publishMarkerCandidates();
@@ -269,6 +274,23 @@ void LocalPlannerNode::publishAll() {
   publishMarkerExtended();
   publishGoal();
 //  publishNormalToPowerline();
+}
+
+void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
+                                                   uint32_t level) {
+  local_planner.min_box_x_ = config.min_box_x_;
+  local_planner.max_box_x_ = config.max_box_x_;
+  local_planner.min_box_y_ = config.min_box_y_;
+  local_planner.max_box_y_ = config.max_box_y_;
+  local_planner.min_box_z_ = config.min_box_z_;
+  local_planner.max_box_z_ = config.max_box_z_;
+  local_planner.rad_ = config.rad_;
+  local_planner.goal_cost_param_ = config.goal_cost_param_;
+  local_planner.smooth_cost_param_ = config.smooth_cost_param_;
+  local_planner.prior_cost_param_ = config.prior_cost_param_;
+  local_planner.min_speed_ = config.min_speed_;
+  local_planner.max_speed_ = config.max_speed_;
+  local_planner.max_accel_z_ = config.max_accel_z_;
 }
 
 int main(int argc, char** argv) {
