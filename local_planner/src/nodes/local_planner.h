@@ -42,13 +42,14 @@
 
 #define PI 3.14159265
 #define alpha_res 6
-#define h_fov 59.0
-#define v_fov 46.0
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
-#define n_fields_90 round(90.0/alpha_res)
-#define n_fields_hfov std::floor((grid_length_z-h_fov/alpha_res)/2)
-#define n_fields_vfov std::floor((grid_length_e-v_fov/alpha_res)/2)
+#define binary_threshold 5
+//#define h_fov 59.0
+//#define v_fov 46.0
+//#define n_fields_90 round(90.0/alpha_res)
+//#define n_fields_hfov std::floor((grid_length_z-h_fov/alpha_res)/2)
+//#define n_fields_vfov std::floor((grid_length_e-v_fov/alpha_res)/2)
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
