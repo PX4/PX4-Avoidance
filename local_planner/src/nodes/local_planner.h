@@ -41,9 +41,14 @@
 
 
 #define PI 3.14159265
-#define alpha_res 10
+#define alpha_res 6
+#define h_fov 59.0
+#define v_fov 46.0
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
+#define n_fields_90 round(90.0/alpha_res)
+#define n_fields_hfov std::floor((grid_length_z-h_fov/alpha_res)/2)
+#define n_fields_vfov std::floor((grid_length_e-v_fov/alpha_res)/2)
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
@@ -122,6 +127,7 @@ public:
 	Histogram polar_histogram;
 	Histogram polar_histogram_old;
 	Histogram polar_histogram_est;
+	geometry_msgs::Point position_old;
 
     std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
@@ -160,7 +166,7 @@ public:
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	void stopInFrontObstacles();
-	geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius);
+	geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
 };
 
 
