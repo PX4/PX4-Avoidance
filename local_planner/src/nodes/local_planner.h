@@ -46,7 +46,6 @@
 #define alpha_res 6
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
-#define binary_threshold 5
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)
@@ -57,27 +56,38 @@ float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
 float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
 
-class Histogram 
-{ 
-	int array[grid_length_e][grid_length_z];
+class Histogram
+{
+  int bin[grid_length_e][grid_length_z];
+  int dist[grid_length_e][grid_length_z];
 
-	public: 
+ public:
 
-		Histogram() {}
-		
-		~Histogram() {} 
-		
-		int get( int x, int y ) const {
-		 	return array[x][y]; 
-		} 
+  Histogram() {
+  }
 
-		void set( int x, int y , int value) {
-		 	array[x][y] = value; 
-		}
+  ~Histogram() {
+  }
 
-		int setZero() {
-			memset(array, 0, sizeof(array)); 
-		} 
+  int get_bin(int x, int y) const {
+    return bin[x][y];
+  }
+
+  int get_dist(int x, int y) const {
+    return dist[x][y];
+  }
+
+  void set_bin(int x, int y, int value) {
+    bin[x][y] = value;
+  }
+  void set_dist(int x, int y, int value) {
+    dist[x][y] = value;
+  }
+
+  void setZero() {
+    memset(bin, 0, sizeof(bin));
+    memset(dist, 0, sizeof(dist));
+  }
 };
 
 class LocalPlanner {

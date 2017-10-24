@@ -4,8 +4,9 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /Global Options1
-        - /Status1
+        - /PointCloud21
+        - /PointCloud22
+        - /PointCloud22/Status1
       Splitter Ratio: 0.5
     Tree Height: 370
   - Class: rviz/Selection
@@ -299,7 +300,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 17.0896187
+      Distance: 32.2955437
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -314,10 +315,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.294798523
+      Pitch: 0.284798443
       Target Frame: camera_link
       Value: ThirdPersonFollower (rviz)
-      Yaw: 5.77041578
+      Yaw: 4.60724688
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 10
@@ -377,5 +378,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1855
-  X: 65
-  Y: 1112
+  X: 257
+  Y: 890
