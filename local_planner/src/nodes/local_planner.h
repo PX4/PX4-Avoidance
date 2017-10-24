@@ -93,7 +93,9 @@ class Histogram
 class LocalPlanner {
 
 public:
+
 	pcl::PointCloud<pcl::PointXYZ> final_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> reprojected_points;
 
 	bool first_reach_ = true;
 	bool obstacle_ = false;

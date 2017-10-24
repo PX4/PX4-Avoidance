@@ -17,6 +17,7 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  reprojected_points_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
@@ -222,6 +223,7 @@ void LocalPlannerNode::publishAll() {
 
   local_pointcloud_pub_.publish(local_planner.final_cloud_);
   waypoint_pub_.publish(local_planner.path_msg_);
+  reprojected_points_pub_.publish(local_planner.reprojected_points);
   path_pub_.publish(path_actual);
   current_waypoint_pub_.publish(local_planner.waypt_p_);
   tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p_, "world", local_planner.waypt_p_);
