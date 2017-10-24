@@ -1,6 +1,8 @@
 #!/bin/bash
 
-docker-compose up -d
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+docker-compose -f ${DIR}/docker-compose.yml up -d
 
 VPN_SERVER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' globalplannerproddebug_alpinevpn_1)
 ROS_MASTER_URI=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' globalplannerproddebug_mavros-avoidance_1)
@@ -21,4 +23,4 @@ Press any key to continue..."
 
 read
 
-docker-compose logs -f
+docker-compose -f ${DIR}/docker-compose.yml logs -f
