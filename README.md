@@ -218,6 +218,10 @@ rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_ms
 
 Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
 
+## Running the Local Planner
+
+The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
+
 ## Troubleshooting
 
 ### I see the drone position in rviz (shown as a red arrow), but the world around is empty
