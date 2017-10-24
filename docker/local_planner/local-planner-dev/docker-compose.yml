@@ -17,11 +17,11 @@ services:
             service: sitl-avoidance-gui
         depends_on:
             - sitl-avoidance-server
-        command: /root/avoidance/resource/planning.rviz
+        command: /root/avoidance/resource/local_planning.rviz
     avoidance-node:
         extends:
             file: ../../components/components.yml
             service: avoidance-node
         depends_on:
             - sitl-avoidance-server
-        command: global_avoidance.launch use_sim_time:="true"
+        command: local_avoidance.launch use_sim_time:="true"
