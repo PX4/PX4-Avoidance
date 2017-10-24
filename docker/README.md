@@ -14,6 +14,55 @@ This can be undone with:
 
     $ xhost -local:root
 
+## Quick Start
+
+A wrapper script has been created to help running the planners in simulation or on the drone.
+
+### Run the simulation
+
+To run the simulation for the local planner, run:
+
+```
+$ ./run.py local
+```
+
+Similarly, for the global planner:
+
+```
+$ ./run.py global
+```
+
+### Run in production on the Aero
+
+In production mode, the simulator is not started and the modules connect to the FCU on the Aero. There are two modes:
+
+* __debug__: start a vpn server, allowing you to connect your machine into the ROS network on the Aero and e.g. run RViz on your machine.
+* __release__: just start the production nodes.
+
+To run the local planner in __debug__ mode:
+
+```
+$ ./run.py local --prod-debug
+```
+
+To run the local planner in __release__ mode:
+
+```
+$ ./run.py local --prod-release
+```
+
+To run the global planner in __debug__ mode:
+
+```
+$ ./run.py global --prod-debug
+```
+
+To run the global planner in __release__ mode:
+
+```
+$ ./run.py global --prod-release
+```
+
 ## Running the demo
 
 Find instructions [here](demo).
