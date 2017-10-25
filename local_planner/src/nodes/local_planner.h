@@ -46,6 +46,7 @@
 #define alpha_res 6
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
+#define age_lim 20
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)
@@ -59,6 +60,7 @@ float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointX
 class Histogram
 {
   int bin[grid_length_e][grid_length_z];
+  int age[grid_length_e][grid_length_z];
   double dist[grid_length_e][grid_length_z];
 
  public:
@@ -72,6 +74,9 @@ class Histogram
   int get_bin(int x, int y) const {
     return bin[x][y];
   }
+  int get_age(int x, int y) const {
+    return age[x][y];
+  }
 
   double get_dist(int x, int y) const {
     return dist[x][y];
@@ -80,6 +85,9 @@ class Histogram
   void set_bin(int x, int y, int value) {
     bin[x][y] = value;
   }
+  void set_age(int x, int y, int value) {
+    age[x][y] = value;
+  }
   void set_dist(int x, int y, double value) {
     dist[x][y] = value;
   }
@@ -87,6 +95,7 @@ class Histogram
   void setZero() {
     memset(bin, 0, sizeof(bin));
     memset(dist, 0, sizeof(dist));
+    memset(age, 0, sizeof(age));
   }
 };
 
@@ -118,9 +127,8 @@ public:
 
 	int init = 0;
 	int stop_in_front_;
-
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
-	double rad_;
+	double rad_ = 1.0;
 	float min_distance_;
 
 	double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;

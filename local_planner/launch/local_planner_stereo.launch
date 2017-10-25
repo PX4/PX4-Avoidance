@@ -13,6 +13,10 @@
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
 
+	<include file="$(find rviz_world_loader)/launch/rviz_world_loader.launch">
+    	<arg name="world_file" value="$(find avoidance)/worlds/Boxes.yaml"/>
+  	</include>
+
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
 
     <!-- rosrun topic_tools transform /stereoV/disparity /stereoV/disparity_image sensor_msgs/Image 'm.image' -->
