@@ -4,9 +4,8 @@ Panels:
     Name: Displays
     Property Tree Widget:
       Expanded:
-        - /MarkerArray3
-        - /MarkerArray4
-        - /Reprojected_points1
+        - /Global Options1
+        - /World1
       Splitter Ratio: 0.5
     Tree Height: 370
   - Class: rviz/Selection
@@ -30,6 +29,14 @@ Panels:
 Visualization Manager:
   Class: ""
   Displays:
+    - Class: rviz/MarkerArray
+      Enabled: true
+      Marker Topic: /rviz_world_loader/marker
+      Name: World
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
     - Alpha: 0.5
       Cell Size: 1
       Class: rviz/Grid
@@ -255,7 +262,7 @@ Visualization Manager:
       Reference Frame: local_origin
       Value: true
     - Class: rviz/Image
-      Enabled: true
+      Enabled: false
       Image Topic: /camera/depth/image_raw
       Max Value: 1
       Median window: 5
@@ -265,9 +272,9 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Image
-      Enabled: false
+      Enabled: true
       Image Topic: /camera/rgb/image_raw
       Max Value: 1
       Median window: 5
@@ -277,7 +284,7 @@ Visualization Manager:
       Queue Size: 2
       Transport Hint: raw
       Unreliable: false
-      Value: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -300,7 +307,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 7.77994156
+      Distance: 15.0941515
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -315,10 +322,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.444798112
+      Pitch: 0.444797873
       Target Frame: camera_link
       Value: ThirdPersonFollower (rviz)
-      Yaw: 4.22225046
+      Yaw: 4.75725317
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 10
@@ -379,4 +386,4 @@ Window Geometry:
     collapsed: true
   Width: 1855
   X: 65
-  Y: 1245
+  Y: 1112
