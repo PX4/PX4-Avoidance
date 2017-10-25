@@ -62,9 +62,7 @@ private:
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
   ros::Publisher marker_selected_pub_;
-  ros::Publisher marker_extended_pub_;
   ros::Publisher marker_goal_pub_;
-  ros::Publisher marker_normal_pub_;
 
   tf::TransformListener tf_listener_;
 
@@ -86,12 +84,10 @@ private:
   void publishMarkerRejected();
   void publishMarkerCandidates();
   void publishMarkerSelected();
-  void publishMarkerExtended();
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
   void printPointInfo(double x, double y, double z);
   void publishGoal();
-  void publishNormalToPowerline();
 
 };
 
