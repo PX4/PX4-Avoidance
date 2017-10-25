@@ -59,7 +59,7 @@ float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointX
 class Histogram
 {
   int bin[grid_length_e][grid_length_z];
-  int dist[grid_length_e][grid_length_z];
+  double dist[grid_length_e][grid_length_z];
 
  public:
 
@@ -73,14 +73,14 @@ class Histogram
     return bin[x][y];
   }
 
-  int get_dist(int x, int y) const {
+  double get_dist(int x, int y) const {
     return dist[x][y];
   }
 
   void set_bin(int x, int y, int value) {
     bin[x][y] = value;
   }
-  void set_dist(int x, int y, int value) {
+  void set_dist(int x, int y, double value) {
     dist[x][y] = value;
   }
 
