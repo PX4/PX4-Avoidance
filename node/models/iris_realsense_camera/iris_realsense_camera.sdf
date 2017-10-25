@@ -5,22 +5,6 @@
     </include>
 
     <include>
-      <uri>model://depth_camera_new</uri>
-      <pose>0.1 0 0 0 0 0</pose>
-    </include>
-    <joint name="depth_camera_new_joint" type="revolute">
-      <child>depth_camera_new::link</child>
-      <parent>iris::base_link</parent>
-      <axis>
-        <xyz>0 0 1</xyz>
-        <limit>
-          <upper>0</upper>
-          <lower>0</lower>
-        </limit>
-      </axis>
-    </joint>
-
-    <include>
       <uri>model://distance_sensor</uri>
       <pose>0 0 -0.1 0 0 0</pose>
     </include>
@@ -54,3 +38,5 @@
      -->
   </model>
 </sdf>
+~                                                                                                                                                                                                           
+~                                      

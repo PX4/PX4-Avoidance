@@ -19,7 +19,6 @@
 
     <!-- Transformations for the camera and the world -->
 
-
     <!-- Launch MAVROS posix SITL environment -->
 <!--     <include file="$(find px4)/launch/mavros_posix_sitl.launch">
         <arg name="world" value="$(arg world)"/>
