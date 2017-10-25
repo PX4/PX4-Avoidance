@@ -222,6 +222,17 @@ Now the disparity map can be visualized by rviz or rqt under the topic */stereo/
 
 The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
 
+### How to recover the logs
+
+It is possible to log the point cloud, the polar histogram, the waypoints and the drone position when simulating the local planner. In order to (dis)enable logging, you need to set the following arguments to `false`/`true` in the `local_planner_depth-camera.launch` launch file:
+```bash
+<arg name="record_point_cloud" default="true" />
+<arg name="record_histogram"   default="true" />
+<arg name="record_waypoints"   default="true" />
+<arg name="record_position"    default="true" />
+```
+You can retrieve the logs in the `~/.ros/` folder of you computer.
+
 ## Troubleshooting
 
 ### I see the drone position in rviz (shown as a red arrow), but the world around is empty
