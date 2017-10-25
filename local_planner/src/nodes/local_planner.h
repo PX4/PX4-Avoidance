@@ -46,7 +46,7 @@
 #define alpha_res 6
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
-#define age_lim 20
+#define age_lim 100
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)
@@ -59,8 +59,8 @@ float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointX
 
 class Histogram
 {
-  int bin[grid_length_e][grid_length_z];
-  int age[grid_length_e][grid_length_z];
+  double bin[grid_length_e][grid_length_z];
+  double age[grid_length_e][grid_length_z];
   double dist[grid_length_e][grid_length_z];
 
  public:
@@ -71,10 +71,10 @@ class Histogram
   ~Histogram() {
   }
 
-  int get_bin(int x, int y) const {
+  double get_bin(int x, int y) const {
     return bin[x][y];
   }
-  int get_age(int x, int y) const {
+  double get_age(int x, int y) const {
     return age[x][y];
   }
 
@@ -82,10 +82,10 @@ class Histogram
     return dist[x][y];
   }
 
-  void set_bin(int x, int y, int value) {
+  void set_bin(int x, int y, double value) {
     bin[x][y] = value;
   }
-  void set_age(int x, int y, int value) {
+  void set_age(int x, int y, double value) {
     age[x][y] = value;
   }
   void set_dist(int x, int y, double value) {
