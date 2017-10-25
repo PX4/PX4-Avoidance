@@ -55,7 +55,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud_.points.clear();
   min_distance_ = 1000.0f;
   float distance;
-  double deceleration_limit = 1.5*9.8066;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
       // Check if the point is invalid
@@ -78,14 +77,10 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     sor.setStddevMulThresh (1.0);
     sor.filter(*cloud);
 
-    // filter out obstacles that are smaller than 160 points and that are at a distance greater than
-    // how much space the UAV needs to travel to stop in front of it when at maximum decelleration
-    if(cloud->points.size() > 160 && (min_distance_ > pow(velocity_mod_,2)/(2*deceleration_limit) + 0.5)) {
+    if(cloud->points.size() > 0) {
       obstacle_ = true;
-    }
-    else {
+    } else {
       obstacle_ = false;
-      ROS_INFO("False positive obstacle at distance %2.2fm. Minimum decelleration distance possible %2.2fm.", min_distance_, pow(velocity_mod_,2)/(2*deceleration_limit) + 0.5);
     }
   }
 
@@ -169,20 +164,12 @@ void LocalPlanner::findFreeDirections() {
   bool free = true;
   bool corner = false;
   geometry_msgs::Point p;
-  geometry_msgs::Point Pp;
-  std::vector<int> azimuthal_length(grid_length_z, 0);
-  std::vector<int> elevation_length(grid_length_e, 0);
-  std::vector<int> blocked_az(grid_length_z, 0);
-  std::vector<int> blocked_el(grid_length_e, 0);
-  std::vector<int> azimuthal_length_pos;
-  extension_points.clear();
   cost_path_candidates_.clear();
 
   initGridCells(&path_candidates_);
   initGridCells(&path_rejected_);
   initGridCells(&path_blocked_);
   initGridCells(&path_selected_);
-  initGridCells(&path_extended_);
 
   for(int e = 0; e < grid_length_e; e++) {
     for(int z = 0; z < grid_length_z; z++) {  
@@ -242,16 +229,12 @@ void LocalPlanner::findFreeDirections() {
         cost_path_candidates_.push_back(costFunction((int)p.x, (int)p.y));
       }
       else if(!free && polar_histogram_.get(e,z) != 0) {
-        azimuthal_length[z] = 1;
-        elevation_length[e] = 1;
         p.x = e * alpha_res + alpha_res - 90;
         p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
         path_rejected_.cells.push_back(p);
       }
       else {
-        blocked_az[z] = 1;
-        blocked_el[e] = 1;
         p.x = e * alpha_res + alpha_res - 90;
         p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
@@ -259,91 +242,6 @@ void LocalPlanner::findFreeDirections() {
       }
     } 
   }
-  
-  // extend rejected path cells in the 2D polar histogram when the UAV altitude is greater than 1.5m and 
-  // when the obstacle is longer than 60 degrees. The obstacle becomes 270 degree long, leaving only 90 degrees 
-  // behind the UAV heading free
-  int e,z;
-  if (pose_.pose.position.z > 1.5){
-    if (cv::countNonZero(azimuthal_length)>= 6){
-
-      std::vector<int> idx_non_zeros;
-
-      for (int c=0; c<azimuthal_length.size(); c++){
-        if (azimuthal_length[c]==1)
-          idx_non_zeros.push_back(c);
-      }
-      
-      z = idx_non_zeros[floor(idx_non_zeros.size()/2)];
-      int beta_z = z*alpha_res+alpha_res-180;
-
-      int high_boundary = beta_z + 140;
-      high_boundary = (high_boundary > 180) ? (-180 + (high_boundary%180))+180 : high_boundary+180;
-      int low_boundary = beta_z - 130;
-      low_boundary = (low_boundary < -170) ? (180 - std::abs(low_boundary)%180)+180 : low_boundary+180;
-
-      if (high_boundary < low_boundary){
-        int temp = low_boundary;
-        low_boundary = high_boundary;
-        high_boundary = temp;
-      }
-
-      for (int i=0; i<grid_length_e; i++){
-        if (elevation_length[i]==1){
-          e = i*alpha_res+alpha_res-90;
-          
-          for (int k=0; k<grid_length_z; k++){
-            z = k*alpha_res+alpha_res-180;
-            if ((beta_z+180) > low_boundary && (beta_z+180) < high_boundary){
-              if (azimuthal_length[k]==0 && ((z+180)>low_boundary && (z+180)<=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
-                p.x = e; p.y = z; p.z = 0;
-                path_blocked_.cells.push_back(p);
-                path_extended_.cells.push_back(p);
-
-                for(int t=0; t<path_candidates_.cells.size(); t++){
-                  if(path_candidates_.cells[t].x==e && path_candidates_.cells[t].y==z){
-                    path_candidates_.cells.erase(path_candidates_.cells.begin()+t);
-                    cost_path_candidates_.erase(cost_path_candidates_.begin()+t);
-                  }
-                }
-              }
-            }
-            else {
-              if (azimuthal_length[k]==0 && ((z+180)<low_boundary || (z+180)>=high_boundary) && (blocked_az[k]==0 || blocked_el[i]==0)) {
-                p.x = e; p.y = z; p.z = 0;
-                path_blocked_.cells.push_back(p);
-                path_extended_.cells.push_back(p);
-
-                for(int t=0; t<path_candidates_.cells.size(); t++){
-                  if(path_candidates_.cells[t].x==e && path_candidates_.cells[t].y==z){
-                    path_candidates_.cells.erase(path_candidates_.cells.begin()+t);
-                    cost_path_candidates_.erase(cost_path_candidates_.begin()+t);
-                  }
-                }
-              }
-            }
-          } 
-        }
-      }
-    }
-   } else{
-    for (int i = 0; i < 9; ++i) {
-      for(int k=0; k<36 ; ++k){
-        // fill entire lower half of the histogram
-        p.x = i*alpha_res+alpha_res-90;
-        p.y = k*alpha_res+alpha_res-180;
-        p.z = 0.0f;
-        path_blocked_.cells.push_back(p);
-
-        for(int t=0; t<path_candidates_.cells.size(); t++){
-          if(path_candidates_.cells[t].x==p.x && path_candidates_.cells[t].y==p.y){
-            path_candidates_.cells.erase(path_candidates_.cells.begin()+t);
-            cost_path_candidates_.erase(cost_path_candidates_.begin()+t);
-          }
-        }
-      }
-   }
- }
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -623,76 +521,3 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
          && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
 
 }
-
-// old function to extend powerlines. TODO: check if there is anything useful
-void LocalPlanner::extendPowerline(){
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>); // need to take the filled one
-  //estimation normal to the powerline
-  if (pose_.pose.position.z > 1.5 && cloud->points.size()>3){
-    pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients);
-    pcl::PointIndices::Ptr inliers (new pcl::PointIndices);
-    pcl::SACSegmentation<pcl::PointXYZ> seg;
-    seg.setOptimizeCoefficients (true);
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold (0.01);
-
-    seg.setInputCloud(cloud);
-    seg.segment (*inliers, *coefficients);
-
-    if (inliers->indices.size () == 0) {
-      PCL_ERROR ("Could not estimate a planar model for the given dataset.");
-    } 
-
-    std::cerr << "Model coefficients: " << coefficients->values[0] << " " 
-                                    << coefficients->values[1] << " "
-                                    << coefficients->values[2] << " "
-                                    << coefficients->values[4] << std::endl;    
-    coef1 = coefficients->values[0];  coef2 = coefficients->values[1];
-    coef3 = coefficients->values[2];  coef4 = coefficients->values[3];
-    
-  }
-
-  // extend powerlines in the polar histogram 
-  std::vector<float> x_cloud, y_cloud, z_cloud;
-  double minVal, maxVal;
-
-  pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  for (pcl_it = final_cloud_.begin(); pcl_it != final_cloud_.end(); ++pcl_it) {
-    x_cloud.push_back(pcl_it->x);
-    y_cloud.push_back(pcl_it->y);
-    z_cloud.push_back(pcl_it->z);
-  }
-
-  cv::meanStdDev(y_cloud, mean_y, stddev_y);
-  cv::meanStdDev(z_cloud, mean_z, stddev_z);
-  cv::meanStdDev(x_cloud, mean_x, stddev_x);
-  printf("Mean Values [%f %f %f] \n", mean_x[0], mean_y[0], mean_z[0]);
-  printf("Std Values [%f %f %f] \n", stddev_x[0], stddev_y[0], stddev_z[0]);
-
-  cv::minMaxLoc(x_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
-  cv::minMaxLoc(y_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
-  cv::minMaxLoc(z_cloud, &minVal, &maxVal); printf("minx %f maxx %f \n", minVal, maxVal);
- 
-  ext_p1.x = mean_x[0]; ext_p2.x = mean_x[0];
-  ext_p1.y = mean_y[0]-73.0; ext_p2.y = mean_y[0]+73.0;
-  ext_p1.z = mean_z[0]; ext_p2.z = mean_z[0];
-
-  ext_p1.x = (-coef2*ext_p1.y - coef3*ext_p1.z - coef4)/coef1;
-  ext_p2.x = (-coef2*ext_p2.y - coef3*ext_p2.z - coef4)/coef1;
-  extension_points.push_back(ext_p1);
-  extension_points.push_back(ext_p2);
-  int beta_z = floor((atan2(ext_p1.x-pose_.pose.position.x,ext_p1.y-pose_.pose.position.y)*180.0/PI)); //azimuthal angle
-  int low_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
-  beta_z = floor((atan2(ext_p2.x-pose_.pose.position.x,ext_p2.y-pose_.pose.position.y)*180.0/PI)); //azimuthal angle
-  int high_boundary = beta_z + (alpha_res - beta_z%alpha_res) + 180;
-  if (high_boundary < low_boundary){
-    int temp = low_boundary;
-    low_boundary = high_boundary;
-    high_boundary = temp;
-  }
-}
-
-
-
-

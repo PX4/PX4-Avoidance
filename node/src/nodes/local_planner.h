@@ -85,7 +85,6 @@ public:
 	geometry_msgs::Point min_box_, max_box_, goal_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
 	geometry_msgs::Vector3Stamped waypt_;
-	geometry_msgs::Point ext_p1, ext_p2;
 	geometry_msgs::TwistStamped curr_vel_;
 
 	nav_msgs::Path path_msg_;
@@ -93,7 +92,6 @@ public:
 	nav_msgs::GridCells path_selected_;
 	nav_msgs::GridCells path_rejected_;
 	nav_msgs::GridCells path_blocked_;
-	nav_msgs::GridCells path_extended_;
 	nav_msgs::GridCells path_waypoints_;
 
 	int init = 0;
@@ -124,11 +122,6 @@ public:
     
     std::vector<float> cost_path_candidates_;
     std::vector<int> cost_idx_sorted_;
-
-    std::vector<geometry_msgs::Point> extension_points;
-    float coef1, coef2, coef3, coef4;
-    cv::Scalar mean_x, mean_y, mean_z;
-    cv::Scalar stddev_x, stddev_y, stddev_z;
 
     std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
     std::clock_t t_prev = 0.0f;
@@ -161,7 +154,6 @@ public:
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	geometry_msgs::Point fromPolarToCartesian(int e, int z);
-	void extendPowerline();
 };
 
 

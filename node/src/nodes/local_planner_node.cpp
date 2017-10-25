@@ -21,9 +21,7 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
-  marker_extended_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/extended_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  marker_normal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/normal_powerline", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
@@ -112,12 +110,6 @@ void LocalPlannerNode::publishMarkerSelected() {
   marker_selected_pub_.publish(marker_selected);
 }
 
-void LocalPlannerNode::publishMarkerExtended() {
-  visualization_msgs::MarkerArray marker_extended;
-  initMarker(&marker_extended, local_planner.path_extended_, 0.5, 0.5, 0.5);
-  marker_extended_pub_.publish(marker_extended);
-}
-
 void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
@@ -138,45 +130,6 @@ void LocalPlannerNode::publishGoal() {
   m.pose.position = local_planner.goal_;
   marker_goal.markers.push_back(m);
   marker_goal_pub_.publish(marker_goal);
-}
-
-
-void LocalPlannerNode::publishNormalToPowerline() {
-  visualization_msgs::MarkerArray marker_normal;
-  visualization_msgs::Marker m;
-
-  m.header.frame_id = "world";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::ARROW;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.2;
-  m.scale.z = 0.2;
-  m.color.a = 1.0;
-  m.color.r = 0.0;
-  m.color.g = 0.0;
-  m.color.b = 0.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker_normal.markers.push_back(m);
-
-  if (local_planner.obstacleAhead() && local_planner.init != 0) {
-
-    geometry_msgs::Point start, end;
-    start.x = local_planner.mean_x[0]; start.y = local_planner.mean_y[0]; start.z = local_planner.mean_z[0];
-    end.x = local_planner.mean_x[0] + local_planner.coef1;
-    end.y = local_planner.mean_y[0] + local_planner.coef2;
-    end.z = local_planner.mean_z[0] + local_planner.coef3;
-
-    int ext_id = 1;
-    m.id = ext_id;
-    m.action = visualization_msgs::Marker::ADD;
-    m.points.push_back(start);
-    m.points.push_back(end);
-    marker_normal.markers.push_back(m);
-
-    marker_normal_pub_.publish(marker_normal);
-  }
 }
 
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {
@@ -271,9 +224,7 @@ void LocalPlannerNode::publishAll() {
   publishMarkerCandidates();
   publishMarkerRejected();
   publishMarkerSelected();
-  publishMarkerExtended();
   publishGoal();
-//  publishNormalToPowerline();
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
