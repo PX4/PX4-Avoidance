@@ -312,9 +312,9 @@ To download items on the drone, shut down the drone hotspot and connect to the i
 
 ```bash
 nmcli c down hotspot
-nmcli modify hotspot connection.autoconnect no
+nmcli con modify hotspot connection.autoconnect no
 nmcli dev wifi
-nmcli wifi connect <network_name> password <network_password>
+nmcli d wifi connect <network_name> password <network_password>
 ```
 
 Download and run ROS docker image:
