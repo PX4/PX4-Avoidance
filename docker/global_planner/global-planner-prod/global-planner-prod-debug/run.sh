@@ -6,6 +6,7 @@ docker-compose -f ${DIR}/docker-compose.yml up -d
 
 VPN_SERVER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' globalplannerproddebug_alpinevpn_1)
 ROS_MASTER_URI=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' globalplannerproddebug_mavros-avoidance_1)
+ROUTE_IP=$(echo $ROS_MASTER_URI | sed 's/[[:digit:]]\+\.[[:digit:]]\+$/0.0/')
 
 route add -net 10.0.0.0/16 gw $VPN_SERVER_IP
 
