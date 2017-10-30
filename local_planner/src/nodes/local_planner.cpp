@@ -502,7 +502,7 @@ void LocalPlanner::getPathMsg() {
   if(!reach_altitude_){
     reachGoalAltitudeFirst();
   } else {
-      if(!reached_goal_ && (pose_.pose.position.z > 1.5)){
+      if(!reached_goal_ && (pose_.pose.position.z > 1.5) && !stop_in_front_){
         waypt_ = smoothWaypoint();
       }
   }
@@ -528,5 +528,43 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
   return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z) 
          && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
          && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
+
+}
+
+void LocalPlanner::stopInFrontObstacles(){
+
+  if (min_distance_ < keep_distance_) {
+
+    if (!stop_lock_){
+      pose_stop_.x = pose_.pose.position.x;
+      pose_stop_.y = pose_.pose.position.y;
+      pose_stop_.z = pose_.pose.position.z;
+      stop_lock_ = true;
+    }
+  } else {
+    stop_lock_ = false;
+    double braking_distance = min_distance_ - keep_distance_;
+    if (first_brake_) {
+      Eigen::Vector2f waypt_xy(waypt_.vector.x - pose_.pose.position.x, waypt_.vector.y - pose_.pose.position.y);
+      Eigen::Vector2f stop_xy(pose_.pose.position.x + (braking_distance * waypt_xy(0) / waypt_xy.norm()), pose_.pose.position.y + (braking_distance * waypt_xy(1) / waypt_xy.norm()));
+      m_x = (stop_xy(0) - pose_.pose.position.x) / braking_distance;
+      m_y = (stop_xy(1) - pose_.pose.position.y) / braking_distance;
+      pose_stop_.z = pose_.pose.position.z;
+      first_brake_ = false;
+    }
+
+    pose_stop_.x = pose_.pose.position.x + m_x * braking_distance;
+    pose_stop_.y = pose_.pose.position.y + m_y * braking_distance;
+  }
+
+  waypt_.vector.x = pose_stop_.x;
+  waypt_.vector.y = pose_stop_.y;
+  waypt_.vector.z = pose_stop_.z;
+
+    // fill direction as straight ahead
+  geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
+  path_waypoints_.cells.push_back(p);
+  ROS_INFO("Stop waypoint: [%.2f %.2f %.2f], obstacle distance %.2f. ", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z, min_distance_);
+  getPathMsg();
 
 }
