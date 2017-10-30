@@ -69,21 +69,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  // statistical outlier removal (really slow)
-  if (cloud->points.size() > 0) {
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud);
-    sor.setMeanK (20);
-    sor.setStddevMulThresh (1.0);
-    sor.filter(*cloud);
-
-    if(cloud->points.size() > 0) {
-      obstacle_ = true;
-    } else {
-      obstacle_ = false;
-    }
-  }
-
   final_cloud_.header.stamp =  complete_cloud.header.stamp;
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
   final_cloud_.width = cloud->points.size();
@@ -92,6 +77,21 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+
+  if (cloud->points.size() > 0) {
+    obstacle_ = true;
+    if (stop_in_front_){
+      stopInFrontObstacles();
+    } else {
+      createPolarHistogram();
+      if(stop_in_front_){
+        first_brake_ = true;
+      }
+    }
+  } else {
+    obstacle_ = false;
+    goFast();
+  }
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -144,6 +144,7 @@ void LocalPlanner::createPolarHistogram() {
 
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  findFreeDirections();
 }
 
 // initialize GridCell message
@@ -245,6 +246,7 @@ void LocalPlanner::findFreeDirections() {
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  calculateCostMap();
 }
 
 // transform polar coordinates into Cartesian coordinates
@@ -277,10 +279,14 @@ double LocalPlanner::costFunction(int e, int z) {
   int goal_z = floor(atan2(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y)*180.0 / PI); //azimuthal angle
   int goal_e = floor(atan((goal_.z-pose_.pose.position.z) / sqrt(pow((goal_.x-pose_.pose.position.x), 2) + pow((goal_.y-pose_.pose.position.y), 2)))*180.0 / PI);//elevation angle
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
-  
   double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
   int waypoint_index = path_waypoints_.cells.size();
-  double smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index-1].x, path_waypoints_.cells[waypoint_index-1].y, e, z);
+  double smooth_cost = 0.0;
+  if (waypoint_index == 0)
+    smooth_cost = 0.0;
+  else {
+    smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index].x, path_waypoints_.cells[waypoint_index].y, e, z);
+  }
   double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal_.z)])*prior_cost_param_*10.0;
   // alternative cost to prefer higher altitudes
   // int t = std::round(p.z) + e;
@@ -308,6 +314,7 @@ void LocalPlanner::calculateCostMap() {
 
   ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  getNextWaypoint();
 }
 
 // check that the selected direction is really free and transform it into a waypoint. Otherwise break not 
@@ -341,6 +348,7 @@ void LocalPlanner::getNextWaypoint() {
   }
 
   ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
+  getPathMsg();
 }
 
 // check that each point in the filtered point cloud is at least 0.5m away from the waypoint the UAV is
@@ -373,19 +381,20 @@ void LocalPlanner::goFast(){
     vec.setZ(goal_.z - pose_.pose.position.z);
     double new_len = vec.length() < 1.0 ? vec.length() : speed;
     vec.normalize();
-    vec *= new_len;
+    vec *= 1.0;
   
     waypt_.vector.x = pose_.pose.position.x + vec.getX();
     waypt_.vector.y = pose_.pose.position.y + vec.getY();
     waypt_.vector.z = pose_.pose.position.z + vec.getZ();
 
     // fill direction as straight ahead
-    geometry_msgs::Point p; p.x = 90; p.y = 90; p.z = 0;
+    geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
     path_waypoints_.cells.push_back(p);
  }
 
   
   ROS_INFO("Go fast selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
+  getPathMsg();
 }
 
 // check if the UAV has reached the goal set for the mission

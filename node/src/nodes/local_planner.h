@@ -126,7 +126,6 @@ public:
     std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
     std::clock_t t_prev = 0.0f;
 
-
 	LocalPlanner();
 	~LocalPlanner();
 	
