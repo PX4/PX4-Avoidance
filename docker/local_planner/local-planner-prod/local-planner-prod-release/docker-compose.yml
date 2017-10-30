@@ -10,6 +10,8 @@ services:
         extends:
             file: ../../../components/components.yml
             service: realsense-node
+        depends_on:
+            - mavros-avoidance
         privileged: true
         environment:
             - ROS_MASTER_URI=http://mavros-avoidance:11311
