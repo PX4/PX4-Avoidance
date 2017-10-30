@@ -13,7 +13,6 @@ services:
         privileged: true
         environment:
             - ROS_MASTER_URI=http://mavros-avoidance:11311
-        tty: true
     avoidance-node:
         extends:
             file: ../../../components/components.yml
@@ -23,5 +22,4 @@ services:
             - realsense-node
         environment:
             - ROS_MASTER_URI=http://mavros-avoidance:11311
-        tty: true
         command: global_avoidance.launch use_sim_time:="false"
