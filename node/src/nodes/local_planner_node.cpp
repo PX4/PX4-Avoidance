@@ -224,6 +224,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.min_speed_ = config.min_speed_;
   local_planner.max_speed_ = config.max_speed_;
   local_planner.max_accel_z_ = config.max_accel_z_;
+  local_planner.stop_in_front_ = config.stop_in_front_;
+  local_planner.keep_distance_ = config.keep_distance_;
 }
 
 int main(int argc, char** argv) {

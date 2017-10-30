@@ -81,8 +81,10 @@ public:
 	bool set_first_yaw_ = true;
 	bool reach_altitude_ = false;
 	bool reached_goal_ = false;
+	bool stop_lock_ = false;
+	bool first_brake_ = true;
 
-	geometry_msgs::Point min_box_, max_box_, goal_;
+	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
 	geometry_msgs::Vector3Stamped waypt_;
 	geometry_msgs::TwistStamped curr_vel_;
@@ -95,6 +97,7 @@ public:
 	nav_msgs::GridCells path_waypoints_;
 
 	int init = 0;
+	int stop_in_front_;
 
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
 	double rad_;
@@ -114,6 +117,8 @@ public:
 	double yaw_reached_goal_;
 	double max_accel_xy_;
 	double max_accel_z_;
+	double keep_distance_;
+	double m_y, m_x;
 
 	Histogram polar_histogram_;
 
@@ -153,6 +158,7 @@ public:
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	geometry_msgs::Point fromPolarToCartesian(int e, int z);
+	void stopInFrontObstacles();
 };
 
 
