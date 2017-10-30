@@ -163,27 +163,16 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   std::clock_t start_time = std::clock();
 
   try {
-    tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
+    ros::Time now = ros::Time::now();
+    tf_listener_.waitForTransform("/world","/camera_link", now, ros::Duration(5.0));
     tf::StampedTransform transform;
-    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+    tf_listener_.lookupTransform("/world", "/camera_link", now, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner.filterPointCloud(complete_cloud);
+    publishAll();
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
-  }
-
-  if (local_planner.obstacleAhead() && local_planner.init != 0) {
-    printf("There is an Obstacle Ahead \n");
-    local_planner.createPolarHistogram();
-    local_planner.findFreeDirections();
-    local_planner.calculateCostMap();
-    local_planner.getNextWaypoint();
-    local_planner.getPathMsg();
-  } else {
-    printf("There isn't any Obstacle Ahead \n");
-    local_planner.goFast();
-    local_planner.getPathMsg();
   }
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -199,13 +188,6 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     cv::meanStdDev(local_planner.cost_time_, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(local_planner.collision_time_, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
     printf("----------------------------------- \n");
-  }
-
-  publishAll();
-
-  if (local_planner.init == 0) {
-    ros::Duration(2).sleep();
-    local_planner.init =1;
   }
 }
 
