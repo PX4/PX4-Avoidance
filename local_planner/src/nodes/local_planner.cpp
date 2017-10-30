@@ -531,6 +531,8 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
 
 }
 
+
+// stop in front of an obstacle at a distance defined by the variable keep_distance_
 void LocalPlanner::stopInFrontObstacles(){
 
   if (min_distance_ < keep_distance_) {
@@ -553,8 +555,10 @@ void LocalPlanner::stopInFrontObstacles(){
       first_brake_ = false;
     }
 
-    pose_stop_.x = pose_.pose.position.x + m_x * braking_distance;
-    pose_stop_.y = pose_.pose.position.y + m_y * braking_distance;
+    double increment_x = (m_x * braking_distance) > 1.0 ? 1.0 : (m_x * braking_distance);
+    double increment_y = (m_y * braking_distance) > 1.0 ? 1.0 : (m_y * braking_distance);
+    pose_stop_.x = pose_.pose.position.x + increment_x;
+    pose_stop_.y = pose_.pose.position.y + increment_y;
   }
 
   waypt_.vector.x = pose_stop_.x;
