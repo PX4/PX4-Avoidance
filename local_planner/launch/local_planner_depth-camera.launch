@@ -11,10 +11,10 @@
         <arg name="point_cloud_topic" value="/camera/depth/points" />
     </include>
 
-     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" >
-        <param name="goal_x_param" value="46" />
-        <param name="goal_y_param" value="42"/>
-        <param name="goal_z_param" value="8" />
+     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
+        <param name="goal_x_param" value="30" />
+        <param name="goal_y_param" value="0"/>
+        <param name="goal_z_param" value="4" />
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
