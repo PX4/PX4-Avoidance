@@ -54,17 +54,20 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud_.points.clear();
   min_distance_ = 1000.0f;
+  double min_realsense_dist = 0.2;
   float distance;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
-      // Check if the point is invalid
+    // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-      if((pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z) {
-        cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));  
-        distance = sqrt(pow(pose_.pose.position.x-pcl_it->x,2) + pow(pose_.pose.position.y-pcl_it->y,2) + pow(pose_.pose.position.z-pcl_it->z,2));
-        if (distance < min_distance_){
-          min_distance_ = distance;
-        } 
+      if ((pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z) {
+        distance = sqrt(pow(pose_.pose.position.x - pcl_it->x, 2) + pow(pose_.pose.position.y - pcl_it->y, 2) + pow(pose_.pose.position.z - pcl_it->z, 2));
+        if (distance > min_realsense_dist) {
+          cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+          if (distance < min_distance_) {
+            min_distance_ = distance;
+          }
+        }
       }
     }
   }
@@ -78,7 +81,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
-  if (cloud->points.size() > 0) {
+  if (cloud->points.size() > 160) {
     obstacle_ = true;
     if (stop_in_front_ && pose_.pose.position.z > 2.0){
       stopInFrontObstacles();
