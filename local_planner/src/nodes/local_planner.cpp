@@ -80,7 +80,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   if (cloud->points.size() > 0) {
     obstacle_ = true;
-    if (stop_in_front_){
+    if (stop_in_front_ && pose_.pose.position.z > 2.0){
       stopInFrontObstacles();
     } else {
       createPolarHistogram();
