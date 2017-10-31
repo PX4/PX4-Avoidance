@@ -281,14 +281,16 @@ double LocalPlanner::costFunction(int e, int z) {
   double cost;
   int goal_z = floor(atan2(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y)*180.0 / PI); //azimuthal angle
   int goal_e = floor(atan((goal_.z-pose_.pose.position.z) / sqrt(pow((goal_.x-pose_.pose.position.x), 2) + pow((goal_.y-pose_.pose.position.y), 2)))*180.0 / PI);//elevation angle
+  goal_z = goal_z + (alpha_res - goal_z%alpha_res); //[-170,+190]
+  goal_e = goal_e + (alpha_res - goal_e%alpha_res); //[-80,+90]
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
   double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
   int waypoint_index = path_waypoints_.cells.size();
   double smooth_cost = 0.0;
-  if (waypoint_index == 0)
+  if (waypoint_index == 0) {
     smooth_cost = 0.0;
-  else {
-    smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index].x, path_waypoints_.cells[waypoint_index].y, e, z);
+  } else {
+    smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index-1].x, path_waypoints_.cells[waypoint_index-1].y, e, z);
   }
   double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal_.z)])*prior_cost_param_*10.0;
   // alternative cost to prefer higher altitudes
