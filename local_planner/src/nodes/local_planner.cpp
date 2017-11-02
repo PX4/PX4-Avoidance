@@ -16,6 +16,19 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 
   setVelocity();
   setLimitsBoundingBox();
+
+    //log data
+    if (reach_altitude_ && !reached_goal_) {
+      std::stringstream stream;
+      stream << std::fixed << std::setprecision(1) << min_bin;
+      std::string s_bin = stream.str();
+      std::string str = "MaxAge";
+      str.append(std::to_string(age_lim)).append("_MinBin").append(s_bin).append(".txt");
+      std::ofstream myfile(str, std::ofstream::app);
+      myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ << "\n";
+      myfile.close();
+    }
+
 }
 
 // update UAV velocity
@@ -77,7 +90,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  final_cloud_.header.stamp =  complete_cloud.header.stamp;
+  obstacle_ = true;
+
+  final_cloud_.header.stamp = complete_cloud.header.stamp;
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
   final_cloud_.width = cloud->points.size();
   final_cloud_.height = 1;
@@ -129,6 +144,55 @@ void LocalPlanner::createPolarHistogram() {
   float dist;
   geometry_msgs::Point temp;
 
+<<<<<<< dc58065d817cc82025c25fde74d7640131fb2f77
+=======
+//  //  //Visualize histogram step2
+//  std::cout << "------------Estimate Bin before----------------\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
+
+  //Normalize and get mean in dist bins
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      if (polar_histogram_est_.get_bin(e, z) > min_bin) {
+        polar_histogram_est_.set_dist(e, z, polar_histogram_est_.get_dist(e, z) / polar_histogram_est_.get_bin(e, z));
+        polar_histogram_est_.set_age(e, z, polar_histogram_est_.get_age(e, z) / polar_histogram_est_.get_bin(e, z));
+        polar_histogram_est_.set_bin(e, z, 1);
+      } else {
+        polar_histogram_est_.set_dist(e, z, 0);
+        polar_histogram_est_.set_age(e, z, 0);
+        polar_histogram_est_.set_bin(e, z, 0);
+      }
+    }
+  }
+
+//  //  //Visualize histogram step2
+//  std::cout << "------------Estimate bin after---------------\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
+//
+//  //  //Visualize histogram step2
+//  std::cout << "------------Estimate Age----------------\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      std::cout << polar_histogram_est_.get_age(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
+
+  //Generate new histogram
+>>>>>>> Add new worlds for benchmarking. Add logging to txt file
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
 

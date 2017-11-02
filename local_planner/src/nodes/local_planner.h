@@ -6,6 +6,7 @@
 #include <math.h> 
 #include <Eigen/Dense>
 #include <math.h>
+#include <string>
 
 #include <ros/ros.h>
 
@@ -47,6 +48,7 @@
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
 #define age_lim 100
+#define min_bin 0.7
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)

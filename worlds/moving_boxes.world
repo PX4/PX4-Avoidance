@@ -83,21 +83,10 @@
     <model name='unit_box'>
       <pose frame=''>1.5 0 0 0 -0 0</pose>
       <link name='link'>
-        <inertial>
-          <mass>1</mass>
-          <inertia>
-            <ixx>0.166667</ixx>
-            <ixy>0</ixy>
-            <ixz>0</ixz>
-            <iyy>0.166667</iyy>
-            <iyz>0</iyz>
-            <izz>0.166667</izz>
-          </inertia>
-        </inertial>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>1 8 10</size>
+              <size>1 15 8</size>
             </box>
           </geometry>
           <max_contacts>10</max_contacts>
@@ -117,7 +106,7 @@
         <visual name='visual'>
           <geometry>
             <box>
-              <size>1 8 10</size>
+              <size>1 15 8</size>
             </box>
           </geometry>
           <material>
