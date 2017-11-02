@@ -163,10 +163,9 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   std::clock_t start_time = std::clock();
 
   try {
-    ros::Time now = ros::Time::now();
-    tf_listener_.waitForTransform("/world","/camera_link", now, ros::Duration(5.0));
+    tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
-    tf_listener_.lookupTransform("/world", "/camera_link", now, transform);
+    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner.filterPointCloud(complete_cloud);
