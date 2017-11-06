@@ -136,7 +136,7 @@ void LocalPlannerNode::publishGoal() {
 void LocalPlannerNode::publishBox() {
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
-  box.header.stamp = ros::Time();
+  box.header.stamp = ros::Time::now();
   box.id = 0;
   box.type = visualization_msgs::Marker::CUBE;
   box.action = visualization_msgs::Marker::ADD;
@@ -257,9 +257,28 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 	  local_planner.setGoal();
   }
   if(local_planner.goal_dist_!= config.goal_dist_){
+	  geometry_msgs::PointStamped dist_fcu;
+	  geometry_msgs::PointStamped dist_world;
+	  dist_fcu.point.x = local_planner.goal_dist_;
+	  dist_fcu.point.y = 0;
+	  dist_fcu.point.z = 0;
+	  dist_fcu.header.frame_id = "/fcu";
+	  dist_fcu.header.stamp = ros::Time();
+	  dist_world.header.frame_id = "/world";
+	  dist_world.header.stamp = ros::Time();
+
+	  try {
+	    tf_listener_.waitForTransform("/world","/fcu", ros::Time::now(), ros::Duration(3.0));
+	    tf::StampedTransform transform;
+	    tf_listener_.lookupTransform("/world", "/fcu", ros::Time::now(), transform);
+	    tf_listener_.transformPoint("/world", dist_fcu, dist_world);
+
+	  } catch(tf::TransformException& ex) {
+	    ROS_ERROR("Received an exception trying to transform a point from \fcu\" to \"world\": %s", ex.what());
+	  }
 	  local_planner.goal_dist_ = config.goal_dist_;
-	  local_planner.goal_y_param_ = local_planner.pose_.pose.position.y;
-	  local_planner.goal_x_param_ = local_planner.pose_.pose.position.x + local_planner.goal_dist_;
+	  local_planner.goal_y_param_ = local_planner.pose_.pose.position.y + dist_world.point.y;
+	  local_planner.goal_x_param_ = local_planner.pose_.pose.position.x + dist_world.point.x;
 	  local_planner.setGoal();
   }
 }
