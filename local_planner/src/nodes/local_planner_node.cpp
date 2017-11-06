@@ -10,9 +10,9 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-	pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
-	pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
-	velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
@@ -23,7 +23,7 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
-  path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
+  path_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
@@ -132,6 +132,30 @@ void LocalPlannerNode::publishGoal() {
   marker_goal_pub_.publish(marker_goal);
 }
 
+void LocalPlannerNode::publishBox() {
+  visualization_msgs::Marker box;
+  box.header.frame_id = "local_origin";
+  box.header.stamp = ros::Time();
+  box.id = 0;
+  box.type = visualization_msgs::Marker::CUBE;
+  box.action = visualization_msgs::Marker::ADD;
+  box.pose.position.x = local_planner.pose_.pose.position.x + 0.5*(local_planner.max_box_x_-local_planner.min_box_x_);
+  box.pose.position.y = local_planner.pose_.pose.position.y + 0.5*(local_planner.max_box_y_-local_planner.min_box_y_);
+  box.pose.position.z = local_planner.pose_.pose.position.z + 0.5*(local_planner.max_box_z_-local_planner.min_box_z_);
+  box.pose.orientation.x = 0.0;
+  box.pose.orientation.y = 0.0;
+  box.pose.orientation.z = 0.0;
+  box.pose.orientation.w = 1.0;
+  box.scale.x = (local_planner.max_box_x_ + local_planner.min_box_x_);
+  box.scale.y = (local_planner.max_box_y_ + local_planner.min_box_y_);
+  box.scale.z = (local_planner.max_box_z_ + local_planner.min_box_z_);
+  box.color.a = 0.5;
+  box.color.r = 0.0;
+  box.color.g = 1.0;
+  box.color.b = 0.0;
+  bounding_box_pub_.publish(box);
+}
+
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
 }
@@ -206,6 +230,7 @@ void LocalPlannerNode::publishAll() {
   publishMarkerRejected();
   publishMarkerSelected();
   publishGoal();
+  publishBox();
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
@@ -225,6 +250,17 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.max_accel_z_ = config.max_accel_z_;
   local_planner.stop_in_front_ = config.stop_in_front_;
   local_planner.keep_distance_ = config.keep_distance_;
+
+  if(local_planner.goal_z_param_!= config.goal_z_param_){
+	  local_planner.goal_z_param_ = config.goal_z_param_;
+	  local_planner.setGoal();
+  }
+  if(local_planner.goal_dist_!= config.goal_dist_){
+	  local_planner.goal_dist_ = config.goal_dist_;
+	  local_planner.goal_y_param_ = local_planner.pose_.pose.position.y;
+	  local_planner.goal_x_param_ = local_planner.pose_.pose.position.x + local_planner.goal_dist_;
+	  local_planner.setGoal();
+  }
 }
 
 int main(int argc, char** argv) {
