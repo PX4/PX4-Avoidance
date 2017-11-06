@@ -257,20 +257,21 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 	  local_planner.setGoal();
   }
   if(local_planner.goal_dist_!= config.goal_dist_){
+	  ros::Time time= ros::Time::now();
 	  geometry_msgs::PointStamped dist_fcu;
 	  geometry_msgs::PointStamped dist_world;
 	  dist_fcu.point.x = local_planner.goal_dist_;
 	  dist_fcu.point.y = 0;
 	  dist_fcu.point.z = 0;
 	  dist_fcu.header.frame_id = "/fcu";
-	  dist_fcu.header.stamp = ros::Time();
+	  dist_fcu.header.stamp = time;
 	  dist_world.header.frame_id = "/world";
-	  dist_world.header.stamp = ros::Time();
+	  dist_world.header.stamp = time;
 
 	  try {
-	    tf_listener_.waitForTransform("/world","/fcu", ros::Time::now(), ros::Duration(3.0));
+	    tf_listener_.waitForTransform("/world","/fcu", time, ros::Duration(3.0));
 	    tf::StampedTransform transform;
-	    tf_listener_.lookupTransform("/world", "/fcu", ros::Time::now(), transform);
+	    tf_listener_.lookupTransform("/world", "/fcu", time, transform);
 	    tf_listener_.transformPoint("/world", dist_fcu, dist_world);
 
 	  } catch(tf::TransformException& ex) {
