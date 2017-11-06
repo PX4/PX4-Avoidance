@@ -20,9 +20,11 @@ if args.planner != "local" and args.planner != "global":
 # Start module in desired mode
 if args.prod_release:
     print("Deploying {}_planner in RELEASE mode".format(args.planner))
+    subprocess.call("docker-compose -f ./components/components.yml build mavros", shell=True)
     subprocess.call("./{}_planner/{}-planner-prod/{}-planner-prod-release/run.sh".format(args.planner, args.planner, args.planner))
 elif args.prod_debug:
     print("Deploying {}_planner in DEBUG mode".format(args.planner))
+    subprocess.call("docker-compose -f ./components/components.yml build mavros", shell=True)
     subprocess.call("./{}_planner/{}-planner-prod/{}-planner-prod-debug/run.sh".format(args.planner, args.planner, args.planner))
 else:
     print("Running simulation for planner {}".format(args.planner))
