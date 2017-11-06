@@ -4,6 +4,8 @@ ENV WORKSPACE_DIR /root
 ENV FIRMWARE_DIR ${WORKSPACE_DIR}/Firmware
 ENV CATKIN_WS ${WORKSPACE_DIR}/catkin_ws
 ENV AVOIDANCE_DIR ${CATKIN_WS}/src/avoidance
+ENV MODELS_DIR ${WORKSPACE_DIR}/sim/models
+ENV WORLDS_DIR ${WORKSPACE_DIR}/sim/worlds
 
 RUN apt-get update && \
     apt-get install -y git \
@@ -61,7 +63,9 @@ RUN apt-get update && \
                        ros-kinetic-octomap-*
 
 # Prepare and build avoidance
-COPY node ${AVOIDANCE_DIR}
+COPY global_planner ${AVOIDANCE_DIR}
+COPY sim/models ${MODELS_DIR}
+COPY sim/worlds ${WORLDS_DIR}
 
 # NOTE: catkin build fails the first time (maybe the modules have to be built in the right order?)
 RUN ["/bin/bash", "-c", "\
@@ -73,7 +77,7 @@ RUN ["/bin/bash", "-c", "\
 RUN git clone https://github.com/PX4/Firmware.git ${FIRMWARE_DIR}
 RUN git -C ${FIRMWARE_DIR} submodule update --init --recursive
 
-ENV GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}:${AVOIDANCE_DIR}/models
+ENV GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}:${MODELS_DIR}
 
 RUN apt-get update && \
     apt-get install -y libopencv-dev \
@@ -94,5 +98,5 @@ CMD ["/bin/bash", "-c", " \
     source ${CATKIN_WS}/devel/setup.bash && \
     export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:${FIRMWARE_DIR} && \
     . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build/posix_sitl_default && \
-    roslaunch avoidance global_planner_sitl_mavros.launch \
+    roslaunch avoidance global_planner_sitl_mavros.launch world_path:=${WORLDS_DIR}/test_city_2.world \
 "]
