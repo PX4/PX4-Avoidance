@@ -122,6 +122,7 @@ public:
 	double max_accel_z_;
 	double keep_distance_;
 	double m_y, m_x;
+	double goal_dist_;
 	double keep_distance_prev_, min_distance_prev_;
 
 	Eigen::Vector2f stop_xy{};
