@@ -257,9 +257,10 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 	  local_planner.setGoal();
   }
   if(local_planner.goal_dist_!= config.goal_dist_){
-	  ros::Time time= ros::Time::now();
+	  ros::Time time= ros::Time(0);
 	  geometry_msgs::PointStamped dist_fcu;
 	  geometry_msgs::PointStamped dist_world;
+	  local_planner.goal_dist_ = config.goal_dist_;
 	  dist_fcu.point.x = local_planner.goal_dist_;
 	  dist_fcu.point.y = 0;
 	  dist_fcu.point.z = 0;
@@ -277,7 +278,6 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 	  } catch(tf::TransformException& ex) {
 	    ROS_ERROR("Received an exception trying to transform a point from \fcu\" to \"world\": %s", ex.what());
 	  }
-	  local_planner.goal_dist_ = config.goal_dist_;
 	  local_planner.goal_y_param_ = local_planner.pose_.pose.position.y + dist_world.point.y;
 	  local_planner.goal_x_param_ = local_planner.pose_.pose.position.x + dist_world.point.x;
 	  local_planner.setGoal();
