@@ -23,7 +23,8 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
-  path_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
+  path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
+  bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
