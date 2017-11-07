@@ -8,18 +8,42 @@ import subprocess
 def main(args):
     checkArgs(args)
     runGlobalPrerequisites()
-    runContainers()
+    workingDir = findWorkingDir(args)
+
+    if args.run:
+        buildContainers(args, workingDir)
+        runContainers(args, workingDir)
+    elif args.stop:
+        stopContainers(workingDir)
+    elif args.build:
+        buildContainers(args, workingDir)
+    elif args.rebuild:
+        rebuildContainers(workingDir)
+    else:
+        runContainers(args, workingDir)
 
 def createArgsParser():
     parser = argparse.ArgumentParser()
     parser.add_argument("planner", help="the planner to start (local | global)")
 
-    flavour = parser.add_mutually_exclusive_group()
-    flavour.add_argument("--sim", help="run in gazebo", action="store_true")
-    flavour.add_argument("--prod-debug", help="deploy in debug mode, allowing an external machine to connect to the ROS network through VPN (useful for plotting topics in rviz while running on the drone)", action="store_true")
-    flavour.add_argument("--prod-release", help="deploy in release mode", action="store_true")
+    addRunModes(parser)
+    addRunCommands(parser)
 
     return parser.parse_args()
+
+def addRunModes(parser):
+    runMode = parser.add_mutually_exclusive_group()
+    runMode.add_argument("--sim", help="run in gazebo", action="store_true")
+    runMode.add_argument("--prod-debug", help="deploy in debug mode, allowing an external machine to connect to the ROS network through VPN (useful for plotting topics in rviz while running on the drone)", action="store_true")
+    runMode.add_argument("--prod-release", help="deploy in release mode", action="store_true")
+
+def addRunCommands(parser):
+    runCommands = parser.add_mutually_exclusive_group()
+    runCommands.add_argument("--run", help="build and run the containers", action="store_true")
+    runCommands.add_argument("--run-only", help="run the containers (this is the default)", action="store_true")
+    runCommands.add_argument("--stop", help="stop the containers, if running", action="store_true")
+    runCommands.add_argument("--build", help="build the containers if necessary (internally running `docker-compose build`)", action="store_true")
+    runCommands.add_argument("--rebuild", help="rebuild the containers from scratch (internally running `docker-compose build --no-cache`)", action="store_true")
 
 def checkArgs(args):
     if args.planner != "local" and args.planner != "global":
@@ -29,8 +53,6 @@ def checkArgs(args):
 def runGlobalPrerequisites():
     while isDockerComposeNotInstalled():
         installDockerCompose()
-
-    subprocess.call("docker-compose -f ./components/components.yml build mavros", shell=True)
 
 def isDockerComposeNotInstalled():
     return shutil.which("docker-compose") == ''
@@ -55,17 +77,36 @@ def installDockerCompose():
 
     input("When finished, press any key to continue...\n")
 
-def runContainers():
+def findWorkingDir(args):
+    if args.prod_release:
+        return "./{}_planner/{}-planner-prod/{}-planner-prod-release".format(args.planner, args.planner, args.planner)
+    elif args.prod_debug:
+        return "./{}_planner/{}-planner-prod/{}-planner-prod-debug".format(args.planner, args.planner, args.planner)
+    else:
+        return "./{}_planner/{}-planner-dev".format(args.planner, args.planner)
+
+def runContainers(args, workingDir):
     if args.prod_release:
         print("Deploying {}_planner in RELEASE mode".format(args.planner))
-        subprocess.call("./{}_planner/{}-planner-prod/{}-planner-prod-release/run.sh".format(args.planner, args.planner, args.planner))
     elif args.prod_debug:
         print("Deploying {}_planner in DEBUG mode".format(args.planner))
-        subprocess.call("./{}_planner/{}-planner-prod/{}-planner-prod-debug/run.sh".format(args.planner, args.planner, args.planner))
     else:
         print("Running simulation for planner {}".format(args.planner))
+
+    subprocess.call("{}/run.sh".format(workingDir), shell=True)
+
+def stopContainers(workingDir):
+    subprocess.call("docker-compose -f {}/docker-compose.yml down".format(workingDir), shell=True)
+
+def buildContainers(args, workingDir):
+    subprocess.call("docker-compose -f ./components/components.yml build mavros", shell=True)
+    subprocess.call("docker-compose -f {}/docker-compose.yml build".format(workingDir), shell=True)
+
+    if not args.prod_release and not args.prod_debug:
         subprocess.call("docker-compose -f ./components/components.yml build sitl-avoidance-server", shell=True)
-        subprocess.call("./{}_planner/{}-planner-dev/run.sh".format(args.planner, args.planner))
+
+def rebuildContainers(workingDir):
+    subprocess.call("docker-compose -f {}/docker-compose.yml build --no-cache".format(workingDir), shell=True)
 
 if __name__ == '__main__':
     args = createArgsParser()
