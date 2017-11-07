@@ -5,7 +5,7 @@ models:
     position:
       x: 1.5
       y: 0
-      z: 4.0
+      z: 2.5
     orientation:
       x: 0.0
       y: 0.0
@@ -13,5 +13,8 @@ models:
       w: 1.0
     scale:
       x: 1.0
-      y: 15.0
-      z: 8.0
+      y: 20.0
+      z: 5.0
+
+
+
