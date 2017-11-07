@@ -1,6 +1,8 @@
 #!/bin/python3
 
 import argparse
+import os
+import shutil
 import subprocess
 
 def main(args):
@@ -25,7 +27,33 @@ def checkArgs(args):
         exit(1)
 
 def runGlobalPrerequisites():
+    while isDockerComposeNotInstalled():
+        installDockerCompose()
+
     subprocess.call("docker-compose -f ./components/components.yml build mavros", shell=True)
+
+def isDockerComposeNotInstalled():
+    return shutil.which("docker-compose") == ''
+
+def installDockerCompose():
+    print("You need to install docker-compose in order to run this script. From another terminal, follow these instructions:")
+
+    if os.path.exists("/usr/local/bin"):
+        installPath = "/usr/local/bin"
+    else:
+        installPath = "/usr/bin"
+
+    sysname = os.uname().sysname
+    machine = os.uname().machine
+    remotePath = "https://github.com/docker/compose/releases/download/1.17.0/docker-compose-{}-{}".format(sysname, machine)
+    curlCommand = "sudo curl -L {} -o {}/docker-compose".format(remotePath, installPath)
+
+    print()
+    print("    1. Run: $ {}".format(curlCommand))
+    print("    2. Run: $ sudo chmod +x {}/docker-compose".format(installPath))
+    print()
+
+    input("When finished, press any key to continue...\n")
 
 def runContainers():
     if args.prod_release:
