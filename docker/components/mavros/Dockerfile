@@ -23,4 +23,4 @@ COPY entrypoint.sh /root/entrypoint.sh
 RUN chmod +x /root/entrypoint.sh
 
 ENTRYPOINT ["/root/entrypoint.sh"]
-CMD fcu_url:="udp://:14540@127.0.0.1:14557"
+CMD ["fcu_url:=\"udp://:14540@127.0.0.1:14557\""]

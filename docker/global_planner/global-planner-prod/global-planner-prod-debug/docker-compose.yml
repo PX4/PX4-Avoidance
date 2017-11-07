@@ -15,10 +15,10 @@ services:
         privileged: true
         environment:
             - ROS_MASTER_URI=http://mavros-avoidance:11311
-    avoidance-node:
+    global-planner-node:
         extends:
             file: ../../../components/components.yml
-            service: avoidance-node
+            service: global-planner-node
         depends_on:
             - mavros-avoidance
             - realsense-node

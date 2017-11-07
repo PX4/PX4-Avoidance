@@ -31,10 +31,14 @@ services:
             - DISPLAY=${DISPLAY}
         volumes:
             - /tmp/.X11-unix:/tmp/.X11-unix:ro
-    avoidance-node:
+    local-planner-node:
         build:
             context: ../..
-            dockerfile: docker/components/avoidance-node/Dockerfile
+            dockerfile: docker/components/local-planner-node/Dockerfile
+    global-planner-node:
+        build:
+            context: ../..
+            dockerfile: docker/components/global-planner-node/Dockerfile
     realsense-node:
         build: ./realsense-node/
     alpinevpn:
