@@ -83,17 +83,15 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   if (cloud->points.size() > 160) {
     obstacle_ = true;
-    if (stop_in_front_ && pose_.pose.position.z > 2.0){
+    if (stop_in_front_ && reach_altitude_){
       stopInFrontObstacles();
     } else {
-      do_not_yaw_ = false;
-      first_brake_ = true;
-      first_lock_ = true;
-      stop_lock_ = false;
       createPolarHistogram();
+      first_brake_ = true;
     }
   } else {
     obstacle_ = false;
+    first_brake_ = true;
     goFast();
   }
 }
@@ -541,61 +539,14 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
 // stop in front of an obstacle at a distance defined by the variable keep_distance_
 void LocalPlanner::stopInFrontObstacles(){
 
-  do_not_yaw_ = true;
-  bool changed_keep_distance = fabsf(keep_distance_ - keep_distance_prev_) > 0.01 ? true : false;
-  bool obstacle_moving = ((min_distance_ < min_distance_prev_ - 0.1) && stop_lock_) ? true : false;
-  double braking_distance = min_distance_ - keep_distance_;
-
-  if (changed_keep_distance || obstacle_moving) {
-    stop_lock_ = false;
-    first_brake_ = true;
+  if (first_brake_) {
+    double braking_distance = min_distance_ - keep_distance_;
+    Eigen::Vector2f pose_to_goal(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y);
+    goal_.x = pose_.pose.position.x + (braking_distance * pose_to_goal(0) / pose_to_goal.norm());
+    goal_.y = pose_.pose.position.y + (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
+    first_brake_ = false;
   }
-
-  if (!stop_lock_) {
-    first_lock_ = true;
-    if (first_brake_) {
-
-     if(save_dir_) {
-        waypt_xy(0) = waypt_.vector.x - pose_.pose.position.x;
-        waypt_xy(1) = waypt_.vector.y - pose_.pose.position.y;
-        save_dir_ = false;
-      }
-
-      stop_xy(0)= pose_.pose.position.x + (braking_distance * waypt_xy(0) / waypt_xy.norm());
-      stop_xy(1)= pose_.pose.position.y + (braking_distance * waypt_xy(1) / waypt_xy.norm());
-      m_x = fabsf(stop_xy(0) - pose_.pose.position.x) / max_box_x_;
-      m_y = fabsf(stop_xy(1) - pose_.pose.position.y) / max_box_y_;
-      pose_stop_.z = pose_.pose.position.z;
-      first_brake_ = false;
-    }
-
-    Eigen::Vector2f increment(m_x * braking_distance, m_y * braking_distance);
-    Eigen::Vector2f stop_wp(stop_xy(0) / stop_xy.norm() * increment(0), stop_xy(1) / stop_xy.norm() * increment(1));
-    stop_lock_ = stop_wp.norm() < 0.1 ? true : false;
-    stop_wp = stop_wp.normalized();
-    pose_stop_.x = pose_.pose.position.x + stop_wp(0);
-    pose_stop_.y = pose_.pose.position.y + stop_wp(1);
-
-  } else {
-    if (first_lock_){
-      pose_stop_.x = pose_.pose.position.x;
-      pose_stop_.y = pose_.pose.position.y;
-      pose_stop_.z = pose_.pose.position.z;
-      first_lock_ = false;
-    }
-  }
-
-  keep_distance_prev_ = keep_distance_;
-  min_distance_prev_ = min_distance_;
-
-  waypt_.vector.x = pose_stop_.x;
-  waypt_.vector.y = pose_stop_.y;
-  waypt_.vector.z = pose_stop_.z;
-
-   // fill direction as straight ahead
-  geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
-  path_waypoints_.cells.push_back(p);
-  ROS_INFO("Stop waypoint: [%.2f %.2f %.2f], obstacle distance %.2f. ", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z, min_distance_);
-  getPathMsg();
+  ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.x, goal_.y, goal_.z, min_distance_);
+  goFast();
 }
 
