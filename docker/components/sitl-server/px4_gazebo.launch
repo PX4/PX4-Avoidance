@@ -1,6 +1,6 @@
 <launch>
     <arg name="gui" default="true" />
-    <arg name="world" default="test_city_2" />
+    <arg name="world_path" />
 
     <param name="use_sim_time" value="true" />
 
@@ -10,7 +10,7 @@
 
     <!-- Start Gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="world_name" value="/root/avoidance/worlds/$(arg world).world" />
+        <arg name="world_name" value="$(arg world_path)" />
         <arg name="gui" value="$(arg gui)" />
     </include>
 
