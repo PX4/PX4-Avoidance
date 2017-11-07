@@ -48,7 +48,11 @@
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
 #define age_lim 100
+<<<<<<< 33dca6ee6cc39c323a454ecb0702338a21767963
 #define min_bin 0.7
+=======
+#define min_bin 0.75
+>>>>>>> Added incresed min_bin if too many points are lost. Added world3 for fisrt benchmark
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)
@@ -113,7 +117,11 @@ public:
 	bool set_first_yaw_ = true;
 	bool reach_altitude_ = false;
 	bool reached_goal_ = false;
+<<<<<<< 33dca6ee6cc39c323a454ecb0702338a21767963
 	bool first_brake_ = true;
+=======
+	int adapted_min_bin_ = 100;
+>>>>>>> Added incresed min_bin if too many points are lost. Added world3 for fisrt benchmark
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
@@ -153,9 +161,6 @@ public:
 	Histogram polar_histogram_old;
 	Histogram polar_histogram_est;
 	geometry_msgs::Point position_old;
-
-	double hist_runs = 0.0;
-	double hist_time = 0.0;
 
     std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
