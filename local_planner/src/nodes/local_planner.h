@@ -47,6 +47,7 @@
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
+float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
 
 class Histogram 
 { 
@@ -137,6 +138,7 @@ public:
 	void setLimitsBoundingBox();
 	void setVelocity();
 	void setGoal();
+	bool isPointWithinBoxBoundaries(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
 	bool obstacleAhead();
 	void createPolarHistogram();

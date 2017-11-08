@@ -46,6 +46,11 @@ void LocalPlanner::setGoal() {
   initGridCells(&path_waypoints_);
 }
 
+bool LocalPlanner::isPointWithinBoxBoundaries(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
+
+  return (pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z;
+}
+
 // trim the point cloud so that only points inside the bounding box are considered and
 // filter out false positve obstacles
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
@@ -60,8 +65,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
     // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-      if ((pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z) {
-        distance = sqrt(pow(pose_.pose.position.x - pcl_it->x, 2) + pow(pose_.pose.position.y - pcl_it->y, 2) + pow(pose_.pose.position.z - pcl_it->z, 2));
+      if (isPointWithinBoxBoundaries(pcl_it)) {
+        distance = computeL2Dist(pose_, pcl_it);
         if (distance > min_realsense_dist) {
           cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < min_distance_) {
@@ -103,6 +108,11 @@ float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
 float distance2DPolar(int e1, int z1, int e2, int z2){
   return sqrt(pow((e1-e2),2) + pow((z1-z2),2));
 }
+
+float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
+  return sqrt(pow(pose.pose.position.x - pcl_it->x, 2) + pow(pose.pose.position.y - pcl_it->y, 2) + pow(pose.pose.position.z - pcl_it->z, 2));
+}
+
 
 bool LocalPlanner::obstacleAhead() { 
   if(obstacle_){
