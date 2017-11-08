@@ -81,11 +81,7 @@ public:
 	bool set_first_yaw_ = true;
 	bool reach_altitude_ = false;
 	bool reached_goal_ = false;
-	bool stop_lock_ = false;
 	bool first_brake_ = true;
-	bool do_not_yaw_ = false;
-	bool first_lock_ = true;
-	bool save_dir_ = true;
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
@@ -121,12 +117,7 @@ public:
 	double max_accel_xy_;
 	double max_accel_z_;
 	double keep_distance_;
-	double m_y, m_x;
 	double goal_dist_;
-	double keep_distance_prev_, min_distance_prev_;
-
-	Eigen::Vector2f stop_xy{};
-	Eigen::Vector2f waypt_xy = {};
 
 	Histogram polar_histogram_;
 
