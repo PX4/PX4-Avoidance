@@ -94,6 +94,10 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   } else {
     obstacle_ = false;
+    do_not_yaw_ = false;
+    first_brake_ = true;
+    first_lock_ = true;
+    stop_lock_ = false;
     goFast();
   }
 }
