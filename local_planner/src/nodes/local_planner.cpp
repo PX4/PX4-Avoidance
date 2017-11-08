@@ -525,7 +525,7 @@ void LocalPlanner::getPathMsg() {
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
-  //checkSpeed();
+  checkSpeed();
 } 
 
 void LocalPlanner::checkSpeed(){
