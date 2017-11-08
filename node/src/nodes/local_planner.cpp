@@ -83,7 +83,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   if (cloud->points.size() > 160) {
     obstacle_ = true;
-    if (stop_in_front_ && pose_.pose.position.z > 2.0){
+    if (stop_in_front_ && reach_altitude_ ){
       stopInFrontObstacles();
     } else {
       do_not_yaw_ = false;
