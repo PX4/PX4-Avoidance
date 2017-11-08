@@ -385,7 +385,7 @@ void LocalPlanner::goFast(){
     vec.setZ(goal_.z - pose_.pose.position.z);
     double new_len = vec.length() < 1.0 ? vec.length() : speed;
     vec.normalize();
-    vec *= 1.0;
+    vec *= new_len;
   
     waypt_.vector.x = pose_.pose.position.x + vec.getX();
     waypt_.vector.y = pose_.pose.position.y + vec.getY();
@@ -511,7 +511,7 @@ void LocalPlanner::getPathMsg() {
       }
   }
 
-  double new_yaw = (do_not_yaw_ == true) ? last_yaw_ : nextYaw(pose_, waypt_, last_yaw_);
+  double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
