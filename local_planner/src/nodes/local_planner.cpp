@@ -550,7 +550,7 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
 void LocalPlanner::stopInFrontObstacles(){
 
   if (first_brake_) {
-    double braking_distance = min_distance_ - keep_distance_;
+    double braking_distance = fabsf(min_distance_ - keep_distance_);
     Eigen::Vector2f pose_to_goal(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y);
     goal_.x = pose_.pose.position.x + (braking_distance * pose_to_goal(0) / pose_to_goal.norm());
     goal_.y = pose_.pose.position.y + (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
