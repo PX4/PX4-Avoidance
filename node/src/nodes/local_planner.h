@@ -121,7 +121,7 @@ public:
 	double max_accel_xy_;
 	double max_accel_z_;
 	double keep_distance_;
-	double m_y, m_x;
+	double m;
 	double goal_dist_;
 	double keep_distance_prev_, min_distance_prev_;
 

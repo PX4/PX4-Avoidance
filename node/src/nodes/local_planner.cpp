@@ -567,13 +567,12 @@ void LocalPlanner::stopInFrontObstacles(){
 
       stop_xy(0)= pose_.pose.position.x + (braking_distance * waypt_xy(0) / waypt_xy.norm());
       stop_xy(1)= pose_.pose.position.y + (braking_distance * waypt_xy(1) / waypt_xy.norm());
-      m_x = fabsf(stop_xy(0) - pose_.pose.position.x) / max_box_x_;
-      m_y = fabsf(stop_xy(1) - pose_.pose.position.y) / max_box_y_;
+      m = fabsf(braking_distance) / max_box_x_;
       pose_stop_.z = pose_.pose.position.z;
       first_brake_ = false;
     }
 
-    Eigen::Vector2f increment(m_x * braking_distance, m_y * braking_distance);
+    Eigen::Vector2f increment(m * braking_distance, m * braking_distance);
     Eigen::Vector2f stop_wp(stop_xy(0) / stop_xy.norm() * increment(0), stop_xy(1) / stop_xy.norm() * increment(1));
     stop_lock_ = stop_wp.norm() < 0.1 ? true : false;
     stop_wp = stop_wp.normalized();
