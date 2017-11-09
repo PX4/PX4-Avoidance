@@ -25,7 +25,9 @@ services:
         volumes:
             - /tmp/.X11-unix:/tmp/.X11-unix:ro
     sitl-avoidance-gui:
-        build: ./sitl-gui/
+        build:
+            context: ../..
+            dockerfile: docker/components/sitl-gui/Dockerfile
         privileged: true
         environment:
             - DISPLAY=${DISPLAY}
