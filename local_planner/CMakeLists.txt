@@ -9,14 +9,11 @@ add_definitions(-std=c++11)
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
-  std_msgs
   dynamic_reconfigure
-  message_generation
   tf
   pcl_ros
 )
 find_package(PCL 1.7 REQUIRED)
-find_package(octomap REQUIRED)
 find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
@@ -52,13 +49,6 @@ find_package(OpenCV REQUIRED)
 ##   * uncomment the generate_messages entry below
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
-## Generate messages in the 'msg' folder
-add_message_files(
-  FILES
-  PathWithRiskMsg.msg
-  ThreePointMsg.msg
-)
-
 ## Generate services in the 'srv' folder
 # add_service_files(
 #   FILES
@@ -72,13 +62,6 @@ add_message_files(
 #   Action1.action
 #   Action2.action
 # )
-
-## Generate added messages and services with any dependencies listed here
-generate_messages(
-  DEPENDENCIES
-  std_msgs
-  geometry_msgs
-)
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -96,8 +79,6 @@ generate_messages(
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
-  cfg/path_handler_node.cfg
-  cfg/global_planner_node.cfg
   cfg/local_planner_node.cfg
 )
 
@@ -112,7 +93,6 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES global_planner cell node
   CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs message_runtime tf
 #  DEPENDS system_lib
 )
@@ -128,24 +108,13 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
-  ${OCTOMAP_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
 )
-link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
 # add_library(avoidance
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
-add_library(cell
-  src/library/cell.cpp
-)
-add_library(node
-  src/library/node.cpp
-)
-add_library(global_planner
-  src/library/global_planner.cpp
-)
 add_library(local_planner
   src/nodes/local_planner.cpp
 )
@@ -153,13 +122,10 @@ add_library(local_planner
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
-add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
-add_executable(global_planner_node src/nodes/global_planner_node.cpp)
-add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 add_executable(local_planner_node src/nodes/local_planner_node.cpp)
 
 ## Add cmake target dependencies of the executable
@@ -171,13 +137,9 @@ add_executable(local_planner_node src/nodes/local_planner_node.cpp)
 #   ${catkin_LIBRARIES}
 #   ${PCL_LIBRARIES}
 # )
-target_link_libraries(global_planner_node
-  global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
-target_link_libraries(path_handler_node
-  ${catkin_LIBRARIES})
 target_link_libraries(local_planner_node
   local_planner
-  ${catkin_LIBRARIES} ${OpenCV_LIBS})  
+  ${catkin_LIBRARIES} ${OpenCV_LIBS})
 
 #############
 ## Install ##

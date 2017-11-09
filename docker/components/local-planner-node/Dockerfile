@@ -6,7 +6,8 @@ ENV AVOIDANCE_DIR ${CATKIN_WS}/src/avoidance
 
 RUN apt-get update && \
     apt-get install -y libopencv-dev \
-                       python-catkin-tools
+                       python-catkin-tools \
+                       ros-kinetic-pcl-ros
 
 COPY local_planner ${AVOIDANCE_DIR}
 COPY docker/components/local-planner-node/launch ${WORKSPACE_DIR}/launch
