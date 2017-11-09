@@ -1,5 +1,5 @@
-#ifndef GLOBAL_PLANNER_LOCAL_PLANNER_H
-#define GLOBAL_PLANNER_LOCAL_PLANNER_H
+#ifndef LOCAL_PLANNER_LOCAL_PLANNER_H
+#define LOCAL_PLANNER_LOCAL_PLANNER_H
 
 #include <iostream>
 #include <Eigen/Dense>
@@ -157,4 +157,4 @@ public:
 };
 
 
-#endif // GLOBAL_PLANNER_LOCAL_PLANNER_H
+#endif // LOCAL_PLANNER_LOCAL_PLANNER_H
