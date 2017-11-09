@@ -7,6 +7,7 @@
 #include <Eigen/Dense>
 #include <math.h>
 #include <string>
+#include <vector>
 
 #include <ros/ros.h>
 
@@ -48,11 +49,8 @@
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
 #define age_lim 100
-<<<<<<< 33dca6ee6cc39c323a454ecb0702338a21767963
-#define min_bin 0.7
-=======
-#define min_bin 0.75
->>>>>>> Added incresed min_bin if too many points are lost. Added world3 for fisrt benchmark
+#define min_bin 1.5
+
 //#define h_fov 59.0
 //#define v_fov 46.0
 //#define n_fields_90 round(90.0/alpha_res)
@@ -65,13 +63,28 @@ float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointX
 
 class Histogram
 {
-  double bin[grid_length_e][grid_length_z];
-  double age[grid_length_e][grid_length_z];
-  double dist[grid_length_e][grid_length_z];
+   int resolution;
+   int z_dim;
+   int e_dim;
+  std::vector<std::vector<double> > bin;
+  std::vector<std::vector<double> > age;
+  std::vector<std::vector<double> > dist;
 
  public:
+  Histogram(const int res)
+      : resolution { res },
+        z_dim { 360 / resolution },
+        e_dim { 180 / resolution } {
 
-  Histogram() {
+    bin.resize(e_dim);
+    age.resize(e_dim);
+    dist.resize(e_dim);
+    for (int i = 0; i < e_dim; ++i) {
+      bin[i].resize(z_dim);
+      age[i].resize(z_dim);
+      dist[i].resize(z_dim);
+    }
+    setZero();
   }
 
   ~Histogram() {
@@ -98,12 +111,47 @@ class Histogram
     dist[x][y] = value;
   }
 
+  void upsample() {
+    resolution = resolution / 2;
+    z_dim = 2 * z_dim;
+    e_dim = 2 * e_dim;
+    std::vector < std::vector<double> > temp_bin;
+    std::vector < std::vector<double> > temp_age;
+    std::vector < std::vector<double> > temp_dist;
+    temp_bin.resize(e_dim);
+    temp_age.resize(e_dim);
+    temp_dist.resize(e_dim);
+    for (int i = 0; i < e_dim; ++i) {
+      temp_bin[i].resize(z_dim);
+      temp_age[i].resize(z_dim);
+      temp_dist[i].resize(z_dim);
+    }
+    for (int i = 0; i < e_dim; ++i) {
+      for (int j = 0; j < z_dim; ++j) {
+        int i_lowres = floor(i / 2);
+        int j_lowres = floor(j / 2);
+        temp_bin[i][j] = bin[i_lowres][j_lowres];
+        temp_age[i][j] = age[i_lowres][j_lowres];
+        temp_dist[i][j] = dist[i_lowres][j_lowres];
+      }
+    }
+    bin = temp_bin;
+    age = temp_age;
+    dist = temp_dist;
+  }
+
   void setZero() {
-    memset(bin, 0, sizeof(bin));
-    memset(dist, 0, sizeof(dist));
-    memset(age, 0, sizeof(age));
+    for (int i = 0; i < e_dim; ++i) {
+      for (int j = 0; j < z_dim; ++j) {
+        bin[i][j] = 0.0;
+        age[i][j] = 0.0;
+        dist[i][j] = 0.0;
+      }
+    }
   }
 };
+
+
 
 class LocalPlanner {
 
@@ -117,11 +165,8 @@ public:
 	bool set_first_yaw_ = true;
 	bool reach_altitude_ = false;
 	bool reached_goal_ = false;
-<<<<<<< 33dca6ee6cc39c323a454ecb0702338a21767963
 	bool first_brake_ = true;
-=======
 	int adapted_min_bin_ = 100;
->>>>>>> Added incresed min_bin if too many points are lost. Added world3 for fisrt benchmark
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
@@ -157,10 +202,11 @@ public:
 	double max_accel_z_;
 	double keep_distance_;
 
-	Histogram polar_histogram;
-	Histogram polar_histogram_old;
-	Histogram polar_histogram_est;
-	geometry_msgs::Point position_old;
+	Histogram polar_histogram_ = Histogram(alpha_res);
+	Histogram polar_histogram_old_ = Histogram(alpha_res);
+	Histogram polar_histogram_est_ = Histogram(2*alpha_res);
+
+	geometry_msgs::Point position_old_;
 
     std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
