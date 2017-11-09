@@ -514,8 +514,8 @@ double LocalPlanner::costFunction(int e, int z) {
   // t = t > 21 ? 21 : t;
   // double height_cost = std::abs(accumulated_height_prior[t])*prior_cost_param*10.0;
 
-  double height_cost = 10*std::abs(goal_.z - pose_.pose.position.z) * std::abs(e);
-//  double height_cost=0;
+  double height_cost = 10*std::abs(goal_e-e);
+
   if (pose_.pose.position.z < 1 && e < 0 && reach_altitude_) {
     height_cost = 10000;
     std::cout << "Height cost added!!!!!!\n";
