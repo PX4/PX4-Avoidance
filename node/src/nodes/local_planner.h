@@ -107,7 +107,7 @@ public:
 	float min_distance_;
 
 	double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
-	double speed = 2.0;
+	double speed_ = 2.0;
 	double min_speed_;
 	double max_speed_;
 	double goal_cost_param_;
