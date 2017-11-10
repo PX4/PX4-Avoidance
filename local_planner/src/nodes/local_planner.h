@@ -36,7 +36,7 @@
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/crop_box.h>
 
-#include <avoidance/LocalPlannerNodeConfig.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
 
 

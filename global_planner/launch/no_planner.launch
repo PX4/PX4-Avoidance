@@ -3,11 +3,11 @@
     <param name="use_sim_time" value="true" />
 
     <!-- Mavros and Sitl -->
-    <include file="$(find avoidance)/launch/mavros_sitl.launch" />
-    
+    <include file="$(find global_planner)/launch/mavros_sitl.launch" />
+
     <!-- Global planner -->
-    <!-- <include file="$(find avoidance)/launch/global_planner_octomap.launch" /> -->
-    <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" />
+    <!-- <include file="$(find global_planner)/launch/global_planner_octomap.launch" /> -->
+    <node name="path_handler_node" pkg="global_planner" type="path_handler_node" output="screen" />
 
     <!-- RViz -->
     <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true" />

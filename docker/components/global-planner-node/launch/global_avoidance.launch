@@ -20,7 +20,7 @@
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
     <!-- Global planner -->
-    <include file="$(find avoidance)/launch/global_planner_octomap.launch" >
+    <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
         <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />

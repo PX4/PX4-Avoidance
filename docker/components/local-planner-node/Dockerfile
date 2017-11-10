@@ -2,7 +2,7 @@ FROM ros:kinetic-ros-base
 
 ENV WORKSPACE_DIR /root
 ENV CATKIN_WS ${WORKSPACE_DIR}/catkin_ws
-ENV AVOIDANCE_DIR ${CATKIN_WS}/src/avoidance
+ENV AVOIDANCE_DIR ${CATKIN_WS}/src/local-planner
 
 RUN apt-get update && \
     apt-get install -y libopencv-dev \

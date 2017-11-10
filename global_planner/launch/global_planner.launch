@@ -10,19 +10,18 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
 
-
     <!-- <param name="use_sim_time" value="true" /> -->
 
     <!-- Transformations for the camera and the world -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg" 
-        args="0 0 0 -1.58 0 0 world local_origin 100"/>    
-    <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera" 
+    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
+        args="0 0 0 -1.58 0 0 world local_origin 100"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
         args="0 0 0 -1.58 0 -1.58 fcu camera_link 100"/>
 
     <!-- Global Planner -->
-    <node name="global_planner_node" pkg="avoidance" type="global_planner_node" output="screen" args=""  />
-    <!-- <node name="path_handler_node" pkg="avoidance" type="path_handler_node" output="screen" /> -->
-    <node name="mock_data_node" pkg="avoidance" type="mock_data_node" output="screen" />
+    <node name="global_planner_node" pkg="global_planner" type="global_planner_node" output="screen" args=""  />
+    <!-- <node name="path_handler_node" pkg="global_planner" type="path_handler_node" output="screen" /> -->
+    <node name="mock_data_node" pkg="global_planner" type="mock_data_node" output="screen" />
 
     <!-- OctoMap Server -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">

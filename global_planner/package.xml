@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <package>
-  <name>avoidance</name>
+  <name>global_planner</name>
   <version>0.0.0</version>
-  <description>The avoidance package</description>
+  <description>Avoidance module doing global planning.</description>
 
   <!-- One maintainer tag required, multiple allowed, one person per tag --> 
   <!-- Example:  -->
@@ -53,7 +53,7 @@
   <build_depend>tf</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>mavros</build_depend>
-  
+
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>roscpp</run_depend>
@@ -70,6 +70,5 @@
   <!-- The export tag contains other, unspecified, tags -->
   <export>
     <!-- Other tools can request additional information be placed here -->
-
   </export>
 </package>

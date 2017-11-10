@@ -20,12 +20,12 @@
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
     <!-- Mavros and Sitl -->
-    <include file="$(find avoidance)/launch/mavros_sitl.launch" >
+    <include file="$(find global_planner)/launch/mavros_sitl.launch" >
         <arg name="world_path" value="$(arg world_path)" />
     </include>
 
     <!-- Global planner -->
-    <include file="$(find avoidance)/launch/global_planner_octomap.launch" >
+    <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
         <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />
@@ -49,5 +49,5 @@
 
     <!-- RViz -->
     <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true"
-          args="-d $(find avoidance)/resource/planning.rviz" />
+          args="-d $(find global_planner)/resource/planning.rviz" />
 </launch>

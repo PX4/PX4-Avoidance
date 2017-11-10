@@ -7,8 +7,8 @@
 #include <queue>            // std::priority_queue
 #include <string>
 #include <tuple>
-#include <unordered_map>  
-#include <unordered_set>  
+#include <unordered_map>
+#include <unordered_set>
 
 
 #include <dynamic_reconfigure/server.h>
