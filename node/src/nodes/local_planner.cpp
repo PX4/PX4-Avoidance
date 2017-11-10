@@ -547,7 +547,7 @@ void LocalPlanner::stopInFrontObstacles(){
 
   do_not_yaw_ = true;
   bool changed_keep_distance = fabsf(keep_distance_ - keep_distance_prev_) > 0.01 ? true : false;
-  bool obstacle_moving = ((min_distance_ < min_distance_prev_ - 0.1) && stop_lock_) ? true : false;
+  bool obstacle_moving = ((min_distance_ < min_distance_prev_ - 0.5f) && stop_lock_) ? true : false;
   double braking_distance = min_distance_ - keep_distance_;
 
   if (changed_keep_distance || obstacle_moving) {
@@ -569,23 +569,26 @@ void LocalPlanner::stopInFrontObstacles(){
       stop_xy(1)= pose_.pose.position.y + (braking_distance * waypt_xy(1) / waypt_xy.norm());
       m = fabsf(braking_distance) / max_box_x_;
       pose_stop_.z = pose_.pose.position.z;
+      goal_.x = stop_xy(0);
+      goal_.y = stop_xy(1);
       first_brake_ = false;
     }
 
     Eigen::Vector2f increment(m * braking_distance, m * braking_distance);
     Eigen::Vector2f stop_wp(stop_xy(0) / stop_xy.norm() * increment(0), stop_xy(1) / stop_xy.norm() * increment(1));
-    stop_lock_ = stop_wp.norm() < 0.1 ? true : false;
-    stop_wp = stop_wp.normalized();
+    stop_lock_ = (withinGoalRadius() || increment(0) < 0.1);
+
+    if (stop_wp.norm() > speed_) {
+      stop_wp = speed_ * stop_wp.normalized();
+    }
+
     pose_stop_.x = pose_.pose.position.x + stop_wp(0);
     pose_stop_.y = pose_.pose.position.y + stop_wp(1);
 
   } else {
-    if (first_lock_){
-      pose_stop_.x = pose_.pose.position.x;
-      pose_stop_.y = pose_.pose.position.y;
-      pose_stop_.z = pose_.pose.position.z;
-      first_lock_ = false;
-    }
+      pose_stop_.x = goal_.x;
+      pose_stop_.y = goal_.y;
+      pose_stop_.z = goal_.z;
   }
 
   keep_distance_prev_ = keep_distance_;
