@@ -44,6 +44,11 @@ void LocalPlanner::setGoal() {
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
+  save_dir_ = true;
+  do_not_yaw_ = false;
+  first_brake_ = true;
+  first_lock_ = true;
+  stop_lock_ = false;
 }
 
 // trim the point cloud so that only points inside the bounding box are considered and
@@ -512,7 +517,7 @@ void LocalPlanner::getPathMsg() {
   if(!reach_altitude_){
     reachGoalAltitudeFirst();
   } else {
-      if(!reached_goal_ && (pose_.pose.position.z > 1.5) && !stop_in_front_){
+      if(!reached_goal_ && (pose_.pose.position.z > 1.5) && (!stop_in_front_ || obstacle_)){
         waypt_ = smoothWaypoint();
       }
   }
