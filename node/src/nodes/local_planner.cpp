@@ -389,9 +389,9 @@ void LocalPlanner::goFast(){
     vec.setX(goal_.x - pose_.pose.position.x);
     vec.setY(goal_.y - pose_.pose.position.y);
     vec.setZ(goal_.z - pose_.pose.position.z);
-    double new_len = vec.length() < 1.0 ? vec.length() : speed;
+    double new_len = vec.length() < 1.0 ? vec.length() : speed_;
     vec.normalize();
-    vec *= 1.0;
+    vec *= new_len;
   
     waypt_.vector.x = pose_.pose.position.x + vec.getX();
     waypt_.vector.y = pose_.pose.position.y + vec.getY();
@@ -521,15 +521,15 @@ void LocalPlanner::getPathMsg() {
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
-  //checkSpeed();
+  checkSpeed();
 } 
 
 void LocalPlanner::checkSpeed(){
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacleAhead()){
-    speed = std::min(max_speed_, speed + 0.1);
+    speed_ = std::min(max_speed_, speed_ + 0.1);
   }
   else{
-    speed = min_speed_;
+    speed_ = min_speed_;
   }
 }
 
