@@ -44,6 +44,11 @@ void LocalPlanner::setGoal() {
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
+  save_dir_ = true;
+  do_not_yaw_ = false;
+  first_brake_ = true;
+  first_lock_ = true;
+  stop_lock_ = false;
 }
 
 // trim the point cloud so that only points inside the bounding box are considered and
@@ -54,33 +59,21 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud_.points.clear();
   min_distance_ = 1000.0f;
+  double min_realsense_dist = 0.2;
   float distance;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
-      // Check if the point is invalid
+    // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-      if((pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z) {
-        cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));  
-        distance = sqrt(pow(pose_.pose.position.x-pcl_it->x,2) + pow(pose_.pose.position.y-pcl_it->y,2) + pow(pose_.pose.position.z-pcl_it->z,2));
-        if (distance < min_distance_){
-          min_distance_ = distance;
-        } 
+      if ((pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z) {
+        distance = sqrt(pow(pose_.pose.position.x - pcl_it->x, 2) + pow(pose_.pose.position.y - pcl_it->y, 2) + pow(pose_.pose.position.z - pcl_it->z, 2));
+        if (distance > min_realsense_dist) {
+          cloud->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+          if (distance < min_distance_) {
+            min_distance_ = distance;
+          }
+        }
       }
-    }
-  }
-
-  // statistical outlier removal (really slow)
-  if (cloud->points.size() > 0) {
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud);
-    sor.setMeanK (20);
-    sor.setStddevMulThresh (1.0);
-    sor.filter(*cloud);
-
-    if(cloud->points.size() > 0) {
-      obstacle_ = true;
-    } else {
-      obstacle_ = false;
     }
   }
 
@@ -92,6 +85,26 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+
+  if (cloud->points.size() > 160) {
+    obstacle_ = true;
+    if (stop_in_front_ && reach_altitude_ ){
+      stopInFrontObstacles();
+    } else {
+      do_not_yaw_ = false;
+      first_brake_ = true;
+      first_lock_ = true;
+      stop_lock_ = false;
+      createPolarHistogram();
+    }
+  } else {
+    obstacle_ = false;
+    do_not_yaw_ = false;
+    first_brake_ = true;
+    first_lock_ = true;
+    stop_lock_ = false;
+    goFast();
+  }
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -144,6 +157,7 @@ void LocalPlanner::createPolarHistogram() {
 
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  findFreeDirections();
 }
 
 // initialize GridCell message
@@ -245,6 +259,7 @@ void LocalPlanner::findFreeDirections() {
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  calculateCostMap();
 }
 
 // transform polar coordinates into Cartesian coordinates
@@ -276,11 +291,17 @@ double LocalPlanner::costFunction(int e, int z) {
   double cost;
   int goal_z = floor(atan2(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y)*180.0 / PI); //azimuthal angle
   int goal_e = floor(atan((goal_.z-pose_.pose.position.z) / sqrt(pow((goal_.x-pose_.pose.position.x), 2) + pow((goal_.y-pose_.pose.position.y), 2)))*180.0 / PI);//elevation angle
+  goal_z = goal_z + (alpha_res - goal_z%alpha_res); //[-170,+190]
+  goal_e = goal_e + (alpha_res - goal_e%alpha_res); //[-80,+90]
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
-  
   double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
   int waypoint_index = path_waypoints_.cells.size();
-  double smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index-1].x, path_waypoints_.cells[waypoint_index-1].y, e, z);
+  double smooth_cost = 0.0;
+  if (waypoint_index == 0) {
+    smooth_cost = 0.0;
+  } else {
+    smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index-1].x, path_waypoints_.cells[waypoint_index-1].y, e, z);
+  }
   double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)]-accumulated_height_prior[std::round(goal_.z)])*prior_cost_param_*10.0;
   // alternative cost to prefer higher altitudes
   // int t = std::round(p.z) + e;
@@ -308,6 +329,7 @@ void LocalPlanner::calculateCostMap() {
 
   ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  getNextWaypoint();
 }
 
 // check that the selected direction is really free and transform it into a waypoint. Otherwise break not 
@@ -341,6 +363,7 @@ void LocalPlanner::getNextWaypoint() {
   }
 
   ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
+  getPathMsg();
 }
 
 // check that each point in the filtered point cloud is at least 0.5m away from the waypoint the UAV is
@@ -371,7 +394,7 @@ void LocalPlanner::goFast(){
     vec.setX(goal_.x - pose_.pose.position.x);
     vec.setY(goal_.y - pose_.pose.position.y);
     vec.setZ(goal_.z - pose_.pose.position.z);
-    double new_len = vec.length() < 1.0 ? vec.length() : speed;
+    double new_len = vec.length() < 1.0 ? vec.length() : speed_;
     vec.normalize();
     vec *= new_len;
   
@@ -380,12 +403,13 @@ void LocalPlanner::goFast(){
     waypt_.vector.z = pose_.pose.position.z + vec.getZ();
 
     // fill direction as straight ahead
-    geometry_msgs::Point p; p.x = 90; p.y = 90; p.z = 0;
+    geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
     path_waypoints_.cells.push_back(p);
  }
 
   
   ROS_INFO("Go fast selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
+  getPathMsg();
 }
 
 // check if the UAV has reached the goal set for the mission
@@ -493,12 +517,12 @@ void LocalPlanner::getPathMsg() {
   if(!reach_altitude_){
     reachGoalAltitudeFirst();
   } else {
-      if(!reached_goal_ && (pose_.pose.position.z > 1.5)){
+      if(!reached_goal_ && (pose_.pose.position.z > 1.5) && (!stop_in_front_ || obstacle_)){
         waypt_ = smoothWaypoint();
       }
   }
 
-  double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+  double new_yaw = (do_not_yaw_ == true) ? last_yaw_ : nextYaw(pose_, waypt_, last_yaw_);
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
@@ -507,10 +531,10 @@ void LocalPlanner::getPathMsg() {
 
 void LocalPlanner::checkSpeed(){
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacleAhead()){
-    speed = std::min(max_speed_, speed + 0.1);
+    speed_ = std::min(max_speed_, speed_ + 0.1);
   }
   else{
-    speed = min_speed_;
+    speed_ = min_speed_;
   }
 }
 
@@ -521,3 +545,68 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
          && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
 
 }
+
+
+// stop in front of an obstacle at a distance defined by the variable keep_distance_
+void LocalPlanner::stopInFrontObstacles(){
+
+  do_not_yaw_ = true;
+  bool changed_keep_distance = fabsf(keep_distance_ - keep_distance_prev_) > 0.01 ? true : false;
+  bool obstacle_moving = ((min_distance_ < min_distance_prev_ - 0.5f) && stop_lock_) ? true : false;
+  double braking_distance = min_distance_ - keep_distance_;
+
+  if (changed_keep_distance || obstacle_moving) {
+    stop_lock_ = false;
+    first_brake_ = true;
+  }
+
+  if (!stop_lock_) {
+    first_lock_ = true;
+    if (first_brake_) {
+
+     if(save_dir_) {
+        waypt_xy(0) = waypt_.vector.x - pose_.pose.position.x;
+        waypt_xy(1) = waypt_.vector.y - pose_.pose.position.y;
+        save_dir_ = false;
+      }
+
+      stop_xy(0)= pose_.pose.position.x + (braking_distance * waypt_xy(0) / waypt_xy.norm());
+      stop_xy(1)= pose_.pose.position.y + (braking_distance * waypt_xy(1) / waypt_xy.norm());
+      m = fabsf(braking_distance) / max_box_x_;
+      pose_stop_.z = pose_.pose.position.z;
+      goal_.x = stop_xy(0);
+      goal_.y = stop_xy(1);
+      first_brake_ = false;
+    }
+
+    Eigen::Vector2f increment(m * braking_distance, m * braking_distance);
+    Eigen::Vector2f stop_wp(stop_xy(0) / stop_xy.norm() * increment(0), stop_xy(1) / stop_xy.norm() * increment(1));
+    stop_lock_ = (withinGoalRadius() || increment(0) < 0.1);
+
+    if (stop_wp.norm() > speed_) {
+      stop_wp = speed_ * stop_wp.normalized();
+    }
+
+    pose_stop_.x = pose_.pose.position.x + stop_wp(0);
+    pose_stop_.y = pose_.pose.position.y + stop_wp(1);
+
+  } else {
+      pose_stop_.x = goal_.x;
+      pose_stop_.y = goal_.y;
+      pose_stop_.z = goal_.z;
+  }
+
+  keep_distance_prev_ = keep_distance_;
+  min_distance_prev_ = min_distance_;
+
+  waypt_.vector.x = pose_stop_.x;
+  waypt_.vector.y = pose_stop_.y;
+  waypt_.vector.z = pose_stop_.z;
+
+   // fill direction as straight ahead
+  geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
+  path_waypoints_.cells.push_back(p);
+  ROS_INFO("Stop waypoint: [%.2f %.2f %.2f], obstacle distance %.2f. ", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z, min_distance_);
+  getPathMsg();
+}
+

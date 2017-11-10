@@ -63,6 +63,7 @@ private:
   ros::Publisher marker_candidates_pub_;
   ros::Publisher marker_selected_pub_;
   ros::Publisher marker_goal_pub_;
+  ros::Publisher bounding_box_pub_;
 
   tf::TransformListener tf_listener_;
 
@@ -88,6 +89,7 @@ private:
   void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
   void printPointInfo(double x, double y, double z);
   void publishGoal();
+  void publishBox();
 
 };
 
