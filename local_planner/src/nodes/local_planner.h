@@ -50,9 +50,14 @@
 #define grid_length_e 180/alpha_res
 #define age_lim 100
 #define min_bin 1.5
+<<<<<<< ec49835a6d8f4e6ad9fc2de8eb36193b22454b56
 
 //#define h_fov 59.0
 //#define v_fov 46.0
+=======
+#define h_fov 59.0
+#define v_fov 46.0
+>>>>>>> Determine FOV and give proirity to the new histogram inside the FOV
 //#define n_fields_90 round(90.0/alpha_res)
 //#define n_fields_hfov std::floor((grid_length_z-h_fov/alpha_res)/2)
 //#define n_fields_vfov std::floor((grid_length_e-v_fov/alpha_res)/2)

@@ -279,12 +279,72 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-  //Visualize histogram step2
-  std::cout << "------------New Histogram----------------\n";
+
+  // Calculate FOV
+    tf::Quaternion q(
+        pose_.pose.orientation.x,
+        pose_.pose.orientation.y,
+        pose_.pose.orientation.z,
+        pose_.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw);
+
+    int z_FOV_max = std::round((-yaw*180.0/PI + h_fov/2.0+270.0)/alpha_res)-1;
+    int z_FOV_min = std::round((-yaw*180.0/PI - h_fov/2.0+270.0)/alpha_res)-1;
+    int e_FOV_max = std::round((-pitch*180.0/PI + v_fov/2.0+90.0)/alpha_res)-1;
+    int e_FOV_min = std::round((-pitch*180.0/PI - v_fov/2.0+90.0)/alpha_res)-1;
+
+    //Visualize histogram step2
+    std::cout << "------------New Histogram----------------\n";
+    //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+    for (int e = 0; e < grid_length_e; e++) {
+      for (int z = 0; z < grid_length_z; z++) {
+        if(z>z_FOV_min && z<z_FOV_max && e>e_FOV_min && e<e_FOV_max){
+          std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
+        }else{
+          std::cout << polar_histogram_.get_bin(e, z) << " ";
+        }
+      }
+      std::cout << "\n";
+    }
+    std::cout << "--------------------------------------\n";
+
+
+
+
+  //Combine to New binary histogram
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
-      if(z>32 && z<50 && e>10 && e<20){
-        std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
+
+      if (z > z_FOV_min && z < z_FOV_max && e > e_FOV_min && e < e_FOV_max) {  //inside FOV
+        if (polar_histogram_.get_bin(e, z) > 0) {
+          polar_histogram_.set_age(e, z, 1);
+        }
+      } else {
+        if (polar_histogram_est_.get_bin(e, z) > 0) {
+          polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+        }
+        if (polar_histogram_.get_bin(e, z) > 0) {
+          polar_histogram_.set_age(e, z, 1);
+        }
+
+        if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) == 0) {
+          polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
+          polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
+        }
+      }
+
+    }
+  }
+
+  //Visualize histogram step2
+  std::cout << "------------combined Histogram----------------\n";
+  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      if(z>z_FOV_min && z<z_FOV_max && e>e_FOV_min && e<e_FOV_max){
+        std::cout << "\033[1;32m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
       }else{
         std::cout << polar_histogram_.get_bin(e, z) << " ";
       }
@@ -293,36 +353,7 @@ void LocalPlanner::createPolarHistogram() {
   }
   std::cout << "--------------------------------------\n";
 
-  //Combine to New binary histogram
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
 
-      if (polar_histogram_est_.get_bin(e, z) > 0) {
-        polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
-      }
-      if (polar_histogram_.get_bin(e, z) > 0) {
-        polar_histogram_.set_age(e, z, 1);
-      }
-
-      if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) > 0) {
-        polar_histogram_.set_bin(e, z, (polar_histogram_.get_bin(e, z) + polar_histogram_est_.get_bin(e, z)) / 2);
-        polar_histogram_.set_dist(e, z, (polar_histogram_.get_dist(e, z) + polar_histogram_est_.get_dist(e, z)) / 2);
-      } else if (polar_histogram_est_.get_bin(e, z) > 0 || polar_histogram_.get_bin(e, z) > 0) {
-        polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + polar_histogram_est_.get_bin(e, z));
-        polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + polar_histogram_est_.get_dist(e, z));
-      }
-    }
-  }
-
-//  //  //Visualize histogram step2
-//  std::cout << "------------Combined Age----------------\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      std::cout << polar_histogram_.get_age(e, z) << " ";
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
 
   //Update old histogram
   polar_histogram_old_.setZero();
