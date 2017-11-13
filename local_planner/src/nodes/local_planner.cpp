@@ -140,7 +140,7 @@ bool LocalPlanner::obstacleAhead() {
 // fill the 2D polar histogram with the points from the filtered point cloud
 void LocalPlanner::createPolarHistogram() {
   std::clock_t start_time = std::clock();
-  float bbx_rad = max_box_x_;
+  //float bbx_rad = (max_box_.x - min_box_.x) * sqrt(2) / 2;
   float dist;
   float age;
   double n_points = 0;
@@ -171,7 +171,7 @@ void LocalPlanner::createPolarHistogram() {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
-          if (dist < bbx_rad && age < age_lim) {
+          if (dist < max_box_.x && dist > 0.3 && age < age_lim) {
             //fill into histogram at actual position
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             int beta_z_new = floor((atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
@@ -197,43 +197,21 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-  //  //Visualize histogram step2
-  std::cout << "------------Estimate Bin before----------------\n";
-  for (int e = 0; e < grid_length_e / 2; e++) {
-    for (int z = 0; z < grid_length_z / 2; z++) {
-      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
+//  //  //Visualize histogram step2
+//  std::cout << "------------Estimate Bin before----------------\n";
+//  for (int e = 0; e < grid_length_e / 2; e++) {
+//    for (int z = 0; z < grid_length_z / 2; z++) {
+//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
 
   //Normalize and get mean in dist bins
-  double n_points_set = 0.0;
+
   for (int e = 0; e < grid_length_e / 2; e++) {
     for (int z = 0; z < grid_length_z / 2; z++) {
       if (polar_histogram_est_.get_bin(e, z) >= min_bin) {
-        n_points_set += polar_histogram_est_.get_bin(e, z);
-      }
-    }
-  }
-
-//  //adapt min_bin when too many points are lost
-  double min_bin_adapted = min_bin;
-//  if (n_points_set < 0.6 * n_points && adapted_min_bin_ >= 5) {
-//    min_bin_adapted -= 1.0 / n_split;
-//    std::cout << "Min_Bin adapted 1!!!!!!!!!!!!\n";
-//    if (n_points_set < 0.2 * n_points) {
-//        min_bin_adapted -= 1.0 / n_split;
-//        std::cout << "Min_Bin adapted 2!!!!!!!!!!!!\n";
-//      }
-//    adapted_min_bin_ = 0;
-//  }else{
-//    adapted_min_bin_ ++;
-//  }
-
-  for (int e = 0; e < grid_length_e / 2; e++) {
-    for (int z = 0; z < grid_length_z / 2; z++) {
-      if (polar_histogram_est_.get_bin(e, z) >= min_bin_adapted) {
         polar_histogram_est_.set_dist(e, z, polar_histogram_est_.get_dist(e, z) / polar_histogram_est_.get_bin(e, z));
         polar_histogram_est_.set_age(e, z, polar_histogram_est_.get_age(e, z) / polar_histogram_est_.get_bin(e, z));
         polar_histogram_est_.set_bin(e, z, 1);
@@ -244,30 +222,28 @@ void LocalPlanner::createPolarHistogram() {
       }
     }
   }
-  std::cout << "Original Number of points: " << n_points << " set points with min_bin: " << n_points_set << "ratio: " << n_points_set / n_points << "\n";
 
-//
-  //  //Visualize histogram step2
-  std::cout << "------------Estimate bin after---------------\n";
-  for (int e = 0; e < grid_length_e / 2; e++) {
-    for (int z = 0; z < grid_length_z / 2; z++) {
-      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
+//  //  //Visualize histogram step2
+//  std::cout << "------------Estimate bin after---------------\n";
+//  for (int e = 0; e < grid_length_e / 2; e++) {
+//    for (int z = 0; z < grid_length_z / 2; z++) {
+//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
 
   //upsample estimate
   polar_histogram_est_.upsample();
 
-  std::cout << "------------Estimate upsampled---------------\n";
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
-      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
+//  std::cout << "------------Estimate upsampled---------------\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
 
   //Generate new histogram
 
@@ -280,23 +256,63 @@ void LocalPlanner::createPolarHistogram() {
     temp.z = it->z;
     dist = distance3DCartesian(pose_.pose.position,temp);
 
-    if (dist < bbx_rad && dist > 0.2) {
-      int beta_z = floor((atan2(temp.x - pose_.pose.position.x, temp.y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
-      int beta_e = floor((atan((temp.z - pose_.pose.position.z) / sqrt((temp.x - pose_.pose.position.x) * (temp.x - pose_.pose.position.x) + (temp.y - pose_.pose.position.y) * (temp.y - pose_.pose.position.y))) * 180.0 / PI));  //(-90.+90)
+    int beta_z = floor((atan2(temp.x - pose_.pose.position.x, temp.y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
+    int beta_e = floor((atan((temp.z - pose_.pose.position.z) / sqrt((temp.x - pose_.pose.position.x) * (temp.x - pose_.pose.position.x) + (temp.y - pose_.pose.position.y) * (temp.y - pose_.pose.position.y))) * 180.0 / PI));  //(-90.+90)
 
-      beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
-      beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
+    beta_z = beta_z + (alpha_res - beta_z % alpha_res);  //[-170,+190]
+    beta_e = beta_e + (alpha_res - beta_e % alpha_res);  //[-80,+90]
 
-      int e = (90+beta_e)/alpha_res - 1; //[0,17]
-      int z = (180+beta_z)/alpha_res - 1; //[0,35]
+    int e = (90 + beta_e) / alpha_res - 1;  //[0,17]
+    int z = (180 + beta_z) / alpha_res - 1;  //[0,35]
 
-      polar_histogram_.set(e,z,polar_histogram_.get(e,z)+1);
+    polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + 1);
+    polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
+  }
+
+  //Normalize and get mean in dist bins
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      if (polar_histogram_.get_bin(e, z) > 0) {
+        polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) / polar_histogram_.get_bin(e, z));
+        polar_histogram_.set_bin(e, z, 1);
+      }
     }
   }
 
-  ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  polar_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  findFreeDirections();
+  //Visualize histogram step2
+  std::cout << "------------New Histogram----------------\n";
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      if(z>32 && z<50 && e>10 && e<20){
+        std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
+      }else{
+        std::cout << polar_histogram_.get_bin(e, z) << " ";
+      }
+    }
+    std::cout << "\n";
+  }
+  std::cout << "--------------------------------------\n";
+
+  //Combine to New binary histogram
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+
+      if (polar_histogram_est_.get_bin(e, z) > 0) {
+        polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+      }
+      if (polar_histogram_.get_bin(e, z) > 0) {
+        polar_histogram_.set_age(e, z, 1);
+      }
+
+      if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) > 0) {
+        polar_histogram_.set_bin(e, z, (polar_histogram_.get_bin(e, z) + polar_histogram_est_.get_bin(e, z)) / 2);
+        polar_histogram_.set_dist(e, z, (polar_histogram_.get_dist(e, z) + polar_histogram_est_.get_dist(e, z)) / 2);
+      } else if (polar_histogram_est_.get_bin(e, z) > 0 || polar_histogram_.get_bin(e, z) > 0) {
+        polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + polar_histogram_est_.get_bin(e, z));
+        polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + polar_histogram_est_.get_dist(e, z));
+      }
+    }
+  }
 
 //  //  //Visualize histogram step2
 //  std::cout << "------------Combined Age----------------\n";
@@ -492,11 +508,13 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
 // cost function according to all free directions found in the 2D polar histogram are ranked
 double LocalPlanner::costFunction(int e, int z) {
   double cost;
+
   int goal_z = floor(atan2(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y)*180.0 / PI); //azimuthal angle
   int goal_e = floor(atan((goal_.z-pose_.pose.position.z) / sqrt(pow((goal_.x-pose_.pose.position.x), 2) + pow((goal_.y-pose_.pose.position.y), 2)))*180.0 / PI);//elevation angle
   goal_z = goal_z + (alpha_res - goal_z%alpha_res); //[-170,+190]
   goal_e = goal_e + (alpha_res - goal_e%alpha_res); //[-80,+90]
   geometry_msgs::Vector3Stamped possible_waypt = getWaypointFromAngle(e,z);
+
   double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
   int waypoint_index = path_waypoints_.cells.size();
 
