@@ -5,7 +5,7 @@
 
 // This file consists functions for functions for Bezier curves
 
-namespace avoidance {
+namespace global_planner {
 
 // Returns the point on the quadratic Bezier curve at time t (0 <= t <= 1)
 template <typename T>
@@ -151,5 +151,5 @@ void pathToTriplets(const nav_msgs::Path & path,
   }
 }
 
-} // namespace avoidance
+} // namespace global_planner
 #endif /* GLOBAL_PLANNER_BEZIER_H_ */

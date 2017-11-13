@@ -1,6 +1,6 @@
-#include "avoidance/global_planner.h"
+#include "global_planner/global_planner.h"
 
-namespace avoidance {
+namespace global_planner {
 
 // Returns the XY-angle between u and v, or if v is directly above/below u, it returns last_yaw 
 double nextYaw(Cell u, Cell v, double last_yaw) {
@@ -540,4 +540,4 @@ void GlobalPlanner::stop() {
 }
 
 
-} // namespace avoidance
+} // namespace global_planner

@@ -3,15 +3,14 @@
 
 #include <string>
 
-#include "avoidance/cell.h"
-#include "avoidance/node.h"
-#include "avoidance/visitor.h"
-#include "avoidance/bezier.h"
-
+#include "global_planner/cell.h"
+#include "global_planner/node.h"
+#include "global_planner/visitor.h"
+#include "global_planner/bezier.h"
 
 // This file consists of general search tools
 
-namespace avoidance {
+namespace global_planner {
 
 struct PathInfo {
   bool is_blocked;
@@ -355,5 +354,5 @@ bool findPathOld(GlobalPlanner * global_planner,
   return true;
 }  
 
-} // namespace avoidance
+} // namespace global_planner
 #endif /* GLOBAL_PLANNER_SEARCH_TOOLS_H_ */

@@ -20,19 +20,19 @@
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/Octomap.h>
 
-#include <avoidance/GlobalPlannerNodeConfig.h>
-#include "avoidance/PathWithRiskMsg.h"
-#include "avoidance/analysis.h"
-#include "avoidance/bezier.h"
-#include "avoidance/cell.h"
-#include "avoidance/common.h"
-#include "avoidance/common_ros.h"
-#include "avoidance/node.h"
-#include "avoidance/search_tools.h"
-#include "avoidance/visitor.h"
+#include <global_planner/GlobalPlannerNodeConfig.h>
+#include <global_planner/PathWithRiskMsg.h>
+#include "global_planner/analysis.h"
+#include "global_planner/bezier.h"
+#include "global_planner/cell.h"
+#include "global_planner/common.h"
+#include "global_planner/common_ros.h"
+#include "global_planner/node.h"
+#include "global_planner/search_tools.h"
+#include "global_planner/visitor.h"
 
 
-namespace avoidance {
+namespace global_planner {
 
 class GlobalPlanner {
  public:
@@ -138,6 +138,6 @@ class GlobalPlanner {
   void stop();
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif // GLOBAL_PLANNER_GLOBAL_PLANNER_H

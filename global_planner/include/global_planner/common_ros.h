@@ -10,11 +10,11 @@
 #include <visualization_msgs/Marker.h>
 #include <math.h>   // sqrt
 
-#include "avoidance/common.h" // hasSameYawAndAltitude
+#include "global_planner/common.h" // hasSameYawAndAltitude
 
 // This file contains general functions which have some Ros dependancy
 
-namespace avoidance {
+namespace global_planner {
 
 // GLOBAL PLANNER
 
@@ -149,6 +149,6 @@ double pathEnergy(const nav_msgs::Path & path, double up_penalty) {
   return total_energy;
 }
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif /* GLOBAL_PLANNER_COMMON_ROS_H_ */

@@ -1,6 +1,6 @@
-#include "avoidance/cell.h"
+#include "global_planner/cell.h"
 
-namespace avoidance {
+namespace global_planner {
 
 Cell::Cell() = default;
 Cell::Cell(std::tuple<int, int, int> new_tuple)
@@ -11,8 +11,6 @@ Cell::Cell(double x, double y)
   : Cell(x, y, 0.0) {}
 Cell::Cell(geometry_msgs::Point point) 
   : Cell(point.x, point.y, point.z) {}
-// Cell::Cell(Eigen::Vector3d point) 
-  // : Cell(point[0], point[1], point[2])  {}
 
 int Cell::xIndex() const {return std::get<0>(tpl_);}
 int Cell::yIndex() const {return std::get<1>(tpl_);}
@@ -112,4 +110,4 @@ std::string Cell::asString() const {
   return s;
 }
 
-} // namespace avoidance
+} // namespace global_planner

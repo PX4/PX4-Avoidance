@@ -2,24 +2,22 @@
 #define GLOBAL_PLANNER_GLOBAL_PLANNER_NODE_H
 
 #include <boost/bind.hpp>
-// #include <Eigen/Eigen>
-#include <math.h>           // abs floor
+#include <math.h>
 #include <set>
 #include <stdio.h>
 #include <string>
 
 #include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseStamped.h>
-// #include <mav_msgs/eigen_mav_msgs.h>
 #include <nav_msgs/Path.h>
 #include <nav_msgs/Odometry.h>
-#include <pcl_ros/transforms.h> // transformPointCloud
-#include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
+#include <pcl_ros/transforms.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <std_msgs/ColorRGBA.h>
 #include <sensor_msgs/LaserScan.h>
-#include <tf/transform_listener.h> // getYaw createQuaternionMsgFromYaw  TransformListener
+#include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -28,19 +26,16 @@
 #include <octomap_msgs/conversions.h>
 #include <octomap_msgs/Octomap.h>
 
-#include "avoidance/analysis.h"
-#include "avoidance/cell.h"
-#include "avoidance/common.h"
-#include "avoidance/common_ros.h"
-#include "avoidance/global_planner.h"
-#include "avoidance/search_tools.h"
-#include "avoidance/visitor.h"
-#include "avoidance/PathWithRiskMsg.h"
+#include "global_planner/analysis.h"
+#include "global_planner/cell.h"
+#include "global_planner/common.h"
+#include "global_planner/common_ros.h"
+#include "global_planner/global_planner.h"
+#include "global_planner/search_tools.h"
+#include "global_planner/visitor.h"
+#include "global_planner/PathWithRiskMsg.h"
 
-
-
-
-namespace avoidance {
+namespace global_planner {
 
 class GlobalPlannerNode {
  public:
@@ -52,7 +47,7 @@ class GlobalPlannerNode {
 
  private:
   ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<avoidance::GlobalPlannerNodeConfig> server_;
+  dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
   
   nav_msgs::Path actual_path_;
 
@@ -98,7 +93,7 @@ class GlobalPlannerNode {
   void planPath();
   void setIntermediateGoal();
 
-  void dynamicReconfigureCallback(avoidance::GlobalPlannerNodeConfig & config, uint32_t level);
+  void dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig & config, uint32_t level);
   void velocityCallback(const geometry_msgs::TwistStamped & msg);
   void positionCallback(const geometry_msgs::PoseStamped & msg);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
@@ -116,6 +111,6 @@ class GlobalPlannerNode {
 
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif // GLOBAL_PLANNER_GLOBAL_PLANNER_NODE_H

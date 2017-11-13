@@ -1,7 +1,7 @@
 #ifndef GLOBAL_PLANNER_VISITOR
 #define GLOBAL_PLANNER_VISITOR
 
-namespace avoidance {
+namespace global_planner {
 
 template <typename Set, typename Map>
 class SearchVisitor {
@@ -42,6 +42,6 @@ class NullVisitor {
   void perNeighbor(NodePtr u, NodePtr v) {}
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif // GLOBAL_PLANNER_VISITOR

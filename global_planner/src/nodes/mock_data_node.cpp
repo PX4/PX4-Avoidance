@@ -1,6 +1,6 @@
 #include "mock_data_node.h"
 
-namespace avoidance {
+namespace global_planner {
 
 MockDataNode::MockDataNode() {
 
@@ -122,11 +122,11 @@ void MockDataNode::sendMockData() {
 
 }
 
-} // namespace avoidance 
+} // namespace global_planner 
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "mock_data_node");
-  avoidance::MockDataNode mock_data_node;
+  global_planner::MockDataNode mock_data_node;
   ros::spin();
   return 0;
 }

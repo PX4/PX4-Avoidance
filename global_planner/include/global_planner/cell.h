@@ -7,9 +7,9 @@
 
 #include <geometry_msgs/Point.h>
 
-#include "avoidance/common.h"
+#include "global_planner/common.h"
 
-namespace avoidance {
+namespace global_planner {
 
 double CELL_SCALE = 1.0;
 
@@ -97,13 +97,13 @@ class GoalCell : public Cell {
   bool is_temporary_;
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 namespace std {
 
 template <>
-struct hash<avoidance::Cell> {
-    std::size_t operator()(const avoidance::Cell & cell ) const {
+struct hash<global_planner::Cell> {
+    std::size_t operator()(const global_planner::Cell & cell ) const {
         return (std::get<0>(cell.tpl_) << 20) ^ (std::get<1>(cell.tpl_) << 10) ^ std::get<2>(cell.tpl_);
       // return (std::get<0>(cell.tpl_) * 18397) + (std::get<1>(cell.tpl_) * 20483) + (std::get<2>(cell.tpl_) * 29303);
     }

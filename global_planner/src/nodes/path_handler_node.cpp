@@ -1,12 +1,12 @@
 #include "path_handler_node.h"
 
-namespace avoidance {
+namespace global_planner {
 
 PathHandlerNode::PathHandlerNode() {
   nh_ = ros::NodeHandle("~"); 
 
   // Set up Dynamic Reconfigure Server
-  dynamic_reconfigure::Server<avoidance::PathHandlerNodeConfig>::CallbackType f;
+  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig>::CallbackType f;
   f = boost::bind(&PathHandlerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
@@ -23,7 +23,7 @@ PathHandlerNode::PathHandlerNode() {
   mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ = nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
-  three_point_msg_publisher_ = nh_.advertise<avoidance::ThreePointMsg>("/three_point_msg", 10);
+  three_point_msg_publisher_ = nh_.advertise<global_planner::ThreePointMsg>("/three_point_msg", 10);
   // avoidance_triplet_msg_publisher_ = nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet", 10);
 
   // Initialize goal
@@ -98,7 +98,7 @@ void PathHandlerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStampe
   }
 }
 
-void PathHandlerNode::dynamicReconfigureCallback(avoidance::PathHandlerNodeConfig & config, 
+void PathHandlerNode::dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig & config, 
                                                  uint32_t level) {
   ignore_path_messages_ = config.ignore_path_messages_;
   three_point_mode_ = config.three_point_mode_;
@@ -236,11 +236,11 @@ void PathHandlerNode::publishThreePointMsg() {
   // avoidance_triplet_msg_publisher_.publish(avoidance_triplet);
 }
 
-} // namespace avoidance 
+} // namespace global_planner 
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "path_handler_node");
-  avoidance::PathHandlerNode path_handler_node;
+  global_planner::PathHandlerNode path_handler_node;
   ros::spin();
   return 0;
 }

@@ -1,12 +1,12 @@
 #ifndef GLOBAL_PLANNER_ANALYSIS_H_
 #define GLOBAL_PLANNER_ANALYSIS_H_
 
-#include "avoidance/cell.h"
-#include "avoidance/node.h"
+#include "global_planner/cell.h"
+#include "global_planner/node.h"
 
 // This file consists mostly of ugly debug functions which contain no logic 
 
-namespace avoidance {
+namespace global_planner {
 
 // Print information about all the costs and heuristics on the path
 template <typename GlobalPlanner>
@@ -136,6 +136,6 @@ void printPointStats(GlobalPlanner * global_planner, double x, double y, double 
   }
 }
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif /* GLOBAL_PLANNER_ANALYSIS_H_ */

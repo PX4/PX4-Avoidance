@@ -1,6 +1,6 @@
-#include "avoidance/node.h"
+#include "global_planner/node.h"
 
-namespace avoidance {
+namespace global_planner {
 
 bool Node::isSmaller(const Node & other) const {
   return cell_ < other.cell_ || (cell_ == other.cell_ && parent_ < other.parent_);
@@ -10,8 +10,7 @@ bool Node::isEqual(const Node & other) const {
 }
 
 std::size_t Node::hash() const {
-  return (std::hash<avoidance::Cell>()(cell_) << 1) ^ std::hash<avoidance::Cell>()(parent_);
-  // return std::hash<avoidance::Cell>()(node.cell_) * 37 + std::hash<avoidance::Cell>()(node.parent_) * 41;
+  return (std::hash<global_planner::Cell>()(cell_) << 1) ^ std::hash<global_planner::Cell>()(parent_);
 }
 
 NodePtr Node::nextNode(const Cell & nextCell) const {
@@ -88,4 +87,4 @@ std::string Node::asString() const {
   return s;
 }
 
-} // namespace avoidance
+} // namespace global_planner

@@ -9,9 +9,9 @@
 #include <vector>
 #include <stdlib.h> 
 
-#include "avoidance/common.h" // hasSameYawAndAltitude
+#include "global_planner/common.h" // hasSameYawAndAltitude
 
-namespace avoidance {
+namespace global_planner {
 
 class MockDataNode {
  public:
@@ -35,6 +35,6 @@ class MockDataNode {
   ros::Publisher global_goal_pub_;
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif // GLOBAL_PLANNER_MOCK_DATA_NODE_H

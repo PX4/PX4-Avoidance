@@ -121,7 +121,6 @@ catkin_package(
 
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
-# include_directories(include)
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -131,9 +130,6 @@ include_directories(
 link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
-# add_library(avoidance
-#   src/${PROJECT_NAME}/avoidance.cpp
-# )
 add_library(cell
   src/library/cell.cpp
 )
@@ -150,7 +146,6 @@ add_library(global_planner
 add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-# add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(global_planner_node src/nodes/global_planner_node.cpp)
 add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 
@@ -159,10 +154,6 @@ add_executable(path_handler_node src/nodes/path_handler_node.cpp)
 # add_dependencies(avoidance_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(avoidance_node
-#   ${catkin_LIBRARIES}
-#   ${PCL_LIBRARIES}
-# )
 target_link_libraries(global_planner_node
   global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
 target_link_libraries(path_handler_node

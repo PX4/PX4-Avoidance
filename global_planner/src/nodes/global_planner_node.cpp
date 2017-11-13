@@ -1,12 +1,12 @@
 #include "global_planner_node.h"
 
-namespace avoidance {
+namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode() {
   nh_ = ros::NodeHandle("~"); 
 
   // Set up Dynamic Reconfigure Server
-  dynamic_reconfigure::Server<avoidance::GlobalPlannerNodeConfig>::CallbackType f;
+  dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
@@ -109,7 +109,7 @@ void GlobalPlannerNode::setIntermediateGoal() {
   }
 }
 
-void GlobalPlannerNode::dynamicReconfigureCallback(avoidance::GlobalPlannerNodeConfig & config, 
+void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig & config, 
                                                    uint32_t level) {
   // global_planner_
   global_planner_.min_altitude_ = config.min_altitude_;
@@ -364,11 +364,11 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
   printPointStats(&global_planner_, x, y, z);
 }
 
-} // namespace avoidance
+} // namespace global_planner
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "global_planner_node");
-  avoidance::GlobalPlannerNode global_planner_node;
+  global_planner::GlobalPlannerNode global_planner_node;
 
   // Read waypoints from file, if any
   ros::V_string args;
@@ -380,7 +380,7 @@ int main(int argc, char** argv) {
     if (wp_file.is_open()) {
       double x, y, z;
       while (wp_file >> x >> y >> z) {
-        global_planner_node.waypoints_.push_back(avoidance::Cell(x, y, z));
+        global_planner_node.waypoints_.push_back(global_planner::Cell(x, y, z));
       }
       wp_file.close();
       ROS_INFO("  Read %d waypoints.", global_planner_node.waypoints_.size());

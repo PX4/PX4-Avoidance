@@ -6,15 +6,15 @@
     <arg name="start_pos_z" default="3.5" />
 
     <!-- Global Planner -->
-    <node name="global_planner_node" pkg="local_planner" type="global_planner_node" output="screen"
-          args="$(find local_planner)/resource/random_goals"  >
+    <node name="global_planner_node" pkg="global_planner" type="global_planner_node" output="screen"
+          args="$(find global_planner)/resource/random_goals"  >
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />
         <param name="start_pos_z" value="$(arg start_pos_z)" />
     </node>
 
     <!-- A node that streams the relevant path information to Mavros-->
-    <node name="path_handler_node" pkg="local_planner" type="path_handler_node" output="screen" >
+    <node name="path_handler_node" pkg="global_planner" type="path_handler_node" output="screen" >
         <param name="three_point_mode_" value="$(arg use_three_point_msg)" />
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />

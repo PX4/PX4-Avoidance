@@ -1,9 +1,9 @@
 <launch>
-    <arg name="use_three_point_msg" default="false"/>
-    <arg name="use_stereo_simulation" default="false"/>
+    <arg name="use_three_point_msg" default="false" />
+    <arg name="use_stereo_simulation" default="false" />
     <arg name="mavros_transformation" default="0" />
-    <arg name="world_path" />
-    <arg name="point_cloud_topic" default="/camera/depth/points"/>
+    <arg name="world_path" default="$(find global_planner)/../sim/worlds/test_city_2.world" />
+    <arg name="point_cloud_topic" default="/camera/depth/points" />
     <arg name="start_pos_x" default="0.5" />
     <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
@@ -49,5 +49,5 @@
 
     <!-- RViz -->
     <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true"
-          args="-d $(find global_planner)/resource/planning.rviz" />
+          args="-d $(find global_planner)/resource/global_planner.rviz" />
 </launch>

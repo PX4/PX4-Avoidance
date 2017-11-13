@@ -4,10 +4,10 @@
 #include <string>
 #include <unordered_set>
 
-#include "avoidance/cell.h"
-#include "avoidance/common.h"
+#include "global_planner/cell.h"
+#include "global_planner/common.h"
 
-namespace avoidance {
+namespace global_planner {
   
 class Node {
  public:
@@ -67,7 +67,7 @@ class NodeWithoutSmooth : public Node {
   }
 
   std::size_t hash() const {
-    return std::hash<avoidance::Cell>()(cell_);
+    return std::hash<global_planner::Cell>()(cell_);
   }
 
   NodePtr nextNode(const Cell & nextCell) const {
@@ -120,20 +120,20 @@ struct EqualsNodePtr {
     }
 };
 
-} // namespace avoidance
+} // namespace global_planner
 
 namespace std {
 
 template <>
-struct hash<avoidance::Node> {
-  std::size_t operator()(const avoidance::Node & node) const {
+struct hash<global_planner::Node> {
+  std::size_t operator()(const global_planner::Node & node) const {
     return node.hash();
   }
 };
 
 template <>
-struct hash<avoidance::NodeWithoutSmooth> {
-  std::size_t operator()(const avoidance::NodeWithoutSmooth & node) const {
+struct hash<global_planner::NodeWithoutSmooth> {
+  std::size_t operator()(const global_planner::NodeWithoutSmooth & node) const {
     return node.hash();
   }
 };

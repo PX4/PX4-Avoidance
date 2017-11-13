@@ -4,7 +4,7 @@
 #include <string>
 #include <math.h>   // sqrt
 
-namespace avoidance {
+namespace global_planner {
 
 // GLOBAL PLANNER
 
@@ -112,6 +112,6 @@ double posterior(double p, double prior) {
   return prob_obstacle / (prob_obstacle + prob_free+0.0001);
 }
 
-} // namespace avoidance
+} // namespace global_planner
 
 #endif /* GLOBAL_PLANNER_COMMON_H_ */
