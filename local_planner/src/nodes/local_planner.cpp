@@ -132,7 +132,6 @@ void LocalPlanner::createPolarHistogram() {
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
 
-
   for( it = final_cloud_.begin(); it != final_cloud_.end(); ++it) {
     temp.x = it->x;
     temp.y = it->y;
