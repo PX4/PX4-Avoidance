@@ -1,5 +1,0 @@
-<launch>
-    <include file="$(find avoidance)/launch/global_planner_sitl_mavros.launch" >
-        <arg name="use_three_point_msg" value="true" />
-    </include>
-</launch>

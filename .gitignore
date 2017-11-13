@@ -1,5 +1,6 @@
 .DS_Store
 *.sublime-workspace
+*.sublime-project
 *.tags
 *.tags_sorted_by_file
 .clang_complete

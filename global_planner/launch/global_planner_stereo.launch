@@ -1,0 +1,15 @@
+<launch>
+    <arg name="use_three_point_msg" default="false" />
+
+    <include file="$(find global_planner)/launch/global_planner_sitl_mavros.launch" >
+        <arg name="use_three_point_msg" value="$(arg use_three_point_msg)" />
+        <arg name="use_stereo_simulation" value="true" />
+        <arg name="point_cloud_topic" value="/stereo/points2" />
+        <arg name="model" value="iris_stereo_camera" />
+        <!-- <arg name="world" value="outdoor_village" /> -->
+    </include>
+
+    <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
+    <!-- <node name="disparity_image_transform" pkg="topic_tools" type="transform"
+      args="/stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'" /> -->
+</launch>

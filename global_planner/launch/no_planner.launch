@@ -1,0 +1,14 @@
+<launch>
+
+    <param name="use_sim_time" value="true" />
+
+    <!-- Mavros and Sitl -->
+    <include file="$(find global_planner)/launch/mavros_sitl.launch" />
+
+    <!-- Global planner -->
+    <!-- <include file="$(find global_planner)/launch/global_planner_octomap.launch" /> -->
+    <node name="path_handler_node" pkg="global_planner" type="path_handler_node" output="screen" />
+
+    <!-- RViz -->
+    <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true" />
+</launch>

@@ -1,0 +1,53 @@
+<launch>
+    <arg name="use_three_point_msg" default="false" />
+    <arg name="use_stereo_simulation" default="false" />
+    <arg name="mavros_transformation" default="0" />
+    <arg name="world_path" default="$(find global_planner)/../sim/worlds/test_city_2.world" />
+    <arg name="point_cloud_topic" default="/camera/depth/points" />
+    <arg name="start_pos_x" default="0.5" />
+    <arg name="start_pos_y" default="0.5" />
+    <arg name="start_pos_z" default="3.5" />
+
+    <param name="use_sim_time" value="true" />
+
+    <!-- Dynamic Reconfiguration Server -->
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
+
+    <!-- Ros transformation -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_local_origin"
+          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_camera"
+          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
+
+    <!-- Mavros and Sitl -->
+    <include file="$(find global_planner)/launch/mavros_sitl.launch" >
+        <arg name="world_path" value="$(arg world_path)" />
+    </include>
+
+    <!-- Global planner -->
+    <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
+        <arg name="use_three_point_msg" default="false"/>
+        <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
+        <arg name="start_pos_x" value="$(arg start_pos_x)" />
+        <arg name="start_pos_y" value="$(arg start_pos_y)" />
+        <arg name="start_pos_z" value="$(arg start_pos_z)" />
+    </include>
+
+    <!-- Run a wrapper on top of Mavros to handle 3-point messages -->
+    <group if="$(arg use_three_point_msg)">
+        <node name="bezier_mavros_wrapper" pkg="offboard" type="bezier_mapping.py" output="screen">
+            <param name="bezier_duration" value="1.5" />
+            <param name="cross_factor" value="2.0" />
+            <remap from="/path/bezier_pt" to="/three_point_path" />
+        </node>
+    </group>
+
+    <!-- Run a node for handling data from simulated stereo-camera -->
+    <group if="$(arg use_stereo_simulation)">
+        <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
+    </group>
+
+    <!-- RViz -->
+    <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true"
+          args="-d $(find global_planner)/resource/global_planner.rviz" />
+</launch>

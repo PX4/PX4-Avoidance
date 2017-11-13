@@ -1,0 +1,31 @@
+<launch>
+
+    <arg name="record_point_cloud" default="true" />
+    <arg name="record_histogram"   default="true" />
+    <arg name="record_waypoints"   default="true" />
+    <arg name="record_position"    default="true" />
+    <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
+
+    <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
+        <arg name="world_path" value="$(arg world_path)" />
+        <arg name="point_cloud_topic" value="/camera/depth/points" />
+    </include>
+
+     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" >
+        <param name="goal_x_param" value="46" />
+        <param name="goal_y_param" value="42"/>
+        <param name="goal_z_param" value="8" />
+    </node>
+
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
+
+    <!-- Logging -->
+    <node pkg="rosbag" type="record" name="point_cloud_bag" args="record -O point_cloud_bag /camera/depth/points local_pointcloud" if="$(arg record_point_cloud)" />
+
+    <node pkg="rosbag" type="record" name="histogram_bag" args="record -O histogram_bag /blocked_marker /rejected_marker /candidates_marker /selected_marker" if="$(arg record_histogram)"/>
+
+    <node pkg="rosbag" type="record" name="waypoints_bag" args="record -O waypoints_bag /current_setpoint" if="$(arg record_waypoints)"/>
+
+    <node pkg="rosbag" type="record" name="position_bag" args="record -O position_bag /mavros/local_position/pose" if="$(arg record_position)"/>
+
+</launch>
