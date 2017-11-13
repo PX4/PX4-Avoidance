@@ -7,32 +7,33 @@
 #include <nav_msgs/Path.h>
 
 #include <vector>
-#include <stdlib.h> 
+#include <stdlib.h>
 
 #include "global_planner/common.h" // hasSameYawAndAltitude
 
 namespace global_planner {
 
-class MockDataNode {
- public:
-  MockDataNode();
-  ~MockDataNode();
-  void createWall(int dist, int width, int height);
-  void sendClickedPoint();
-  void receivePath(const nav_msgs::Path & msg);
-  void sendMockData();
-  
+class MockDataNode
+{
+public:
+    MockDataNode();
+    ~MockDataNode();
+    void createWall(int dist, int width, int height);
+    void sendClickedPoint();
+    void receivePath(const nav_msgs::Path &msg);
+    void sendMockData();
 
-  std::vector<float> points_ {5.5,-0.5,0.5, 5.5,0.5,0.5, 5.5,1.5,0.5,  
-                             5.5,-0.5,1.5, 5.5,0.5,1.5, 5.5,1.5,1.5,
-                             5.5,-0.5,2.5, 5.5,0.5,2.5, 5.5,1.5,2.5};
 
- private:
-  ros::Subscriber path_sub_;
+    std::vector<float> points_ {5.5, -0.5, 0.5, 5.5, 0.5, 0.5, 5.5, 1.5, 0.5,
+            5.5, -0.5, 1.5, 5.5, 0.5, 1.5, 5.5, 1.5, 1.5,
+            5.5, -0.5, 2.5, 5.5, 0.5, 2.5, 5.5, 1.5, 2.5};
 
-  ros::Publisher local_position_pub_;
-  ros::Publisher depth_points_pub_;
-  ros::Publisher global_goal_pub_;
+private:
+    ros::Subscriber path_sub_;
+
+    ros::Publisher local_position_pub_;
+    ros::Publisher depth_points_pub_;
+    ros::Publisher global_goal_pub_;
 };
 
 } // namespace global_planner

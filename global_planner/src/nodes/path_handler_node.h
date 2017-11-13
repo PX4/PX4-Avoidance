@@ -13,7 +13,7 @@
 #include <tf/transform_datatypes.h>
 #include <ros/ros.h>
 
-#include "global_planner/common.h" 
+#include "global_planner/common.h"
 #include "global_planner/common_ros.h"
 #include <global_planner/PathHandlerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
@@ -22,62 +22,63 @@
 
 namespace global_planner {
 
-class PathHandlerNode {
- public:
-  PathHandlerNode();
-  ~PathHandlerNode();
+class PathHandlerNode
+{
+public:
+    PathHandlerNode();
+    ~PathHandlerNode();
 
- private:
-  ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
+private:
+    ros::NodeHandle nh_;
+    dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
 
-  // Parameters (Rosparam)
-  geometry_msgs::Point start_pos_;
-  double start_yaw_;
-  // Parameters (Dynamic Reconfiguration)
-  bool three_point_mode_;
-  bool ignore_path_messages_;
-  double min_speed_;
-  double max_speed_;
-  double three_point_speed_;
-  double direct_goal_alt_;
-  
-  double speed_ = min_speed_;
-  geometry_msgs::PoseStamped current_goal_;
-  geometry_msgs::PoseStamped last_goal_;
-  geometry_msgs::PoseStamped last_pos_;
+    // Parameters (Rosparam)
+    geometry_msgs::Point start_pos_;
+    double start_yaw_;
+    // Parameters (Dynamic Reconfiguration)
+    bool three_point_mode_;
+    bool ignore_path_messages_;
+    double min_speed_;
+    double max_speed_;
+    double three_point_speed_;
+    double direct_goal_alt_;
 
-  std::vector<geometry_msgs::PoseStamped> path_;
-  std::map<tf::Vector3, double> path_risk_;
+    double speed_ = min_speed_;
+    geometry_msgs::PoseStamped current_goal_;
+    geometry_msgs::PoseStamped last_goal_;
+    geometry_msgs::PoseStamped last_pos_;
 
-  ros::Subscriber direct_goal_sub_;
-  ros::Subscriber path_sub_;
-  ros::Subscriber path_with_risk_sub_;
-  ros::Subscriber ground_truth_sub_;
+    std::vector<geometry_msgs::PoseStamped> path_;
+    std::map<tf::Vector3, double> path_risk_;
 
-  ros::Publisher mavros_waypoint_publisher_;
-  ros::Publisher current_waypoint_publisher_;
-  ros::Publisher three_point_path_publisher_;
-  ros::Publisher three_point_msg_publisher_;
-  ros::Publisher avoidance_triplet_msg_publisher_;
+    ros::Subscriber direct_goal_sub_;
+    ros::Subscriber path_sub_;
+    ros::Subscriber path_with_risk_sub_;
+    ros::Subscriber ground_truth_sub_;
 
-  tf::TransformListener listener_;
+    ros::Publisher mavros_waypoint_publisher_;
+    ros::Publisher current_waypoint_publisher_;
+    ros::Publisher three_point_path_publisher_;
+    ros::Publisher three_point_msg_publisher_;
+    ros::Publisher avoidance_triplet_msg_publisher_;
 
-  // Methods
-  void readParams();
-  bool shouldPublishThreePoints();
-  bool isCloseToGoal();
-  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
-  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
-  // Callbacks
-  void dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig & config, uint32_t level);
-  void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped & msg);
-  void receivePath(const nav_msgs::Path & msg);
-  void receivePathWithRisk(const PathWithRiskMsg & msg);
-  void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
-  // Publishers
-  void publishSetpoint();
-  void publishThreePointMsg();
+    tf::TransformListener listener_;
+
+    // Methods
+    void readParams();
+    bool shouldPublishThreePoints();
+    bool isCloseToGoal();
+    double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> &poses);
+    void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> &poses);
+    // Callbacks
+    void dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig &config, uint32_t level);
+    void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped &msg);
+    void receivePath(const nav_msgs::Path &msg);
+    void receivePathWithRisk(const PathWithRiskMsg &msg);
+    void positionCallback(const geometry_msgs::PoseStamped &pose_msg);
+    // Publishers
+    void publishSetpoint();
+    void publishThreePointMsg();
 };
 
 } // namespace global_planner
