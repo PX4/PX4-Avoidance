@@ -14,8 +14,8 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     curr_yaw_ = tf::getYaw(msg.pose.orientation);
   }
 
-  setVelocity();  
-  setLimitsBoundingBox(); 
+  setVelocity();
+  setLimitsBoundingBox();
 }
 
 // update UAV velocity
@@ -27,7 +27,7 @@ void LocalPlanner::setVelocity() {
 }
 
 // update bounding box limit coordinates around a new UAV pose
-void LocalPlanner::setLimitsBoundingBox() { 
+void LocalPlanner::setLimitsBoundingBox() {
   min_box_.x = pose_.pose.position.x - min_box_x_;
   min_box_.y = pose_.pose.position.y - min_box_y_;
   min_box_.z = pose_.pose.position.z - min_box_z_;
@@ -36,7 +36,7 @@ void LocalPlanner::setLimitsBoundingBox() {
   max_box_.z = pose_.pose.position.z + max_box_z_;
 }
 
-// set mission goal 
+// set mission goal
 void LocalPlanner::setGoal() {
   goal_.x = goal_x_param_;
   goal_.y = goal_y_param_;
@@ -114,7 +114,7 @@ float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointX
 }
 
 
-bool LocalPlanner::obstacleAhead() { 
+bool LocalPlanner::obstacleAhead() {
   if(obstacle_){
     return true;
   } else{
@@ -123,29 +123,29 @@ bool LocalPlanner::obstacleAhead() {
 }
 
 // fill the 2D polar histogram with the points from the filtered point cloud
-void LocalPlanner::createPolarHistogram() {  
+void LocalPlanner::createPolarHistogram() {
   std::clock_t start_time = std::clock();
-  float bbx_rad = (max_box_.x - min_box_.x) * sqrt(2.0f) / 2.0f;
+  float bbx_rad = max_box_x_;
   float dist;
-  geometry_msgs::Point temp; 
- 
+  geometry_msgs::Point temp;
+
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
 
-    
+
   for( it = final_cloud_.begin(); it != final_cloud_.end(); ++it) {
     temp.x = it->x;
     temp.y = it->y;
     temp.z = it->z;
     dist = distance3DCartesian(pose_.pose.position,temp);
-   
-    if(dist < bbx_rad) { 
+
+    if(dist < bbx_rad) {
       int beta_z = floor((atan2(temp.x-pose_.pose.position.x,temp.y-pose_.pose.position.y)*180.0/PI)); //(-180. +180]
       int beta_e = floor((atan((temp.z-pose_.pose.position.z)/sqrt((temp.x-pose_.pose.position.x)*(temp.x-pose_.pose.position.x)+(temp.y-pose_.pose.position.y)*(temp.y-pose_.pose.position.y)))*180.0/PI)); //(-90.+90)
 
       beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
       beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
-      
+
       int e = (90+beta_e)/alpha_res - 1; //[0,17]
       int z = (180+beta_z)/alpha_res - 1; //[0,35]
 
@@ -185,14 +185,14 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_selected_);
 
   for(int e = 0; e < grid_length_e; e++) {
-    for(int z = 0; z < grid_length_z; z++) {  
+    for(int z = 0; z < grid_length_z; z++) {
       for(int i = (e-n); i <= (e+n); i++) {
         for(int j = (z-n); j <= (z+n); j++) {
-                
+
           free = true;
           corner = false;
 
-          // Elevation index < 0 
+          // Elevation index < 0
           if(i < 0 && j >= 0 && j < grid_length_z) {
             a = -i;
             b = grid_length_z - j - 1;
@@ -200,7 +200,7 @@ void LocalPlanner::findFreeDirections() {
           // Azimuth index < 0
           else if(j < 0 && i >= 0 && i < grid_length_e) {
             b = j+grid_length_z;
-          } 
+          }
           // Elevation index > grid_length_e
           else if(i >= grid_length_e && j >= 0 && j < grid_length_z) {
             a = grid_length_e - (i % (grid_length_e - 1));
@@ -226,15 +226,15 @@ void LocalPlanner::findFreeDirections() {
             if(polar_histogram_.get(a,b) != 0) {
               free = false;
               break;
-            } 
+            }
           }
         }
-            
+
         if(!free)
           break;
       }
 
-      if(free) {    
+      if(free) {
         p.x = e * alpha_res + alpha_res - 90;
         p.y = z * alpha_res + alpha_res - 180;
         p.z = 0;
@@ -253,7 +253,7 @@ void LocalPlanner::findFreeDirections() {
         p.z = 0;
         path_blocked_.cells.push_back(p);
       }
-    } 
+    }
   }
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -272,7 +272,7 @@ geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z){
 }
 
 // transform a 2D polar histogram direction in a 3D Catesian coordinate point
-geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) { 
+geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
   geometry_msgs::Point p = fromPolarToCartesian(e, z);
 
   geometry_msgs::Vector3Stamped waypoint;
@@ -310,7 +310,7 @@ double LocalPlanner::costFunction(int e, int z) {
   double kinetic_energy = 0.5*1.56*std::abs(pow(velocity_x_,2) + pow(velocity_y_,2) + pow(velocity_z_,2));
   double potential_energy = 1.56*9.81*std::abs(e-goal_e);
   cost = distance_cost + smooth_cost + height_cost;
-  return cost;  
+  return cost;
 }
 
 
@@ -318,7 +318,7 @@ double LocalPlanner::costFunction(int e, int z) {
 void LocalPlanner::calculateCostMap() {
   std::clock_t start_time = std::clock();
   cv::sortIdx(cost_path_candidates_, cost_idx_sorted_, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
-  
+
   geometry_msgs::Point p;
   p.x = path_candidates_.cells[cost_idx_sorted_[0]].x;
   p.y = path_candidates_.cells[cost_idx_sorted_[0]].y;
@@ -331,7 +331,7 @@ void LocalPlanner::calculateCostMap() {
   getNextWaypoint();
 }
 
-// check that the selected direction is really free and transform it into a waypoint. Otherwise break not 
+// check that the selected direction is really free and transform it into a waypoint. Otherwise break not
 //to collide with an obstacle
 void LocalPlanner::getNextWaypoint() {
   int waypoint_index = path_waypoints_.cells.size();
@@ -370,11 +370,11 @@ void LocalPlanner::getNextWaypoint() {
 bool LocalPlanner::checkForCollision() {
   std::clock_t start_time = std::clock();
   bool avoid = false;
-      
+
   if(min_distance_ < 0.5f && init != 0) {
     avoid = true;
   }
- 
+
   collision_time_.push_back((std::clock() - start_time) / (double(CLOCKS_PER_SEC / 1000)));
   return avoid;
 }
@@ -396,7 +396,7 @@ void LocalPlanner::goFast(){
     double new_len = vec.length() < 1.0 ? vec.length() : speed;
     vec.normalize();
     vec *= new_len;
-  
+
     waypt_.vector.x = pose_.pose.position.x + vec.getX();
     waypt_.vector.y = pose_.pose.position.y + vec.getY();
     waypt_.vector.z = pose_.pose.position.z + vec.getZ();
@@ -406,7 +406,7 @@ void LocalPlanner::goFast(){
     path_waypoints_.cells.push_back(p);
  }
 
-  
+
   ROS_INFO("Go fast selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
   getPathMsg();
 }
@@ -418,7 +418,7 @@ bool LocalPlanner::withinGoalRadius(){
   a.y = std::abs(goal_.y - pose_.pose.position.y);
   a.z = std::abs(goal_.z - pose_.pose.position.z);
   float goal_acceptance_radius = 0.5f;
-  
+
   if(a.x < goal_acceptance_radius && a.y < goal_acceptance_radius && a.z < goal_acceptance_radius){
     if(!reached_goal_){
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
@@ -442,7 +442,7 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
   return pose_msg;
 }
 
-// calculate the yaw for the next waypoint 
+// calculate the yaw for the next waypoint
 double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw_) {
   double dx = v.vector.x - u.pose.position.x;
   double dy = v.vector.y - u.pose.position.y;
@@ -512,7 +512,7 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
 
-  //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if) 
+  //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if)
   if(!reach_altitude_){
     reachGoalAltitudeFirst();
   } else {
@@ -526,7 +526,7 @@ void LocalPlanner::getPathMsg() {
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
   checkSpeed();
-} 
+}
 
 void LocalPlanner::checkSpeed(){
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacleAhead()){
@@ -539,7 +539,7 @@ void LocalPlanner::checkSpeed(){
 
 // check if two points have the same altitude and yaw
 bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
-  return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z) 
+  return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z)
          && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
          && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
 
@@ -559,4 +559,3 @@ void LocalPlanner::stopInFrontObstacles(){
   ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.x, goal_.y, goal_.z, min_distance_);
   goFast();
 }
-
