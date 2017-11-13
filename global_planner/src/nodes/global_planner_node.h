@@ -37,77 +37,79 @@
 
 namespace global_planner {
 
-class GlobalPlannerNode {
- public:
-  // TODO: Deque instead of vector
-  GlobalPlanner global_planner_;
-  std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
-  GlobalPlannerNode();
-  ~GlobalPlannerNode();
+class GlobalPlannerNode
+{
+public:
+    // TODO: Deque instead of vector
+    GlobalPlanner global_planner_;
+    std::vector<GoalCell>
+    waypoints_;  // Intermediate goals, from file, mavros mission or intermediate goals
+    GlobalPlannerNode();
+    ~GlobalPlannerNode();
 
- private:
-  ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
-  
-  nav_msgs::Path actual_path_;
+private:
+    ros::NodeHandle nh_;
+    dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
 
-  int num_octomap_msg_ = 0;
-  int num_pos_msg_ = 0;
-  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
+    nav_msgs::Path actual_path_;
 
-  // Dynamic Reconfiguration
-  double clicked_goal_alt_;
-  double clicked_goal_radius_;
-  int simplify_iterations_;
-  double simplify_margin_;
+    int num_octomap_msg_ = 0;
+    int num_pos_msg_ = 0;
+    std::vector<geometry_msgs::PoseStamped> last_clicked_points;
 
-  // Subscribers
-  ros::Subscriber octomap_sub_;
-  ros::Subscriber octomap_full_sub_;
-  ros::Subscriber ground_truth_sub_;
-  ros::Subscriber velocity_sub_;
-  ros::Subscriber clicked_point_sub_;
-  ros::Subscriber three_point_sub_;
-  ros::Subscriber move_base_simple_sub_;
-  ros::Subscriber laser_sensor_sub_;
-  ros::Subscriber depth_camera_sub_;
+    // Dynamic Reconfiguration
+    double clicked_goal_alt_;
+    double clicked_goal_radius_;
+    int simplify_iterations_;
+    double simplify_margin_;
 
-  // Publishers
-  ros::Publisher three_points_pub_;
-  ros::Publisher three_points_smooth_pub_;
-  ros::Publisher three_points_revised_pub_;
-  ros::Publisher global_path_pub_;
-  ros::Publisher global_temp_path_pub_;
-  ros::Publisher smooth_path_pub_;
-  ros::Publisher actual_path_pub_;
-  ros::Publisher explored_cells_pub_;
-  ros::Publisher global_goal_pub_;
-  ros::Publisher global_temp_goal_pub_;
+    // Subscribers
+    ros::Subscriber octomap_sub_;
+    ros::Subscriber octomap_full_sub_;
+    ros::Subscriber ground_truth_sub_;
+    ros::Subscriber velocity_sub_;
+    ros::Subscriber clicked_point_sub_;
+    ros::Subscriber three_point_sub_;
+    ros::Subscriber move_base_simple_sub_;
+    ros::Subscriber laser_sensor_sub_;
+    ros::Subscriber depth_camera_sub_;
 
-  tf::TransformListener listener_;
+    // Publishers
+    ros::Publisher three_points_pub_;
+    ros::Publisher three_points_smooth_pub_;
+    ros::Publisher three_points_revised_pub_;
+    ros::Publisher global_path_pub_;
+    ros::Publisher global_temp_path_pub_;
+    ros::Publisher smooth_path_pub_;
+    ros::Publisher actual_path_pub_;
+    ros::Publisher explored_cells_pub_;
+    ros::Publisher global_goal_pub_;
+    ros::Publisher global_temp_goal_pub_;
 
-  void readParams();
-  
-  void setNewGoal(const GoalCell & goal);
-  void popNextGoal();
-  void planPath();
-  void setIntermediateGoal();
+    tf::TransformListener listener_;
 
-  void dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig & config, uint32_t level);
-  void velocityCallback(const geometry_msgs::TwistStamped & msg);
-  void positionCallback(const geometry_msgs::PoseStamped & msg);
-  void clickedPointCallback(const geometry_msgs::PointStamped & msg);
-  void threePointCallback(const nav_msgs::Path & msg);
-  void moveBaseSimpleCallback(const geometry_msgs::PoseStamped & msg);
-  void laserSensorCallback(const sensor_msgs::LaserScan & msg);
-  void octomapFullCallback(const octomap_msgs::Octomap & msg);
-  void depthCameraCallback(const sensor_msgs::PointCloud2 & msg);
+    void readParams();
 
-  void publishGoal(const GoalCell & goal);
-  void publishPath();
-  void publishExploredCells();
+    void setNewGoal(const GoalCell &goal);
+    void popNextGoal();
+    void planPath();
+    void setIntermediateGoal();
 
-  void printPointInfo(double x, double y, double z);
+    void dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig &config, uint32_t level);
+    void velocityCallback(const geometry_msgs::TwistStamped &msg);
+    void positionCallback(const geometry_msgs::PoseStamped &msg);
+    void clickedPointCallback(const geometry_msgs::PointStamped &msg);
+    void threePointCallback(const nav_msgs::Path &msg);
+    void moveBaseSimpleCallback(const geometry_msgs::PoseStamped &msg);
+    void laserSensorCallback(const sensor_msgs::LaserScan &msg);
+    void octomapFullCallback(const octomap_msgs::Octomap &msg);
+    void depthCameraCallback(const sensor_msgs::PointCloud2 &msg);
+
+    void publishGoal(const GoalCell &goal);
+    void publishPath();
+    void publishExploredCells();
+
+    void printPointInfo(double x, double y, double z);
 
 };
 
