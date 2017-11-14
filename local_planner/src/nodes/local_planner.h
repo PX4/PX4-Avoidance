@@ -164,7 +164,10 @@ public:
 
 	pcl::PointCloud<pcl::PointXYZ> final_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points;
+	pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
+  bool new_cloud_ = false;
 	bool first_reach_ = true;
 	bool obstacle_ = false;
 	bool set_first_yaw_ = true;
@@ -172,6 +175,8 @@ public:
 	bool reached_goal_ = false;
 	bool first_brake_ = true;
 	int adapted_min_bin_ = 100;
+	bool waypoint_outside_FOV_ = false;
+
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
@@ -185,12 +190,13 @@ public:
 	nav_msgs::GridCells path_blocked_;
 	nav_msgs::GridCells path_waypoints_;
 
+	int n_call_hist_ = 0;
 	int init = 0;
 	int stop_in_front_;
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
 	double rad_ = 1.0;
 	float min_distance_;
-
+	int z_FOV_max_, z_FOV_min_, e_FOV_max_, e_FOV_min_;
 	double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
 	double speed = 1.0;
 	double min_speed_;
