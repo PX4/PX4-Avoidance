@@ -118,7 +118,6 @@ public:
 	double max_accel_xy_;
 	double max_accel_z_;
 	double keep_distance_;
-	double goal_dist_;
 
 	Histogram polar_histogram_;
 
