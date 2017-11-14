@@ -4,7 +4,7 @@
     <arg name="record_histogram"   default="true" />
     <arg name="record_waypoints"   default="true" />
     <arg name="record_position"    default="true" />
-    <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
+    <arg name="world_path" default="$(find local_planner)/../sim/worlds/simple_obstacle.world" />
 
     <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
         <arg name="world_path" value="$(arg world_path)" />
