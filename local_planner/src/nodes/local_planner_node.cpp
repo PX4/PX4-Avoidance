@@ -195,6 +195,8 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
+    local_planner.new_cloud_ = true;
+    local_planner.n_call_hist_ = 0;
     local_planner.filterPointCloud(complete_cloud);
     publishAll();
   } catch(tf::TransformException& ex) {

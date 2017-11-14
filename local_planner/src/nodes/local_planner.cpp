@@ -22,8 +22,9 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(2) << min_bin;
     std::string s_bin = stream.str();
-    std::string str = "MaxAge";
-    str.append(std::to_string(age_lim)).append("_MinBin").append(s_bin).append(".txt");
+//    std::string str = "MaxAge";
+//    str.append(std::to_string(age_lim)).append("_MinBin").append(s_bin).append(".txt");
+    std::string str = "FOV_lookFurther.txt";
     std::ofstream myfile(str, std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ << "\n";
     myfile.close();
@@ -75,7 +76,12 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   double min_realsense_dist = 0.2;
   float distance;
 
-  for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
+  if (new_cloud_){
+    complete_cloud_ = complete_cloud;
+    new_cloud_ = false;
+  }
+
+  for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
     // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
       if (isPointWithinBoxBoundaries(pcl_it)) {
@@ -148,19 +154,44 @@ void LocalPlanner::createPolarHistogram() {
   geometry_msgs::Point temp;
   geometry_msgs::Point temp_array[n_split];
 
+  // Calculate FOV
+  tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+
+  z_FOV_max_ = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
+  z_FOV_min_ = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
+  e_FOV_max_ = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
+  e_FOV_min_ = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
+
   //Build Estimate of Histogram from old Histogram and Movement
   polar_histogram_est_ = Histogram(2 * alpha_res);
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
   reprojected_points_.header.frame_id = "world";
 
+
+//  std::cout << "------------ Histogram old----------------\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//        std::cout << "\033[1;33m"<<polar_histogram_old_.get_bin(e, z)  <<" \033[0m";
+//      }else{
+//        std::cout << polar_histogram_old_.get_bin(e, z) << " ";
+//      }
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
+
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
       if (polar_histogram_old_.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
-        double beta_e = (e + 1.0) * alpha_res - 90 - alpha_res / 2.0;
-        double beta_z = (z + 1.0) * alpha_res - 180 - alpha_res / 2.0;
+        double beta_e = (e + 1.0) * alpha_res - 90; //- alpha_res / 2.0;
+        double beta_z = (z + 1.0) * alpha_res - 180; //- alpha_res / 2.0;
         //transform from Polar to Cartesian
         temp_array[0] = fromPolarToCartesian(beta_e + alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
         temp_array[1] = fromPolarToCartesian(beta_e - alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
@@ -171,7 +202,7 @@ void LocalPlanner::createPolarHistogram() {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
-          if (dist < max_box_.x && dist > 0.3 && age < age_lim) {
+          if (dist < 2*max_box_x_ && dist > 0.3 && age < age_lim) {
             //fill into histogram at actual position
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             int beta_z_new = floor((atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
@@ -191,23 +222,30 @@ void LocalPlanner::createPolarHistogram() {
             //Debug
             //std::cout<<"Bin (e,z)=("<<e<<","<<z<<") with "<<polar_histogram_old__.get(e, z)<<"points is (x,y,z) = ("<< temp.x<<","<<temp.y<<","<<temp.z<<") and goes into (e_est, z_est)=("<<e_new<<","<<z_new<<") \n";
             //std::cout<<"Bin (e,z)=("<<e_new<<","<<z_new<<") with "<<polar_histogram_est_.get_bin(e_new, z_new)<<"\n";
+          }else{
+            if (dist > max_box_.x) std::cout<<"Point discarded box\n";
+            if (dist < 0.3) std::cout<<"Point discarded dist\n";
+            if (age > age_lim) std::cout<<"Point discarded age\n";
           }
         }
       }
     }
   }
 
-//  //  //Visualize histogram step2
-//  std::cout << "------------Estimate Bin before----------------\n";
-//  for (int e = 0; e < grid_length_e / 2; e++) {
-//    for (int z = 0; z < grid_length_z / 2; z++) {
-//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+
+//  std::cout << "------------ Histogram Est low res bin----------------\n";
+//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+//  for (int e = 0; e < grid_length_e/2; e++) {
+//    for (int z = 0; z < grid_length_z/2; z++) {
+//      if(z>z_FOV_min_/2 && z<z_FOV_max_/2 && e>e_FOV_min_/2 && e<e_FOV_max_/2){
+//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
+//      }else{
+//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//      }
 //    }
 //    std::cout << "\n";
 //  }
-//  std::cout << "--------------------------------------\n";
-
-  //Normalize and get mean in dist bins
+//  std::cout << "-------------------------------------------------------\n";
 
   for (int e = 0; e < grid_length_e / 2; e++) {
     for (int z = 0; z < grid_length_z / 2; z++) {
@@ -223,11 +261,15 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-//  //  //Visualize histogram step2
-//  std::cout << "------------Estimate bin after---------------\n";
-//  for (int e = 0; e < grid_length_e / 2; e++) {
-//    for (int z = 0; z < grid_length_z / 2; z++) {
-//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//  std::cout << "------------ Histogram Est low res----------------\n";
+//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+//  for (int e = 0; e < grid_length_e/2; e++) {
+//    for (int z = 0; z < grid_length_z/2; z++) {
+//      if(z>z_FOV_min_/2 && z<z_FOV_max_/2 && e>e_FOV_min_/2 && e<e_FOV_max_/2){
+//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
+//      }else{
+//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//      }
 //    }
 //    std::cout << "\n";
 //  }
@@ -236,14 +278,20 @@ void LocalPlanner::createPolarHistogram() {
   //upsample estimate
   polar_histogram_est_.upsample();
 
-//  std::cout << "------------Estimate upsampled---------------\n";
+//  std::cout << "------------ Histogram Est upsampled----------------\n";
+//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
 //  for (int e = 0; e < grid_length_e; e++) {
 //    for (int z = 0; z < grid_length_z; z++) {
-//      std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
+//      }else{
+//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
+//      }
 //    }
 //    std::cout << "\n";
 //  }
 //  std::cout << "--------------------------------------\n";
+
 
   //Generate new histogram
 
@@ -280,27 +328,11 @@ void LocalPlanner::createPolarHistogram() {
   }
 
 
-  // Calculate FOV
-    tf::Quaternion q(
-        pose_.pose.orientation.x,
-        pose_.pose.orientation.y,
-        pose_.pose.orientation.z,
-        pose_.pose.orientation.w);
-    tf::Matrix3x3 m(q);
-    double roll, pitch, yaw;
-    m.getRPY(roll, pitch, yaw);
-
-    int z_FOV_max = std::round((-yaw*180.0/PI + h_fov/2.0+270.0)/alpha_res)-1;
-    int z_FOV_min = std::round((-yaw*180.0/PI - h_fov/2.0+270.0)/alpha_res)-1;
-    int e_FOV_max = std::round((-pitch*180.0/PI + v_fov/2.0+90.0)/alpha_res)-1;
-    int e_FOV_min = std::round((-pitch*180.0/PI - v_fov/2.0+90.0)/alpha_res)-1;
-
-    //Visualize histogram step2
     std::cout << "------------New Histogram----------------\n";
     //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
     for (int e = 0; e < grid_length_e; e++) {
       for (int z = 0; z < grid_length_z; z++) {
-        if(z>z_FOV_min && z<z_FOV_max && e>e_FOV_min && e<e_FOV_max){
+        if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
           std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
         }else{
           std::cout << polar_histogram_.get_bin(e, z) << " ";
@@ -314,21 +346,32 @@ void LocalPlanner::createPolarHistogram() {
 
 
   //Combine to New binary histogram
+  bool hist_is_empty = true;
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
-
-      if (z > z_FOV_min && z < z_FOV_max && e > e_FOV_min && e < e_FOV_max) {  //inside FOV
+      if (z > z_FOV_min_ && z < z_FOV_max_ && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
+        if (min_distance_ < 0.5 && polar_histogram_est_.get_bin(e, z) > 0) {  //if too close to an obstacle, use olso est in FOV
+          polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+          polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
+          polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
+        }
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
+          hist_is_empty = false;
         }
       } else {
         if (polar_histogram_est_.get_bin(e, z) > 0) {
-          polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+          if (waypoint_outside_FOV_) {
+            polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z));
+          } else {
+            polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+          }
+          hist_is_empty = false;
         }
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
+          hist_is_empty = false;
         }
-
         if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) == 0) {
           polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
           polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
@@ -337,21 +380,7 @@ void LocalPlanner::createPolarHistogram() {
 
     }
   }
-
-  //Visualize histogram step2
-  std::cout << "------------combined Histogram----------------\n";
-  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
-      if(z>z_FOV_min && z<z_FOV_max && e>e_FOV_min && e<e_FOV_max){
-        std::cout << "\033[1;32m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
-      }else{
-        std::cout << polar_histogram_.get_bin(e, z) << " ";
-      }
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
+  std::cout<<"Min_dist:"<<min_distance_<<"\n";
 
 
 
@@ -359,53 +388,23 @@ void LocalPlanner::createPolarHistogram() {
   polar_histogram_old_.setZero();
   polar_histogram_old_ = polar_histogram_;
   position_old_ = pose_.pose.position;
+  n_call_hist_ +=1;
 
-//  //Visualize histogram step3
-//  std::cout << "------------Combined Histogram----------------\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      std::cout << polar_histogram_.get_bin(e, z) << " ";
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
+  //Increase bounding box if histogram is empty
+  if (hist_is_empty && n_call_hist_==1) {
+    min_box_.x = pose_.pose.position.x - 2 * min_box_x_;
+    min_box_.y = pose_.pose.position.y - 2 * min_box_y_;
+    min_box_.z = pose_.pose.position.z - 2 * min_box_z_;
+    max_box_.x = pose_.pose.position.x + 2 * max_box_x_;
+    max_box_.y = pose_.pose.position.y + max_box_y_;
+    max_box_.z = pose_.pose.position.z + max_box_z_;
 
-// OLD STUFF
-//  //Visualize histogram estimate
-//  int wrongPred = 0;
-//  std::cout << "------------Histogram est-------------\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      if (polar_histogram_est_.get(e, z) == 0) {
-//        std::cout << polar_histogram_est_.get(e, z) << " ";
-//        if (polar_histogram.get(e, z) != 0) {
-//          wrongPred += 1;
-//        }
-//      } else {
-//        std::cout << polar_histogram_est_.get(e, z) << " ";
-//        if (polar_histogram_.get(e, z) == 0) {
-//          wrongPred += 1;
-//        }
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "Number of wrong Predictions:" << wrongPred << "\n";
-//  std::cout << "--------------------------------------\n";
-//
-//
-//  //Find FOV fields in histogram (floor?)
-//
-//   //Visualize FOV
-//    std::cout << "------------Histogram FOV-------------\n";
-//    for (int e = n_fields_vfov; e < grid_length_e-n_fields_vfov; e++) {
-//      for (int z = n_fields_hfov+n_fields_90; z < grid_length_z-n_fields_hfov+n_fields_90; z++) {
-//        std::cout << polar_histogram_.get(e, z) << " ";
-//      }
-//      std::cout << "\n";
-//    }
-//    std::cout << "--------------------------------------\n";
+    filterPointCloud(complete_cloud_);
+    createPolarHistogram();
+    std::cout << "\033[1;31m Box size increased! \033[0m";
+  }
 
+  //Statistics
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 }
@@ -598,7 +597,35 @@ void LocalPlanner::calculateCostMap() {
 //to collide with an obstacle
 void LocalPlanner::getNextWaypoint() {
   int waypoint_index = path_waypoints_.cells.size();
-  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(path_waypoints_.cells[waypoint_index-1].x, path_waypoints_.cells[waypoint_index-1].y);
+  int e = path_waypoints_.cells[waypoint_index - 1].x;
+  int z = path_waypoints_.cells[waypoint_index - 1].y;
+  int e_index = (e-alpha_res+90)/alpha_res;
+  int z_index = (z-alpha_res+180)/alpha_res;
+  int margin = floor(0 / alpha_res);
+  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e,z);
+
+  if(z_index>z_FOV_min_-margin && z_index<z_FOV_max_+margin && e_index>e_FOV_min_-margin && e_index<e_FOV_max_+margin){
+    waypoint_outside_FOV_ = false;
+  }else{
+    waypoint_outside_FOV_ = true;
+  }
+
+  //Visualize histogram step2
+  std::cout << "------------combined Histogram----------------\n";
+  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+      if (z_ind == z_index && e_ind == e_index) {
+        std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+      } else if (z_ind > z_FOV_min_ && z_ind < z_FOV_max_ && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+        std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+      } else {
+        std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
+      }
+    }
+    std::cout << "\n";
+  }
+  std::cout << "--------------------------------------\n";
 
   if (withinGoalRadius()){
     ROS_INFO("Goal Reached: Hoovering");
@@ -785,6 +812,18 @@ void LocalPlanner::getPathMsg() {
   }
 
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+  std::cout<<"yaw: with angle "<<new_yaw<<" last yaw: "<<last_yaw_<<"\n";
+
+  //If the waypoint is not inside the FOV, only yaw and not move
+  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ ){
+    waypt_.vector.x = pose_.pose.position.x;
+    waypt_.vector.y = pose_.pose.position.y;
+    waypt_.vector.z = pose_.pose.position.z;
+
+    std::cout<<"ONLY yaw: with angle "<<new_yaw<<"\n";
+  }
+
+
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
