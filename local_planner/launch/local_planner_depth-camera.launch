@@ -15,6 +15,7 @@
         <param name="goal_x_param" value="46" />
         <param name="goal_y_param" value="42"/>
         <param name="goal_z_param" value="8" />
+        <param name="path_to_node" value="$(find local_planner)" />
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />

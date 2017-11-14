@@ -69,6 +69,7 @@ private:
   std::vector<float> algo_time;
 
   std::string depth_points_topic_;
+  std::string path_to_node_;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
 
