@@ -10,13 +10,13 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
 #include <nav_msgs/Path.h>
-#include <tf/transform_datatypes.h>
 #include <ros/ros.h>
+#include <tf/transform_datatypes.h>
 
-#include "global_planner/common.h" 
-#include "global_planner/common_ros.h"
 #include <global_planner/PathHandlerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
+#include "global_planner/common.h"
+#include "global_planner/common_ros.h"
 
 #include <global_planner/ThreePointMsg.h>
 
@@ -41,7 +41,7 @@ class PathHandlerNode {
   double max_speed_;
   double three_point_speed_;
   double direct_goal_alt_;
-  
+
   double speed_ = min_speed_;
   geometry_msgs::PoseStamped current_goal_;
   geometry_msgs::PoseStamped last_goal_;
@@ -67,19 +67,20 @@ class PathHandlerNode {
   void readParams();
   bool shouldPublishThreePoints();
   bool isCloseToGoal();
-  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped> & poses);
-  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped> & poses);
+  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& poses);
+  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
   // Callbacks
-  void dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig & config, uint32_t level);
-  void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped & msg);
-  void receivePath(const nav_msgs::Path & msg);
-  void receivePathWithRisk(const PathWithRiskMsg & msg);
-  void positionCallback(const geometry_msgs::PoseStamped & pose_msg);
+  void dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig& config,
+                                  uint32_t level);
+  void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped& msg);
+  void receivePath(const nav_msgs::Path& msg);
+  void receivePathWithRisk(const PathWithRiskMsg& msg);
+  void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
   // Publishers
   void publishSetpoint();
   void publishThreePointMsg();
 };
 
-} // namespace global_planner
+}  // namespace global_planner
 
-#endif // GLOBAL_PLANNER_PATH_HANDLER_NODE_H
+#endif  // GLOBAL_PLANNER_PATH_HANDLER_NODE_H

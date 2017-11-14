@@ -9,19 +9,13 @@ class SearchVisitor {
   Set seen_;
   Map seen_count_;
 
-  SearchVisitor() {
-
-  }
-  void initVisitor(Set seen, Map seen_count) {
-
-  }
+  SearchVisitor() {}
+  void initVisitor(Set seen, Map seen_count) {}
   void init() {
     seen_.clear();
     seen_count_.clear();
   }
-  void popNode(NodePtr u) {
-
-  }
+  void popNode(NodePtr u) {}
   void perNeighbor(NodePtr u, NodePtr v) {
     seen_count_[v->cell_] = 1.0 + getWithDefault(seen_count_, v->cell_, 0.0);
     seen_.insert(v->cell_);
@@ -30,11 +24,10 @@ class SearchVisitor {
 
 class NullVisitor {
  public:
-
   NullVisitor() {}
 
   void init() {}
-  
+
   template <typename NodePtr>
   void popNode(NodePtr u) {}
 
@@ -42,6 +35,6 @@ class NullVisitor {
   void perNeighbor(NodePtr u, NodePtr v) {}
 };
 
-} // namespace global_planner
+}  // namespace global_planner
 
-#endif // GLOBAL_PLANNER_VISITOR
+#endif  // GLOBAL_PLANNER_VISITOR
