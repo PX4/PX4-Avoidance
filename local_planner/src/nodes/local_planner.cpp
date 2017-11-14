@@ -504,7 +504,9 @@ void LocalPlanner::getPathMsg() {
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
   checkSpeed();
-  createLogs();
+  if (reach_altitude_) {
+    writeStateToLogs();
+  }
 } 
 
 void LocalPlanner::checkSpeed(){
@@ -524,7 +526,7 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
 
 }
 
-void LocalPlanner::createLogs() {
+void LocalPlanner::writeStateToLogs() {
   if (init_logs_) {
     log_counter_++;
     position_log_.open(logs_path_param_ + "position_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
