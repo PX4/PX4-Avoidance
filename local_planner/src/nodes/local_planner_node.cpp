@@ -38,6 +38,7 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_z_param", local_planner.goal_z_param_, 3.5);
 
   nh_.param<std::string>("depth_points_topic", depth_points_topic_, "/camera/depth/points");
+  nh_.param<std::string>("logs_path_param", local_planner.logs_path_param_, "~/logs/local_planner_node/");
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {

@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
 #include <iostream>
+#include <fstream>
 #include <Eigen/Dense>
 #include <math.h>
 
@@ -81,6 +82,7 @@ public:
 	bool set_first_yaw_ = true;
 	bool reach_altitude_ = false;
 	bool reached_goal_ = false;
+	bool init_logs_ = true;
 
 	geometry_msgs::Point min_box_, max_box_, goal_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
@@ -95,6 +97,7 @@ public:
 	nav_msgs::GridCells path_waypoints_;
 
 	int init = 0;
+	int log_counter_ = 0;
 
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
 	double rad_;
@@ -116,6 +119,9 @@ public:
 	double max_accel_z_;
 
 	Histogram polar_histogram_;
+
+	std::ofstream position_log_, speed_log_, cloud_log_, path_selected_log_, waypoint_log_;
+	std::string logs_path_param_;
 
     std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
@@ -154,6 +160,7 @@ public:
 	void checkSpeed();
 	bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
 	geometry_msgs::Point fromPolarToCartesian(int e, int z);
+	void createLogs();
 };
 
 

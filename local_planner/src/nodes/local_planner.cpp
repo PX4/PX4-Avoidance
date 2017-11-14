@@ -42,6 +42,7 @@ void LocalPlanner::setGoal() {
   goal_.y = goal_y_param_;
   goal_.z = goal_z_param_;
   reached_goal_ = false;
+  init_logs_ = true;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
 }
@@ -503,6 +504,7 @@ void LocalPlanner::getPathMsg() {
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
   checkSpeed();
+  createLogs();
 } 
 
 void LocalPlanner::checkSpeed(){
@@ -520,4 +522,30 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
          && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
          && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
 
+}
+
+void LocalPlanner::createLogs() {
+  if (init_logs_) {
+    log_counter_++;
+    position_log_.open(logs_path_param_ + "position_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
+    speed_log_.open(logs_path_param_ + "speed_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
+    cloud_log_.open(logs_path_param_ + "cloud_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
+    path_selected_log_.open(logs_path_param_ + "path_selected_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
+    waypoint_log_.open(logs_path_param_ + "waypoint_log_" + std::to_string(log_counter_) + ".csv", std::ofstream::out | std::ofstream::app);
+    init_logs_ = false;
+  }
+
+  position_log_ << pose_.header.stamp.nsec << "," << pose_.pose.position.x << "," << pose_.pose.position.y << "," << pose_.pose.position.z << "," << tf::getYaw(pose_.pose.orientation) << std::endl;
+  speed_log_ << curr_vel_.header.stamp.nsec << "," << curr_vel_.twist.linear.x << "," << curr_vel_.twist.linear.y << "," << curr_vel_.twist.linear.z << std::endl;
+  cloud_log_ << final_cloud_.header.stamp << "," << final_cloud_.width << "," << min_distance_ << std::endl;
+  path_selected_log_ << path_selected_.header.stamp.nsec << "," <<  path_selected_.cells[path_selected_.cells.size()-1].x <<  path_selected_.cells[path_selected_.cells.size()-1].y << std::endl;
+  waypoint_log_ << waypt_.header.stamp.nsec << "," << waypt_.vector.x << "," << waypt_.vector.y << "," << waypt_.vector.z << std::endl;
+
+  if (withinGoalRadius()) {
+    position_log_.close();
+    speed_log_.close();
+    cloud_log_.close();
+    path_selected_log_.close();
+    waypoint_log_.close();
+  }
 }
