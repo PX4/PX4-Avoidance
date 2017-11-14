@@ -252,34 +252,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.stop_in_front_ = config.stop_in_front_;
   local_planner.keep_distance_ = config.keep_distance_;
 
-  if(local_planner.goal_z_param_!= config.goal_z_param_){
+  if (local_planner.goal_z_param_!= config.goal_z_param_) {
 	  local_planner.goal_z_param_ = config.goal_z_param_;
-	  local_planner.setGoal();
-  }
-  if(local_planner.goal_dist_!= config.goal_dist_){
-	  ros::Time time= ros::Time(0);
-	  geometry_msgs::PointStamped dist_fcu;
-	  geometry_msgs::PointStamped dist_world;
-	  local_planner.goal_dist_ = config.goal_dist_;
-	  dist_fcu.point.x = local_planner.goal_dist_;
-	  dist_fcu.point.y = 0;
-	  dist_fcu.point.z = 0;
-	  dist_fcu.header.frame_id = "/fcu";
-	  dist_fcu.header.stamp = time;
-	  dist_world.header.frame_id = "/world";
-	  dist_world.header.stamp = time;
-
-	  try {
-	    tf_listener_.waitForTransform("/world","/fcu", time, ros::Duration(3.0));
-	    tf::StampedTransform transform;
-	    tf_listener_.lookupTransform("/world", "/fcu", time, transform);
-	    tf_listener_.transformPoint("/world", dist_fcu, dist_world);
-
-	  } catch(tf::TransformException& ex) {
-	    ROS_ERROR("Received an exception trying to transform a point from \fcu\" to \"world\": %s", ex.what());
-	  }
-	  local_planner.goal_y_param_ = local_planner.pose_.pose.position.y + dist_world.point.y;
-	  local_planner.goal_x_param_ = local_planner.pose_.pose.position.x + dist_world.point.x;
 	  local_planner.setGoal();
   }
 }
