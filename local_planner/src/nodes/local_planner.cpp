@@ -24,7 +24,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     std::string s_bin = stream.str();
 //    std::string str = "MaxAge";
 //    str.append(std::to_string(age_lim)).append("_MinBin").append(s_bin).append(".txt");
-    std::string str = "FOV_lookFurther.txt";
+    std::string str = "Original.txt";
     std::ofstream myfile(str, std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ << "\n";
     myfile.close();
@@ -219,9 +219,7 @@ void LocalPlanner::createPolarHistogram() {
             polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 1.0 / n_split);
             polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 1.0 / n_split * age);
             polar_histogram_est_.set_dist(e_new, z_new, polar_histogram_est_.get_dist(e_new, z_new) + 1.0 / n_split * dist);
-            //Debug
-            //std::cout<<"Bin (e,z)=("<<e<<","<<z<<") with "<<polar_histogram_old__.get(e, z)<<"points is (x,y,z) = ("<< temp.x<<","<<temp.y<<","<<temp.z<<") and goes into (e_est, z_est)=("<<e_new<<","<<z_new<<") \n";
-            //std::cout<<"Bin (e,z)=("<<e_new<<","<<z_new<<") with "<<polar_histogram_est_.get_bin(e_new, z_new)<<"\n";
+
           }else{
             if (dist > max_box_.x) std::cout<<"Point discarded box\n";
             if (dist < 0.3) std::cout<<"Point discarded dist\n";
@@ -231,7 +229,6 @@ void LocalPlanner::createPolarHistogram() {
       }
     }
   }
-
 
 //  std::cout << "------------ Histogram Est low res bin----------------\n";
 //  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
@@ -327,34 +324,80 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
+//  std::cout << "------------New Histogram----------------\n";
+//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+//  for (int e = 0; e < grid_length_e; e++) {
+//    for (int z = 0; z < grid_length_z; z++) {
+//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//        std::cout << "\033[1;31m"<<polar_histogram_.get_dist(e, z)  <<" \033[0m";
+//      }else{
+//        std::cout << polar_histogram_.get_dist(e, z) << " ";
+//      }
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
 
-    std::cout << "------------New Histogram----------------\n";
-    //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-    for (int e = 0; e < grid_length_e; e++) {
-      for (int z = 0; z < grid_length_z; z++) {
-        if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
-          std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
-        }else{
-          std::cout << polar_histogram_.get_bin(e, z) << " ";
+  //IF too close, go back!!
+  int e_60 = floor(60 / alpha_res);
+  int z_90 = floor(90 / alpha_res);
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      if (polar_histogram_.get_dist(e, z) < 1.2 && polar_histogram_.get_dist(e, z) > 0 && reach_altitude_) {
+        std::cout << "Obstacle too close!\n";
+        int distance = polar_histogram_.get_dist(e, z);
+        int z_min = z - z_90;
+        int z_max = z + z_90;
+        if (z_min < 0){
+          z_min = grid_length_z + z_min;
+        }
+        if (z_max > grid_length_z){
+          z_max = z_max - grid_length_z;
+        }
+        for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+          if (z_max > z_min) {
+            for (int z_ind = z_min; z_ind < z_max; z_ind++) {
+              polar_histogram_.set_dist(e_ind, z_ind, 3 * distance);
+              polar_histogram_.set_bin(e_ind, z_ind, 1);
+              polar_histogram_.set_age(e_ind, z_ind, 0.95 * age_lim);
+            }
+          } else {
+            for (int z_ind = 0; z_ind < z_max; z_ind++) {
+              polar_histogram_.set_dist(e_ind, z_ind, 3 * distance);
+              polar_histogram_.set_bin(e_ind, z_ind, 1);
+              polar_histogram_.set_age(e_ind, z_ind, 0.95 * age_lim);
+            }
+            for (int z_ind = z_min; z_ind < grid_length_z; z_ind++) {
+              polar_histogram_.set_dist(e_ind, z_ind, 3 * distance);
+              polar_histogram_.set_bin(e_ind, z_ind, 1);
+              polar_histogram_.set_age(e_ind, z_ind, 0.95 * age_lim);
+            }
+
+          }
         }
       }
-      std::cout << "\n";
     }
-    std::cout << "--------------------------------------\n";
+  }
 
-
-
+//    std::cout << "------------New Histogram----------------\n";
+//    //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+//    for (int e = 0; e < grid_length_e; e++) {
+//      for (int z = 0; z < grid_length_z; z++) {
+//        if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//          std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
+//        }else{
+//          std::cout << polar_histogram_.get_bin(e, z) << " ";
+//        }
+//      }
+//      std::cout << "\n";
+//    }
+//    std::cout << "--------------------------------------\n";
 
   //Combine to New binary histogram
   bool hist_is_empty = true;
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
       if (z > z_FOV_min_ && z < z_FOV_max_ && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
-        if (min_distance_ < 0.5 && polar_histogram_est_.get_bin(e, z) > 0) {  //if too close to an obstacle, use olso est in FOV
-          polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
-          polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
-          polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
-        }
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
           hist_is_empty = false;
@@ -377,12 +420,8 @@ void LocalPlanner::createPolarHistogram() {
           polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
         }
       }
-
     }
   }
-  std::cout<<"Min_dist:"<<min_distance_<<"\n";
-
-
 
   //Update old histogram
   polar_histogram_old_.setZero();
@@ -610,22 +649,21 @@ void LocalPlanner::getNextWaypoint() {
     waypoint_outside_FOV_ = true;
   }
 
-  //Visualize histogram step2
-  std::cout << "------------combined Histogram----------------\n";
-  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
-    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
-      if (z_ind == z_index && e_ind == e_index) {
-        std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
-      } else if (z_ind > z_FOV_min_ && z_ind < z_FOV_max_ && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
-        std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
-      } else {
-        std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
-      }
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
+//  std::cout << "------------combined Histogram----------------\n";
+//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
+//  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+//    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+//      if (z_ind == z_index && e_ind == e_index) {
+//        std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+//      } else if (z_ind > z_FOV_min_ && z_ind < z_FOV_max_ && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+//        std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+//      } else {
+//        std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
+//      }
+//    }
+//    std::cout << "\n";
+//  }
+//  std::cout << "--------------------------------------\n";
 
   if (withinGoalRadius()){
     ROS_INFO("Goal Reached: Hoovering");

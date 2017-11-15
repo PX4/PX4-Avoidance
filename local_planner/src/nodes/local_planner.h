@@ -48,7 +48,7 @@
 #define alpha_res 6
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
-#define age_lim 100
+#define age_lim 0
 #define min_bin 1.5
 <<<<<<< ec49835a6d8f4e6ad9fc2de8eb36193b22454b56
 
