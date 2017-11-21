@@ -463,7 +463,7 @@ void LocalPlanner::reachGoalAltitudeFirst(){
   if (pose_.pose.position.z < (goal_.z - 0.5)) {
       waypt_.vector.x = 0.0;
       waypt_.vector.y = 0.0;
-      waypt_.vector.z = goal_.z;
+      waypt_.vector.z = pose_.pose.position.z + 0.5;
   } else {
     reach_altitude_ = true;
     printf("Reached altitude %f, now going towards the goal_. \n\n",pose_.pose.position.z);
