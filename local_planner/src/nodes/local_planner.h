@@ -96,7 +96,6 @@ public:
 	nav_msgs::GridCells path_blocked_;
 	nav_msgs::GridCells path_waypoints_;
 
-	int init = 0;
 	int stop_in_front_;
 
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;

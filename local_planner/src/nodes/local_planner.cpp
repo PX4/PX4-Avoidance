@@ -371,7 +371,7 @@ bool LocalPlanner::checkForCollision() {
   std::clock_t start_time = std::clock();
   bool avoid = false;
       
-  if(min_distance_ < 0.5f && init != 0) {
+  if(min_distance_ < 0.5f) {
     avoid = true;
   }
  
