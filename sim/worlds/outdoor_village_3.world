@@ -56,7 +56,7 @@
     </light>
   
     <include>
-      <uri>model://grass_plane</uri>
+      <uri>model://vrc_driving_terrain</uri>
     </include>
 
 
