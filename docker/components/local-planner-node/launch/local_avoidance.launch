@@ -17,6 +17,6 @@
     <node name="timestamp" pkg="rostopic" type="rostopic" output="screen" args="echo $(arg start_time)" if="$(eval start_time != 'undef')" />
 
     <!-- Logging -->
-    <node pkg="rosbag" type="record" name="log_bag" args="record -O log_$(arg start_time) /mavros/local_position/pose /mavros/local_position/velocity /goal_position /camera/depth/points /local_pointcloud /blocked_marker /rejected_marker /candidates_marker /selected_marker /current_setpoint" if="$(arg record_bag)" />
+    <node pkg="rosbag" type="record" name="log_bag" args="record -O log_$(arg start_time) /mavros/local_position/pose /mavros/local_position/velocity /goal_position /camera/depth/points /local_pointcloud /blocked_marker /rejected_marker /candidates_marker /selected_marker /current_setpoint --split --size 500 --max-splits 5" if="$(arg record_bag)" />
 
 </launch>
