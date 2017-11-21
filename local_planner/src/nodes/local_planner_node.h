@@ -67,8 +67,6 @@ private:
 
   tf::TransformListener tf_listener_;
 
-  std::vector<float> algo_time;
-
   std::string depth_points_topic_;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;

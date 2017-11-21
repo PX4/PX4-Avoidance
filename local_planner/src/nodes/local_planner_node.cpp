@@ -194,25 +194,12 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner.filterPointCloud(complete_cloud);
+    printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+    local_planner.algo_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
     publishAll();
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
-  }
-
-  printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-  if (local_planner.withinGoalRadius()) {
-    cv::Scalar mean, std;
-    printf("----------------------------------- \n");
-    cv::meanStdDev(algo_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.cloud_time_, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.polar_time_, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.free_time_, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.cost_time_, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(local_planner.collision_time_, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
-    printf("----------------------------------- \n");
-  }
+  } 
 }
 
 void LocalPlannerNode::publishAll() {
@@ -248,6 +235,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.prior_cost_param_ = config.prior_cost_param_;
   local_planner.min_speed_ = config.min_speed_;
   local_planner.max_speed_ = config.max_speed_;
+  local_planner.speed_ = config.speed_;
   local_planner.max_accel_z_ = config.max_accel_z_;
   local_planner.stop_in_front_ = config.stop_in_front_;
   local_planner.keep_distance_ = config.keep_distance_;
