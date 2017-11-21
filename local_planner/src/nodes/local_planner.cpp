@@ -526,6 +526,9 @@ void LocalPlanner::getPathMsg() {
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
   checkSpeed();
+  if (reached_goal_) {
+    printAlgorithmInfo();
+  }
 } 
 
 void LocalPlanner::checkSpeed(){
@@ -560,3 +563,21 @@ void LocalPlanner::stopInFrontObstacles(){
   goFast();
 }
 
+void LocalPlanner::printAlgorithmInfo() {
+  cv::Scalar mean, std;
+  printf("----------------------------------- \n");
+  printf("Time to: \n");
+  cv::meanStdDev(algo_time_, mean, std);
+  printf("* compute each algorith iteration: mean %.2f std %.2f. \n", mean[0], std[0]);
+  cv::meanStdDev(cloud_time_, mean, std);
+  printf("* filter local point cloud: mean %.2f std %.2f. \n", mean[0], std[0]);
+  cv::meanStdDev(polar_time_, mean, std);
+  printf("* create polar histogram: mean %.2f std %.2f. \n", mean[0], std[0]);
+  cv::meanStdDev(free_time_, mean, std);
+  printf("* calculate free drirections: mean %.2f std %.2f. \n", mean[0], std[0]);
+  cv::meanStdDev(cost_time_, mean, std);
+  printf("* minimum cost direction: mean %.2f std %.2f. \n", mean[0], std[0]);
+  cv::meanStdDev(collision_time_, mean, std);
+  printf("* check for possible collision: mean %.2f std %.2f \n", mean[0], std[0]);
+  printf("----------------------------------- \n");
+}
