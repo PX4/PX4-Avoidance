@@ -1,0 +1,19 @@
+models:
+ - box:
+    name: "Box1"
+    frame_id: "world"
+    position:
+      x: 20
+      y: 0
+      z: 1.25
+    orientation:
+      x: 0.0
+      y: 0.25
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 10.0
+      y: 10.0
+      z: 2.5
+
+
