@@ -17,12 +17,16 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  ground_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/ground_pointcloud", 1);
   reprojected_points_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
+  groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
+  ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
+  marker_ground_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
@@ -40,7 +44,6 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner.goal_x_param_, 9);
   nh_.param<double>("goal_y_param", local_planner.goal_y_param_, 13);
   nh_.param<double>("goal_z_param", local_planner.goal_z_param_, 3.5);
-
   nh_.param<std::string>("depth_points_topic", depth_points_topic_, "/camera/depth/points");
 }
 
@@ -114,6 +117,12 @@ void LocalPlannerNode::publishMarkerSelected() {
   marker_selected_pub_.publish(marker_selected);
 }
 
+void LocalPlannerNode::publishMarkerGround() {
+  visualization_msgs::MarkerArray marker_ground;
+  initMarker(&marker_ground, local_planner.path_ground_, 0.16, 0.8, 0.8);
+  marker_ground_pub_.publish(marker_ground);
+}
+
 void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
@@ -136,6 +145,29 @@ void LocalPlannerNode::publishGoal() {
   marker_goal_pub_.publish(marker_goal);
 }
 
+void LocalPlannerNode::publishGround() {
+  visualization_msgs::Marker m;
+
+  m.header.frame_id = "world";
+  m.header.stamp = ros::Time::now();
+  m.type = visualization_msgs::Marker::CUBE;
+  m.pose.position.x = local_planner.closest_point_on_ground_.x;
+  m.pose.position.y = local_planner.closest_point_on_ground_.y;
+  m.pose.position.z = local_planner.closest_point_on_ground_.z;
+  m.pose.orientation = local_planner.ground_orientation_;
+  m.scale.x = 10;
+  m.scale.y = 10;
+  m.scale.z = 0.001;
+  m.color.a = 0.5;
+  m.color.r = 0.0;
+  m.color.g = 0.0;
+  m.color.b = 1.0;
+  m.lifetime = ros::Duration(0.5);
+  m.id = 0;
+
+  ground_est_pub_.publish(m);
+}
+
 void LocalPlannerNode::publishBox() {
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
@@ -143,21 +175,43 @@ void LocalPlannerNode::publishBox() {
   box.id = 0;
   box.type = visualization_msgs::Marker::CUBE;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = local_planner.pose_.pose.position.x + 0.5*(local_planner.max_box_x_-local_planner.min_box_x_);
-  box.pose.position.y = local_planner.pose_.pose.position.y + 0.5*(local_planner.max_box_y_-local_planner.min_box_y_);
-  box.pose.position.z = local_planner.pose_.pose.position.z + 0.5*(local_planner.max_box_z_-local_planner.min_box_z_);
+  box.pose.position.x = local_planner.pose_.pose.position.x + 0.5 * (local_planner.max_box_x_ - local_planner.min_box_x_);
+  box.pose.position.y = local_planner.pose_.pose.position.y + 0.5 * (local_planner.max_box_y_ - local_planner.min_box_y_);
+  box.pose.position.z = local_planner.pose_.pose.position.z + 0.5 * (local_planner.max_box_z_ - local_planner.min_box_z_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = (local_planner.max_box_x_ + local_planner.min_box_x_);
-  box.scale.y = (local_planner.max_box_y_ + local_planner.min_box_y_);
-  box.scale.z = (local_planner.max_box_z_ + local_planner.min_box_z_);
+  box.scale.x = local_planner.max_box_x_ + local_planner.min_box_x_;
+  box.scale.y = local_planner.max_box_y_ + local_planner.min_box_y_;
+  box.scale.z = local_planner.max_box_z_ + local_planner.min_box_z_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
+
+  visualization_msgs::Marker groundbox;
+  groundbox.header.frame_id = "local_origin";
+  groundbox.header.stamp = ros::Time::now();
+  groundbox.id = 0;
+  groundbox.type = visualization_msgs::Marker::CUBE;
+  groundbox.action = visualization_msgs::Marker::ADD;
+  groundbox.pose.position.x = local_planner.pose_.pose.position.x + 0.5 * (local_planner.max_groundbox_x_ - local_planner.min_groundbox_x_);
+  groundbox.pose.position.y = local_planner.pose_.pose.position.y + 0.5 * (local_planner.max_groundbox_y_ - local_planner.min_groundbox_y_);
+  groundbox.pose.position.z = local_planner.pose_.pose.position.z - 0.5 * (local_planner.min_dist_to_ground_ + local_planner.min_groundbox_z_);
+  groundbox.pose.orientation.x = 0.0;
+  groundbox.pose.orientation.y = 0.0;
+  groundbox.pose.orientation.z = 0.0;
+  groundbox.pose.orientation.w = 1.0;
+  groundbox.scale.x = local_planner.max_groundbox_x_ + local_planner.min_groundbox_x_;
+  groundbox.scale.y = local_planner.max_groundbox_y_ + local_planner.min_groundbox_y_;
+  groundbox.scale.z = local_planner.min_dist_to_ground_ + local_planner.min_groundbox_z_;
+  groundbox.color.a = 0.5;
+  groundbox.color.r = 1.0;
+  groundbox.color.g = 0.0;
+  groundbox.color.b = 0.0;
+  groundbox_pub_.publish(groundbox);
 }
 
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {
@@ -199,10 +253,27 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     local_planner.n_call_hist_ = 0;
     local_planner.filterPointCloud(complete_cloud);
     publishAll();
+    local_planner.createPolarHistogram();
+    if (local_planner.use_ground_detection_ && local_planner.reach_altitude_){
+      local_planner.fitPlane();
+    }
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
 
+  if (local_planner.obstacleAhead() && local_planner.init != 0) {
+    std::cout << "\033[1;32m There is an Obstacle Ahead\n \033[0m";
+    local_planner.findFreeDirections();
+    local_planner.calculateCostMap();
+    local_planner.getNextWaypoint();
+    local_planner.getPathMsg();
+  } else {
+    std::cout << "\033[1;32m There is NO Obstacle Ahead\n \033[0m";
+    local_planner.goFast();
+    local_planner.getPathMsg();
+  }
+
+  local_planner.position_old_ = local_planner.pose_.pose.position;
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   algo_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
@@ -224,6 +295,7 @@ void LocalPlannerNode::publishAll() {
   ROS_INFO("Velocity: [%f, %f, %f], module: %f.", local_planner.velocity_x_, local_planner.velocity_y_, local_planner.velocity_z_, local_planner.velocity_mod_);
 
   local_pointcloud_pub_.publish(local_planner.final_cloud_);
+  ground_pointcloud_pub_.publish(local_planner.ground_cloud_);
   waypoint_pub_.publish(local_planner.path_msg_);
   reprojected_points_pub_.publish(local_planner.reprojected_points);
   path_pub_.publish(path_actual);
@@ -237,6 +309,9 @@ void LocalPlannerNode::publishAll() {
   publishMarkerSelected();
   publishGoal();
   publishBox();
+  if (local_planner.ground_detected_) {
+    publishGround();
+  }
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
@@ -247,6 +322,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner.max_box_y_ = config.max_box_y_;
   local_planner.min_box_z_ = config.min_box_z_;
   local_planner.max_box_z_ = config.max_box_z_;
+  local_planner.min_dist_to_ground_ = config.min_dist_to_ground_;
   local_planner.rad_ = config.rad_;
   local_planner.goal_cost_param_ = config.goal_cost_param_;
   local_planner.smooth_cost_param_ = config.smooth_cost_param_;
@@ -261,6 +337,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 	  local_planner.goal_z_param_ = config.goal_z_param_;
 	  local_planner.setGoal();
   }
+  local_planner.use_ground_detection_ = config.use_ground_detection_;
 }
 
 int main(int argc, char** argv) {

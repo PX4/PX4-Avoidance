@@ -51,7 +51,11 @@ private:
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
+  ros::Publisher ground_pointcloud_pub_;
   ros::Publisher front_pointcloud_pub_;
+  ros::Publisher reprojected_points_pub_;
+  ros::Publisher bounding_box_pub_;
+  ros::Publisher groundbox_pub_;
   ros::Publisher cached_pointcloud_pub_ ;
   ros::Publisher marker_pub_;
   ros::Publisher waypoint_pub_;
@@ -62,8 +66,10 @@ private:
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
   ros::Publisher marker_selected_pub_;
+  ros::Publisher marker_ground_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher bounding_box_pub_;
+  ros::Publisher ground_est_pub_;
 
   tf::TransformListener tf_listener_;
 
@@ -85,11 +91,13 @@ private:
   void publishMarkerRejected();
   void publishMarkerCandidates();
   void publishMarkerSelected();
+  void publishMarkerGround();
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
+  void publishGround();
 
 };
 

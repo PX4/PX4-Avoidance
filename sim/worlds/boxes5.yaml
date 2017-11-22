@@ -1,0 +1,66 @@
+models:
+ - box:
+    name: "Box1"
+    frame_id: "world"
+    position:
+      x: 20
+      y: 0
+      z: 1.25
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 10.0
+      y: 10.0
+      z: 2.5
+ - box:
+    name: "Box2"
+    frame_id: "world"
+    position:
+      x: 27
+      y: 0
+      z: 2
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 4
+      y: 10.0
+      z: 4
+ - box:
+    name: "Box3"
+    frame_id: "world"
+    position:
+      x: 33
+      y: 0
+      z: 0.5
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 8
+      y: 10.0
+      z: 1
+ - box:
+    name: "Box4"
+    frame_id: "world"
+    position:
+      x: 48
+      y: 0
+      z: 0.5
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 8
+      y: 10.0
+      z: 1
+

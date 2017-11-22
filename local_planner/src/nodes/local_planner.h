@@ -17,6 +17,16 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
+#include <pcl/filters/extract_indices.h>
+
 
 #include <tf/transform_listener.h>
 
@@ -32,13 +42,6 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/crop_box.h>
 
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
@@ -48,16 +51,10 @@
 #define alpha_res 6
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
-#define age_lim 0
+#define age_lim 100
 #define min_bin 1.5
-<<<<<<< ec49835a6d8f4e6ad9fc2de8eb36193b22454b56
-
-//#define h_fov 59.0
-//#define v_fov 46.0
-=======
 #define h_fov 59.0
 #define v_fov 46.0
->>>>>>> Determine FOV and give proirity to the new histogram inside the FOV
 //#define n_fields_90 round(90.0/alpha_res)
 //#define n_fields_hfov std::floor((grid_length_z-h_fov/alpha_res)/2)
 //#define n_fields_vfov std::floor((grid_length_e-v_fov/alpha_res)/2)
@@ -163,7 +160,7 @@ class LocalPlanner {
 public:
 
 	pcl::PointCloud<pcl::PointXYZ> final_cloud_;
-  pcl::PointCloud<pcl::PointXYZ> reprojected_points;
+	pcl::PointCloud<pcl::PointXYZ> ground_cloud_;
 	pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
@@ -176,9 +173,13 @@ public:
 	bool first_brake_ = true;
 	int adapted_min_bin_ = 100;
 	bool waypoint_outside_FOV_ = false;
-
+	bool use_ground_detection_ = true;
+	bool ground_detected_ = false;
+	bool  print_height_map_ = true;
+	bool over_obstacle_ = false;
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
+	geometry_msgs::Point min_groundbox_, max_groundbox_;
 	geometry_msgs::PoseStamped pose_, waypt_p_, last_waypt_p_, last_last_waypt_p_;
 	geometry_msgs::Vector3Stamped waypt_;
 	geometry_msgs::TwistStamped curr_vel_;
@@ -188,12 +189,15 @@ public:
 	nav_msgs::GridCells path_selected_;
 	nav_msgs::GridCells path_rejected_;
 	nav_msgs::GridCells path_blocked_;
+	nav_msgs::GridCells path_ground_;
 	nav_msgs::GridCells path_waypoints_;
 
 	int n_call_hist_ = 0;
 	int init = 0;
 	int stop_in_front_;
+	double min_dist_to_ground_;
 	double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
+	double min_groundbox_x_=10, max_groundbox_x_=10, min_groundbox_y_=10, max_groundbox_y_=10, min_groundbox_z_=2.0;
 	double rad_ = 1.0;
 	float min_distance_;
 	int z_FOV_max_, z_FOV_min_, e_FOV_max_, e_FOV_min_;
@@ -212,12 +216,24 @@ public:
 	double max_accel_xy_;
 	double max_accel_z_;
 	double keep_distance_;
+	double ground_dist_;
+	double min_flight_height_;
+
+
+	std::vector<double> ground_heights_;
+	std::vector<double> ground_xmax_;
+	std::vector<double> ground_xmin_;
+	std::vector<double> ground_ymax_;
+	std::vector<double> ground_ymin_;
 
 	Histogram polar_histogram_ = Histogram(alpha_res);
 	Histogram polar_histogram_old_ = Histogram(alpha_res);
 	Histogram polar_histogram_est_ = Histogram(2*alpha_res);
 
 	geometry_msgs::Point position_old_;
+	geometry_msgs::Quaternion ground_orientation_;
+	geometry_msgs::Point closest_point_on_ground_;
+
 
     std::vector<float> accumulated_height_prior{1.0, 0.9999, 0.9990, 0.9952, 0.9882, 0.9794, 0.9674, 0.9289, 0.8622, 0.7958, 0.7240, 0.6483, 0.5752, 0.5132, 0.4535, 0.4020, 0.3525, 0.3090, 0.2670, 0.2300, 0.2066, 0.1831};
     std::vector<float> height_prior{0.000057, 0.00052, 0.00369, 0.01176, 0.0166, 0.01728, 0.04255, 0.11559, 0.1315, 0.1357, 0.1556, 0.1464};
@@ -236,6 +252,7 @@ public:
 	void setVelocity();
 	void setGoal();
 	bool isPointWithinBoxBoundaries(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
+	void fitPlane();
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
 	bool obstacleAhead();
 	void createPolarHistogram();
@@ -245,6 +262,7 @@ public:
 	double costFunction(int e, int z);
 	void calculateCostMap();
 	void getNextWaypoint();
+  void getMinFlightHeight();
 	bool checkForCollision();
 	void goFast();
 	geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
