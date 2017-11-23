@@ -108,7 +108,7 @@ void LocalPlanner::fitPlane() {
     seg.setDistanceThreshold(0.1);
     seg.setInputCloud(cloud);
     seg.setAxis (Eigen::Vector3f (0.0, 0.0, 1.0));
-    seg.setEpsAngle (35.0*PI/180.0);
+    seg.setEpsAngle (30.0*PI/180.0);
     seg.segment(*inliers, *coefficients);
 
     double a = coefficients->values[0];
@@ -333,10 +333,45 @@ void LocalPlanner::createPolarHistogram() {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  z_FOV_max_ = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
-  z_FOV_min_ = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
+  double z_FOV_max = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
+  double z_FOV_min = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
   e_FOV_max_ = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
   e_FOV_min_ = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
+
+  if(z_FOV_max>=grid_length_z && z_FOV_min>=grid_length_z ){
+    z_FOV_max-= grid_length_z;
+    z_FOV_min-= grid_length_z;
+  }
+  if(z_FOV_max<0 && z_FOV_min<0 ){
+    z_FOV_max+= grid_length_z;
+    z_FOV_min+= grid_length_z;
+  }
+
+  z_FOV_idx_.clear();
+  if(z_FOV_max >= grid_length_z && z_FOV_min < grid_length_z){
+    for (int i = 0; i < z_FOV_max-grid_length_z; i++){
+      z_FOV_idx_.push_back(i);
+    }
+    for (int i = z_FOV_min; i < grid_length_z; i++){
+      z_FOV_idx_.push_back(i);
+    }
+  } else if(z_FOV_min < 0 && z_FOV_max >= 0){
+    for (int i = 0; i < z_FOV_max; i++){
+      z_FOV_idx_.push_back(i);
+    }
+    for (int i = z_FOV_min + grid_length_z; i < grid_length_z; i++){
+      z_FOV_idx_.push_back(i);
+    }
+  }else{
+    for (int i = z_FOV_min; i < z_FOV_max; i++){
+      z_FOV_idx_.push_back(i);
+    }
+  }
+
+//  std::cout << "Z FOV index contains:";
+//  for (std::vector<int>::iterator it = z_FOV_idx_.begin() ; it != z_FOV_idx_.end(); ++it)
+//    std::cout << ' ' << *it;
+//  std::cout << '\n';
 
   //Build Estimate of Histogram from old Histogram and Movement
   polar_histogram_est_ = Histogram(2 * alpha_res);
@@ -348,7 +383,7 @@ void LocalPlanner::createPolarHistogram() {
 //  std::cout << "------------ Histogram old----------------\n";
 //  for (int e = 0; e < grid_length_e; e++) {
 //    for (int z = 0; z < grid_length_z; z++) {
-//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()&& e>e_FOV_min_ && e<e_FOV_max_){
 //        std::cout << "\033[1;33m"<<polar_histogram_old_.get_bin(e, z)  <<" \033[0m";
 //      }else{
 //        std::cout << polar_histogram_old_.get_bin(e, z) << " ";
@@ -403,20 +438,6 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-//  std::cout << "------------ Histogram Est low res bin----------------\n";
-//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-//  for (int e = 0; e < grid_length_e/2; e++) {
-//    for (int z = 0; z < grid_length_z/2; z++) {
-//      if(z>z_FOV_min_/2 && z<z_FOV_max_/2 && e>e_FOV_min_/2 && e<e_FOV_max_/2){
-//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
-//      }else{
-//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "-------------------------------------------------------\n";
-
   for (int e = 0; e < grid_length_e / 2; e++) {
     for (int z = 0; z < grid_length_z / 2; z++) {
       if (polar_histogram_est_.get_bin(e, z) >= min_bin) {
@@ -431,20 +452,6 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-//  std::cout << "------------ Histogram Est low res----------------\n";
-//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-//  for (int e = 0; e < grid_length_e/2; e++) {
-//    for (int z = 0; z < grid_length_z/2; z++) {
-//      if(z>z_FOV_min_/2 && z<z_FOV_max_/2 && e>e_FOV_min_/2 && e<e_FOV_max_/2){
-//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
-//      }else{
-//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
-
   //upsample estimate
   polar_histogram_est_.upsample();
 
@@ -452,7 +459,7 @@ void LocalPlanner::createPolarHistogram() {
 //  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
 //  for (int e = 0; e < grid_length_e; e++) {
 //    for (int z = 0; z < grid_length_z; z++) {
-//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e>e_FOV_min_ && e<e_FOV_max_){
 //        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
 //      }else{
 //        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
@@ -501,7 +508,7 @@ void LocalPlanner::createPolarHistogram() {
 //  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
 //  for (int e = 0; e < grid_length_e; e++) {
 //    for (int z = 0; z < grid_length_z; z++) {
-//      if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e>e_FOV_min_ && e<e_FOV_max_){
 //        std::cout << "\033[1;31m"<<polar_histogram_.get_dist(e, z)  <<" \033[0m";
 //      }else{
 //        std::cout << polar_histogram_.get_dist(e, z) << " ";
@@ -556,7 +563,7 @@ void LocalPlanner::createPolarHistogram() {
 //    //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
 //    for (int e = 0; e < grid_length_e; e++) {
 //      for (int z = 0; z < grid_length_z; z++) {
-//        if(z>z_FOV_min_ && z<z_FOV_max_ && e>e_FOV_min_ && e<e_FOV_max_){
+//        if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()&& e>e_FOV_min_ && e<e_FOV_max_){
 //          std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
 //        }else{
 //          std::cout << polar_histogram_.get_bin(e, z) << " ";
@@ -570,7 +577,7 @@ void LocalPlanner::createPolarHistogram() {
   bool hist_is_empty = true;
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
-      if (z > z_FOV_min_ && z < z_FOV_max_ && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
+      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
           hist_is_empty = false;
@@ -619,7 +626,6 @@ void LocalPlanner::createPolarHistogram() {
   if (hist_is_empty && n_call_hist_>1) {
     obstacle_ = false;
   }
-  obstacle_ = true; //TAKE AWAY AGAIN!
 
   //Statistics
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
@@ -656,16 +662,31 @@ void LocalPlanner::findFreeDirections() {
   int e_min_idx = -1;
   if (use_ground_detection_) {
     getMinFlightHeight();
+    int e_max = floor(v_fov / 2);
     int e_min;
-    if (over_obstacle_ && pose_.pose.position.z <= min_flight_height_) {
-      e_min = floor(atan(min_flight_height_ - pose_.pose.position.z)*180/PI);
-      e_min = e_min + (alpha_res - e_min % alpha_res);  //[-80,+90]
-      e_min_idx = (90 + e_min) / alpha_res - 1;  //[0,17]
-      std::cout << "\033[1;36m Too low, discard points under elevation " << e_min<< "\n \033[0m";
+
+    if(!is_near_min_height_ && over_obstacle_ && pose_.pose.position.z < min_flight_height_ + 0.2){
+      is_near_min_height_ = true;
     }
-    if (over_obstacle_ && pose_.pose.position.z > min_flight_height_ && pose_.pose.position.z < min_flight_height_ + 0.5) {
+    if(is_near_min_height_ && over_obstacle_ && pose_.pose.position.z > min_flight_height_ + 0.5){
+      is_near_min_height_ = false;
+    }
+    if(!too_low_ && over_obstacle_ && pose_.pose.position.z <= min_flight_height_){
+       too_low_ = true;
+     }
+     if(too_low_  && over_obstacle_ && pose_.pose.position.z > min_flight_height_ + 0.2){
+       too_low_ = false;
+     }
+
+    if (over_obstacle_ && too_low_) {
+      e_max = e_max - e_max % alpha_res;
+      e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
+      e_min_idx = (90 + e_max) / alpha_res - 1;  //[0,17]
+      std::cout << "\033[1;36m Too low, discard points under elevation " << e_max<< "\n \033[0m";
+    }
+    if (over_obstacle_ && is_near_min_height_ && !too_low_) {
       e_min = 0;
-      e_min = e_min + (alpha_res - e_min % alpha_res);  //[-80,+90]
+      //e_min = e_min + (alpha_res - e_min % alpha_res);  //[-80,+90]
       e_min_idx = (90 + e_min) / alpha_res - 1;  //[0,17]
       std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min<< "\n \033[0m";
     }
@@ -857,10 +878,9 @@ void LocalPlanner::getNextWaypoint() {
   int z = path_waypoints_.cells[waypoint_index - 1].y;
   int e_index = (e-alpha_res+90)/alpha_res;
   int z_index = (z-alpha_res+180)/alpha_res;
-  int margin = floor(0 / alpha_res);
   geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e,z);
 
-  if(z_index>z_FOV_min_-margin && z_index<z_FOV_max_+margin && e_index>e_FOV_min_-margin && e_index<e_FOV_max_+margin){
+  if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_index) != z_FOV_idx_ .end()){
     waypoint_outside_FOV_ = false;
   }else{
     waypoint_outside_FOV_ = true;
@@ -872,7 +892,7 @@ void LocalPlanner::getNextWaypoint() {
 //    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
 //      if (z_ind == z_index && e_ind == e_index) {
 //        std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
-//      } else if (z_ind > z_FOV_min_ && z_ind < z_FOV_max_ && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+//      } else if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
 //        std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
 //      } else {
 //        std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
@@ -924,23 +944,54 @@ bool LocalPlanner::checkForCollision() {
   return avoid;
 }
 
-void LocalPlanner::getMinFlightHeight(){
+void LocalPlanner::getMinFlightHeight() {
   int i = 0;
   double margin = 1;
+  bool over_obstacle_old = over_obstacle_;
+  double min_flight_height_old = min_flight_height_;
   over_obstacle_ = false;
   min_flight_height_ = -1000;
+  double begin_rise_temp;
 
   for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
-    if (pose_.pose.position.x < ground_xmax_[i] + margin && pose_.pose.position.x > ground_xmin_[i] - margin && pose_.pose.position.y < ground_ymax_[i] + margin && pose_.pose.position.y > ground_ymin_[i] - margin) {
-      double flight_height = ground_heights_[i] + min_dist_to_ground_;
+    double flight_height = ground_heights_[i] + min_dist_to_ground_;
+    double begin_rise;
+    if (over_obstacle_old && flight_height > min_flight_height_old - 0.1 && flight_height < min_flight_height_old + 0.1) {
+      begin_rise = begin_rise_;
+    } else if (flight_height > pose_.pose.position.z) {
+      double dist_diff = flight_height - pose_.pose.position.z;
+      int e_max = floor(v_fov / 2);
+      e_max = e_max - e_max % alpha_res;
+      e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
+      begin_rise = dist_diff / tan(e_max * PI / 180.0);
+    } else {
+      begin_rise = 0;
+    }
+    double xmin_begin_rise = 0;
+    double xmax_begin_rise = begin_rise;
+    double ymin_begin_rise = 0;
+    double ymax_begin_rise = begin_rise;
+    if (curr_vel_.twist.linear.x > 0) {
+      xmin_begin_rise = begin_rise;
+      xmax_begin_rise = 0;
+    }
+    if (curr_vel_.twist.linear.y > 0) {
+      ymin_begin_rise = begin_rise;
+      ymax_begin_rise = 0;
+    }
+    if (pose_.pose.position.x < ground_xmax_[i] + xmax_begin_rise && pose_.pose.position.x > ground_xmin_[i] - xmin_begin_rise && pose_.pose.position.y < ground_ymax_[i] + ymax_begin_rise
+        && pose_.pose.position.y > ground_ymin_[i] - ymin_begin_rise) {
       if (flight_height > min_flight_height_) {
         min_flight_height_ = flight_height;
         over_obstacle_ = true;
+        begin_rise_temp = begin_rise;
       }
     }
+
     i++;
   }
-  if(over_obstacle_){
+  begin_rise_ = begin_rise_temp;
+  if (over_obstacle_) {
     std::cout << "\033[1;36m Minimal flight height: " << min_flight_height_ << "\n \033[0m";
   }
 }
@@ -1102,7 +1153,6 @@ void LocalPlanner::getPathMsg() {
   }
 
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
-  std::cout<<"yaw: with angle "<<new_yaw<<" last yaw: "<<last_yaw_<<"\n";
 
   //If the waypoint is not inside the FOV, only yaw and not move
   if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ ){

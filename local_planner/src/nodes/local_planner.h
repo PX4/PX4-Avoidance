@@ -177,6 +177,8 @@ public:
 	bool ground_detected_ = false;
 	bool  print_height_map_ = true;
 	bool over_obstacle_ = false;
+	bool is_near_min_height_ = false;
+	bool too_low_ = false;
 
 	geometry_msgs::Point min_box_, max_box_, goal_, pose_stop_;
 	geometry_msgs::Point min_groundbox_, max_groundbox_;
@@ -200,7 +202,7 @@ public:
 	double min_groundbox_x_=10, max_groundbox_x_=10, min_groundbox_y_=10, max_groundbox_y_=10, min_groundbox_z_=2.0;
 	double rad_ = 1.0;
 	float min_distance_;
-	int z_FOV_max_, z_FOV_min_, e_FOV_max_, e_FOV_min_;
+	int e_FOV_max_, e_FOV_min_;
 	double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
 	double speed = 1.0;
 	double min_speed_;
@@ -218,6 +220,7 @@ public:
 	double keep_distance_;
 	double ground_dist_;
 	double min_flight_height_;
+	double begin_rise_;
 
 
 	std::vector<double> ground_heights_;
@@ -225,6 +228,8 @@ public:
 	std::vector<double> ground_xmin_;
 	std::vector<double> ground_ymax_;
 	std::vector<double> ground_ymin_;
+	std::vector<int> e_FOV_idx_;
+  std::vector<int> z_FOV_idx_;
 
 	Histogram polar_histogram_ = Histogram(alpha_res);
 	Histogram polar_histogram_old_ = Histogram(alpha_res);
