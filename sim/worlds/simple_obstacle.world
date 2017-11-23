@@ -50,234 +50,74 @@
       <direction>-0.5 0.1 -0.9</direction>
     </light>
     
-    <!--
-    <light type="point" name="light_bulb">
-      <cast_shadows>false</cast_shadows>
-      <pose>-14 0 5 0 0 0</pose>
-      <diffuse>0.3 0.3 0.3 1</diffuse>
-      <specular>0.0 0.0 0.0 1</specular>
-      <attenuation>
-        <range>80</range>
-        <constant>0.9</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-    </light>
-    -->
-    
-    <!--
-    <light type="spot" name="lamp_post_light">
-      <cast_shadows>true</cast_shadows>
-      <pose>-3.01 -1.7 3.01   0.22 0 0</pose>
-      <diffuse>0.5 0.5 0.5 1</diffuse>
-      <specular>0.0 0.0 0.0 1</specular>
-      <attenuation>
-        <range>20</range>
-        <constant>0.5</constant>
-        <linear>0.01</linear>
-        <quadratic>0.001</quadratic>
-      </attenuation>
-      <direction>0 0.3 -0.9</direction>
-      <spot>
-        <inner_angle>0.6</inner_angle>
-        <outer_angle>1.0</outer_angle>
-        <falloff>1.0</falloff>
-      </spot> 
-    </light>
-    -->
-    
-    
     <include>
       <uri>model://vrc_driving_terrain</uri>
-    </include>
-    
-    <!--
-    <include>
-      <uri>model://grass_plane</uri>
-    </include>
-    
-    
-    <include>
-      <uri>model://ground_plane_small</uri>
-    </include>
-    -->
-
-    <include>
-      <name>house_2</name>
-      <uri>model://house_2</uri>
-      <pose>3.35 -11.72 0   0 0 0</pose>
-    </include>
-    
-    <include>
-      <name>house_2_2</name>
-      <uri>model://house_2</uri>
-      <pose>-12 8 0   0 0 1.5707</pose>
-    </include>
-    
-    <include>
-      <name>house_1</name>
-      <uri>model://house_1</uri>
-      <pose>-10 -12 0   0 0 3.1415</pose>
-    </include>
-    
-    <include>
-      <name>dumpster</name>
-      <uri>model://dumpster</uri>
-      <pose>-13 3 0   0 0 0</pose>
-    </include>
-    
-    <include>
-      <name>lamp_post_1</name>
-      <uri>model://lamp_post</uri>
-      <pose>-11.5 2.6 0   0 0 0</pose>
-    </include>
-    
-    <include>
-      <name>lamp_post_2</name>
-      <uri>model://lamp_post</uri>
-      <pose>-6 -2.6 0   0 0 3.1415</pose>
-    </include>
-
-<!--     <include>
-      <name>lamp_post_3</name>
-      <uri>model://lamp_post</uri>
-      <pose>3 2.6 0   0 0 0</pose>
-    </include>
-    
-    <include>
-      <name>lamp_post_4</name>
-      <uri>model://lamp_post</uri>
-      <pose>9 -2.6 0   0 0 3.1415</pose>
-    </include> -->
-    
-    <include>
-      <name>lamp_post_5</name>
-      <uri>model://lamp_post</uri>
-      <pose>-22 5 0   0 0 1.5707</pose>
     </include>
     
     <!-- Trees -->
     <include>
       <name>pine_tree_1</name>
       <uri>model://pine_tree</uri>
-      <pose>-4.5 8.7 0   0 0 0</pose>
+      <pose>4 7 0   0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_2</name>
       <uri>model://pine_tree</uri>
-      <pose>-3.5 -9.5 0   0 0 0</pose>
+      <pose>6.1 7.6 0   0 0 0</pose>
     </include>
     <include>
       <name>pine_tree_3</name>
       <uri>model://pine_tree</uri>
-      <pose>-7 4 0   0 0 0</pose>
+      <pose>19.3 -14 0   0 0 0</pose>
     </include>
     <include>
-      <name>pine_tree_7</name>
-      <uri>model://pine_tree</uri>
-      <pose>-22 -8 0   0 0 0</pose>
-    </include>
-    <include>
-      <name>pine_tree_9</name>
+      <name>pine_tree_4</name>
       <uri>model://pine_tree</uri>
       <pose>16 -11.5 0  0 0 0</pose>
     </include>
     
-    <!-- Roads & Garage ways -->
-    <road name="main_street">
-      <width>4</width>
-      <point>-19    14   0.01</point>
-      <point>-19    3    0.01</point>
-      <point>-18.77 1.85 0.01</point>
-      <point>-18.12 0.88 0.01</point>
-      <point>-17.15 0.23 0.01</point>
-      <point>-16    0    0.01</point>
-      
-      <point>10 0 0.01</point>
-      <point>11.15 -0.23 0.01</point>
-      <point>12.12 -0.88 0.01</point>
-      <point>12.77 -1.85 0.01</point>
-      <point>13    -3    0.01</point>
-      <point>13    -14   0.01</point>
-    </road>
-        
-   <!-- <include>
-      <name>recorder_camera</name>
-      <uri>model://recorder_camera</uri>
-      <pose>-1 -3.08 3.0  0 0 -1.89</pose>
+    <include>
+      <name>oak_tree_1</name>
+      <uri>model://oak_tree</uri>
+      <pose>10 0 0  0 0 0</pose>
     </include>
--->
-    <road name="garage_way_1">
-      <width>1.75</width>
-      <point>1.75 -2 0.01</point>
-      <point>1.75 -10 0.01</point>
-      <material>
-        <script>
-          <uri>file://media/materials/scripts/gazebo.material</uri>
-          <name>Gazebo/Pedestrian</name>
-        </script>
-      </material>
-    </road>
-    
-    <road name="garage_way_2">
-      <width>2.5</width>
-      <point>-12.5 -2 0.01</point>
-      <point>-12.5 -8 0.01</point>
-      <material>
-        <script>
-          <uri>file://media/materials/scripts/gazebo.material</uri>
-          <name>Gazebo/Pedestrian</name>
-        </script>
-      </material>
-    </road>
+    <include>
+      <name>oak_tree_2</name>
+      <uri>model://oak_tree</uri>
+      <pose>10.25 -4.25 0  0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_3</name>
+      <uri>model://oak_tree</uri>
+      <pose>20.2 14.4 0  0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_4</name>
+      <uri>model://oak_tree</uri>
+      <pose>30 8.5 0  0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_5</name>
+      <uri>model://oak_tree</uri>
+      <pose>136.2 -0.4 0  0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_6</name>
+      <uri>model://oak_tree</uri>
+      <pose>38 -9.8 0  0 0 0</pose>
+    </include>
+    <include>
+      <name>oak_tree_7</name>
+      <uri>model://oak_tree</uri>
+      <pose>38.6 -4.6 0 0 0 0</pose>
+    </include>
 
-     <model name='House 1'>
-      <static>1</static>
-      <link name='link'>
-        <collision name='collision'>
-          <geometry>
-            <mesh>
-              <uri>model://house_1/meshes/house_1.dae</uri>
-            </mesh>
-          </geometry>
-          <max_contacts>10</max_contacts>
-          <surface>
-            <bounce/>
-            <friction>
-              <ode/>
-            </friction>
-            <contact>
-              <ode/>
-            </contact>
-          </surface>
-        </collision>
-        <visual name='visual'>
-          <geometry>
-            <mesh>
-              <uri>model://house_1/meshes/house_1.dae</uri>
-            </mesh>
-          </geometry>
-          <material>
-            <script>
-              <uri>model://house_1/materials/scripts</uri>
-              <uri>model://house_1/materials/textures</uri>
-              <name>House_1/Diffuse</name>
-            </script>
-            <shader type='normal_map_object_space'>
-              <normal_map>House_1_Normal.png</normal_map>
-            </shader>
-          </material>
-        </visual>
-        <velocity_decay>
-          <linear>0</linear>
-          <angular>0</angular>
-        </velocity_decay>
-        <self_collide>0</self_collide>
-        <kinematic>0</kinematic>
-        <gravity>1</gravity>
-      </link>
-      <pose>20 1.8 0 0 0 0</pose>
-    </model>
+    <include>
+      <name>oak_tree_8</name>
+      <uri>model://oak_tree</uri>
+      <pose>16 30 1.6 0.15 0 0</pose>
+    </include>
+
 
   </world>
 </sdf>
