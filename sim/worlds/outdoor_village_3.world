@@ -56,7 +56,7 @@
     </light>
   
     <include>
-      <uri>model://vrc_driving_terrain</uri>
+      <uri>model://ground_plane</uri>
     </include>
 
 
