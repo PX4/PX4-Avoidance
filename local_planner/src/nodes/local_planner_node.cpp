@@ -52,6 +52,10 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   local_planner.setPose(rot_msg);
   publishPath(rot_msg);
+
+  if(local_planner.log_data_to_txt_file_ ){
+    local_planner.logData();
+  }
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {

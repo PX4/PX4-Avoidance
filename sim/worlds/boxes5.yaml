@@ -13,7 +13,7 @@ models:
       w: 1.0
     scale:
       x: 10.0
-      y: 10.0
+      y: 20.0
       z: 2.5
  - box:
     name: "Box2"
@@ -29,7 +29,7 @@ models:
       w: 1.0
     scale:
       x: 4
-      y: 10.0
+      y: 20.0
       z: 4
  - box:
     name: "Box3"
@@ -45,7 +45,7 @@ models:
       w: 1.0
     scale:
       x: 8
-      y: 10.0
+      y: 20.0
       z: 1
  - box:
     name: "Box4"
@@ -61,6 +61,22 @@ models:
       w: 1.0
     scale:
       x: 8
-      y: 10.0
+      y: 20.0
       z: 1
+ - box:
+    name: "Box5"
+    frame_id: "world"
+    position:
+      x: 18
+      y: 0
+      z: 4.5
+    orientation:
+      x: 0.0
+      y: 0.0
+      z: 0.0
+      w: 1.0
+    scale:
+      x: 2
+      y: 3
+      z: 4
 

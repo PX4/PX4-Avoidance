@@ -90,14 +90,14 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>10 10 2.5</size>
+              <size>10 20 2.5</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>10 10 2.5</size>
+              <size>10 20 2.5</size>
             </box>
           </geometry>
           <material>
@@ -117,14 +117,14 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>4 10 4</size>
+              <size>4 20 4</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>4 10 4</size>
+              <size>4 20 4</size>
             </box>
           </geometry>
           <material>
@@ -144,14 +144,14 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>4 10 2</size>
+              <size>8 20 2</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>8 10 1</size>
+              <size>8 20 1</size>
             </box>
           </geometry>
           <material>
@@ -171,14 +171,41 @@
         <collision name='collision'>
           <geometry>
             <box>
-              <size>4 10 2</size>
+              <size>8 20 2</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>8 10 1</size>
+              <size>8 20 1</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <emissive>0 0 0 0</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <model name="box5">
+      <static>true</static>
+      <link name='box'>
+        <pose>18 0 4.5 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>2 3 4</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>2 3 4</size>
             </box>
           </geometry>
           <material>

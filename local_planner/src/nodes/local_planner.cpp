@@ -16,8 +16,10 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 
   setVelocity();
   setLimitsBoundingBox();
+}
 
-  //log data
+// log Data
+void LocalPlanner::logData() {
   if (reach_altitude_ && !reached_goal_) {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(2) << min_bin;
@@ -40,7 +42,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     myfile.close();
     print_height_map_ = false;
   }
-
 }
 
 // update UAV velocity
@@ -77,7 +78,6 @@ void LocalPlanner::setGoal() {
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
 }
-
 
 bool LocalPlanner::isPointWithinBoxBoundaries(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
 
@@ -122,25 +122,14 @@ void LocalPlanner::fitPlane() {
     closest_point_on_ground_.y = pose_.pose.position.y + b*ground_dist_;
     closest_point_on_ground_.z = pose_.pose.position.z + c*ground_dist_;
 
-//    std::cout << "Model coefficients: " << coefficients->values[0] << " "
-//                                          << coefficients->values[1] << " "
-//                                          << coefficients->values[2] << " "
-//                                          << coefficients->values[3] << std::endl;
-//
-//    std::cout<<"Ground distance: "<< ground_dist_<<" \n";
-//    std::cout << "Closest ground point: " << closest_point_on_ground_.x << " "
-//                                              << closest_point_on_ground_.y << " "
-//                                              << closest_point_on_ground_.z << " "
-//                                              << std::endl;
-
+   //Assume estimate to be valid if 60% of the points are inliers
     if(inliers->indices.size()>0.6*ground_cloud_.width){
       ground_detected_ = true;
-      std::cout<<"horizontal plane found! -------------------------------------------------------------\n";
     }else{
       ground_detected_ = false;
     }
 
-    // Extract region from inliers
+    // Extract patch size from inliers
     double xmin = 10000;
     double xmax = -10000;
     double ymin = 10000;
@@ -160,14 +149,12 @@ void LocalPlanner::fitPlane() {
         ymin = ground_cloud_.points[indices[i]].y;
       }
     }
-    std::cout << "Limits [xmin,xmax,ymin,ymax]: " << xmin<< " " << xmax << " " << ymin << " " << ymax << std::endl;
 
     double h_tol = 0.2;
     double xy_tol = 0.1;
     double ground_height = pose_.pose.position.z - std::abs(ground_dist_);
     bool same_surface = false;
     int heights_length = ground_heights_.size();
-    std::cout << "ground height: " << ground_height << "\n";
     if (ground_detected_) {
       if (heights_length == 0) {
         ground_heights_.push_back(ground_height);
@@ -213,20 +200,19 @@ void LocalPlanner::fitPlane() {
   }else{
     ground_detected_ = false;
   }
-
-  int i = 0;
-  for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
-    std::cout << "ground_distances[" << i << "]: " << ground_heights_[i] << "\n";
-    std::cout << "xmin[" << i << "]: " << ground_xmin_[i] << std::endl;
-    std::cout << "xmax[" << i << "]: " << ground_xmax_[i] << std::endl;
-    std::cout << "ymin[" << i << "]: " << ground_ymin_[i] << std::endl;
-    std::cout << "ymax[" << i << "]: " << ground_ymax_[i] << std::endl;
-    i++;
-  }
+//
+//  int i = 0;
+//  for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
+//    std::cout << "ground_distances[" << i << "]: " << ground_heights_[i] << "\n";
+//    std::cout << "xmin[" << i << "]: " << ground_xmin_[i] << std::endl;
+//    std::cout << "xmax[" << i << "]: " << ground_xmax_[i] << std::endl;
+//    std::cout << "ymin[" << i << "]: " << ground_ymin_[i] << std::endl;
+//    std::cout << "ymax[" << i << "]: " << ground_ymax_[i] << std::endl;
+//    i++;
+//  }
 }
 
 // trim the point cloud so that only points inside the bounding box are considered and
-// filter out false positve obstacles
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
@@ -263,7 +249,15 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  obstacle_ = true;
+  //increase safety radius if too close to the wall
+  if(min_distance_ < 1.7){
+    safety_radius_ = 25+ 2*alpha_res;
+    std::cout<<"Increased safety radius!\n";
+  }
+  if(min_distance_ > 2.1 && min_distance_ < 1000){
+    safety_radius_ = 25;
+    std::cout<<"Lowered safety radius!\n";
+  }
 
   final_cloud_.header.stamp = complete_cloud.header.stamp;
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
@@ -319,7 +313,6 @@ bool LocalPlanner::obstacleAhead() {
 // fill the 2D polar histogram with the points from the filtered point cloud
 void LocalPlanner::createPolarHistogram() {
   std::clock_t start_time = std::clock();
-  //float bbx_rad = (max_box_.x - min_box_.x) * sqrt(2) / 2;
   float dist;
   float age;
   double n_points = 0;
@@ -327,7 +320,7 @@ void LocalPlanner::createPolarHistogram() {
   geometry_msgs::Point temp;
   geometry_msgs::Point temp_array[n_split];
 
-  // Calculate FOV
+  // Calculate FOV. Azimuth angle is wrapped, elevation is not!
   tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
@@ -368,38 +361,19 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-//  std::cout << "Z FOV index contains:";
-//  for (std::vector<int>::iterator it = z_FOV_idx_.begin() ; it != z_FOV_idx_.end(); ++it)
-//    std::cout << ' ' << *it;
-//  std::cout << '\n';
-
   //Build Estimate of Histogram from old Histogram and Movement
   polar_histogram_est_ = Histogram(2 * alpha_res);
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
   reprojected_points_.header.frame_id = "world";
 
-
-//  std::cout << "------------ Histogram old----------------\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()&& e>e_FOV_min_ && e<e_FOV_max_){
-//        std::cout << "\033[1;33m"<<polar_histogram_old_.get_bin(e, z)  <<" \033[0m";
-//      }else{
-//        std::cout << polar_histogram_old_.get_bin(e, z) << " ";
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
-
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
       if (polar_histogram_old_.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
-        double beta_e = (e + 1.0) * alpha_res - 90; //- alpha_res / 2.0;
-        double beta_z = (z + 1.0) * alpha_res - 180; //- alpha_res / 2.0;
+        double beta_e = (e + 1.0) * alpha_res - 90;
+        double beta_z = (z + 1.0) * alpha_res - 180;
         //transform from Polar to Cartesian
         temp_array[0] = fromPolarToCartesian(beta_e + alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
         temp_array[1] = fromPolarToCartesian(beta_e - alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
@@ -411,13 +385,11 @@ void LocalPlanner::createPolarHistogram() {
           age = polar_histogram_old_.get_age(e, z);
 
           if (dist < 2*max_box_x_ && dist > 0.3 && age < age_lim) {
-            //fill into histogram at actual position
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             int beta_z_new = floor((atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
             int beta_e_new = floor(
                 (atan((temp_array[i].z - pose_.pose.position.z) / sqrt((temp_array[i].x - pose_.pose.position.x) * (temp_array[i].x - pose_.pose.position.x) + (temp_array[i].y - pose_.pose.position.y) * (temp_array[i].y - pose_.pose.position.y)))
                     * 180.0 / PI));  //(-90.+90)
-
             beta_z_new = beta_z_new + ((2 * alpha_res) - beta_z_new % (2 * alpha_res));  //[-170,+190]
             beta_e_new = beta_e_new + ((2 * alpha_res) - beta_e_new % (2 * alpha_res));  //[-80,+90]
 
@@ -427,11 +399,6 @@ void LocalPlanner::createPolarHistogram() {
             polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 1.0 / n_split);
             polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 1.0 / n_split * age);
             polar_histogram_est_.set_dist(e_new, z_new, polar_histogram_est_.get_dist(e_new, z_new) + 1.0 / n_split * dist);
-
-          }else{
-            if (dist > max_box_.x) std::cout<<"Point discarded box\n";
-            if (dist < 0.3) std::cout<<"Point discarded dist\n";
-            if (age > age_lim) std::cout<<"Point discarded age\n";
           }
         }
       }
@@ -452,26 +419,10 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-  //upsample estimate
+  //Upsample histogram estimate
   polar_histogram_est_.upsample();
 
-//  std::cout << "------------ Histogram Est upsampled----------------\n";
-//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e>e_FOV_min_ && e<e_FOV_max_){
-//        std::cout << "\033[1;35m"<<polar_histogram_est_.get_bin(e, z)  <<" \033[0m";
-//      }else{
-//        std::cout << polar_histogram_est_.get_bin(e, z) << " ";
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
-
-
-  //Generate new histogram
-
+  //Generate new histogram from pointcloud
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
 
@@ -494,7 +445,7 @@ void LocalPlanner::createPolarHistogram() {
     polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
   }
 
-  //Normalize and get mean in dist bins
+  //Normalize and get mean in distance bins
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
       if (polar_histogram_.get_bin(e, z) > 0) {
@@ -504,19 +455,6 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-//  std::cout << "------------New Histogram----------------\n";
-//  //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-//  for (int e = 0; e < grid_length_e; e++) {
-//    for (int z = 0; z < grid_length_z; z++) {
-//      if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e>e_FOV_min_ && e<e_FOV_max_){
-//        std::cout << "\033[1;31m"<<polar_histogram_.get_dist(e, z)  <<" \033[0m";
-//      }else{
-//        std::cout << polar_histogram_.get_dist(e, z) << " ";
-//      }
-//    }
-//    std::cout << "\n";
-//  }
-//  std::cout << "--------------------------------------\n";
 
 //  //IF too close, go back!!
 //  int e_60 = floor(60 / alpha_res);
@@ -558,20 +496,6 @@ void LocalPlanner::createPolarHistogram() {
 //      }
 //    }
 //  }
-
-//    std::cout << "------------New Histogram----------------\n";
-//    //std::cout<<"yaw: "<<yaw<<" curr yaw: "<<curr_yaw_<<" pitch: "<<pitch<<"\n";
-//    for (int e = 0; e < grid_length_e; e++) {
-//      for (int z = 0; z < grid_length_z; z++) {
-//        if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()&& e>e_FOV_min_ && e<e_FOV_max_){
-//          std::cout << "\033[1;31m"<<polar_histogram_.get_bin(e, z)  <<" \033[0m";
-//        }else{
-//          std::cout << polar_histogram_.get_bin(e, z) << " ";
-//        }
-//      }
-//      std::cout << "\n";
-//    }
-//    std::cout << "--------------------------------------\n";
 
   //Combine to New binary histogram
   bool hist_is_empty = true;
@@ -645,7 +569,7 @@ void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
 // search for free directions in the 2D polar histogram with a moving window approach
 void LocalPlanner::findFreeDirections() {
   std::clock_t start_time = std::clock();
-  int n = floor(20/alpha_res); //safety radius
+  int n = floor(safety_radius_ / alpha_res);  //safety radius
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
@@ -659,6 +583,9 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_selected_);
   initGridCells(&path_ground_);
 
+//  updateCostParameters();
+
+  // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
   if (use_ground_detection_) {
     getMinFlightHeight();
@@ -692,10 +619,11 @@ void LocalPlanner::findFreeDirections() {
     }
   }
 
-  for(int e = 0; e < grid_length_e; e++) {
-    for(int z = 0; z < grid_length_z; z++) {
-      for(int i = (e-n); i <= (e+n); i++) {
-        for(int j = (z-n); j <= (z+n); j++) {
+  //determine which bins are candidates
+  for (int e = 0; e < grid_length_e; e++) {
+    for (int z = 0; z < grid_length_z; z++) {
+      for (int i = (e - n); i <= (e + n); i++) {
+        for (int j = (z - n); j <= (z + n); j++) {
 
           free = true;
           corner = false;
@@ -743,7 +671,7 @@ void LocalPlanner::findFreeDirections() {
           break;
       }
 
-      //reject points which lead the drone downwards, if it is too close to ground
+      //reject points which lead the drone too close to the ground
       if (use_ground_detection_ && over_obstacle_) {
         if (e <= e_min_idx) {
           height_reject = true;
@@ -780,6 +708,40 @@ void LocalPlanner::findFreeDirections() {
   calculateCostMap();
 }
 
+//calculate the correct weight between fly over and fly around
+void LocalPlanner::updateCostParameters() {
+
+  double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
+  double goal_dist_old = distance3DCartesian(position_old_, goal_);
+  double time = std::clock() / (double) (CLOCKS_PER_SEC / 1000);
+  double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
+  integral_time_old_ = time;
+
+  goal_dist_incline_.push_back(incline);
+  if (goal_dist_incline_.size() > dist_incline_window_size_) {
+    goal_dist_incline_.pop_front();
+  }
+
+  std::cout << "Incline: ";
+  double sum_incline = 0;
+  int n_incline = 0;
+  for (int i = 0; i < goal_dist_incline_.size(); i++) {
+    sum_incline += goal_dist_incline_[i];
+    n_incline++;
+  }
+  double avg_incline = sum_incline / n_incline;
+  std::cout << "Avg incline: " << avg_incline << "\n";
+
+  if (avg_incline > -0.001 && reach_altitude_) {
+    height_change_cost_param_ = 0.5;
+    std::cout << "Height Change allowed!!\n";
+  }
+  if (avg_incline < -0.002 && reach_altitude_) {
+    height_change_cost_param_ = 5;
+    std::cout << "Height Change stopped!!\n";
+  }
+}
+
 // transform polar coordinates into Cartesian coordinates
 geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z){
   geometry_msgs::Point p;
@@ -807,24 +769,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
 // cost function according to all free directions found in the 2D polar histogram are ranked
 double LocalPlanner::costFunction(int e, int z) {
   double cost;
-//  int goal_z = floor(atan2(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
-//  int goal_e = floor(atan((goal_.z - pose_.pose.position.z) / sqrt(pow((goal_.x - pose_.pose.position.x), 2) + pow((goal_.y - pose_.pose.position.y), 2))) * 180.0 / PI);  //elevation angle
-//  goal_z = goal_z + (alpha_res - goal_z%alpha_res); //[-170,+190]
-//  goal_e = goal_e + (alpha_res - goal_e%alpha_res); //[-80,+90]
-
   int waypoint_index = path_waypoints_.cells.size();
-
-//  double distance_cost = goal_cost_param_ * distance2DPolar(goal_e, goal_z, e, z);
-//  double smooth_cost = smooth_cost_param_ * distance2DPolar(path_waypoints_.cells[waypoint_index - 1].x, path_waypoints_.cells[waypoint_index - 1].y, e, z);
-
-  //double height_cost = std::abs(accumulated_height_prior[std::round(possible_waypt.vector.z)] - accumulated_height_prior[std::round(goal_.z)]) * prior_cost_param_ * 10.0;
-  // alternative cost to prefer higher altitudes
-  // int t = std::round(p.z) + e;
-  // t = t < 0 ? 0 : t;
-  // t = t > 21 ? 21 : t;
-  // double height_cost = std::abs(accumulated_height_prior[t])*prior_cost_param*10.0;
-
-  //double height_cost = 10*std::abs(goal_e-e);
 
   double dist = distance3DCartesian(pose_.pose.position, goal_);
   double dist_old = distance3DCartesian(position_old_, goal_);
@@ -835,20 +780,12 @@ double LocalPlanner::costFunction(int e, int z) {
   double yaw_cost_smooth = 0.8*smooth_cost_param_ * sqrt((old_candidate_goal.x - candidate_goal.x) * (old_candidate_goal .x - candidate_goal.x) + (old_candidate_goal .y - candidate_goal.y) * (old_candidate_goal .y - candidate_goal.y));
   double pitch_cost_smooth = 0.8*smooth_cost_param_ * sqrt((old_candidate_goal .z - candidate_goal.z)*(old_candidate_goal .z - candidate_goal.z));
 
+  //discurage going down
+  if (candidate_goal.z<goal_.z){
+    pitch_cost = 500*pitch_cost;
+  }
 
-  cost = yaw_cost + 5*pitch_cost + yaw_cost_smooth + pitch_cost_smooth;
-//  cost = distance_cost + smooth_cost;
-//  std::cout<<"goal mapped to [e,z]=["<<goal_e<<", "<<goal_z<<"] yaw cost = "<<yaw_cost<<" and pitch cost = "<<pitch_cost<<"\n";
-//  std::cout<<" cost [e,z]=["<<e<<", "<<z<<"] yaw cost = "<<yaw_cost<<" and pitch cost = "<<pitch_cost<<"total cost: "<<cost<<"\n";
-//  if (pose_.pose.position.z < 1 && e < 0 && reach_altitude_) {
-//    height_cost = 10000;
-//    std::cout << "Height cost added!!!!!!\n";
-//  }
-
-//  double kinetic_energy = 0.5 * 1.56 * std::abs(pow(velocity_x_, 2) + pow(velocity_y_, 2) + pow(velocity_z_, 2));
-//  double potential_energy = 1.56 * 9.81 * std::abs(e - goal_e);
-//  cost = distance_cost + smooth_cost + height_cost;
-
+  cost = yaw_cost + height_change_cost_param_*pitch_cost + yaw_cost_smooth + pitch_cost_smooth;
   return cost;
 }
 
@@ -1017,7 +954,7 @@ void LocalPlanner::goFast(){
       vec.normalize();
       getMinFlightHeight();
       if (over_obstacle_ && pose_.pose.position.z <= min_flight_height_) {
-        vec.setZ(0.3*(min_flight_height_ - pose_.pose.position.z));
+        vec.setZ(0.3 * (min_flight_height_ - pose_.pose.position.z));
         std::cout << "\033[1;36m Go Fast: Flight altitude too low, rising.\n \033[0m";
       }
       if (over_obstacle_ && pose_.pose.position.z > min_flight_height_ && pose_.pose.position.z < min_flight_height_ + 0.5 && vec.getZ() < 0) {
@@ -1036,6 +973,16 @@ void LocalPlanner::goFast(){
     // fill direction as straight ahead
     geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
     path_waypoints_.cells.push_back(p);
+
+    //to keep track of forward movement
+//    updateCostParameters();
+
+    //reset candidates for visualization
+    initGridCells(&path_candidates_);
+    initGridCells(&path_rejected_);
+    initGridCells(&path_blocked_);
+    initGridCells(&path_selected_);
+    initGridCells(&path_ground_);
 
     ROS_INFO("Go fast selected direction: [%f, %f, %f].", vec.getX(), vec.getY(), vec.getZ());
     ROS_INFO("Go fast selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
