@@ -260,7 +260,8 @@ public:
 	void setLimitsBoundingBox();
 	void setVelocity();
 	void setGoal();
-	bool isPointWithinBoxBoundaries(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
+	bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
+  bool isPointWithinGroundBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   void logData();
 	void fitPlane();
 	void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& );
