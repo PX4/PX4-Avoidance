@@ -1,9 +1,7 @@
 <launch>
 
-    <arg name="record_point_cloud" default="true" />
-    <arg name="record_histogram"   default="true" />
-    <arg name="record_waypoints"   default="true" />
-    <arg name="record_position"    default="true" />
+    <arg name="record_bag" default="true" />
+    <arg name="start_time" default="undef"/>
     <arg name="world_path" default="$(find local_planner)/../sim/worlds/simple_obstacle.world" />
 
     <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
@@ -20,12 +18,6 @@
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
 
     <!-- Logging -->
-    <node pkg="rosbag" type="record" name="point_cloud_bag" args="record -O point_cloud_bag /camera/depth/points local_pointcloud" if="$(arg record_point_cloud)" />
-
-    <node pkg="rosbag" type="record" name="histogram_bag" args="record -O histogram_bag /blocked_marker /rejected_marker /candidates_marker /selected_marker" if="$(arg record_histogram)"/>
-
-    <node pkg="rosbag" type="record" name="waypoints_bag" args="record -O waypoints_bag /current_setpoint" if="$(arg record_waypoints)"/>
-
-    <node pkg="rosbag" type="record" name="position_bag" args="record -O position_bag /mavros/local_position/pose" if="$(arg record_position)"/>
+    <node pkg="rosbag" type="record" name="log_bag" args="record -O log_$(arg start_time) /mavros/local_position/pose /mavros/local_position/velocity /goal_position /camera/depth/points /local_pointcloud /blocked_marker /rejected_marker /candidates_marker /selected_marker /current_setpoint --split --size 500 --max-splits 5" if="$(arg record_bag)" />
 
 </launch>
