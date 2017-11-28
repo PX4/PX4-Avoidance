@@ -19,7 +19,6 @@ LocalPlannerNode::LocalPlannerNode() {
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   ground_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/ground_pointcloud", 1);
   reprojected_points_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
-  transformed_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/transformed_pointcloud", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
@@ -86,7 +85,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
   for (int i=0; i < path.cells.size(); i++) {
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, local_planner.rad, local_planner.pose.pose.position);
+    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, local_planner.rad_, local_planner.pose_.pose.position);
     m.pose.position = p;
 
     m.color.r = red;
@@ -255,26 +254,11 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner.new_cloud_ = true;
     local_planner.n_call_hist_ = 0;
+    std::cout<<"Test1\n";
     local_planner.filterPointCloud(complete_cloud);
     publishAll();
-    local_planner.createPolarHistogram();
-    if (local_planner.use_ground_detection_ && local_planner.reach_altitude_){
-      local_planner.fitPlane();
-    }
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
-  }
-
-  if (local_planner.obstacleAhead() && local_planner.init != 0) {
-    std::cout << "\033[1;32m There is an Obstacle Ahead\n \033[0m";
-    local_planner.findFreeDirections();
-    local_planner.calculateCostMap();
-    local_planner.getNextWaypoint();
-    local_planner.getPathMsg();
-  } else {
-    std::cout << "\033[1;32m There is NO Obstacle Ahead\n \033[0m";
-    local_planner.goFast();
-    local_planner.getPathMsg();
   }
 
   local_planner.position_old_ = local_planner.pose_.pose.position;
@@ -301,8 +285,10 @@ void LocalPlannerNode::publishAll() {
   local_pointcloud_pub_.publish(local_planner.final_cloud_);
   ground_pointcloud_pub_.publish(local_planner.ground_cloud_);
   waypoint_pub_.publish(local_planner.path_msg_);
-  reprojected_points_pub_.publish(local_planner.reprojected_points);
+  reprojected_points_pub_.publish(local_planner.reprojected_points_);
   path_pub_.publish(path_actual);
+
+  std::cout<<"Waypoint: "<<local_planner.waypt_p_.pose.position.x<<" "<<local_planner.waypt_p_.pose.position.y<<" "<<local_planner.waypt_p_.pose.position.z<<"\n";
   current_waypoint_pub_.publish(local_planner.waypt_p_);
   tf_listener_.transformPose("local_origin", ros::Time(0), local_planner.waypt_p_, "world", local_planner.waypt_p_);
   mavros_waypoint_pub_.publish(local_planner.waypt_p_);
@@ -311,8 +297,10 @@ void LocalPlannerNode::publishAll() {
   publishMarkerCandidates();
   publishMarkerRejected();
   publishMarkerSelected();
+  publishMarkerGround();
   publishGoal();
   publishBox();
+
   if (local_planner.ground_detected_) {
     publishGround();
   }

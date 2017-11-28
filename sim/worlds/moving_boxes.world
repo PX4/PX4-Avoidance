@@ -80,10 +80,50 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
 
-    <model name="box">
-      <pose>0 0 0.5 0 0 0</pose>
-      <link name="link">
-        <collision name="collision">
+    
+     <model name="box">
+      <static>true</static>
+      <link name='box'>
+        <pose>1.5 0 2.5 0 0 0</pose>
+        <collision name='collision'>
+          <geometry>
+            <box>
+              <size>1 20 5</size>
+            </box>
+          </geometry>
+        </collision>
+        <visual name='visual'>
+          <geometry>
+            <box>
+              <size>1 20 5</size>
+            </box>
+          </geometry>
+          <material>
+            <ambient>0.3 0.3 0.3 1</ambient>
+            <diffuse>0.3 0.3 0.3 1</diffuse>
+            <specular>0.1 0.1 0.1 1</specular>
+            <emissive>0 0 0 0</emissive>
+          </material>
+        </visual>
+      </link>
+    </model>
+    
+    <!--
+    <model name='unit_box_0'>
+      <pose frame=''>1.47447 -1.48615 0.5 0 -0 0</pose>
+      <link name='link'>
+        <inertial>
+          <mass>1</mass>
+          <inertia>
+            <ixx>0.166667</ixx>
+            <ixy>0</ixy>
+            <ixz>0</ixz>
+            <iyy>0.166667</iyy>
+            <iyz>0</iyz>
+            <izz>0.166667</izz>
+          </inertia>
+        </inertial>
+        <collision name='collision'>
           <geometry>
             <box>
               <size>1 1 1</size>
