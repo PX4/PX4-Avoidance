@@ -117,6 +117,7 @@ include_directories(
 # )
 add_library(local_planner
   src/nodes/local_planner.cpp
+  src/nodes/histogram.cpp
 )
 
 ## Add cmake target dependencies of the library

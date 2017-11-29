@@ -18,6 +18,36 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   setLimitsBoundingBox();
 }
 
+// reset cloud and histogram counter variables when new cloud comes in
+void LocalPlanner::resetHistogramCounter() {
+  new_cloud_ = true;
+  n_call_hist_ = 0;
+}
+
+// set parameters changed by dynamic rconfigure
+void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config,uint32_t level){
+  min_box_x_ = config.min_box_x_;
+  max_box_x_ = config.max_box_x_;
+  min_box_y_ = config.min_box_y_;
+  max_box_y_ = config.max_box_y_;
+  min_box_z_ = config.min_box_z_;
+  max_box_z_ = config.max_box_z_;
+  min_dist_to_ground_ = config.min_dist_to_ground_;
+  goal_cost_param_ = config.goal_cost_param_;
+  smooth_cost_param_ = config.smooth_cost_param_;
+  min_speed_ = config.min_speed_;
+  max_speed_ = config.max_speed_;
+  max_accel_z_ = config.max_accel_z_;
+  stop_in_front_ = config.stop_in_front_;
+  keep_distance_ = config.keep_distance_;
+
+  if (goal_z_param!= config.goal_z_param) {
+    goal_z_param = config.goal_z_param;
+    setGoal();
+  }
+  use_ground_detection_ = config.use_ground_detection_;
+}
+
 // log Data
 void LocalPlanner::logData() {
   if (reach_altitude_ && !reached_goal_) {
@@ -69,9 +99,9 @@ void LocalPlanner::setLimitsBoundingBox() {
 
 // set mission goal
 void LocalPlanner::setGoal() {
-  goal_.x = goal_x_param_;
-  goal_.y = goal_y_param_;
-  goal_.z = goal_z_param_;
+  goal_.x = goal_x_param;
+  goal_.y = goal_y_param;
+  goal_.z = goal_z_param;
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
@@ -205,13 +235,14 @@ void LocalPlanner::fitPlane() {
 
 // trim the point cloud so that only points inside the bounding box are considered and
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
+  calculateFOV();
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp1(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp2(new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud_.points.clear();
   ground_cloud_.points.clear();
-  min_distance_ = 1000.0f;
+  distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
 
@@ -226,8 +257,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
         distance = computeL2Dist(pose_, pcl_it);
         if (distance > min_realsense_dist) {
           cloud_temp1->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
-          if (distance < min_distance_) {
-            min_distance_ = distance;
+          if (distance < distance_to_closest_point_) {
+            distance_to_closest_point_ = distance;
           }
         }
       }
@@ -240,11 +271,11 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   }
 
   //increase safety radius if too close to the wall
-  if(min_distance_ < 1.7 && cloud_temp1->points.size() > 160){
+  if(distance_to_closest_point_ < 1.7 && cloud_temp1->points.size() > 160){
     safety_radius_ = 25+ 2*alpha_res;
     std::cout<<"Increased safety radius!\n";
   }
-  if(min_distance_ > 2.1 && min_distance_ < 1000 && cloud_temp1->points.size() > 160){
+  if(distance_to_closest_point_ > 2.1 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > 160){
     safety_radius_ = 25;
     std::cout<<"Lowered safety radius!\n";
   }
@@ -301,17 +332,16 @@ bool LocalPlanner::obstacleAhead() {
   }
 }
 
-// fill the 2D polar histogram with the points from the filtered point cloud
-void LocalPlanner::createPolarHistogram() {
-  std::clock_t start_time = std::clock();
-  float dist;
-  float age;
-  double n_points = 0;
-  int n_split = 4;
-  geometry_msgs::Point temp;
-  geometry_msgs::Point temp_array[n_split];
+bool LocalPlanner::groundDetected() {
+  if(ground_detected_){
+    return true;
+  } else{
+    return false;
+  }
+}
 
-  // Calculate FOV. Azimuth angle is wrapped, elevation is not!
+// Calculate FOV. Azimuth angle is wrapped, elevation is not!
+void LocalPlanner::calculateFOV() {
   tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
@@ -322,35 +352,46 @@ void LocalPlanner::createPolarHistogram() {
   e_FOV_max_ = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
   e_FOV_min_ = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
 
-  if(z_FOV_max>=grid_length_z && z_FOV_min>=grid_length_z ){
-    z_FOV_max-= grid_length_z;
-    z_FOV_min-= grid_length_z;
+  if (z_FOV_max >= grid_length_z && z_FOV_min >= grid_length_z) {
+    z_FOV_max -= grid_length_z;
+    z_FOV_min -= grid_length_z;
   }
-  if(z_FOV_max<0 && z_FOV_min<0 ){
-    z_FOV_max+= grid_length_z;
-    z_FOV_min+= grid_length_z;
+  if (z_FOV_max < 0 && z_FOV_min < 0) {
+    z_FOV_max += grid_length_z;
+    z_FOV_min += grid_length_z;
   }
 
   z_FOV_idx_.clear();
-  if(z_FOV_max >= grid_length_z && z_FOV_min < grid_length_z){
-    for (int i = 0; i < z_FOV_max-grid_length_z; i++){
+  if (z_FOV_max >= grid_length_z && z_FOV_min < grid_length_z) {
+    for (int i = 0; i < z_FOV_max - grid_length_z; i++) {
       z_FOV_idx_.push_back(i);
     }
-    for (int i = z_FOV_min; i < grid_length_z; i++){
+    for (int i = z_FOV_min; i < grid_length_z; i++) {
       z_FOV_idx_.push_back(i);
     }
-  } else if(z_FOV_min < 0 && z_FOV_max >= 0){
-    for (int i = 0; i < z_FOV_max; i++){
+  } else if (z_FOV_min < 0 && z_FOV_max >= 0) {
+    for (int i = 0; i < z_FOV_max; i++) {
       z_FOV_idx_.push_back(i);
     }
-    for (int i = z_FOV_min + grid_length_z; i < grid_length_z; i++){
+    for (int i = z_FOV_min + grid_length_z; i < grid_length_z; i++) {
       z_FOV_idx_.push_back(i);
     }
-  }else{
-    for (int i = z_FOV_min; i < z_FOV_max; i++){
+  } else {
+    for (int i = z_FOV_min; i < z_FOV_max; i++) {
       z_FOV_idx_.push_back(i);
     }
   }
+}
+
+// fill the 2D polar histogram with the points from the filtered point cloud
+void LocalPlanner::createPolarHistogram() {
+  std::clock_t start_time = std::clock();
+  float dist;
+  float age;
+  double n_points = 0;
+  int n_split = 4;
+  geometry_msgs::Point temp;
+  geometry_msgs::Point temp_array[n_split];
 
   //Build Estimate of Histogram from old Histogram and Movement
   polar_histogram_est_ = Histogram(2 * alpha_res);
@@ -493,7 +534,7 @@ void LocalPlanner::createPolarHistogram() {
     max_box_.x = pose_.pose.position.x + 2 * max_box_x_;
     max_box_.y = pose_.pose.position.y + max_box_y_;
     max_box_.z = pose_.pose.position.z + max_box_z_;
-    std::cout << "\033[1;31m Box size increased!\n \033[0m";
+    std::cout << "\033[1;33m Box size increased!\n \033[0m";
     filterPointCloud(complete_cloud_);
 
   }else if(hist_is_empty && n_call_hist_>1){
@@ -710,7 +751,7 @@ geometry_msgs::Point LocalPlanner::fromPolarToCartesian(int e, int z, double rad
 
 // transform a 2D polar histogram direction in a 3D Catesian coordinate point
 geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
-  geometry_msgs::Point p = fromPolarToCartesian(e, z, rad_, pose_.pose.position);
+  geometry_msgs::Point p = fromPolarToCartesian(e, z, 1.0, pose_.pose.position);
 
   geometry_msgs::Vector3Stamped waypoint;
   waypoint.header.stamp = ros::Time::now();
@@ -813,7 +854,7 @@ bool LocalPlanner::checkForCollision() {
   std::clock_t start_time = std::clock();
   bool avoid = false;
 
-  if(min_distance_ < 0.5f && init != 0) {
+  if(distance_to_closest_point_ < 0.5f) {
     avoid = true;
   }
 
@@ -887,7 +928,7 @@ void LocalPlanner::goFast(){
     vec.setX(goal_.x - pose_.pose.position.x);
     vec.setY(goal_.y - pose_.pose.position.y);
     vec.setZ(goal_.z - pose_.pose.position.z);
-    double new_len = vec.length() < 1.0 ? vec.length() : speed;
+    double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
     //Prevent downward motion or move up if too close to ground
     if (use_ground_detection_) {
@@ -994,9 +1035,9 @@ void LocalPlanner::reachGoalAltitudeFirst(){
 geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
   geometry_msgs::Vector3Stamped smooth_waypt;
   std::clock_t t = std::clock();
-  float dt = (t - t_prev) / (float)(CLOCKS_PER_SEC);
+  float dt = (t - t_prev_) / (float)(CLOCKS_PER_SEC);
   dt = dt > 0.0f ? dt : 0.004f;
-  t_prev = t;
+  t_prev_ = t;
   Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
   Eigen::Vector2f vel_waypt_xy((waypt_.vector.x - last_waypt_p_.pose.position.x) / dt, (waypt_.vector.y - last_waypt_p_.pose.position.y) / dt);
   Eigen::Vector2f vel_waypt_xy_prev((last_waypt_p_.pose.position.x - last_last_waypt_p_.pose.position.x) / dt, (last_waypt_p_.pose.position.y - last_last_waypt_p_.pose.position.y) / dt);
@@ -1043,27 +1084,47 @@ void LocalPlanner::getPathMsg() {
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
 
   //If the waypoint is not inside the FOV, only yaw and not move
-  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ ){
+  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ && obstacle_){
     waypt_.vector.x = pose_.pose.position.x;
     waypt_.vector.y = pose_.pose.position.y;
     waypt_.vector.z = pose_.pose.position.z;
-
-    std::cout<<"ONLY yaw: with angle "<<new_yaw<<"\n";
   }
 
 
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
+  position_old_ = pose_.pose.position;
   checkSpeed();
+}
+
+void LocalPlanner::printAlgorithmStatistics(){
+  ROS_INFO("Current pose: [%f, %f, %f].", pose_.pose.position.x, pose_.pose.position.y, pose_.pose.position.z);
+  ROS_INFO("Velocity: [%f, %f, %f], module: %f.", velocity_x_, velocity_y_, velocity_z_, velocity_mod_);
+
+  if(log_data_to_txt_file_){
+    logData();
+  }
+
+  if (withinGoalRadius()) {
+    cv::Scalar mean, std;
+    printf("----------------------------------- \n");
+    cv::meanStdDev(algorithm_total_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(cloud_time_, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(polar_time_, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(free_time_, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(cost_time_, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(collision_time_, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
+    printf("----------------------------------- \n");
+  }
 }
 
 void LocalPlanner::checkSpeed(){
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacleAhead()){
-    speed = std::min(max_speed_, speed + 0.1);
+    speed_ = std::min(max_speed_, speed_ + 0.1);
   }
   else{
-    speed = min_speed_;
+    speed_ = min_speed_;
   }
 }
 
@@ -1080,12 +1141,69 @@ bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geomet
 void LocalPlanner::stopInFrontObstacles(){
 
   if (first_brake_) {
-    double braking_distance = fabsf(min_distance_ - keep_distance_);
+    double braking_distance = fabsf(distance_to_closest_point_ - keep_distance_);
     Eigen::Vector2f pose_to_goal(goal_.x - pose_.pose.position.x, goal_.y - pose_.pose.position.y);
     goal_.x = pose_.pose.position.x + (braking_distance * pose_to_goal(0) / pose_to_goal.norm());
     goal_.y = pose_.pose.position.y + (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
     first_brake_ = false;
   }
-  ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.x, goal_.y, goal_.z, min_distance_);
+  ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.x, goal_.y, goal_.z, distance_to_closest_point_);
   goFast();
+}
+
+//Get the dimensions of the bounding box
+void LocalPlanner::getBoundingBoxSize(double &min_x, double &max_x, double &min_y, double &max_y, double &min_z, double &max_z){
+  min_x = min_box_x_;
+  max_x = max_box_x_;
+  min_y = min_box_y_;
+  max_y = max_box_y_;
+  min_z = min_box_z_;
+  max_z = max_box_z_;
+}
+
+//Get the dimensions of the ground box
+void LocalPlanner::getGroundBoxSize(double &min_x, double &max_x, double &min_y, double &max_y, double &min_z){
+  min_x = min_groundbox_x_;
+  max_x = max_groundbox_x_;
+  min_y = min_groundbox_y_;
+  max_y = max_groundbox_y_;
+  min_z = min_groundbox_z_;
+}
+
+void LocalPlanner::getPosition(geometry_msgs::PoseStamped &pos){
+  pos = pose_;
+}
+
+void LocalPlanner::getGoalPosition(geometry_msgs::Point  &goal){
+  goal = goal_;
+}
+
+void LocalPlanner::getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &final_cloud, pcl::PointCloud<pcl::PointXYZ> &ground_cloud, pcl::PointCloud<pcl::PointXYZ> &reprojected_points){
+  final_cloud = final_cloud_;
+  ground_cloud = ground_cloud_;
+  reprojected_points = reprojected_points_;
+}
+
+void LocalPlanner::getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
+                                      nav_msgs::GridCells &path_ground){
+  path_candidates = path_candidates_;
+  path_selected = path_selected_;
+  path_rejected = path_rejected_;
+  path_blocked = path_blocked_;
+  path_ground = path_ground_;
+}
+
+void LocalPlanner::getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p){
+  path_msg = path_msg_;
+  waypt_p = waypt_p_;
+}
+
+void LocalPlanner::getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation){
+  closest_point_on_ground = closest_point_on_ground_;
+  ground_orientation = ground_orientation_;
+
+}
+
+void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel){
+  curr_vel_ = vel;
 }
