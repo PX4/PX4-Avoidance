@@ -31,6 +31,7 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_ground_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
+  obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
@@ -322,6 +323,10 @@ void LocalPlannerNode::publishAll() {
   if (local_planner.groundDetected()) {
     publishGround();
   }
+
+  sensor_msgs::LaserScan distance_data;
+  local_planner.sendObstacleDistanceData(distance_data);
+  obstacle_distance_pub_.publish(distance_data);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,

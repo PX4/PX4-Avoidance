@@ -70,6 +70,7 @@ private:
   ros::Publisher marker_selected_pub_;
   ros::Publisher marker_ground_pub_;
   ros::Publisher marker_goal_pub_;
+  ros::Publisher obstacle_distance_pub_;
   ros::Publisher ground_est_pub_;
 
   tf::TransformListener tf_listener_;

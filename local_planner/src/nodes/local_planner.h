@@ -33,6 +33,7 @@
 #include <tf/transform_listener.h>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
@@ -91,6 +92,7 @@ class LocalPlanner
   int stop_in_front_;
   int n_call_hist_ = 0;
   int e_FOV_max_, e_FOV_min_;
+  double middle_z_FOV_idx_;
   int dist_incline_window_size_ = 50;
 
   double local_planner_mode_;
@@ -162,9 +164,12 @@ class LocalPlanner
   nav_msgs::GridCells path_ground_;
   nav_msgs::GridCells path_waypoints_;
 
+  sensor_msgs::LaserScan distance_data_ = {};
+
   Histogram polar_histogram_ = Histogram(alpha_res);
   Histogram polar_histogram_old_ = Histogram(alpha_res);
   Histogram polar_histogram_est_ = Histogram(2 * alpha_res);
+  Histogram to_fcu_histogram_ = Histogram(alpha_res);
 
   void setLimitsBoundingBox();
   bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
@@ -192,6 +197,8 @@ class LocalPlanner
   void stopInFrontObstacles();
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
+  void updateObstacleDistanceMsg(Histogram hist);
+  void updateObstacleDistanceMsg();
   geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);
   geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
   geometry_msgs::Vector3Stamped smoothWaypoint();
@@ -225,6 +232,7 @@ class LocalPlanner
   void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
+  void sendObstacleDistanceData(sensor_msgs::LaserScan &obstacle_distance);
 };
 
 #endif // LOCAL_PLANNER_LOCAL_PLANNER_H
