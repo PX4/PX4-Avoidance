@@ -86,11 +86,11 @@ private:
   void publishAll();
   void publishPath(const geometry_msgs::PoseStamped msg);
   void initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green , float blue);
-  void publishMarkerBlocked();
-  void publishMarkerRejected();
-  void publishMarkerCandidates();
-  void publishMarkerSelected();
-  void publishMarkerGround();
+  void publishMarkerBlocked(nav_msgs::GridCells path_blocked);
+  void publishMarkerRejected(nav_msgs::GridCells path_rejected);
+  void publishMarkerCandidates(nav_msgs::GridCells path_candidates);
+  void publishMarkerSelected(nav_msgs::GridCells path_selected);
+  void publishMarkerGround(nav_msgs::GridCells path_ground);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
   void printPointInfo(double x, double y, double z);

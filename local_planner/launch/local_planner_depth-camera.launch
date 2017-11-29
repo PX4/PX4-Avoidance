@@ -5,7 +5,7 @@
     <arg name="record_waypoints"   default="true" />
     <arg name="record_position"    default="true" />
     
-    <arg name="world_path" default="$(find local_planner)/../sim/worlds/boxes4.world" />
+    <arg name="world_path" default="$(find local_planner)/../sim/worlds/simple_obstacle.world" />
 
     <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
         <arg name="world_path" value="$(arg world_path)" />
@@ -14,15 +14,11 @@
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
         <param name="goal_x_param" value="17" />
-        <param name="goal_y_param" value="-10"/>
+        <param name="goal_y_param" value="15"/>
         <param name="goal_z_param" value="3" />
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
-    
-    <include file="$(find rviz_world_loader)/launch/rviz_world_loader.launch">
-    	<arg name="world_file" value="$(find local_planner)/../sim/worlds/boxes4.yaml"/>
-  	</include> 
 
     <!-- Logging -->
     <node pkg="rosbag" type="record" name="point_cloud_bag" args="record -O point_cloud_bag /camera/depth/points local_pointcloud" if="$(arg record_point_cloud)" />
