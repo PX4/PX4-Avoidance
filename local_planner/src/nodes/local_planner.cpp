@@ -389,6 +389,7 @@ void LocalPlanner::calculateFOV() {
 
   double z_FOV_max = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
   double z_FOV_min = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
+  middle_z_FOV_idx_ = std::floor((z_FOV_min + z_FOV_max) / 2.0);
   e_FOV_max_ = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
   e_FOV_min_ = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
 
@@ -502,6 +503,8 @@ void LocalPlanner::createPolarHistogram() {
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
 
+  to_fcu_histogram_.setZero();
+
   for( it = final_cloud_.begin(); it != final_cloud_.end(); ++it) {
     temp.x = it->x;
     temp.y = it->y;
@@ -522,7 +525,14 @@ void LocalPlanner::createPolarHistogram() {
 
     polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + 1);
     polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
+
+    to_fcu_histogram_.set_bin(0, z, to_fcu_histogram_.get_bin(e, z) + 1);
+    if (to_fcu_histogram_.get_dist(0, z) > dist || to_fcu_histogram_.get_dist(0, z) == 0.0) {
+      to_fcu_histogram_.set_dist(0, z, dist);
+    }
   }
+
+  updateObstacleDistanceMsg(to_fcu_histogram_);
 
   //Normalize and get mean in distance bins
   for (int e = 0; e < grid_length_e; e++) {
@@ -611,6 +621,33 @@ void LocalPlanner::printHistogram(Histogram hist){
     std::cout << "\n";
   }
   std::cout << "--------------------------------------\n";
+}
+
+void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
+
+  sensor_msgs::LaserScan msg;
+  msg.header.stamp = ros::Time::now();
+  msg.header.frame_id = "/world";
+  msg.angle_increment = alpha_res * PI / 180.0;
+
+  if (!std::isnan(middle_z_FOV_idx_)) {
+    for (int idx = -4; idx < 6; idx++) {
+      int z = (int)middle_z_FOV_idx_ + idx;
+
+      if (z < 0) {
+        z = grid_length_z + z;
+
+      } else if (z >= grid_length_z) {
+          z = z % grid_length_z;
+      }
+
+      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()) {
+        msg.ranges.push_back(hist.get_dist(0, z));
+      } else {
+        msg.ranges.push_back(0.0);
+      }
+    }
+  }
 }
 
 // initialize GridCell message
