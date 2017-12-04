@@ -82,6 +82,8 @@ class LocalPlanner
   bool use_ground_detection_;
   bool log_data_to_txt_file_ = true;
   bool ground_detected_ = false;
+  bool box_size_increase_ = true;
+  bool no_progress_rise_ = false;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
@@ -109,6 +111,8 @@ class LocalPlanner
   double safety_radius_ = 25;
   double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
   double min_groundbox_x_ = 10, max_groundbox_x_ = 10, min_groundbox_y_ = 10, max_groundbox_y_ = 10, min_groundbox_z_ = 2.0;
+  double ground_inlier_distance_threshold_;
+  double ground_inlier_angle_threshold_;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
