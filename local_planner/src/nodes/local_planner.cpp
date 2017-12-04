@@ -40,12 +40,15 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   max_accel_z_ = config.max_accel_z_;
   stop_in_front_ = config.stop_in_front_;
   keep_distance_ = config.keep_distance_;
+  ground_inlier_angle_threshold_ = config.ground_inlier_angle_threshold_;
+  ground_inlier_distance_threshold_ = config.ground_inlier_distance_threshold_;
 
   if (goal_z_param!= config.goal_z_param) {
     goal_z_param = config.goal_z_param;
     setGoal();
   }
   use_ground_detection_ = config.use_ground_detection_;
+  box_size_increase_ = config.box_size_increase_;
 }
 
 // log Data
@@ -54,9 +57,9 @@ void LocalPlanner::logData() {
     std::stringstream stream;
     stream << std::fixed << std::setprecision(2) << min_bin;
     std::string s_bin = stream.str();
-    std::string str = "HeightTest.txt";
+    std::string str = "Data.txt";
     std::ofstream myfile(str, std::ofstream::app);
-    myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ << "\n";
+    myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ <<"\t" << obstacle_  <<"\t"<< no_progress_rise_<<"\t"<< too_low_ <<"\n";
     myfile.close();
   }
   if (reach_altitude_ && reached_goal_ && print_height_map_ && use_ground_detection_) {
@@ -136,10 +139,10 @@ void LocalPlanner::fitPlane() {
 
     seg.setModelType(pcl::SACMODEL_PERPENDICULAR_PLANE);
     seg.setMethodType(pcl::SAC_RANSAC);
-    seg.setDistanceThreshold(0.1);
+    seg.setDistanceThreshold(ground_inlier_distance_threshold_);
     seg.setInputCloud(cloud);
     seg.setAxis (Eigen::Vector3f (0.0, 0.0, 1.0));
-    seg.setEpsAngle (30.0*PI/180.0);
+    seg.setEpsAngle (ground_inlier_angle_threshold_*PI/180.0);
     seg.segment(*inliers, *coefficients);
 
     double a = coefficients->values[0];
@@ -275,7 +278,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     safety_radius_ = 25+ 2*alpha_res;
     std::cout<<"Increased safety radius!\n";
   }
-  if(distance_to_closest_point_ > 2.1 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > 160){
+  if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > 160){
     safety_radius_ = 25;
     std::cout<<"Lowered safety radius!\n";
   }
@@ -527,7 +530,7 @@ void LocalPlanner::createPolarHistogram() {
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
   //decide how to proceed
-  if(hist_is_empty && n_call_hist_==1){
+  if(hist_is_empty && n_call_hist_==1 && box_size_increase_){
     min_box_.x = pose_.pose.position.x - 2 * min_box_x_;
     min_box_.y = pose_.pose.position.y - 2 * min_box_y_;
     min_box_.z = pose_.pose.position.z - 2 * min_box_z_;
@@ -537,7 +540,7 @@ void LocalPlanner::createPolarHistogram() {
     std::cout << "\033[1;33m Box size increased!\n \033[0m";
     filterPointCloud(complete_cloud_);
 
-  }else if(hist_is_empty && n_call_hist_>1){
+  }else if((hist_is_empty && n_call_hist_>1 &&box_size_increase_) || (hist_is_empty && !box_size_increase_)){
     obstacle_ = false;
     std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
     goFast();
@@ -581,7 +584,7 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_selected_);
   initGridCells(&path_ground_);
 
-//  updateCostParameters();
+  updateCostParameters();
 
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
@@ -710,32 +713,34 @@ void LocalPlanner::findFreeDirections() {
 //calculate the correct weight between fly over and fly around
 void LocalPlanner::updateCostParameters() {
 
-  double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
-  double goal_dist_old = distance3DCartesian(position_old_, goal_);
-  double time = std::clock() / (double) (CLOCKS_PER_SEC / 1000);
-  double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
-  integral_time_old_ = time;
+  if (reach_altitude_) {
+    double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
+    double goal_dist_old = distance3DCartesian(position_old_, goal_);
+    double time = std::clock() / (double) (CLOCKS_PER_SEC / 1000);
+    double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
+    integral_time_old_ = time;
 
-  goal_dist_incline_.push_back(incline);
-  if (goal_dist_incline_.size() > dist_incline_window_size_) {
-    goal_dist_incline_.pop_front();
-  }
+    goal_dist_incline_.push_back(incline);
+    if (goal_dist_incline_.size() > dist_incline_window_size_) {
+      goal_dist_incline_.pop_front();
+    }
 
-  double sum_incline = 0;
-  int n_incline = 0;
-  for (int i = 0; i < goal_dist_incline_.size(); i++) {
-    sum_incline += goal_dist_incline_[i];
-    n_incline++;
-  }
-  double avg_incline = sum_incline / n_incline;
-
-  if (avg_incline > -0.001 && reach_altitude_) {
-    height_change_cost_param_ = 0.5;
-    std::cout << "Cost param updated: Height Change encouraged\n";
-  }
-  if (avg_incline < -0.002 && reach_altitude_) {
-    height_change_cost_param_ = 5;
-    std::cout << "Cost param updated: Height Change discouraged\n";
+    double sum_incline = 0;
+    int n_incline = 0;
+    for (int i = 0; i < goal_dist_incline_.size(); i++) {
+      sum_incline += goal_dist_incline_[i];
+      n_incline++;
+    }
+    double avg_incline = sum_incline / n_incline;
+    ;
+    if (avg_incline > -0.001 && goal_dist_incline_.size() == dist_incline_window_size_) {
+//    height_change_cost_param_ = 0.5;
+      no_progress_rise_ = true;
+    }
+    if (avg_incline < -0.002) {
+//    height_change_cost_param_ = 5;
+      no_progress_rise_ = false;
+    }
   }
 }
 
@@ -820,11 +825,22 @@ void LocalPlanner::getNextWaypoint() {
     waypoint_outside_FOV_ = true;
   }
 
-  if (withinGoalRadius()){
-    ROS_INFO("Goal Reached: Hoovering");
-    waypt_.vector.x = goal_.x;
-    waypt_.vector.y = goal_.y;
-    waypt_.vector.z = goal_.z;
+  if (withinGoalRadius()) {
+    if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
+      ROS_INFO("Above Goal cannot go lower: Hoovering");
+      waypt_.vector.x = goal_.x;
+      waypt_.vector.y = goal_.y;
+      if (pose_.pose.position.z > goal_.z) {
+        waypt_.vector.z = pose_.pose.position.z;
+      } else {
+        waypt_.vector.z = goal_.z;
+      }
+    } else {
+      ROS_INFO("Goal Reached: Hoovering");
+      waypt_.vector.x = goal_.x;
+      waypt_.vector.y = goal_.y;
+      waypt_.vector.z = goal_.z;
+    }
   }
   else{
  	  if(checkForCollision() && pose_.pose.position.z>0.5) {
@@ -842,6 +858,11 @@ void LocalPlanner::getNextWaypoint() {
     else{
       waypt_ = setpoint;
     }
+  }
+
+  if (obstacle_ && no_progress_rise_){
+    waypt_.vector.z = 1.1*waypt_.vector.z;
+    std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
   }
 
   ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
@@ -917,13 +938,23 @@ void LocalPlanner::getMinFlightHeight() {
 // if there isn't any obstacle in front of the UAV, increase cruising speed
 void LocalPlanner::goFast(){
 
-  if (withinGoalRadius()){
-    ROS_INFO("Goal reached: hoovering.");
-    waypt_.vector.x = goal_.x;
-    waypt_.vector.y = goal_.y;
-    waypt_.vector.z = goal_.z;
-  }
-  else {
+  if (withinGoalRadius()) {
+    if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
+      ROS_INFO("Above Goal cannot go lower: Hoovering");
+      waypt_.vector.x = goal_.x;
+      waypt_.vector.y = goal_.y;
+      if (pose_.pose.position.z > goal_.z) {
+        waypt_.vector.z = pose_.pose.position.z;
+      } else {
+        waypt_.vector.z = goal_.z;
+      }
+    } else {
+      ROS_INFO("Goal Reached: Hoovering");
+      waypt_.vector.x = goal_.x;
+      waypt_.vector.y = goal_.y;
+      waypt_.vector.z = goal_.z;
+    }
+  } else {
     tf::Vector3 vec;
     vec.setX(goal_.x - pose_.pose.position.x);
     vec.setY(goal_.y - pose_.pose.position.y);
@@ -956,7 +987,7 @@ void LocalPlanner::goFast(){
     path_waypoints_.cells.push_back(p);
 
     //to keep track of forward movement update params also in go Fast mode
-//    updateCostParameters();
+    updateCostParameters();
 
     //reset candidates for visualization
     initGridCells(&path_candidates_);
@@ -981,6 +1012,12 @@ bool LocalPlanner::withinGoalRadius(){
   float goal_acceptance_radius = 0.5f;
 
   if(a.x < goal_acceptance_radius && a.y < goal_acceptance_radius && a.z < goal_acceptance_radius){
+    if(!reached_goal_){
+      yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
+    }
+    reached_goal_ = true;
+    return true;
+  } else if(over_obstacle_ && a.x < goal_acceptance_radius && a.y < goal_acceptance_radius){
     if(!reached_goal_){
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
