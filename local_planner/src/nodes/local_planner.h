@@ -90,6 +90,7 @@ class LocalPlanner
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
 
+  double local_planner_mode_;
   double distance_to_closest_point_;
   double min_dist_to_ground_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
@@ -113,6 +114,12 @@ class LocalPlanner
   double min_groundbox_x_ = 10, max_groundbox_x_ = 10, min_groundbox_y_ = 10, max_groundbox_y_ = 10, min_groundbox_z_ = 2.0;
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
+  double no_progress_slope_;
+  double progress_slope_;
+  double rise_factor_no_progress_;
+
+  std::string log_name_;
+  std::string log_folder_ = "~/ros/log";
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;

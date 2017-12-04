@@ -42,6 +42,9 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   keep_distance_ = config.keep_distance_;
   ground_inlier_angle_threshold_ = config.ground_inlier_angle_threshold_;
   ground_inlier_distance_threshold_ = config.ground_inlier_distance_threshold_;
+  no_progress_slope_ = config.no_progress_slope_ ;
+  progress_slope_  = config.progress_slope_ ;
+  rise_factor_no_progress_ = config.rise_factor_no_progress_;
 
   if (goal_z_param!= config.goal_z_param) {
     goal_z_param = config.goal_z_param;
@@ -53,25 +56,29 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 
 // log Data
 void LocalPlanner::logData() {
-  if (reach_altitude_ && !reached_goal_) {
-    std::stringstream stream;
-    stream << std::fixed << std::setprecision(2) << min_bin;
-    std::string s_bin = stream.str();
-    std::string str = "Data.txt";
-    std::ofstream myfile(str, std::ofstream::app);
-    myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << curr_yaw_ <<"\t" << obstacle_  <<"\t"<< no_progress_rise_<<"\t"<< too_low_ <<"\n";
+  if (!reach_altitude_) {
+    time_t t = time(0);
+    struct tm * now = localtime(&t);
+    std::string buffer(80, '\0');
+    strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
+    log_name_ = buffer;
+
+  } else {
+    std::ofstream myfile((log_folder_ + "/LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
+    myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
+        << box_size_increase_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\n";
     myfile.close();
-  }
-  if (reach_altitude_ && reached_goal_ && print_height_map_ && use_ground_detection_) {
-    std::string str = "InternalMap.txt";
-    std::ofstream myfile(str, std::ofstream::app);
-    int i = 0;
-    for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
-      myfile << ground_heights_[i] << "\t" << ground_xmin_[i] << "\t" << ground_xmax_[i] << "\t" << ground_ymin_[i] << "\t" << ground_ymax_[i] <<"\n";
-      i++;
+
+    if (print_height_map_) {
+      std::ofstream myfile((log_folder_ +"/InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
+      myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec <<"\t" << 0 <<"\t" << 0 <<"\t" << 0 << "\n";
+      int i = 0;
+      for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
+        myfile << ground_heights_[i] << "\t" << ground_xmin_[i] << "\t" << ground_xmax_[i] << "\t" << ground_ymin_[i] << "\t" << ground_ymax_[i] << "\n";
+        i++;
+      }
+      myfile.close();
     }
-    myfile.close();
-    print_height_map_ = false;
   }
 }
 
@@ -301,6 +308,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   if (cloud_temp1->points.size() > 160 && stop_in_front_ && reach_altitude_) {
     obstacle_ = true;
     std::cout << "\033[1;32m There is an Obstacle Ahead stop in front\n \033[0m";
+    local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
     createPolarHistogram(); //TODO: Maybe also discard points is cloud is too small
@@ -543,16 +551,19 @@ void LocalPlanner::createPolarHistogram() {
   }else if((hist_is_empty && n_call_hist_>1 &&box_size_increase_) || (hist_is_empty && !box_size_increase_)){
     obstacle_ = false;
     std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
+    local_planner_mode_ = 1;
     goFast();
   }
 
   if(!hist_is_empty && reach_altitude_){
     obstacle_ = true;
     std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
+    local_planner_mode_ = 2;
     findFreeDirections();
   }
   if(!hist_is_empty && !reach_altitude_){
     std::cout << "\033[1;32m Reach height first go fast\n \033[0m";
+    local_planner_mode_ = 0;
     goFast();
   }
 }
@@ -733,11 +744,11 @@ void LocalPlanner::updateCostParameters() {
     }
     double avg_incline = sum_incline / n_incline;
     ;
-    if (avg_incline > -0.001 && goal_dist_incline_.size() == dist_incline_window_size_) {
+    if (avg_incline > no_progress_slope_ && goal_dist_incline_.size() == dist_incline_window_size_) {
 //    height_change_cost_param_ = 0.5;
       no_progress_rise_ = true;
     }
-    if (avg_incline < -0.002) {
+    if (avg_incline < progress_slope_) {
 //    height_change_cost_param_ = 5;
       no_progress_rise_ = false;
     }
@@ -861,7 +872,7 @@ void LocalPlanner::getNextWaypoint() {
   }
 
   if (obstacle_ && no_progress_rise_){
-    waypt_.vector.z = 1.1*waypt_.vector.z;
+    waypt_.vector.z = rise_factor_no_progress_*waypt_.vector.z;
     std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
   }
 
