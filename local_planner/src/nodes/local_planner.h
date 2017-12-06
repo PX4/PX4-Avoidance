@@ -84,6 +84,8 @@ class LocalPlanner
   bool ground_detected_ = false;
   bool box_size_increase_ = true;
   bool no_progress_rise_ = false;
+  bool back_off_ = false;
+  bool only_yawed_ = false;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
@@ -141,6 +143,8 @@ class LocalPlanner
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::Point goal_;
+  geometry_msgs::Point closest_point_;
+  geometry_msgs::Point back_off_point_;
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
@@ -169,6 +173,7 @@ class LocalPlanner
   bool obstacleAhead();
   void calculateFOV();
   void createPolarHistogram();
+  void printHistogram(Histogram hist);
   void initGridCells(nav_msgs::GridCells *cell);
   void findFreeDirections();
   void calculateCostMap();
@@ -176,6 +181,7 @@ class LocalPlanner
   void getMinFlightHeight();
   bool checkForCollision();
   void goFast();
+  void backOff();
   void setVelocity();
   void updateCostParameters();
   void reachGoalAltitudeFirst();

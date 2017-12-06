@@ -269,6 +269,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
           cloud_temp1->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < distance_to_closest_point_) {
             distance_to_closest_point_ = distance;
+            closest_point_.x = pcl_it->x;
+            closest_point_.y = pcl_it->y;
+            closest_point_.z = pcl_it->z;
           }
         }
       }
@@ -311,8 +314,19 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    createPolarHistogram(); //TODO: Maybe also discard points is cloud is too small
-    first_brake_ = true;
+    if ((distance_to_closest_point_ < 1.5 || back_off_) && reach_altitude_ ) {
+      local_planner_mode_ = 4;
+      std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
+      if(!back_off_){
+        back_off_point_ = closest_point_;
+        back_off_ = true;
+      }
+      backOff();
+
+    } else {
+      createPolarHistogram();  //TODO: Maybe also discard points is cloud is too small
+      first_brake_ = true;
+    }
   }
 
   //fit horizontal plane for ground estimation
@@ -415,8 +429,8 @@ void LocalPlanner::createPolarHistogram() {
       if (polar_histogram_old_.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
-        double beta_e = (e + 1.0) * alpha_res - 90;
-        double beta_z = (z + 1.0) * alpha_res - 180;
+        double beta_e = (e + 1.0) * alpha_res - 90 - alpha_res/2.0;
+        double beta_z = (z + 1.0) * alpha_res - 180 - alpha_res/2.0;
         //transform from Polar to Cartesian
         temp_array[0] = fromPolarToCartesian(beta_e + alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
         temp_array[1] = fromPolarToCartesian(beta_e - alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
@@ -429,15 +443,19 @@ void LocalPlanner::createPolarHistogram() {
 
           if (dist < 2*max_box_x_ && dist > 0.3 && age < age_lim) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
-            int beta_z_new = floor((atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
+            int beta_z_new = floor(atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
             int beta_e_new = floor(
-                (atan((temp_array[i].z - pose_.pose.position.z) / sqrt((temp_array[i].x - pose_.pose.position.x) * (temp_array[i].x - pose_.pose.position.x) + (temp_array[i].y - pose_.pose.position.y) * (temp_array[i].y - pose_.pose.position.y)))
-                    * 180.0 / PI));  //(-90.+90)
-            beta_z_new = beta_z_new + ((2 * alpha_res) - beta_z_new % (2 * alpha_res));  //[-170,+190]
-            beta_e_new = beta_e_new + ((2 * alpha_res) - beta_e_new % (2 * alpha_res));  //[-80,+90]
+                atan((temp_array[i].z - pose_.pose.position.z) / sqrt((temp_array[i].x - pose_.pose.position.x) * (temp_array[i].x - pose_.pose.position.x) + (temp_array[i].y - pose_.pose.position.y) * (temp_array[i].y - pose_.pose.position.y)))
+                    * 180.0 / PI);  //(-90.+90)
 
-            int e_new = (90 + beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
-            int z_new = (180 + beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
+            beta_e_new += 90;
+            beta_z_new += 180;
+
+            beta_z_new = beta_z_new + ((2 * alpha_res) - (beta_z_new % (2 * alpha_res)));  //[-170,+180]
+            beta_e_new = beta_e_new + ((2 * alpha_res) - (beta_e_new % (2 * alpha_res)));  //[-80,+90]
+
+            int e_new = (beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
+            int z_new = (beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
 
             polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 1.0 / n_split);
             polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 1.0 / n_split * age);
@@ -478,11 +496,14 @@ void LocalPlanner::createPolarHistogram() {
     int beta_z = floor((atan2(temp.x - pose_.pose.position.x, temp.y - pose_.pose.position.y) * 180.0 / PI));  //(-180. +180]
     int beta_e = floor((atan((temp.z - pose_.pose.position.z) / sqrt((temp.x - pose_.pose.position.x) * (temp.x - pose_.pose.position.x) + (temp.y - pose_.pose.position.y) * (temp.y - pose_.pose.position.y))) * 180.0 / PI));  //(-90.+90)
 
-    beta_z = beta_z + (alpha_res - beta_z % alpha_res);  //[-170,+190]
-    beta_e = beta_e + (alpha_res - beta_e % alpha_res);  //[-80,+90]
+    beta_e += 90;  //[0,360]
+    beta_z += 180; //[0,180]
 
-    int e = (90 + beta_e) / alpha_res - 1;  //[0,17]
-    int z = (180 + beta_z) / alpha_res - 1;  //[0,35]
+    beta_z = beta_z + (alpha_res - beta_z % alpha_res);  //[10,360]
+    beta_e = beta_e + (alpha_res - beta_e % alpha_res);  //[10,180]
+
+    int e = beta_e / alpha_res - 1;  //[0,17]
+    int z = beta_z/ alpha_res - 1;  //[0,35]
 
     polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + 1);
     polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
@@ -568,6 +589,20 @@ void LocalPlanner::createPolarHistogram() {
   }
 }
 
+void LocalPlanner::printHistogram(Histogram hist){
+  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+        std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
+      } else {
+        std::cout << hist.get_bin(e_ind, z_ind) << " ";
+      }
+    }
+    std::cout << "\n";
+  }
+  std::cout << "--------------------------------------\n";
+}
+
 // initialize GridCell message
 void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
   cell->cells.clear();
@@ -618,9 +653,10 @@ void LocalPlanner::findFreeDirections() {
      }
 
     if (over_obstacle_ && too_low_) {
+      e_max = e_max+90;
       e_max = e_max - e_max % alpha_res;
-      e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
-      e_min_idx = (90 + e_max) / alpha_res - 1;  //[0,17]
+      e_max = e_max + (alpha_res - e_max % alpha_res);  //[10,180]
+      e_min_idx = (e_max) / alpha_res - 1;  //[0,17]
       std::cout << "\033[1;36m Too low, discard points under elevation " << e_max<< "\n \033[0m";
     }
     if (over_obstacle_ && is_near_min_height_ && !too_low_) {
@@ -798,7 +834,12 @@ double LocalPlanner::costFunction(int e, int z) {
     pitch_cost = 500*pitch_cost;
   }
 
-  cost = yaw_cost + height_change_cost_param_*pitch_cost + yaw_cost_smooth + pitch_cost_smooth;
+  if(!only_yawed_){
+    cost = yaw_cost + height_change_cost_param_*pitch_cost + yaw_cost_smooth + pitch_cost_smooth;
+  }else{
+    cost = yaw_cost + height_change_cost_param_*pitch_cost + 0.1*yaw_cost_smooth + 0.1*pitch_cost_smooth;
+  }
+
   return cost;
 }
 
@@ -871,8 +912,8 @@ void LocalPlanner::getNextWaypoint() {
     }
   }
 
-  if (obstacle_ && no_progress_rise_){
-    waypt_.vector.z = rise_factor_no_progress_*waypt_.vector.z;
+  if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
+    waypt_.vector.z = waypt_.vector.z + rise_factor_no_progress_*std::abs(waypt_.vector.z - pose_.pose.position.z);
     std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
   }
 
@@ -1014,6 +1055,36 @@ void LocalPlanner::goFast(){
   }
 }
 
+void LocalPlanner::backOff() {
+
+  tf::Vector3 vec;
+  vec.setX(pose_.pose.position.x - back_off_point_.x);
+  vec.setY(pose_.pose.position.y - back_off_point_.y);
+  vec.setZ(0);
+  vec.normalize();
+  double new_len = speed_;
+  vec *= new_len;
+
+  waypt_.vector.x = pose_.pose.position.x + vec.getX();
+  waypt_.vector.y = pose_.pose.position.y + vec.getY();
+  waypt_.vector.z = pose_.pose.position.z + vec.getZ();
+
+  double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
+  if (dist > 2.0) {
+    back_off_ = false;
+  }
+
+  // fill direction as straight ahead
+  geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
+  path_waypoints_.cells.push_back(p);
+
+  std::cout<<"Distance: "<<dist<<"\n";
+  ROS_INFO("Back off selected direction: [%f, %f, %f].", vec.getX(), vec.getY(), vec.getZ());
+  ROS_INFO("Back off selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
+
+  getPathMsg();
+}
+
 // check if the UAV has reached the goal set for the mission
 bool LocalPlanner::withinGoalRadius(){
   geometry_msgs::Point a;
@@ -1130,12 +1201,13 @@ void LocalPlanner::getPathMsg() {
   }
 
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
-
+  only_yawed_ = false;
   //If the waypoint is not inside the FOV, only yaw and not move
-  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ && obstacle_){
+  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_){
     waypt_.vector.x = pose_.pose.position.x;
     waypt_.vector.y = pose_.pose.position.y;
     waypt_.vector.z = pose_.pose.position.z;
+    only_yawed_ = true;
   }
 
 
