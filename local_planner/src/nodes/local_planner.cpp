@@ -913,7 +913,7 @@ void LocalPlanner::getNextWaypoint() {
   }
 
   if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
-    waypt_.vector.z = waypt_.vector.z + rise_factor_no_progress_*std::abs(waypt_.vector.z - pose_.pose.position.z);
+    waypt_.vector.z = waypt_.vector.z + rise_factor_no_progress_;
     std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
   }
 
