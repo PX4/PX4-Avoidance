@@ -11,6 +11,7 @@ ENV WORLDS_DIR ${SIM_DIR}/worlds
 RUN apt-get update && \
     apt-get install -y libopencv-dev \
                        python-jinja2 \
+                       python-toml \
                        protobuf-compiler
 
 RUN git clone https://github.com/PX4/Firmware.git ${FIRMWARE_DIR}
