@@ -7,4 +7,7 @@ export ROS_IP=`hostname -I`
 # Wait until ROS master is started
 until rostopic list; do sleep 1; done
 
-roslaunch /root/launch/${1} $2
+LAUNCH_FILE=$1
+shift
+
+roslaunch /root/launch/${LAUNCH_FILE} $@ start_time:="$(date +'%Y%m%d_%I%M%S')"
