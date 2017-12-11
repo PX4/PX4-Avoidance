@@ -103,6 +103,7 @@ class LocalPlanner
   double max_speed_;
   double goal_cost_param_;
   double smooth_cost_param_;
+  double smooth_cost_param_adapted_;
   double max_accel_xy_;
   double max_accel_z_;
   double keep_distance_;
@@ -121,7 +122,7 @@ class LocalPlanner
   double rise_factor_no_progress_;
 
   std::string log_name_;
-  std::string log_folder_ = "~/ros/log";
+  std::string log_folder_ = "log/";
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
