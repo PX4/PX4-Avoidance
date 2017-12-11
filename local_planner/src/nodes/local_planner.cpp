@@ -64,13 +64,13 @@ void LocalPlanner::logData() {
     log_name_ = buffer;
 
   } else {
-    std::ofstream myfile((log_folder_ + "/LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
+    std::ofstream myfile((log_folder_ + "LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
         << box_size_increase_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\n";
     myfile.close();
 
     if (print_height_map_) {
-      std::ofstream myfile((log_folder_ +"/InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
+      std::ofstream myfile((log_folder_ +"InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
       myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec <<"\t" << 0 <<"\t" << 0 <<"\t" << 0 << "\n";
       int i = 0;
       for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
@@ -308,7 +308,11 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
-  if (cloud_temp1->points.size() > 160 && stop_in_front_ && reach_altitude_) {
+  if(!reach_altitude_){
+    std::cout << "\033[1;32m Reach height first go fast\n \033[0m";
+    local_planner_mode_ = 0;
+    goFast();
+  }else if (cloud_temp1->points.size() > 160 && stop_in_front_ && reach_altitude_) {
     obstacle_ = true;
     std::cout << "\033[1;32m There is an Obstacle Ahead stop in front\n \033[0m";
     local_planner_mode_ = 3;
@@ -582,11 +586,6 @@ void LocalPlanner::createPolarHistogram() {
     local_planner_mode_ = 2;
     findFreeDirections();
   }
-  if(!hist_is_empty && !reach_altitude_){
-    std::cout << "\033[1;32m Reach height first go fast\n \033[0m";
-    local_planner_mode_ = 0;
-    goFast();
-  }
 }
 
 void LocalPlanner::printHistogram(Histogram hist){
@@ -693,7 +692,7 @@ void LocalPlanner::findFreeDirections() {
           }
           // Azimuth index > grid_length_z
           else if(j >= grid_length_z && i >= 0 && i < grid_length_e) {
-            b = j % grid_length_z;
+            b = j - grid_length_z;
           }
           // Elevation and Azimuth index both within histogram
           else if( i >= 0 && i < grid_length_e && j >= 0 && j < grid_length_z) {
@@ -783,10 +782,12 @@ void LocalPlanner::updateCostParameters() {
     if (avg_incline > no_progress_slope_ && goal_dist_incline_.size() == dist_incline_window_size_) {
 //    height_change_cost_param_ = 0.5;
       no_progress_rise_ = true;
+      smooth_cost_param_adapted_ =  smooth_cost_param_ + 0.8;
     }
     if (avg_incline < progress_slope_) {
 //    height_change_cost_param_ = 5;
       no_progress_rise_ = false;
+      smooth_cost_param_adapted_ =  smooth_cost_param_;
     }
   }
 }
@@ -826,8 +827,8 @@ double LocalPlanner::costFunction(int e, int z) {
   geometry_msgs::Point old_candidate_goal = fromPolarToCartesian(path_waypoints_.cells[waypoint_index - 1].x, path_waypoints_.cells[waypoint_index - 1].y, dist_old, position_old_);
   double yaw_cost = goal_cost_param_ * sqrt((goal_.x - candidate_goal.x) * (goal_.x - candidate_goal.x) + (goal_.y - candidate_goal.y) * (goal_.y - candidate_goal.y));
   double pitch_cost = goal_cost_param_ * sqrt((goal_.z - candidate_goal.z)*(goal_.z - candidate_goal.z));
-  double yaw_cost_smooth = 0.8*smooth_cost_param_ * sqrt((old_candidate_goal.x - candidate_goal.x) * (old_candidate_goal .x - candidate_goal.x) + (old_candidate_goal .y - candidate_goal.y) * (old_candidate_goal .y - candidate_goal.y));
-  double pitch_cost_smooth = 0.8*smooth_cost_param_ * sqrt((old_candidate_goal .z - candidate_goal.z)*(old_candidate_goal .z - candidate_goal.z));
+  double yaw_cost_smooth = smooth_cost_param_adapted_ * sqrt((old_candidate_goal.x - candidate_goal.x) * (old_candidate_goal .x - candidate_goal.x) + (old_candidate_goal .y - candidate_goal.y) * (old_candidate_goal .y - candidate_goal.y));
+  double pitch_cost_smooth = smooth_cost_param_adapted_ * sqrt((old_candidate_goal .z - candidate_goal.z)*(old_candidate_goal .z - candidate_goal.z));
 
   //discurage going down
   if (candidate_goal.z<goal_.z){
@@ -913,7 +914,7 @@ void LocalPlanner::getNextWaypoint() {
   }
 
   if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
-    waypt_.vector.z = waypt_.vector.z + rise_factor_no_progress_;
+    waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
     std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
   }
 
