@@ -122,7 +122,6 @@ class LocalPlanner
   double rise_factor_no_progress_;
 
   std::string log_name_;
-  std::string log_folder_ = "log/";
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
