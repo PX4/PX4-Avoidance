@@ -64,13 +64,13 @@ void LocalPlanner::logData() {
     log_name_ = buffer;
 
   } else {
-    std::ofstream myfile((log_folder_ + "LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
+    std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
         << box_size_increase_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\n";
     myfile.close();
 
     if (print_height_map_) {
-      std::ofstream myfile((log_folder_ +"InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
+      std::ofstream myfile(("InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
       myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec <<"\t" << 0 <<"\t" << 0 <<"\t" << 0 << "\n";
       int i = 0;
       for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
