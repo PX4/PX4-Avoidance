@@ -14,6 +14,13 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     curr_yaw_ = tf::getYaw(msg.pose.orientation);
   }
 
+  if(take_off_){
+    take_off_pose_.header = msg.header;
+    take_off_pose_.pose.position = msg.pose.position;
+    take_off_pose_.pose.orientation = msg.pose.orientation;
+    take_off_ = false;
+  }
+
   setVelocity();
   setLimitsBoundingBox();
 }
@@ -309,7 +316,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   if(!reach_altitude_){
-    std::cout << "\033[1;32m Reach height first go fast\n \033[0m";
+    std::cout << "\033[1;32m Reach height ("<<take_off_pose_.pose.position.z + goal_.z - 0.5<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
   }else if (cloud_temp1->points.size() > 160 && stop_in_front_ && reach_altitude_) {
@@ -318,7 +325,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if ((distance_to_closest_point_ < 1.5 || back_off_) && reach_altitude_ ) {
+    if ((distance_to_closest_point_ < 1.5 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > 160) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -1140,7 +1147,7 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
 
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst(){
-  if (pose_.pose.position.z < (goal_.z - 0.5)) {
+  if (pose_.pose.position.z < (take_off_pose_.pose.position.z + goal_.z - 0.5)) {
       waypt_.vector.x = 0.0;
       waypt_.vector.y = 0.0;
       waypt_.vector.z = pose_.pose.position.z + 0.5;

@@ -86,6 +86,7 @@ class LocalPlanner
   bool no_progress_rise_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
+  bool take_off_ = true;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
@@ -140,6 +141,7 @@ class LocalPlanner
   pcl::PointCloud<pcl::PointXYZ> final_cloud_, ground_cloud_, reprojected_points_, complete_cloud_;
 
   geometry_msgs::PoseStamped pose_;
+  geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::Point goal_;
