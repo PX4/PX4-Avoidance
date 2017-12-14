@@ -2,7 +2,7 @@
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
-docker-compose -f ${DIR}/docker-compose.yml up -d
+docker-compose -f ${DIR}/docker-compose.yml up -d || { exit 1; }
 
 VPN_SERVER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' localplannerproddebug_alpinevpn_1)
 ROS_MASTER_URI=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' localplannerproddebug_mavros-avoidance_1)
