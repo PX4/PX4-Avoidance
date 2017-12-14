@@ -18,7 +18,7 @@ def main(args):
     elif args.build:
         buildContainers(args, workingDir)
     elif args.rebuild:
-        rebuildContainers(workingDir)
+        rebuildContainers(args, workingDir)
     else:
         runContainers(args, workingDir)
 
@@ -105,8 +105,12 @@ def buildContainers(args, workingDir):
     if not args.prod_release and not args.prod_debug:
         subprocess.call("docker-compose -f ./components/components.yml build sitl-avoidance-server", shell=True)
 
-def rebuildContainers(workingDir):
+def rebuildContainers(args, workingDir):
+    subprocess.call("docker-compose -f ./components/components.yml build --no-cache mavros", shell=True)
     subprocess.call("docker-compose -f {}/docker-compose.yml build --no-cache".format(workingDir), shell=True)
+
+    if not args.prod_release and not args.prod_debug:
+        subprocess.call("docker-compose -f ./components/components.yml build --no-cache sitl-avoidance-server", shell=True)
 
 if __name__ == '__main__':
     args = createArgsParser()
