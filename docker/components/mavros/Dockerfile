@@ -3,7 +3,6 @@ FROM ros:kinetic-ros-base
 RUN apt-get update && \
     apt-get install -y python-wstool \
                        python-rosinstall-generator \
-                       ros-kinetic-mavros-msgs \
                        python-catkin-tools && \
     mkdir -p ~/catkin_ws/src && \
     catkin init --workspace ~/catkin_ws && \

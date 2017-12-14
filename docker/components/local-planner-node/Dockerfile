@@ -7,6 +7,7 @@ ENV AVOIDANCE_DIR ${CATKIN_WS}/src/local-planner
 RUN apt-get update && \
     apt-get install -y libopencv-dev \
                        python-catkin-tools \
+                       ros-kinetic-mavros-msgs \
                        ros-kinetic-pcl-ros
 
 COPY local_planner ${AVOIDANCE_DIR}
