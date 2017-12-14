@@ -24,8 +24,11 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     std::string buffer(80, '\0');
     strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
     log_name_ = buffer;
+<<<<<<< a57a27bcc86292900ff9036d57cbdcc04494da97
 
     reach_altitude_ = false;
+=======
+>>>>>>> logg only when aarmed and in offboard mode. Adde mavros_msgs in Dockerfile as an installation
   }
 
   if(!offboard_){
@@ -89,7 +92,11 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 // log Data
 void LocalPlanner::logData() {
 
+<<<<<<< a57a27bcc86292900ff9036d57cbdcc04494da97
   if (currently_armed_ && offboard_) {
+=======
+  if (currently_armed && offboard) {
+>>>>>>> logg only when aarmed and in offboard mode. Adde mavros_msgs in Dockerfile as an installation
     std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
          << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\t"<< algorithm_total_time_[algorithm_total_time_.size()-1]<< "\n";
