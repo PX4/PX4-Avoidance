@@ -86,7 +86,6 @@ class LocalPlanner
   bool no_progress_rise_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
-  bool take_off_ = true;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
@@ -198,6 +197,8 @@ class LocalPlanner
   geometry_msgs::Vector3Stamped smoothWaypoint();
 
  public:
+
+  bool currently_armed = false;
 
   std::vector<float> algorithm_total_time;
 

@@ -13,6 +13,7 @@ LocalPlannerNode::LocalPlannerNode() {
   pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
   pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+  state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
@@ -56,6 +57,10 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
   auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
   local_planner.setCurrentVelocity(transformed_msg);
+}
+
+void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
+  local_planner.currently_armed = msg.armed;
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {

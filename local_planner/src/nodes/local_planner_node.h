@@ -11,6 +11,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
+#include <mavros_msgs/State.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -46,6 +47,7 @@ private:
   ros::Subscriber pointcloud_sub_ ;
   ros::Subscriber pose_sub_ ;
   ros::Subscriber velocity_sub_ ;
+  ros::Subscriber state_sub_ ;
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
 
@@ -82,6 +84,7 @@ private:
   void positionCallback(const geometry_msgs::PoseStamped msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
+  void stateCallback(const mavros_msgs::State msg);
   void readParams();
   void publishAll();
   void publishPath(const geometry_msgs::PoseStamped msg);
