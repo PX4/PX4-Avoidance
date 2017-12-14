@@ -199,6 +199,7 @@ class LocalPlanner
  public:
 
   bool currently_armed = false;
+  bool offboard = false;
 
   std::vector<float> algorithm_total_time;
 
