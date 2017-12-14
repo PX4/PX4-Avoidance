@@ -14,11 +14,10 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     curr_yaw_ = tf::getYaw(msg.pose.orientation);
   }
 
-  if(take_off_){
+  if(!currently_armed){
     take_off_pose_.header = msg.header;
     take_off_pose_.pose.position = msg.pose.position;
     take_off_pose_.pose.orientation = msg.pose.orientation;
-    take_off_ = false;
   }
 
   setVelocity();
