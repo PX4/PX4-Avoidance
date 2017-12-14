@@ -61,6 +61,11 @@ void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
   local_planner.currently_armed = msg.armed;
+  if(msg.mode == "OFFBOARD"){
+    local_planner.offboard = true;
+  }else{
+    local_planner.offboard = false;
+  }
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
