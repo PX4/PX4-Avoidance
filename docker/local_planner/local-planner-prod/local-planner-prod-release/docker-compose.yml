@@ -5,7 +5,7 @@ services:
         extends:
             file: ../../../components/components.yml
             service: mavros-avoidance
-        command: "fcu_url:=\"tcp://172.17.0.1:5760\""
+            command: fcu_url:=\"tcp://172.17.0.1:5760\" use_sim_time:="false"
     realsense-node:
         extends:
             file: ../../../components/components.yml

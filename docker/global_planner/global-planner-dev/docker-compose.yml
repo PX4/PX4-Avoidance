@@ -5,6 +5,7 @@ services:
         extends:
             file: ../../components/components.yml
             service: mavros-avoidance
+        command: fcu_url:="udp://:14540@sitl-avoidance-server:14557" use_sim_time:="true"
     sitl-avoidance-server:
         extends:
             file: ../../components/components.yml
