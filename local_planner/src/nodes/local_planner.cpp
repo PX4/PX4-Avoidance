@@ -63,6 +63,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
     setGoal();
   }
   use_ground_detection_ = config.use_ground_detection_;
+  use_back_off_ = config.use_back_off_;
   box_size_increase_ = config.box_size_increase_;
 }
 
@@ -261,6 +262,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
+  int counter_close_points = 0;
 
   if (new_cloud_){
     complete_cloud_ = complete_cloud;
@@ -278,6 +280,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
             closest_point_.x = pcl_it->x;
             closest_point_.y = pcl_it->y;
             closest_point_.z = pcl_it->z;
+          }
+          if (distance < 1.5){
+            counter_close_points ++;
           }
         }
       }
@@ -324,7 +329,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if ((distance_to_closest_point_ < 1.5 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > 160) {
+    if ((counter_close_points < 20 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > 160 && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
