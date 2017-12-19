@@ -80,6 +80,7 @@ class LocalPlanner
   bool too_low_ = false;
   bool new_cloud_ = false;
   bool use_ground_detection_;
+  bool use_back_off_ = true;
   bool log_data_to_txt_file_ = true;
   bool ground_detected_ = false;
   bool box_size_increase_ = true;
