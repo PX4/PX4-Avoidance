@@ -13,6 +13,7 @@
 #include <ros/ros.h>
 
 #include "histogram.h"
+#include "tree_node.h"
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
@@ -92,7 +93,6 @@ class LocalPlanner
   bool hovering_ = false;
 
   int stop_in_front_;
-  int n_call_hist_ = 0;
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
   int avoid_sphere_age_ = 1000;
@@ -131,6 +131,10 @@ class LocalPlanner
   double min_plane_percentage_ = 0.6;
   double avoid_radius_;
   double min_dist_backoff_;
+  double tree_discount_factor_ = 0.8;
+  double tree_node_distance_;
+
+  std::string log_name_;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
@@ -143,6 +147,8 @@ class LocalPlanner
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
   std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
+
+  std::vector<TreeNode> tree_;
 
   std::clock_t t_prev_ = 0.0f;
 
@@ -166,6 +172,7 @@ class LocalPlanner
   geometry_msgs::Quaternion ground_orientation_;
 
   nav_msgs::Path path_msg_;
+  nav_msgs::GridCells tree_candidates_;
   nav_msgs::GridCells path_candidates_;
   nav_msgs::GridCells path_selected_;
   nav_msgs::GridCells path_rejected_;
@@ -200,6 +207,10 @@ class LocalPlanner
   bool withinGoalRadius();
   void checkSpeed();
   void stopInFrontObstacles();
+  void buildLookAheadTree();
+  double treeCostFunction(int e, int z, int node_number);
+  double treeHeuristicFunction(int node_number);
+  double indexAngleDifference(int a, int b);
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
   geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);

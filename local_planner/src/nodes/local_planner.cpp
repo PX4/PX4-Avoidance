@@ -42,7 +42,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 // reset cloud and histogram counter variables when new cloud comes in
 void LocalPlanner::resetHistogramCounter() {
   new_cloud_ = true;
-  n_call_hist_ = 0;
 }
 
 // set parameters changed by dynamic rconfigure
@@ -449,6 +448,7 @@ void LocalPlanner::calculateFOV() {
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
+  std::cout<<"yaw:"<<yaw<<"\n";
 
   double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
   double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
@@ -630,24 +630,13 @@ void LocalPlanner::createPolarHistogram() {
   //Update old histogram
   polar_histogram_old_.setZero();
   polar_histogram_old_ = polar_histogram_;
-  n_call_hist_ +=1;
 
   //Statistics
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
   //decide how to proceed
-  if(hist_is_empty && n_call_hist_==1 && box_size_increase_){
-    min_box_.x = pose_.pose.position.x - 2 * min_box_x_;
-    min_box_.y = pose_.pose.position.y - 2 * min_box_y_;
-    min_box_.z = pose_.pose.position.z - 2 * min_box_z_;
-    max_box_.x = pose_.pose.position.x + 2 * max_box_x_;
-    max_box_.y = pose_.pose.position.y + max_box_y_;
-    max_box_.z = pose_.pose.position.z + max_box_z_;
-    std::cout << "\033[1;33m Box size increased!\n \033[0m";
-    filterPointCloud(complete_cloud_);
-
-  }else if((hist_is_empty && n_call_hist_>1 &&box_size_increase_) || (hist_is_empty && !box_size_increase_)){
+  if(hist_is_empty){
     obstacle_ = false;
     std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
     local_planner_mode_ = 1;
@@ -832,6 +821,114 @@ void LocalPlanner::findFreeDirections() {
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   calculateCostMap();
+  buildLookAheadTree();
+}
+
+void LocalPlanner::buildLookAheadTree(){
+
+  //insert first node
+  tree_.push_back(TreeNode(0, 0, pose_.pose.position));
+  tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
+
+  tree_candidates_ = path_candidates_;
+  double origin = 0;
+  double min_c = 1000000;
+  int min_c_node = 0;
+
+
+  //WHILE
+  //insert new nodes
+  geometry_msgs::Point origin_position = tree_[origin].getPosition();
+  int depth = tree_[origin].depth + 1;
+
+  int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
+  int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
+  int goal_e_idx = (goal_e -alpha_res+90)/alpha_res;
+  int goal_z_idx = (goal_z-alpha_res+180)/alpha_res;
+
+  for(int i = 0; i<tree_candidates_.cells.size(); i++){
+    int e = path_candidates_.cells[i].x;
+    int z = path_candidates_.cells[i].y;
+    geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_ , origin_position);
+
+    tree_.push_back(TreeNode(origin, depth, node_location));
+    tree_.back().last_e = e;
+    tree_.back().last_z = z;
+    double h = treeHeuristicFunction(tree_.size()-1);
+    double c = treeCostFunction(e, z, tree_.size()-1);
+    tree_.back().heuristic = h;
+    tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+
+    if(c<min_c){
+      min_c = c;
+      min_c_node = tree_.size()-1;
+    }
+  }
+
+  //find best node to continue
+  double minimal_cost = 1000000;
+  for(int i = 0; i<tree_candidates_.cells.size(); i++){
+    if(tree_[i].total_cost<minimal_cost){
+      minimal_cost = tree_[i].total_cost;
+      origin = i;
+    }
+  }
+
+  std::cout<<"min c node [e, z]: ["<<tree_[min_c_node].last_e <<", "<<tree_[min_c_node].last_z<<"] \n";
+  std::cout<<"chosen node [e, z]: ["<<tree_[origin].last_e <<", "<<tree_[origin].last_z<<"] \n";
+
+  int e_cmin = (tree_[min_c_node].last_e -alpha_res+90)/alpha_res;
+  int z_cmin = (tree_[min_c_node].last_z-alpha_res+180)/alpha_res;
+
+  int e_min = (tree_[origin].last_e -alpha_res+90)/alpha_res;
+  int z_min = (tree_[origin].last_z-alpha_res+180)/alpha_res;
+
+  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+      for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+        if(e_ind == e_cmin && z_ind == z_cmin){
+          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+        }else if(e_ind == e_min && z_ind == z_min){
+          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+        }else if(e_ind == goal_e_idx && z_ind == goal_z_idx){
+          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+        }else if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+        } else {
+          std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
+        }
+      }
+      std::cout << "\n";
+    }
+
+}
+
+double LocalPlanner::treeCostFunction(int e, int z, int node_number) {
+  geometry_msgs::Point origin_position = tree_[tree_[node_number].origin].getPosition();
+  int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
+  int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
+
+  double curr_yaw_z = std::round((-curr_yaw_ * 180.0 / PI + 270.0) / alpha_res) - 1;
+
+  double target_cost = 5 * indexAngleDifference(z, goal_z) + 20 * indexAngleDifference(e, goal_e);  //include effective direction?
+  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
+  double smooth_cost = 2 * indexAngleDifference(z, tree_[node_number].last_z) + 2 * indexAngleDifference(e, tree_[node_number].last_e);
+
+  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost);
+
+}
+double LocalPlanner::treeHeuristicFunction(int node_number) {
+  geometry_msgs::Point node_position = tree_[node_number].getPosition();
+  int goal_z = floor(atan2(goal_.x - node_position.x, goal_.y - node_position.y) * 180.0 / PI);  //azimuthal angle
+  int goal_e = floor(atan((goal_.z - node_position.z) / sqrt(pow((goal_.x - node_position.x), 2) + pow((goal_.y - node_position.y), 2))) * 180.0 / PI);
+
+  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
+  double smooth_cost = 1 * indexAngleDifference(goal_z, tree_[node_number].last_z) + 1 * indexAngleDifference(goal_e, tree_[node_number].last_e);
+
+  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (smooth_cost);
+}
+
+double LocalPlanner::indexAngleDifference(int a, int b) {
+return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)), std::abs(a - b + 360));
 }
 
 //calculate the correct weight between fly over and fly around
@@ -1332,6 +1429,7 @@ void LocalPlanner::getPathMsg() {
   last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
   checkSpeed();
+  std::cout<<"Curr yaw:"<<curr_yaw_<<"\n";
 }
 
 void LocalPlanner::useHoverPoint() {
