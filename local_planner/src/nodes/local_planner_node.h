@@ -58,6 +58,7 @@ private:
   ros::Publisher reprojected_points_pub_;
   ros::Publisher bounding_box_pub_;
   ros::Publisher groundbox_pub_;
+  ros::Publisher height_map_pub_;
   ros::Publisher cached_pointcloud_pub_ ;
   ros::Publisher marker_pub_;
   ros::Publisher waypoint_pub_;

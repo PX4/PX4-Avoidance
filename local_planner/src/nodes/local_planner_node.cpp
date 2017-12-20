@@ -23,6 +23,7 @@ LocalPlannerNode::LocalPlannerNode() {
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
+  height_map_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -164,7 +165,12 @@ void LocalPlannerNode::publishGround() {
   visualization_msgs::Marker m;
   geometry_msgs::Point closest_point_on_ground;
   geometry_msgs::Quaternion ground_orientation;
-  local_planner.getGroundDataForVisualization(closest_point_on_ground,ground_orientation);
+  std::vector<double> ground_heights;
+  std::vector<double> ground_xmax;
+  std::vector<double> ground_xmin;
+  std::vector<double> ground_ymax;
+  std::vector<double> ground_ymin;
+  local_planner.getGroundDataForVisualization(closest_point_on_ground,ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
@@ -183,6 +189,38 @@ void LocalPlannerNode::publishGround() {
   m.id = 0;
 
   ground_est_pub_.publish(m);
+
+  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::Marker g;
+  g.header.frame_id = "world";
+  g.header.stamp = ros::Time::now();
+  g.type = visualization_msgs::Marker::CUBE;
+  g.action = 3;
+  g.scale.x = 0.1;
+  g.scale.y = 0.1;
+  g.scale.z = 0.5;
+  g.color.a = 0.5;
+  g.lifetime = ros::Duration();
+  g.id = 0;
+  marker_array.markers.push_back(g);
+
+  for (int i=0; i < ground_heights.size(); i++) {
+      g.id = i+1;
+      g.action = visualization_msgs::Marker::ADD;
+      g.scale.x = std::abs(ground_xmax[i] - ground_xmin[i]);
+      g.scale.y = std::abs(ground_ymax[i] - ground_ymin[i]);
+
+      g.pose.position.x = ground_xmax[i] - 0.5 * std::abs(ground_xmax[i] - ground_xmin[i]);
+      g.pose.position.y = ground_ymax[i] - 0.5 * std::abs(ground_ymax[i] - ground_ymin[i]);
+      g.pose.position.z = ground_heights[i] - 0.5 * g.scale.z;
+
+      g.color.r = 1;
+      g.color.g = 0;
+      g.color.b = 0;
+
+      marker_array.markers.push_back(g);
+  }
+  height_map_pub_.publish(marker_array);
 }
 
 void LocalPlannerNode::publishBox() {
