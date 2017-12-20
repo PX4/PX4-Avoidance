@@ -19,7 +19,7 @@ RUN chmod +x /root/entrypoint.sh
 
 RUN ["/bin/bash", "-c", "\
     source /opt/ros/kinetic/setup.bash && \
-    catkin build -w /root/catkin_ws \
+    catkin build -w /root/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release \
 "]
 
 ENV ROS_MASTER_URI http://mavros-avoidance:11311
