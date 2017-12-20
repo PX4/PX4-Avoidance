@@ -1330,10 +1330,14 @@ void LocalPlanner::getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStam
   waypt_p = waypt_p_;
 }
 
-void LocalPlanner::getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation){
+void LocalPlanner::getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin){
   closest_point_on_ground = closest_point_on_ground_;
   ground_orientation = ground_orientation_;
-
+  ground_heights = ground_heights_;
+  ground_xmax = ground_xmax_;
+  ground_xmin = ground_xmin_;
+  ground_ymax = ground_ymax_;
+  ground_ymin = ground_ymin_;
 }
 
 void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel){
