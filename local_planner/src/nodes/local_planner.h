@@ -121,6 +121,9 @@ class LocalPlanner
   double no_progress_slope_;
   double progress_slope_;
   double rise_factor_no_progress_;
+  double min_cloud_size_ = 160;
+  double min_plane_points_ = 100;
+  double min_plane_percentage_ = 0.6;
 
   std::string log_name_;
 
