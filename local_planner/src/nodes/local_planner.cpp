@@ -57,6 +57,9 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   no_progress_slope_ = config.no_progress_slope_ ;
   progress_slope_  = config.progress_slope_ ;
   rise_factor_no_progress_ = config.rise_factor_no_progress_;
+  min_cloud_size_ = config.min_cloud_size_;
+  min_plane_points_ = config.min_plane_points_;
+  min_plane_percentage_ = config.min_plane_percentage_;
 
   if (goal_z_param!= config.goal_z_param) {
     goal_z_param = config.goal_z_param;
@@ -143,8 +146,7 @@ void LocalPlanner::fitPlane() {
   cloud->height = ground_cloud_.height;
   cloud->points = ground_cloud_.points;
 
-  if (ground_cloud_.width > 100) {
-    ROS_INFO("Cloud size %d. Plane fit in progress...", ground_cloud_.width);
+  if (ground_cloud_.width > min_cloud_size_ && !reached_goal_) {
     pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients);
     pcl::PointIndices::Ptr inliers(new pcl::PointIndices);
     pcl::SACSegmentation < pcl::PointXYZ > seg;
@@ -170,10 +172,10 @@ void LocalPlanner::fitPlane() {
     closest_point_on_ground_.y = pose_.pose.position.y + b*ground_dist_;
     closest_point_on_ground_.z = pose_.pose.position.z + c*ground_dist_;
 
-   //Assume estimate to be valid if 60% of the points are inliers
-    if(inliers->indices.size()>0.6*ground_cloud_.width){
+    //Assume estimate to be valid if at least a certain number of inliers
+    if (inliers->indices.size() > min_plane_points_ && inliers->indices.size() > min_plane_percentage_*ground_cloud_.width) {
       ground_detected_ = true;
-    }else{
+    } else {
       ground_detected_ = false;
     }
 
@@ -244,7 +246,7 @@ void LocalPlanner::fitPlane() {
       }
     }
 
-    ROS_INFO("Plane fit %2.2fms. Inlier %d.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000), inliers->indices.size());
+    ROS_INFO("Plane fit %2.2fms. Inlier %d.Ground detected: %d", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000), inliers->indices.size(), ground_detected_);
   }else{
     ground_detected_ = false;
   }
@@ -259,6 +261,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp2(new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud_.points.clear();
   ground_cloud_.points.clear();
+  final_cloud_.width = 0;
+  ground_cloud_.width = 0;
   distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
@@ -295,26 +299,30 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   }
 
   //increase safety radius if too close to the wall
-  if(distance_to_closest_point_ < 1.7 && cloud_temp1->points.size() > 160){
+  if(distance_to_closest_point_ < 1.7 && cloud_temp1->points.size() > min_cloud_size_ ){
     safety_radius_ = 25+ 2*alpha_res;
     std::cout<<"Increased safety radius!\n";
   }
-  if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > 160){
+  if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > min_cloud_size_ ){
     safety_radius_ = 25;
     std::cout<<"Lowered safety radius!\n";
   }
 
   final_cloud_.header.stamp = complete_cloud.header.stamp;
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
-  final_cloud_.width = cloud_temp1->points.size();
   final_cloud_.height = 1;
-  final_cloud_.points = cloud_temp1->points;
+  if (cloud_temp1->points.size() > min_cloud_size_ ) {
+    final_cloud_.points = cloud_temp1->points;
+    final_cloud_.width = cloud_temp1->points.size();
+  }
 
   ground_cloud_.header.stamp = complete_cloud.header.stamp;
   ground_cloud_.header.frame_id = complete_cloud.header.frame_id;
-  ground_cloud_.width = cloud_temp2->points.size();
   ground_cloud_.height = 1;
-  ground_cloud_.points = cloud_temp2->points;
+  if (cloud_temp2->points.size() > min_cloud_size_ ) {
+    ground_cloud_.points = cloud_temp2->points;
+    ground_cloud_.width = cloud_temp2->points.size();
+  }
 
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
@@ -323,13 +331,13 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     std::cout << "\033[1;32m Reach height ("<<take_off_pose_.pose.position.z + goal_.z - 0.5<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
-  }else if (cloud_temp1->points.size() > 160 && stop_in_front_ && reach_altitude_) {
+  }else if (cloud_temp1->points.size() > min_cloud_size_  && stop_in_front_ && reach_altitude_) {
     obstacle_ = true;
     std::cout << "\033[1;32m There is an Obstacle Ahead stop in front\n \033[0m";
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if ((counter_close_points < 20 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > 160 && use_back_off_) {
+    if ((counter_close_points > 20 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > min_cloud_size_  && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -339,7 +347,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       backOff();
 
     } else {
-      createPolarHistogram();  //TODO: Maybe also discard points is cloud is too small
+      createPolarHistogram();
       first_brake_ = true;
     }
   }
