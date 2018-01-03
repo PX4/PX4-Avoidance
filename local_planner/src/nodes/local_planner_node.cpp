@@ -1,4 +1,5 @@
 #include "local_planner_node.h"
+#include <sensor_msgs/point_cloud_conversion.h>
 
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
@@ -10,8 +11,8 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
-  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/vislam/pose", 1, &LocalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
@@ -251,6 +252,13 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   printf("Elevation %d Azimuth %d \n",beta_e, beta_z);
   printf("Cost %f \n", cost);
   printf("-------------------------------------------- \n");
+}
+
+
+void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud msg) {
+  sensor_msgs::PointCloud2 msg_pcl2;
+  sensor_msgs::convertPointCloudToPointCloud2(msg, msg_pcl2);
+  pointCloudCallback(msg_pcl2);
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {

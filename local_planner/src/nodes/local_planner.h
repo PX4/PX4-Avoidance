@@ -42,6 +42,7 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
+#include <opencv2/core.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
 

@@ -19,6 +19,7 @@
 #include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/PointCloud.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <tf/transform_listener.h>
@@ -80,6 +81,7 @@ private:
 
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void positionCallback(const geometry_msgs::PoseStamped msg);
+  void pointCloudCallback(const sensor_msgs::PointCloud msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
   void readParams();
