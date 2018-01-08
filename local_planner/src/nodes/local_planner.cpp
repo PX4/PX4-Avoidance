@@ -338,7 +338,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if ((counter_close_points > 20 || back_off_) && reach_altitude_ && cloud_temp1->points.size() > min_cloud_size_  && use_back_off_) {
+    if (((counter_close_points > 20 && cloud_temp1->points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -935,11 +935,11 @@ void LocalPlanner::getNextWaypoint() {
     else{
       waypt_ = setpoint;
     }
-  }
 
-  if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
-    waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
-    std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
+ 	  if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
+ 	    waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
+ 	    std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
+ 	  }
   }
 
   ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
@@ -1016,7 +1016,7 @@ void LocalPlanner::getMinFlightHeight() {
 void LocalPlanner::goFast(){
 
   if(smooth_go_fast_<1){
-    smooth_go_fast_ += 0.1;
+    smooth_go_fast_ += 0.02;
   }
 
   if (withinGoalRadius()) {
