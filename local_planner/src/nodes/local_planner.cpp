@@ -254,6 +254,7 @@ void LocalPlanner::fitPlane() {
 
 // trim the point cloud so that only points inside the bounding box are considered and
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
+  local_planner_last_mode_ = local_planner_mode_;
   calculateFOV();
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
@@ -596,6 +597,10 @@ void LocalPlanner::createPolarHistogram() {
     obstacle_ = false;
     std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
     local_planner_mode_ = 1;
+    if(local_planner_last_mode_ == 2){
+      smooth_go_fast_ = 0.1;
+      last_hist_waypt_ = waypt_;
+    }
     goFast();
   }
 
@@ -1010,6 +1015,10 @@ void LocalPlanner::getMinFlightHeight() {
 // if there isn't any obstacle in front of the UAV, increase cruising speed
 void LocalPlanner::goFast(){
 
+  if(smooth_go_fast_<1){
+    smooth_go_fast_ += 0.1;
+  }
+
   if (withinGoalRadius()) {
     if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
       ROS_INFO("Above Goal cannot go lower: Hoovering");
@@ -1200,7 +1209,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
   smooth_waypt.vector.y = last_waypt_p_.pose.position.y + vel_xy(1) * dt;
   smooth_waypt.vector.z = waypt_.vector.z;
 
-  ROS_INFO("Smothed waypoint: [%f %f %f].", smooth_waypt.vector.x, smooth_waypt.vector.y, smooth_waypt.vector.z);
+  ROS_INFO("Smoothed waypoint: [%f %f %f].", smooth_waypt.vector.x, smooth_waypt.vector.y, smooth_waypt.vector.z);
   return smooth_waypt;
 }
 
@@ -1211,14 +1220,6 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
 
-  //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if)
-  if(!reach_altitude_){
-    reachGoalAltitudeFirst();
-  } else {
-      if(!reached_goal_ && (pose_.pose.position.z > 1.5) && !stop_in_front_){
-//        waypt_ = smoothWaypoint(); //Does not work with yaw only
-      }
-  }
 
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
   only_yawed_ = false;
@@ -1228,6 +1229,24 @@ void LocalPlanner::getPathMsg() {
     waypt_.vector.y = pose_.pose.position.y;
     waypt_.vector.z = pose_.pose.position.z;
     only_yawed_ = true;
+  }
+
+  if(!only_yawed_){
+
+    //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if)
+    if(!reach_altitude_){
+      reachGoalAltitudeFirst();
+    } else {
+        if(!reached_goal_ && !stop_in_front_){
+          if(smooth_go_fast_ <1 && local_planner_mode_==1){
+            waypt_.vector.x = smooth_go_fast_ * waypt_.vector.x + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.x;
+            waypt_.vector.y = smooth_go_fast_ * waypt_.vector.y + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.y;
+            waypt_.vector.z = smooth_go_fast_ * waypt_.vector.z + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.z;
+          }
+          waypt_ = smoothWaypoint();
+        }
+    }
+    double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
   }
 
 

@@ -94,6 +94,8 @@ class LocalPlanner
   int dist_incline_window_size_ = 50;
 
   double local_planner_mode_;
+  double local_planner_last_mode_;
+  double smooth_go_fast_;
   double distance_to_closest_point_;
   double min_dist_to_ground_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
@@ -153,6 +155,7 @@ class LocalPlanner
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
+  geometry_msgs::Vector3Stamped last_hist_waypt_;
   geometry_msgs::PoseStamped waypt_p_;
   geometry_msgs::TwistStamped curr_vel_;
   geometry_msgs::Point closest_point_on_ground_;
