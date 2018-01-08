@@ -113,7 +113,7 @@ class LocalPlanner
   double ground_dist_;
   double min_flight_height_;
   double begin_rise_;
-  double height_change_cost_param_ = 5;
+  double height_change_cost_param_ = 4;
   double integral_time_old_ = 0;
   double safety_radius_ = 25;
   double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
