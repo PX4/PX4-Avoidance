@@ -24,11 +24,8 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     std::string buffer(80, '\0');
     strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
     log_name_ = buffer;
-<<<<<<< a57a27bcc86292900ff9036d57cbdcc04494da97
 
     reach_altitude_ = false;
-=======
->>>>>>> logg only when aarmed and in offboard mode. Adde mavros_msgs in Dockerfile as an installation
   }
 
   if(!offboard_){
@@ -36,22 +33,16 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   }
 
   setVelocity();
-  setLimitsBoundingBox();
-}
-
-// reset cloud and histogram counter variables when new cloud comes in
-void LocalPlanner::resetHistogramCounter() {
-  new_cloud_ = true;
 }
 
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config,uint32_t level){
-  min_box_x_ = config.min_box_x_;
-  max_box_x_ = config.max_box_x_;
-  min_box_y_ = config.min_box_y_;
-  max_box_y_ = config.max_box_y_;
-  min_box_z_ = config.min_box_z_;
-  max_box_z_ = config.max_box_z_;
+  histogram_box_size_.xmin = config.min_box_x_;
+  histogram_box_size_.xmax = config.max_box_x_;
+  histogram_box_size_.ymin = config.min_box_y_;
+  histogram_box_size_.ymax = config.max_box_y_;
+  histogram_box_size_.zmin = config.min_box_z_;
+  histogram_box_size_.zmax = config.max_box_z_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
   min_groundbox_z_ = 1.5 * min_dist_to_ground_;
   min_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
@@ -83,19 +74,15 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
     goal_z_param_ = config.goal_z_param;
     setGoal();
   }
-  use_ground_detection_ = config.use_ground_detection_;
+  use_ground_detection = config.use_ground_detection;
   use_back_off_ = config.use_back_off_;
-  box_size_increase_ = config.box_size_increase_;
+  use_VFH_star_ = config.use_VFH_star_;
 }
 
 // log Data
 void LocalPlanner::logData() {
 
-<<<<<<< a57a27bcc86292900ff9036d57cbdcc04494da97
   if (currently_armed_ && offboard_) {
-=======
-  if (currently_armed && offboard) {
->>>>>>> logg only when aarmed and in offboard mode. Adde mavros_msgs in Dockerfile as an installation
     std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
          << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\t"<< algorithm_total_time_[algorithm_total_time_.size()-1]<< "\n";
@@ -123,20 +110,22 @@ void LocalPlanner::setVelocity() {
 }
 
 // update bounding box limit coordinates around a new UAV pose
-void LocalPlanner::setLimitsBoundingBox() {
-  min_box_.x = pose_.pose.position.x - min_box_x_;
-  min_box_.y = pose_.pose.position.y - min_box_y_;
-  min_box_.z = pose_.pose.position.z - min_box_z_;
-  max_box_.x = pose_.pose.position.x + max_box_x_;
-  max_box_.y = pose_.pose.position.y + max_box_y_;
-  max_box_.z = pose_.pose.position.z + max_box_z_;
-
-  min_groundbox_.x = pose_.pose.position.x - min_groundbox_x_;
-  min_groundbox_.y = pose_.pose.position.y - min_groundbox_y_;
-  min_groundbox_.z = pose_.pose.position.z - min_dist_to_ground_ - min_groundbox_z_;
-  max_groundbox_.x = pose_.pose.position.x + max_groundbox_x_;
-  max_groundbox_.y = pose_.pose.position.y + max_groundbox_y_;
-  max_groundbox_.z = pose_.pose.position.z ;
+void LocalPlanner::setLimitsHistogramBox(geometry_msgs::Point pos) {
+  histogram_box_.xmin = pos.x - histogram_box_size_.xmin;
+  histogram_box_.ymin = pos.y - histogram_box_size_.ymin;
+  histogram_box_.zmin = pos.z - histogram_box_size_.zmin;
+  histogram_box_.xmax = pos.x + histogram_box_size_.xmax;
+  histogram_box_.ymax = pos.y + histogram_box_size_.ymax;
+  histogram_box_.zmax = pos.z + histogram_box_size_.zmax;
+}
+// update bounding box limit coordinates around a new UAV pose
+void LocalPlanner::setLimitsGroundBox(geometry_msgs::Point pos) {
+  ground_box_.xmin = pos.x - ground_box_size_.xmin;
+  ground_box_.ymin = pos.y - ground_box_size_.ymin;
+  ground_box_.zmin = pos.z - min_dist_to_ground_ - ground_box_size_.zmin;
+  ground_box_.xmax = pos.x + ground_box_size_.xmax;
+  ground_box_.ymax = pos.y + ground_box_size_.ymax;
+  ground_box_.zmax = pos.z;
 }
 
 // set mission goal
@@ -150,11 +139,11 @@ void LocalPlanner::setGoal() {
 }
 
 bool LocalPlanner::isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
-  return (pcl_it->x) < max_box_.x && (pcl_it->x) > min_box_.x && (pcl_it->y) < max_box_.y && (pcl_it->y) > min_box_.y && (pcl_it->z) < max_box_.z && (pcl_it->z) > min_box_.z;
+  return (pcl_it->x) < histogram_box_.xmax && (pcl_it->x) > histogram_box_.xmin && (pcl_it->y) < histogram_box_.ymax && (pcl_it->y) > histogram_box_.ymin && (pcl_it->z) < histogram_box_.zmax && (pcl_it->z) > histogram_box_.zmin;
 }
 
 bool LocalPlanner::isPointWithinGroundBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
-  return (pcl_it->x) < max_groundbox_.x && (pcl_it->x) > min_groundbox_.x && (pcl_it->y) < max_groundbox_.y && (pcl_it->y) > min_groundbox_.y && (pcl_it->z) < max_groundbox_.z && (pcl_it->z) > min_groundbox_.z;
+  return (pcl_it->x) < ground_box_.xmax && (pcl_it->x) > ground_box_.xmin && (pcl_it->y) < ground_box_.ymax && (pcl_it->y) > ground_box_.ymin && (pcl_it->z) < ground_box_.zmax && (pcl_it->z) > ground_box_.zmin;
 }
 
 // fit plane through groud cloud
@@ -274,6 +263,44 @@ void LocalPlanner::fitPlane() {
   }
 }
 
+
+// crop cloud to groundbox and estimate ground
+void LocalPlanner::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
+  std::clock_t start_time = std::clock();
+  pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
+  ground_cloud_.points.clear();
+  double min_realsense_dist = 0.2;
+  float distance;
+
+  for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
+    // Check if the point is invalid
+    if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
+      if (use_ground_detection) {
+        if (isPointWithinGroundBox(pcl_it)) {
+          cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+        }
+      }
+    }
+  }
+
+  ground_cloud_.header.stamp = complete_cloud.header.stamp;
+  ground_cloud_.header.frame_id = complete_cloud.header.frame_id;
+  ground_cloud_.width = cloud_temp->points.size();
+  ground_cloud_.height = 1;
+  ground_cloud_.points = cloud_temp->points;
+
+  //fit horizontal plane for ground estimation
+  if (reach_altitude_){
+    fitPlane();
+  }else{
+    ground_detected_ = false;
+  }
+  ROS_INFO("Ground detection took %2.2fms. Ground detected: %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), ground_detected_);
+    cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+}
+
+
 // trim the point cloud so that only points inside the bounding box are considered and
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
   hovering_ = false;
@@ -281,12 +308,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   calculateFOV();
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp1(new pcl::PointCloud<pcl::PointXYZ>);
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp2(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
   final_cloud_.points.clear();
-  ground_cloud_.points.clear();
   final_cloud_.width = 0;
-  ground_cloud_.width = 0;
   distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
@@ -300,7 +324,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       if (isPointWithinHistogramBox(pcl_it)) {
         distance = computeL2Dist(pose_, pcl_it);
         if (distance > min_realsense_dist) {
-          cloud_temp1->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+          cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < distance_to_closest_point_) {
             distance_to_closest_point_ = distance;
             closest_point_.x = pcl_it->x;
@@ -316,11 +340,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
             temp_centerpoint.y += pcl_it->y;
             temp_centerpoint.z += pcl_it->z;
           }
-        }
-      }
-      if (use_ground_detection_) {
-        if (isPointWithinGroundBox(pcl_it)) {
-          cloud_temp2->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
         }
       }
     }
@@ -353,11 +372,11 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   }
 
   //increase safety radius if too close to the wall
-  if(distance_to_closest_point_ < 1.7 && cloud_temp1->points.size() > min_cloud_size_ ){
+  if(distance_to_closest_point_ < 1.7 && cloud_temp->points.size() > min_cloud_size_ ){
     safety_radius_ = 25+ 2*ALPHA_RES;
     std::cout<<"Increased safety radius!\n";
   }
-  if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > min_cloud_size_ ){
+  if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp->points.size() > min_cloud_size_ ){
     safety_radius_ = 25;
     std::cout<<"Lowered safety radius!\n";
   }
@@ -366,32 +385,30 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
   final_cloud_.height = 1;
   if (cloud_temp1->points.size() > min_cloud_size_ ) {
-    final_cloud_.points = cloud_temp1->points;
-    final_cloud_.width = cloud_temp1->points.size();
-  }
-
-  ground_cloud_.header.stamp = complete_cloud.header.stamp;
-  ground_cloud_.header.frame_id = complete_cloud.header.frame_id;
-  ground_cloud_.height = 1;
-  if (cloud_temp2->points.size() > min_cloud_size_ ) {
-    ground_cloud_.points = cloud_temp2->points;
-    ground_cloud_.width = cloud_temp2->points.size();
+    final_cloud_.points = cloud_temp->points;
+    final_cloud_.width = cloud_temp->points.size();
   }
 
   ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
+  if(new_cloud){
+    determineStrategy();
+  }
+}
+
+void LocalPlanner::determineStrategy(){
   if(!reach_altitude_){
     std::cout << "\033[1;32m Reach height ("<<starting_height_<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
-  }else if (cloud_temp1->points.size() > min_cloud_size_  && stop_in_front_ && reach_altitude_) {
+  }else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ && reach_altitude_) {
     obstacle_ = true;
     std::cout << "\033[1;32m There is an Obstacle Ahead stop in front\n \033[0m";
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if (((counter_close_points_backoff > 20 && cloud_temp1->points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
+    if (((counter_close_points_backoff > 20 && final_cloud_.points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -405,12 +422,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
       first_brake_ = true;
     }
   }
-
-  //fit horizontal plane for ground estimation
-  if (use_ground_detection_ && reach_altitude_ && new_cloud_){
-    fitPlane();
-  }
-  new_cloud_ = false;
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
@@ -488,6 +499,7 @@ void LocalPlanner::calculateFOV() {
 
 // fill the 2D polar histogram with the points from the filtered point cloud
 void LocalPlanner::createPolarHistogram() {
+  calculateFOV();
   std::clock_t start_time = std::clock();
   float dist;
   float age;
@@ -519,7 +531,7 @@ void LocalPlanner::createPolarHistogram() {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
-          if (dist < 2*max_box_x_ && dist > 0.3 && age < AGE_LIM) {
+          if (dist < 2*histogram_box_size_.xmax && dist > 0.3 && age < AGE_LIM) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             int beta_z_new = floor(atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
             int beta_e_new = floor(
@@ -700,7 +712,7 @@ void LocalPlanner::findFreeDirections() {
 
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
-  if (use_ground_detection_) {
+  if (use_ground_detection) {
     getMinFlightHeight();
     int e_max = floor(V_FOV / 2);
     int e_min;
@@ -786,7 +798,7 @@ void LocalPlanner::findFreeDirections() {
       }
 
       //reject points which lead the drone too close to the ground
-      if (use_ground_detection_ && over_obstacle_) {
+      if (use_ground_detection && over_obstacle_) {
         if (e <= e_min_idx) {
           height_reject = true;
         }
@@ -821,92 +833,130 @@ void LocalPlanner::findFreeDirections() {
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   calculateCostMap();
-  buildLookAheadTree();
+
+  if(use_VFH_star_){
+    buildLookAheadTree();
+  }
 }
 
 void LocalPlanner::buildLookAheadTree(){
 
+  new_cloud = false;
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
-  tree_candidates_ = path_candidates_;
-  double origin = 0;
-  double min_c = 1000000;
+  int origin = 0;
+  double min_c = inf;
   int min_c_node = 0;
 
 
-  //WHILE
-  //insert new nodes
-  geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  int depth = tree_[origin].depth + 1;
-  closed_set_.push_back(origin);
+  while (!depth_reached_) {
 
-  int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
-  int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
-  int goal_e_idx = (goal_e -alpha_res+90)/alpha_res;
-  int goal_z_idx = (goal_z-alpha_res+180)/alpha_res;
+    geometry_msgs::Point origin_position = tree_[origin].getPosition();
+    bool add_nodes = true;
 
-  for(int i = 0; i<tree_candidates_.cells.size(); i++){
-    int e = tree_candidates_.cells[i].x;
-    int z = tree_candidates_.cells[i].y;
-    geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_ , origin_position);
+    if(origin == 0){
+      tree_candidates_ = path_candidates_;
+    }else{
 
-    tree_.push_back(TreeNode(origin, depth, node_location));
-    tree_.back().last_e = e;
-    tree_.back().last_z = z;
-    double h = treeHeuristicFunction(tree_.size()-1);
-    double c = treeCostFunction(e, z, tree_.size()-1);
-    tree_.back().heuristic = h;
-    tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+      //crop pointcloud
+      setLimitsHistogramBox(origin_position);
+      filterPointCloud(complete_cloud_);
 
-    if(c<min_c){
-      min_c = c;
-      min_c_node = tree_.size()-1;
-    }
-  }
+      //if too close to obstacle, we do not want to go there (equivalent to back off)
+      if(counter_close_points_ < 20 && final_cloud_.points.size() > 160){
+        tree_[origin].total_cost = inf;
+        add_nodes = false;
+      }
 
-  //find best node to continue
-  double minimal_cost = 1000000;
-  for(int i = 0; i<tree_.size(); i++){
-    bool closed = false;
-    for (int j = 0; j < closed_set_.size(); j++){
-      if(closed_set_[j] == i){
-        closed = true;
+      if(add_nodes){
+        //build new histogram
+
+        //calculate candidates
+
       }
     }
-    if(tree_[i].total_cost<minimal_cost && !closed){
-      minimal_cost = tree_[i].total_cost;
-      origin = i;
-    }
-  }
-  std::cout<<"New Origin: "<<origin<<"\n";
 
-  std::cout<<"min c node [e, z]: ["<<tree_[min_c_node].last_e <<", "<<tree_[min_c_node].last_z<<"] \n";
-  std::cout<<"chosen node [e, z]: ["<<tree_[origin].last_e <<", "<<tree_[origin].last_z<<"] \n";
+    if (add_nodes) {
+      //insert new nodes
+      int depth = tree_[origin].depth + 1;
+      if (depth >= goal_tree_depth_) {
+        depth_reached_ = true;
+      }
+      closed_set_.push_back(origin);
 
-  int e_cmin = (tree_[min_c_node].last_e -alpha_res+90)/alpha_res;
-  int z_cmin = (tree_[min_c_node].last_z-alpha_res+180)/alpha_res;
+      int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
+      int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
+      int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
+      int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
 
-  int e_min = (tree_[origin].last_e -alpha_res+90)/alpha_res;
-  int z_min = (tree_[origin].last_z-alpha_res+180)/alpha_res;
+      for (int i = 0; i < tree_candidates_.cells.size(); i++) {
+        int e = tree_candidates_.cells[i].x;
+        int z = tree_candidates_.cells[i].y;
+        geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
-  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
-      for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
-        if(e_ind == e_cmin && z_ind == z_cmin){
-          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //blue
-        }else if(e_ind == e_min && z_ind == z_min){
-          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //red
-        }else if(e_ind == goal_e_idx && z_ind == goal_z_idx){
-          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //cyan
-        }else if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
-          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //green
-        } else {
-          std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
+        tree_.push_back(TreeNode(origin, depth, node_location));
+        tree_.back().last_e = e;
+        tree_.back().last_z = z;
+        double h = treeHeuristicFunction(tree_.size() - 1);
+        double c = treeCostFunction(e, z, tree_.size() - 1);
+        tree_.back().heuristic = h;
+        tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+
+        if (c < min_c) {
+          min_c = c;
+          min_c_node = tree_.size() - 1;
         }
       }
-      std::cout << "\n";
+
+      //find best node to continue
+      double minimal_cost = inf;
+      for (int i = 0; i < tree_.size(); i++) {
+        bool closed = false;
+        for (int j = 0; j < closed_set_.size(); j++) {
+          if (closed_set_[j] == i) {
+            closed = true;
+          }
+        }
+        if (tree_[i].total_cost < minimal_cost && !closed) {
+          minimal_cost = tree_[i].total_cost;
+          origin = i;
+        }
+      }
+
+
+
+
+//    std::cout << "New Origin: " << origin << "\n";
+//
+//    std::cout << "min c node [e, z]: [" << tree_[min_c_node].last_e << ", " << tree_[min_c_node].last_z << "] \n";
+//    std::cout << "chosen node [e, z]: [" << tree_[origin].last_e << ", " << tree_[origin].last_z << "] \n";
+//
+//    int e_cmin = (tree_[min_c_node].last_e - alpha_res + 90) / alpha_res;
+//    int z_cmin = (tree_[min_c_node].last_z - alpha_res + 180) / alpha_res;
+//
+//    int e_min = (tree_[origin].last_e - alpha_res + 90) / alpha_res;
+//    int z_min = (tree_[origin].last_z - alpha_res + 180) / alpha_res;
+//
+//    for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+//      for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+//        if (e_ind == e_cmin && z_ind == z_cmin) {
+//          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //blue
+//        } else if (e_ind == e_min && z_ind == z_min) {
+//          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //red
+//        } else if (e_ind == goal_e_idx && z_ind == goal_z_idx) {
+//          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //cyan
+//        } else if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_ind) != z_FOV_idx_.end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
+//          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //green
+//        } else {
+//          std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
+//        }
+//      }
+//      std::cout << "\n";
+//    }
     }
+  }
 
 
 tree_.clear();
@@ -1179,7 +1229,7 @@ void LocalPlanner::goFast(){
     double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
     //Prevent downward motion or move up if too close to ground
-    if (use_ground_detection_) {
+    if (use_ground_detection) {
       vec.normalize();
       getMinFlightHeight();
       if (over_obstacle_ && pose_.pose.position.z <= min_flight_height_) {
@@ -1501,21 +1551,21 @@ void LocalPlanner::stopInFrontObstacles(){
 
 //Get the dimensions of the bounding box
 void LocalPlanner::getBoundingBoxSize(double &min_x, double &max_x, double &min_y, double &max_y, double &min_z, double &max_z){
-  min_x = min_box_x_;
-  max_x = max_box_x_;
-  min_y = min_box_y_;
-  max_y = max_box_y_;
-  min_z = min_box_z_;
-  max_z = max_box_z_;
+  min_x = histogram_box_size_.xmin;
+  max_x = histogram_box_size_.xmax;
+  min_y = histogram_box_size_.ymin;
+  max_y = histogram_box_size_.ymax;
+  min_z = histogram_box_size_.zmin;
+  max_z = histogram_box_size_.zmax;
 }
 
 //Get the dimensions of the ground box
 void LocalPlanner::getGroundBoxSize(double &min_x, double &max_x, double &min_y, double &max_y, double &min_z){
-  min_x = min_groundbox_x_;
-  max_x = max_groundbox_x_;
-  min_y = min_groundbox_y_;
-  max_y = max_groundbox_y_;
-  min_z = min_groundbox_z_;
+  min_x = ground_box_size_.xmin;
+  max_x = ground_box_size_.xmax;
+  min_y = ground_box_size_.ymin;
+  max_y = ground_box_size_.ymax;
+  min_z = ground_box_size_.zmin;
 }
 
 void LocalPlanner::getPosition(geometry_msgs::PoseStamped &pos){

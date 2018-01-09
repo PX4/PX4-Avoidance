@@ -119,6 +119,7 @@ add_library(local_planner
   src/nodes/local_planner.cpp
   src/nodes/histogram.cpp
   src/nodes/tree_node.cpp
+  src/nodes/box.cpp
 )
 
 ## Add cmake target dependencies of the library
