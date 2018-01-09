@@ -147,6 +147,7 @@ class LocalPlanner
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
   std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
+  std::vector<int> closed_set_;
 
   std::vector<TreeNode> tree_;
 
