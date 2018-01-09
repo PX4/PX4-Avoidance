@@ -840,6 +840,7 @@ void LocalPlanner::buildLookAheadTree(){
   //insert new nodes
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
   int depth = tree_[origin].depth + 1;
+  closed_set_.push_back(origin);
 
   int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
   int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
@@ -847,8 +848,8 @@ void LocalPlanner::buildLookAheadTree(){
   int goal_z_idx = (goal_z-alpha_res+180)/alpha_res;
 
   for(int i = 0; i<tree_candidates_.cells.size(); i++){
-    int e = path_candidates_.cells[i].x;
-    int z = path_candidates_.cells[i].y;
+    int e = tree_candidates_.cells[i].x;
+    int z = tree_candidates_.cells[i].y;
     geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_ , origin_position);
 
     tree_.push_back(TreeNode(origin, depth, node_location));
@@ -867,12 +868,19 @@ void LocalPlanner::buildLookAheadTree(){
 
   //find best node to continue
   double minimal_cost = 1000000;
-  for(int i = 0; i<tree_candidates_.cells.size(); i++){
-    if(tree_[i].total_cost<minimal_cost){
+  for(int i = 0; i<tree_.size(); i++){
+    bool closed = false;
+    for (int j = 0; j < closed_set_.size(); j++){
+      if(closed_set_[j] == i){
+        closed = true;
+      }
+    }
+    if(tree_[i].total_cost<minimal_cost && !closed){
       minimal_cost = tree_[i].total_cost;
       origin = i;
     }
   }
+  std::cout<<"New Origin: "<<origin<<"\n";
 
   std::cout<<"min c node [e, z]: ["<<tree_[min_c_node].last_e <<", "<<tree_[min_c_node].last_z<<"] \n";
   std::cout<<"chosen node [e, z]: ["<<tree_[origin].last_e <<", "<<tree_[origin].last_z<<"] \n";
@@ -886,13 +894,13 @@ void LocalPlanner::buildLookAheadTree(){
   for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
       for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
         if(e_ind == e_cmin && z_ind == z_cmin){
-          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //blue
         }else if(e_ind == e_min && z_ind == z_min){
-          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //red
         }else if(e_ind == goal_e_idx && z_ind == goal_z_idx){
-          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //cyan
         }else if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
-          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";
+          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m"; //green
         } else {
           std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
         }
@@ -900,6 +908,9 @@ void LocalPlanner::buildLookAheadTree(){
       std::cout << "\n";
     }
 
+
+tree_.clear();
+closed_set_.clear();
 }
 
 double LocalPlanner::treeCostFunction(int e, int z, int node_number) {
