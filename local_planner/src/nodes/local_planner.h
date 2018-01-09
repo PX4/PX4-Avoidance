@@ -9,11 +9,14 @@
 #include <vector>
 #include <deque>
 #include <mutex>
+#include <limits>
+
 
 #include <ros/ros.h>
 
 #include "histogram.h"
 #include "tree_node.h"
+#include "box.h"
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
@@ -52,6 +55,7 @@
 
 
 #define PI 3.14159265
+<<<<<<< 468d193a9a4dc4bd9e6971a950eb16d6daed7667
 #define ALPHA_RES 6
 #define GRID_LENGTH_Z 360/ALPHA_RES
 #define GRID_LENGTH_E 180/ALPHA_RES
@@ -59,6 +63,16 @@
 #define MIN_BIN 1.5
 #define H_FOV 59.0
 #define V_FOV 46.0
+=======
+#define alpha_res 6
+#define grid_length_z 360/alpha_res
+#define grid_length_e 180/alpha_res
+#define age_lim 100
+#define min_bin 1.5
+#define h_fov 59.0
+#define v_fov 46.0
+#define inf  std::numeric_limits<double>::infinity()
+>>>>>>> Change code structure for VFH star implementation. Clean up and split functions which are needed separately in VFH star
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
@@ -81,7 +95,6 @@ class LocalPlanner
   bool is_near_min_height_ = false;
   bool too_low_ = false;
   bool new_cloud_ = false;
-  bool use_ground_detection_;
   bool use_back_off_ = true;
   bool log_data_to_txt_file_ = true;
   bool ground_detected_ = false;
@@ -91,11 +104,14 @@ class LocalPlanner
   bool only_yawed_ = false;
   bool use_avoid_sphere_ = false;
   bool hovering_ = false;
+  bool depth_reached_ = false;
+  bool use_VFH_star_ = true;
 
   int stop_in_front_;
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
   int avoid_sphere_age_ = 1000;
+  int counter_close_points_ = 0;
 
   double local_planner_last_mode_;
   double smooth_go_fast_;
@@ -119,8 +135,6 @@ class LocalPlanner
   double height_change_cost_param_ = 4;
   double integral_time_old_ = 0;
   double safety_radius_ = 25;
-  double min_box_x_, max_box_x_, min_box_y_, max_box_y_, min_box_z_, max_box_z_;
-  double min_groundbox_x_ = 10, max_groundbox_x_ = 10, min_groundbox_y_ = 10, max_groundbox_y_ = 10, min_groundbox_z_ = 2.0;
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
   double no_progress_slope_;
@@ -133,6 +147,7 @@ class LocalPlanner
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
   double tree_node_distance_;
+  double goal_tree_depth_ = 3;
 
   std::string log_name_;
 
@@ -158,6 +173,7 @@ class LocalPlanner
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
+  geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point goal_;
   geometry_msgs::Point closest_point_;
   geometry_msgs::Point avoid_centerpoint_;
@@ -185,12 +201,17 @@ class LocalPlanner
   Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
   Histogram polar_histogram_est_ = Histogram(2 * ALPHA_RES);
 
-  void setLimitsBoundingBox();
+  Box histogram_box_size_;
+  Box ground_box_size_;
+  Box histogram_box_;
+  Box ground_box_;
+
   bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   bool isPointWithinGroundBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   void logData();
   void fitPlane();
   bool obstacleAhead();
+  void determineStrategy();
   void calculateFOV();
   void createPolarHistogram();
   void printHistogram(Histogram hist);
@@ -222,6 +243,8 @@ class LocalPlanner
 
   bool currently_armed_ = false;
   bool offboard_ = false;
+  bool use_ground_detection;
+  bool new_cloud;
 
   std::vector<float> algorithm_total_time_;
 
@@ -241,9 +264,10 @@ class LocalPlanner
   LocalPlanner();
   ~LocalPlanner();
 
+  void setLimitsHistogramBox(geometry_msgs::Point pos);
+  void setLimitsGroundBox(geometry_msgs::Point pos);
   void setPose(const geometry_msgs::PoseStamped msg);
   double costFunction(int e, int z);
-  void resetHistogramCounter();
   void setGoal();
   void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
   geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
