@@ -14,6 +14,6 @@
     </node>
 
     <!-- Logging -->
-    <node pkg="rosbag" type="record" name="log_bag" args="record -O log_$(arg start_time) /tf /mavros/local_position/pose /mavros/local_position/velocity /goal_position /local_pointcloud /reprojected_points /height_map /blocked_marker /rejected_marker /candidates_marker /selected_marker /current_setpoint --size 3000" if="$(arg record_bag)" />
+    <node pkg="rosbag" type="record" name="log_bag" args="record -O log_$(arg start_time) /tf /mavros/local_position/pose /mavros/local_position/velocity /goal_position /local_pointcloud /ground_pointcloud /reprojected_points /height_map /blocked_marker /rejected_marker /candidates_marker /selected_marker /current_setpoint --size 3000" if="$(arg record_bag)" />
 
 </launch>
