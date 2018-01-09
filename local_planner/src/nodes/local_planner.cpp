@@ -24,6 +24,8 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     std::string buffer(80, '\0');
     strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
     log_name_ = buffer;
+
+    reach_altitude_ = false;
   }
 
   setVelocity();
