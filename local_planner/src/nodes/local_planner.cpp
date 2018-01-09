@@ -1169,8 +1169,8 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst(){
   if (pose_.pose.position.z < (take_off_pose_.pose.position.z + goal_.z - 0.5)) {
-      waypt_.vector.x = 0.0;
-      waypt_.vector.y = 0.0;
+      waypt_.vector.x = pose_.pose.position.x;
+      waypt_.vector.y = pose_.pose.position.y;
       waypt_.vector.z = pose_.pose.position.z + 0.5;
   } else {
     reach_altitude_ = true;
@@ -1231,24 +1231,21 @@ void LocalPlanner::getPathMsg() {
     only_yawed_ = true;
   }
 
-  if(!only_yawed_){
-
-    //first reach the altitude of the goal then start to move towards it (optional, comment out the entire if)
-    if(!reach_altitude_){
-      reachGoalAltitudeFirst();
-    } else {
-        if(!reached_goal_ && !stop_in_front_){
-          if(smooth_go_fast_ <1 && local_planner_mode_==1){
-            waypt_.vector.x = smooth_go_fast_ * waypt_.vector.x + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.x;
-            waypt_.vector.y = smooth_go_fast_ * waypt_.vector.y + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.y;
-            waypt_.vector.z = smooth_go_fast_ * waypt_.vector.z + (1.0-smooth_go_fast_) * last_hist_waypt_.vector.z;
-          }
-          waypt_ = smoothWaypoint();
+  if (!reach_altitude_) {
+    reachGoalAltitudeFirst();
+  } else {
+    if (!only_yawed_) {
+      if (!reached_goal_ && !stop_in_front_) {
+        if (smooth_go_fast_ < 1 && local_planner_mode_ == 1) {
+          waypt_.vector.x = smooth_go_fast_ * waypt_.vector.x + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.x;
+          waypt_.vector.y = smooth_go_fast_ * waypt_.vector.y + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.y;
+          waypt_.vector.z = smooth_go_fast_ * waypt_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
         }
+        waypt_ = smoothWaypoint();
+        double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+      }
     }
-    double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
   }
-
 
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
