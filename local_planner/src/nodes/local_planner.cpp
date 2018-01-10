@@ -47,6 +47,11 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   min_box_z_ = config.min_box_z_;
   max_box_z_ = config.max_box_z_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
+  min_groundbox_z_ = 1.5 * min_dist_to_ground_;
+  min_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
+  max_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
+  min_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
+  max_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
