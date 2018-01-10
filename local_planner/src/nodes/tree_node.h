@@ -14,6 +14,7 @@ class TreeNode
   int last_z;
   int origin;
   int depth;
+  int yaw;
 
   TreeNode();
   TreeNode(int from, int d, geometry_msgs::Point pos);

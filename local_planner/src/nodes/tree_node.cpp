@@ -6,7 +6,8 @@ TreeNode::TreeNode()
       origin { 0 },
       depth { 0 },
       last_e { 0 },
-      last_z { 0 } {
+      last_z { 0 },
+      yaw { 0} {
 
   position.x = 0;
   position.y = 0;
@@ -19,7 +20,8 @@ TreeNode::TreeNode(int from, int d, geometry_msgs::Point pos)
       origin { from },
       depth { d },
       last_e { 0 },
-      last_z { 0 } {
+      last_z { 0 },
+      yaw { 0 } {
 
   position = pos;
 }
