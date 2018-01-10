@@ -96,6 +96,7 @@ class LocalPlanner
   bool hovering_ = false;
   bool depth_reached_ = false;
   bool use_VFH_star_ = true;
+  bool hist_is_empty_ = false;
 
   int stop_in_front_;
   int e_FOV_max_, e_FOV_min_;
@@ -181,7 +182,6 @@ class LocalPlanner
   geometry_msgs::Quaternion ground_orientation_;
 
   nav_msgs::Path path_msg_;
-  nav_msgs::GridCells tree_candidates_;
   nav_msgs::GridCells path_candidates_;
   nav_msgs::GridCells path_selected_;
   nav_msgs::GridCells path_rejected_;
@@ -205,7 +205,7 @@ class LocalPlanner
   bool obstacleAhead();
   void determineStrategy();
   void reprojectPoints();
-  void calculateFOV();
+  void calculateFOV(double yaw, double pitch);
   void createPolarHistogram();
   void printHistogram(Histogram hist);
   void initGridCells(nav_msgs::GridCells *cell);

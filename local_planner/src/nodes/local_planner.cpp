@@ -418,7 +418,39 @@ void LocalPlanner::determineStrategy(){
       backOff();
 
     } else {
-      createPolarHistogram();
+      reprojectPoints();
+
+      tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
+      tf::Matrix3x3 m(q);
+      double roll, pitch, yaw;
+      m.getRPY(roll, pitch, yaw);
+      calculateFOV(yaw, pitch);
+
+      createPolarHistogram();  //TODO: Maybe also discard points is cloud is too small
+
+      //decide how to proceed
+      if(hist_is_empty_){
+        obstacle_ = false;
+        std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
+        local_planner_mode_ = 1;
+        goFast();
+      }
+
+      if(!hist_is_empty_ && reach_altitude_){
+        obstacle_ = true;
+        std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
+        local_planner_mode_ = 2;
+        findFreeDirections();
+
+
+        if(use_VFH_star_){
+          buildLookAheadTree();
+        }
+
+        calculateCostMap();
+        getNextWaypoint();
+      }
+
       first_brake_ = true;
     }
   }
@@ -454,12 +486,7 @@ bool LocalPlanner::groundDetected() {
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void LocalPlanner::calculateFOV() {
-  tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
-  tf::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-  std::cout<<"yaw:"<<yaw<<"\n";
+void LocalPlanner::calculateFOV(double yaw, double pitch) {
 
   double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
   double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
@@ -540,11 +567,9 @@ void LocalPlanner::reprojectPoints() {
 
 // fill the 2D polar histogram with the points from the filtered point cloud
 void LocalPlanner::createPolarHistogram() {
-  calculateFOV();
-
   //Build histogram estimate from reprojected points
   std::clock_t start_time = std::clock();
-  reprojectPoints();
+
   polar_histogram_est_ = Histogram(2 * ALPHA_RES);
 
   for (int i = 0; i < reprojected_points_.width; i++) {
@@ -628,7 +653,7 @@ void LocalPlanner::createPolarHistogram() {
       if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
-          hist_is_empty = false;
+          hist_is_empty_ = false;
         }
       } else {
         if (polar_histogram_est_.get_bin(e, z) > 0) {
@@ -637,11 +662,11 @@ void LocalPlanner::createPolarHistogram() {
           } else {
             polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
           }
-          hist_is_empty = false;
+          hist_is_empty_ = false;
         }
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
-          hist_is_empty = false;
+          hist_is_empty_ = false;
         }
         if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) == 0) {
           polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
@@ -658,25 +683,6 @@ void LocalPlanner::createPolarHistogram() {
   //Statistics
   ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
-
-  //decide how to proceed
-  if(hist_is_empty){
-    obstacle_ = false;
-    std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
-    local_planner_mode_ = 1;
-    if(local_planner_last_mode_ == 2){
-      smooth_go_fast_ = 0.1;
-      last_hist_waypt_ = waypt_;
-    }
-    goFast();
-  }
-
-  if(!hist_is_empty && reach_altitude_){
-    obstacle_ = true;
-    std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
-    local_planner_mode_ = 2;
-    findFreeDirections();
-  }
 }
 
 void LocalPlanner::printHistogram(Histogram hist){
@@ -843,17 +849,12 @@ void LocalPlanner::findFreeDirections() {
 
   ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-  calculateCostMap();
-
-  if(use_VFH_star_){
-    buildLookAheadTree();
-  }
 }
 
 void LocalPlanner::buildLookAheadTree(){
-
+  std::clock_t start_time = std::clock();
   new_cloud = false;
+  depth_reached_ = false;
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
@@ -868,29 +869,25 @@ void LocalPlanner::buildLookAheadTree(){
     geometry_msgs::Point origin_position = tree_[origin].getPosition();
     bool add_nodes = true;
 
-    if(origin == 0){
-      tree_candidates_ = path_candidates_;
-    }else{
 
-      //crop pointcloud
-      setLimitsHistogramBox(origin_position);
-      filterPointCloud(complete_cloud_);
+    //crop pointcloud
+    setLimitsHistogramBox(origin_position);
+    filterPointCloud(complete_cloud_);
 
-      //if too close to obstacle, we do not want to go there (equivalent to back off)
-      if(counter_close_points_ < 20 && final_cloud_.points.size() > 160){
-        tree_[origin].total_cost = INF;
-        add_nodes = false;
-      }
-
-      if(add_nodes){
-        //build new histogram
-
-        //calculate candidates
-
-      }
+    //if too close to obstacle, we do not want to go there (equivalent to back off)
+    if (counter_close_points_ < 20 && final_cloud_.points.size() > 160) {
+      tree_[origin].total_cost = INF;
+      add_nodes = false;
     }
 
     if (add_nodes) {
+      //build new histogram
+      calculateFOV(tree_[origin].yaw, 0.0);  //assume pitch is zero at every node
+      createPolarHistogram();
+
+      //calculate candidates
+      findFreeDirections();
+
       //insert new nodes
       int depth = tree_[origin].depth + 1;
       if (depth >= goal_tree_depth_) {
@@ -903,9 +900,9 @@ void LocalPlanner::buildLookAheadTree(){
       int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
       int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
 
-      for (int i = 0; i < tree_candidates_.cells.size(); i++) {
-        int e = tree_candidates_.cells[i].x;
-        int z = tree_candidates_.cells[i].y;
+      for (int i = 0; i < path_candidates_.cells.size(); i++) {
+        int e = path_candidates_.cells[i].x;
+        int z = path_candidates_.cells[i].y;
         geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
         tree_.push_back(TreeNode(origin, depth, node_location));
@@ -915,6 +912,9 @@ void LocalPlanner::buildLookAheadTree(){
         double c = treeCostFunction(e, z, tree_.size() - 1);
         tree_.back().heuristic = h;
         tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+        double dx = node_location.x - origin_position.x;
+        double dy = node_location.y - origin_position.y;
+        tree_.back().yaw = atan2(dy, dx);
 
         if (c < min_c) {
           min_c = c;
@@ -939,8 +939,7 @@ void LocalPlanner::buildLookAheadTree(){
 
 
 
-
-//    std::cout << "New Origin: " << origin << "\n";
+    std::cout << "Number of nodes: " << tree_.size() <<"  New Origin: " << origin << "\n";
 //
 //    std::cout << "min c node [e, z]: [" << tree_[min_c_node].last_e << ", " << tree_[min_c_node].last_z << "] \n";
 //    std::cout << "chosen node [e, z]: [" << tree_[origin].last_e << ", " << tree_[origin].last_z << "] \n";
@@ -973,6 +972,7 @@ void LocalPlanner::buildLookAheadTree(){
 
 tree_.clear();
 closed_set_.clear();
+ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 double LocalPlanner::treeCostFunction(int e, int z, int node_number) {
@@ -1107,8 +1107,6 @@ void LocalPlanner::calculateCostMap() {
 
   ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-  getNextWaypoint();
 }
 
 // check that the selected direction is really free and transform it into a waypoint.
@@ -1502,7 +1500,6 @@ void LocalPlanner::getPathMsg() {
   last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
   checkSpeed();
-  std::cout<<"Curr yaw:"<<curr_yaw_<<"\n";
 }
 
 void LocalPlanner::useHoverPoint() {
