@@ -187,7 +187,6 @@ class LocalPlanner
   void calculateCostMap();
   void getNextWaypoint();
   void getMinFlightHeight();
-  bool checkForCollision();
   void goFast();
   void backOff();
   void setVelocity();

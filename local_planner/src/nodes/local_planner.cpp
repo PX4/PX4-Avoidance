@@ -889,77 +889,51 @@ void LocalPlanner::calculateCostMap() {
   getNextWaypoint();
 }
 
-// check that the selected direction is really free and transform it into a waypoint. Otherwise break to avoid collision with an obstacle
+// check that the selected direction is really free and transform it into a waypoint.
 void LocalPlanner::getNextWaypoint() {
-  int waypoint_index = path_waypoints_.cells.size();
-  int e = path_waypoints_.cells[waypoint_index - 1].x;
-  int z = path_waypoints_.cells[waypoint_index - 1].y;
-  int e_index = (e-alpha_res+90)/alpha_res;
-  int z_index = (z-alpha_res+180)/alpha_res;
-  geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e,z);
+	int waypoint_index = path_waypoints_.cells.size();
+	int e = path_waypoints_.cells[waypoint_index - 1].x;
+	int z = path_waypoints_.cells[waypoint_index - 1].y;
+	int e_index = (e - alpha_res + 90) / alpha_res;
+	int z_index = (z - alpha_res + 180) / alpha_res;
+	geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e, z);
 
-  if(std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_index) != z_FOV_idx_ .end()){
-    waypoint_outside_FOV_ = false;
-  }else{
-    waypoint_outside_FOV_ = true;
-  }
+	if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index)
+			!= z_FOV_idx_.end()) {
+		waypoint_outside_FOV_ = false;
+	} else {
+		waypoint_outside_FOV_ = true;
+	}
 
-  if (withinGoalRadius()) {
-    if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
-      ROS_INFO("Above Goal cannot go lower: Hoovering");
-      waypt_.vector.x = goal_.x;
-      waypt_.vector.y = goal_.y;
-      if (pose_.pose.position.z > goal_.z) {
-        waypt_.vector.z = pose_.pose.position.z;
-      } else {
-        waypt_.vector.z = goal_.z;
-      }
-    } else {
-      ROS_INFO("Goal Reached: Hoovering");
-      waypt_.vector.x = goal_.x;
-      waypt_.vector.y = goal_.y;
-      waypt_.vector.z = goal_.z;
-    }
-  }
-  else{
- 	  if(checkForCollision() && pose_.pose.position.z>0.5) {
-      waypt_.vector.x = 0.0;
-      waypt_.vector.y = 0.0;
-      waypt_.vector.z = setpoint.vector.z;
+	if (withinGoalRadius()) {
+		if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
+			ROS_INFO("Above Goal cannot go lower: Hoovering");
+			waypt_.vector.x = goal_.x;
+			waypt_.vector.y = goal_.y;
+			if (pose_.pose.position.z > goal_.z) {
+				waypt_.vector.z = pose_.pose.position.z;
+			} else {
+				waypt_.vector.z = goal_.z;
+			}
+		} else {
+			ROS_INFO("Goal Reached: Hoovering");
+			waypt_.vector.x = goal_.x;
+			waypt_.vector.y = goal_.y;
+			waypt_.vector.z = goal_.z;
+		}
+	} else {
+		waypt_ = setpoint;
+		if (obstacle_ && no_progress_rise_ && !too_low_
+				&& !is_near_min_height_) {
+			waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
+			std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
+		}
+	}
 
-   	  ROS_INFO("Braking!!! Obstacle closer than 0.5m.");
-      path_selected_.cells[path_selected_.cells.size()-1].x = 0;
-      path_selected_.cells[path_selected_.cells.size()-1].y = 0;
+	ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x,
+			waypt_.vector.y, waypt_.vector.z);
 
-      path_waypoints_.cells[path_waypoints_.cells.size()-1].x = 90;
-      path_waypoints_.cells[path_waypoints_.cells.size()-1].y = 90;
- 	  }
-    else{
-      waypt_ = setpoint;
-    }
-
- 	  if (obstacle_ && no_progress_rise_ && !too_low_ && !is_near_min_height_ ){
- 	    waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
- 	    std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
- 	  }
-  }
-
-  ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
-
-  getPathMsg();
-}
-
-// check that each point in the filtered point cloud is at least 0.5m away from the waypoint the UAV is flying to
-bool LocalPlanner::checkForCollision() {
-  std::clock_t start_time = std::clock();
-  bool avoid = false;
-
-  if(distance_to_closest_point_ < 0.5f) {
-    avoid = true;
-  }
-
-  collision_time_.push_back((std::clock() - start_time) / (double(CLOCKS_PER_SEC / 1000)));
-  return avoid;
+	getPathMsg();
 }
 
 void LocalPlanner::getMinFlightHeight() {
@@ -1272,7 +1246,6 @@ void LocalPlanner::printAlgorithmStatistics(){
     cv::meanStdDev(polar_time_, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(free_time_, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(cost_time_, mean, std); printf("cost mean %f std %f \n", mean[0], std[0]);
-    cv::meanStdDev(collision_time_, mean, std); printf("collision mean %f std %f \n", mean[0], std[0]);
     printf("----------------------------------- \n");
   }
 }
