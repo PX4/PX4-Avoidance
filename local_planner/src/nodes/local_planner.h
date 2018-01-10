@@ -55,7 +55,6 @@
 
 
 #define PI 3.14159265
-<<<<<<< 468d193a9a4dc4bd9e6971a950eb16d6daed7667
 #define ALPHA_RES 6
 #define GRID_LENGTH_Z 360/ALPHA_RES
 #define GRID_LENGTH_E 180/ALPHA_RES
@@ -63,16 +62,7 @@
 #define MIN_BIN 1.5
 #define H_FOV 59.0
 #define V_FOV 46.0
-=======
-#define alpha_res 6
-#define grid_length_z 360/alpha_res
-#define grid_length_e 180/alpha_res
-#define age_lim 100
-#define min_bin 1.5
-#define h_fov 59.0
-#define v_fov 46.0
-#define inf  std::numeric_limits<double>::infinity()
->>>>>>> Change code structure for VFH star implementation. Clean up and split functions which are needed separately in VFH star
+#define INF  std::numeric_limits<double>::infinity()
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
@@ -163,6 +153,8 @@ class LocalPlanner
   std::vector<int> cost_idx_sorted_;
   std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
   std::vector<int> closed_set_;
+  std::vector<double> reprojected_points_age_;
+  std::vector<double> reprojected_points_dist_;
 
   std::vector<TreeNode> tree_;
 
@@ -212,6 +204,7 @@ class LocalPlanner
   void fitPlane();
   bool obstacleAhead();
   void determineStrategy();
+  void reprojectPoints();
   void calculateFOV();
   void createPolarHistogram();
   void printHistogram(Histogram hist);

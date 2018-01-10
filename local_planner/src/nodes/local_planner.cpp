@@ -497,19 +497,15 @@ void LocalPlanner::calculateFOV() {
   }
 }
 
-// fill the 2D polar histogram with the points from the filtered point cloud
-void LocalPlanner::createPolarHistogram() {
-  calculateFOV();
-  std::clock_t start_time = std::clock();
-  float dist;
-  float age;
-  double n_points = 0;
-  int n_split = 4;
-  geometry_msgs::Point temp;
-  geometry_msgs::Point temp_array[n_split];
+// get 3D points from old histogram
+void LocalPlanner::reprojectPoints() {
 
-  //Build Estimate of Histogram from old Histogram and Movement
-  polar_histogram_est_ = Histogram(2 * ALPHA_RES);
+  double n_points = 0;
+  double dist, age;
+  geometry_msgs::Point temp_array[4];
+  reprojected_points_age_.clear();
+  reprojected_points_dist_.clear();
+
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
   reprojected_points_.header.frame_id = "world";
@@ -527,33 +523,47 @@ void LocalPlanner::createPolarHistogram() {
         temp_array[2] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
         temp_array[3] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
 
-        for (int i = 0; i < n_split; i++) {
+        for (int i = 0; i < 4; i++) {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
           if (dist < 2*histogram_box_size_.xmax && dist > 0.3 && age < AGE_LIM) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
-            int beta_z_new = floor(atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
-            int beta_e_new = floor(
-                atan((temp_array[i].z - pose_.pose.position.z) / sqrt((temp_array[i].x - pose_.pose.position.x) * (temp_array[i].x - pose_.pose.position.x) + (temp_array[i].y - pose_.pose.position.y) * (temp_array[i].y - pose_.pose.position.y)))
-                    * 180.0 / PI);  //(-90.+90)
-
-            beta_e_new += 90;
-            beta_z_new += 180;
-
-            beta_z_new = beta_z_new + ((2 * ALPHA_RES) - (beta_z_new % (2 * ALPHA_RES)));  //[-170,+180]
-            beta_e_new = beta_e_new + ((2 * ALPHA_RES) - (beta_e_new % (2 * ALPHA_RES)));  //[-80,+90]
-
-            int e_new = (beta_e_new) / (2 * ALPHA_RES) - 1;  //[0,17]
-            int z_new = (beta_z_new) / (2 * ALPHA_RES) - 1;  //[0,35]
-
-            polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 1.0 / n_split);
-            polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 1.0 / n_split * age);
-            polar_histogram_est_.set_dist(e_new, z_new, polar_histogram_est_.get_dist(e_new, z_new) + 1.0 / n_split * dist);
+            reprojected_points_age_.push_back(age);
+            reprojected_points_dist_.push_back(dist);
           }
         }
       }
     }
+  }
+}
+
+// fill the 2D polar histogram with the points from the filtered point cloud
+void LocalPlanner::createPolarHistogram() {
+  calculateFOV();
+
+  //Build histogram estimate from reprojected points
+  std::clock_t start_time = std::clock();
+  reprojectPoints();
+  polar_histogram_est_ = Histogram(2 * ALPHA_RES);
+
+  for (int i = 0; i < reprojected_points_.width; i++) {
+    int beta_z_new = floor(atan2(reprojected_points_.points[i].x - pose_.pose.position.x, reprojected_points_.points[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
+    int beta_e_new = floor( atan((reprojected_points_.points[i].z - pose_.pose.position.z)/ sqrt(
+                    (reprojected_points_.points[i].x - pose_.pose.position.x) * (reprojected_points_.points[i].x - pose_.pose.position.x)
+                        + (reprojected_points_.points[i].y - pose_.pose.position.y) * (reprojected_points_.points[i].y - pose_.pose.position.y))) * 180.0 / PI);  //(-90.+90)
+    beta_e_new += 90;
+    beta_z_new += 180;
+
+    beta_z_new = beta_z_new + ((2 * alpha_res) - (beta_z_new % (2 * alpha_res)));  //[-170,+180]
+    beta_e_new = beta_e_new + ((2 * alpha_res) - (beta_e_new % (2 * alpha_res)));  //[-80,+90]
+
+    int e_new = (beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
+    int z_new = (beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
+
+    polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 0.25);
+    polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 0.25 * reprojected_points_age_[i]);
+    polar_histogram_est_.set_dist(e_new, z_new, polar_histogram_est_.get_dist(e_new, z_new) + 0.25 * reprojected_points_dist_[i]);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
@@ -576,6 +586,8 @@ void LocalPlanner::createPolarHistogram() {
   //Generate new histogram from pointcloud
   polar_histogram_.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
+  geometry_msgs::Point temp;
+  double dist;
 
   for( it = final_cloud_.begin(); it != final_cloud_.end(); ++it) {
     temp.x = it->x;
@@ -847,7 +859,7 @@ void LocalPlanner::buildLookAheadTree(){
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
-  double min_c = inf;
+  double min_c = INF;
   int min_c_node = 0;
 
 
@@ -866,7 +878,7 @@ void LocalPlanner::buildLookAheadTree(){
 
       //if too close to obstacle, we do not want to go there (equivalent to back off)
       if(counter_close_points_ < 20 && final_cloud_.points.size() > 160){
-        tree_[origin].total_cost = inf;
+        tree_[origin].total_cost = INF;
         add_nodes = false;
       }
 
@@ -911,7 +923,7 @@ void LocalPlanner::buildLookAheadTree(){
       }
 
       //find best node to continue
-      double minimal_cost = inf;
+      double minimal_cost = INF;
       for (int i = 0; i < tree_.size(); i++) {
         bool closed = false;
         for (int j = 0; j < closed_set_.size(); j++) {
