@@ -87,11 +87,13 @@ class LocalPlanner
   bool no_progress_rise_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
+  bool use_avoid_sphere_ = false;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
+  int avoid_sphere_age_ = 1000;
 
   double local_planner_mode_;
   double local_planner_last_mode_;
@@ -126,6 +128,9 @@ class LocalPlanner
   double min_cloud_size_ = 160;
   double min_plane_points_ = 100;
   double min_plane_percentage_ = 0.6;
+  double avoid_radius_;
+  double min_dist_backoff_;
+
 
   std::string log_name_;
 
@@ -151,6 +156,7 @@ class LocalPlanner
   geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::Point goal_;
   geometry_msgs::Point closest_point_;
+  geometry_msgs::Point avoid_centerpoint_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
@@ -229,6 +235,7 @@ class LocalPlanner
   void getGroundBoxSize(double &min_x, double &max_x, double &min_y, double &max_y, double &min_z);
   void getPosition(geometry_msgs::PoseStamped &pos);
   void getGoalPosition(geometry_msgs::Point &goal);
+  void getAvoidSphere(geometry_msgs::Point &center, double &radius, int &avoid_sphere_age, bool &use_avoid_sphere);
   void getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &final_cloud, pcl::PointCloud<pcl::PointXYZ> &ground_cloud, pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
   void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &path_ground);
   void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);

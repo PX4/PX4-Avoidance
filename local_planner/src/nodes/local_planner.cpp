@@ -67,6 +67,9 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   min_cloud_size_ = config.min_cloud_size_;
   min_plane_points_ = config.min_plane_points_;
   min_plane_percentage_ = config.min_plane_percentage_;
+  avoid_radius_ = config.avoid_radius_;
+  use_avoid_sphere_ = config.use_avoid_sphere_;
+  min_dist_backoff_ = config.min_dist_backoff_;
 
   if (goal_z_param!= config.goal_z_param) {
     goal_z_param = config.goal_z_param;
@@ -274,7 +277,9 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
+  int counter_close_points_backoff = 0;
   int counter_close_points = 0;
+  geometry_msgs::Point temp_centerpoint;
 
   if (new_cloud_){
     complete_cloud_ = complete_cloud;
@@ -293,8 +298,14 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
             closest_point_.y = pcl_it->y;
             closest_point_.z = pcl_it->z;
           }
-          if (distance < 1.5){
+          if (distance < min_dist_backoff_){
+            counter_close_points_backoff ++;
+          }
+          if (distance < avoid_radius_ + 1.0 && use_avoid_sphere_){
             counter_close_points ++;
+            temp_centerpoint.x += pcl_it->x;
+            temp_centerpoint.y += pcl_it->y;
+            temp_centerpoint.z += pcl_it->z;
           }
         }
       }
@@ -304,6 +315,16 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
         }
       }
     }
+  }
+
+  //calculate avoid center from close points
+  if (counter_close_points > 20 && use_avoid_sphere_ && reach_altitude_) {
+    avoid_centerpoint_.x = temp_centerpoint.x / counter_close_points;
+    avoid_centerpoint_.y = temp_centerpoint.y / counter_close_points;
+    avoid_centerpoint_.z = temp_centerpoint.z / counter_close_points;
+    avoid_sphere_age_ = 0;
+  }else{
+    avoid_sphere_age_ ++;
   }
 
   //increase safety radius if too close to the wall
@@ -345,7 +366,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if (((counter_close_points > 20 && cloud_temp1->points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
+    if (((counter_close_points_backoff > 20 && cloud_temp1->points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -1080,7 +1101,7 @@ void LocalPlanner::backOff() {
   waypt_.vector.z = pose_.pose.position.z + vec.getZ();
 
   double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
-  if (dist > 2.0) {
+  if (dist > min_dist_backoff_ + 1.0) {
     back_off_ = false;
   }
 
@@ -1212,6 +1233,25 @@ void LocalPlanner::getPathMsg() {
     only_yawed_ = true;
   }
 
+  //If avoid sphere is used, project waypoint on sphere
+  if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_) {
+    double dist = sqrt(
+        (waypt_.vector.x - avoid_centerpoint_.x) * (waypt_.vector.x - avoid_centerpoint_.x) + (waypt_.vector.y - avoid_centerpoint_.y) * (waypt_.vector.y - avoid_centerpoint_.y)
+            + (waypt_.vector.z - avoid_centerpoint_.z) * (waypt_.vector.z - avoid_centerpoint_.z));
+    if(dist < avoid_radius_){
+      tf::Vector3 vec;
+      vec.setX(waypt_.vector.x - avoid_centerpoint_.x);
+      vec.setY(waypt_.vector.y - avoid_centerpoint_.y);
+      vec.setZ(waypt_.vector.z - avoid_centerpoint_.z);
+      vec.normalize();
+      vec *= avoid_radius_;
+
+      waypt_.vector.x = avoid_centerpoint_.x + vec.getX();
+      waypt_.vector.y = avoid_centerpoint_.y + vec.getY();
+      waypt_.vector.z = avoid_centerpoint_.z + vec.getZ();
+    }
+  }
+
   if (!reach_altitude_) {
     reachGoalAltitudeFirst();
   } else {
@@ -1312,6 +1352,12 @@ void LocalPlanner::getPosition(geometry_msgs::PoseStamped &pos){
 
 void LocalPlanner::getGoalPosition(geometry_msgs::Point  &goal){
   goal = goal_;
+}
+void LocalPlanner::getAvoidSphere(geometry_msgs::Point  &center, double &radius, int &sphere_age, bool &use_avoid_sphere){
+  center = avoid_centerpoint_;
+  radius = avoid_radius_;
+  sphere_age = avoid_sphere_age_;
+  use_avoid_sphere = use_avoid_sphere_;
 }
 
 void LocalPlanner::getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &final_cloud, pcl::PointCloud<pcl::PointXYZ> &ground_cloud, pcl::PointCloud<pcl::PointXYZ> &reprojected_points){

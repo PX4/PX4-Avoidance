@@ -72,6 +72,7 @@ private:
   ros::Publisher marker_ground_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher ground_est_pub_;
+  ros::Publisher avoid_sphere_pub_;
 
   tf::TransformListener tf_listener_;
 
@@ -100,6 +101,7 @@ private:
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
+  void publishAvoidSphere();
   void publishGround();
 
 };
