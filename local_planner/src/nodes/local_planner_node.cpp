@@ -22,6 +22,7 @@ LocalPlannerNode::LocalPlannerNode() {
   reprojected_points_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
+  avoid_sphere_pub_ = nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
   height_map_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
@@ -274,6 +275,40 @@ void LocalPlannerNode::publishBox() {
   groundbox_pub_.publish(groundbox);
 }
 
+void LocalPlannerNode::publishAvoidSphere() {
+  geometry_msgs::Point center;
+  double radius;
+  int age;
+  bool use_sphere;
+  local_planner.getAvoidSphere(center, radius, age, use_sphere);
+  visualization_msgs::Marker sphere;
+  sphere.header.frame_id = "local_origin";
+  sphere.header.stamp = ros::Time::now();
+  sphere.id = 0;
+  sphere.type = visualization_msgs::Marker::SPHERE;
+  sphere.action = visualization_msgs::Marker::ADD;
+  sphere.pose.position.x = center.x;
+  sphere.pose.position.y = center.y;
+  sphere.pose.position.z = center.z;
+  sphere.pose.orientation.x = 0.0;
+  sphere.pose.orientation.y = 0.0;
+  sphere.pose.orientation.z = 0.0;
+  sphere.pose.orientation.w = 1.0;
+  sphere.scale.x = 2*radius;
+  sphere.scale.y = 2*radius;
+  sphere.scale.z = 2*radius;
+  sphere.color.a = 0.5;
+  sphere.color.r = 0.5;
+  sphere.color.g = 0.0;
+  sphere.color.b = 0.5;
+  if(use_sphere && age < 100){
+    avoid_sphere_pub_.publish(sphere);
+  }else{
+    sphere.color.a = 0;
+    avoid_sphere_pub_.publish(sphere);
+  }
+}
+
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
 }
@@ -354,6 +389,7 @@ void LocalPlannerNode::publishAll() {
   publishMarkerGround(path_ground);
   publishGoal();
   publishBox();
+  publishAvoidSphere();
 
   if (local_planner.groundDetected()) {
     publishGround();
