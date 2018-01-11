@@ -301,7 +301,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
           if (distance < min_dist_backoff_){
             counter_close_points_backoff ++;
           }
-          if (distance < avoid_radius_ + 1.0 && use_avoid_sphere_){
+          if (distance < avoid_radius_ + 1.5 && use_avoid_sphere_){
             counter_close_points ++;
             temp_centerpoint.x += pcl_it->x;
             temp_centerpoint.y += pcl_it->y;
@@ -1234,7 +1234,7 @@ void LocalPlanner::getPathMsg() {
   }
 
   //If avoid sphere is used, project waypoint on sphere
-  if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_) {
+  if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
     double dist = sqrt(
         (waypt_.vector.x - avoid_centerpoint_.x) * (waypt_.vector.x - avoid_centerpoint_.x) + (waypt_.vector.y - avoid_centerpoint_.y) * (waypt_.vector.y - avoid_centerpoint_.y)
             + (waypt_.vector.z - avoid_centerpoint_.z) * (waypt_.vector.z - avoid_centerpoint_.z));
