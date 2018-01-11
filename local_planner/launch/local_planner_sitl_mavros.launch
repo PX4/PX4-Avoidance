@@ -1,7 +1,7 @@
 <launch>
     <arg name="mavros_transformation" default="0" />
+    <arg name="model" default="iris_depth_camera"/>
     <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
-    <arg name="point_cloud_topic" default="/camera/depth/points"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -13,6 +13,7 @@
 
     <!-- Mavros and Sitl -->
     <include file="$(find local_planner)/launch/mavros_sitl.launch" >
+        <arg name="model" value="$(arg model)" />
         <arg name="world_path" value="$(arg world_path)" />
     </include>
 
