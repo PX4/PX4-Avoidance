@@ -86,7 +86,7 @@ void LocalPlanner::logData() {
   if (currently_armed && offboard) {
     std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
-        << box_size_increase_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\n";
+         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << goal_.x <<goal_.y <<goal_.z << "\n";
     myfile.close();
 
     if (print_height_map_) {
@@ -318,10 +318,26 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   }
 
   //calculate avoid center from close points
-  if (counter_close_points > 20 && use_avoid_sphere_ && reach_altitude_) {
-    avoid_centerpoint_.x = temp_centerpoint.x / counter_close_points;
-    avoid_centerpoint_.y = temp_centerpoint.y / counter_close_points;
-    avoid_centerpoint_.z = temp_centerpoint.z / counter_close_points;
+  if (counter_close_points > 50 && use_avoid_sphere_ && reach_altitude_) {
+    temp_centerpoint.x = temp_centerpoint.x / counter_close_points;
+    temp_centerpoint.y = temp_centerpoint.y / counter_close_points;
+    temp_centerpoint.z = temp_centerpoint.z / counter_close_points;
+    if(avoid_sphere_age_ < 10){
+      tf::Vector3 vec;
+      vec.setX(temp_centerpoint.x - avoid_centerpoint_.x);
+      vec.setY(temp_centerpoint.y - avoid_centerpoint_.y);
+      vec.setZ(temp_centerpoint.z - avoid_centerpoint_.z);
+      vec.normalize();
+      double new_len = speed_;
+      vec *= new_len;
+      avoid_centerpoint_.x = avoid_centerpoint_.x + vec.getX();
+      avoid_centerpoint_.y = avoid_centerpoint_.y + vec.getY();
+      avoid_centerpoint_.z = avoid_centerpoint_.z + vec.getZ();
+    } else {
+      avoid_centerpoint_.x = temp_centerpoint.x;
+      avoid_centerpoint_.y = temp_centerpoint.y;
+      avoid_centerpoint_.z = temp_centerpoint.z;
+    }
     avoid_sphere_age_ = 0;
   }else{
     avoid_sphere_age_ ++;
@@ -1239,6 +1255,13 @@ void LocalPlanner::getPathMsg() {
         (waypt_.vector.x - avoid_centerpoint_.x) * (waypt_.vector.x - avoid_centerpoint_.x) + (waypt_.vector.y - avoid_centerpoint_.y) * (waypt_.vector.y - avoid_centerpoint_.y)
             + (waypt_.vector.z - avoid_centerpoint_.z) * (waypt_.vector.z - avoid_centerpoint_.z));
     if(dist < avoid_radius_){
+      //put waypoint closer to equator
+      if(waypt_.vector.z<avoid_centerpoint_.z){
+        waypt_.vector.z = waypt_.vector.z + std::abs(waypt_.vector.z - avoid_centerpoint_.z)/2.0;
+      }else{
+        waypt_.vector.z = waypt_.vector.z - std::abs(waypt_.vector.z - avoid_centerpoint_.z)/2.0;
+      }
+      //project waypoint on sphere
       tf::Vector3 vec;
       vec.setX(waypt_.vector.x - avoid_centerpoint_.x);
       vec.setY(waypt_.vector.y - avoid_centerpoint_.y);
