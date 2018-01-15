@@ -1238,6 +1238,56 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
 
+  //If avoid sphere is used, project waypoint on sphere
+  if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
+    double sphere_hysteresis_radius = 1.3 * avoid_radius_;
+
+    double dist = sqrt(
+        (waypt_.vector.x - avoid_centerpoint_.x) * (waypt_.vector.x - avoid_centerpoint_.x) + (waypt_.vector.y - avoid_centerpoint_.y) * (waypt_.vector.y - avoid_centerpoint_.y)
+            + (waypt_.vector.z - avoid_centerpoint_.z) * (waypt_.vector.z - avoid_centerpoint_.z));
+    if (dist < sphere_hysteresis_radius) {
+      //put waypoint closer to equator
+      if (waypt_.vector.z < avoid_centerpoint_.z) {
+        waypt_.vector.z = waypt_.vector.z + 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
+      } else {
+        waypt_.vector.z = waypt_.vector.z - 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
+      }
+      //increase angle from pole
+      Eigen::Vector3f center_to_wp(waypt_.vector.x - avoid_centerpoint_.x, waypt_.vector.y - avoid_centerpoint_.y, waypt_.vector.z - avoid_centerpoint_.z);
+      Eigen::Vector2f center_to_wp_2D(waypt_.vector.x - avoid_centerpoint_.x, waypt_.vector.y - avoid_centerpoint_.y);
+      Eigen::Vector2f pose_to_center_2D(pose_.pose.position.x - avoid_centerpoint_.x, pose_.pose.position.y - avoid_centerpoint_.y);
+      center_to_wp_2D = center_to_wp_2D.normalized();
+      pose_to_center_2D = pose_to_center_2D.normalized();
+      double cos_theta = center_to_wp_2D[0] * pose_to_center_2D[0] + center_to_wp_2D[1] * pose_to_center_2D[1];
+      Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0], center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
+      n = n.normalized();
+      double cos_new_theta = 0.8 * cos_theta;
+      std::cout<<"cos(theta) new = "<<cos_new_theta<<"\n";
+      double sin_new_theta = sin(acos(cos_new_theta));
+      Eigen::Vector2f center_to_wp_2D_new(cos_new_theta * pose_to_center_2D[0] + sin_new_theta * n[0], cos_new_theta * pose_to_center_2D[1] + sin_new_theta * n[1]);
+      center_to_wp = center_to_wp.normalized();
+      Eigen::Vector3f center_to_wp_new(center_to_wp_2D_new[0], center_to_wp_2D_new[1], center_to_wp[2]);
+
+      //project on sphere
+      center_to_wp_new = center_to_wp_new.normalized();
+
+      //hysteresis
+      if (dist < avoid_radius_) {
+        center_to_wp_new *= avoid_radius_;
+        waypt_.vector.x = avoid_centerpoint_.x + center_to_wp_new[0];
+        waypt_.vector.y = avoid_centerpoint_.y + center_to_wp_new[1];
+        waypt_.vector.z = avoid_centerpoint_.z + center_to_wp_new[2];
+        std::cout << "\033[1;36m Inside sphere \n \033[0m";
+      } else {
+        center_to_wp_new *= dist;
+        double radius_percentage = (dist - avoid_radius_) / (sphere_hysteresis_radius - avoid_radius_);  //1 at hysteresis rad, 0 at avoid rad
+        waypt_.vector.x = (1.0 - radius_percentage) * (avoid_centerpoint_.x + center_to_wp_new[0]) + radius_percentage * waypt_.vector.x;
+        waypt_.vector.y = (1.0 - radius_percentage) * (avoid_centerpoint_.y + center_to_wp_new[1]) + radius_percentage * waypt_.vector.y;
+        waypt_.vector.z = (1.0 - radius_percentage) * (avoid_centerpoint_.z + center_to_wp_new[2]) + radius_percentage * waypt_.vector.z;
+        std::cout << "\033[1;36m Inside sphere hysteresis \n \033[0m";
+      }
+    }
+  }
 
   double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
   only_yawed_ = false;
@@ -1247,32 +1297,6 @@ void LocalPlanner::getPathMsg() {
     waypt_.vector.y = pose_.pose.position.y;
     waypt_.vector.z = pose_.pose.position.z;
     only_yawed_ = true;
-  }
-
-  //If avoid sphere is used, project waypoint on sphere
-  if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
-    double dist = sqrt(
-        (waypt_.vector.x - avoid_centerpoint_.x) * (waypt_.vector.x - avoid_centerpoint_.x) + (waypt_.vector.y - avoid_centerpoint_.y) * (waypt_.vector.y - avoid_centerpoint_.y)
-            + (waypt_.vector.z - avoid_centerpoint_.z) * (waypt_.vector.z - avoid_centerpoint_.z));
-    if(dist < avoid_radius_){
-      //put waypoint closer to equator
-      if(waypt_.vector.z<avoid_centerpoint_.z){
-        waypt_.vector.z = waypt_.vector.z + std::abs(waypt_.vector.z - avoid_centerpoint_.z)/2.0;
-      }else{
-        waypt_.vector.z = waypt_.vector.z - std::abs(waypt_.vector.z - avoid_centerpoint_.z)/2.0;
-      }
-      //project waypoint on sphere
-      tf::Vector3 vec;
-      vec.setX(waypt_.vector.x - avoid_centerpoint_.x);
-      vec.setY(waypt_.vector.y - avoid_centerpoint_.y);
-      vec.setZ(waypt_.vector.z - avoid_centerpoint_.z);
-      vec.normalize();
-      vec *= avoid_radius_;
-
-      waypt_.vector.x = avoid_centerpoint_.x + vec.getX();
-      waypt_.vector.y = avoid_centerpoint_.y + vec.getY();
-      waypt_.vector.z = avoid_centerpoint_.z + vec.getZ();
-    }
   }
 
   if (!reach_altitude_) {
