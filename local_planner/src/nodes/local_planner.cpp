@@ -86,7 +86,7 @@ void LocalPlanner::logData() {
   if (currently_armed && offboard) {
     std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
-         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << goal_.x <<goal_.y <<goal_.z << "\n";
+         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z << "\n";
     myfile.close();
 
     if (print_height_map_) {
