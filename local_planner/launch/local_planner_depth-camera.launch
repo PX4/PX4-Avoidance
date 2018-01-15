@@ -8,8 +8,8 @@
     <arg name="world_path" default="$(find local_planner)/../sim/worlds/simple_obstacle.world" />
 
     <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
+        <arg name="model" value="iris_depth_camera" />
         <arg name="world_path" value="$(arg world_path)" />
-        <arg name="point_cloud_topic" value="/camera/depth/points" />
     </include>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
