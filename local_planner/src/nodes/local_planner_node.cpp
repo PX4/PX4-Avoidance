@@ -31,11 +31,13 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_ground_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
+  waypoint_pub = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
+  mavros_waypoint_pub = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  current_waypoint_pub = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
+
+  mavros_set_mode_client = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
   local_planner.setGoal();
 }
@@ -51,13 +53,13 @@ void LocalPlannerNode::readParams() {
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   auto rot_msg = msg;
-  tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
+  tf_listener.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   local_planner.setPose(rot_msg);
   publishPath(rot_msg);
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
+  auto transformed_msg = avoidance::transformTwistMsg(tf_listener, "/world", "/local_origin", msg); // 90 deg fix
   local_planner.setCurrentVelocity(transformed_msg);
 }
 
@@ -343,9 +345,9 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
   try {
-    tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
+    tf_listener.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
-    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+    tf_listener.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner.resetHistogramCounter();
@@ -359,6 +361,15 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   local_planner.algorithm_total_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   local_planner.printAlgorithmStatistics();
+
+  //Log timing for timeout detection
+  pointcloud_time_now = msg.header.stamp;
+  ros::Duration time_diff = pointcloud_time_now - pointcloud_time_old;
+  pointcloud_time_old = pointcloud_time_now;
+
+  std::ofstream myfile(("PointcloudTimes_" + local_planner.log_name).c_str(), std::ofstream::app);
+  myfile << pointcloud_time_now.sec <<"\t"<<pointcloud_time_now.nsec << "\t" << time_diff << "\n";
+  myfile.close();
 }
 
 void LocalPlannerNode::publishAll() {
@@ -372,12 +383,12 @@ void LocalPlannerNode::publishAll() {
   nav_msgs::Path path_msg;
   geometry_msgs::PoseStamped waypt_p;
   local_planner.getPathData(path_msg, waypt_p);
-  waypoint_pub_.publish(path_msg);
+  waypoint_pub.publish(path_msg);
   path_pub_.publish(path_actual);
 
-  current_waypoint_pub_.publish(waypt_p);
-  tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-  mavros_waypoint_pub_.publish(waypt_p);
+  current_waypoint_pub.publish(waypt_p);
+  tf_listener.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+  mavros_waypoint_pub.publish(waypt_p);
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground;
   local_planner.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, path_ground);
@@ -406,7 +417,40 @@ int main(int argc, char** argv) {
   ros::init(argc, argv, "local_planner_node");
   LocalPlannerNode local_planner_node;
   ros::Duration(2).sleep();
-  ros::spin();
+  ros::Rate rate(20.0);
+  ros::Time start = ros::Time::now();
+  ros::Duration min_time = ros::Duration(1);
+
+  while (ros::ok()) {
+
+    //Check if pointcloud message is published fast enough
+    ros::Time now = ros::Time::now();
+    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_old;
+    ros::Duration since_start = now - start;
+
+    if (since_last_cloud > local_planner_node.pointcloud_timeout_land && since_start > min_time) {
+      mavros_msgs::SetMode mode_msg;
+      mode_msg.request.custom_mode = "AUTO.LAND";
+      if (local_planner_node.mavros_set_mode_client.call(mode_msg) && mode_msg.response.mode_sent) {
+        std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
+      } else {
+        std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
+      }
+    } else if (since_last_cloud > local_planner_node.pointcloud_timeout_hover && since_start > min_time) {
+      local_planner_node.local_planner.hover();
+      nav_msgs::Path path_msg;
+      geometry_msgs::PoseStamped waypt_p;
+      local_planner_node.local_planner.getPathData(path_msg, waypt_p);
+      local_planner_node.waypoint_pub.publish(path_msg);
+
+      local_planner_node.current_waypoint_pub.publish(waypt_p);
+      local_planner_node.tf_listener.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+      local_planner_node.mavros_waypoint_pub.publish(waypt_p);
+    }
+
+    ros::spinOnce();
+    rate.sleep();
+  }
 
   return 0;
 }

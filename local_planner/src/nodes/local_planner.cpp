@@ -23,7 +23,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     struct tm * now = localtime(&t);
     std::string buffer(80, '\0');
     strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
-    log_name_ = buffer;
+    log_name = buffer;
 
     reach_altitude_ = false;
   }
@@ -84,13 +84,13 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 void LocalPlanner::logData() {
 
   if (currently_armed && offboard) {
-    std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
+    std::ofstream myfile(("LocalPlanner_" + log_name).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
          << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z << "\n";
     myfile.close();
 
     if (print_height_map_) {
-      std::ofstream myfile(("InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
+      std::ofstream myfile(("InternalHeightMap_" + log_name).c_str(), std::ofstream::app);
       myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << 0 << "\t" << 0 << "\t" << 0 << "\n";
       int i = 0;
       for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
@@ -264,6 +264,7 @@ void LocalPlanner::fitPlane() {
 
 // trim the point cloud so that only points inside the bounding box are considered and
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
+  hovering_ = false;
   local_planner_last_mode_ = local_planner_mode_;
   calculateFOV();
   std::clock_t start_time = std::clock();
@@ -1320,6 +1321,31 @@ void LocalPlanner::getPathMsg() {
   curr_yaw_ = new_yaw;
   position_old_ = pose_.pose.position;
   checkSpeed();
+}
+
+void LocalPlanner::hover() {
+
+  if(!hovering_){
+    hover_point_.vector.x = pose_.pose.position.x;
+    hover_point_.vector.y = pose_.pose.position.y;
+    hover_point_.vector.z = pose_.pose.position.z;
+  }
+  hovering_ = true;
+  path_msg_.header.frame_id = "/world";
+  last_last_waypt_p_ = last_waypt_p_;
+  last_waypt_p_ = waypt_p_;
+  last_yaw_ = curr_yaw_;
+
+  waypt_.vector.x = hover_point_.vector.x;
+  waypt_.vector.y = hover_point_.vector.y;
+  waypt_.vector.z = hover_point_.vector.z;
+
+  waypt_p_ = createPoseMsg(waypt_, last_yaw_);
+  path_msg_.poses.push_back(waypt_p_);
+  curr_yaw_ = last_yaw_;
+  position_old_ = pose_.pose.position;
+
+  std::cout << "\033[1;33m Pointcloud timeout: Hovering \n \033[0m";
 }
 
 void LocalPlanner::printAlgorithmStatistics(){

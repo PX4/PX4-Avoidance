@@ -12,6 +12,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/State.h>
+#include <mavros_msgs/SetMode.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -35,9 +36,23 @@ public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
+  ros::Time pointcloud_time_now;
+  ros::Time pointcloud_time_old;
+  ros::Duration pointcloud_timeout_hover = ros::Duration(0.4);
+  ros::Duration pointcloud_timeout_land = ros::Duration(10);
+
+  LocalPlanner local_planner;
+
+  ros::ServiceClient mavros_set_mode_client;
+
+  ros::Publisher waypoint_pub;
+  ros::Publisher current_waypoint_pub;
+  ros::Publisher mavros_waypoint_pub;
+
+  tf::TransformListener tf_listener;
+
 private:
   ros::NodeHandle nh_;
-  LocalPlanner local_planner;
 
   nav_msgs::Path path_actual;
 
@@ -63,8 +78,6 @@ private:
   ros::Publisher marker_pub_;
   ros::Publisher waypoint_pub_;
   ros::Publisher path_pub_;
-  ros::Publisher mavros_waypoint_pub_;
-  ros::Publisher current_waypoint_pub_;
   ros::Publisher marker_rejected_pub_;
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
