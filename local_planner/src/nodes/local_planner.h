@@ -11,7 +11,6 @@
 #include <mutex>
 #include <limits>
 
-
 #include <ros/ros.h>
 
 #include "histogram.h"
@@ -137,7 +136,7 @@ class LocalPlanner
   double avoid_radius_;
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
-  double tree_node_distance_;
+  double tree_node_distance_ = 1;
   double goal_tree_depth_ = 3;
 
   std::string log_name_;
@@ -278,6 +277,7 @@ class LocalPlanner
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
   void useHoverPoint();
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set);
 };
 
 #endif // LOCAL_PLANNER_LOCAL_PLANNER_H

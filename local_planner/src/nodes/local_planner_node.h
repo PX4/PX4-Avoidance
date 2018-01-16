@@ -98,6 +98,7 @@ private:
   ros::Publisher avoid_sphere_pub_;
   ros::Publisher takeoff_pose_pub_;
   ros::Publisher initial_height_pub_;
+  ros::Publisher complete_tree_pub_;
 
   std::vector<float> algo_time;
 
@@ -127,6 +128,7 @@ private:
   void publishAvoidSphere();
   void publishGround();
   void publishReachHeight();
+  void publishTree();
 
 };
 

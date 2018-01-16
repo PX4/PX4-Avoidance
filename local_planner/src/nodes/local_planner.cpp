@@ -374,11 +374,10 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   //increase safety radius if too close to the wall
   if(distance_to_closest_point_ < 1.7 && cloud_temp->points.size() > min_cloud_size_ ){
     safety_radius_ = 25+ 2*ALPHA_RES;
-    std::cout<<"Increased safety radius!\n";
   }
   if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp->points.size() > min_cloud_size_ ){
     safety_radius_ = 25;
-    std::cout<<"Lowered safety radius!\n";
+//    std::cout<<"Lowered safety radius!\n";
   }
 
   final_cloud_.header.stamp = complete_cloud.header.stamp;
@@ -389,7 +388,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     final_cloud_.width = cloud_temp->points.size();
   }
 
-  ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
+//  ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   if(new_cloud){
@@ -681,7 +680,7 @@ void LocalPlanner::createPolarHistogram() {
   polar_histogram_old_ = polar_histogram_;
 
   //Statistics
-  ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+//  ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 }
 
@@ -847,13 +846,15 @@ void LocalPlanner::findFreeDirections() {
     }
   }
 
-  ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+//  ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 void LocalPlanner::buildLookAheadTree(){
   std::clock_t start_time = std::clock();
   new_cloud = false;
+  tree_.clear();
+  closed_set_.clear();
   depth_reached_ = false;
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
@@ -937,10 +938,6 @@ void LocalPlanner::buildLookAheadTree(){
         }
       }
 
-
-
-    std::cout << "Number of nodes: " << tree_.size() <<"  New Origin: " << origin << "\n";
-//
 //    std::cout << "min c node [e, z]: [" << tree_[min_c_node].last_e << ", " << tree_[min_c_node].last_z << "] \n";
 //    std::cout << "chosen node [e, z]: [" << tree_[origin].last_e << ", " << tree_[origin].last_z << "] \n";
 //
@@ -969,9 +966,6 @@ void LocalPlanner::buildLookAheadTree(){
     }
   }
 
-
-tree_.clear();
-closed_set_.clear();
 ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -1623,4 +1617,9 @@ void LocalPlanner::getGroundDataForVisualization(geometry_msgs::Point &closest_p
 
 void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel){
   curr_vel_ = vel;
+}
+
+void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set){
+  tree = tree_;
+  closed_set = closed_set_;
 }
