@@ -88,6 +88,7 @@ class LocalPlanner
   bool back_off_ = false;
   bool only_yawed_ = false;
   bool use_avoid_sphere_ = false;
+  bool hovering_ = false;
 
   int stop_in_front_;
   int n_call_hist_ = 0;
@@ -131,9 +132,6 @@ class LocalPlanner
   double avoid_radius_;
   double min_dist_backoff_;
 
-
-  std::string log_name_;
-
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
   std::vector<double> ground_xmin_;
@@ -161,6 +159,7 @@ class LocalPlanner
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
+  geometry_msgs::Vector3Stamped hover_point_;
   geometry_msgs::Vector3Stamped last_hist_waypt_;
   geometry_msgs::PoseStamped waypt_p_;
   geometry_msgs::TwistStamped curr_vel_;
@@ -219,6 +218,8 @@ class LocalPlanner
   double goal_y_param;
   double goal_z_param;
 
+  std::string log_name;
+
   LocalPlanner();
   ~LocalPlanner();
 
@@ -226,6 +227,7 @@ class LocalPlanner
   double costFunction(int e, int z);
   void resetHistogramCounter();
   void setGoal();
+  void hover();
   void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
   geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
