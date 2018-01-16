@@ -25,6 +25,7 @@ LocalPlannerNode::LocalPlannerNode() {
   avoid_sphere_pub_ = nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
   height_map_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
+  complete_tree_pub_ = nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -358,6 +359,36 @@ void LocalPlannerNode::publishAvoidSphere() {
   }
 }
 
+void LocalPlannerNode::publishTree() {
+  visualization_msgs::Marker tree_marker;
+  tree_marker.header.frame_id = "local_origin";
+  tree_marker.header.stamp = ros::Time::now();
+  tree_marker.id = 0;
+  tree_marker.type = visualization_msgs::Marker::LINE_LIST;
+  tree_marker.action = visualization_msgs::Marker::ADD;
+  tree_marker.pose.orientation.w = 1.0;
+  tree_marker.scale.x = 0.05;
+  tree_marker.color.a = 0.8;
+  tree_marker.color.r = 0.6;
+  tree_marker.color.g = 0.0;
+  tree_marker.color.b = 0.4;
+
+  std::vector<TreeNode> tree;
+  std::vector<int> closed_set;
+  local_planner.getTree(tree, closed_set);
+
+  for(int i=0; i<closed_set.size(); i++){
+    int node_nr = closed_set[i];
+    geometry_msgs::Point p1 = tree[node_nr].getPosition();
+    int origin = tree[node_nr].origin;
+    geometry_msgs::Point p2 = tree[origin].getPosition();
+    tree_marker.points.push_back(p1);
+    tree_marker.points.push_back(p2);
+  }
+
+  complete_tree_pub_.publish(tree_marker);
+}
+
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
 }
@@ -480,6 +511,7 @@ void LocalPlannerNode::publishAll() {
   publishBox();
   publishAvoidSphere();
   publishReachHeight();
+  publishTree();
 
   if (local_planner_.groundDetected()) {
     publishGround();
