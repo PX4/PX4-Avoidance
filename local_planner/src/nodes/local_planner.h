@@ -93,7 +93,6 @@ class LocalPlanner
   bool only_yawed_ = false;
   bool use_avoid_sphere_ = false;
   bool hovering_ = false;
-  bool depth_reached_ = false;
   bool use_VFH_star_ = true;
   bool hist_is_empty_ = false;
 
@@ -102,6 +101,8 @@ class LocalPlanner
   int dist_incline_window_size_ = 50;
   int avoid_sphere_age_ = 1000;
   int counter_close_points_ = 0;
+  int expand_best_nodes_ = 5;
+  int n_expanded_nodes_ = 30;
 
   double local_planner_last_mode_;
   double smooth_go_fast_;
@@ -137,7 +138,6 @@ class LocalPlanner
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
   double tree_node_distance_ = 1;
-  double goal_tree_depth_ = 3;
 
   std::string log_name_;
 
