@@ -95,6 +95,8 @@ class LocalPlanner
   bool hovering_ = false;
   bool use_VFH_star_ = true;
   bool hist_is_empty_ = false;
+  bool tree_available_ = false;
+  bool tree_new_ = false;
 
   int stop_in_front_;
   int e_FOV_max_, e_FOV_min_;
@@ -220,6 +222,8 @@ class LocalPlanner
   void reachGoalAltitudeFirst();
   void getPathMsg();
   bool withinGoalRadius();
+  bool getWaypointFromTree();
+  void getWaypointFromCostMap();
   void checkSpeed();
   void stopInFrontObstacles();
   void buildLookAheadTree();

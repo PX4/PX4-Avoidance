@@ -397,6 +397,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 }
 
 void LocalPlanner::determineStrategy(){
+  tree_new_ = false;
+
   if(!reach_altitude_){
     std::cout << "\033[1;32m Reach height ("<<starting_height_<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
@@ -430,9 +432,14 @@ void LocalPlanner::determineStrategy(){
       //decide how to proceed
       if(hist_is_empty_){
         obstacle_ = false;
-        std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
         local_planner_mode_ = 1;
-        goFast();
+        if(getWaypointFromTree()){
+          std::cout << "\033[1;32m There is NO Obstacle Ahead reuse old Tree\n \033[0m";
+          getNextWaypoint();
+        }else{
+          goFast();
+          std::cout << "\033[1;32m There is NO Obstacle Ahead go Fast\n \033[0m";
+        }
       }
 
       if(!hist_is_empty_ && reach_altitude_){
@@ -444,7 +451,12 @@ void LocalPlanner::determineStrategy(){
 
 
         if(use_VFH_star_){
+          tree_available_ = true;
+          tree_new_ = true;
           buildLookAheadTree();
+          getWaypointFromTree();
+        }else{
+          getWaypointFromCostMap();
         }
 
 
@@ -851,6 +863,63 @@ void LocalPlanner::findFreeDirections() {
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
+bool LocalPlanner::getWaypointFromTree() {
+  if (tree_available_) {
+    std::vector < geometry_msgs::Point > path_points;
+    int tree_end = origin_;
+    path_points.push_back(tree_[tree_end].getPosition());
+    while (tree_end > 0) {
+      tree_end = tree_[tree_end].origin;
+      path_points.push_back(tree_[tree_end].getPosition());
+    }
+    int size = path_points.size();
+    geometry_msgs::Point p;
+
+    if (tree_new_) {
+      p.x = tree_[size-2].last_e;
+      p.y = tree_[size-2].last_z;
+      p.z = 0;
+
+      path_selected_.cells.push_back(p);
+      path_waypoints_.cells.push_back(p);
+
+    } else {
+      int min_dist_idx = 0;
+      int second_min_dist_idx = 0;
+      double min_dist = inf;
+
+      std::vector<double> distances;
+      for (int i = 0; i < size; i++) {
+        distances.push_back(distance3DCartesian(pose_.pose.position, path_points[i]));
+        if (distances[i] < min_dist) {
+          second_min_dist_idx = min_dist_idx;
+          min_dist = distances[i];
+          min_dist_idx = i;
+        }
+      }
+      if (min_dist > 3.0 || min_dist_idx == 0) {
+        tree_available_ = false;
+      } else {
+        int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
+        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
+          wp_idx--;
+        }
+        int wp_z = floor(atan2(path_points[wp_idx].x - pose_.pose.position.x, path_points[wp_idx].y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
+        int wp_e = floor(atan((path_points[wp_idx].z - pose_.pose.position.z) / sqrt(pow((path_points[wp_idx].x - pose_.pose.position.x), 2) + pow((path_points[wp_idx].y - pose_.pose.position.y), 2))) * 180.0 / PI);
+
+        p.x = wp_e;
+        p.y = wp_z;
+        p.z = 0;
+
+        path_selected_.cells.push_back(p);
+        path_waypoints_.cells.push_back(p);
+      }
+    }
+  }
+
+  return tree_available_;
+}
+
 void LocalPlanner::buildLookAheadTree(){
   std::clock_t start_time = std::clock();
   new_cloud = false;
@@ -1089,15 +1158,19 @@ void LocalPlanner::calculateCostMap() {
   std::clock_t start_time = std::clock();
   cv::sortIdx(cost_path_candidates_, cost_idx_sorted_, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
 
+//  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+}
+
+// get waypoint from sorted cost list
+void LocalPlanner::getWaypointFromCostMap() {
+
   geometry_msgs::Point p;
   p.x = path_candidates_.cells[cost_idx_sorted_[0]].x;
   p.y = path_candidates_.cells[cost_idx_sorted_[0]].y;
   p.z = path_candidates_.cells[cost_idx_sorted_[0]].z;
   path_selected_.cells.push_back(p);
   path_waypoints_.cells.push_back(p);
-
-//  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 // check that the selected direction is really free and transform it into a waypoint.
