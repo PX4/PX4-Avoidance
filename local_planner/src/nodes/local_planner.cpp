@@ -440,13 +440,14 @@ void LocalPlanner::determineStrategy(){
         std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
         local_planner_mode_ = 2;
         findFreeDirections();
+        calculateCostMap();
 
 
         if(use_VFH_star_){
           buildLookAheadTree();
         }
 
-        calculateCostMap();
+
         getNextWaypoint();
       }
 
@@ -855,7 +856,6 @@ void LocalPlanner::buildLookAheadTree(){
   new_cloud = false;
   tree_.clear();
   closed_set_.clear();
-  depth_reached_ = false;
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
@@ -863,10 +863,9 @@ void LocalPlanner::buildLookAheadTree(){
   int origin = 0;
   double min_c = INF;
   int min_c_node = 0;
+  int n = 0;
 
-
-  while (!depth_reached_) {
-
+  while (n < n_expanded_nodes_) {
     geometry_msgs::Point origin_position = tree_[origin].getPosition();
     bool add_nodes = true;
 
@@ -874,7 +873,6 @@ void LocalPlanner::buildLookAheadTree(){
     //crop pointcloud
     setLimitsHistogramBox(origin_position);
     filterPointCloud(complete_cloud_);
-
     //if too close to obstacle, we do not want to go there (equivalent to back off)
     if (counter_close_points_ < 20 && final_cloud_.points.size() > 160) {
       tree_[origin].total_cost = INF;
@@ -888,22 +886,19 @@ void LocalPlanner::buildLookAheadTree(){
 
       //calculate candidates
       findFreeDirections();
+      calculateCostMap();
 
       //insert new nodes
       int depth = tree_[origin].depth + 1;
-      if (depth >= goal_tree_depth_) {
-        depth_reached_ = true;
-      }
-      closed_set_.push_back(origin);
 
       int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
       int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
       int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
       int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
 
-      for (int i = 0; i < path_candidates_.cells.size(); i++) {
-        int e = path_candidates_.cells[i].x;
-        int z = path_candidates_.cells[i].y;
+      for (int i = 0; i < expand_best_nodes_; i++) {
+        int e = path_candidates_.cells[cost_idx_sorted_[i]].x;
+        int z = path_candidates_.cells[cost_idx_sorted_[i]].y;
         geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
         tree_.push_back(TreeNode(origin, depth, node_location));
@@ -922,21 +917,24 @@ void LocalPlanner::buildLookAheadTree(){
           min_c_node = tree_.size() - 1;
         }
       }
+    }
+    closed_set_.push_back(origin);
+    n++;
 
-      //find best node to continue
-      double minimal_cost = INF;
-      for (int i = 0; i < tree_.size(); i++) {
-        bool closed = false;
-        for (int j = 0; j < closed_set_.size(); j++) {
-          if (closed_set_[j] == i) {
-            closed = true;
-          }
-        }
-        if (tree_[i].total_cost < minimal_cost && !closed) {
-          minimal_cost = tree_[i].total_cost;
-          origin = i;
+    //find best node to continue
+    double minimal_cost = INF;
+    for (int i = 0; i < tree_.size(); i++) {
+      bool closed = false;
+      for (int j = 0; j < closed_set_.size(); j++) {
+        if (closed_set_[j] == i) {
+          closed = true;
         }
       }
+      if (tree_[i].total_cost < minimal_cost && !closed) {
+        minimal_cost = tree_[i].total_cost;
+        origin = i;
+      }
+
 
 //    std::cout << "min c node [e, z]: [" << tree_[min_c_node].last_e << ", " << tree_[min_c_node].last_z << "] \n";
 //    std::cout << "chosen node [e, z]: [" << tree_[origin].last_e << ", " << tree_[origin].last_z << "] \n";
@@ -1099,7 +1097,7 @@ void LocalPlanner::calculateCostMap() {
   path_selected_.cells.push_back(p);
   path_waypoints_.cells.push_back(p);
 
-  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+//  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 

@@ -532,8 +532,15 @@ void LocalPlannerNode::threadFunction() {
       lock.lock();
       point_cloud_updated_ = false;
       never_run_ = false;
-      local_planner_.resetHistogramCounter();
-      local_planner_.filterPointCloud(local_planner_.complete_cloud_);
+      geometry_msgs::PoseStamped drone_pos;
+      local_planner.getPosition(drone_pos);
+      local_planner.new_cloud = true;
+      local_planner.setLimitsHistogramBox(drone_pos.pose.position);
+      local_planner.setLimitsGroundBox(drone_pos.pose.position);
+      if (local_planner.use_ground_detection) {
+        local_planner.detectGround(complete_cloud);
+      }
+      local_planner.filterPointCloud(local_planner_.complete_cloud_);
       publishAll();
       lock.unlock();
 
