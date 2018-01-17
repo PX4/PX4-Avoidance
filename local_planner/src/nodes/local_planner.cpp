@@ -14,7 +14,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     curr_yaw_ = tf::getYaw(msg.pose.orientation);
   }
 
-  if(!currently_armed){
+  if(!currently_armed_){
     take_off_pose_.header = msg.header;
     take_off_pose_.pose.position = msg.pose.position;
     take_off_pose_.pose.orientation = msg.pose.orientation;
@@ -23,7 +23,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     struct tm * now = localtime(&t);
     std::string buffer(80, '\0');
     strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
-    log_name = buffer;
+    log_name_ = buffer;
 
     reach_altitude_ = false;
   }
@@ -71,8 +71,8 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   use_avoid_sphere_ = config.use_avoid_sphere_;
   min_dist_backoff_ = config.min_dist_backoff_;
 
-  if (goal_z_param!= config.goal_z_param) {
-    goal_z_param = config.goal_z_param;
+  if (goal_z_param_!= config.goal_z_param) {
+    goal_z_param_ = config.goal_z_param;
     setGoal();
   }
   use_ground_detection_ = config.use_ground_detection_;
@@ -83,14 +83,14 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 // log Data
 void LocalPlanner::logData() {
 
-  if (currently_armed && offboard) {
-    std::ofstream myfile(("LocalPlanner_" + log_name).c_str(), std::ofstream::app);
+  if (currently_armed_ && offboard_) {
+    std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
          << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\n";
     myfile.close();
 
     if (print_height_map_) {
-      std::ofstream myfile(("InternalHeightMap_" + log_name).c_str(), std::ofstream::app);
+      std::ofstream myfile(("InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
       myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << 0 << "\t" << 0 << "\t" << 0 << "\n";
       int i = 0;
       for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
@@ -129,9 +129,9 @@ void LocalPlanner::setLimitsBoundingBox() {
 
 // set mission goal
 void LocalPlanner::setGoal() {
-  goal_.x = goal_x_param;
-  goal_.y = goal_y_param;
-  goal_.z = goal_z_param;
+  goal_.x = goal_x_param_;
+  goal_.y = goal_y_param_;
+  goal_.z = goal_z_param_;
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
@@ -1359,7 +1359,7 @@ void LocalPlanner::printAlgorithmStatistics(){
   if (withinGoalRadius()) {
     cv::Scalar mean, std;
     printf("----------------------------------- \n");
-    cv::meanStdDev(algorithm_total_time, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
+    cv::meanStdDev(algorithm_total_time_, mean, std); printf("total mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(cloud_time_, mean, std); printf("cloud mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(polar_time_, mean, std); printf("polar mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(free_time_, mean, std); printf("free mean %f std %f \n", mean[0], std[0]);

@@ -31,44 +31,44 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_ground_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  waypoint_pub = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
+  waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-  mavros_waypoint_pub = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  current_waypoint_pub = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
+  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
+  current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
 
-  mavros_set_mode_client = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
+  mavros_set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
-  local_planner.setGoal();
+  local_planner_.setGoal();
 }
 
 LocalPlannerNode::~LocalPlannerNode() {}
 
 void LocalPlannerNode::readParams() {
-  nh_.param<double>("goal_x_param", local_planner.goal_x_param, 9);
-  nh_.param<double>("goal_y_param", local_planner.goal_y_param, 13);
-  nh_.param<double>("goal_z_param", local_planner.goal_z_param, 3.5);
+  nh_.param<double>("goal_x_param", local_planner_.goal_x_param_, 9);
+  nh_.param<double>("goal_y_param", local_planner_.goal_y_param_, 13);
+  nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
   nh_.param<std::string>("depth_points_topic", depth_points_topic_, "/camera/depth/points");
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   auto rot_msg = msg;
-  tf_listener.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
-  local_planner.setPose(rot_msg);
+  tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
+  local_planner_.setPose(rot_msg);
   publishPath(rot_msg);
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  auto transformed_msg = avoidance::transformTwistMsg(tf_listener, "/world", "/local_origin", msg); // 90 deg fix
-  local_planner.setCurrentVelocity(transformed_msg);
+  auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
+  local_planner_.setCurrentVelocity(transformed_msg);
 }
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
-  local_planner.currently_armed = msg.armed;
+  local_planner_.currently_armed_ = msg.armed;
   if(msg.mode == "OFFBOARD"){
-    local_planner.offboard = true;
+    local_planner_.offboard_ = true;
   }else{
-    local_planner.offboard = false;
+    local_planner_.offboard_ = false;
   }
 }
 
@@ -93,12 +93,12 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
   marker->markers.push_back(m);
 
   geometry_msgs::PoseStamped drone_pos;
-  local_planner.getPosition(drone_pos);
+  local_planner_.getPosition(drone_pos);
 
   for (int i=0; i < path.cells.size(); i++) {
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p = local_planner.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0, drone_pos.pose.position);
+    geometry_msgs::Point p = local_planner_.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0, drone_pos.pose.position);
     m.pose.position = p;
 
     m.color.r = red;
@@ -144,7 +144,7 @@ void LocalPlannerNode::publishGoal() {
   visualization_msgs::Marker m;
 
   geometry_msgs::Point  goal;
-  local_planner.getGoalPosition(goal);
+  local_planner_.getGoalPosition(goal);
 
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
@@ -173,7 +173,7 @@ void LocalPlannerNode::publishGround() {
   std::vector<double> ground_xmin;
   std::vector<double> ground_ymax;
   std::vector<double> ground_ymin;
-  local_planner.getGroundDataForVisualization(closest_point_on_ground,ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
+  local_planner_.getGroundDataForVisualization(closest_point_on_ground,ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
@@ -228,9 +228,9 @@ void LocalPlannerNode::publishGround() {
 
 void LocalPlannerNode::publishBox() {
   geometry_msgs::PoseStamped drone_pos;
-  local_planner.getPosition(drone_pos);
+  local_planner_.getPosition(drone_pos);
   double min_x, max_x, min_y, max_y, min_z, max_z;
-  local_planner.getBoundingBoxSize(min_x, max_x, min_y, max_y, min_z, max_z);
+  local_planner_.getBoundingBoxSize(min_x, max_x, min_y, max_y, min_z, max_z);
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
   box.header.stamp = ros::Time::now();
@@ -253,7 +253,7 @@ void LocalPlannerNode::publishBox() {
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
 
-  local_planner.getGroundBoxSize(min_x, max_x, min_y, max_y, min_z);
+  local_planner_.getGroundBoxSize(min_x, max_x, min_y, max_y, min_z);
   visualization_msgs::Marker groundbox;
   groundbox.header.frame_id = "local_origin";
   groundbox.header.stamp = ros::Time::now();
@@ -282,7 +282,7 @@ void LocalPlannerNode::publishAvoidSphere() {
   double radius;
   int age;
   bool use_sphere;
-  local_planner.getAvoidSphere(center, radius, age, use_sphere);
+  local_planner_.getAvoidSphere(center, radius, age, use_sphere);
   visualization_msgs::Marker sphere;
   sphere.header.frame_id = "local_origin";
   sphere.header.stamp = ros::Time::now();
@@ -316,21 +316,21 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &m
 }
 
 void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg) {
-  local_planner.goal_x_param = msg.pose.position.x;
-  local_planner.goal_y_param = msg.pose.position.y;
-  local_planner.setGoal();
+  local_planner_.goal_x_param_ = msg.pose.position.x;
+  local_planner_.goal_y_param_ = msg.pose.position.y;
+  local_planner_.setGoal();
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   geometry_msgs::PoseStamped drone_pos;
-  local_planner.getPosition(drone_pos);
+  local_planner_.getPosition(drone_pos);
   int beta_z = floor((atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y)*180.0/PI)); //(-180. +180]
   int beta_e = floor((atan((z - drone_pos.pose.position.z) / sqrt((x - drone_pos.pose.position.x)*(x - drone_pos.pose.position.x) + (y - drone_pos.pose.position.y) * (y - drone_pos.pose.position.y)))*180.0/PI)); //(-90.+90)
 
   beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
   beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
 
-  float cost = local_planner.costFunction(beta_e-10, beta_z-10);
+  float cost = local_planner_.costFunction(beta_e-10, beta_z-10);
 
   printf("----- Point: %f %f %f -----\n",x,y,z);
   printf("Elevation %d Azimuth %d \n",beta_e, beta_z);
@@ -340,58 +340,58 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   geometry_msgs::PoseStamped drone_pos;
-  local_planner.getPosition(drone_pos);
+  local_planner_.getPosition(drone_pos);
   pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
   std::clock_t start_time = std::clock();
   try {
-    tf_listener.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
+    tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
-    tf_listener.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-    local_planner.resetHistogramCounter();
-    local_planner.filterPointCloud(complete_cloud);
+    local_planner_.resetHistogramCounter();
+    local_planner_.filterPointCloud(complete_cloud);
     publishAll();
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
 
   printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  local_planner.algorithm_total_time.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
-  local_planner.printAlgorithmStatistics();
+  local_planner_.printAlgorithmStatistics();
 
   //Log timing for timeout detection
-  pointcloud_time_now = msg.header.stamp;
-  ros::Duration time_diff = pointcloud_time_now - pointcloud_time_old;
-  pointcloud_time_old = pointcloud_time_now;
+  pointcloud_time_now_ = msg.header.stamp;
+  ros::Duration time_diff = pointcloud_time_now_ - pointcloud_time_old_;
+  pointcloud_time_old_ = pointcloud_time_now_;
 
-  std::ofstream myfile(("PointcloudTimes_" + local_planner.log_name).c_str(), std::ofstream::app);
-  myfile << pointcloud_time_now.sec <<"\t"<<pointcloud_time_now.nsec << "\t" << time_diff << "\n";
+  std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
+  myfile << pointcloud_time_now_.sec <<"\t"<<pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
   myfile.close();
 }
 
 void LocalPlannerNode::publishAll() {
 
   pcl::PointCloud<pcl::PointXYZ> final_cloud, ground_cloud, reprojected_points;
-  local_planner.getCloudsForVisualization(final_cloud, ground_cloud, reprojected_points);
+  local_planner_.getCloudsForVisualization(final_cloud, ground_cloud, reprojected_points);
   local_pointcloud_pub_.publish(final_cloud);
   ground_pointcloud_pub_.publish(ground_cloud);
   reprojected_points_pub_.publish(reprojected_points);
 
   nav_msgs::Path path_msg;
   geometry_msgs::PoseStamped waypt_p;
-  local_planner.getPathData(path_msg, waypt_p);
-  waypoint_pub.publish(path_msg);
+  local_planner_.getPathData(path_msg, waypt_p);
+  waypoint_pub_.publish(path_msg);
   path_pub_.publish(path_actual);
 
-  current_waypoint_pub.publish(waypt_p);
-  tf_listener.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-  mavros_waypoint_pub.publish(waypt_p);
+  current_waypoint_pub_.publish(waypt_p);
+  tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+  mavros_waypoint_pub_.publish(waypt_p);
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground;
-  local_planner.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, path_ground);
+  local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, path_ground);
 
   publishMarkerCandidates(path_candidates);
   publishMarkerSelected(path_selected);
@@ -402,7 +402,7 @@ void LocalPlannerNode::publishAll() {
   publishBox();
   publishAvoidSphere();
 
-  if (local_planner.groundDetected()) {
+  if (local_planner_.groundDetected()) {
     publishGround();
   }
 }
@@ -410,7 +410,7 @@ void LocalPlannerNode::publishAll() {
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
                                                    uint32_t level) {
 
-  local_planner.dynamicReconfigureSetParams(config, level);
+  local_planner_.dynamicReconfigureSetParams(config, level);
 }
 
 int main(int argc, char** argv) {
@@ -425,27 +425,27 @@ int main(int argc, char** argv) {
 
     //Check if pointcloud message is published fast enough
     ros::Time now = ros::Time::now();
-    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_old;
+    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_old_;
     ros::Duration since_start = now - start;
 
-    if (since_last_cloud > local_planner_node.pointcloud_timeout_land && since_start > min_time) {
+    if (since_last_cloud > local_planner_node.pointcloud_timeout_land_ && since_start > min_time) {
       mavros_msgs::SetMode mode_msg;
       mode_msg.request.custom_mode = "AUTO.LAND";
-      if (local_planner_node.mavros_set_mode_client.call(mode_msg) && mode_msg.response.mode_sent) {
+      if (local_planner_node.mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
         std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
       } else {
         std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
       }
-    } else if (since_last_cloud > local_planner_node.pointcloud_timeout_hover && since_start > min_time) {
-      local_planner_node.local_planner.hover();
+    } else if (since_last_cloud > local_planner_node.pointcloud_timeout_hover_ && since_start > min_time) {
+      local_planner_node.local_planner_.hover();
       nav_msgs::Path path_msg;
       geometry_msgs::PoseStamped waypt_p;
-      local_planner_node.local_planner.getPathData(path_msg, waypt_p);
-      local_planner_node.waypoint_pub.publish(path_msg);
+      local_planner_node.local_planner_.getPathData(path_msg, waypt_p);
+      local_planner_node.waypoint_pub_.publish(path_msg);
 
-      local_planner_node.current_waypoint_pub.publish(waypt_p);
-      local_planner_node.tf_listener.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-      local_planner_node.mavros_waypoint_pub.publish(waypt_p);
+      local_planner_node.current_waypoint_pub_.publish(waypt_p);
+      local_planner_node.tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+      local_planner_node.mavros_waypoint_pub_.publish(waypt_p);
     }
 
     ros::spinOnce();
