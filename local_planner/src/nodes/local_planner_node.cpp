@@ -26,6 +26,7 @@ LocalPlannerNode::LocalPlannerNode() {
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
   height_map_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
   complete_tree_pub_ = nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
+  tree_path_pub_ = nh_.advertise<visualization_msgs::Marker>("/tree_path", 1);
   marker_blocked_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
@@ -369,13 +370,27 @@ void LocalPlannerNode::publishTree() {
   tree_marker.pose.orientation.w = 1.0;
   tree_marker.scale.x = 0.05;
   tree_marker.color.a = 0.8;
-  tree_marker.color.r = 0.6;
+  tree_marker.color.r = 0.4;
   tree_marker.color.g = 0.0;
-  tree_marker.color.b = 0.4;
+  tree_marker.color.b = 0.6;
+
+  visualization_msgs::Marker path_marker;
+  path_marker.header.frame_id = "local_origin";
+  path_marker.header.stamp = ros::Time::now();
+  path_marker.id = 0;
+  path_marker.type = visualization_msgs::Marker::LINE_LIST;
+  path_marker.action = visualization_msgs::Marker::ADD;
+  path_marker.pose.orientation.w = 1.0;
+  path_marker.scale.x = 0.05;
+  path_marker.color.a = 0.8;
+  path_marker.color.r = 1.0;
+  path_marker.color.g = 0.0;
+  path_marker.color.b = 0.0;
 
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
-  local_planner.getTree(tree, closed_set);
+  int tree_end;
+  local_planner.getTree(tree, closed_set, tree_end);
 
   for(int i=0; i<closed_set.size(); i++){
     int node_nr = closed_set[i];
@@ -386,7 +401,16 @@ void LocalPlannerNode::publishTree() {
     tree_marker.points.push_back(p2);
   }
 
+  while (tree_end > 0) {
+    geometry_msgs::Point p1 = tree[tree_end].getPosition();
+    tree_end = tree[tree_end].origin;
+    geometry_msgs::Point p2 = tree[tree_end].getPosition();
+    path_marker.points.push_back(p1);
+    path_marker.points.push_back(p2);
+  }
+
   complete_tree_pub_.publish(tree_marker);
+  tree_path_pub_.publish(path_marker);
 }
 
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &msg) {

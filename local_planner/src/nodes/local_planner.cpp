@@ -866,7 +866,7 @@ void LocalPlanner::buildLookAheadTree(){
   int n = 0;
 
   while (n < n_expanded_nodes_) {
-    geometry_msgs::Point origin_position = tree_[origin].getPosition();
+    geometry_msgs::Point origin_position = tree_[origin_].getPosition();
     bool add_nodes = true;
 
 
@@ -881,7 +881,7 @@ void LocalPlanner::buildLookAheadTree(){
 
     if (add_nodes) {
       //build new histogram
-      calculateFOV(tree_[origin].yaw, 0.0);  //assume pitch is zero at every node
+      calculateFOV(tree_[origin_].yaw, 0.0);  //assume pitch is zero at every node
       createPolarHistogram();
 
       //calculate candidates
@@ -889,7 +889,7 @@ void LocalPlanner::buildLookAheadTree(){
       calculateCostMap();
 
       //insert new nodes
-      int depth = tree_[origin].depth + 1;
+      int depth = tree_[origin_].depth + 1;
 
       int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
       int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
@@ -901,13 +901,13 @@ void LocalPlanner::buildLookAheadTree(){
         int z = path_candidates_.cells[cost_idx_sorted_[i]].y;
         geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
-        tree_.push_back(TreeNode(origin, depth, node_location));
+        tree_.push_back(TreeNode(origin_, depth, node_location));
         tree_.back().last_e = e;
         tree_.back().last_z = z;
         double h = treeHeuristicFunction(tree_.size() - 1);
         double c = treeCostFunction(e, z, tree_.size() - 1);
         tree_.back().heuristic = h;
-        tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+        tree_.back().total_cost = tree_[origin_].total_cost - tree_[origin_].heuristic + c + h;
         double dx = node_location.x - origin_position.x;
         double dy = node_location.y - origin_position.y;
         tree_.back().yaw = atan2(dy, dx);
@@ -918,7 +918,7 @@ void LocalPlanner::buildLookAheadTree(){
         }
       }
     }
-    closed_set_.push_back(origin);
+    closed_set_.push_back(origin_);
     n++;
 
     //find best node to continue
@@ -932,7 +932,7 @@ void LocalPlanner::buildLookAheadTree(){
       }
       if (tree_[i].total_cost < minimal_cost && !closed) {
         minimal_cost = tree_[i].total_cost;
-        origin = i;
+        origin_ = i;
       }
 
 
@@ -963,7 +963,6 @@ void LocalPlanner::buildLookAheadTree(){
 //    }
     }
   }
-
 ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -1617,7 +1616,8 @@ void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel){
   curr_vel_ = vel;
 }
 
-void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set){
+void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, int &origin){
   tree = tree_;
   closed_set = closed_set_;
+  origin = origin_;
 }
