@@ -102,7 +102,8 @@ class LocalPlanner
   int avoid_sphere_age_ = 1000;
   int counter_close_points_ = 0;
   int expand_best_nodes_ = 5;
-  int n_expanded_nodes_ = 30;
+  int n_expanded_nodes_ = 50;
+  int origin_;
 
   double local_planner_last_mode_;
   double smooth_go_fast_;
@@ -277,7 +278,7 @@ class LocalPlanner
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
   void useHoverPoint();
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set);
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, int &origin);
 };
 
 #endif // LOCAL_PLANNER_LOCAL_PLANNER_H

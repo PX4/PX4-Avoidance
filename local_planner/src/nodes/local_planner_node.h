@@ -99,6 +99,7 @@ private:
   ros::Publisher takeoff_pose_pub_;
   ros::Publisher initial_height_pub_;
   ros::Publisher complete_tree_pub_;
+  ros::Publisher tree_path_pub_;
 
   std::vector<float> algo_time;
 
