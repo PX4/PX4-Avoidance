@@ -209,16 +209,16 @@ class LocalPlanner
 
  public:
 
-  bool currently_armed = false;
-  bool offboard = false;
+  bool currently_armed_ = false;
+  bool offboard_ = false;
 
-  std::vector<float> algorithm_total_time;
+  std::vector<float> algorithm_total_time_;
 
-  double goal_x_param;
-  double goal_y_param;
-  double goal_z_param;
+  double goal_x_param_;
+  double goal_y_param_;
+  double goal_z_param_;
 
-  std::string log_name;
+  std::string log_name_;
 
   LocalPlanner();
   ~LocalPlanner();

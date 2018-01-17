@@ -36,20 +36,18 @@ public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
-  ros::Time pointcloud_time_now;
-  ros::Time pointcloud_time_old;
-  ros::Duration pointcloud_timeout_hover = ros::Duration(0.4);
-  ros::Duration pointcloud_timeout_land = ros::Duration(10);
+  const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
+  const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
+  ros::Time pointcloud_time_now_;
+  ros::Time pointcloud_time_old_;
 
-  LocalPlanner local_planner;
+  LocalPlanner local_planner_;
 
-  ros::ServiceClient mavros_set_mode_client;
-
-  ros::Publisher waypoint_pub;
-  ros::Publisher current_waypoint_pub;
-  ros::Publisher mavros_waypoint_pub;
-
-  tf::TransformListener tf_listener;
+  ros::Publisher current_waypoint_pub_;
+  ros::Publisher mavros_waypoint_pub_;
+  ros::Publisher waypoint_pub_;
+  ros::ServiceClient mavros_set_mode_client_;
+  tf::TransformListener tf_listener_;
 
 private:
   ros::NodeHandle nh_;
@@ -76,7 +74,6 @@ private:
   ros::Publisher height_map_pub_;
   ros::Publisher cached_pointcloud_pub_ ;
   ros::Publisher marker_pub_;
-  ros::Publisher waypoint_pub_;
   ros::Publisher path_pub_;
   ros::Publisher marker_rejected_pub_;
   ros::Publisher marker_blocked_pub_;
@@ -86,8 +83,6 @@ private:
   ros::Publisher marker_goal_pub_;
   ros::Publisher ground_est_pub_;
   ros::Publisher avoid_sphere_pub_;
-
-  tf::TransformListener tf_listener_;
 
   std::vector<float> algo_time;
 
