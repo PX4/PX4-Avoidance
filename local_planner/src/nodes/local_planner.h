@@ -99,8 +99,8 @@ class LocalPlanner
   int avoid_sphere_age_ = 1000;
   int counter_close_points_ = 0;
   int counter_close_points_backoff_ = 0;
-  int expand_best_nodes_ = 5;
-  int n_expanded_nodes_ = 50;
+  int childs_per_node_;
+  int n_expanded_nodes_;
   int origin_;
 
   double local_planner_last_mode_;
@@ -136,7 +136,7 @@ class LocalPlanner
   double avoid_radius_;
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
-  double tree_node_distance_ = 1;
+  double tree_node_distance_ = 0.5;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;

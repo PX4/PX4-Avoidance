@@ -51,7 +51,6 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   max_accel_z_ = config.max_accel_z_;
-  stop_in_front_ = config.stop_in_front_;
   keep_distance_ = config.keep_distance_;
   ground_inlier_angle_threshold_ = config.ground_inlier_angle_threshold_;
   ground_inlier_distance_threshold_ = config.ground_inlier_distance_threshold_;
@@ -62,15 +61,20 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   min_plane_points_ = config.min_plane_points_;
   min_plane_percentage_ = config.min_plane_percentage_;
   avoid_radius_ = config.avoid_radius_;
-  use_avoid_sphere_ = config.use_avoid_sphere_;
   min_dist_backoff_ = config.min_dist_backoff_;
   pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
   pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
+  childs_per_node_ = config.childs_per_node_;
+  n_expanded_nodes_ = config.n_expanded_nodes_;
+  tree_node_distance_  = config.tree_node_distance_;
 
   if (goal_z_param_!= config.goal_z_param) {
     goal_z_param_ = config.goal_z_param;
     setGoal();
   }
+
+  stop_in_front_ = config.stop_in_front_;
+  use_avoid_sphere_ = config.use_avoid_sphere_;
   use_ground_detection_ = config.use_ground_detection_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
@@ -962,7 +966,8 @@ void LocalPlanner::buildLookAheadTree(){
       int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
       int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
 
-      for (int i = 0; i < expand_best_nodes_; i++) {
+      int childs = std::min(childs_per_node_, (int)path_candidates_.cells.size());
+      for (int i = 0; i < childs; i++) {
         int e = path_candidates_.cells[cost_idx_sorted_[i]].x;
         int z = path_candidates_.cells[cost_idx_sorted_[i]].y;
         geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
@@ -1042,7 +1047,7 @@ double LocalPlanner::treeCostFunction(int e, int z, int node_number) {
 
   double target_cost = 5 * indexAngleDifference(z, goal_z) + 20 * indexAngleDifference(e, goal_e);  //include effective direction?
   //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
-  double smooth_cost = 2 * indexAngleDifference(z, tree_[node_number].last_z) + 2 * indexAngleDifference(e, tree_[node_number].last_e);
+  double smooth_cost = 5 * indexAngleDifference(z, tree_[node_number].last_z) + 5 * indexAngleDifference(e, tree_[node_number].last_e);
 
   return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost);
 
