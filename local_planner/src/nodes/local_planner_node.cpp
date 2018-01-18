@@ -390,8 +390,7 @@ void LocalPlannerNode::publishTree() {
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
   int tree_end;
-  local_planner.getTree(tree, closed_set, tree_end);
-
+  local_planner_.getTree(tree, closed_set, tree_end);
   for(int i=0; i<closed_set.size(); i++){
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = tree[node_nr].getPosition();

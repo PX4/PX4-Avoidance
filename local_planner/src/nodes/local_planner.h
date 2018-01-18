@@ -72,22 +72,17 @@ class LocalPlanner
 
  private:
 
-  bool first_reach_ = true;
   bool obstacle_ = false;
-  bool set_first_yaw_ = true;
   bool reach_altitude_ = false;
   bool reached_goal_ = false;
   bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
-  bool print_height_map_ = true;
   bool over_obstacle_ = false;
   bool is_near_min_height_ = false;
   bool too_low_ = false;
-  bool new_cloud_ = false;
   bool use_back_off_ = true;
   bool log_data_to_txt_file_ = true;
   bool ground_detected_ = false;
-  bool box_size_increase_ = true;
   bool no_progress_rise_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
@@ -97,12 +92,13 @@ class LocalPlanner
   bool hist_is_empty_ = false;
   bool tree_available_ = false;
   bool tree_new_ = false;
+  bool stop_in_front_;
 
-  int stop_in_front_;
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
   int avoid_sphere_age_ = 1000;
   int counter_close_points_ = 0;
+  int counter_close_points_backoff_ = 0;
   int expand_best_nodes_ = 5;
   int n_expanded_nodes_ = 50;
   int origin_;
@@ -141,8 +137,6 @@ class LocalPlanner
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
   double tree_node_distance_ = 1;
-
-  std::string log_name_;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
@@ -218,7 +212,7 @@ class LocalPlanner
   void goFast();
   void backOff();
   void setVelocity();
-  void updateCostParameters();
+  void evaluateProgressRate();
   void reachGoalAltitudeFirst();
   void getPathMsg();
   bool withinGoalRadius();
@@ -240,8 +234,8 @@ class LocalPlanner
 
   bool currently_armed_ = false;
   bool offboard_ = false;
-  bool use_ground_detection;
-  bool new_cloud;
+  bool use_ground_detection_;
+  bool new_cloud_;
 
   std::vector<float> algorithm_total_time_;
 
