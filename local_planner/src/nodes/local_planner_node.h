@@ -100,6 +100,9 @@ private:
   ros::Publisher initial_height_pub_;
   ros::Publisher complete_tree_pub_;
   ros::Publisher tree_path_pub_;
+  ros::Publisher original_wp_pub_;
+  ros::Publisher adapted_wp_pub_;
+  ros::Publisher smoothed_wp_pub_;
 
   std::vector<float> algo_time;
 
@@ -130,6 +133,7 @@ private:
   void publishGround();
   void publishReachHeight();
   void publishTree();
+  void publishWaypoints();
 
 };
 

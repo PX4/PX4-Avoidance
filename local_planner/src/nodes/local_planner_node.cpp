@@ -23,6 +23,9 @@ LocalPlannerNode::LocalPlannerNode() {
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
   avoid_sphere_pub_ = nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
+  original_wp_pub_ = nh_.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
+  adapted_wp_pub_ = nh_.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
+  smoothed_wp_pub_ = nh_.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
   ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
   height_map_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
   complete_tree_pub_ = nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
@@ -349,15 +352,90 @@ void LocalPlannerNode::publishAvoidSphere() {
   sphere.scale.y = 2*radius;
   sphere.scale.z = 2*radius;
   sphere.color.a = 0.5;
-  sphere.color.r = 0.5;
-  sphere.color.g = 0.0;
-  sphere.color.b = 0.5;
+  sphere.color.r = 0.0;
+  sphere.color.g = 1.0;
+  sphere.color.b = 1.0;
   if(use_sphere && age < 100){
     avoid_sphere_pub_.publish(sphere);
   }else{
     sphere.color.a = 0;
     avoid_sphere_pub_.publish(sphere);
   }
+}
+
+void LocalPlannerNode::publishWaypoints() {
+  geometry_msgs::Vector3Stamped waypt_original;
+  geometry_msgs::Vector3Stamped waypt_adapted;
+  geometry_msgs::Vector3Stamped waypt_smoothed;
+  local_planner_.getWaypoints(waypt_original, waypt_adapted, waypt_smoothed);
+  visualization_msgs::Marker sphere1;
+  visualization_msgs::Marker sphere2;
+  visualization_msgs::Marker sphere3;
+
+
+  sphere1.header.frame_id = "local_origin";
+  sphere1.header.stamp = ros::Time::now();
+  sphere1.id = 0;
+  sphere1.type = visualization_msgs::Marker::SPHERE;
+  sphere1.action = visualization_msgs::Marker::ADD;
+  sphere1.pose.position.x = waypt_original.vector.x;
+  sphere1.pose.position.y = waypt_original.vector.y;
+  sphere1.pose.position.z = waypt_original.vector.z;
+  sphere1.pose.orientation.x = 0.0;
+  sphere1.pose.orientation.y = 0.0;
+  sphere1.pose.orientation.z = 0.0;
+  sphere1.pose.orientation.w = 1.0;
+  sphere1.scale.x = 0.2;
+  sphere1.scale.y = 0.2;
+  sphere1.scale.z = 0.2;
+  sphere1.color.a = 0.8;
+  sphere1.color.r = 0.5;
+  sphere1.color.g = 1.0;
+  sphere1.color.b = 0.0;
+
+  sphere2.header.frame_id = "local_origin";
+  sphere2.header.stamp = ros::Time::now();
+  sphere2.id = 0;
+  sphere2.type = visualization_msgs::Marker::SPHERE;
+  sphere2.action = visualization_msgs::Marker::ADD;
+  sphere2.pose.position.x = waypt_adapted.vector.x;
+  sphere2.pose.position.y = waypt_adapted.vector.y;
+  sphere2.pose.position.z = waypt_adapted.vector.z;
+  sphere2.pose.orientation.x = 0.0;
+  sphere2.pose.orientation.y = 0.0;
+  sphere2.pose.orientation.z = 0.0;
+  sphere2.pose.orientation.w = 1.0;
+  sphere2.scale.x = 0.2;
+  sphere2.scale.y = 0.2;
+  sphere2.scale.z = 0.2;
+  sphere2.color.a = 0.8;
+  sphere2.color.r = 1.0;
+  sphere2.color.g = 1.0;
+  sphere2.color.b = 0.0;
+
+  sphere3.header.frame_id = "local_origin";
+  sphere3.header.stamp = ros::Time::now();
+  sphere3.id = 0;
+  sphere3.type = visualization_msgs::Marker::SPHERE;
+  sphere3.action = visualization_msgs::Marker::ADD;
+  sphere3.pose.position.x = waypt_smoothed.vector.x;
+  sphere3.pose.position.y = waypt_smoothed.vector.y;
+  sphere3.pose.position.z = waypt_smoothed.vector.z;
+  sphere3.pose.orientation.x = 0.0;
+  sphere3.pose.orientation.y = 0.0;
+  sphere3.pose.orientation.z = 0.0;
+  sphere3.pose.orientation.w = 1.0;
+  sphere3.scale.x = 0.2;
+  sphere3.scale.y = 0.2;
+  sphere3.scale.z = 0.2;
+  sphere3.color.a = 0.8;
+  sphere3.color.r = 1.0;
+  sphere3.color.g = 0.5;
+  sphere3.color.b = 0.0;
+
+  original_wp_pub_.publish(sphere1);
+  adapted_wp_pub_.publish(sphere2);
+  smoothed_wp_pub_.publish(sphere3);
 }
 
 void LocalPlannerNode::publishTree() {
@@ -535,6 +613,7 @@ void LocalPlannerNode::publishAll() {
   publishAvoidSphere();
   publishReachHeight();
   publishTree();
+  publishWaypoints();
 
   if (local_planner_.groundDetected()) {
     publishGround();
