@@ -272,7 +272,6 @@ void LocalPlanner::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) 
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
   ground_cloud_.points.clear();
-  double min_realsense_dist = 0.2;
   float distance;
 
   for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
@@ -313,7 +312,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud_.points.clear();
   final_cloud_.width = 0;
   distance_to_closest_point_ = 1000.0f;
-  double min_realsense_dist = 0.2;
   float distance;
   counter_close_points_backoff_ = 0;
   counter_close_points_ = 0;
@@ -324,7 +322,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
       if (isPointWithinHistogramBox(pcl_it)) {
         distance = computeL2Dist(pose_, pcl_it);
-        if (distance > min_realsense_dist) {
+        if (distance > min_realsense_dist_) {
           cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < distance_to_closest_point_) {
             distance_to_closest_point_ = distance;
@@ -335,7 +333,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
           if (distance < min_dist_backoff_){
             counter_close_points_backoff_ ++;
           }
-          if (distance < avoid_radius_ + 1.5 && use_avoid_sphere_){
+          if (distance < avoid_radius_ + 1.5 && use_avoid_sphere_ && new_cloud_){
             counter_close_points_ ++;
             temp_centerpoint.x += pcl_it->x;
             temp_centerpoint.y += pcl_it->y;
@@ -344,32 +342,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
         }
       }
     }
-  }
-
-  //calculate sphere center from close points
-  if (counter_close_points_ > 50 && use_avoid_sphere_ && reach_altitude_) {
-    temp_centerpoint.x = temp_centerpoint.x / counter_close_points_;
-    temp_centerpoint.y = temp_centerpoint.y / counter_close_points_;
-    temp_centerpoint.z = temp_centerpoint.z / counter_close_points_;
-    if(avoid_sphere_age_ < 10){
-      tf::Vector3 vec;
-      vec.setX(temp_centerpoint.x - avoid_centerpoint_.x);
-      vec.setY(temp_centerpoint.y - avoid_centerpoint_.y);
-      vec.setZ(temp_centerpoint.z - avoid_centerpoint_.z);
-      vec.normalize();
-      double new_len = speed_;
-      vec *= new_len;
-      avoid_centerpoint_.x = avoid_centerpoint_.x + vec.getX();
-      avoid_centerpoint_.y = avoid_centerpoint_.y + vec.getY();
-      avoid_centerpoint_.z = avoid_centerpoint_.z + vec.getZ();
-    } else {
-      avoid_centerpoint_.x = temp_centerpoint.x;
-      avoid_centerpoint_.y = temp_centerpoint.y;
-      avoid_centerpoint_.z = temp_centerpoint.z;
-    }
-    avoid_sphere_age_ = 0;
-  }else{
-    avoid_sphere_age_ ++;
   }
 
   //increase safety radius if too close to the wall
@@ -393,12 +365,40 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   if(new_cloud_){
+
+    //calculate sphere center from close points
+    if (counter_close_points_ > 50 && use_avoid_sphere_ && reach_altitude_) {
+      temp_centerpoint.x = temp_centerpoint.x / counter_close_points_;
+      temp_centerpoint.y = temp_centerpoint.y / counter_close_points_;
+      temp_centerpoint.z = temp_centerpoint.z / counter_close_points_;
+      if(avoid_sphere_age_ < 10){
+        tf::Vector3 vec;
+        vec.setX(temp_centerpoint.x - avoid_centerpoint_.x);
+        vec.setY(temp_centerpoint.y - avoid_centerpoint_.y);
+        vec.setZ(temp_centerpoint.z - avoid_centerpoint_.z);
+        vec.normalize();
+        double new_len = speed_;
+        vec *= new_len;
+        avoid_centerpoint_.x = avoid_centerpoint_.x + vec.getX();
+        avoid_centerpoint_.y = avoid_centerpoint_.y + vec.getY();
+        avoid_centerpoint_.z = avoid_centerpoint_.z + vec.getZ();
+      } else {
+        avoid_centerpoint_.x = temp_centerpoint.x;
+        avoid_centerpoint_.y = temp_centerpoint.y;
+        avoid_centerpoint_.z = temp_centerpoint.z;
+      }
+      avoid_sphere_age_ = 0;
+    }else{
+      avoid_sphere_age_ ++;
+    }
+
     determineStrategy();
   }
 }
 
 void LocalPlanner::determineStrategy(){
   tree_new_ = false;
+  tree_age_ ++;
 
   if(!reach_altitude_){
     std::cout << "\033[1;32m Reach height ("<<starting_height_<<") first: Go fast\n \033[0m";
@@ -428,7 +428,7 @@ void LocalPlanner::determineStrategy(){
       m.getRPY(roll, pitch, yaw);
       calculateFOV(yaw, pitch);
 
-      createPolarHistogram();  //TODO: Maybe also discard points is cloud is too small
+      createPolarHistogram();
 
       //decide how to proceed
       if(hist_is_empty_){
@@ -866,14 +866,7 @@ void LocalPlanner::findFreeDirections() {
 
 bool LocalPlanner::getWaypointFromTree() {
   if (tree_available_) {
-    std::vector < geometry_msgs::Point > path_points;
-    int tree_end = origin_;
-    path_points.push_back(tree_[tree_end].getPosition());
-    while (tree_end > 0) {
-      tree_end = tree_[tree_end].origin;
-      path_points.push_back(tree_[tree_end].getPosition());
-    }
-    int size = path_points.size();
+    int size = path_node_positions_.size();
     geometry_msgs::Point p;
 
     if (tree_new_) {
@@ -891,7 +884,7 @@ bool LocalPlanner::getWaypointFromTree() {
 
       std::vector<double> distances;
       for (int i = 0; i < size; i++) {
-        distances.push_back(distance3DCartesian(pose_.pose.position, path_points[i]));
+        distances.push_back(distance3DCartesian(pose_.pose.position, path_node_positions_[i]));
         if (distances[i] < min_dist) {
           second_min_dist_idx = min_dist_idx;
           min_dist = distances[i];
@@ -905,8 +898,8 @@ bool LocalPlanner::getWaypointFromTree() {
         if (distances[wp_idx] < 0.3 && wp_idx != 0) {
           wp_idx--;
         }
-        int wp_z = floor(atan2(path_points[wp_idx].x - pose_.pose.position.x, path_points[wp_idx].y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
-        int wp_e = floor(atan((path_points[wp_idx].z - pose_.pose.position.z) / sqrt(pow((path_points[wp_idx].x - pose_.pose.position.x), 2) + pow((path_points[wp_idx].y - pose_.pose.position.y), 2))) * 180.0 / PI);
+        int wp_z = floor(atan2(path_node_positions_[wp_idx].x - pose_.pose.position.x, path_node_positions_[wp_idx].y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
+        int wp_e = floor(atan((path_node_positions_[wp_idx].z - pose_.pose.position.z) / sqrt(pow((path_node_positions_[wp_idx].x - pose_.pose.position.x), 2) + pow((path_node_positions_[wp_idx].y - pose_.pose.position.y), 2))) * 180.0 / PI);
 
         p.x = wp_e;
         p.y = wp_z;
@@ -944,7 +937,7 @@ void LocalPlanner::buildLookAheadTree(){
     setLimitsHistogramBox(origin_position);
     filterPointCloud(complete_cloud_);
     //if too close to obstacle, we do not want to go there (equivalent to back off)
-    if (counter_close_points_ > 20 && final_cloud_.points.size() > 160) {
+    if (counter_close_points_backoff_ > 20 && final_cloud_.points.size() > 160) {
       tree_[origin_].total_cost = INF;
       add_nodes = false;
     }
@@ -976,7 +969,7 @@ void LocalPlanner::buildLookAheadTree(){
         tree_.back().last_e = e;
         tree_.back().last_z = z;
         double h = treeHeuristicFunction(tree_.size() - 1);
-        double c = treeCostFunction(e, z, tree_.size() - 1);
+        double c = treeCostFunction(tree_.size() - 1);
         tree_.back().heuristic = h;
         tree_.back().total_cost = tree_[origin_].total_cost - tree_[origin_].heuristic + c + h;
         double dx = node_location.x - origin_position.x;
@@ -1005,51 +998,52 @@ void LocalPlanner::buildLookAheadTree(){
         minimal_cost = tree_[i].total_cost;
         origin_ = i;
       }
-
-
-//    std::cout << "min c node [e, z]: [" << tree_[min_c_node].last_e << ", " << tree_[min_c_node].last_z << "] \n";
-//    std::cout << "chosen node [e, z]: [" << tree_[origin].last_e << ", " << tree_[origin].last_z << "] \n";
-//
-//    int e_cmin = (tree_[min_c_node].last_e - alpha_res + 90) / alpha_res;
-//    int z_cmin = (tree_[min_c_node].last_z - alpha_res + 180) / alpha_res;
-//
-//    int e_min = (tree_[origin].last_e - alpha_res + 90) / alpha_res;
-//    int z_min = (tree_[origin].last_z - alpha_res + 180) / alpha_res;
-//
-//    for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
-//      for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
-//        if (e_ind == e_cmin && z_ind == z_cmin) {
-//          std::cout << "\033[1;34m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //blue
-//        } else if (e_ind == e_min && z_ind == z_min) {
-//          std::cout << "\033[1;31m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //red
-//        } else if (e_ind == goal_e_idx && z_ind == goal_z_idx) {
-//          std::cout << "\033[1;36m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //cyan
-//        } else if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_ind) != z_FOV_idx_.end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
-//          std::cout << "\033[1;32m" << polar_histogram_.get_bin(e_ind, z_ind) << " \033[0m";  //green
-//        } else {
-//          std::cout << polar_histogram_.get_bin(e_ind, z_ind) << " ";
-//        }
-//      }
-//      std::cout << "\n";
-//    }
     }
   }
+  //smoothing between trees
+  int tree_end = origin_;
+  path_node_positions_.clear();
+  while (tree_end > 0) {
+    path_node_positions_.push_back(tree_[tree_end].getPosition());
+    tree_end = tree_[tree_end].origin;
+  }
+  path_node_positions_.push_back(tree_[0].getPosition());
+  tree_age_ = 0;
+
 
 ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
-double LocalPlanner::treeCostFunction(int e, int z, int node_number) {
-  geometry_msgs::Point origin_position = tree_[tree_[node_number].origin].getPosition();
-  int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
+double LocalPlanner::treeCostFunction(int node_number) {
+  int origin = tree_[node_number].origin;
+  int e = tree_[node_number].last_e;
+  int z = tree_[node_number].last_z;
+  geometry_msgs::Point origin_position = tree_[origin].getPosition();
+  int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);
   int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
 
   double curr_yaw_z = std::round((-curr_yaw_ * 180.0 / PI + 270.0) / alpha_res) - 1;
 
-  double target_cost = 5 * indexAngleDifference(z, goal_z) + 20 * indexAngleDifference(e, goal_e);  //include effective direction?
+  double target_cost = 5 * indexAngleDifference(z, goal_z) + 10 * indexAngleDifference(e, goal_e);  //include effective direction?
   //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
-  double smooth_cost = 5 * indexAngleDifference(z, tree_[node_number].last_z) + 5 * indexAngleDifference(e, tree_[node_number].last_e);
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost);
+  int last_e = tree_[origin].last_e;
+  int last_z = tree_[origin].last_z;
+
+  double smooth_cost = 5 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e);
+
+  double smooth_cost_to_old_tree = 0;
+  if(tree_age_<10){
+    int partner_node_idx = path_node_positions_.size() - 1 - tree_[node_number].depth;
+    if(partner_node_idx >= 0){
+      geometry_msgs::Point partner_node_position = path_node_positions_[partner_node_idx];
+      geometry_msgs::Point node_position = tree_[node_number].getPosition();
+      double dist = distance3DCartesian(partner_node_position, node_position);
+      smooth_cost_to_old_tree = 150*dist;
+    }
+  }
+
+  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost + smooth_cost_to_old_tree);
 
 }
 double LocalPlanner::treeHeuristicFunction(int node_number) {
@@ -1400,9 +1394,9 @@ geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Sta
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id="/world";
-  pose_msg.pose.position.x = waypt_.vector.x;
-  pose_msg.pose.position.y = waypt_.vector.y;
-  pose_msg.pose.position.z = waypt_.vector.z;
+  pose_msg.pose.position.x = waypt.vector.x;
+  pose_msg.pose.position.y = waypt.vector.y;
+  pose_msg.pose.position.z = waypt.vector.z;
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
   return pose_msg;
 }
@@ -1434,14 +1428,14 @@ void LocalPlanner::reachGoalAltitudeFirst(){
 }
 
 // smooth trajectory by liming the maximim accelleration possible
-geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
+geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(geometry_msgs::Vector3Stamped wp){
   geometry_msgs::Vector3Stamped smooth_waypt;
   std::clock_t t = std::clock();
   float dt = (t - t_prev_) / (float)(CLOCKS_PER_SEC);
   dt = dt > 0.0f ? dt : 0.004f;
   t_prev_ = t;
   Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
-  Eigen::Vector2f vel_waypt_xy((waypt_.vector.x - last_waypt_p_.pose.position.x) / dt, (waypt_.vector.y - last_waypt_p_.pose.position.y) / dt);
+  Eigen::Vector2f vel_waypt_xy((wp.vector.x - last_waypt_p_.pose.position.x) / dt, (wp.vector.y - last_waypt_p_.pose.position.y) / dt);
   Eigen::Vector2f vel_waypt_xy_prev((last_waypt_p_.pose.position.x - last_last_waypt_p_.pose.position.x) / dt, (last_waypt_p_.pose.position.y - last_last_waypt_p_.pose.position.y) / dt);
   Eigen::Vector2f acc_waypt_xy((vel_waypt_xy - vel_waypt_xy_prev) / dt);
 
@@ -1449,7 +1443,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
     vel_xy = (acc_waypt_xy.norm() / 2.0f) * acc_waypt_xy.normalized() * dt + vel_waypt_xy_prev;
   }
 
-  float vel_waypt_z = (waypt_.vector.z - last_waypt_p_.pose.position.z) / dt;
+  float vel_waypt_z = (wp.vector.z - last_waypt_p_.pose.position.z) / dt;
   float max_acc_z, vel_z;
   float vel_waypt_z_prev = (last_waypt_p_.pose.position.z - last_last_waypt_p_.pose.position.z) / dt;
   float acc_waypt_z = (vel_waypt_z - vel_waypt_z_prev) / dt;
@@ -1461,7 +1455,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(){
 
   smooth_waypt.vector.x = last_waypt_p_.pose.position.x + vel_xy(0) * dt;
   smooth_waypt.vector.y = last_waypt_p_.pose.position.y + vel_xy(1) * dt;
-  smooth_waypt.vector.z = waypt_.vector.z;
+  smooth_waypt.vector.z = wp.vector.z;
 
   ROS_INFO("Smoothed waypoint: [%f %f %f].", smooth_waypt.vector.x, smooth_waypt.vector.y, smooth_waypt.vector.z);
   return smooth_waypt;
@@ -1473,6 +1467,7 @@ void LocalPlanner::getPathMsg() {
   last_last_waypt_p_ = last_waypt_p_;
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
+  waypt_adapted_ = waypt_;
 
   //If avoid sphere is used, project waypoint on sphere
   if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
@@ -1484,13 +1479,13 @@ void LocalPlanner::getPathMsg() {
     if (dist < sphere_hysteresis_radius) {
       //put waypoint closer to equator
       if (waypt_.vector.z < avoid_centerpoint_.z) {
-        waypt_.vector.z = waypt_.vector.z + 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
+        waypt_adapted_.vector.z = waypt_.vector.z + 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
       } else {
-        waypt_.vector.z = waypt_.vector.z - 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
+        waypt_adapted_.vector.z = waypt_.vector.z - 0.25 * std::abs(waypt_.vector.z - avoid_centerpoint_.z);
       }
       //increase angle from pole
-      Eigen::Vector3f center_to_wp(waypt_.vector.x - avoid_centerpoint_.x, waypt_.vector.y - avoid_centerpoint_.y, waypt_.vector.z - avoid_centerpoint_.z);
-      Eigen::Vector2f center_to_wp_2D(waypt_.vector.x - avoid_centerpoint_.x, waypt_.vector.y - avoid_centerpoint_.y);
+      Eigen::Vector3f center_to_wp(waypt_adapted_.vector.x - avoid_centerpoint_.x, waypt_adapted_.vector.y - avoid_centerpoint_.y, waypt_adapted_.vector.z - avoid_centerpoint_.z);
+      Eigen::Vector2f center_to_wp_2D(waypt_adapted_.vector.x - avoid_centerpoint_.x, waypt_adapted_.vector.y - avoid_centerpoint_.y);
       Eigen::Vector2f pose_to_center_2D(pose_.pose.position.x - avoid_centerpoint_.x, pose_.pose.position.y - avoid_centerpoint_.y);
       center_to_wp_2D = center_to_wp_2D.normalized();
       pose_to_center_2D = pose_to_center_2D.normalized();
@@ -1498,7 +1493,6 @@ void LocalPlanner::getPathMsg() {
       Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0], center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
       n = n.normalized();
       double cos_new_theta = 0.8 * cos_theta;
-      std::cout<<"cos(theta) new = "<<cos_new_theta<<"\n";
       double sin_new_theta = sin(acos(cos_new_theta));
       Eigen::Vector2f center_to_wp_2D_new(cos_new_theta * pose_to_center_2D[0] + sin_new_theta * n[0], cos_new_theta * pose_to_center_2D[1] + sin_new_theta * n[1]);
       center_to_wp = center_to_wp.normalized();
@@ -1510,40 +1504,44 @@ void LocalPlanner::getPathMsg() {
       //hysteresis
       if (dist < avoid_radius_) {
         center_to_wp_new *= avoid_radius_;
-        waypt_.vector.x = avoid_centerpoint_.x + center_to_wp_new[0];
-        waypt_.vector.y = avoid_centerpoint_.y + center_to_wp_new[1];
-        waypt_.vector.z = avoid_centerpoint_.z + center_to_wp_new[2];
+        waypt_adapted_.vector.x = avoid_centerpoint_.x + center_to_wp_new[0];
+        waypt_adapted_.vector.y = avoid_centerpoint_.y + center_to_wp_new[1];
+        waypt_adapted_.vector.z = avoid_centerpoint_.z + center_to_wp_new[2];
         std::cout << "\033[1;36m Inside sphere \n \033[0m";
       } else {
         center_to_wp_new *= dist;
         double radius_percentage = (dist - avoid_radius_) / (sphere_hysteresis_radius - avoid_radius_);  //1 at hysteresis rad, 0 at avoid rad
-        waypt_.vector.x = (1.0 - radius_percentage) * (avoid_centerpoint_.x + center_to_wp_new[0]) + radius_percentage * waypt_.vector.x;
-        waypt_.vector.y = (1.0 - radius_percentage) * (avoid_centerpoint_.y + center_to_wp_new[1]) + radius_percentage * waypt_.vector.y;
-        waypt_.vector.z = (1.0 - radius_percentage) * (avoid_centerpoint_.z + center_to_wp_new[2]) + radius_percentage * waypt_.vector.z;
+        waypt_adapted_.vector.x = (1.0 - radius_percentage) * (avoid_centerpoint_.x + center_to_wp_new[0]) + radius_percentage * waypt_adapted_.vector.x;
+        waypt_adapted_.vector.y = (1.0 - radius_percentage) * (avoid_centerpoint_.y + center_to_wp_new[1]) + radius_percentage * waypt_adapted_.vector.y;
+        waypt_adapted_.vector.z = (1.0 - radius_percentage) * (avoid_centerpoint_.z + center_to_wp_new[2]) + radius_percentage * waypt_adapted_.vector.z;
         std::cout << "\033[1;36m Inside sphere hysteresis \n \033[0m";
       }
     }
   }
 
-  double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+  double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
   only_yawed_ = false;
   //If the waypoint is not inside the FOV, only yaw and not move
   if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_){
-    waypt_.vector.x = pose_.pose.position.x;
-    waypt_.vector.y = pose_.pose.position.y;
-    waypt_.vector.z = pose_.pose.position.z;
+    waypt_adapted_.vector.x = pose_.pose.position.x;
+    waypt_adapted_.vector.y = pose_.pose.position.y;
+    waypt_adapted_.vector.z = pose_.pose.position.z;
     only_yawed_ = true;
   }
 
+  waypt_smoothed_ = waypt_adapted_;
+
   if (!reach_altitude_) {
     reachGoalAltitudeFirst();
+    waypt_adapted_ = waypt_;
+    waypt_smoothed_ = waypt_;
   } else {
     if (!only_yawed_) {
       if (!reached_goal_ && !stop_in_front_) {
         if (smooth_go_fast_ < 1 && local_planner_mode_ == 1) {
-          waypt_.vector.x = smooth_go_fast_ * waypt_.vector.x + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.x;
-          waypt_.vector.y = smooth_go_fast_ * waypt_.vector.y + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.y;
-          waypt_.vector.z = smooth_go_fast_ * waypt_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
+          waypt_smoothed_.vector.x = smooth_go_fast_ * waypt_adapted_.vector.x + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.x;
+          waypt_smoothed_.vector.y = smooth_go_fast_ * waypt_adapted_.vector.y + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.y;
+          waypt_smoothed_.vector.z = smooth_go_fast_ * waypt_adapted_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
         }
         waypt_ = smoothWaypoint();
         new_yaw = nextYaw(pose_, waypt_, last_yaw_);
@@ -1557,9 +1555,11 @@ void LocalPlanner::getPathMsg() {
     if (dist > min_dist_backoff_ + 1.0) {
       back_off_ = false;
     }
+    waypt_smoothed_ = waypt_;
   }
 
-  waypt_p_ = createPoseMsg(waypt_, new_yaw);
+  waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw);
+
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
   last_last_waypt_p_ = last_waypt_p_;
@@ -1696,4 +1696,10 @@ void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed
   tree = tree_;
   closed_set = closed_set_;
   origin = origin_;
+}
+
+void LocalPlanner::getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed){
+  waypt = waypt_;
+  waypt_adapted = waypt_adapted_;
+  waypt_smoothed = waypt_smoothed_;
 }

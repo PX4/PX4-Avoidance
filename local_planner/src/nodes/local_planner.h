@@ -102,6 +102,7 @@ class LocalPlanner
   int childs_per_node_;
   int n_expanded_nodes_;
   int origin_;
+  int tree_age_ = 0;
 
   double local_planner_last_mode_;
   double smooth_go_fast_;
@@ -137,6 +138,7 @@ class LocalPlanner
   double min_dist_backoff_;
   double tree_discount_factor_ = 0.8;
   double tree_node_distance_ = 0.5;
+  double min_realsense_dist_ = 0.2;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
@@ -152,6 +154,7 @@ class LocalPlanner
   std::vector<int> closed_set_;
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
+  std::vector<geometry_msgs::Point> path_node_positions_;
 
   std::vector<TreeNode> tree_;
 
@@ -170,6 +173,8 @@ class LocalPlanner
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
+  geometry_msgs::Vector3Stamped waypt_adapted_;
+  geometry_msgs::Vector3Stamped waypt_smoothed_;
   geometry_msgs::Vector3Stamped hover_point_;
   geometry_msgs::Vector3Stamped last_hist_waypt_;
   geometry_msgs::PoseStamped waypt_p_;
@@ -221,14 +226,14 @@ class LocalPlanner
   void checkSpeed();
   void stopInFrontObstacles();
   void buildLookAheadTree();
-  double treeCostFunction(int e, int z, int node_number);
+  double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   double indexAngleDifference(int a, int b);
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
   geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);
   geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
-  geometry_msgs::Vector3Stamped smoothWaypoint();
+  geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
 
  public:
 
@@ -277,6 +282,7 @@ class LocalPlanner
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
   void useHoverPoint();
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, int &origin);
+  void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
 };
 
 #endif // LOCAL_PLANNER_LOCAL_PLANNER_H
