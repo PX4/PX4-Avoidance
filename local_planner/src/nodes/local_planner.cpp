@@ -9,10 +9,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.header = msg.header;
   pose_.pose.position = msg.pose.position;
   pose_.pose.orientation = msg.pose.orientation;
-
-  if (set_first_yaw_){
-    curr_yaw_ = tf::getYaw(msg.pose.orientation);
-  }
+  curr_yaw_ = tf::getYaw(msg.pose.orientation);
 
   if(!currently_armed_){
     take_off_pose_.header = msg.header;
@@ -44,11 +41,11 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   histogram_box_size_.zmin = config.min_box_z_;
   histogram_box_size_.zmax = config.max_box_z_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
-  min_groundbox_z_ = 1.5 * min_dist_to_ground_;
-  min_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
-  max_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
-  min_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
-  max_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
+  ground_box_size_.zmin = 1.5 * min_dist_to_ground_;
+  ground_box_size_.xmin = 1.5 * (ground_box_.zmin / tan((v_fov/2.0)*PI/180));
+  ground_box_size_.xmax = 1.5 * (ground_box_.zmin / tan((v_fov/2.0)*PI/180));
+  ground_box_size_.ymin = 1.5 * (ground_box_.zmin / tan((v_fov/2.0)*PI/180));
+  ground_box_size_.ymax = 1.5 * (ground_box_.zmin / tan((v_fov/2.0)*PI/180));
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
@@ -74,7 +71,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
     goal_z_param_ = config.goal_z_param;
     setGoal();
   }
-  use_ground_detection = config.use_ground_detection;
+  use_ground_detection_ = config.use_ground_detection_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
 }
@@ -83,21 +80,22 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 void LocalPlanner::logData() {
 
   if (currently_armed_ && offboard_) {
-    std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
-    myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
-         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\t"<< algorithm_total_time_[algorithm_total_time_.size()-1]<< "\n";
-    myfile.close();
+    //Print general Algorithm Data
+    std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
+    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t"
+        << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << hovering_ << "\n";
+    myfile1.close();
 
-    if (print_height_map_) {
-      std::ofstream myfile(("InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
-      myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << 0 << "\t" << 0 << "\t" << 0 << "\n";
-      int i = 0;
-      for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
-        myfile << ground_heights_[i] << "\t" << ground_xmin_[i] << "\t" << ground_xmax_[i] << "\t" << ground_ymin_[i] << "\t" << ground_ymax_[i] << "\n";
-        i++;
-      }
-      myfile.close();
+    //Print Internal Height Map
+    std::ofstream myfile2(("InternalHeightMap_" + log_name_).c_str(), std::ofstream::app);
+    myfile2 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << 0 << "\t" << 0 << "\t" << 0 << "\n";
+    int i = 0;
+    for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
+      myfile2 << ground_heights_[i] << "\t" << ground_xmin_[i] << "\t" << ground_xmax_[i] << "\t" << ground_ymin_[i] << "\t" << ground_ymax_[i] << "\n";
+      i++;
     }
+    myfile2.close();
+
   }
 }
 
@@ -276,7 +274,7 @@ void LocalPlanner::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) 
   for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
     // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-      if (use_ground_detection) {
+      if (use_ground_detection_) {
         if (isPointWithinGroundBox(pcl_it)) {
           cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
         }
@@ -305,7 +303,6 @@ void LocalPlanner::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) 
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
   hovering_ = false;
   local_planner_last_mode_ = local_planner_mode_;
-  calculateFOV();
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
@@ -314,8 +311,8 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   distance_to_closest_point_ = 1000.0f;
   double min_realsense_dist = 0.2;
   float distance;
-  int counter_close_points_backoff = 0;
-  int counter_close_points = 0;
+  counter_close_points_backoff_ = 0;
+  counter_close_points_ = 0;
   geometry_msgs::Point temp_centerpoint;
 
   for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
@@ -332,10 +329,10 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
             closest_point_.z = pcl_it->z;
           }
           if (distance < min_dist_backoff_){
-            counter_close_points_backoff ++;
+            counter_close_points_backoff_ ++;
           }
           if (distance < avoid_radius_ + 1.5 && use_avoid_sphere_){
-            counter_close_points ++;
+            counter_close_points_ ++;
             temp_centerpoint.x += pcl_it->x;
             temp_centerpoint.y += pcl_it->y;
             temp_centerpoint.z += pcl_it->z;
@@ -345,11 +342,11 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     }
   }
 
-  //calculate avoid center from close points
-  if (counter_close_points > 50 && use_avoid_sphere_ && reach_altitude_) {
-    temp_centerpoint.x = temp_centerpoint.x / counter_close_points;
-    temp_centerpoint.y = temp_centerpoint.y / counter_close_points;
-    temp_centerpoint.z = temp_centerpoint.z / counter_close_points;
+  //calculate sphere center from close points
+  if (counter_close_points_ > 50 && use_avoid_sphere_ && reach_altitude_) {
+    temp_centerpoint.x = temp_centerpoint.x / counter_close_points_;
+    temp_centerpoint.y = temp_centerpoint.y / counter_close_points_;
+    temp_centerpoint.z = temp_centerpoint.z / counter_close_points_;
     if(avoid_sphere_age_ < 10){
       tf::Vector3 vec;
       vec.setX(temp_centerpoint.x - avoid_centerpoint_.x);
@@ -383,7 +380,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   final_cloud_.header.stamp = complete_cloud.header.stamp;
   final_cloud_.header.frame_id = complete_cloud.header.frame_id;
   final_cloud_.height = 1;
-  if (cloud_temp1->points.size() > min_cloud_size_ ) {
+  if (cloud_temp->points.size() > min_cloud_size_ ) {
     final_cloud_.points = cloud_temp->points;
     final_cloud_.width = cloud_temp->points.size();
   }
@@ -391,7 +388,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 //  ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), final_cloud_.width);
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
-  if(new_cloud){
+  if(new_cloud_){
     determineStrategy();
   }
 }
@@ -409,7 +406,7 @@ void LocalPlanner::determineStrategy(){
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if (((counter_close_points_backoff > 20 && final_cloud_.points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
+    if (((counter_close_points_backoff_ > 20 && final_cloud_.points.size() > min_cloud_size_) || back_off_) && reach_altitude_ && use_back_off_) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
@@ -738,11 +735,11 @@ void LocalPlanner::findFreeDirections() {
   initGridCells(&path_selected_);
   initGridCells(&path_ground_);
 
-  updateCostParameters();
+  evaluateProgressRate();
 
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
-  if (use_ground_detection) {
+  if (use_ground_detection_) {
     getMinFlightHeight();
     int e_max = floor(V_FOV / 2);
     int e_min;
@@ -828,7 +825,7 @@ void LocalPlanner::findFreeDirections() {
       }
 
       //reject points which lead the drone too close to the ground
-      if (use_ground_detection && over_obstacle_) {
+      if (use_ground_detection_ && over_obstacle_) {
         if (e <= e_min_idx) {
           height_reject = true;
         }
@@ -922,7 +919,7 @@ bool LocalPlanner::getWaypointFromTree() {
 
 void LocalPlanner::buildLookAheadTree(){
   std::clock_t start_time = std::clock();
-  new_cloud = false;
+  new_cloud_ = false;
   tree_.clear();
   closed_set_.clear();
   //insert first node
@@ -943,12 +940,12 @@ void LocalPlanner::buildLookAheadTree(){
     setLimitsHistogramBox(origin_position);
     filterPointCloud(complete_cloud_);
     //if too close to obstacle, we do not want to go there (equivalent to back off)
-    if (counter_close_points_ < 20 && final_cloud_.points.size() > 160) {
-      tree_[origin].total_cost = INF;
+    if (counter_close_points_ > 20 && final_cloud_.points.size() > 160) {
+      tree_[origin_].total_cost = INF;
       add_nodes = false;
     }
 
-    if (add_nodes) {
+    if (add_nodes || origin_ == 0) {
       //build new histogram
       calculateFOV(tree_[origin_].yaw, 0.0);  //assume pitch is zero at every node
       createPolarHistogram();
@@ -1032,6 +1029,7 @@ void LocalPlanner::buildLookAheadTree(){
 //    }
     }
   }
+
 ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
@@ -1065,7 +1063,7 @@ return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)), std::abs(a - b
 }
 
 //calculate the correct weight between fly over and fly around
-void LocalPlanner::updateCostParameters() {
+void LocalPlanner::evaluateProgressRate() {
 
   if (reach_altitude_) {
     double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
@@ -1303,7 +1301,7 @@ void LocalPlanner::goFast(){
     double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
     //Prevent downward motion or move up if too close to ground
-    if (use_ground_detection) {
+    if (use_ground_detection_) {
       vec.normalize();
       getMinFlightHeight();
       if (over_obstacle_ && pose_.pose.position.z <= min_flight_height_) {
@@ -1328,7 +1326,7 @@ void LocalPlanner::goFast(){
     path_waypoints_.cells.push_back(p);
 
     //to keep track of forward movement update params also in go Fast mode
-    updateCostParameters();
+    evaluateProgressRate();
 
     //reset candidates for visualization
     initGridCells(&path_candidates_);
