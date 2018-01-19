@@ -426,15 +426,17 @@ void LocalPlanner::determineStrategy(){
       tf::Matrix3x3 m(q);
       double roll, pitch, yaw;
       m.getRPY(roll, pitch, yaw);
-      calculateFOV(yaw, pitch);
+      std::vector<int> z_FOV_idx;
+      int e_FOV_min, e_FOV_max;
+      calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, yaw, pitch);
 
-      createPolarHistogram();
+      polar_histogram_ = createPolarHistogram(z_FOV_idx, e_FOV_min, e_FOV_max);
 
       //decide how to proceed
       if(hist_is_empty_){
         obstacle_ = false;
         local_planner_mode_ = 1;
-        if(getWaypointFromTree()){
+        if(getDirectionFromTree()){
           std::cout << "\033[1;32m There is NO Obstacle Ahead reuse old Tree\n \033[0m";
           getNextWaypoint();
         }else{
@@ -447,7 +449,7 @@ void LocalPlanner::determineStrategy(){
         obstacle_ = true;
         std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
         local_planner_mode_ = 2;
-        findFreeDirections();
+        findFreeDirections(polar_histogram_);
         calculateCostMap();
 
 
@@ -455,9 +457,9 @@ void LocalPlanner::determineStrategy(){
           tree_available_ = true;
           tree_new_ = true;
           buildLookAheadTree();
-          getWaypointFromTree();
+          getDirectionFromTree();
         }else{
-          getWaypointFromCostMap();
+          getDirectionFromCostMap();
         }
 
 
@@ -499,7 +501,7 @@ bool LocalPlanner::groundDetected() {
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void LocalPlanner::calculateFOV(double yaw, double pitch) {
+void LocalPlanner::calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch) {
 
   double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
   double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
@@ -525,14 +527,33 @@ void LocalPlanner::calculateFOV(double yaw, double pitch) {
     }
   } else if (z_FOV_min < 0 && z_FOV_max >= 0) {
     for (int i = 0; i < z_FOV_max; i++) {
-      z_FOV_idx_.push_back(i);
+      z_FOV_idx.push_back(i);
     }
     for (int i = z_FOV_min + GRID_LENGTH_Z; i < GRID_LENGTH_Z; i++) {
       z_FOV_idx_.push_back(i);
     }
   } else {
     for (int i = z_FOV_min; i < z_FOV_max; i++) {
-      z_FOV_idx_.push_back(i);
+      z_FOV_idx.push_back(i);
+    }
+  }
+
+  if (new_cloud_) {
+    z_FOV_idx_.clear();
+    z_FOV_idx_ = z_FOV_idx;
+    e_FOV_max_ = e_FOV_max;
+    e_FOV_min_ = e_FOV_min;
+
+    //visualization
+    initGridCells(&FOV_cells_);
+    geometry_msgs::Point p;
+    for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
+      for (int i = 0; i < z_FOV_idx_.size(); i++) {
+        p.x = j * alpha_res + alpha_res - 90;
+        p.y = z_FOV_idx_[i] * alpha_res + alpha_res - 180;
+        p.z = 0;
+        FOV_cells_.cells.push_back(p);
+      }
     }
   }
 }
@@ -579,13 +600,15 @@ void LocalPlanner::reprojectPoints() {
 }
 
 // fill the 2D polar histogram with the points from the filtered point cloud
-void LocalPlanner::createPolarHistogram() {
+Histogram LocalPlanner::createPolarHistogram(std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max) {
   //Build histogram estimate from reprojected points
   std::clock_t start_time = std::clock();
 
-  polar_histogram_est_ = Histogram(2 * ALPHA_RES);
+  Histogram polar_histogram_est = Histogram(2 * ALPHA_RES);
+  Histogram polar_histogram = Histogram(ALPHA_RES);
 
-  for (int i = 0; i < reprojected_points_.width; i++) {
+
+  for (int i = 0; i < reprojected_points_.points.size(); i++) {
     int beta_z_new = floor(atan2(reprojected_points_.points[i].x - pose_.pose.position.x, reprojected_points_.points[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
     int beta_e_new = floor( atan((reprojected_points_.points[i].z - pose_.pose.position.z)/ sqrt(
                     (reprojected_points_.points[i].x - pose_.pose.position.x) * (reprojected_points_.points[i].x - pose_.pose.position.x)
@@ -599,30 +622,30 @@ void LocalPlanner::createPolarHistogram() {
     int e_new = (beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
     int z_new = (beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
 
-    polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 0.25);
-    polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 0.25 * reprojected_points_age_[i]);
-    polar_histogram_est_.set_dist(e_new, z_new, polar_histogram_est_.get_dist(e_new, z_new) + 0.25 * reprojected_points_dist_[i]);
+    polar_histogram_est.set_bin(e_new, z_new, polar_histogram_est.get_bin(e_new, z_new) + 0.25);
+    polar_histogram_est.set_age(e_new, z_new, polar_histogram_est.get_age(e_new, z_new) + 0.25 * reprojected_points_age_[i]);
+    polar_histogram_est.set_dist(e_new, z_new, polar_histogram_est.get_dist(e_new, z_new) + 0.25 * reprojected_points_dist_[i]);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
     for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
-      if (polar_histogram_est_.get_bin(e, z) >= MIN_BIN) {
-        polar_histogram_est_.set_dist(e, z, polar_histogram_est_.get_dist(e, z) / polar_histogram_est_.get_bin(e, z));
-        polar_histogram_est_.set_age(e, z, polar_histogram_est_.get_age(e, z) / polar_histogram_est_.get_bin(e, z));
-        polar_histogram_est_.set_bin(e, z, 1);
+      if (polar_histogram_est.get_bin(e, z) >= MIN_BIN) {
+        polar_histogram_est.set_dist(e, z, polar_histogram_est.get_dist(e, z) / polar_histogram_est.get_bin(e, z));
+        polar_histogram_est.set_age(e, z, polar_histogram_est.get_age(e, z) / polar_histogram_est.get_bin(e, z));
+        polar_histogram_est.set_bin(e, z, 1);
       } else {
-        polar_histogram_est_.set_dist(e, z, 0);
-        polar_histogram_est_.set_age(e, z, 0);
-        polar_histogram_est_.set_bin(e, z, 0);
+        polar_histogram_est.set_dist(e, z, 0);
+        polar_histogram_est.set_age(e, z, 0);
+        polar_histogram_est.set_bin(e, z, 0);
       }
     }
   }
 
   //Upsample histogram estimate
-  polar_histogram_est_.upsample();
+  polar_histogram_est.upsample();
 
   //Generate new histogram from pointcloud
-  polar_histogram_.setZero();
+  polar_histogram.setZero();
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
   geometry_msgs::Point temp;
   double dist;
@@ -645,57 +668,60 @@ void LocalPlanner::createPolarHistogram() {
     int e = beta_e / ALPHA_RES - 1;  //[0,17]
     int z = beta_z/ ALPHA_RES - 1;  //[0,35]
 
-    polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + 1);
-    polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
+    polar_histogram.set_bin(e, z, polar_histogram.get_bin(e, z) + 1);
+    polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) + dist);
   }
 
   //Normalize and get mean in distance bins
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (polar_histogram_.get_bin(e, z) > 0) {
-        polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) / polar_histogram_.get_bin(e, z));
-        polar_histogram_.set_bin(e, z, 1);
+      if (polar_histogram.get_bin(e, z) > 0) {
+        polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) / polar_histogram.get_bin(e, z));
+        polar_histogram.set_bin(e, z, 1);
       }
     }
   }
 
   //Combine to New binary histogram
-  bool hist_is_empty = true;
+  hist_is_empty_ = true;
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
-        if (polar_histogram_.get_bin(e, z) > 0) {
-          polar_histogram_.set_age(e, z, 1);
+      if (std::find(z_FOV_idx .begin(), z_FOV_idx .end(), z) != z_FOV_idx .end() && e > e_FOV_min && e < e_FOV_max) {  //inside FOV
+        if (polar_histogram.get_bin(e, z) > 0) {
+          polar_histogram.set_age(e, z, 1);
           hist_is_empty_ = false;
         }
       } else {
-        if (polar_histogram_est_.get_bin(e, z) > 0) {
+        if (polar_histogram_est.get_bin(e, z) > 0) {
           if (waypoint_outside_FOV_) {
-            polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z));
+            polar_histogram.set_age(e, z, polar_histogram_est.get_age(e, z));
           } else {
-            polar_histogram_.set_age(e, z, polar_histogram_est_.get_age(e, z) + 1);
+            polar_histogram.set_age(e, z, polar_histogram_est.get_age(e, z) + 1);
           }
           hist_is_empty_ = false;
         }
-        if (polar_histogram_.get_bin(e, z) > 0) {
-          polar_histogram_.set_age(e, z, 1);
+        if (polar_histogram.get_bin(e, z) > 0) {
+          polar_histogram.set_age(e, z, 1);
           hist_is_empty_ = false;
         }
-        if (polar_histogram_est_.get_bin(e, z) > 0 && polar_histogram_.get_bin(e, z) == 0) {
-          polar_histogram_.set_bin(e, z, polar_histogram_est_.get_bin(e, z));
-          polar_histogram_.set_dist(e, z, polar_histogram_est_.get_dist(e, z));
+        if (polar_histogram_est.get_bin(e, z) > 0 && polar_histogram.get_bin(e, z) == 0) {
+          polar_histogram.set_bin(e, z, polar_histogram_est.get_bin(e, z));
+          polar_histogram.set_dist(e, z, polar_histogram_est.get_dist(e, z));
         }
       }
     }
   }
 
   //Update old histogram
-  polar_histogram_old_.setZero();
-  polar_histogram_old_ = polar_histogram_;
+  if (new_cloud_) {
+    polar_histogram_old_.setZero();
+    polar_histogram_old_ = polar_histogram;
+  }
 
   //Statistics
 //  ROS_INFO("Polar histogram created in %2.2fms.", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
   polar_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+  return polar_histogram;
 }
 
 void LocalPlanner::printHistogram(Histogram hist){
@@ -723,7 +749,7 @@ void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
 }
 
 // search for free directions in the 2D polar histogram with a moving window approach
-void LocalPlanner::findFreeDirections() {
+void LocalPlanner::findFreeDirections(Histogram histogram) {
   std::clock_t start_time = std::clock();
   int n = floor(safety_radius_ / ALPHA_RES);  //safety radius
   int a = 0, b = 0;
@@ -817,7 +843,7 @@ void LocalPlanner::findFreeDirections() {
           }
 
           if(!corner) {
-            if(polar_histogram_.get_bin(a,b) != 0) {
+            if(histogram.get_bin(a,b) != 0) {
               free = false;
               break;
             }
@@ -841,7 +867,7 @@ void LocalPlanner::findFreeDirections() {
         p.z = 0;
         path_candidates_.cells.push_back(p);
         cost_path_candidates_.push_back(costFunction((int) p.x, (int) p.y));
-      } else if (!free && polar_histogram_.get_bin(e, z) != 0 && !height_reject) {
+      } else if (!free && histogram.get_bin(e, z) != 0 && !height_reject) {
         p.x = e * ALPHA_RES + ALPHA_RES - 90;
         p.y = z * ALPHA_RES + ALPHA_RES - 180;
         p.z = 0;
@@ -864,7 +890,7 @@ void LocalPlanner::findFreeDirections() {
   free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
-bool LocalPlanner::getWaypointFromTree() {
+bool LocalPlanner::getDirectionFromTree() {
   if (tree_available_) {
     int size = path_node_positions_.size();
     geometry_msgs::Point p;
@@ -944,11 +970,13 @@ void LocalPlanner::buildLookAheadTree(){
 
     if (add_nodes || origin_ == 0) {
       //build new histogram
-      calculateFOV(tree_[origin_].yaw, 0.0);  //assume pitch is zero at every node
-      createPolarHistogram();
+      std::vector<int> z_FOV_idx;
+      int e_FOV_min, e_FOV_max;
+      calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, tree_[origin_].yaw, 0.0);  //assume pitch is zero at every node
+      Histogram histogram = createPolarHistogram(z_FOV_idx, e_FOV_min, e_FOV_max);
 
       //calculate candidates
-      findFreeDirections();
+      findFreeDirections(histogram);
       calculateCostMap();
 
       //insert new nodes
@@ -1039,7 +1067,7 @@ double LocalPlanner::treeCostFunction(int node_number) {
       geometry_msgs::Point partner_node_position = path_node_positions_[partner_node_idx];
       geometry_msgs::Point node_position = tree_[node_number].getPosition();
       double dist = distance3DCartesian(partner_node_position, node_position);
-      smooth_cost_to_old_tree = 150*dist;
+      smooth_cost_to_old_tree = 200*dist;
     }
   }
 
@@ -1160,7 +1188,7 @@ void LocalPlanner::calculateCostMap() {
 }
 
 // get waypoint from sorted cost list
-void LocalPlanner::getWaypointFromCostMap() {
+void LocalPlanner::getDirectionFromCostMap() {
 
   geometry_msgs::Point p;
   p.x = path_candidates_.cells[cost_idx_sorted_[0]].x;
@@ -1665,12 +1693,13 @@ void LocalPlanner::getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &fin
 }
 
 void LocalPlanner::getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-                                      nav_msgs::GridCells &path_ground){
+                                      nav_msgs::GridCells &FOV_cells, nav_msgs::GridCells &path_ground){
   path_candidates = path_candidates_;
   path_selected = path_selected_;
   path_rejected = path_rejected_;
   path_blocked = path_blocked_;
   path_ground = path_ground_;
+  FOV_cells = FOV_cells_;
 }
 
 void LocalPlanner::getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p){

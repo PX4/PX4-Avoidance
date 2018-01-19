@@ -183,6 +183,7 @@ class LocalPlanner
   geometry_msgs::Quaternion ground_orientation_;
 
   nav_msgs::Path path_msg_;
+  nav_msgs::GridCells FOV_cells_;
   nav_msgs::GridCells path_candidates_;
   nav_msgs::GridCells path_selected_;
   nav_msgs::GridCells path_rejected_;
@@ -192,7 +193,6 @@ class LocalPlanner
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
-  Histogram polar_histogram_est_ = Histogram(2 * ALPHA_RES);
 
   Box histogram_box_size_;
   Box ground_box_size_;
@@ -206,11 +206,11 @@ class LocalPlanner
   bool obstacleAhead();
   void determineStrategy();
   void reprojectPoints();
-  void calculateFOV(double yaw, double pitch);
-  void createPolarHistogram();
+  void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
+  Histogram createPolarHistogram(std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
   void printHistogram(Histogram hist);
   void initGridCells(nav_msgs::GridCells *cell);
-  void findFreeDirections();
+  void findFreeDirections(Histogram histogram);
   void calculateCostMap();
   void getNextWaypoint();
   void getMinFlightHeight();
@@ -221,14 +221,15 @@ class LocalPlanner
   void reachGoalAltitudeFirst();
   void getPathMsg();
   bool withinGoalRadius();
-  bool getWaypointFromTree();
-  void getWaypointFromCostMap();
+  bool getDirectionFromTree();
+  void getDirectionFromCostMap();
   void checkSpeed();
   void stopInFrontObstacles();
   void buildLookAheadTree();
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   double indexAngleDifference(int a, int b);
+  void angleToIndex(int &e_idx, int &z_idx, int e, int z);
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
   geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);
@@ -276,7 +277,7 @@ class LocalPlanner
   void getGoalPosition(geometry_msgs::Point &goal);
   void getAvoidSphere(geometry_msgs::Point &center, double &radius, int &avoid_sphere_age, bool &use_avoid_sphere);
   void getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &final_cloud, pcl::PointCloud<pcl::PointXYZ> &ground_cloud, pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &path_ground);
+  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &FOV_cells, nav_msgs::GridCells &path_ground);
   void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
