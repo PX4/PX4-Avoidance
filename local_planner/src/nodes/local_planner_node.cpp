@@ -34,6 +34,7 @@ LocalPlannerNode::LocalPlannerNode() {
   marker_rejected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
   marker_ground_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
+  marker_FOV_pub_= nh_.advertise<visualization_msgs::MarkerArray>("/FOV_marker", 1);
   marker_selected_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
@@ -147,6 +148,12 @@ void LocalPlannerNode::publishMarkerGround(nav_msgs::GridCells path_ground) {
   visualization_msgs::MarkerArray marker_ground;
   initMarker(&marker_ground, path_ground, 0.16, 0.8, 0.8);
   marker_ground_pub_.publish(marker_ground);
+}
+
+void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells FOV_cells) {
+  visualization_msgs::MarkerArray FOV_marker;
+  initMarker(&FOV_marker, FOV_cells, 0.16, 0.8, 0.8);
+  marker_FOV_pub_.publish(FOV_marker);
 }
 
 void LocalPlannerNode::publishGoal() {
@@ -600,14 +607,15 @@ void LocalPlannerNode::publishAll() {
   mavros_waypoint_pub_.publish(waypt_p);
   hover_point_ = waypt_p;
 
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground;
-  local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, path_ground);
+  nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground, FOV_cells;
+  local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, FOV_cells, path_ground);
 
   publishMarkerCandidates(path_candidates);
   publishMarkerSelected(path_selected);
   publishMarkerRejected(path_rejected);
   publishMarkerBlocked(path_blocked);
   publishMarkerGround(path_ground);
+  publishMarkerFOV(FOV_cells);
   publishGoal();
   publishBox();
   publishAvoidSphere();

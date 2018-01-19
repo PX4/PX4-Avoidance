@@ -93,6 +93,7 @@ private:
   ros::Publisher marker_candidates_pub_;
   ros::Publisher marker_selected_pub_;
   ros::Publisher marker_ground_pub_;
+  ros::Publisher marker_FOV_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher ground_est_pub_;
   ros::Publisher avoid_sphere_pub_;
@@ -124,6 +125,7 @@ private:
   void publishMarkerCandidates(nav_msgs::GridCells path_candidates);
   void publishMarkerSelected(nav_msgs::GridCells path_selected);
   void publishMarkerGround(nav_msgs::GridCells path_ground);
+  void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped & msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
   void printPointInfo(double x, double y, double z);
