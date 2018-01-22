@@ -155,6 +155,7 @@ class LocalPlanner
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
   std::vector<geometry_msgs::Point> path_node_positions_;
+  std::vector<int> path_node_origins_;
 
   std::vector<TreeNode> tree_;
 
@@ -282,7 +283,7 @@ class LocalPlanner
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
   void useHoverPoint();
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, int &origin);
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions);
   void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
 };
 

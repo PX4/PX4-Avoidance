@@ -474,8 +474,9 @@ void LocalPlannerNode::publishTree() {
 
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
-  int tree_end;
-  local_planner_.getTree(tree, closed_set, tree_end);
+  std::vector<geometry_msgs::Point> path_node_positions;
+  local_planner_.getTree(tree, closed_set, path_node_positions);
+
   for(int i=0; i<closed_set.size(); i++){
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = tree[node_nr].getPosition();
@@ -485,12 +486,11 @@ void LocalPlannerNode::publishTree() {
     tree_marker.points.push_back(p2);
   }
 
-  while (tree_end > 0) {
-    geometry_msgs::Point p1 = tree[tree_end].getPosition();
-    tree_end = tree[tree_end].origin;
-    geometry_msgs::Point p2 = tree[tree_end].getPosition();
-    path_marker.points.push_back(p1);
-    path_marker.points.push_back(p2);
+  if (path_node_positions.size() > 0) {
+    for (int i = 0; i < (path_node_positions.size() - 1); i++) {
+      path_marker.points.push_back(path_node_positions[i]);
+      path_marker.points.push_back(path_node_positions[i + 1]);
+    }
   }
 
   complete_tree_pub_.publish(tree_marker);
