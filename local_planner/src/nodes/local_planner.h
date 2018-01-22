@@ -104,8 +104,10 @@ class LocalPlanner
   int origin_;
   int tree_age_ = 0;
 
+
   double local_planner_last_mode_;
   double smooth_go_fast_;
+  double local_planner_mode_;
   double distance_to_closest_point_;
   double min_dist_to_ground_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
