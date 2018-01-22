@@ -83,7 +83,6 @@ class LocalPlanner
   bool use_back_off_ = true;
   bool log_data_to_txt_file_ = true;
   bool ground_detected_ = false;
-  bool no_progress_rise_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
   bool use_avoid_sphere_ = false;
@@ -93,6 +92,7 @@ class LocalPlanner
   bool tree_available_ = false;
   bool tree_new_ = false;
   bool stop_in_front_;
+  bool adapt_cost_params_;
 
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
@@ -116,7 +116,6 @@ class LocalPlanner
   double max_speed_;
   double goal_cost_param_;
   double smooth_cost_param_;
-  double smooth_cost_param_adapted_;
   double max_accel_xy_;
   double max_accel_z_;
   double keep_distance_;
@@ -124,13 +123,12 @@ class LocalPlanner
   double min_flight_height_;
   double begin_rise_;
   double height_change_cost_param_ = 4;
+  double height_change_cost_param_adapted_ = 4;
   double integral_time_old_ = 0;
   double safety_radius_ = 25;
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
   double no_progress_slope_;
-  double progress_slope_;
-  double rise_factor_no_progress_;
   double min_cloud_size_ = 160;
   double min_plane_points_ = 100;
   double min_plane_percentage_ = 0.6;
