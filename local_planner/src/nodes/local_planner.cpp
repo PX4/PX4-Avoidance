@@ -1362,10 +1362,19 @@ void LocalPlanner::backOff() {
   geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
   path_waypoints_.cells.push_back(p);
 
+  double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
+  if (dist > min_dist_backoff_ + 1.0) {
+    back_off_ = false;
+  }
+
+  waypt_p_ = createPoseMsg(waypt_, last_yaw_);
+  path_msg_.poses.push_back(waypt_p_);
+  curr_yaw_ = last_yaw_;
+  position_old_ = pose_.pose.position;
+
+  std::cout<<"Distance to Backoff Point: "<<dist<<"\n";
   ROS_INFO("Back off selected direction: [%f, %f, %f].", vec.getX(), vec.getY(), vec.getZ());
   ROS_INFO("Back off selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
-
-  getPathMsg();
 }
 
 // check if the UAV has reached the goal set for the mission
