@@ -896,8 +896,9 @@ bool LocalPlanner::getDirectionFromTree() {
     geometry_msgs::Point p;
 
     if (tree_new_) {
-      p.x = tree_[size-2].last_e;
-      p.y = tree_[size-2].last_z;
+      int goal_node_nr = path_node_origins_[size-2];
+      p.x = tree_[goal_node_nr].last_e;
+      p.y = tree_[goal_node_nr].last_z;
       p.z = 0;
 
       path_selected_.cells.push_back(p);
@@ -1031,11 +1032,14 @@ void LocalPlanner::buildLookAheadTree(){
   //smoothing between trees
   int tree_end = origin_;
   path_node_positions_.clear();
+  path_node_origins_.clear();
   while (tree_end > 0) {
+    path_node_origins_.push_back(tree_end);
     path_node_positions_.push_back(tree_[tree_end].getPosition());
     tree_end = tree_[tree_end].origin;
   }
   path_node_positions_.push_back(tree_[0].getPosition());
+  path_node_origins_.push_back(0);
   tree_age_ = 0;
 
 
@@ -1721,10 +1725,10 @@ void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel){
   curr_vel_ = vel;
 }
 
-void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, int &origin){
+void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions){
   tree = tree_;
   closed_set = closed_set_;
-  origin = origin_;
+  path_node_positions = path_node_positions_;
 }
 
 void LocalPlanner::getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed){
