@@ -55,8 +55,6 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   ground_inlier_angle_threshold_ = config.ground_inlier_angle_threshold_;
   ground_inlier_distance_threshold_ = config.ground_inlier_distance_threshold_;
   no_progress_slope_ = config.no_progress_slope_ ;
-  progress_slope_  = config.progress_slope_ ;
-  rise_factor_no_progress_ = config.rise_factor_no_progress_;
   min_cloud_size_ = config.min_cloud_size_;
   min_plane_points_ = config.min_plane_points_;
   min_plane_percentage_ = config.min_plane_percentage_;
@@ -78,6 +76,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   use_ground_detection_ = config.use_ground_detection_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
+  adapt_cost_params_ = config.adapt_cost_params_;
 }
 
 // log Data
@@ -87,7 +86,7 @@ void LocalPlanner::logData() {
     //Print general Algorithm Data
     std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t"
-        << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << hovering_ << "\n";
+        << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << hovering_ << "\n";
     myfile1.close();
 
     //Print Internal Height Map
@@ -431,6 +430,7 @@ void LocalPlanner::determineStrategy(){
       calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, yaw, pitch);
 
       polar_histogram_ = createPolarHistogram(z_FOV_idx, e_FOV_min, e_FOV_max);
+      evaluateProgressRate();
 
       //decide how to proceed
       if(hist_is_empty_){
@@ -765,8 +765,6 @@ void LocalPlanner::findFreeDirections(Histogram histogram) {
   initGridCells(&path_selected_);
   initGridCells(&path_ground_);
 
-  evaluateProgressRate();
-
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
   if (use_ground_detection_) {
@@ -1056,8 +1054,8 @@ double LocalPlanner::treeCostFunction(int node_number) {
 
   double curr_yaw_z = std::round((-curr_yaw_ * 180.0 / PI + 270.0) / alpha_res) - 1;
 
-  double target_cost = 5 * indexAngleDifference(z, goal_z) + 10 * indexAngleDifference(e, goal_e);  //include effective direction?
-  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
+  double target_cost = 5 * indexAngleDifference(z, goal_z) + 5 * indexAngleDifference(e, goal_e);  //include effective direction?
+  double turning_cost = 3*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
 
   int last_e = tree_[origin].last_e;
   int last_z = tree_[origin].last_z;
@@ -1071,11 +1069,11 @@ double LocalPlanner::treeCostFunction(int node_number) {
       geometry_msgs::Point partner_node_position = path_node_positions_[partner_node_idx];
       geometry_msgs::Point node_position = tree_[node_number].getPosition();
       double dist = distance3DCartesian(partner_node_position, node_position);
-      smooth_cost_to_old_tree = 200*dist;
+      smooth_cost_to_old_tree = 250*dist;
     }
   }
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost + smooth_cost_to_old_tree);
+  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 
 }
 double LocalPlanner::treeHeuristicFunction(int node_number) {
@@ -1096,7 +1094,7 @@ return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)), std::abs(a - b
 //calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
 
-  if (reach_altitude_) {
+  if (reach_altitude_ && adapt_cost_params_) {
     double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
     double goal_dist_old = distance3DCartesian(position_old_, goal_);
     double time = std::clock() / (double) (CLOCKS_PER_SEC / 1000);
@@ -1115,17 +1113,20 @@ void LocalPlanner::evaluateProgressRate() {
       n_incline++;
     }
     double avg_incline = sum_incline / n_incline;
-    ;
+
     if (avg_incline > no_progress_slope_ && goal_dist_incline_.size() == dist_incline_window_size_) {
-//    height_change_cost_param_ = 0.5;
-      no_progress_rise_ = true;
-      smooth_cost_param_adapted_ =  smooth_cost_param_ + 0.8;
+      if(height_change_cost_param_adapted_> 0.75){
+        height_change_cost_param_adapted_ -= 0.02;
+      }
     }
-    if (avg_incline < progress_slope_) {
-//    height_change_cost_param_ = 5;
-      no_progress_rise_ = false;
-      smooth_cost_param_adapted_ =  smooth_cost_param_;
+    if (avg_incline < no_progress_slope_) {
+      if(height_change_cost_param_adapted_<height_change_cost_param_-0.03){
+        height_change_cost_param_adapted_ += 0.03;
+      }
     }
+    ROS_INFO("Progress rate to goal: %f, adapted height change cost: %f .", avg_incline, height_change_cost_param_adapted_);
+  }else{
+    height_change_cost_param_adapted_ = height_change_cost_param_;
   }
 }
 
@@ -1163,19 +1164,21 @@ double LocalPlanner::costFunction(int e, int z) {
   geometry_msgs::Point candidate_goal = fromPolarToCartesian(e, z, dist,pose_.pose.position);
   geometry_msgs::Point old_candidate_goal = fromPolarToCartesian(path_waypoints_.cells[waypoint_index - 1].x, path_waypoints_.cells[waypoint_index - 1].y, dist_old, position_old_);
   double yaw_cost = goal_cost_param_ * sqrt((goal_.x - candidate_goal.x) * (goal_.x - candidate_goal.x) + (goal_.y - candidate_goal.y) * (goal_.y - candidate_goal.y));
-  double pitch_cost = goal_cost_param_ * sqrt((goal_.z - candidate_goal.z)*(goal_.z - candidate_goal.z));
-  double yaw_cost_smooth = smooth_cost_param_adapted_ * sqrt((old_candidate_goal.x - candidate_goal.x) * (old_candidate_goal .x - candidate_goal.x) + (old_candidate_goal .y - candidate_goal.y) * (old_candidate_goal .y - candidate_goal.y));
-  double pitch_cost_smooth = smooth_cost_param_adapted_ * sqrt((old_candidate_goal .z - candidate_goal.z)*(old_candidate_goal .z - candidate_goal.z));
-
-  //discurage going down
-  if (candidate_goal.z<goal_.z){
-    pitch_cost = 500*pitch_cost;
+  double pitch_cost_up = 0;
+  double pitch_cost_down = 0;
+  if(candidate_goal.z>goal_.z){
+    pitch_cost_up = goal_cost_param_ * sqrt((goal_.z - candidate_goal.z)*(goal_.z - candidate_goal.z));
+  }else{
+    pitch_cost_down = goal_cost_param_ * sqrt((goal_.z - candidate_goal.z)*(goal_.z - candidate_goal.z));
   }
 
+  double yaw_cost_smooth = smooth_cost_param_ * sqrt((old_candidate_goal.x - candidate_goal.x) * (old_candidate_goal .x - candidate_goal.x) + (old_candidate_goal .y - candidate_goal.y) * (old_candidate_goal .y - candidate_goal.y));
+  double pitch_cost_smooth = smooth_cost_param_ * sqrt((old_candidate_goal .z - candidate_goal.z)*(old_candidate_goal .z - candidate_goal.z));
+
   if(!only_yawed_){
-    cost = yaw_cost + height_change_cost_param_*pitch_cost + yaw_cost_smooth + pitch_cost_smooth;
+    cost = yaw_cost + height_change_cost_param_adapted_*pitch_cost_up + height_change_cost_param_*pitch_cost_down + yaw_cost_smooth + pitch_cost_smooth;
   }else{
-    cost = yaw_cost + height_change_cost_param_*pitch_cost + 0.1*yaw_cost_smooth + 0.1*pitch_cost_smooth;
+    cost = yaw_cost + height_change_cost_param_adapted_*pitch_cost_up + height_change_cost_param_*pitch_cost_down + 0.1*yaw_cost_smooth + 0.1*pitch_cost_smooth;
   }
 
   return cost;
@@ -1236,11 +1239,6 @@ void LocalPlanner::getNextWaypoint() {
 		}
 	} else {
 		waypt_ = setpoint;
-		if (obstacle_ && no_progress_rise_ && !too_low_
-				&& !is_near_min_height_) {
-			waypt_.vector.z = pose_.pose.position.z + rise_factor_no_progress_;
-			std::cout << "\033[1;34m No progress, increase height.\n \033[0m";
-		}
 	}
 
 	ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x,
@@ -1355,9 +1353,6 @@ void LocalPlanner::goFast(){
     // fill direction as straight ahead
     geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
     path_waypoints_.cells.push_back(p);
-
-    //to keep track of forward movement update params also in go Fast mode
-    evaluateProgressRate();
 
     //reset candidates for visualization
     initGridCells(&path_candidates_);
