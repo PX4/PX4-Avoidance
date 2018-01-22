@@ -52,6 +52,7 @@ private:
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
+  ros::Publisher local_pointcloud2_pub_;
   ros::Publisher ground_pointcloud_pub_;
   ros::Publisher front_pointcloud_pub_;
   ros::Publisher reprojected_points_pub_;

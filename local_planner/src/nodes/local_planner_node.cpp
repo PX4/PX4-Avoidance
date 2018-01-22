@@ -11,13 +11,15 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
-  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/vislam/pose", 1, &LocalPlannerNode::positionCallback, this);
-  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud>("/stereo/dfs/point_cloud", 1, &LocalPlannerNode::pointCloudCallback, this);
+  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
+  //velocity_sub_ = nh_.subscribe<geometry_msgs::TwistStamped>("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
   clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
 
+
   local_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  local_pointcloud2_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/local_pointcloud2", 1);
   ground_pointcloud_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/ground_pointcloud", 1);
   reprojected_points_pub_ = nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
@@ -258,6 +260,8 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud msg) {
   sensor_msgs::PointCloud2 msg_pcl2;
   sensor_msgs::convertPointCloudToPointCloud2(msg, msg_pcl2);
+  printf("Size of pointcloud after conversion: %d, heigth: %d", msg_pcl2.width, msg_pcl2.height);
+  local_pointcloud2_pub_.publish(msg_pcl2);
   pointCloudCallback(msg_pcl2);
 }
 

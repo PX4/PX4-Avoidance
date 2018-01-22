@@ -318,7 +318,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
     local_planner_mode_ = 3;
     stopInFrontObstacles();
   } else {
-    if ((distance_to_closest_point_ < 1.5 || back_off_) && reach_altitude_ ) {
+    if ((distance_to_closest_point_ < 0.1 || back_off_) && reach_altitude_ ) {
       local_planner_mode_ = 4;
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if(!back_off_){
