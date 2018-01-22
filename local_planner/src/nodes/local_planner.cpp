@@ -304,7 +304,6 @@ void LocalPlanner::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) 
 // trim the point cloud so that only points inside the bounding box are considered and
 void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
   hovering_ = false;
-  local_planner_last_mode_ = local_planner_mode_;
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
@@ -1220,26 +1219,7 @@ void LocalPlanner::getNextWaypoint() {
 	} else {
 		waypoint_outside_FOV_ = true;
 	}
-
-	if (withinGoalRadius()) {
-		if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
-			ROS_INFO("Above Goal cannot go lower: Hoovering");
-			waypt_.vector.x = goal_.x;
-			waypt_.vector.y = goal_.y;
-			if (pose_.pose.position.z > goal_.z) {
-				waypt_.vector.z = pose_.pose.position.z;
-			} else {
-				waypt_.vector.z = goal_.z;
-			}
-		} else {
-			ROS_INFO("Goal Reached: Hoovering");
-			waypt_.vector.x = goal_.x;
-			waypt_.vector.y = goal_.y;
-			waypt_.vector.z = goal_.z;
-		}
-	} else {
-		waypt_ = setpoint;
-	}
+	waypt_ = setpoint;
 
 	ROS_INFO("Selected waypoint: [%f, %f, %f].", waypt_.vector.x,
 			waypt_.vector.y, waypt_.vector.z);
@@ -1301,10 +1281,6 @@ void LocalPlanner::getMinFlightHeight() {
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
 void LocalPlanner::goFast(){
-
-  if(smooth_go_fast_<1){
-    smooth_go_fast_ += 0.02;
-  }
 
   if (withinGoalRadius()) {
     if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
@@ -1519,7 +1495,7 @@ void LocalPlanner::getPathMsg() {
       double cos_theta = center_to_wp_2D[0] * pose_to_center_2D[0] + center_to_wp_2D[1] * pose_to_center_2D[1];
       Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0], center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
       n = n.normalized();
-      double cos_new_theta = 0.8 * cos_theta;
+      double cos_new_theta = 0.9 * cos_theta;
       double sin_new_theta = sin(acos(cos_new_theta));
       Eigen::Vector2f center_to_wp_2D_new(cos_new_theta * pose_to_center_2D[0] + sin_new_theta * n[0], cos_new_theta * pose_to_center_2D[1] + sin_new_theta * n[1]);
       center_to_wp = center_to_wp.normalized();
@@ -1544,16 +1520,42 @@ void LocalPlanner::getPathMsg() {
         std::cout << "\033[1;36m Inside sphere hysteresis \n \033[0m";
       }
     }
+
+    //check if new point lies in FOV
+    int beta_z = floor(atan2(waypt_adapted_.vector.x - pose_.pose.position.x, waypt_adapted_.vector.y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
+    int beta_e = floor( atan((waypt_adapted_.vector.z - pose_.pose.position.z)/ sqrt(
+                        (waypt_adapted_.vector.x - pose_.pose.position.x) * (waypt_adapted_.vector.x - pose_.pose.position.x)
+                            + (waypt_adapted_.vector.y - pose_.pose.position.y) * (waypt_adapted_.vector.y - pose_.pose.position.y))) * 180.0 / PI);  //(-90.+90)
+    int e_index = (beta_e - alpha_res + 90) / alpha_res;
+    int z_index = (beta_z - alpha_res + 180) / alpha_res;
+
+    if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) != z_FOV_idx_.end()) {
+      waypoint_outside_FOV_ = false;
+    } else {
+      waypoint_outside_FOV_ = true;
+    }
   }
 
   double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
   only_yawed_ = false;
+
   //If the waypoint is not inside the FOV, only yaw and not move
-  if(waypoint_outside_FOV_  && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_){
+  if (waypoint_outside_FOV_ && reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_) {
     waypt_adapted_.vector.x = pose_.pose.position.x;
     waypt_adapted_.vector.y = pose_.pose.position.y;
     waypt_adapted_.vector.z = pose_.pose.position.z;
     only_yawed_ = true;
+  } else {                    //set waypoint to correct speed
+    tf::Vector3 pose_to_wp;
+    pose_to_wp.setX(waypt_adapted_.vector.x - pose_.pose.position.x);
+    pose_to_wp.setY(waypt_adapted_.vector.y - pose_.pose.position.y);
+    pose_to_wp.setZ(waypt_adapted_.vector.z - pose_.pose.position.z);
+    pose_to_wp.normalize();
+    pose_to_wp *= speed_;
+
+    waypt_adapted_.vector.x = pose_.pose.position.x + pose_to_wp.getX();
+    waypt_adapted_.vector.y = pose_.pose.position.y + pose_to_wp.getY();
+    waypt_adapted_.vector.z = pose_.pose.position.z + pose_to_wp.getZ();
   }
 
   waypt_smoothed_ = waypt_adapted_;
@@ -1576,6 +1578,7 @@ void LocalPlanner::getPathMsg() {
     }
   }
 
+
   if(back_off_ && use_back_off_){
     new_yaw = last_yaw_;
     double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
@@ -1583,6 +1586,24 @@ void LocalPlanner::getPathMsg() {
       back_off_ = false;
     }
     waypt_smoothed_ = waypt_;
+  }
+
+  if (withinGoalRadius()) {
+    if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
+      ROS_INFO("Above Goal cannot go lower: Hoovering");
+      waypt_smoothed_.vector.x = goal_.x;
+      waypt_smoothed_.vector.y = goal_.y;
+      if (pose_.pose.position.z > waypt_smoothed_.vector.z) {
+        waypt_smoothed_.vector.z = pose_.pose.position.z;
+      } else {
+        waypt_smoothed_.vector.z = goal_.z;
+      }
+    } else {
+      ROS_INFO("Goal Reached: Hoovering");
+      waypt_smoothed_.vector.x = goal_.x;
+      waypt_smoothed_.vector.y = goal_.y;
+      waypt_smoothed_.vector.z = goal_.z;
+    }
   }
 
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw);
