@@ -362,14 +362,9 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
 
   local_planner_.printAlgorithmStatistics();
 
-  //Log timing for timeout detection
-  pointcloud_time_now_ = msg.header.stamp;
-  ros::Duration time_diff = pointcloud_time_now_ - pointcloud_time_old_;
+  //Store timing for timeout detection
   pointcloud_time_old_ = pointcloud_time_now_;
-
-  std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
-  myfile << pointcloud_time_now_.sec <<"\t"<<pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
-  myfile.close();
+  pointcloud_time_now_ = msg.header.stamp;
 }
 
 void LocalPlannerNode::publishAll() {
@@ -425,11 +420,14 @@ int main(int argc, char** argv) {
     ros::Time now = ros::Time::now();
     ros::Duration pointcloud_timeout_hover = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_hover_);
     ros::Duration pointcloud_timeout_land = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_land_);
-    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_old_;
+    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_now_;
+    bool landing = false;
+    bool hovering = false;
 
     if (since_last_cloud > pointcloud_timeout_land) {
       mavros_msgs::SetMode mode_msg;
       mode_msg.request.custom_mode = "AUTO.LAND";
+      landing = true;
       if (local_planner_node.mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
         std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
       } else {
@@ -445,7 +443,13 @@ int main(int argc, char** argv) {
       local_planner_node.current_waypoint_pub_.publish(waypt_p);
       local_planner_node.tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
       local_planner_node.mavros_waypoint_pub_.publish(waypt_p);
+      hovering = true;
     }
+
+    ros::Duration time_diff = local_planner_node.pointcloud_time_now_ - local_planner_node.pointcloud_time_old_;
+    std::ofstream myfile(("PointcloudTimes_" + local_planner_node.local_planner_.log_name_).c_str(), std::ofstream::app);
+    myfile << local_planner_node.pointcloud_time_now_.sec <<"\t"<<local_planner_node.pointcloud_time_now_.nsec << "\t" << time_diff<< "\t" << hovering << "\t" << landing<< "\n";
+    myfile.close();
 
     ros::spinOnce();
     rate.sleep();
