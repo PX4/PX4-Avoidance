@@ -110,25 +110,6 @@ void LocalPlanner::setVelocity() {
   velocity_mod_ = sqrt(pow(velocity_x_,2) + pow(velocity_y_,2) + pow(velocity_z_,2));
 }
 
-// update bounding box limit coordinates around a new UAV pose
-void LocalPlanner::setLimitsHistogramBox(geometry_msgs::Point pos) {
-  histogram_box_.xmin = pos.x - histogram_box_size_.xmin;
-  histogram_box_.ymin = pos.y - histogram_box_size_.ymin;
-  histogram_box_.zmin = pos.z - histogram_box_size_.zmin;
-  histogram_box_.xmax = pos.x + histogram_box_size_.xmax;
-  histogram_box_.ymax = pos.y + histogram_box_size_.ymax;
-  histogram_box_.zmax = pos.z + histogram_box_size_.zmax;
-}
-// update bounding box limit coordinates around a new UAV pose
-void LocalPlanner::setLimitsGroundBox(geometry_msgs::Point pos) {
-  ground_box_.xmin = pos.x - ground_box_size_.xmin;
-  ground_box_.ymin = pos.y - ground_box_size_.ymin;
-  ground_box_.zmin = pos.z - min_dist_to_ground_ - ground_box_size_.zmin;
-  ground_box_.xmax = pos.x + ground_box_size_.xmax;
-  ground_box_.ymax = pos.y + ground_box_size_.ymax;
-  ground_box_.zmax = pos.z;
-}
-
 // set mission goal
 void LocalPlanner::setGoal() {
   goal_.x = goal_x_param_;
@@ -958,7 +939,7 @@ void LocalPlanner::buildLookAheadTree(){
 
 
     //crop pointcloud
-    setLimitsHistogramBox(origin_position);
+    histogram_box_.setLimitsHistogramBox(origin_position, histogram_box_size_);
     filterPointCloud(complete_cloud_);
     //if too close to obstacle, we do not want to go there (equivalent to back off)
     if (counter_close_points_backoff_ > 20 && final_cloud_.points.size() > 160) {

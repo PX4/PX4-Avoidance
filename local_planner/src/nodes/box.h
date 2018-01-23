@@ -1,9 +1,15 @@
+
+#include <geometry_msgs/Point.h>
+
 class Box
 {
  public:
   Box();
   Box(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max);
   ~Box();
+
+  void setLimitsHistogramBox(geometry_msgs::Point pos, Box size);
+  void setLimitsGroundBox(geometry_msgs::Point pos, Box size, double min_dist);
 
   double xmin;
   double xmax;

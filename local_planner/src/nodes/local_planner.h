@@ -109,7 +109,6 @@ class LocalPlanner
   double smooth_go_fast_;
   double local_planner_mode_;
   double distance_to_closest_point_;
-  double min_dist_to_ground_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
   double speed_ = 1.0;
   double curr_yaw_, last_yaw_;
@@ -195,11 +194,6 @@ class LocalPlanner
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
 
-  Box histogram_box_size_;
-  Box ground_box_size_;
-  Box histogram_box_;
-  Box ground_box_;
-
   bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   bool isPointWithinGroundBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   void logData();
@@ -257,13 +251,18 @@ class LocalPlanner
   pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
   geometry_msgs::PoseStamped take_off_pose_;
 
+  double min_dist_to_ground_;
+
+  Box histogram_box_size_;
+  Box ground_box_size_;
+  Box histogram_box_;
+  Box ground_box_;
+
   std::string log_name_;
 
   LocalPlanner();
   ~LocalPlanner();
 
-  void setLimitsHistogramBox(geometry_msgs::Point pos);
-  void setLimitsGroundBox(geometry_msgs::Point pos);
   void setPose(const geometry_msgs::PoseStamped msg);
   double costFunction(int e, int z);
   void setGoal();
