@@ -28,6 +28,10 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     reach_altitude_ = false;
   }
 
+  if(!offboard_){
+    reach_altitude_ = false;
+  }
+
   setVelocity();
   setLimitsBoundingBox();
 }
@@ -70,6 +74,8 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   avoid_radius_ = config.avoid_radius_;
   use_avoid_sphere_ = config.use_avoid_sphere_;
   min_dist_backoff_ = config.min_dist_backoff_;
+  pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
+  pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
 
   if (goal_z_param_!= config.goal_z_param) {
     goal_z_param_ = config.goal_z_param;
