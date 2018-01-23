@@ -418,17 +418,16 @@ int main(int argc, char** argv) {
   LocalPlannerNode local_planner_node;
   ros::Duration(2).sleep();
   ros::Rate rate(20.0);
-  ros::Time start = ros::Time::now();
-  ros::Duration min_time = ros::Duration(1);
 
   while (ros::ok()) {
 
     //Check if pointcloud message is published fast enough
     ros::Time now = ros::Time::now();
+    ros::Duration pointcloud_timeout_hover = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_hover_);
+    ros::Duration pointcloud_timeout_land = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_land_);
     ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_old_;
-    ros::Duration since_start = now - start;
 
-    if (since_last_cloud > local_planner_node.pointcloud_timeout_land_ && since_start > min_time) {
+    if (since_last_cloud > pointcloud_timeout_land) {
       mavros_msgs::SetMode mode_msg;
       mode_msg.request.custom_mode = "AUTO.LAND";
       if (local_planner_node.mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
@@ -436,7 +435,7 @@ int main(int argc, char** argv) {
       } else {
         std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
       }
-    } else if (since_last_cloud > local_planner_node.pointcloud_timeout_hover_ && since_start > min_time) {
+    } else if (since_last_cloud > pointcloud_timeout_hover) {
       local_planner_node.local_planner_.hover();
       nav_msgs::Path path_msg;
       geometry_msgs::PoseStamped waypt_p;

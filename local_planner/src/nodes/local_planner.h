@@ -217,6 +217,8 @@ class LocalPlanner
   double goal_x_param_;
   double goal_y_param_;
   double goal_z_param_;
+  double pointcloud_timeout_hover_;
+  double pointcloud_timeout_land_;
 
   std::string log_name_;
 
