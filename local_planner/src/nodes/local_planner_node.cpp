@@ -645,8 +645,8 @@ void LocalPlannerNode::threadFunction() {
       geometry_msgs::PoseStamped drone_pos;
       local_planner.getPosition(drone_pos);
       local_planner.new_cloud = true;
-      local_planner.setLimitsHistogramBox(drone_pos.pose.position);
-      local_planner.setLimitsGroundBox(drone_pos.pose.position);
+      local_planner_.histogram_box_.setLimitsHistogramBox(drone_pos.pose.position, local_planner_.histogram_box_size_);
+      local_planner_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_box_size_, local_planner_.min_dist_to_ground_);
       if (local_planner.use_ground_detection) {
         local_planner.detectGround(complete_cloud);
       }
