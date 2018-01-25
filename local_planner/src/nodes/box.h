@@ -1,4 +1,7 @@
 
+#ifndef BOX_H
+#define BOX_H
+
 #include <geometry_msgs/Point.h>
 
 class Box
@@ -10,6 +13,7 @@ class Box
 
   void setLimitsHistogramBox(geometry_msgs::Point pos, Box size);
   void setLimitsGroundBox(geometry_msgs::Point pos, Box size, double min_dist);
+  bool isPointWithin(double x, double y, double z);
 
   double xmin;
   double xmax;
@@ -18,3 +22,5 @@ class Box
   double zmin;
   double zmax;
 };
+
+#endif // BOX_H

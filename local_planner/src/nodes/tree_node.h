@@ -1,3 +1,6 @@
+#ifndef TREE_NODE_H
+#define TREE_NODE_H
+
 #include <vector>
 #include <math.h>
 #include <geometry_msgs/Point.h>
@@ -23,3 +26,6 @@ class TreeNode
  void setCosts(double h, double c);
  geometry_msgs::Point getPosition();
 };
+
+
+#endif // TREE_NODE_H

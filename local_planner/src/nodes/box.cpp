@@ -41,3 +41,7 @@ void Box::setLimitsGroundBox(geometry_msgs::Point pos, Box size, double min_dist
   zmax = pos.z;
 }
 
+bool Box::isPointWithin(double x, double y, double z) {
+  return x < xmax && x > xmin && y < ymax && y > ymin && z < zmax && z > zmin;
+}
+

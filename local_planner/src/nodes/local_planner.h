@@ -16,6 +16,8 @@
 #include "histogram.h"
 #include "tree_node.h"
 #include "box.h"
+#include "planner_functions.h"
+#include "star_planner.h"
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl_ros/point_cloud.h>
@@ -65,7 +67,6 @@
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
-float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
 
 class LocalPlanner
 {
@@ -73,7 +74,6 @@ class LocalPlanner
  private:
 
   bool obstacle_ = false;
-  bool reach_altitude_ = false;
   bool reached_goal_ = false;
   bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
@@ -85,22 +85,13 @@ class LocalPlanner
   bool ground_detected_ = false;
   bool back_off_ = false;
   bool only_yawed_ = false;
-  bool use_avoid_sphere_ = false;
-  bool hovering_ = false;
   bool use_VFH_star_ = true;
   bool hist_is_empty_ = false;
-  bool tree_available_ = false;
-  bool tree_new_ = false;
   bool stop_in_front_;
   bool adapt_cost_params_;
 
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
-  int avoid_sphere_age_ = 1000;
-  int counter_close_points_ = 0;
-  int counter_close_points_backoff_ = 0;
-  int childs_per_node_;
-  int n_expanded_nodes_;
   int origin_;
   int tree_age_ = 0;
 
@@ -108,9 +99,7 @@ class LocalPlanner
   double local_planner_last_mode_;
   double smooth_go_fast_;
   double local_planner_mode_;
-  double distance_to_closest_point_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
-  double speed_ = 1.0;
   double curr_yaw_, last_yaw_;
   double yaw_reached_goal_;
   double min_speed_;
@@ -126,18 +115,12 @@ class LocalPlanner
   double height_change_cost_param_ = 4;
   double height_change_cost_param_adapted_ = 4;
   double integral_time_old_ = 0;
-  double safety_radius_ = 25;
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
   double no_progress_slope_;
-  double min_cloud_size_ = 160;
   double min_plane_points_ = 100;
   double min_plane_percentage_ = 0.6;
-  double avoid_radius_;
-  double min_dist_backoff_;
-  double tree_discount_factor_ = 0.8;
   double tree_node_distance_ = 0.5;
-  double min_realsense_dist_ = 0.2;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
@@ -158,17 +141,17 @@ class LocalPlanner
 
   std::vector<TreeNode> tree_;
 
+  StarPlanner star_planner_;
+
   std::clock_t t_prev_ = 0.0f;
 
-  pcl::PointCloud<pcl::PointXYZ> final_cloud_, ground_cloud_, reprojected_points_;
+  pcl::PointCloud<pcl::PointXYZ> ground_cloud_, reprojected_points_;
 
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point goal_;
-  geometry_msgs::Point closest_point_;
-  geometry_msgs::Point avoid_centerpoint_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
@@ -194,19 +177,16 @@ class LocalPlanner
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
 
-  bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
-  bool isPointWithinGroundBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
   void logData();
   void fitPlane();
   bool obstacleAhead();
-  void determineStrategy();
   void reprojectPoints();
-  void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
-  Histogram createPolarHistogram(std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
+//  void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
+//  Histogram createPolarHistogram(std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
   void printHistogram(Histogram hist);
-  void initGridCells(nav_msgs::GridCells *cell);
-  void findFreeDirections(Histogram histogram);
-  void calculateCostMap();
+//  void initGridCells(nav_msgs::GridCells *cell);
+//  void findFreeDirections(Histogram histogram);
+//  void calculateCostMap();
   void getNextWaypoint();
   void getMinFlightHeight();
   void goFast();
@@ -216,20 +196,21 @@ class LocalPlanner
   void reachGoalAltitudeFirst();
   void getPathMsg();
   bool withinGoalRadius();
-  bool getDirectionFromTree();
+//  bool getDirectionFromTree();
   void getDirectionFromCostMap();
   void checkSpeed();
   void stopInFrontObstacles();
-  void buildLookAheadTree();
-  double treeCostFunction(int node_number);
-  double treeHeuristicFunction(int node_number);
-  double indexAngleDifference(int a, int b);
-  void angleToIndex(int &e_idx, int &z_idx, int e, int z);
+//  void buildLookAheadTree();
+//  double treeCostFunction(int node_number);
+//  double treeHeuristicFunction(int node_number);
+//  double indexAngleDifference(int a, int b);
+//  void angleToIndex(int &e_idx, int &z_idx, int e, int z);
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
   geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z);
   geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
   geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
+  int getMinFlightElevationIndex();
 
  public:
 
@@ -237,6 +218,9 @@ class LocalPlanner
   bool offboard_ = false;
   bool use_ground_detection_;
   bool new_cloud_;
+  bool hovering_ = false;
+  bool use_avoid_sphere_ = false;
+  bool reach_altitude_ = false;
 
   std::vector<float> algorithm_total_time_;
 
@@ -252,11 +236,25 @@ class LocalPlanner
   geometry_msgs::PoseStamped take_off_pose_;
 
   double min_dist_to_ground_;
+  double distance_to_closest_point_;
+  double safety_radius_ = 25;
+  double min_cloud_size_ = 160;
+  double min_dist_backoff_;
+  double avoid_radius_;
+  double speed_ = 1.0;
+
+  int counter_close_points_backoff_ = 0;
+  int avoid_sphere_age_ = 1000;
 
   Box histogram_box_size_;
   Box ground_box_size_;
   Box histogram_box_;
   Box ground_box_;
+
+  pcl::PointCloud<pcl::PointXYZ> complete_cloud_, final_cloud_;
+
+  geometry_msgs::Point closest_point_;
+  geometry_msgs::Point avoid_centerpoint_;
 
   std::string log_name_;
 
@@ -264,10 +262,12 @@ class LocalPlanner
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  double costFunction(int e, int z);
+//  double costFunction(int e, int z);
   void setGoal();
-  void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
-  geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
+  void hover();
+  void detectGround(pcl::PointCloud<pcl::PointXYZ>&);
+  void determineStrategy();
+//  geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void printAlgorithmStatistics();
   bool groundDetected();
@@ -286,4 +286,4 @@ class LocalPlanner
   void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
 };
 
-#endif // LOCAL_PLANNER_LOCAL_PLANNER_H
+#endif // LOCAL_PLANNER_H
