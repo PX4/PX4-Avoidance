@@ -92,7 +92,7 @@ void LocalPlanner::logData() {
   if (currently_armed_ && offboard_) {
     std::ofstream myfile(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t"
-         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\n";
+         << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << no_progress_rise_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" <<goal_.y << "\t" <<goal_.z <<"\t" << hovering_ << "\t"<< algorithm_total_time_[algorithm_total_time_.size()-1]<< "\n";
     myfile.close();
 
     if (print_height_map_) {
@@ -1325,6 +1325,9 @@ void LocalPlanner::getPathMsg() {
   waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw;
+  last_last_waypt_p_ = last_waypt_p_;
+  last_waypt_p_ = waypt_p_;
+  last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
   checkSpeed();
 }
@@ -1332,9 +1335,9 @@ void LocalPlanner::getPathMsg() {
 void LocalPlanner::hover() {
 
   if(!hovering_){
-    hover_point_.vector.x = pose_.pose.position.x;
-    hover_point_.vector.y = pose_.pose.position.y;
-    hover_point_.vector.z = pose_.pose.position.z;
+    hover_point_.vector.x = last_waypt_p_.pose.position.x;
+    hover_point_.vector.y = last_waypt_p_.pose.position.y;
+    hover_point_.vector.z = last_waypt_p_.pose.position.z;
   }
   hovering_ = true;
   path_msg_.header.frame_id = "/world";
