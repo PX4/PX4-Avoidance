@@ -1,3 +1,6 @@
+#ifndef HISTOGRAM_H
+#define HISTOGRAM_H
+
 #include <vector>
 #include <math.h>
 
@@ -23,3 +26,5 @@ class Histogram
   void upsample();
   void setZero();
 };
+
+#endif // HISTOGRAM_H

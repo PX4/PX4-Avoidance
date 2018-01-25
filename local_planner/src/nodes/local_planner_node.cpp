@@ -109,7 +109,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_m
   for (int i=0; i < path.cells.size(); i++) {
     m.id = i+1;
     m.action = visualization_msgs::Marker::ADD;
-    geometry_msgs::Point p = local_planner_.fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0, drone_pos.pose.position);
+    geometry_msgs::Point p = fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0, drone_pos.pose.position);
     m.pose.position = p;
 
     m.color.r = red;
@@ -516,11 +516,11 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   beta_z = beta_z + (ALPHA_RES - beta_z%ALPHA_RES); //[-170,+190]
   beta_e = beta_e + (ALPHA_RES - beta_e%ALPHA_RES); //[-80,+90]
 
-  float cost = local_planner_.costFunction(beta_e-10, beta_z-10);
+//  float cost = local_planner_.costFunction(beta_e-10, beta_z-10);
 
   printf("----- Point: %f %f %f -----\n",x,y,z);
   printf("Elevation %d Azimuth %d \n",beta_e, beta_z);
-  printf("Cost %f \n", cost);
+//  printf("Cost %f \n", cost);
   printf("-------------------------------------------- \n");
 }
 
@@ -635,7 +635,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 }
 
 void LocalPlannerNode::threadFunction() {
-  std::unique_lock<std::timed_mutex> lock(variable_mutex_,std::defer_lock);
+  std::unique_lock < std::timed_mutex > lock(variable_mutex_, std::defer_lock);
   while (true) {
     std::clock_t start_time = std::clock();
     if (point_cloud_updated_) {
@@ -647,11 +647,21 @@ void LocalPlannerNode::threadFunction() {
       local_planner.new_cloud = true;
       local_planner_.histogram_box_.setLimitsHistogramBox(drone_pos.pose.position, local_planner_.histogram_box_size_);
       local_planner_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_box_size_, local_planner_.min_dist_to_ground_);
-      if (local_planner.use_ground_detection) {
-        local_planner.detectGround(complete_cloud);
+      if (local_planner_.use_ground_detection_) {
+        local_planner_.detectGround(complete_cloud);
       }
-      local_planner.filterPointCloud(local_planner_.complete_cloud_);
-      publishAll();
+
+      geometry_msgs::Point temp_sphere_center;
+      int sphere_points_counter = 0;
+      filterPointCloud(local_planner_.final_cloud_, local_planner_.closest_point_, temp_sphere_center, local_planner_.distance_to_closest_point_, local_planner_.counter_close_points_backoff_, sphere_points_counter, local_planner_.complete_cloud_,
+                       local_planner_.min_cloud_size_, local_planner_.min_dist_backoff_, local_planner_.avoid_radius_, local_planner_.histogram_box_, drone_pos);
+
+      local_planner_.safety_radius_ = adaptSafetyMarginHistogram(local_planner_.distance_to_closest_point_, local_planner_.final_cloud_.points.size(), local_planner_.min_cloud_size_);
+      if (local_planner_.use_avoid_sphere_ && local_planner_.reach_altitude_) {
+        calculateSphere(local_planner_.avoid_centerpoint_, local_planner_.avoid_sphere_age_, temp_sphere_center, sphere_points_counter, local_planner_.speed_);
+      }
+
+      local_planner_.determineStrategy();
       lock.unlock();
 
       printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
