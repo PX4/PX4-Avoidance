@@ -183,7 +183,7 @@ class LocalPlanner
   void reprojectPoints();
 //  void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
 //  Histogram createPolarHistogram(std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
-  void printHistogram(Histogram hist);
+//  void printHistogram(Histogram hist);
 //  void initGridCells(nav_msgs::GridCells *cell);
 //  void findFreeDirections(Histogram histogram);
 //  void calculateCostMap();

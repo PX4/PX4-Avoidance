@@ -22,11 +22,13 @@ void StarPlanner::setBoxSize(Box histogram_box_size){
 }
 
 void StarPlanner::setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud){
-  complete_cloud_ = complete_cloud_;
+  complete_cloud_ = complete_cloud;
 }
 
 void StarPlanner::setGoal(geometry_msgs::Point goal){
   goal_ = goal;
+  tree_new_ = false;
+  tree_age_ = 1000;
 }
 
 void StarPlanner::setCostParams(double goal_cost_param, double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param){
@@ -86,7 +88,7 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
 }
 
 
-void StarPlanner::buildLookAheadTree(){
+void StarPlanner::buildLookAheadTree(double origin_yaw){
 
   tree_available_ = true;
   tree_new_ = true;
@@ -105,6 +107,7 @@ void StarPlanner::buildLookAheadTree(){
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
+  tree_.back().yaw = origin_yaw;
 
   int origin = 0;
   double min_c = inf;
@@ -172,6 +175,7 @@ void StarPlanner::buildLookAheadTree(){
       for (int i = 0; i < childs; i++) {
         int e = path_candidates.cells[cost_idx_sorted[i]].x;
         int z = path_candidates.cells[cost_idx_sorted[i]].y;
+
         geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
         tree_.push_back(TreeNode(origin, depth, node_location));
@@ -255,6 +259,7 @@ bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
           min_dist_idx = i;
         }
       }
+      std::cout<<"closest node: "<<min_dist_idx<<" dist: "<<min_dist<<"\n";
       if (min_dist > 3.0 || min_dist_idx == 0) {
         tree_available_ = false;
         std::cout<<"not available\n";

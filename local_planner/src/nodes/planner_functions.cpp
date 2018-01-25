@@ -440,4 +440,21 @@ void calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> 
 //  cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
+void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen){
+  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
+    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+      if(e_chosen == e_ind && z_chosen == z_ind){
+        std::cout << "\033[1;31m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
+      }
+      else if (std::find(z_FOV_idx .begin(), z_FOV_idx .end(), z_ind) != z_FOV_idx .end() && e_ind > e_FOV_min && e_ind < e_FOV_max) {
+        std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
+      } else {
+        std::cout << hist.get_bin(e_ind, z_ind) << " ";
+      }
+    }
+    std::cout << "\n";
+  }
+  std::cout << "--------------------------------------\n";
+}
+
 
