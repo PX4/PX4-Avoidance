@@ -70,6 +70,7 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints, geometry_m
 void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &path_ground,
                         nav_msgs::GridCells path_waypoints, std::vector<float> &cost_path_candidates, geometry_msgs::Point goal, geometry_msgs::PoseStamped position, geometry_msgs::Point position_old, double goal_cost_param, double smooth_cost_param,
                         double height_change_cost_param_adapted, double height_change_cost_param, int e_min_idx, bool over_obstacle, bool only_yawed);
+void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen);
 void calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> &cost_idx_sorted);
 
 

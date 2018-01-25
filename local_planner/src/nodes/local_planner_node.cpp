@@ -653,15 +653,17 @@ void LocalPlannerNode::threadFunction() {
 
       geometry_msgs::Point temp_sphere_center;
       int sphere_points_counter = 0;
-      filterPointCloud(local_planner_.final_cloud_, local_planner_.closest_point_, temp_sphere_center, local_planner_.distance_to_closest_point_, local_planner_.counter_close_points_backoff_, sphere_points_counter, local_planner_.complete_cloud_,
+      filterPointCloud(local_planner_.final_cloud_, local_planner_.closest_point_, temp_sphere_center, local_planner_.distance_to_closest_point_, local_planner_.counter_close_points_backoff_, sphere_points_counter, complete_cloud,
                        local_planner_.min_cloud_size_, local_planner_.min_dist_backoff_, local_planner_.avoid_radius_, local_planner_.histogram_box_, drone_pos);
 
       local_planner_.safety_radius_ = adaptSafetyMarginHistogram(local_planner_.distance_to_closest_point_, local_planner_.final_cloud_.points.size(), local_planner_.min_cloud_size_);
+
       if (local_planner_.use_avoid_sphere_ && local_planner_.reach_altitude_) {
         calculateSphere(local_planner_.avoid_centerpoint_, local_planner_.avoid_sphere_age_, temp_sphere_center, sphere_points_counter, local_planner_.speed_);
       }
 
       local_planner_.determineStrategy();
+      publishAll();
       lock.unlock();
 
       printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));

@@ -10,6 +10,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.pose.position = msg.pose.position;
   pose_.pose.orientation = msg.pose.orientation;
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
+  star_planner_.setPose(pose_);
 
   if(!currently_armed_){
     take_off_pose_.header = msg.header;
@@ -118,6 +119,7 @@ void LocalPlanner::setGoal() {
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
   initGridCells(&path_waypoints_);
+  path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);
 }
 
@@ -306,6 +308,7 @@ void LocalPlanner::determineStrategy(){
       m.getRPY(roll, pitch, yaw);
       z_FOV_idx_.clear();
       calculateFOV(z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
+      std::cout<<"planner FOVinput: "<<yaw<< ", "<<pitch<<"\n";
 
       //visualization of FOV
       initGridCells(&FOV_cells_);
@@ -358,11 +361,10 @@ void LocalPlanner::determineStrategy(){
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_);
           star_planner_.setReprojectedPoints(reprojected_points_, reprojected_points_age_, reprojected_points_dist_);
           star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_);
-          star_planner_.setPose(pose_);
           star_planner_.setBoxSize(histogram_box_size_);
           star_planner_.setCloud(complete_cloud_);
 
-          star_planner_.buildLookAheadTree();
+          star_planner_.buildLookAheadTree(yaw);
           star_planner_.getDirectionFromTree(path_waypoints_);
         }else{
           getDirectionFromCostMap();
@@ -436,20 +438,6 @@ void LocalPlanner::reprojectPoints() {
       }
     }
   }
-}
-
-void LocalPlanner::printHistogram(Histogram hist){
-  for (int e_ind = 0; e_ind < GRID_LENGTH_E; e_ind++) {
-    for (int z_ind = 0; z_ind < GRID_LENGTH_Z; z_ind++) {
-      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
-        std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
-      } else {
-        std::cout << hist.get_bin(e_ind, z_ind) << " ";
-      }
-    }
-    std::cout << "\n";
-  }
-  std::cout << "--------------------------------------\n";
 }
 
 int LocalPlanner::getMinFlightElevationIndex() {

@@ -70,8 +70,8 @@ class StarPlanner
 
   bool tree_available_ = false;
 
-  int childs_per_node_ = 5;
-  int n_expanded_nodes_ = 50;
+  int childs_per_node_ = 1;
+  int n_expanded_nodes_ = 5;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
   double min_cloud_size_;
@@ -121,7 +121,7 @@ class StarPlanner
   void setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
-  void buildLookAheadTree();
+  void buildLookAheadTree(double origin_yaw);
   bool getDirectionFromTree(nav_msgs::GridCells &path_waypoints);
 
 };
