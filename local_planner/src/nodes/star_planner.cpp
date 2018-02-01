@@ -259,23 +259,33 @@ bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
           min_dist_idx = i;
         }
       }
-      std::cout<<"closest node: "<<min_dist_idx<<" dist: "<<min_dist<<"\n";
-      if (min_dist > 3.0 || min_dist_idx == 0) {
+
+      int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
+      if (min_dist > 3.0 || wp_idx == 0) {
         tree_available_ = false;
-        std::cout<<"not available\n";
+        std::cout << "not available\n";
       } else {
-        int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
-          wp_idx--;
-        }
-        int wp_z = floor(atan2(path_node_positions_[wp_idx].x - pose_.pose.position.x, path_node_positions_[wp_idx].y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
-        int wp_e = floor(atan((path_node_positions_[wp_idx].z - pose_.pose.position.z) / sqrt(pow((path_node_positions_[wp_idx].x - pose_.pose.position.x), 2) + pow((path_node_positions_[wp_idx].y - pose_.pose.position.y), 2))) * 180.0 / PI);
+
+//        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
+//          wp_idx--;
+//        }
+        double cos_alpha = (tree_node_distance_ * tree_node_distance_ + distances[wp_idx] * distances[wp_idx] - distances[wp_idx + 1] * distances[wp_idx + 1]) / (2 * tree_node_distance_ * distances[wp_idx]);
+        double l_front = distances[wp_idx] * cos_alpha;
+        double l_frac = l_front / tree_node_distance_;
+
+        geometry_msgs::Point mean_point;
+        mean_point.x = (1.0 - l_frac) * path_node_positions_[wp_idx].x + l_frac * path_node_positions_[wp_idx - 1].x;
+        mean_point.y = (1.0 - l_frac) * path_node_positions_[wp_idx].y + l_frac * path_node_positions_[wp_idx - 1].y;
+        mean_point.z = (1.0 - l_frac) * path_node_positions_[wp_idx].z + l_frac * path_node_positions_[wp_idx - 1].z;
+
+        int wp_z = floor(atan2(mean_point.x - pose_.pose.position.x, mean_point.y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
+        int wp_e = floor(atan((mean_point.z - pose_.pose.position.z) / sqrt(pow((mean_point.x - pose_.pose.position.x), 2) + pow((mean_point.y - pose_.pose.position.y), 2))) * 180.0 / PI);
 
         p.x = wp_e;
         p.y = wp_z;
         p.z = 0;
 
-        std::cout<<"available\n";
+        std::cout << "available\n";
 //        path_selected_.cells.push_back(p);
         path_waypoints.cells.push_back(p);
       }

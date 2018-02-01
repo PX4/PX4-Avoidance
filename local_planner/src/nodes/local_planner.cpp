@@ -300,6 +300,7 @@ void LocalPlanner::determineStrategy(){
       backOff();
 
     } else {
+      evaluateProgressRate();
       reprojectPoints();
 
       tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
@@ -327,8 +328,6 @@ void LocalPlanner::determineStrategy(){
       Histogram polar_histogram_ = combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
       polar_histogram_old_ = polar_histogram_;
 
-      evaluateProgressRate();
-
       //decide how to proceed
       if(hist_is_empty_){
         obstacle_ = false;
@@ -353,10 +352,6 @@ void LocalPlanner::determineStrategy(){
   //        getMinFlightElevationIndex()
   //      }
 
-        findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_,
-                           pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle, only_yawed_);
-        calculateCostMap(cost_path_candidates_, cost_idx_sorted_);
-
         if(use_VFH_star_){
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_);
           star_planner_.setReprojectedPoints(reprojected_points_, reprojected_points_age_, reprojected_points_dist_);
@@ -367,6 +362,9 @@ void LocalPlanner::determineStrategy(){
           star_planner_.buildLookAheadTree(yaw);
           star_planner_.getDirectionFromTree(path_waypoints_);
         }else{
+          findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_,
+                                     pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle, only_yawed_);
+          calculateCostMap(cost_path_candidates_, cost_idx_sorted_);
           getDirectionFromCostMap();
         }
 
