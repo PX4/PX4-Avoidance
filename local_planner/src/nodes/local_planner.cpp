@@ -78,6 +78,8 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
+
+  star_planner_.dynamicReconfigureSetStarParams(config,level);
 }
 
 // log Data

@@ -123,6 +123,7 @@ class StarPlanner
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree(double origin_yaw);
   bool getDirectionFromTree(nav_msgs::GridCells &path_waypoints);
+  void dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
 
 };
 

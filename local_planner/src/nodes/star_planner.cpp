@@ -6,6 +6,15 @@ StarPlanner::StarPlanner() {
 StarPlanner::~StarPlanner() {
 }
 
+
+// set parameters changed by dynamic rconfigure
+void StarPlanner::dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeConfig & config,uint32_t level){
+  childs_per_node_ = config.childs_per_node_;
+  n_expanded_nodes_ = config.n_expanded_nodes_;
+  tree_node_distance_ = config.tree_node_distance_;
+  tree_discount_factor_ = config.tree_discount_factor_;
+}
+
 void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw){
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
