@@ -122,6 +122,7 @@ add_library(local_planner
   src/nodes/box.cpp
   src/nodes/star_planner.cpp
   src/nodes/planner_functions.cpp
+  src/nodes/ground_detector.cpp
 )
 
 ## Add cmake target dependencies of the library

@@ -190,7 +190,8 @@ void LocalPlannerNode::publishGround() {
   std::vector<double> ground_xmin;
   std::vector<double> ground_ymax;
   std::vector<double> ground_ymin;
-  local_planner_.getGroundDataForVisualization(closest_point_on_ground,ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
+  local_planner_.ground_detector_.getGroundDataForVisualization(closest_point_on_ground, ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
+  std::cout<<"Ground vector size2: "<<ground_heights.size()<<"\n";
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
@@ -288,47 +289,44 @@ void LocalPlannerNode::publishReachHeight() {
 void LocalPlannerNode::publishBox() {
   geometry_msgs::PoseStamped drone_pos;
   local_planner_.getPosition(drone_pos);
-  double min_x, max_x, min_y, max_y, min_z, max_z;
-  local_planner_.getBoundingBoxSize(min_x, max_x, min_y, max_y, min_z, max_z);
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
   box.header.stamp = ros::Time::now();
   box.id = 0;
   box.type = visualization_msgs::Marker::CUBE;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = drone_pos.pose.position.x + 0.5 * (max_x - min_x);
-  box.pose.position.y = drone_pos.pose.position.y + 0.5 * (max_y - min_y);
-  box.pose.position.z = drone_pos.pose.position.z + 0.5 * (max_z - min_z);
+  box.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.histogram_box_size_.xmax - local_planner_.histogram_box_size_.xmin);
+  box.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.histogram_box_size_.ymax - local_planner_.histogram_box_size_.ymin);
+  box.pose.position.z = drone_pos.pose.position.z + 0.5 * (local_planner_.histogram_box_size_.zmax - local_planner_.histogram_box_size_.zmin);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = max_x + min_x;
-  box.scale.y = max_y + min_y;
-  box.scale.z = max_z + min_z;
+  box.scale.x = local_planner_.histogram_box_size_.xmax + local_planner_.histogram_box_size_.xmin;
+  box.scale.y = local_planner_.histogram_box_size_.ymax + local_planner_.histogram_box_size_.ymin;
+  box.scale.z = local_planner_.histogram_box_size_.zmax + local_planner_.histogram_box_size_.zmin;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
 
-  local_planner_.getGroundBoxSize(min_x, max_x, min_y, max_y, min_z);
   visualization_msgs::Marker groundbox;
   groundbox.header.frame_id = "local_origin";
   groundbox.header.stamp = ros::Time::now();
   groundbox.id = 0;
   groundbox.type = visualization_msgs::Marker::CUBE;
   groundbox.action = visualization_msgs::Marker::ADD;
-  groundbox.pose.position.x = drone_pos.pose.position.x + 0.5 * (max_x - min_x);
-  groundbox.pose.position.y = drone_pos.pose.position.y + 0.5 * (max_y - min_y);
-  groundbox.pose.position.z = drone_pos.pose.position.z - min_z;
+  groundbox.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.ground_detector_.ground_box_size_.xmax - local_planner_.ground_detector_.ground_box_size_.xmin);
+  groundbox.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.ground_detector_.ground_box_size_.ymax - local_planner_.ground_detector_.ground_box_size_.ymin);
+  groundbox.pose.position.z = drone_pos.pose.position.z - local_planner_.ground_detector_.ground_box_size_.zmin;
   groundbox.pose.orientation.x = 0.0;
   groundbox.pose.orientation.y = 0.0;
   groundbox.pose.orientation.z = 0.0;
   groundbox.pose.orientation.w = 1.0;
-  groundbox.scale.x = max_x + min_x;
-  groundbox.scale.y = max_y + min_y;
-  groundbox.scale.z = 2 * min_z;
+  groundbox.scale.x = local_planner_.ground_detector_.ground_box_size_.xmax + local_planner_.ground_detector_.ground_box_size_.xmin;
+  groundbox.scale.y = local_planner_.ground_detector_.ground_box_size_.ymax + local_planner_.ground_detector_.ground_box_size_.ymin;
+  groundbox.scale.z = 2 * local_planner_.ground_detector_.ground_box_size_.zmin;
   groundbox.color.a = 0.5;
   groundbox.color.r = 1.0;
   groundbox.color.g = 0.0;
@@ -623,7 +621,7 @@ void LocalPlannerNode::publishAll() {
   publishTree();
   publishWaypoints();
 
-  if (local_planner_.groundDetected()) {
+  if (local_planner_.ground_detector_.ground_detected_) {
     publishGround();
   }
 }
@@ -646,9 +644,12 @@ void LocalPlannerNode::threadFunction() {
       local_planner.getPosition(drone_pos);
       local_planner.new_cloud = true;
       local_planner_.histogram_box_.setLimitsHistogramBox(drone_pos.pose.position, local_planner_.histogram_box_size_);
-      local_planner_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_box_size_, local_planner_.min_dist_to_ground_);
+
       if (local_planner_.use_ground_detection_) {
-        local_planner_.detectGround(complete_cloud);
+        local_planner_.ground_detector_.initializeGroundBox(local_planner_.min_dist_to_ground_);
+        local_planner_.ground_detector_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_detector_.ground_box_size_, local_planner_.min_dist_to_ground_);
+        local_planner_.ground_detector_.setParams(local_planner_.reach_altitude_, local_planner_.min_cloud_size_);
+        local_planner_.ground_detector_.detectGround(complete_cloud);
       }
 
       geometry_msgs::Point temp_sphere_center;
