@@ -1123,16 +1123,10 @@ void LocalPlanner::backOff() {
   waypt_.vector.y = pose_.pose.position.y + vec.getY();
   waypt_.vector.z = pose_.pose.position.z + vec.getZ();
 
-  double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
-  if (dist > min_dist_backoff_ + 1.0) {
-    back_off_ = false;
-  }
-
   // fill direction as straight ahead
   geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
   path_waypoints_.cells.push_back(p);
 
-  std::cout<<"Distance: "<<dist<<"\n";
   ROS_INFO("Back off selected direction: [%f, %f, %f].", vec.getX(), vec.getY(), vec.getZ());
   ROS_INFO("Back off selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
 
@@ -1319,6 +1313,14 @@ void LocalPlanner::getPathMsg() {
         waypt_ = smoothWaypoint();
         double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
       }
+    }
+  }
+
+  if(back_off_ && use_back_off_){
+    new_yaw = last_yaw_;
+    double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
+    if (dist > min_dist_backoff_ + 1.0) {
+      back_off_ = false;
     }
   }
 

@@ -96,7 +96,6 @@ class LocalPlanner
   int dist_incline_window_size_ = 50;
   int avoid_sphere_age_ = 1000;
 
-  double local_planner_mode_;
   double local_planner_last_mode_;
   double smooth_go_fast_;
   double distance_to_closest_point_;
@@ -219,6 +218,7 @@ class LocalPlanner
   double goal_z_param_;
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
+  double local_planner_mode_;
 
   std::string log_name_;
 
