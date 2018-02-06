@@ -14,6 +14,7 @@
 
 #include "box.h"
 #include "histogram.h"
+#include "common.h"
 
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
@@ -52,10 +53,10 @@
 #define v_fov 46.0
 #define inf  std::numeric_limits<double>::infinity()
 
-float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
-float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
-geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
-double indexAngleDifference(int a, int b);
+
+
+
+
 void initGridCells(nav_msgs::GridCells *cell);
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geometry_msgs::Point temp_centerpoint, int counter_sphere_points, double sphere_speed);
 double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_size, double min_cloud_size);

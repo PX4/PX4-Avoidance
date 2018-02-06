@@ -91,7 +91,6 @@ void LocalPlanner::logData() {
   }
 }
 
-// update UAV velocity
 void LocalPlanner::setVelocity() {
   velocity_x_ = curr_vel_.twist.linear.x;
   velocity_y_ = curr_vel_.twist.linear.y;
@@ -102,7 +101,6 @@ void LocalPlanner::setVelocity() {
   }
 }
 
-// set mission goal
 void LocalPlanner::setGoal() {
   goal_.x = goal_x_param_;
   goal_.y = goal_y_param_;
@@ -113,9 +111,6 @@ void LocalPlanner::setGoal() {
   path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);
 }
-
-
-
 
 void LocalPlanner::determineStrategy(){
   star_planner_.tree_age_ ++;
@@ -151,13 +146,13 @@ void LocalPlanner::determineStrategy(){
       z_FOV_idx_.clear();
       calculateFOV(z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
-      //visualization of FOV
+      //visualization of FOV in RViz
       initGridCells(&FOV_cells_);
       geometry_msgs::Point p;
       for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
         for (int i = 0; i < z_FOV_idx_.size(); i++) {
-          p.x = j * alpha_res + alpha_res - 90;
-          p.y = z_FOV_idx_[i] * alpha_res + alpha_res - 180;
+          p.x = elevationIndexToAngle(j, alpha_res);
+          p.y = azimuthIndexToAngle(z_FOV_idx_[i], alpha_res);
           p.z = 0;
           FOV_cells_.cells.push_back(p);
         }
@@ -217,18 +212,6 @@ void LocalPlanner::determineStrategy(){
   }
 }
 
-float distance2DPolar(int e1, int z1, int e2, int z2){
-  return sqrt(pow((e1-e2),2) + pow((z1-z2),2));
-}
-
-bool LocalPlanner::obstacleAhead() {
-  if(obstacle_){
-    return true;
-  } else{
-    return false;
-  }
-}
-
 // get 3D points from old histogram
 void LocalPlanner::reprojectPoints() {
 
@@ -247,8 +230,9 @@ void LocalPlanner::reprojectPoints() {
       if (polar_histogram_old_.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
-        double beta_e = (e + 1.0) * ALPHA_RES - 90 - ALPHA_RES/2.0;
-        double beta_z = (z + 1.0) * ALPHA_RES - 180 - ALPHA_RES/2.0;
+        double beta_e = elevationIndexToAngle(e, ALPHA_RES);
+        double beta_z = azimuthIndexToAngle(z, ALPHA_RES);
+
         //transform from Polar to Cartesian
         temp_array[0] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
         temp_array[1] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
@@ -512,20 +496,6 @@ void LocalPlanner::evaluateProgressRate() {
   }
 }
 
-// transform a 2D polar histogram direction in a 3D Catesian coordinate point
-geometry_msgs::Vector3Stamped LocalPlanner::getWaypointFromAngle(int e, int z) {
-  geometry_msgs::Point p = fromPolarToCartesian(e, z, 1.0, pose_.pose.position);
-
-  geometry_msgs::Vector3Stamped waypoint;
-  waypoint.header.stamp = ros::Time::now();
-  waypoint.header.frame_id = "/world";
-  waypoint.vector.x = p.x;
-  waypoint.vector.y = p.y;
-  waypoint.vector.z = p.z;
-
-  return waypoint;
-}
-
 
 // get waypoint from sorted cost list
 void LocalPlanner::getDirectionFromCostMap() {
@@ -541,11 +511,14 @@ void LocalPlanner::getDirectionFromCostMap() {
 // check that the selected direction is really free and transform it into a waypoint.
 void LocalPlanner::getNextWaypoint() {
 	int waypoint_index = path_waypoints_.cells.size();
-	int e = path_waypoints_.cells[waypoint_index - 1].x;
-	int z = path_waypoints_.cells[waypoint_index - 1].y;
-	int e_index = (e - ALPHA_RES + 90) / ALPHA_RES;
-	int z_index = (z - ALPHA_RES + 180) / ALPHA_RES;
-	geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e, z);
+
+	int e_angle = path_waypoints_.cells[waypoint_index - 1].x;
+	int z_angle = path_waypoints_.cells[waypoint_index - 1].y;
+
+	int e_index = elevationAngletoIndex(e_angle, ALPHA_RES);
+	int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
+
+	geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e_angle, z_angle, pose_.pose.position);
 
 	if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index)
 			!= z_FOV_idx_.end()) {
@@ -801,12 +774,11 @@ void LocalPlanner::getPathMsg() {
     }
 
     //check if new point lies in FOV
-    int beta_z = floor(atan2(waypt_adapted_.vector.x - pose_.pose.position.x, waypt_adapted_.vector.y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
-    int beta_e = floor( atan((waypt_adapted_.vector.z - pose_.pose.position.z)/ sqrt(
-                        (waypt_adapted_.vector.x - pose_.pose.position.x) * (waypt_adapted_.vector.x - pose_.pose.position.x)
-                            + (waypt_adapted_.vector.y - pose_.pose.position.y) * (waypt_adapted_.vector.y - pose_.pose.position.y))) * 180.0 / PI);  //(-90.+90)
-    int e_index = (beta_e - alpha_res + 90) / alpha_res;
-    int z_index = (beta_z - alpha_res + 180) / alpha_res;
+    int e_angle = elevationAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
+    int z_angle = azimuthAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
+
+    int e_index = elevationAngletoIndex(e_angle, alpha_res);
+    int z_index = azimuthAngletoIndex(z_angle, alpha_res);
 
     if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) != z_FOV_idx_.end()) {
       waypoint_outside_FOV_ = false;
@@ -911,9 +883,7 @@ void LocalPlanner::printAlgorithmStatistics(){
   ROS_INFO("Current pose: [%f, %f, %f].", pose_.pose.position.x, pose_.pose.position.y, pose_.pose.position.z);
   ROS_INFO("Velocity: [%f, %f, %f], module: %f.", velocity_x_, velocity_y_, velocity_z_, velocity_mod_);
 
-  if(log_data_to_txt_file_){
-    logData();
-  }
+  logData();
 
   if (withinGoalRadius()) {
     cv::Scalar mean, std;
@@ -928,22 +898,13 @@ void LocalPlanner::printAlgorithmStatistics(){
 }
 
 void LocalPlanner::checkSpeed(){
-  if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacleAhead()){
+  if (hasSameYawAndAltitude(last_waypt_p_, waypt_p_) && !obstacle_){
     speed_ = std::min(max_speed_, speed_ + 0.1);
   }
   else{
     speed_ = min_speed_;
   }
 }
-
-// check if two points have the same altitude and yaw
-bool LocalPlanner::hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
-  return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z)
-         && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
-         && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
-
-}
-
 
 // stop in front of an obstacle at a distance defined by the variable keep_distance_
 void LocalPlanner::stopInFrontObstacles(){

@@ -7,6 +7,7 @@
 #include "box.h"
 #include "histogram.h"
 #include "planner_functions.h"
+#include "common.h"
 
 
 #include <iostream>

@@ -1,26 +1,5 @@
 #include "planner_functions.h"
 
-float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
-  return sqrt(pow(pose.pose.position.x - pcl_it->x, 2) + pow(pose.pose.position.y - pcl_it->y, 2) + pow(pose.pose.position.z - pcl_it->z, 2));
-}
-
-float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
-  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) + (a.z-b.z)*(a.z-b.z));
-}
-
-// transform polar coordinates into Cartesian coordinates
-geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos) {
-  geometry_msgs::Point p;
-  p.x = pos.x + radius * cos(e * (PI / 180)) * sin(z * (PI / 180));  //round
-  p.y = pos.y + radius * cos(e * (PI / 180)) * cos(z * (PI / 180));
-  p.z = pos.z + radius * sin(e * (PI / 180));
-
-  return p;
-}
-
-double indexAngleDifference(int a, int b) {
-return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)), std::abs(a - b + 360));
-}
 
 // initialize GridCell message
 void initGridCells(nav_msgs::GridCells *cell) {
@@ -32,10 +11,8 @@ void initGridCells(nav_msgs::GridCells *cell) {
   cell->cells = {};
 }
 
-
+//calculate sphere center from close points
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geometry_msgs::Point temp_centerpoint, int counter_sphere_points, double sphere_speed){
-
-  //calculate sphere center from close points
   if (counter_sphere_points > 50) {
     if(sphere_age < 10){
       tf::Vector3 vec;
@@ -59,6 +36,7 @@ void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geome
   }
 }
 
+//adapt histogram safety margin around blocked cells to distance of pointcloud
 double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_size, double min_cloud_size) {
   double safety_margin;
 
@@ -71,7 +49,6 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_siz
   }
   return safety_margin;
 }
-
 
 // trim the point cloud so that only points inside the bounding box are considered and
 void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_msgs::Point &closest_point, geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point, int &counter_backoff, int &counter_sphere,
@@ -125,9 +102,6 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
     cropped_cloud.points = cloud_temp->points;
     cropped_cloud.width = cloud_temp->points.size();
   }
-
-//  ROS_INFO("Point cloud cropped in %2.2fms. Cloud size %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), cropped_cloud.width);
-//  cloud_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
@@ -169,30 +143,22 @@ void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, d
   }
 }
 
-
+//Build histogram estimate from reprojected points
 Histogram propagateHistogram(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist, geometry_msgs::PoseStamped position) {
-  //Build histogram estimate from reprojected points
   std::clock_t start_time = std::clock();
   Histogram polar_histogram_est = Histogram(2 * alpha_res);
   Histogram polar_histogram = Histogram(alpha_res);
 
   for (int i = 0; i < reprojected_points.points.size(); i++) {
-    int beta_z_new = floor(atan2(reprojected_points.points[i].x - position.pose.position.x, reprojected_points.points[i].y - position.pose.position.y) * 180.0 / PI);  //(-180. +180]
-    int beta_e_new = floor( atan((reprojected_points.points[i].z - position.pose.position.z)/ sqrt(
-                    (reprojected_points.points[i].x - position.pose.position.x) * (reprojected_points.points[i].x - position.pose.position.x)
-                        + (reprojected_points.points[i].y - position.pose.position.y) * (reprojected_points.points[i].y - position.pose.position.y))) * 180.0 / PI);  //(-90.+90)
-    beta_e_new += 90;
-    beta_z_new += 180;
+    int e_angle = elevationAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
+    int z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
 
-    beta_z_new = beta_z_new + ((2 * alpha_res) - (beta_z_new % (2 * alpha_res)));  //[-170,+180]
-    beta_e_new = beta_e_new + ((2 * alpha_res) - (beta_e_new % (2 * alpha_res)));  //[-80,+90]
+    int e_ind = elevationAngletoIndex(e_angle, 2*alpha_res);
+    int z_ind = azimuthAngletoIndex(z_angle, 2*alpha_res);
 
-    int e_new = (beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
-    int z_new = (beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
-
-    polar_histogram_est.set_bin(e_new, z_new, polar_histogram_est.get_bin(e_new, z_new) + 0.25);
-    polar_histogram_est.set_age(e_new, z_new, polar_histogram_est.get_age(e_new, z_new) + 0.25 * reprojected_points_age[i]);
-    polar_histogram_est.set_dist(e_new, z_new, polar_histogram_est.get_dist(e_new, z_new) + 0.25 * reprojected_points_dist[i]);
+    polar_histogram_est.set_bin(e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
+    polar_histogram_est.set_age(e_ind, z_ind, polar_histogram_est.get_age(e_ind, z_ind) + 0.25 * reprojected_points_age[i]);
+    polar_histogram_est.set_dist(e_ind, z_ind, polar_histogram_est.get_dist(e_ind, z_ind) + 0.25 * reprojected_points_dist[i]);
   }
 
   for (int e = 0; e < grid_length_e / 2; e++) {
@@ -209,14 +175,14 @@ Histogram propagateHistogram(pcl::PointCloud<pcl::PointXYZ> reprojected_points, 
     }
   }
 
-  //Upsample histogram estimate
+  //Upsample propagated histogram
   polar_histogram_est.upsample();
 
   return polar_histogram_est;
 }
 
-Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position) {
 //Generate new histogram from pointcloud
+Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position) {
   Histogram polar_histogram = Histogram(alpha_res);
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
   geometry_msgs::Point temp;
@@ -228,20 +194,14 @@ Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geo
     temp.z = it->z;
     dist = distance3DCartesian(position.pose.position, temp);
 
-    int beta_z = floor((atan2(temp.x - position.pose.position.x, temp.y - position.pose.position.y) * 180.0 / PI));  //(-180. +180]
-    int beta_e = floor((atan((temp.z - position.pose.position.z) / sqrt((temp.x - position.pose.position.x) * (temp.x - position.pose.position.x) + (temp.y - position.pose.position.y) * (temp.y - position.pose.position.y))) * 180.0 / PI));  //(-90.+90)
+    int e_angle = elevationAnglefromCartesian(temp.x, temp.y, temp.z, position.pose.position);
+    int z_angle = azimuthAnglefromCartesian(temp.x, temp.y, temp.z, position.pose.position);
 
-    beta_e += 90;  //[0,360]
-    beta_z += 180;  //[0,180]
+    int e_ind = elevationAngletoIndex(e_angle, alpha_res);
+    int z_ind = azimuthAngletoIndex(z_angle, alpha_res);
 
-    beta_z = beta_z + (alpha_res - beta_z % alpha_res);  //[10,360]
-    beta_e = beta_e + (alpha_res - beta_e % alpha_res);  //[10,180]
-
-    int e = beta_e / alpha_res - 1;  //[0,17]
-    int z = beta_z / alpha_res - 1;  //[0,35]
-
-    polar_histogram.set_bin(e, z, polar_histogram.get_bin(e, z) + 1);
-    polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) + dist);
+    polar_histogram.set_bin(e_ind, z_ind, polar_histogram.get_bin(e_ind, z_ind) + 1);
+    polar_histogram.set_dist(e_ind, z_ind, polar_histogram.get_dist(e_ind, z_ind) + dist);
   }
 
   //Normalize and get mean in distance bins
@@ -258,7 +218,7 @@ Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geo
 }
 
 
-//Combine to New binary histogram
+//Combine propagated histogram and new histogram to the final binary histogram
 Histogram combinedHistogram(bool &hist_empty, Histogram new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max) {
   hist_empty = true;
   for (int e = 0; e < grid_length_e; e++) {
@@ -291,6 +251,7 @@ Histogram combinedHistogram(bool &hist_empty, Histogram new_hist, Histogram prop
   return new_hist;
 }
 
+//costfunction for every free histogram cell
 double costFunction(int e, int z, nav_msgs::GridCells path_waypoints, geometry_msgs::Point goal, geometry_msgs::PoseStamped position, geometry_msgs::Point position_old, double goal_cost_param, double smooth_cost_param,
                     double height_change_cost_param_adapted, double height_change_cost_param, bool only_yawed) {
 
@@ -402,42 +363,36 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
       }
 
       if (free && !height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = elevationIndexToAngle(e, alpha_res);
+        p.y = azimuthIndexToAngle(z, alpha_res);
         p.z = 0;
         path_candidates.cells.push_back(p);
         double cost = costFunction((int) p.x, (int) p.y, path_waypoints, goal, position, position_old, goal_cost_param, smooth_cost_param, height_change_cost_param_adapted, height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0 && !height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = elevationIndexToAngle(e, alpha_res);
+        p.y = azimuthIndexToAngle(z, alpha_res);
         p.z = 0;
         path_rejected.cells.push_back(p);
       } else if (height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = elevationIndexToAngle(e, alpha_res);
+        p.y = azimuthIndexToAngle(z, alpha_res);
         p.z = 0;
         path_ground.cells.push_back(p);
       } else {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = elevationIndexToAngle(e, alpha_res);
+        p.y = azimuthIndexToAngle(z, alpha_res);
         p.z = 0;
         path_blocked.cells.push_back(p);
       }
     }
   }
-//
-////  ROS_INFO("Path candidates calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-//  free_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 // calculate the free direction which has the smallest cost for the UAV to travel to
 void calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> &cost_idx_sorted) {
   std::clock_t start_time = std::clock();
   cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
-
-//  ROS_INFO("Selected path (e, z) = (%d, %d) costs %.2f. Calculated in %2.2f ms.", (int)p.x, (int)p.y, cost_path_candidates_[cost_idx_sorted_[0]], (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-//  cost_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
 void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen){
