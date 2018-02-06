@@ -47,6 +47,8 @@ public:
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;
 
+  void publishSetpoint(const geometry_msgs::PoseStamped wp, double mode);
+
 private:
   ros::NodeHandle nh_;
 

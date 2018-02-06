@@ -35,7 +35,7 @@ LocalPlannerNode::LocalPlannerNode() {
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  current_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 1);
+  current_waypoint_pub_ = nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
 
   mavros_set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
@@ -367,6 +367,50 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   pointcloud_time_now_ = msg.header.stamp;
 }
 
+void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, double mode) {
+
+  visualization_msgs::Marker setpoint;
+  setpoint.header.frame_id = "local_origin";
+  setpoint.header.stamp = ros::Time::now();
+  setpoint.id = 0;
+  setpoint.type = visualization_msgs::Marker::ARROW;
+  setpoint.action = visualization_msgs::Marker::ADD;
+  setpoint.pose = wp.pose;
+  setpoint.scale.x = 1.0;
+  setpoint.scale.y = 0.1;
+  setpoint.scale.z = 0.1;
+  setpoint.color.a = 1.0;
+
+  if (mode == 0) {          //reach altitude
+    setpoint.color.r = 1.0;
+    setpoint.color.g = 0.0;
+    setpoint.color.b = 1.0;
+  } else if (mode == 1) {   //go fast
+    setpoint.color.r = 0.0;
+    setpoint.color.g = 0.0;
+    setpoint.color.b = 1.0;
+  } else if (mode == 2) {   //obstacle ahead
+    setpoint.color.r = 0.0;
+    setpoint.color.g = 1.0;
+    setpoint.color.b = 0.0;
+  } else if (mode == 3) {   //stop in front
+    setpoint.color.r = 0.0;
+    setpoint.color.g = 1.0;
+    setpoint.color.b = 1.0;
+  } else if (mode == 4) {   //back off
+    setpoint.color.r = 1.0;
+    setpoint.color.g = 0.0;
+    setpoint.color.b = 0.0;
+  }else if (mode == 5) {   //hover
+    setpoint.color.r = 1.0;
+    setpoint.color.g = 1.0;
+    setpoint.color.b = 0.0;
+  }
+
+  current_waypoint_pub_.publish(setpoint);
+
+}
+
 void LocalPlannerNode::publishAll() {
 
   pcl::PointCloud<pcl::PointXYZ> final_cloud, ground_cloud, reprojected_points;
@@ -381,7 +425,11 @@ void LocalPlannerNode::publishAll() {
   waypoint_pub_.publish(path_msg);
   path_pub_.publish(path_actual);
 
-  current_waypoint_pub_.publish(waypt_p);
+
+ //choose setpoint color depending on mode
+  double mode = local_planner_.local_planner_mode_;
+  publishSetpoint(waypt_p, mode);
+
   tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
   mavros_waypoint_pub_.publish(waypt_p);
 
@@ -442,7 +490,7 @@ int main(int argc, char** argv) {
       local_planner_node.local_planner_.getPathData(path_msg, waypt_p);
       local_planner_node.waypoint_pub_.publish(path_msg);
 
-      local_planner_node.current_waypoint_pub_.publish(waypt_p);
+      local_planner_node.publishSetpoint(waypt_p, 5);
       local_planner_node.tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
       local_planner_node.mavros_waypoint_pub_.publish(waypt_p);
       hovering = true;
