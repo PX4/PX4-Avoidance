@@ -5,6 +5,7 @@
 #include <math.h>
 #include "box.h"
 #include "planner_functions.h"
+#include "common.h"
 
 
 #include <iostream>
