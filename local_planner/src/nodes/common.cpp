@@ -4,8 +4,8 @@ float distance2DPolar(int e1, int z1, int e2, int z2){
   return sqrt(pow((e1-e2),2) + pow((z1-z2),2));
 }
 
-float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
-  return sqrt(pow(pose.pose.position.x - pcl_it->x, 2) + pow(pose.pose.position.y - pcl_it->y, 2) + pow(pose.pose.position.z - pcl_it->z, 2));
+float computeL2Dist(geometry_msgs::Point position, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
+  return sqrt(pow(position.x - pcl_it->x, 2) + pow(position.y - pcl_it->y, 2) + pow(position.z - pcl_it->z, 2));
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {

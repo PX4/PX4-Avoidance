@@ -52,7 +52,7 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_siz
 
 // trim the point cloud so that only points inside the bounding box are considered and
 void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_msgs::Point &closest_point, geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point, int &counter_backoff, int &counter_sphere,
-                                    pcl::PointCloud<pcl::PointXYZ> complete_cloud, double min_cloud_size, double min_dist_backoff, double sphere_radius, Box histogram_box, geometry_msgs::PoseStamped pose) {
+                                    pcl::PointCloud<pcl::PointXYZ> complete_cloud, double min_cloud_size, double min_dist_backoff, double sphere_radius, Box histogram_box, geometry_msgs::Point position) {
   double min_realsense_dist = 0.2;
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
@@ -68,7 +68,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
     // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
       if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
-        distance = computeL2Dist(pose, pcl_it);
+        distance = computeL2Dist(position, pcl_it);
         if (distance > min_realsense_dist) {
           cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < distance_to_closest_point) {

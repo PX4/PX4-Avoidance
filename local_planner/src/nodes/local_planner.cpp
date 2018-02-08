@@ -96,9 +96,6 @@ void LocalPlanner::setVelocity() {
   velocity_y_ = curr_vel_.twist.linear.y;
   velocity_z_ = curr_vel_.twist.linear.z;
   velocity_mod_ = sqrt(pow(velocity_x_, 2) + pow(velocity_y_, 2) + pow(velocity_z_, 2));
-  if (use_ground_detection_) {
-    ground_detector_.setVelocity(curr_vel_);
-  }
 }
 
 void LocalPlanner::setGoal() {
@@ -181,14 +178,9 @@ void LocalPlanner::determineStrategy(){
         std::cout << "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m";
         local_planner_mode_ = 2;
 
-        int e_min_idx = -1;
-        bool over_obstacle = false;
-  //      if(ground_detect){ //calculate e_min_idx
-  //        getMinFlightElevationIndex()
-  //      }
-
         if(use_VFH_star_){
-          star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_);
+          star_planner_.ground_detector_ = GroundDetector(ground_detector_);
+          star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_, use_ground_detection_);
           star_planner_.setReprojectedPoints(reprojected_points_, reprojected_points_age_, reprojected_points_dist_);
           star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_);
           star_planner_.setBoxSize(histogram_box_size_);
@@ -197,8 +189,20 @@ void LocalPlanner::determineStrategy(){
           star_planner_.buildLookAheadTree(yaw);
           star_planner_.getDirectionFromTree(path_waypoints_);
         }else{
+
+          int e_min_idx = -1;
+          if(use_ground_detection_){
+            min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, curr_vel_, over_obstacle_, min_flight_height_, ground_margin_);
+            e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_);
+            ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
+            ground_margin_ = ground_detector_.getMargin();
+            if (over_obstacle_) {
+              std::cout << "\033[1;36m Minimal flight height: " << min_flight_height_ << "\n \033[0m";
+            }
+          }
+
           findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_,
-                                     pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle, only_yawed_);
+                                     pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_);
           calculateCostMap(cost_path_candidates_, cost_idx_sorted_);
           getDirectionFromCostMap();
         }
@@ -543,28 +547,35 @@ void LocalPlanner::goFast() {
   vec.setZ(goal_.z - pose_.pose.position.z);
   double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
-  //Prevent downward motion or move up if too close to ground
-  if (use_ground_detection_) {
-    vec.normalize();
-    ground_detector_.setParams(reach_altitude_, min_dist_to_ground_);
-    double min_flight_height = ground_detector_.getMinFlightHeight();
-    ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
-    if (over_obstacle_ && pose_.pose.position.z <= min_flight_height) {
-      vec.setZ(0.3 * (min_flight_height - pose_.pose.position.z));
-      std::cout << "\033[1;36m Go Fast: Flight altitude too low, rising.\n \033[0m";
-    }
-    if (over_obstacle_ && pose_.pose.position.z > min_flight_height && pose_.pose.position.z < min_flight_height + 0.5 && vec.getZ() < 0) {
-      vec.setZ(0);
-      std::cout << "\033[1;36m Go Fast: Preventing downward motion.\n \033[0m";
-    }
-  }
-
   vec.normalize();
   vec *= new_len;
 
   waypt_.vector.x = pose_.pose.position.x + vec.getX();
   waypt_.vector.y = pose_.pose.position.y + vec.getY();
   waypt_.vector.z = pose_.pose.position.z + vec.getZ();
+
+  //Prevent downward motion or move up if too close to ground
+  if (use_ground_detection_) {
+    vec.normalize();
+    min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, curr_vel_, over_obstacle_, min_flight_height_, ground_margin_);
+    ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
+    ground_margin_ = ground_detector_.getMargin();
+
+    if (over_obstacle_ && pose_.pose.position.z <= min_flight_height_ && waypt_.vector.z <= min_flight_height_) {
+      if ((min_flight_height_ - pose_.pose.position.z) > 0.5) {
+        waypt_.vector.z = pose_.pose.position.z + 0.5;
+      } else {
+        waypt_.vector.z = min_flight_height_;
+      }
+      too_low_ = true;
+      std::cout << "\033[1;36m Go Fast: Flight altitude too low (Minimal flight height: " << min_flight_height_ << ") rising.\n \033[0m";
+    }
+    if (over_obstacle_ && pose_.pose.position.z > min_flight_height_ && pose_.pose.position.z < min_flight_height_ + 0.5 && vec.getZ() < 0) {
+      waypt_.vector.z = pose_.pose.position.z;
+      is_near_min_height_ = true;
+      std::cout << "\033[1;36m Go Fast: Preventing downward motion (Minimal flight height: " << min_flight_height_ << ") \n \033[0m";
+    }
+  }
 
   // fill direction as straight ahead
   geometry_msgs::Point p;
@@ -843,16 +854,16 @@ void LocalPlanner::getPathMsg() {
   if (withinGoalRadius()) {
     bool over_goal = false;
     if (use_ground_detection_) {
-      ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
       if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
-        ROS_INFO("Above Goal cannot go lower: Hoovering");
         over_goal = true;
         waypt_smoothed_.vector.x = goal_.x;
         waypt_smoothed_.vector.y = goal_.y;
-        if (pose_.pose.position.z > waypt_smoothed_.vector.z) {
-          waypt_smoothed_.vector.z = pose_.pose.position.z;
-        } else {
+        if (pose_.pose.position.z < goal_.z) {
           waypt_smoothed_.vector.z = goal_.z;
+          ROS_INFO("Rising to goal");
+        } else {
+          waypt_smoothed_.vector.z = min_flight_height_;
+          ROS_INFO("Above Goal cannot go lower: Hoovering");
         }
       }
     }
@@ -864,6 +875,7 @@ void LocalPlanner::getPathMsg() {
     }
   }
 
+  ROS_INFO("Final waypoint: [%f %f %f].", waypt_smoothed_.vector.x, waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw);
 
   path_msg_.poses.push_back(waypt_p_);

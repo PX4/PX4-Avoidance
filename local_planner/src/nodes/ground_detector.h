@@ -69,7 +69,6 @@ class GroundDetector
 
   pcl::PointCloud<pcl::PointXYZ> ground_cloud_;
 
-  bool reach_altitude_;
   double min_cloud_size_ = 160;
 
   std::vector<double> ground_heights_;
@@ -80,7 +79,7 @@ class GroundDetector
 
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
-  double min_dist_to_ground_;
+//  double min_dist_to_ground_;
   double min_flight_height_;
   double begin_rise_;
 
@@ -95,7 +94,6 @@ class GroundDetector
   geometry_msgs::Point closest_point_on_ground_;
   geometry_msgs::Quaternion ground_orientation_;
   geometry_msgs::PoseStamped pose_;
-  geometry_msgs::TwistStamped curr_vel_;
 
 
 
@@ -105,22 +103,23 @@ class GroundDetector
   Box ground_box_;
   Box ground_box_size_;
 
-
+  double min_dist_to_ground_;
 
   GroundDetector();
+  GroundDetector(const GroundDetector &detector);
   ~GroundDetector();
 
   void detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud);
-  void setParams(bool reach_altitude, double min_cloud_size);
+  void setParams(double min_dist_to_ground, double min_cloud_size);
   void setPose(geometry_msgs::PoseStamped pose);
   void fitPlane();
   void dynamicReconfigureSetGroundParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void logData(std::string log_name);
-  int getMinFlightElevationIndex();
-  double getMinFlightHeight();
+  int getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height);
+  double getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old);
   void getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height);
+  double getMargin();
   void getGroundCloudForVisualization(pcl::PointCloud<pcl::PointXYZ> &ground_cloud);
-  void setVelocity(geometry_msgs::TwistStamped curr_vel);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void initializeGroundBox(double min_dist_to_ground);
 

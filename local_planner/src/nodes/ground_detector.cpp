@@ -3,6 +3,15 @@
 GroundDetector::GroundDetector() {
 }
 
+GroundDetector::GroundDetector(const GroundDetector &detector):
+    min_dist_to_ground_ { detector.min_dist_to_ground_},
+    ground_heights_ { detector.ground_heights_},
+    ground_xmax_ { detector.ground_xmax_ },
+    ground_xmin_ { detector.ground_xmin_ },
+    ground_ymax_ { detector.ground_ymax_ },
+    ground_ymin_ { detector.ground_ymin_ } {
+}
+
 GroundDetector::~GroundDetector() {
 }
 
@@ -27,8 +36,8 @@ void GroundDetector::getFlags(bool &over_obstacle, bool &too_low, bool &is_near_
   is_near_min_height = is_near_min_height_;
 }
 
-void GroundDetector::setVelocity(geometry_msgs::TwistStamped curr_vel){
-  curr_vel_ = curr_vel;
+double GroundDetector::getMargin(){
+  return begin_rise_;
 }
 
 void GroundDetector::getGroundCloudForVisualization(pcl::PointCloud<pcl::PointXYZ> &ground_cloud){
@@ -36,7 +45,6 @@ void GroundDetector::getGroundCloudForVisualization(pcl::PointCloud<pcl::PointXY
 }
 
 void GroundDetector::getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin){
-  std::cout<<"Ground ector size1: "<<ground_heights_.size()<<"\n";
   closest_point_on_ground = closest_point_on_ground_;
   ground_orientation = ground_orientation_;
   ground_heights = ground_heights_;
@@ -58,9 +66,9 @@ void GroundDetector::logData(std::string log_name){
   myfile2.close();
 }
 
-void GroundDetector::setParams(bool reach_altitude, double min_cloud_size){
-  reach_altitude_ = reach_altitude;
+void GroundDetector::setParams(double min_dist_to_ground, double min_cloud_size){
   min_cloud_size_ = min_cloud_size;
+  min_dist_to_ground_ = min_dist_to_ground;
 }
 
 void GroundDetector::initializeGroundBox(double min_dist_to_ground){
@@ -100,11 +108,8 @@ void GroundDetector::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud
   ground_cloud_.points = cloud_temp->points;
 
   //fit horizontal plane for ground estimation
-  if (reach_altitude_){
-    fitPlane();
-  }else{
-    ground_detected_ = false;
-  }
+
+  fitPlane();
   ROS_INFO("Ground detection took %2.2fms. Ground detected: %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), ground_detected_);
 }
 
@@ -227,48 +232,40 @@ void GroundDetector::fitPlane() {
 }
 
 
-int GroundDetector::getMinFlightElevationIndex() {
+int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height) {
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
-
-  min_flight_height_ = getMinFlightHeight();
   int e_max = floor(v_fov / 2);
   int e_min;
 
-  if (!is_near_min_height_ && over_obstacle_ && pose_.pose.position.z < min_flight_height_ + 0.2) {
+  if (!is_near_min_height_ && over_obstacle_ && current_pose.pose.position.z < min_flight_height_ + 0.2) {
     is_near_min_height_ = true;
   }
-  if (is_near_min_height_ && over_obstacle_ && pose_.pose.position.z > min_flight_height_ + 0.5) {
+  if (is_near_min_height_ && over_obstacle_ && current_pose.pose.position.z > min_flight_height_ + 0.5) {
     is_near_min_height_ = false;
   }
-  if (!too_low_ && over_obstacle_ && pose_.pose.position.z <= min_flight_height_) {
+  if (!too_low_ && over_obstacle_ && current_pose.pose.position.z <= min_flight_height_) {
     too_low_ = true;
   }
-  if (too_low_ && over_obstacle_ && pose_.pose.position.z > min_flight_height_ + 0.2) {
+  if (too_low_ && over_obstacle_ && current_pose.pose.position.z > min_flight_height_ + 0.2) {
     too_low_ = false;
   }
 
   if (over_obstacle_ && too_low_) {
-    e_max = e_max + 90;
-    e_max = e_max - e_max % alpha_res;
-    e_max = e_max + (alpha_res - e_max % alpha_res);  //[10,180]
-    e_min_idx = (e_max) / alpha_res - 1;  //[0,17]
-    std::cout << "\033[1;36m Too low, discard points under elevation " << e_max << "\n \033[0m";
+    e_min_idx =  elevationAngletoIndex(e_max, alpha_res);
+//    std::cout << "\033[1;36m Too low, discard points under elevation " << e_max << "\n \033[0m";
   }
   if (over_obstacle_ && is_near_min_height_ && !too_low_) {
     e_min = 0;
-    //e_min = e_min + (alpha_res - e_min % alpha_res);  //[-80,+90]
-    e_min_idx = (90 + e_min) / alpha_res - 1;  //[0,17]
-    std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min << "\n \033[0m";
+    e_min_idx = elevationAngletoIndex(e_min, alpha_res);
+//    std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min << "\n \033[0m";
   }
 
   return e_min_idx;
 }
 
-double GroundDetector::getMinFlightHeight() {
+double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old) {
   int i = 0;
-  bool over_obstacle_old = over_obstacle_;
-  double min_flight_height_old = min_flight_height_;
   over_obstacle_ = false;
   min_flight_height_ = -inf;
   double begin_rise_temp;
@@ -277,9 +274,9 @@ double GroundDetector::getMinFlightHeight() {
     double flight_height = ground_heights_[i] + min_dist_to_ground_;
     double begin_rise;
     if (over_obstacle_old && flight_height > min_flight_height_old - 0.1 && flight_height < min_flight_height_old + 0.1) {
-      begin_rise = begin_rise_;
-    } else if (flight_height > pose_.pose.position.z) {
-      double dist_diff = flight_height - pose_.pose.position.z;
+      begin_rise = margin_old;
+    } else if (flight_height > current_pose.pose.position.z) {
+      double dist_diff = flight_height - current_pose.pose.position.z;
       int e_max = floor(v_fov / 2);
       e_max = e_max - e_max % alpha_res;
       e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
@@ -291,16 +288,16 @@ double GroundDetector::getMinFlightHeight() {
     double xmax_begin_rise = begin_rise;
     double ymin_begin_rise = 0;
     double ymax_begin_rise = begin_rise;
-    if (curr_vel_.twist.linear.x > 0) {
+    if (curr_vel.twist.linear.x > 0) {
       xmin_begin_rise = begin_rise;
       xmax_begin_rise = 0;
     }
-    if (curr_vel_.twist.linear.y > 0) {
+    if (curr_vel.twist.linear.y > 0) {
       ymin_begin_rise = begin_rise;
       ymax_begin_rise = 0;
     }
-    if (pose_.pose.position.x < ground_xmax_[i] + xmax_begin_rise && pose_.pose.position.x > ground_xmin_[i] - xmin_begin_rise && pose_.pose.position.y < ground_ymax_[i] + ymax_begin_rise
-        && pose_.pose.position.y > ground_ymin_[i] - ymin_begin_rise) {
+    if (current_pose.pose.position.x < ground_xmax_[i] + xmax_begin_rise && current_pose.pose.position.x > ground_xmin_[i] - xmin_begin_rise && current_pose.pose.position.y < ground_ymax_[i] + ymax_begin_rise
+        && current_pose.pose.position.y > ground_ymin_[i] - ymin_begin_rise) {
       if (flight_height > min_flight_height_) {
         min_flight_height_ = flight_height;
         over_obstacle_ = true;
@@ -311,9 +308,6 @@ double GroundDetector::getMinFlightHeight() {
     i++;
   }
   begin_rise_ = begin_rise_temp;
-  if (over_obstacle_) {
-    std::cout << "\033[1;36m Minimal flight height: " << min_flight_height_ << "\n \033[0m";
-  }
 
   return min_flight_height_;
 }
