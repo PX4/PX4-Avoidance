@@ -8,6 +8,7 @@
 #include "histogram.h"
 #include "planner_functions.h"
 #include "common.h"
+#include "ground_detector.h"
 
 
 #include <iostream>
@@ -70,6 +71,10 @@ class StarPlanner
 {
 
   bool tree_available_ = false;
+  bool over_obstacle_ = false;
+  bool too_low_;
+  bool is_near_min_height_;
+  bool use_ground_detection_;
 
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
@@ -82,6 +87,8 @@ class StarPlanner
   double height_change_cost_param_adapted_;
   double height_change_cost_param_;
   double curr_yaw_;
+  double min_flight_height_;
+  double ground_margin_;
 
   Box histogram_box_;
   Box histogram_box_size_;
@@ -98,9 +105,6 @@ class StarPlanner
 
   nav_msgs::GridCells path_waypoints_;
 
-
-
-
  public:
 
   std::vector<geometry_msgs::Point> path_node_positions_;
@@ -109,11 +113,13 @@ class StarPlanner
   std::vector<TreeNode> tree_;
   bool tree_new_ = false;
 
+  GroundDetector ground_detector_;
+
 
   StarPlanner();
   ~StarPlanner();
 
-  void setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw);
+  void setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
   void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist);
   void setCostParams(double goal_cost_param, double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param);
   void setPose(geometry_msgs::PoseStamped pose);

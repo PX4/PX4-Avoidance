@@ -26,7 +26,7 @@
 #define inf  std::numeric_limits<double>::infinity()
 
 float distance2DPolar(int e1, int z1, int e2, int z2);
-float computeL2Dist(geometry_msgs::PoseStamped pose, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
+float computeL2Dist(geometry_msgs::Point position, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
 double indexAngleDifference(int a, int b);

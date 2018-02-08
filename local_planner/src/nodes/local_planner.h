@@ -67,9 +67,6 @@
 #define V_FOV 46.0
 #define INF  std::numeric_limits<double>::infinity()
 
-float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
-
-
 class LocalPlanner
 {
 
@@ -116,6 +113,8 @@ class LocalPlanner
   double integral_time_old_ = 0;
   double no_progress_slope_;
   double tree_node_distance_;
+  double min_flight_height_ = 0;
+  double ground_margin_ = 0;
 
 
   std::vector<int> e_FOV_idx_;

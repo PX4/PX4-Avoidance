@@ -15,11 +15,12 @@ void StarPlanner::dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeCon
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw){
+void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection){
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
+  use_ground_detection_ = use_ground_detection;
 }
 
 void StarPlanner::setPose(geometry_msgs::PoseStamped  pose){
@@ -141,7 +142,7 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
     histogram_box_.setLimitsHistogramBox(origin_position, histogram_box_size_);
 
     filterPointCloud(cropped_cloud, closest_point, temp_sphere_center, distance_to_closest_point, backoff_points_counter, sphere_points_counter,
-                                    complete_cloud_, min_cloud_size_, min_dist_backoff_, avoid_radius, histogram_box_, pose_);
+                                    complete_cloud_, min_cloud_size_, min_dist_backoff_, avoid_radius, histogram_box_, origin_position);
     double safety_radius = adaptSafetyMarginHistogram(distance_to_closest_point, cropped_cloud.points.size(), min_cloud_size_);
 
     //if too close to obstacle, we do not want to go there (equivalent to back off)
@@ -162,14 +163,21 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
 
       //calculate candidates
       int e_min_idx = -1;
-//      if(ground_detect){ //calculate e_min_idx
-//        getMinFlightElevationIndex()
-//      }
+      if(use_ground_detection_){
+        //calculate velocity direction
+        geometry_msgs::TwistStamped velocity;
+        velocity.twist.linear.x = origin_position.x - origin_origin_position.x;
+        velocity.twist.linear.y = origin_position.y - origin_origin_position.y;
+        velocity.twist.linear.z = origin_position.z - origin_origin_position.z;
 
-      bool over_obstacle = false;
+        min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, velocity, over_obstacle_, min_flight_height_, ground_margin_);
+        e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_);
+        ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
+        ground_margin_ = ground_detector_.getMargin();
+      }
 
       findFreeDirections(histogram, safety_radius, path_candidates, path_selected, path_rejected, path_blocked, path_ground, path_waypoints_, cost_path_candidates, goal_,
-                         pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle, false);
+                         pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false);
       calculateCostMap(cost_path_candidates, cost_idx_sorted);
 
       //insert new nodes
@@ -251,9 +259,7 @@ bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
       p.y = tree_[goal_node_nr].last_z;
       p.z = 0;
 
-//      path_selected_.cells.push_back(p);
       path_waypoints.cells.push_back(p);
-    std::cout<<"new tree\n";
     } else {
       int min_dist_idx = 0;
       int second_min_dist_idx = 0;
@@ -272,7 +278,6 @@ bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
       int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
       if (min_dist > 3.0 || wp_idx == 0) {
         tree_available_ = false;
-        std::cout << "not available\n";
       } else {
 
 //        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
@@ -294,8 +299,6 @@ bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
         p.y = wp_z;
         p.z = 0;
 
-        std::cout << "available\n";
-//        path_selected_.cells.push_back(p);
         path_waypoints.cells.push_back(p);
       }
     }

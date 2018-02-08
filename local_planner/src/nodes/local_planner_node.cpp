@@ -191,7 +191,6 @@ void LocalPlannerNode::publishGround() {
   std::vector<double> ground_ymax;
   std::vector<double> ground_ymin;
   local_planner_.ground_detector_.getGroundDataForVisualization(closest_point_on_ground, ground_orientation, ground_heights, ground_xmax, ground_xmin, ground_ymax, ground_ymin);
-  std::cout<<"Ground vector size2: "<<ground_heights.size()<<"\n";
   m.header.frame_id = "world";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
@@ -648,14 +647,14 @@ void LocalPlannerNode::threadFunction() {
       if (local_planner_.use_ground_detection_) {
         local_planner_.ground_detector_.initializeGroundBox(local_planner_.min_dist_to_ground_);
         local_planner_.ground_detector_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_detector_.ground_box_size_, local_planner_.min_dist_to_ground_);
-        local_planner_.ground_detector_.setParams(local_planner_.reach_altitude_, local_planner_.min_cloud_size_);
+        local_planner_.ground_detector_.setParams(local_planner_.min_dist_to_ground_, local_planner_.min_cloud_size_);
         local_planner_.ground_detector_.detectGround(complete_cloud);
       }
 
       geometry_msgs::Point temp_sphere_center;
       int sphere_points_counter = 0;
       filterPointCloud(local_planner_.final_cloud_, local_planner_.closest_point_, temp_sphere_center, local_planner_.distance_to_closest_point_, local_planner_.counter_close_points_backoff_, sphere_points_counter, complete_cloud,
-                       local_planner_.min_cloud_size_, local_planner_.min_dist_backoff_, local_planner_.avoid_radius_, local_planner_.histogram_box_, drone_pos);
+                       local_planner_.min_cloud_size_, local_planner_.min_dist_backoff_, local_planner_.avoid_radius_, local_planner_.histogram_box_, drone_pos.pose.position);
 
       local_planner_.safety_radius_ = adaptSafetyMarginHistogram(local_planner_.distance_to_closest_point_, local_planner_.final_cloud_.points.size(), local_planner_.min_cloud_size_);
 
