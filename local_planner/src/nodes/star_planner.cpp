@@ -171,13 +171,14 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
         velocity.twist.linear.z = origin_position.z - origin_origin_position.z;
 
         min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, velocity, over_obstacle_, min_flight_height_, ground_margin_);
-        e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_);
+        e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, 2*alpha_res);
         ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
         ground_margin_ = ground_detector_.getMargin();
       }
 
+      histogram.downsample();
       findFreeDirections(histogram, safety_radius, path_candidates, path_selected, path_rejected, path_blocked, path_ground, path_waypoints_, cost_path_candidates, goal_,
-                         pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false);
+                         pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false, 2*alpha_res);
       calculateCostMap(cost_path_candidates, cost_idx_sorted);
 
       //insert new nodes

@@ -24,6 +24,7 @@ class Histogram
   void set_age(int x, int y, double value);
   void set_dist(int x, int y, double value);
   void upsample();
+  void downsample();
   void setZero();
 };
 

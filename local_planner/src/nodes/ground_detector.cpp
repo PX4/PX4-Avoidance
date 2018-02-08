@@ -232,7 +232,7 @@ void GroundDetector::fitPlane() {
 }
 
 
-int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height) {
+int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height, int resolution) {
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
   int e_max = floor(v_fov / 2);
@@ -252,12 +252,12 @@ int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped curren
   }
 
   if (over_obstacle_ && too_low_) {
-    e_min_idx =  elevationAngletoIndex(e_max, alpha_res);
+    e_min_idx =  elevationAngletoIndex(e_max, resolution);
 //    std::cout << "\033[1;36m Too low, discard points under elevation " << e_max << "\n \033[0m";
   }
   if (over_obstacle_ && is_near_min_height_ && !too_low_) {
     e_min = 0;
-    e_min_idx = elevationAngletoIndex(e_min, alpha_res);
+    e_min_idx = elevationAngletoIndex(e_min, resolution);
 //    std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min << "\n \033[0m";
   }
 

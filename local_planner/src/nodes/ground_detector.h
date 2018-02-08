@@ -115,7 +115,7 @@ class GroundDetector
   void fitPlane();
   void dynamicReconfigureSetGroundParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void logData(std::string log_name);
-  int getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height);
+  int getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height, int resolution);
   double getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old);
   void getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height);
   double getMargin();
