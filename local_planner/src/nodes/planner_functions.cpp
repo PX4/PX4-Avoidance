@@ -287,9 +287,11 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints, geometry_m
 void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected,
                                       nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &path_ground, nav_msgs::GridCells path_waypoints, std::vector<float> &cost_path_candidates,
                                       geometry_msgs::Point goal, geometry_msgs::PoseStamped position, geometry_msgs::Point position_old, double goal_cost_param,
-                                      double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param, int e_min_idx, bool over_obstacle, bool only_yawed) {
+                                      double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param, int e_min_idx, bool over_obstacle, bool only_yawed, int resolution_alpha) {
   std::clock_t start_time = std::clock();
-  int n = floor(safety_radius / alpha_res);  //safety radius
+  int n = floor(safety_radius / resolution_alpha);  //safety radius
+  int z_dim = 360 / resolution_alpha;
+  int e_dim = 180 / resolution_alpha;
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
@@ -304,8 +306,8 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
   initGridCells(&path_ground);
 
   //determine which bins are candidates
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < e_dim; e++) {
+    for (int z = 0; z < z_dim; z++) {
       for (int i = (e - n); i <= (e + n); i++) {
         for (int j = (z - n); j <= (z + n); j++) {
 
@@ -314,25 +316,25 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
           height_reject = false;
 
           // Elevation index < 0
-          if(i < 0 && j >= 0 && j < grid_length_z) {
+          if(i < 0 && j >= 0 && j < z_dim) {
             a = -i;
-            b = grid_length_z - j - 1;
+            b = z_dim - j - 1;
           }
           // Azimuth index < 0
-          else if(j < 0 && i >= 0 && i < grid_length_e) {
-            b = j+grid_length_z;
+          else if(j < 0 && i >= 0 && i < e_dim) {
+            b = j+z_dim;
           }
           // Elevation index > grid_length_e
-          else if(i >= grid_length_e && j >= 0 && j < grid_length_z) {
-            a = grid_length_e - (i % (grid_length_e - 1));
-            b = grid_length_z - j - 1;
+          else if(i >= e_dim && j >= 0 && j < z_dim) {
+            a = e_dim - (i % (e_dim - 1));
+            b = z_dim - j - 1;
           }
           // Azimuth index > grid_length_z
-          else if(j >= grid_length_z && i >= 0 && i < grid_length_e) {
-            b = j - grid_length_z;
+          else if(j >= z_dim && i >= 0 && i < e_dim) {
+            b = j - z_dim;
           }
           // Elevation and Azimuth index both within histogram
-          else if( i >= 0 && i < grid_length_e && j >= 0 && j < grid_length_z) {
+          else if( i >= 0 && i < e_dim && j >= 0 && j < z_dim) {
             a = i;
             b = j;
           }
@@ -363,25 +365,25 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
       }
 
       if (free && !height_reject) {
-        p.x = elevationIndexToAngle(e, alpha_res);
-        p.y = azimuthIndexToAngle(z, alpha_res);
+        p.x = elevationIndexToAngle(e, resolution_alpha);
+        p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0;
         path_candidates.cells.push_back(p);
         double cost = costFunction((int) p.x, (int) p.y, path_waypoints, goal, position, position_old, goal_cost_param, smooth_cost_param, height_change_cost_param_adapted, height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0 && !height_reject) {
-        p.x = elevationIndexToAngle(e, alpha_res);
-        p.y = azimuthIndexToAngle(z, alpha_res);
+        p.x = elevationIndexToAngle(e, resolution_alpha);
+        p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0;
         path_rejected.cells.push_back(p);
       } else if (height_reject) {
-        p.x = elevationIndexToAngle(e, alpha_res);
-        p.y = azimuthIndexToAngle(z, alpha_res);
+        p.x = elevationIndexToAngle(e, resolution_alpha);
+        p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0;
         path_ground.cells.push_back(p);
       } else {
-        p.x = elevationIndexToAngle(e, alpha_res);
-        p.y = azimuthIndexToAngle(z, alpha_res);
+        p.x = elevationIndexToAngle(e, resolution_alpha);
+        p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0;
         path_blocked.cells.push_back(p);
       }
@@ -395,13 +397,15 @@ void calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> 
   cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
 }
 
-void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen){
-  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
-    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
-      if(e_chosen == e_ind && z_chosen == z_ind){
+void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen, double resolution) {
+  int z_dim = 360 / resolution;
+  int e_dim = 180 / resolution;
+
+  for (int e_ind = 0; e_ind < e_dim; e_ind++) {
+    for (int z_ind = 0; z_ind < z_dim; z_ind++) {
+      if (e_chosen == e_ind && z_chosen == z_ind) {
         std::cout << "\033[1;31m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
-      }
-      else if (std::find(z_FOV_idx .begin(), z_FOV_idx .end(), z_ind) != z_FOV_idx .end() && e_ind > e_FOV_min && e_ind < e_FOV_max) {
+      } else if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z_ind) != z_FOV_idx.end() && e_ind > e_FOV_min && e_ind < e_FOV_max) {
         std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
       } else {
         std::cout << hist.get_bin(e_ind, z_ind) << " ";

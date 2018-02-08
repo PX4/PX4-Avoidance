@@ -69,6 +69,44 @@ void Histogram::upsample() {
   dist = temp_dist;
 }
 
+void Histogram::downsample() {
+  resolution = 2*resolution;
+  z_dim = z_dim/2;
+  e_dim = e_dim/2;
+  std::vector < std::vector<double> > temp_bin;
+  std::vector < std::vector<double> > temp_age;
+  std::vector < std::vector<double> > temp_dist;
+  temp_bin.resize(e_dim);
+  temp_age.resize(e_dim);
+  temp_dist.resize(e_dim);
+  for (int i = 0; i < e_dim; ++i) {
+    temp_bin[i].resize(z_dim);
+    temp_age[i].resize(z_dim);
+    temp_dist[i].resize(z_dim);
+  }
+  for (int i = 0; i < e_dim; ++i) {
+    for (int j = 0; j < z_dim; ++j) {
+      int i_high_res = 2*i;
+      int j_high_res = 2*j;
+
+      double mean_bin = (bin[i_high_res][j_high_res] + bin[i_high_res+1][j_high_res] + bin[i_high_res][j_high_res+1] + bin[i_high_res+1][j_high_res+1])/4.0;
+      double mean_age = (age[i_high_res][j_high_res] + age[i_high_res+1][j_high_res] + age[i_high_res][j_high_res+1] + age[i_high_res+1][j_high_res+1])/4.0;
+      double mean_dist = (dist[i_high_res][j_high_res] + dist[i_high_res+1][j_high_res] + dist[i_high_res][j_high_res+1] + dist[i_high_res+1][j_high_res+1])/4.0;
+
+      if(mean_bin >= 0.5){
+        temp_bin[i][j] = 1.0;
+      }else{
+        temp_bin[i][j] = 0.0;
+      }
+      temp_age[i][j] = mean_age;
+      temp_dist[i][j] = mean_dist;
+    }
+  }
+  bin = temp_bin;
+  age = temp_age;
+  dist = temp_dist;
+}
+
 void Histogram::setZero() {
   for (int i = 0; i < e_dim; ++i) {
     for (int j = 0; j < z_dim; ++j) {

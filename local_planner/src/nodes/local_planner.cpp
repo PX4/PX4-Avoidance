@@ -193,7 +193,7 @@ void LocalPlanner::determineStrategy(){
           int e_min_idx = -1;
           if(use_ground_detection_){
             min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, curr_vel_, over_obstacle_, min_flight_height_, ground_margin_);
-            e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_);
+            e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, alpha_res);
             ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
             ground_margin_ = ground_detector_.getMargin();
             if (over_obstacle_) {
@@ -202,7 +202,7 @@ void LocalPlanner::determineStrategy(){
           }
 
           findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_,
-                                     pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_);
+                                     pose_, position_old_, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_, alpha_res);
           calculateCostMap(cost_path_candidates_, cost_idx_sorted_);
           getDirectionFromCostMap();
         }
