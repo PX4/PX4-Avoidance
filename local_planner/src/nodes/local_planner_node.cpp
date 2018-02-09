@@ -579,6 +579,14 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, doub
 
   current_waypoint_pub_.publish(setpoint);
 
+<<<<<<< 6a58c5dbee96824148f6c79e4c0c16df1224cb20
+=======
+  if (!local_planner_.log_name_.empty()) {
+    std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
+    myfile << pointcloud_time_now_.sec << "\t" << pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
+    myfile.close();
+  }
+>>>>>>> Enter tree time in txt file log. Clean up and reformat.
 }
 
 void LocalPlannerNode::publishAll() {
