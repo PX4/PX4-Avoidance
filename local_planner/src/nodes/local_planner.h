@@ -128,6 +128,7 @@ class LocalPlanner
   std::vector<double> reprojected_points_dist_;
   std::vector<geometry_msgs::Point> path_node_positions_;
   std::vector<int> path_node_origins_;
+  std::vector<float> tree_time_;
 
   std::vector<TreeNode> tree_;
   StarPlanner star_planner_;
