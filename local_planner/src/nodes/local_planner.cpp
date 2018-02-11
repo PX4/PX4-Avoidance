@@ -636,9 +636,15 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
       }
 
       if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()) {
-        msg.ranges.push_back(hist.get_dist(0, z) * 100.0); // 1 unit 1 cm
+
+        if (hist.get_dist(0, z) == 0.0) {
+          msg.ranges.push_back(UINT16_MAX);
+        } else {
+           msg.ranges.push_back(hist.get_dist(0, z) * 100.0f); // 1 unit 1 cm
+        }
+
       } else {
-        msg.ranges.push_back(0.0);
+        msg.ranges.push_back(UINT16_MAX);
       }
     }
   }
