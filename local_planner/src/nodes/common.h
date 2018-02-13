@@ -31,7 +31,7 @@ float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
 double indexAngleDifference(int a, int b);
 geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z, geometry_msgs::Point pos);
-bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2);
+bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp, geometry_msgs::Vector3Stamped new_wp, double new_yaw, double old_yaw);
 double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
 int azimuthAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos);

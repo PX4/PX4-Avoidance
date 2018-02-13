@@ -177,11 +177,12 @@ class LocalPlanner
   void getPathMsg();
   bool withinGoalRadius();
   void getDirectionFromCostMap();
-  void checkSpeed();
+  void adaptSpeed();
   void stopInFrontObstacles();
   double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
   geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
   geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
+  geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(geometry_msgs::Vector3Stamped wp, geometry_msgs::Point avoid_centerpoint, double avoid_radius);
 
  public:
   GroundDetector ground_detector_;

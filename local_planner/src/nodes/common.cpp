@@ -42,10 +42,9 @@ geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z, geometry_msgs::
 }
 
 // check if two points have the same altitude and yaw
-bool hasSameYawAndAltitude(geometry_msgs::PoseStamped msg1, geometry_msgs::PoseStamped msg2){
-  return abs(msg1.pose.orientation.z) >= abs(0.9*msg2.pose.orientation.z) && abs(msg1.pose.orientation.z) <= abs(1.1*msg2.pose.orientation.z)
-         && abs(msg1.pose.orientation.w) >= abs(0.9*msg2.pose.orientation.w) && abs(msg1.pose.orientation.w) <= abs(1.1*msg2.pose.orientation.w)
-         && abs(msg1.pose.position.z) >= abs(0.9*msg2.pose.position.z) && abs(msg1.pose.position.z) <= abs(1.1*msg2.pose.position.z);
+bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp, geometry_msgs::Vector3Stamped new_wp, double new_yaw, double old_yaw){
+  return abs(new_yaw) >= abs(0.9*old_yaw) && abs(new_yaw) <= abs(1.1*old_yaw)
+         && abs(new_wp.vector.z) >= abs(0.9*old_wp.pose.position.z) && abs(new_wp.vector.z) <= abs(1.1*old_wp.pose.position.z);
 
 }
 
