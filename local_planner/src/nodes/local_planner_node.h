@@ -43,6 +43,11 @@ public:
   bool never_run_;
   bool position_received_;
 
+  ros::CallbackQueue pointcloud_queue_;
+
+  const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
+  const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
+
   ros::Time pointcloud_time_now_;
   ros::Time pointcloud_time_old_;
 
@@ -65,6 +70,7 @@ public:
 
 private:
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_pc_;
 
   nav_msgs::Path path_actual;
 
