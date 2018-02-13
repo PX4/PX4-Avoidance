@@ -1,6 +1,12 @@
 #include "local_planner_node.h"
 
 LocalPlannerNode::LocalPlannerNode() {
+
+  //pointcloud queue node handle
+  nh_pc_ = ros::NodeHandle("~");
+  nh_pc_.setCallbackQueue(&pointcloud_queue_);
+
+  //global queue node handle
   nh_ = ros::NodeHandle("~");
 
   readParams();
@@ -10,7 +16,7 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+  pointcloud_sub_ = nh_pc_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
   pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
@@ -579,14 +585,11 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, doub
 
   current_waypoint_pub_.publish(setpoint);
 
-<<<<<<< 6a58c5dbee96824148f6c79e4c0c16df1224cb20
-=======
-  if (!local_planner_.log_name_.empty()) {
+  if (!local_planner_.log_name_.empty() && local_planner_.currently_armed_ && local_planner_.offboard_) {
     std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
     myfile << pointcloud_time_now_.sec << "\t" << pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
     myfile.close();
   }
->>>>>>> Enter tree time in txt file log. Clean up and reformat.
 }
 
 void LocalPlannerNode::publishAll() {
