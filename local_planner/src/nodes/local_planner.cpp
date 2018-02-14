@@ -380,7 +380,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   if(!reach_altitude_){
-    std::cout << "\033[1;32m Reach height ("<<take_off_pose_.pose.position.z + goal_.z - 0.5<<") first: Go fast\n \033[0m";
+    std::cout << "\033[1;32m Reach height ("<<std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0)<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
   }else if (cloud_temp1->points.size() > min_cloud_size_  && stop_in_front_ && reach_altitude_) {
@@ -1174,10 +1174,6 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
   double dx = v.vector.x - u.pose.position.x;
   double dy = v.vector.y - u.pose.position.y;
 
-  if (round(dx) == 0 && round(dy) == 0) {
-    return last_yaw_;   // Going up or down
-  }
-
   if (reached_goal_){
     return yaw_reached_goal_;
   }
@@ -1187,7 +1183,8 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
 
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst(){
-  if (pose_.pose.position.z < (take_off_pose_.pose.position.z + goal_.z - 0.5)) {
+  double start_height = std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0);
+  if (pose_.pose.position.z < start_height) {
       waypt_.vector.x = pose_.pose.position.x;
       waypt_.vector.y = pose_.pose.position.y;
       waypt_.vector.z = pose_.pose.position.z + 0.5;

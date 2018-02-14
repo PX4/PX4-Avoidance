@@ -36,6 +36,7 @@ LocalPlannerNode::LocalPlannerNode() {
   bounding_box_pub_ = nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
+  log_name_pub_ = nh_.advertise<std_msgs::String>("/log_name", 1);
 
   mavros_set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
@@ -464,6 +465,12 @@ int main(int argc, char** argv) {
   ros::Time start_time = ros::Time::now();
 
   while (ros::ok()) {
+
+
+    //publish log name
+    std_msgs::String msg;
+    msg.data = local_planner_node.local_planner_.log_name_;
+    local_planner_node.log_name_pub_.publish(msg);
 
     //Check if pointcloud message is published fast enough
     ros::Time now = ros::Time::now();
