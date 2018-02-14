@@ -23,6 +23,7 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
+#include "std_msgs/String.h"
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -41,6 +42,7 @@ public:
 
   LocalPlanner local_planner_;
 
+  ros::Publisher log_name_pub_;
   ros::Publisher current_waypoint_pub_;
   ros::Publisher mavros_waypoint_pub_;
   ros::Publisher waypoint_pub_;
