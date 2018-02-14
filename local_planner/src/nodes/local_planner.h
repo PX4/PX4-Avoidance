@@ -143,6 +143,7 @@ class LocalPlanner
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point goal_;
   geometry_msgs::Point back_off_point_;
+  geometry_msgs::Point back_off_start_point_;
   geometry_msgs::Point position_old_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
