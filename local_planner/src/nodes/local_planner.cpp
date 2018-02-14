@@ -132,6 +132,7 @@ void LocalPlanner::determineStrategy() {
       std::cout << "\033[1;32m There is an Obstacle too close! Back off\n \033[0m";
       if (!back_off_) {
         back_off_point_ = closest_point_;
+        back_off_start_point_ = pose_.pose.position;
         back_off_ = true;
       }
       backOff();
@@ -603,12 +604,12 @@ void LocalPlanner::backOff() {
   vec.setY(pose_.pose.position.y - back_off_point_.y);
   vec.setZ(0);
   vec.normalize();
-  double new_len = speed_;
+  double new_len = 0.5;
   vec *= new_len;
 
   waypt_.vector.x = pose_.pose.position.x + vec.getX();
   waypt_.vector.y = pose_.pose.position.y + vec.getY();
-  waypt_.vector.z = pose_.pose.position.z + vec.getZ();
+  waypt_.vector.z = back_off_start_point_.z;
 
   // fill direction as straight ahead
   geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
@@ -624,7 +625,8 @@ void LocalPlanner::backOff() {
   curr_yaw_ = last_yaw_;
   position_old_ = pose_.pose.position;
 
-  std::cout << "Distance to Backoff Point: " << dist << "\n";
+  ROS_INFO("Backoff Point: [%f, %f, %f].", back_off_point_.x, back_off_point_.y, back_off_point_.z);
+  std::cout << "Distance to Back off Point: " << dist << "\n";
   ROS_INFO("Back off selected direction: [%f, %f, %f].", vec.getX(), vec.getY(), vec.getZ());
   ROS_INFO("Back off selected waypoint: [%f, %f, %f].", waypt_.vector.x, waypt_.vector.y, waypt_.vector.z);
 }
@@ -836,14 +838,15 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
   waypt_adapted_ = waypt_;
-  waypt_smoothed_ = waypt_adapted_;
 
   //If avoid sphere is used, project waypoint on sphere
   if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
     waypt_adapted_ = getSphereAdaptedWaypoint(waypt_, avoid_centerpoint_, avoid_radius_);
   }
 
+  double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
   adaptSpeed();
+  waypt_smoothed_ = waypt_adapted_;
 
   if (!reach_altitude_) {
     reachGoalAltitudeFirst();
@@ -857,12 +860,11 @@ void LocalPlanner::getPathMsg() {
           waypt_smoothed_.vector.y = smooth_go_fast_ * waypt_adapted_.vector.y + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.y;
           waypt_smoothed_.vector.z = smooth_go_fast_ * waypt_adapted_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
         }
-        waypt_smoothed_ = smoothWaypoint(waypt_smoothed_);
+        waypt_smoothed_ = smoothWaypoint(waypt_adapted_);
         new_yaw = nextYaw(pose_, waypt_, last_yaw_);
       }
     }
   }
-
 
   if(back_off_ && use_back_off_){
     new_yaw = last_yaw_;
@@ -873,7 +875,7 @@ void LocalPlanner::getPathMsg() {
     waypt_smoothed_ = waypt_;
   }
 
-
+  //change waypoint if drone is at goal or above
   if (withinGoalRadius()) {
     bool over_goal = false;
     if (use_ground_detection_) {
@@ -899,7 +901,6 @@ void LocalPlanner::getPathMsg() {
   }
 
   ROS_INFO("Final waypoint: [%f %f %f].", waypt_smoothed_.vector.x, waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
-  double new_yaw = nextYaw(pose_, waypt_smoothed_, last_yaw_);
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw);
 
   path_msg_.poses.push_back(waypt_p_);
