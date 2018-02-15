@@ -541,6 +541,25 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
+<<<<<<< bbd65542a6f90671a1b876497e23b1201777ed49
+=======
+
+  printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+
+  local_planner_.printAlgorithmStatistics();
+
+  //Store timing for timeout detection
+  pointcloud_time_now_ = msg.header.stamp;
+  ros::Duration time_diff = pointcloud_time_now_ - pointcloud_time_old_;
+  pointcloud_time_old_ = pointcloud_time_now_;
+
+  if (!local_planner_.log_name_.empty() && local_planner_.currently_armed_ && local_planner_.offboard_) {
+    std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
+    myfile << pointcloud_time_now_.sec << "\t" << pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
+    myfile.close();
+  }
+>>>>>>> Fix Rebase. Reduce spin rate of regular spinner from 20hz to 10hz to try avoiding serialization error.
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, double mode) {
@@ -584,12 +603,6 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, doub
   }
 
   current_waypoint_pub_.publish(setpoint);
-
-  if (!local_planner_.log_name_.empty() && local_planner_.currently_armed_ && local_planner_.offboard_) {
-    std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
-    myfile << pointcloud_time_now_.sec << "\t" << pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
-    myfile.close();
-  }
 }
 
 void LocalPlannerNode::publishAll() {

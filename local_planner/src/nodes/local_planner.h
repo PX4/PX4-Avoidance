@@ -93,11 +93,9 @@ class LocalPlanner
   int dist_incline_window_size_ = 50;
   int origin_;
   int tree_age_ = 0;
+  int childs_per_node_;
+  int n_expanded_nodes_;
 
-
-  double local_planner_last_mode_;
-  double smooth_go_fast_;
-  double local_planner_mode_;
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
   double curr_yaw_, last_yaw_;
   double yaw_reached_goal_;
@@ -140,7 +138,6 @@ class LocalPlanner
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
-  geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point goal_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point back_off_start_point_;
