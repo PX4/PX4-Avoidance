@@ -85,6 +85,8 @@ private:
   ros::Publisher marker_goal_pub_;
   ros::Publisher ground_est_pub_;
   ros::Publisher avoid_sphere_pub_;
+  ros::Publisher takeoff_pose_pub_;
+  ros::Publisher initial_height_pub_;
 
   std::vector<float> algo_time;
 
@@ -113,6 +115,7 @@ private:
   void publishBox();
   void publishAvoidSphere();
   void publishGround();
+  void publishReachHeight();
 
 };
 

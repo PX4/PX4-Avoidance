@@ -37,6 +37,8 @@ LocalPlannerNode::LocalPlannerNode() {
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   current_waypoint_pub_ = nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
   log_name_pub_ = nh_.advertise<std_msgs::String>("/log_name", 1);
+  takeoff_pose_pub_ = nh_.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
+  initial_height_pub_ = nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
 
   mavros_set_mode_client_ = nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
@@ -225,6 +227,48 @@ void LocalPlannerNode::publishGround() {
       marker_array.markers.push_back(g);
   }
   height_map_pub_.publish(marker_array);
+}
+
+void LocalPlannerNode::publishReachHeight() {
+  visualization_msgs::Marker m;
+  m.header.frame_id = "world";
+  m.header.stamp = ros::Time::now();
+  m.type = visualization_msgs::Marker::CUBE;
+  m.pose.position.x = local_planner_.take_off_pose_.pose.position.x;
+  m.pose.position.y = local_planner_.take_off_pose_.pose.position.y;
+  m.pose.position.z = local_planner_.starting_height_;
+  m.pose.orientation.x = 0.0;
+  m.pose.orientation.y = 0.0;
+  m.pose.orientation.z = 0.0;
+  m.pose.orientation.w = 1.0;
+  m.scale.x = 10;
+  m.scale.y = 10;
+  m.scale.z = 0.001;
+  m.color.a = 0.5;
+  m.color.r = 0.0;
+  m.color.g = 0.0;
+  m.color.b = 1.0;
+  m.lifetime = ros::Duration(0.5);
+  m.id = 0;
+
+  initial_height_pub_.publish(m);
+
+  visualization_msgs::Marker t;
+  t.header.frame_id = "world";
+  t.header.stamp = ros::Time::now();
+  t.type = visualization_msgs::Marker::SPHERE;
+  t.action = visualization_msgs::Marker::ADD;
+  t.scale.x = 0.2;
+  t.scale.y = 0.2;
+  t.scale.z = 0.2;
+  t.color.a = 1.0;
+  t.color.r = 1.0;
+  t.color.g = 0.0;
+  t.color.b = 0.0;
+  t.lifetime = ros::Duration();
+  t.id = 0;
+  t.pose.position = local_planner_.take_off_pose_.pose.position;
+  takeoff_pose_pub_.publish(t);
 }
 
 void LocalPlannerNode::publishBox() {
@@ -445,6 +489,7 @@ void LocalPlannerNode::publishAll() {
   publishGoal();
   publishBox();
   publishAvoidSphere();
+  publishReachHeight();
 
   if (local_planner_.groundDetected()) {
     publishGround();
@@ -503,10 +548,12 @@ int main(int argc, char** argv) {
       hovering = true;
     }
 
-    ros::Duration time_diff = local_planner_node.pointcloud_time_now_ - local_planner_node.pointcloud_time_old_;
-    std::ofstream myfile(("PointcloudTimes_" + local_planner_node.local_planner_.log_name_).c_str(), std::ofstream::app);
-    myfile << local_planner_node.pointcloud_time_now_.sec <<"\t"<<local_planner_node.pointcloud_time_now_.nsec << "\t" << time_diff<< "\t" << hovering << "\t" << landing<< "\n";
-    myfile.close();
+    if (local_planner_node.local_planner_.currently_armed_ && local_planner_node.local_planner_.offboard_) {
+      ros::Duration time_diff = local_planner_node.pointcloud_time_now_ - local_planner_node.pointcloud_time_old_;
+      std::ofstream myfile(("PointcloudTimes_" + local_planner_node.local_planner_.log_name_).c_str(), std::ofstream::app);
+      myfile << local_planner_node.pointcloud_time_now_.sec << "\t" << local_planner_node.pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\n";
+      myfile.close();
+    }
 
     ros::spinOnce();
     rate.sleep();
