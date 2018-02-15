@@ -844,10 +844,12 @@ void LocalPlanner::getPathMsg() {
     waypt_adapted_ = getSphereAdaptedWaypoint(waypt_, avoid_centerpoint_, avoid_radius_);
   }
 
+  //adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
   adaptSpeed();
   waypt_smoothed_ = waypt_adapted_;
 
+  //go to flight height first or smooth wp
   if (!reach_altitude_) {
     reachGoalAltitudeFirst();
     waypt_adapted_ = waypt_;
@@ -855,13 +857,8 @@ void LocalPlanner::getPathMsg() {
   } else {
     if (!only_yawed_) {
       if (!reached_goal_ && !stop_in_front_) {
-        if (smooth_go_fast_ < 1 && local_planner_mode_ == 1) {
-          waypt_smoothed_.vector.x = smooth_go_fast_ * waypt_adapted_.vector.x + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.x;
-          waypt_smoothed_.vector.y = smooth_go_fast_ * waypt_adapted_.vector.y + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.y;
-          waypt_smoothed_.vector.z = smooth_go_fast_ * waypt_adapted_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
-        }
         waypt_smoothed_ = smoothWaypoint(waypt_adapted_);
-        new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+        new_yaw = nextYaw(pose_, waypt_smoothed_, last_yaw_);
       }
     }
   }
@@ -912,8 +909,7 @@ void LocalPlanner::getPathMsg() {
 }
 
 void LocalPlanner::useHoverPoint() {
-
-
+  path_msg_.poses.push_back(waypt_p_);
 }
 
 
