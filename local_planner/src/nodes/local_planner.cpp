@@ -380,7 +380,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   cloud_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
   if(!reach_altitude_){
-    std::cout << "\033[1;32m Reach height ("<<std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0)<<") first: Go fast\n \033[0m";
+    std::cout << "\033[1;32m Reach height ("<<starting_height_<<") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
   }else if (cloud_temp1->points.size() > min_cloud_size_  && stop_in_front_ && reach_altitude_) {
@@ -1183,8 +1183,8 @@ double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector
 
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst(){
-  double start_height = std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0);
-  if (pose_.pose.position.z < start_height) {
+  starting_height_ = std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0);
+  if (pose_.pose.position.z < starting_height_) {
       waypt_.vector.x = pose_.pose.position.x;
       waypt_.vector.y = pose_.pose.position.y;
       waypt_.vector.z = pose_.pose.position.z + 0.5;
@@ -1308,7 +1308,7 @@ void LocalPlanner::getPathMsg() {
           waypt_.vector.z = smooth_go_fast_ * waypt_.vector.z + (1.0 - smooth_go_fast_) * last_hist_waypt_.vector.z;
         }
         waypt_ = smoothWaypoint();
-        double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+        new_yaw = nextYaw(pose_, waypt_, last_yaw_);
       }
     }
   }
@@ -1348,9 +1348,10 @@ void LocalPlanner::hover() {
   waypt_.vector.y = hover_point_.vector.y;
   waypt_.vector.z = hover_point_.vector.z;
 
-  waypt_p_ = createPoseMsg(waypt_, last_yaw_);
+  double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
+  waypt_p_ = createPoseMsg(waypt_, new_yaw);
   path_msg_.poses.push_back(waypt_p_);
-  curr_yaw_ = last_yaw_;
+  curr_yaw_ = new_yaw;
   position_old_ = pose_.pose.position;
 
   std::cout << "\033[1;33m Pointcloud timeout: Hovering \n \033[0m";

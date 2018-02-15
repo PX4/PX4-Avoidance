@@ -148,7 +148,6 @@ class LocalPlanner
   pcl::PointCloud<pcl::PointXYZ> final_cloud_, ground_cloud_, reprojected_points_, complete_cloud_;
 
   geometry_msgs::PoseStamped pose_;
-  geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::Point goal_;
@@ -219,6 +218,9 @@ class LocalPlanner
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
   double local_planner_mode_;
+  double starting_height_;
+
+  geometry_msgs::PoseStamped take_off_pose_;
 
   std::string log_name_;
 
