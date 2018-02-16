@@ -19,7 +19,6 @@
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h> // transformPointCloud
-#include <ros/callback_queue.h>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Bool.h>
@@ -42,8 +41,6 @@ public:
   bool point_cloud_updated_;
   bool never_run_;
   bool position_received_;
-
-  ros::CallbackQueue pointcloud_queue_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -70,7 +67,6 @@ public:
 
 private:
   ros::NodeHandle nh_;
-  ros::NodeHandle nh_pc_;
 
   nav_msgs::Path path_actual;
 
