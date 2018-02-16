@@ -2,10 +2,6 @@
 
 LocalPlannerNode::LocalPlannerNode() {
 
-  //pointcloud queue node handle
-  nh_pc_ = ros::NodeHandle("~");
-  nh_pc_.setCallbackQueue(&pointcloud_queue_);
-
   //global queue node handle
   nh_ = ros::NodeHandle("~");
 
@@ -16,7 +12,7 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_pc_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
   pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback, this);
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback, this);
   state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
@@ -541,25 +537,6 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
-<<<<<<< bbd65542a6f90671a1b876497e23b1201777ed49
-=======
-
-  printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-  local_planner_.printAlgorithmStatistics();
-
-  //Store timing for timeout detection
-  pointcloud_time_now_ = msg.header.stamp;
-  ros::Duration time_diff = pointcloud_time_now_ - pointcloud_time_old_;
-  pointcloud_time_old_ = pointcloud_time_now_;
-
-  if (!local_planner_.log_name_.empty() && local_planner_.currently_armed_ && local_planner_.offboard_) {
-    std::ofstream myfile(("PointcloudTimes_" + local_planner_.log_name_).c_str(), std::ofstream::app);
-    myfile << pointcloud_time_now_.sec << "\t" << pointcloud_time_now_.nsec << "\t" << time_diff << "\n";
-    myfile.close();
-  }
->>>>>>> Fix Rebase. Reduce spin rate of regular spinner from 20hz to 10hz to try avoiding serialization error.
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, double mode) {
@@ -721,9 +698,13 @@ int main(int argc, char** argv) {
   NodePtr->position_received_ = false;
   bool writing = false;
 
+<<<<<<< b20c4cc731bc902a783efbdba7e1af98ca1d2d73
   std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
   std::unique_lock < std::timed_mutex > lock(NodePtr->variable_mutex_, std::defer_lock);
 
+=======
+  //spin for all the other topic callbacks
+>>>>>>> Revert changes to callback queue, take out asynchronous spinner
   while (ros::ok()) {
     std::clock_t t_loop = std::clock();
     writing = false;
