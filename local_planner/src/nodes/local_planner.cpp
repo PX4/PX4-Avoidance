@@ -386,8 +386,7 @@ void LocalPlanner::calculateFOV() {
   if (z_FOV_max >= grid_length_z && z_FOV_min >= grid_length_z) {
     z_FOV_max -= grid_length_z;
     z_FOV_min -= grid_length_z;
-  }
-  if (z_FOV_max < 0 && z_FOV_min < 0) {
+  } else if (z_FOV_max < 0 && z_FOV_min < 0) {
     z_FOV_max += grid_length_z;
     z_FOV_min += grid_length_z;
   }
@@ -620,31 +619,41 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   sensor_msgs::LaserScan msg = {};
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "/world";
-  msg.angle_increment = alpha_res * PI / 180.0;
-  msg.range_min = 0.2 * 100; //0.2m
-  msg.range_max = 20 * 100; //20m
+  msg.angle_increment = alpha_res * PI / 180.0f;
+  msg.range_min = 0.2f * 100.0f; //0.2m
+  msg.range_max = 20.0f * 100.0f; //20m
 
   if (!std::isnan(middle_z_FOV_idx_)) {
-    for (int idx = -4; idx < 6; idx++) {
-      int z = (int)middle_z_FOV_idx_ + idx;
+    // turn idxs 180 degress to point to local north instead of south
+    std::vector<int> z_FOV_idx_north;
 
-      if (z < 0) {
-        z = grid_length_z + z;
+    for (int i = 0; i < z_FOV_idx_.size(); i++) {
+      int new_idx = z_FOV_idx_[i] + grid_length_z / 2;
 
-      } else if (z >= grid_length_z) {
-          z = z % grid_length_z;
+      if (new_idx >= grid_length_z) {
+        new_idx = new_idx - grid_length_z;
       }
 
-      if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end()) {
+      z_FOV_idx_north.push_back(new_idx);
+    }
 
-        if (hist.get_dist(0, z) == 0.0) {
-          msg.ranges.push_back(UINT16_MAX);
-        } else {
-           msg.ranges.push_back(hist.get_dist(0, z) * 100.0f); // 1 unit 1 cm
-        }
+    for (int idx = 0; idx < grid_length_z; idx++) {
 
-      } else {
+      if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) == z_FOV_idx_north.end()) {
         msg.ranges.push_back(UINT16_MAX);
+        continue;
+      }
+
+      int hist_idx = idx - grid_length_z / 2;
+
+      if (hist_idx < 0) {
+        hist_idx = hist_idx + grid_length_z;
+      }
+
+      if (hist.get_dist(0, hist_idx) == 0.0) {
+        msg.ranges.push_back(msg.range_max + 1.0f);
+      } else {
+        msg.ranges.push_back(hist.get_dist(0, hist_idx) * 100.0f); // 1 unit 1 cm
       }
     }
   }
@@ -656,9 +665,9 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   sensor_msgs::LaserScan msg = {};
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "/world";
-  msg.angle_increment = alpha_res * PI / 180.0;
-  msg.range_min = 0.2 * 100; //0.2m
-  msg.range_max = 20 * 100; //20m
+  msg.angle_increment = alpha_res * PI / 180.0f;
+  msg.range_min = 0.2f * 100.0f; //0.2m
+  msg.range_max = 20.0f * 100.0f; //20m
   distance_data_ = msg;
 }
 

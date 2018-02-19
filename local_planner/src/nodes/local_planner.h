@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <math.h> 
+#include <math.h>
 #include <Eigen/Dense>
 #include <string>
 #include <vector>
@@ -52,7 +52,7 @@
 
 
 #define PI 3.14159265
-#define alpha_res 6
+#define alpha_res 5
 #define grid_length_z 360/alpha_res
 #define grid_length_e 180/alpha_res
 #define age_lim 1
