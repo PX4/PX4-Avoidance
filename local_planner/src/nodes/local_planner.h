@@ -113,6 +113,7 @@ class LocalPlanner
   double tree_node_distance_;
   double min_flight_height_ = 0;
   double ground_margin_ = 0;
+  double new_yaw_;
 
 
   std::vector<int> e_FOV_idx_;

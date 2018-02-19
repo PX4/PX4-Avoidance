@@ -845,7 +845,7 @@ void LocalPlanner::getPathMsg() {
   }
 
   //adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
-  double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
+  new_yaw_ = nextYaw(pose_, waypt_adapted_, last_yaw_);
   adaptSpeed();
   waypt_smoothed_ = waypt_adapted_;
 
@@ -858,13 +858,13 @@ void LocalPlanner::getPathMsg() {
     if (!only_yawed_) {
       if (!reached_goal_ && !stop_in_front_) {
         waypt_smoothed_ = smoothWaypoint(waypt_adapted_);
-        new_yaw = nextYaw(pose_, waypt_smoothed_, last_yaw_);
+        new_yaw_ = nextYaw(pose_, waypt_smoothed_, last_yaw_);
       }
     }
   }
 
   if(back_off_ && use_back_off_){
-    new_yaw = last_yaw_;
+    new_yaw_ = last_yaw_;
     double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
     if (dist > min_dist_backoff_ + 1.0) {
       back_off_ = false;
@@ -898,14 +898,15 @@ void LocalPlanner::getPathMsg() {
   }
 
   ROS_INFO("Final waypoint: [%f %f %f].", waypt_smoothed_.vector.x, waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
-  waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw);
+  waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw_);
 
   path_msg_.poses.push_back(waypt_p_);
-  curr_yaw_ = new_yaw;
+  curr_yaw_ = new_yaw_;
   last_last_waypt_p_ = last_waypt_p_;
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
+  std::cout<<"Current yaw: "<<curr_yaw_<<"\n";
 }
 
 void LocalPlanner::useHoverPoint() {
