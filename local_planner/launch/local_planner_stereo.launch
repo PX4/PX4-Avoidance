@@ -19,11 +19,21 @@
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
-    <param name="goal_z_param" value="5" />
+    <param name="goal_z_param" value="4" />
     <param name="depth_points_topic" value="/stereo/points2" />
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
+    
+    <include file="$(find rviz_world_loader)/launch/rviz_world_loader.launch">
+    	<arg name="world_file" value="$(find local_planner)/../sim/worlds/simple_obstacle.yaml"/>
+	</include> 
+	
+
+  	<node name="pc_throttler" type="throttle" pkg="topic_tools" args="messages /stereo/points2 5.0 /pc_throttled" />
+
+
+	
 
     <!-- rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' -->
 
