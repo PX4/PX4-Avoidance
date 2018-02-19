@@ -630,6 +630,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
                                                    uint32_t level) {
 
   local_planner_.dynamicReconfigureSetParams(config, level);
+  depth_points_topic_ = config.callback_topic;
+  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
 }
 
 void LocalPlannerNode::threadFunction() {
@@ -698,13 +700,9 @@ int main(int argc, char** argv) {
   NodePtr->position_received_ = false;
   bool writing = false;
 
-<<<<<<< b20c4cc731bc902a783efbdba7e1af98ca1d2d73
   std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
   std::unique_lock < std::timed_mutex > lock(NodePtr->variable_mutex_, std::defer_lock);
 
-=======
-  //spin for all the other topic callbacks
->>>>>>> Revert changes to callback queue, take out asynchronous spinner
   while (ros::ok()) {
     std::clock_t t_loop = std::clock();
     writing = false;
@@ -766,6 +764,13 @@ int main(int argc, char** argv) {
       myfile.close();
     }
 
+<<<<<<< 9b904cf31fad7a2e2614f7ea995565fbc6e39998
+=======
+    std::clock_t t1 = std::clock();
+    std::cout<< "Spin Once started...\n";
+    ros::spinOnce();
+    std::cout<< "Spin Once stopped, elapsed time: "<< (std::clock() - t1) / (double)(CLOCKS_PER_SEC / 1000)<<"\n";
+>>>>>>> Launch throttler for pointcloud topic. Enable topic change in reconfigure.Output messages when spin is started and ended.
     rate.sleep();
   }
 
