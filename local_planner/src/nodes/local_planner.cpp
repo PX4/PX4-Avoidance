@@ -350,6 +350,38 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.range_min = 0.2f;
   msg.range_max = 20.0f;
 
+  // turn idxs 180 degress to point to local north instead of south
+  std::vector<int> z_FOV_idx_north;
+
+  for (int i = 0; i < z_FOV_idx_.size(); i++) {
+    int new_idx = z_FOV_idx_[i] + grid_length_z / 2;
+
+    if (new_idx >= grid_length_z) {
+      new_idx = new_idx - grid_length_z;
+    }
+
+    z_FOV_idx_north.push_back(new_idx);
+  }
+
+  for (int idx = 0; idx < grid_length_z; idx++) {
+
+    if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) == z_FOV_idx_north.end()) {
+      msg.ranges.push_back(UINT16_MAX);
+      continue;
+    }
+
+    int hist_idx = idx - grid_length_z / 2;
+
+    if (hist_idx < 0) {
+      hist_idx = hist_idx + grid_length_z;
+    }
+
+    if (hist.get_dist(0, hist_idx) == 0.0) {
+      msg.ranges.push_back(msg.range_max + 1.0f);
+    } else {
+      msg.ranges.push_back(hist.get_dist(0, hist_idx));
+    }
+  }
 
   distance_data_ = msg;
 }
@@ -361,6 +393,7 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   msg.angle_increment = ALPHA_RES * M_PI / 180.0f;
   msg.range_min = 0.2f;
   msg.range_max = 20.0f;
+
   distance_data_ = msg;
 }
 
