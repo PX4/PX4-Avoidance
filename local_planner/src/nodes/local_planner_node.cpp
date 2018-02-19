@@ -261,7 +261,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud msg) {
   sensor_msgs::PointCloud2 msg_pcl2;
   sensor_msgs::convertPointCloudToPointCloud2(msg, msg_pcl2);
-  printf("Size of pointcloud after conversion: %d, heigth: %d", msg_pcl2.width, msg_pcl2.height);
+  printf("Size of pointcloud after conversion: %d, height: %d\n", msg_pcl2.width, msg_pcl2.height);
   local_pointcloud2_pub_.publish(msg_pcl2);
   pointCloudCallback(msg_pcl2);
 }
