@@ -51,6 +51,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   max_speed_ = config.max_speed_;
   max_accel_z_ = config.max_accel_z_;
   keep_distance_ = config.keep_distance_;
+  reproj_age_ = config.reproj_age_;
 
   no_progress_slope_ = config.no_progress_slope_;
   min_cloud_size_ = config.min_cloud_size_;
@@ -85,9 +86,9 @@ void LocalPlanner::logData() {
   if (currently_armed_ && offboard_) {
     //Print general Algorithm Data
     std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
-    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t"
-        << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t"
-        << hovering_ << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
+    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y << "\t"
+        << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_
+        << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << hovering_ << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
     myfile1.close();
 
     ground_detector_.logData(log_name_);
@@ -211,11 +212,18 @@ void LocalPlanner::determineStrategy() {
 
           findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_, pose_, position_old_, goal_cost_param_, smooth_cost_param_,
                              height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_, alpha_res);
-          calculateCostMap(cost_path_candidates_, cost_idx_sorted_);
-          getDirectionFromCostMap();
+          if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
+            local_planner_mode_ = 3;
+            stopInFrontObstacles();
+            stop_in_front_ = true;
+            std::cout << "\033[1;31m All directions blocked: Stopping in front obstacle. \n \033[0m";
+          } else {
+            getDirectionFromCostMap();
+          }
         }
-
-        getNextWaypoint();
+        if (!stop_in_front_) {
+          getNextWaypoint();
+        }
       }
 
       first_brake_ = true;
@@ -254,7 +262,7 @@ void LocalPlanner::reprojectPoints() {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
-          if (dist < 2 * histogram_box_size_.xmax && dist > 0.3 && age < AGE_LIM) {
+          if (dist < 2 * histogram_box_size_.xmax && dist > 0.3 && age < reproj_age_) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             reprojected_points_age_.push_back(age);
             reprojected_points_dist_.push_back(dist);
@@ -906,7 +914,6 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
-  std::cout<<"Current yaw: "<<curr_yaw_<<"\n";
 }
 
 void LocalPlanner::useHoverPoint() {
