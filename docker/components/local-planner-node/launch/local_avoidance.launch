@@ -7,7 +7,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
         args="0 0 0 0 0 0 fcu camera_link 10"/>
         
-    <node name="pc_throttler" type="throttle" pkg="topic_tools" args="messages /stereo/points2 5.0 /pc_throttled" />
+    <node name="pc_throttler" type="throttle" pkg="topic_tools" args="messages /camera/depth/points 10.0 /pc_throttled" />
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
         <param name="goal_x_param" value="46" />

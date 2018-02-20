@@ -179,37 +179,40 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
       histogram.downsample();
       findFreeDirections(histogram, safety_radius, path_candidates, path_selected, path_rejected, path_blocked, path_ground, path_waypoints_, cost_path_candidates, goal_,
                          pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false, 2*alpha_res);
-      calculateCostMap(cost_path_candidates, cost_idx_sorted);
 
-      //insert new nodes
-      int depth = tree_[origin].depth + 1;
+      if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
+        tree_[origin].total_cost = inf;
+      } else {
+        //insert new nodes
+        int depth = tree_[origin].depth + 1;
 
-      int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);  //azimuthal angle
-      int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
-      int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
-      int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
+        int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);//azimuthal angle
+        int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
+        int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
+        int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
 
-      int childs = std::min(childs_per_node_, (int)path_candidates.cells.size());
-      for (int i = 0; i < childs; i++) {
-        int e = path_candidates.cells[cost_idx_sorted[i]].x;
-        int z = path_candidates.cells[cost_idx_sorted[i]].y;
+        int childs = std::min(childs_per_node_, (int)path_candidates.cells.size());
+        for (int i = 0; i < childs; i++) {
+          int e = path_candidates.cells[cost_idx_sorted[i]].x;
+          int z = path_candidates.cells[cost_idx_sorted[i]].y;
 
-        geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
+          geometry_msgs::Point node_location = fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
 
-        tree_.push_back(TreeNode(origin, depth, node_location));
-        tree_.back().last_e = e;
-        tree_.back().last_z = z;
-        double h = treeHeuristicFunction(tree_.size() - 1);
-        double c = treeCostFunction(tree_.size() - 1);
-        tree_.back().heuristic = h;
-        tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
-        double dx = node_location.x - origin_position.x;
-        double dy = node_location.y - origin_position.y;
-        tree_.back().yaw = atan2(dy, dx);
+          tree_.push_back(TreeNode(origin, depth, node_location));
+          tree_.back().last_e = e;
+          tree_.back().last_z = z;
+          double h = treeHeuristicFunction(tree_.size() - 1);
+          double c = treeCostFunction(tree_.size() - 1);
+          tree_.back().heuristic = h;
+          tree_.back().total_cost = tree_[origin].total_cost - tree_[origin].heuristic + c + h;
+          double dx = node_location.x - origin_position.x;
+          double dy = node_location.y - origin_position.y;
+          tree_.back().yaw = atan2(dy, dx);
 
-        if (c < min_c) {
-          min_c = c;
-          min_c_node = tree_.size() - 1;
+          if (c < min_c) {
+            min_c = c;
+            min_c_node = tree_.size() - 1;
+          }
         }
       }
     }

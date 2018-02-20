@@ -392,9 +392,14 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
 }
 
 // calculate the free direction which has the smallest cost for the UAV to travel to
-void calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> &cost_idx_sorted) {
-  std::clock_t start_time = std::clock();
-  cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+bool calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> &cost_idx_sorted) {
+  if(cost_path_candidates.empty()){
+    std::cout << "\033[1;31mbold Empty candidates vector!--------------------------------\033[0m\n";
+    return 1;
+  }else{
+    cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+    return 0;
+  }
 }
 
 void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max, int e_chosen, int z_chosen, double resolution) {

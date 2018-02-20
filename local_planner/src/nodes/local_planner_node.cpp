@@ -760,17 +760,11 @@ int main(int argc, char** argv) {
     if (NodePtr->local_planner_.currently_armed_ && NodePtr->local_planner_.offboard_) {
       ros::Duration time_diff = NodePtr->pointcloud_time_now_ - NodePtr->pointcloud_time_old_;
       std::ofstream myfile(("PointcloudTimes_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
-      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t"<< writing << "\t" << (std::clock() - t_loop) / (double) (CLOCKS_PER_SEC / 1000) << "\n";
+      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t" << writing << "\t" << (std::clock() - t_loop) / (double) (CLOCKS_PER_SEC / 1000)
+          << "\n";
       myfile.close();
     }
 
-<<<<<<< 9b904cf31fad7a2e2614f7ea995565fbc6e39998
-=======
-    std::clock_t t1 = std::clock();
-    std::cout<< "Spin Once started...\n";
-    ros::spinOnce();
-    std::cout<< "Spin Once stopped, elapsed time: "<< (std::clock() - t1) / (double)(CLOCKS_PER_SEC / 1000)<<"\n";
->>>>>>> Launch throttler for pointcloud topic. Enable topic change in reconfigure.Output messages when spin is started and ended.
     rate.sleep();
   }
 
