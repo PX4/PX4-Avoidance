@@ -206,7 +206,6 @@ class LocalPlanner
   double local_planner_mode_;
   double starting_height_;
 
-  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
   geometry_msgs::PoseStamped take_off_pose_;
 
   double min_dist_to_ground_;
@@ -235,7 +234,6 @@ class LocalPlanner
 
   void setPose(const geometry_msgs::PoseStamped msg);
   void setGoal();
-  void hover();
   void determineStrategy();
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
   void printAlgorithmStatistics();
