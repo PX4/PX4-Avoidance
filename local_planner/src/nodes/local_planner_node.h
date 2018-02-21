@@ -4,7 +4,8 @@
 #include <iostream>
 #include <math.h>
 #include <string>
-
+#include <thread>
+#include <mutex>
 
 #include <boost/bind.hpp>
 #include <Eigen/Core>
@@ -37,8 +38,13 @@ public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
+  bool new_variables_;
+  bool never_run_;
+
   ros::Time pointcloud_time_now_;
   ros::Time pointcloud_time_old_;
+
+  geometry_msgs::PoseStamped hover_point_;
 
   LocalPlanner local_planner_;
 
@@ -49,7 +55,10 @@ public:
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;
 
+  std::timed_mutex variable_mutex_;
+
   void publishSetpoint(const geometry_msgs::PoseStamped wp, double mode);
+  void threadFunction();
 
 private:
   ros::NodeHandle nh_;
