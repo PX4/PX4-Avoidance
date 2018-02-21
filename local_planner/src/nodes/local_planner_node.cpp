@@ -464,6 +464,7 @@ void LocalPlannerNode::publishAll() {
 
   tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
   mavros_waypoint_pub_.publish(waypt_p);
+  hover_point_ = waypt_p;
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground;
   local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, path_ground);
@@ -573,8 +574,7 @@ int main(int argc, char** argv) {
         NodePtr->local_planner_.getPathData(path_msg, waypt_p);
         NodePtr->waypoint_pub_.publish(path_msg);
         NodePtr->publishSetpoint(waypt_p, 5);
-        NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-        NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+        NodePtr->mavros_waypoint_pub_.publish(NodePtr->hover_point_);
         hovering = true;
         std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
       } else {
