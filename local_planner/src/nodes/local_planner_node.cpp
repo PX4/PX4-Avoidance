@@ -703,7 +703,7 @@ int main(int argc, char** argv) {
   std::unique_lock < std::timed_mutex > lock(NodePtr->variable_mutex_, std::defer_lock);
 
   while (ros::ok()) {
-    std::clock_t t_loop = std::clock();
+    std::clock_t t_loop1 = std::clock();
     writing = false;
 
     //spin node, execute callbacks
@@ -712,6 +712,7 @@ int main(int argc, char** argv) {
       lock.unlock();
       writing = true;
     }
+    std::clock_t t_loop2 = std::clock();
 
     //Check if pointcloud message is published fast enough
     ros::Time now = ros::Time::now();
@@ -733,6 +734,7 @@ int main(int argc, char** argv) {
       }
     } else if (since_last_cloud > pointcloud_timeout_hover && since_start > pointcloud_timeout_hover) {
       if (!NodePtr->never_run_) {
+        std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
         NodePtr->local_planner_.useHoverPoint();
         nav_msgs::Path path_msg;
         geometry_msgs::PoseStamped waypt_p;
@@ -741,7 +743,6 @@ int main(int argc, char** argv) {
         NodePtr->publishSetpoint(waypt_p, 5);
         NodePtr->mavros_waypoint_pub_.publish(NodePtr->hover_point_);
         hovering = true;
-        std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
       } else {
         if (NodePtr->position_received_) {
           geometry_msgs::PoseStamped drone_pos;
@@ -759,8 +760,8 @@ int main(int argc, char** argv) {
     if (NodePtr->local_planner_.currently_armed_ && NodePtr->local_planner_.offboard_) {
       ros::Duration time_diff = NodePtr->pointcloud_time_now_ - NodePtr->pointcloud_time_old_;
       std::ofstream myfile(("PointcloudTimes_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
-      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t" << writing << "\t" << (std::clock() - t_loop) / (double) (CLOCKS_PER_SEC / 1000)
-          << "\n";
+      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t" << writing << "\t" << (t_loop2 - t_loop1) / (double) (CLOCKS_PER_SEC / 1000) << "\t"
+          << (std::clock() - t_loop2) / (double) (CLOCKS_PER_SEC / 1000) << "\n";
       myfile.close();
     }
 
