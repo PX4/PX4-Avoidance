@@ -384,32 +384,19 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
-  geometry_msgs::PoseStamped drone_pos;
-  local_planner_.getPosition(drone_pos);
   pcl::PointCloud<pcl::PointXYZ> complete_cloud;
   sensor_msgs::PointCloud2 pc2cloud_world;
-  std::clock_t start_time = std::clock();
   try {
     tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
     tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-    local_planner_.resetHistogramCounter();
-    local_planner_.filterPointCloud(complete_cloud);
-    publishAll();
+    local_planner_.complete_cloud_ = complete_cloud;
+    new_variables_ = true;
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
-
-  printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-  local_planner_.printAlgorithmStatistics();
-
-  //Store timing for timeout detection
-  pointcloud_time_old_ = pointcloud_time_now_;
-  pointcloud_time_now_ = msg.header.stamp;
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp, double mode) {
@@ -502,26 +489,69 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
   local_planner_.dynamicReconfigureSetParams(config, level);
 }
 
+void LocalPlannerNode::threadFunction() {
+  std::unique_lock<std::timed_mutex> lock(variable_mutex_,std::defer_lock);
+  while (true) {
+    std::clock_t start_time = std::clock();
+    if (new_variables_) {
+      lock.lock();
+      new_variables_ = false;
+      never_run_ = false;
+      local_planner_.resetHistogramCounter();
+      local_planner_.filterPointCloud(local_planner_.complete_cloud_);
+      publishAll();
+      lock.unlock();
+
+      printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+      local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+
+      local_planner_.printAlgorithmStatistics();
+
+      //Store timing for timeout detection
+      pointcloud_time_old_ = pointcloud_time_now_;
+      pcl_conversions::fromPCL(local_planner_.complete_cloud_.header.stamp, pointcloud_time_now_);
+
+      //publish log name
+      std_msgs::String msg;
+      msg.data = local_planner_.log_name_;
+      log_name_pub_.publish(msg);
+    }
+
+  }
+}
+
+
+
 int main(int argc, char** argv) {
   ros::init(argc, argv, "local_planner_node");
-  LocalPlannerNode local_planner_node;
+  LocalPlannerNode * NodePtr = new LocalPlannerNode();
+//  LocalPlannerNode local_planner_node;
   ros::Duration(2).sleep();
-  ros::Rate rate(20.0);
+  ros::Rate rate(10.0);
   ros::Time start_time = ros::Time::now();
+  NodePtr->new_variables_ = false;
+  NodePtr->never_run_ = true;
+  bool writing = false;
+
+  std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
+  std::unique_lock < std::timed_mutex > lock(NodePtr->variable_mutex_, std::defer_lock);
 
   while (ros::ok()) {
+    std::clock_t t_loop = std::clock();
+    writing = false;
 
-
-    //publish log name
-    std_msgs::String msg;
-    msg.data = local_planner_node.local_planner_.log_name_;
-    local_planner_node.log_name_pub_.publish(msg);
+    //spin node, execute callbacks
+    if (lock.try_lock_for(std::chrono::milliseconds(20))) {
+      ros::spinOnce();
+      lock.unlock();
+      writing = true;
+    }
 
     //Check if pointcloud message is published fast enough
     ros::Time now = ros::Time::now();
-    ros::Duration pointcloud_timeout_hover = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_hover_);
-    ros::Duration pointcloud_timeout_land = ros::Duration(local_planner_node.local_planner_.pointcloud_timeout_land_);
-    ros::Duration since_last_cloud = now - local_planner_node.pointcloud_time_now_;
+    ros::Duration pointcloud_timeout_hover = ros::Duration(NodePtr->local_planner_.pointcloud_timeout_hover_);
+    ros::Duration pointcloud_timeout_land = ros::Duration(NodePtr->local_planner_.pointcloud_timeout_land_);
+    ros::Duration since_last_cloud = now - NodePtr->pointcloud_time_now_;
     ros::Duration since_start = now - start_time;
     bool landing = false;
     bool hovering = false;
@@ -530,34 +560,39 @@ int main(int argc, char** argv) {
       mavros_msgs::SetMode mode_msg;
       mode_msg.request.custom_mode = "AUTO.LAND";
       landing = true;
-      if (local_planner_node.mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
+      if (NodePtr->mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
         std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
       } else {
         std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
       }
     } else if (since_last_cloud > pointcloud_timeout_hover && since_start > pointcloud_timeout_hover) {
-      local_planner_node.local_planner_.hover();
-      nav_msgs::Path path_msg;
-      geometry_msgs::PoseStamped waypt_p;
-      local_planner_node.local_planner_.getPathData(path_msg, waypt_p);
-      local_planner_node.waypoint_pub_.publish(path_msg);
-
-      local_planner_node.publishSetpoint(waypt_p, 5);
-      local_planner_node.tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-      local_planner_node.mavros_waypoint_pub_.publish(waypt_p);
-      hovering = true;
+      if (!NodePtr->never_run_) {
+        NodePtr->local_planner_.useHoverPoint();
+        nav_msgs::Path path_msg;
+        geometry_msgs::PoseStamped waypt_p;
+        NodePtr->local_planner_.getPathData(path_msg, waypt_p);
+        NodePtr->waypoint_pub_.publish(path_msg);
+        NodePtr->publishSetpoint(waypt_p, 5);
+        NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+        NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+        hovering = true;
+        std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
+      } else {
+        std::cout << "Planner never ran, no WP to output....\n";
+      }
     }
 
-    if (local_planner_node.local_planner_.currently_armed_ && local_planner_node.local_planner_.offboard_) {
-      ros::Duration time_diff = local_planner_node.pointcloud_time_now_ - local_planner_node.pointcloud_time_old_;
-      std::ofstream myfile(("PointcloudTimes_" + local_planner_node.local_planner_.log_name_).c_str(), std::ofstream::app);
-      myfile << local_planner_node.pointcloud_time_now_.sec << "\t" << local_planner_node.pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\n";
+    if (NodePtr->local_planner_.currently_armed_ && NodePtr->local_planner_.offboard_) {
+      ros::Duration time_diff = NodePtr->pointcloud_time_now_ - NodePtr->pointcloud_time_old_;
+      std::ofstream myfile(("PointcloudTimes_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
+      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t"<< writing << "\t" << (std::clock() - t_loop) / (double) (CLOCKS_PER_SEC / 1000) << "\n";
       myfile.close();
     }
 
-    ros::spinOnce();
     rate.sleep();
   }
 
+  worker.join();
+  delete NodePtr;
   return 0;
 }

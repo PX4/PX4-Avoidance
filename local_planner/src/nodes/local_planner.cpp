@@ -288,10 +288,6 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
   int counter_close_points = 0;
   geometry_msgs::Point temp_centerpoint;
 
-  if (new_cloud_){
-    complete_cloud_ = complete_cloud;
-  }
-
   for (pcl_it = complete_cloud_.begin(); pcl_it != complete_cloud_.end(); ++pcl_it) {
     // Check if the point is invalid
     if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
@@ -1331,30 +1327,8 @@ void LocalPlanner::getPathMsg() {
   checkSpeed();
 }
 
-void LocalPlanner::hover() {
-
-  if(!hovering_){
-    hover_point_.vector.x = last_waypt_p_.pose.position.x;
-    hover_point_.vector.y = last_waypt_p_.pose.position.y;
-    hover_point_.vector.z = last_waypt_p_.pose.position.z;
-  }
-  hovering_ = true;
-  path_msg_.header.frame_id = "/world";
-  last_last_waypt_p_ = last_waypt_p_;
-  last_waypt_p_ = waypt_p_;
-  last_yaw_ = curr_yaw_;
-
-  waypt_.vector.x = hover_point_.vector.x;
-  waypt_.vector.y = hover_point_.vector.y;
-  waypt_.vector.z = hover_point_.vector.z;
-
-  double new_yaw = nextYaw(pose_, waypt_, last_yaw_);
-  waypt_p_ = createPoseMsg(waypt_, new_yaw);
+void LocalPlanner::useHoverPoint() {
   path_msg_.poses.push_back(waypt_p_);
-  curr_yaw_ = new_yaw;
-  position_old_ = pose_.pose.position;
-
-  std::cout << "\033[1;33m Pointcloud timeout: Hovering \n \033[0m";
 }
 
 void LocalPlanner::printAlgorithmStatistics(){

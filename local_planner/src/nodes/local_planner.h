@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <deque>
+#include <mutex>
 
 #include <ros/ros.h>
 
@@ -145,7 +146,7 @@ class LocalPlanner
 
   std::clock_t t_prev_ = 0.0f;
 
-  pcl::PointCloud<pcl::PointXYZ> final_cloud_, ground_cloud_, reprojected_points_, complete_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> final_cloud_, ground_cloud_, reprojected_points_;
 
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
@@ -220,6 +221,7 @@ class LocalPlanner
   double local_planner_mode_;
   double starting_height_;
 
+  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
   geometry_msgs::PoseStamped take_off_pose_;
 
   std::string log_name_;
@@ -231,7 +233,6 @@ class LocalPlanner
   double costFunction(int e, int z);
   void resetHistogramCounter();
   void setGoal();
-  void hover();
   void filterPointCloud(pcl::PointCloud<pcl::PointXYZ>&);
   geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos);
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
@@ -247,6 +248,7 @@ class LocalPlanner
   void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
+  void useHoverPoint();
 };
 
 #endif // LOCAL_PLANNER_LOCAL_PLANNER_H
