@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <fstream>
-#include <math.h> 
+#include <math.h>
 #include <Eigen/Dense>
 #include <string>
 #include <vector>
@@ -50,13 +50,13 @@
 
 
 #define PI 3.14159265
-#define alpha_res 6
-#define grid_length_z 360/alpha_res
-#define grid_length_e 180/alpha_res
-#define age_lim 100
-#define min_bin 1.5
-#define h_fov 59.0
-#define v_fov 46.0
+#define ALPHA_RES 6
+#define GRID_LENGTH_Z 360/ALPHA_RES
+#define GRID_LENGTH_E 180/ALPHA_RES
+#define AGE_LIM 100
+#define MIN_BIN 1.5
+#define H_FOV 59.0
+#define V_FOV 46.0
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b);
 float distance2DPolar(int e1, int z1, int e2, int z2);
@@ -172,9 +172,9 @@ class LocalPlanner
   nav_msgs::GridCells path_ground_;
   nav_msgs::GridCells path_waypoints_;
 
-  Histogram polar_histogram_ = Histogram(alpha_res);
-  Histogram polar_histogram_old_ = Histogram(alpha_res);
-  Histogram polar_histogram_est_ = Histogram(2 * alpha_res);
+  Histogram polar_histogram_ = Histogram(ALPHA_RES);
+  Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
+  Histogram polar_histogram_est_ = Histogram(2 * ALPHA_RES);
 
   void setLimitsBoundingBox();
   bool isPointWithinHistogramBox(pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it);

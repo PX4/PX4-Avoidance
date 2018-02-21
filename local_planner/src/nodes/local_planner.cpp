@@ -52,10 +52,10 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   max_box_z_ = config.max_box_z_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
   min_groundbox_z_ = 1.5 * min_dist_to_ground_;
-  min_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
-  max_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
-  min_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
-  max_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((v_fov/2.0)*PI/180));
+  min_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
+  max_groundbox_x_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
+  min_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
+  max_groundbox_y_ = 1.5 * (min_groundbox_z_ / tan((V_FOV/2.0)*PI/180));
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
@@ -352,7 +352,7 @@ void LocalPlanner::filterPointCloud(pcl::PointCloud<pcl::PointXYZ>& complete_clo
 
   //increase safety radius if too close to the wall
   if(distance_to_closest_point_ < 1.7 && cloud_temp1->points.size() > min_cloud_size_ ){
-    safety_radius_ = 25+ 2*alpha_res;
+    safety_radius_ = 25+ 2*ALPHA_RES;
     std::cout<<"Increased safety radius!\n";
   }
   if(distance_to_closest_point_ > 2.5 && distance_to_closest_point_ < 1000 && cloud_temp1->points.size() > min_cloud_size_ ){
@@ -447,33 +447,33 @@ void LocalPlanner::calculateFOV() {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
 
-  double z_FOV_max = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
-  double z_FOV_min = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
-  e_FOV_max_ = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
-  e_FOV_min_ = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
+  double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  e_FOV_max_ = std::round((-pitch * 180.0 / PI + V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
+  e_FOV_min_ = std::round((-pitch * 180.0 / PI - V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
 
-  if (z_FOV_max >= grid_length_z && z_FOV_min >= grid_length_z) {
-    z_FOV_max -= grid_length_z;
-    z_FOV_min -= grid_length_z;
+  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
+    z_FOV_max -= GRID_LENGTH_Z;
+    z_FOV_min -= GRID_LENGTH_Z;
   }
   if (z_FOV_max < 0 && z_FOV_min < 0) {
-    z_FOV_max += grid_length_z;
-    z_FOV_min += grid_length_z;
+    z_FOV_max += GRID_LENGTH_Z;
+    z_FOV_min += GRID_LENGTH_Z;
   }
 
   z_FOV_idx_.clear();
-  if (z_FOV_max >= grid_length_z && z_FOV_min < grid_length_z) {
-    for (int i = 0; i < z_FOV_max - grid_length_z; i++) {
+  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z) {
+    for (int i = 0; i < z_FOV_max - GRID_LENGTH_Z; i++) {
       z_FOV_idx_.push_back(i);
     }
-    for (int i = z_FOV_min; i < grid_length_z; i++) {
+    for (int i = z_FOV_min; i < GRID_LENGTH_Z; i++) {
       z_FOV_idx_.push_back(i);
     }
   } else if (z_FOV_min < 0 && z_FOV_max >= 0) {
     for (int i = 0; i < z_FOV_max; i++) {
       z_FOV_idx_.push_back(i);
     }
-    for (int i = z_FOV_min + grid_length_z; i < grid_length_z; i++) {
+    for (int i = z_FOV_min + GRID_LENGTH_Z; i < GRID_LENGTH_Z; i++) {
       z_FOV_idx_.push_back(i);
     }
   } else {
@@ -494,29 +494,29 @@ void LocalPlanner::createPolarHistogram() {
   geometry_msgs::Point temp_array[n_split];
 
   //Build Estimate of Histogram from old Histogram and Movement
-  polar_histogram_est_ = Histogram(2 * alpha_res);
+  polar_histogram_est_ = Histogram(2 * ALPHA_RES);
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
   reprojected_points_.header.frame_id = "world";
 
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (polar_histogram_old_.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
-        double beta_e = (e + 1.0) * alpha_res - 90 - alpha_res/2.0;
-        double beta_z = (z + 1.0) * alpha_res - 180 - alpha_res/2.0;
+        double beta_e = (e + 1.0) * ALPHA_RES - 90 - ALPHA_RES/2.0;
+        double beta_z = (z + 1.0) * ALPHA_RES - 180 - ALPHA_RES/2.0;
         //transform from Polar to Cartesian
-        temp_array[0] = fromPolarToCartesian(beta_e + alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[1] = fromPolarToCartesian(beta_e - alpha_res / 2, beta_z + alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[2] = fromPolarToCartesian(beta_e + alpha_res / 2, beta_z - alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[3] = fromPolarToCartesian(beta_e - alpha_res / 2, beta_z - alpha_res / 2, polar_histogram_old_.get_dist(e, z), position_old_);
+        temp_array[0] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
+        temp_array[1] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
+        temp_array[2] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
+        temp_array[3] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
 
         for (int i = 0; i < n_split; i++) {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = polar_histogram_old_.get_age(e, z);
 
-          if (dist < 2*max_box_x_ && dist > 0.3 && age < age_lim) {
+          if (dist < 2*max_box_x_ && dist > 0.3 && age < AGE_LIM) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
             int beta_z_new = floor(atan2(temp_array[i].x - pose_.pose.position.x, temp_array[i].y - pose_.pose.position.y) * 180.0 / PI);  //(-180. +180]
             int beta_e_new = floor(
@@ -526,11 +526,11 @@ void LocalPlanner::createPolarHistogram() {
             beta_e_new += 90;
             beta_z_new += 180;
 
-            beta_z_new = beta_z_new + ((2 * alpha_res) - (beta_z_new % (2 * alpha_res)));  //[-170,+180]
-            beta_e_new = beta_e_new + ((2 * alpha_res) - (beta_e_new % (2 * alpha_res)));  //[-80,+90]
+            beta_z_new = beta_z_new + ((2 * ALPHA_RES) - (beta_z_new % (2 * ALPHA_RES)));  //[-170,+180]
+            beta_e_new = beta_e_new + ((2 * ALPHA_RES) - (beta_e_new % (2 * ALPHA_RES)));  //[-80,+90]
 
-            int e_new = (beta_e_new) / (2 * alpha_res) - 1;  //[0,17]
-            int z_new = (beta_z_new) / (2 * alpha_res) - 1;  //[0,35]
+            int e_new = (beta_e_new) / (2 * ALPHA_RES) - 1;  //[0,17]
+            int z_new = (beta_z_new) / (2 * ALPHA_RES) - 1;  //[0,35]
 
             polar_histogram_est_.set_bin(e_new, z_new, polar_histogram_est_.get_bin(e_new, z_new) + 1.0 / n_split);
             polar_histogram_est_.set_age(e_new, z_new, polar_histogram_est_.get_age(e_new, z_new) + 1.0 / n_split * age);
@@ -541,9 +541,9 @@ void LocalPlanner::createPolarHistogram() {
     }
   }
 
-  for (int e = 0; e < grid_length_e / 2; e++) {
-    for (int z = 0; z < grid_length_z / 2; z++) {
-      if (polar_histogram_est_.get_bin(e, z) >= min_bin) {
+  for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
+      if (polar_histogram_est_.get_bin(e, z) >= MIN_BIN) {
         polar_histogram_est_.set_dist(e, z, polar_histogram_est_.get_dist(e, z) / polar_histogram_est_.get_bin(e, z));
         polar_histogram_est_.set_age(e, z, polar_histogram_est_.get_age(e, z) / polar_histogram_est_.get_bin(e, z));
         polar_histogram_est_.set_bin(e, z, 1);
@@ -574,19 +574,19 @@ void LocalPlanner::createPolarHistogram() {
     beta_e += 90;  //[0,360]
     beta_z += 180; //[0,180]
 
-    beta_z = beta_z + (alpha_res - beta_z % alpha_res);  //[10,360]
-    beta_e = beta_e + (alpha_res - beta_e % alpha_res);  //[10,180]
+    beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[10,360]
+    beta_e = beta_e + (ALPHA_RES - beta_e % ALPHA_RES);  //[10,180]
 
-    int e = beta_e / alpha_res - 1;  //[0,17]
-    int z = beta_z/ alpha_res - 1;  //[0,35]
+    int e = beta_e / ALPHA_RES - 1;  //[0,17]
+    int z = beta_z/ ALPHA_RES - 1;  //[0,35]
 
     polar_histogram_.set_bin(e, z, polar_histogram_.get_bin(e, z) + 1);
     polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) + dist);
   }
 
   //Normalize and get mean in distance bins
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (polar_histogram_.get_bin(e, z) > 0) {
         polar_histogram_.set_dist(e, z, polar_histogram_.get_dist(e, z) / polar_histogram_.get_bin(e, z));
         polar_histogram_.set_bin(e, z, 1);
@@ -596,8 +596,8 @@ void LocalPlanner::createPolarHistogram() {
 
   //Combine to New binary histogram
   bool hist_is_empty = true;
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z) != z_FOV_idx_ .end() && e > e_FOV_min_ && e < e_FOV_max_) {  //inside FOV
         if (polar_histogram_.get_bin(e, z) > 0) {
           polar_histogram_.set_age(e, z, 1);
@@ -664,8 +664,8 @@ void LocalPlanner::createPolarHistogram() {
 }
 
 void LocalPlanner::printHistogram(Histogram hist){
-  for (int e_ind = 0; e_ind < grid_length_e; e_ind++) {
-    for (int z_ind = 0; z_ind < grid_length_z; z_ind++) {
+  for (int e_ind = 0; e_ind < GRID_LENGTH_E; e_ind++) {
+    for (int z_ind = 0; z_ind < GRID_LENGTH_Z; z_ind++) {
       if (std::find(z_FOV_idx_ .begin(), z_FOV_idx_ .end(), z_ind) != z_FOV_idx_ .end() && e_ind > e_FOV_min_ && e_ind < e_FOV_max_) {
         std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
       } else {
@@ -682,15 +682,15 @@ void LocalPlanner::initGridCells(nav_msgs::GridCells *cell) {
   cell->cells.clear();
   cell->header.stamp = ros::Time::now();
   cell->header.frame_id = "/world";
-  cell->cell_width = alpha_res;
-  cell->cell_height = alpha_res;
+  cell->cell_width = ALPHA_RES;
+  cell->cell_height = ALPHA_RES;
   cell->cells = {};
 }
 
 // search for free directions in the 2D polar histogram with a moving window approach
 void LocalPlanner::findFreeDirections() {
   std::clock_t start_time = std::clock();
-  int n = floor(safety_radius_ / alpha_res);  //safety radius
+  int n = floor(safety_radius_ / ALPHA_RES);  //safety radius
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
@@ -710,7 +710,7 @@ void LocalPlanner::findFreeDirections() {
   int e_min_idx = -1;
   if (use_ground_detection_) {
     getMinFlightHeight();
-    int e_max = floor(v_fov / 2);
+    int e_max = floor(V_FOV / 2);
     int e_min;
 
     if(!is_near_min_height_ && over_obstacle_ && pose_.pose.position.z < min_flight_height_ + 0.2){
@@ -728,22 +728,22 @@ void LocalPlanner::findFreeDirections() {
 
     if (over_obstacle_ && too_low_) {
       e_max = e_max+90;
-      e_max = e_max - e_max % alpha_res;
-      e_max = e_max + (alpha_res - e_max % alpha_res);  //[10,180]
-      e_min_idx = (e_max) / alpha_res - 1;  //[0,17]
+      e_max = e_max - e_max % ALPHA_RES;
+      e_max = e_max + (ALPHA_RES - e_max % ALPHA_RES);  //[10,180]
+      e_min_idx = (e_max) / ALPHA_RES - 1;  //[0,17]
       std::cout << "\033[1;36m Too low, discard points under elevation " << e_max<< "\n \033[0m";
     }
     if (over_obstacle_ && is_near_min_height_ && !too_low_) {
       e_min = 0;
-      //e_min = e_min + (alpha_res - e_min % alpha_res);  //[-80,+90]
-      e_min_idx = (90 + e_min) / alpha_res - 1;  //[0,17]
+      //e_min = e_min + (ALPHA_RES - e_min % ALPHA_RES);  //[-80,+90]
+      e_min_idx = (90 + e_min) / ALPHA_RES - 1;  //[0,17]
       std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min<< "\n \033[0m";
     }
   }
 
   //determine which bins are candidates
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       for (int i = (e - n); i <= (e + n); i++) {
         for (int j = (z - n); j <= (z + n); j++) {
 
@@ -752,30 +752,30 @@ void LocalPlanner::findFreeDirections() {
           height_reject = false;
 
           // Elevation index < 0
-          if(i < 0 && j >= 0 && j < grid_length_z) {
+          if(i < 0 && j >= 0 && j < GRID_LENGTH_Z) {
             a = -i;
-            b = grid_length_z - j - 1;
+            b = GRID_LENGTH_Z - j - 1;
           }
           // Azimuth index < 0
-          else if(j < 0 && i >= 0 && i < grid_length_e) {
-            b = j+grid_length_z;
+          else if(j < 0 && i >= 0 && i < GRID_LENGTH_E) {
+            b = j+GRID_LENGTH_Z;
           }
-          // Elevation index > grid_length_e
-          else if(i >= grid_length_e && j >= 0 && j < grid_length_z) {
-            a = grid_length_e - (i % (grid_length_e - 1));
-            b = grid_length_z - j - 1;
+          // Elevation index > GRID_LENGTH_E
+          else if(i >= GRID_LENGTH_E && j >= 0 && j < GRID_LENGTH_Z) {
+            a = GRID_LENGTH_E - (i % (GRID_LENGTH_E - 1));
+            b = GRID_LENGTH_Z - j - 1;
           }
-          // Azimuth index > grid_length_z
-          else if(j >= grid_length_z && i >= 0 && i < grid_length_e) {
-            b = j - grid_length_z;
+          // Azimuth index > GRID_LENGTH_Z
+          else if(j >= GRID_LENGTH_Z && i >= 0 && i < GRID_LENGTH_E) {
+            b = j - GRID_LENGTH_Z;
           }
           // Elevation and Azimuth index both within histogram
-          else if( i >= 0 && i < grid_length_e && j >= 0 && j < grid_length_z) {
+          else if( i >= 0 && i < GRID_LENGTH_E && j >= 0 && j < GRID_LENGTH_Z) {
             a = i;
             b = j;
           }
-          // Elevation and azimuth index both < 0 OR elevation index > grid_length_e and azimuth index <> grid_length_z
-          // OR elevation index < 0 and azimuth index > grid_length_z OR elevation index > grid_length_e and azimuth index < 0.
+          // Elevation and azimuth index both < 0 OR elevation index > GRID_LENGTH_E and azimuth index <> GRID_LENGTH_Z
+          // OR elevation index < 0 and azimuth index > GRID_LENGTH_Z OR elevation index > GRID_LENGTH_E and azimuth index < 0.
           // These cells are not part of the polar histogram.
           else {
             corner = true;
@@ -801,24 +801,24 @@ void LocalPlanner::findFreeDirections() {
       }
 
       if (free && !height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = e * ALPHA_RES + ALPHA_RES - 90;
+        p.y = z * ALPHA_RES + ALPHA_RES - 180;
         p.z = 0;
         path_candidates_.cells.push_back(p);
         cost_path_candidates_.push_back(costFunction((int) p.x, (int) p.y));
       } else if (!free && polar_histogram_.get_bin(e, z) != 0 && !height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = e * ALPHA_RES + ALPHA_RES - 90;
+        p.y = z * ALPHA_RES + ALPHA_RES - 180;
         p.z = 0;
         path_rejected_.cells.push_back(p);
       } else if (height_reject) {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = e * ALPHA_RES + ALPHA_RES - 90;
+        p.y = z * ALPHA_RES + ALPHA_RES - 180;
         p.z = 0;
         path_ground_.cells.push_back(p);
       } else {
-        p.x = e * alpha_res + alpha_res - 90;
-        p.y = z * alpha_res + alpha_res - 180;
+        p.x = e * ALPHA_RES + ALPHA_RES - 90;
+        p.y = z * ALPHA_RES + ALPHA_RES - 180;
         p.z = 0;
         path_blocked_.cells.push_back(p);
       }
@@ -943,8 +943,8 @@ void LocalPlanner::getNextWaypoint() {
 	int waypoint_index = path_waypoints_.cells.size();
 	int e = path_waypoints_.cells[waypoint_index - 1].x;
 	int z = path_waypoints_.cells[waypoint_index - 1].y;
-	int e_index = (e - alpha_res + 90) / alpha_res;
-	int z_index = (z - alpha_res + 180) / alpha_res;
+	int e_index = (e - ALPHA_RES + 90) / ALPHA_RES;
+	int z_index = (z - ALPHA_RES + 180) / ALPHA_RES;
 	geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(e, z);
 
 	if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index)
@@ -1001,9 +1001,9 @@ void LocalPlanner::getMinFlightHeight() {
       begin_rise = begin_rise_;
     } else if (flight_height > pose_.pose.position.z) {
       double dist_diff = flight_height - pose_.pose.position.z;
-      int e_max = floor(v_fov / 2);
-      e_max = e_max - e_max % alpha_res;
-      e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
+      int e_max = floor(V_FOV / 2);
+      e_max = e_max - e_max % ALPHA_RES;
+      e_max = e_max + (ALPHA_RES - e_max % ALPHA_RES);  //[-80,+90]
       begin_rise = dist_diff / tan(e_max * PI / 180.0);
     } else {
       begin_rise = 0;
