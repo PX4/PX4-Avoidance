@@ -42,14 +42,13 @@ public:
   bool never_run_;
   bool position_received_;
 
+  geometry_msgs::PoseStamped hover_point_;
+
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
   ros::Time pointcloud_time_now_;
   ros::Time pointcloud_time_old_;
-
-  geometry_msgs::PoseStamped hover_point_;
-  geometry_msgs::PoseStamped hover_current_pose_;
 
   LocalPlanner local_planner_;
 
