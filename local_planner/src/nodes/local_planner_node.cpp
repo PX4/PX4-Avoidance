@@ -372,8 +372,8 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   int beta_z = floor((atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y)*180.0/PI)); //(-180. +180]
   int beta_e = floor((atan((z - drone_pos.pose.position.z) / sqrt((x - drone_pos.pose.position.x)*(x - drone_pos.pose.position.x) + (y - drone_pos.pose.position.y) * (y - drone_pos.pose.position.y)))*180.0/PI)); //(-90.+90)
 
-  beta_z = beta_z + (alpha_res - beta_z%alpha_res); //[-170,+190]
-  beta_e = beta_e + (alpha_res - beta_e%alpha_res); //[-80,+90]
+  beta_z = beta_z + (ALPHA_RES - beta_z%ALPHA_RES); //[-170,+190]
+  beta_e = beta_e + (ALPHA_RES - beta_e%ALPHA_RES); //[-80,+90]
 
   float cost = local_planner_.costFunction(beta_e-10, beta_z-10);
 
