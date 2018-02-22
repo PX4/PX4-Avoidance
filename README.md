@@ -213,7 +213,32 @@ Now the disparity map can be visualized by rviz or rqt under the topic */stereo/
 
 ## Running the Local Planner
 
-The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
+The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm simulating stereo vision
+
+```bash
+# if stereo-image-proc not yet installed
+sudo apt-get install ros-kinetic-stereo-image-proc
+
+roslaunch local_planner local_planner_stereo.launch
+```
+To simulate a kinect depth sensor:
+
+```bash
+roslaunch local_planner local_planner_depth-camera.lauch
+```
+
+To start flying, put the drone in OFFBOARD mode and arm it. The avoidance node will then take control of it.
+
+```bash
+# In another terminal
+rosrun mavros mavsys mode -c OFFBOARD
+rosrun mavros mavsafety arm
+```
+
+The drone will first change its altitude to reach the goal height. It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
+![Screenshot rqt_reconfigure goal height](docs/lp_goal_height.png)
+Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then chosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
+![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
 ### How to recover the logs
 
