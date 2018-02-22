@@ -100,7 +100,7 @@ apt install libopencv-dev python-jinja2 protobuf-compiler
 
 ```bash
 # Add the models from the avoidance module to GAZEBO_MODEL_PATH
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/node/models
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
 
 # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
 export QT_X11_NO_MITSHM=1
@@ -155,7 +155,7 @@ source ~/catkin_ws/devel/setup.bash
 2. Run the simulation.
 
 ```bash
-roslaunch avoidance global_planner_sitl_mavros.launch
+roslaunch global_planner global_planner_sitl_mavros.launch
 ```
 
 You should now see the drone unarmed on the ground, and the octomap should show 2 red arrows and the visible world, as pictured below.
@@ -192,17 +192,10 @@ To simulate obstacle avoidance with stereo-cameras, the package `stereo-image-pr
 
 ```bash
 # Launch simulation
-roslaunch avoidance global_planner_stereo.launch
+roslaunch global_planner global_planner_stereo.launch
 ```
 
-Simulated stereo-vision is prone to errors due to artificial texture, which may make obstacles appear extremely close to the camera. For better results, choose a more natural [world](https://github.com/AurelienRoy/ardupilot_sitl_gazebo_plugin/tree/master/ardupilot_sitl_gazebo_plugin/worlds/outdoor_village), like so:
-
-```bash
-cd <where_you_want_to_download_the_world>
-git clone https://github.com/AurelienRoy/ardupilot_sitl_gazebo_plugin.git
-export GAZEBO_MODEL_PATH=$GAZEBO_MODEL_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin/meshes/meshes_outdoor
-export GAZEBO_RESOURCE_PATH="$GAZEBO_RESOURCE_PATH:$(pwd)/ardupilot_sitl_gazebo_plugin/ardupilot_sitl_gazebo_plugin"
-```
+Simulated stereo-vision is prone to errors due to artificial texture, which may make obstacles appear extremely close to the camera. For better results, choose a more natural [world](https://github.com/PX4/avoidance/blob/master/sim/worlds/simple_obstacle.world).
 
 The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message, either run:
 
@@ -311,7 +304,7 @@ catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
 And then just run with the corresponding launch file:
 
 ```bash
-roslaunch avoidance global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
+roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
 ```
 
 # Running on Odroid
