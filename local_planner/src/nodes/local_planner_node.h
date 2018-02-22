@@ -38,13 +38,15 @@ public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
-  bool new_variables_;
+  bool point_cloud_updated_;
   bool never_run_;
+  bool position_received_;
 
   ros::Time pointcloud_time_now_;
   ros::Time pointcloud_time_old_;
 
   geometry_msgs::PoseStamped hover_point_;
+  geometry_msgs::PoseStamped hover_current_pose_;
 
   LocalPlanner local_planner_;
 
