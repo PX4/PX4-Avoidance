@@ -59,6 +59,8 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   local_planner_.setPose(rot_msg);
   publishPath(rot_msg);
+  hover_current_pose_ = msg;
+  position_received_ = true;
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
@@ -393,7 +395,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
     pcl::fromROSMsg(pc2cloud_world, complete_cloud);
     local_planner_.complete_cloud_ = complete_cloud;
-    new_variables_ = true;
+    point_cloud_updated_ = true;
   } catch(tf::TransformException& ex) {
     ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
   }
@@ -494,9 +496,9 @@ void LocalPlannerNode::threadFunction() {
   std::unique_lock<std::timed_mutex> lock(variable_mutex_,std::defer_lock);
   while (true) {
     std::clock_t start_time = std::clock();
-    if (new_variables_) {
+    if (point_cloud_updated_) {
       lock.lock();
-      new_variables_ = false;
+      point_cloud_updated_ = false;
       never_run_ = false;
       local_planner_.resetHistogramCounter();
       local_planner_.filterPointCloud(local_planner_.complete_cloud_);
@@ -526,12 +528,12 @@ void LocalPlannerNode::threadFunction() {
 int main(int argc, char** argv) {
   ros::init(argc, argv, "local_planner_node");
   LocalPlannerNode * NodePtr = new LocalPlannerNode();
-//  LocalPlannerNode local_planner_node;
   ros::Duration(2).sleep();
   ros::Rate rate(10.0);
   ros::Time start_time = ros::Time::now();
-  NodePtr->new_variables_ = false;
+  NodePtr->point_cloud_updated_ = false;
   NodePtr->never_run_ = true;
+  NodePtr->position_received_ = false;
   bool writing = false;
 
   std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
@@ -578,7 +580,16 @@ int main(int argc, char** argv) {
         hovering = true;
         std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
       } else {
-        std::cout << "Planner never ran, no WP to output....\n";
+        if (NodePtr->position_received_) {
+          geometry_msgs::PoseStamped drone_pos;
+          NodePtr->local_planner_.getPosition(drone_pos);
+          NodePtr->publishSetpoint(drone_pos, 5);
+          NodePtr->mavros_waypoint_pub_.publish(NodePtr->hover_current_pose_);
+          hovering = true;
+          std::cout << "\033[1;33m Pointcloud timeout: Hovering at current position \n \033[0m";
+        } else {
+          std::cout << "\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m";
+        }
       }
     }
 
