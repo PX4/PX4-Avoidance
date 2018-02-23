@@ -221,13 +221,13 @@ sudo apt-get install ros-kinetic-stereo-image-proc
 
 roslaunch local_planner local_planner_stereo.launch
 ```
-To simulate a kinect depth sensor:
+Another option is to simulate a kinect depth sensor:
 
 ```bash
 roslaunch local_planner local_planner_depth-camera.lauch
 ```
 
-To start flying, put the drone in OFFBOARD mode and arm it. The avoidance node will then take control of it.
+You will see the Iris drone unarmed in the Gazebo world. To start flying, put the drone in OFFBOARD mode and arm it. The avoidance node will then take control of it.
 
 ```bash
 # In another terminal
