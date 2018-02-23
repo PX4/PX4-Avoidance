@@ -38,14 +38,11 @@ void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geome
 
 //adapt histogram safety margin around blocked cells to distance of pointcloud
 double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_size, double min_cloud_size) {
-  double safety_margin;
+  double safety_margin = 25;
 
   //increase safety radius if too close to the wall
   if (dist_to_closest_point < 1.7 && cloud_size > min_cloud_size) {
     safety_margin = 25 + 2 * alpha_res;
-  }
-  if (dist_to_closest_point > 2.5 && dist_to_closest_point < 1000 && cloud_size > min_cloud_size) {
-    safety_margin = 25;
   }
   return safety_margin;
 }
@@ -56,7 +53,6 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   double min_realsense_dist = 0.2;
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(new pcl::PointCloud<pcl::PointXYZ>);
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
   distance_to_closest_point = inf;
@@ -70,7 +66,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
       if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
         distance = computeL2Dist(position, pcl_it);
         if (distance > min_realsense_dist) {
-          cloud_temp->points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+          cropped_cloud.points.push_back(pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
           if (distance < distance_to_closest_point) {
             distance_to_closest_point = distance;
             closest_point.x = pcl_it->x;
@@ -98,9 +94,9 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   cropped_cloud.header.stamp = complete_cloud.header.stamp;
   cropped_cloud.header.frame_id = complete_cloud.header.frame_id;
   cropped_cloud.height = 1;
-  if (cloud_temp->points.size() > min_cloud_size) {
-    cropped_cloud.points = cloud_temp->points;
-    cropped_cloud.width = cloud_temp->points.size();
+  if (cropped_cloud.points.size() <= min_cloud_size) {
+    cropped_cloud.points.clear();
+    cropped_cloud.width = 0;
   }
 }
 

@@ -204,7 +204,7 @@ class LocalPlanner
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
   double local_planner_mode_;
-  double starting_height_;
+  double starting_height_ = 0;
 
   geometry_msgs::PoseStamped take_off_pose_;
 

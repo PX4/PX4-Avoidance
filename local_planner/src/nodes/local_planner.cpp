@@ -707,7 +707,7 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(geometry_msgs::Vector
   float dt = (t - t_prev_) / (float) (CLOCKS_PER_SEC);
   dt = dt > 0.0f ? dt : 0.004f;
   t_prev_ = t;
-  std::cout<<"Smoothing 1: "<<dt<<"\n";
+
   Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
   Eigen::Vector2f vel_waypt_xy((wp.vector.x - last_waypt_p_.pose.position.x) / dt, (wp.vector.y - last_waypt_p_.pose.position.y) / dt);
   Eigen::Vector2f vel_waypt_xy_prev((last_waypt_p_.pose.position.x - last_last_waypt_p_.pose.position.x) / dt, (last_waypt_p_.pose.position.y - last_last_waypt_p_.pose.position.y) / dt);
@@ -716,17 +716,6 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(geometry_msgs::Vector
   if (acc_waypt_xy.norm() > (acc_waypt_xy.norm() / 2.0f)) {
     vel_xy = (acc_waypt_xy.norm() / 2.0f) * acc_waypt_xy.normalized() * dt + vel_waypt_xy_prev;
   }
-  std::cout<<"Smoothing 2: ["<<vel_xy(0)<<", "<<vel_xy(1)<<"] \n";
-
-//  float vel_waypt_z = (wp.vector.z - last_waypt_p_.pose.position.z) / dt;
-//  float max_acc_z, vel_z;
-//  float vel_waypt_z_prev = (last_waypt_p_.pose.position.z - last_last_waypt_p_.pose.position.z) / dt;
-//  float acc_waypt_z = (vel_waypt_z - vel_waypt_z_prev) / dt;
-//
-//  max_acc_z = (acc_waypt_z < 0.0f) ? -(max_accel_z_) : (max_accel_z_);
-//  if (fabsf(acc_waypt_z) > fabsf(max_acc_z)) {
-//    vel_z = max_acc_z * dt + vel_waypt_z_prev;
-//  }
 
   smooth_waypt.vector.x = last_waypt_p_.pose.position.x + vel_xy(0) * dt;
   smooth_waypt.vector.y = last_waypt_p_.pose.position.y + vel_xy(1) * dt;

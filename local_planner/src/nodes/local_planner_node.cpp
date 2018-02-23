@@ -620,10 +620,7 @@ void LocalPlannerNode::publishAll() {
   publishReachHeight();
   publishTree();
   publishWaypoints();
-
-  if (local_planner_.ground_detector_.ground_detected_) {
-    publishGround();
-  }
+  publishGround();
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config,
@@ -682,7 +679,6 @@ void LocalPlannerNode::threadFunction() {
       msg.data = local_planner_.log_name_;
       log_name_pub_.publish(msg);
     }
-
   }
 }
 
