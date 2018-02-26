@@ -64,13 +64,19 @@ int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Poi
   return floor(atan((z - pos.z) / sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y))) * 180.0 / PI);  //(-90.+90)
 }
 
-int elevationAngletoIndex(int e, int res) { //[-90,90]
+int elevationAngletoIndex(int e, int res) {  //[-90,90]
+  if (e == 90) {
+    e = e - 180;
+  }
   e += 90;
   e = e + (res - (e % res));  //[-80,+90]
   return e / res - 1;  //[0,17]
 }
 
-int azimuthAngletoIndex(int z, int res) { //[-90,90]
+int azimuthAngletoIndex(int z, int res) {  //[-180,180]
+  if (z == 180) {
+    z = z - 360;
+  }
   z += 180;
   z = z + (res - (z % res));  //[-80,+90]
   return z / res - 1;  //[0,17]
