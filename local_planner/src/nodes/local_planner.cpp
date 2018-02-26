@@ -161,10 +161,15 @@ void LocalPlanner::determineStrategy() {
         }
       }
 
-      Histogram propagated_histogram = propagateHistogram(reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
-      Histogram new_histogram = generateNewHistogram(final_cloud_, pose_);
-      Histogram polar_histogram_ = combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+      Histogram propagated_histogram = Histogram(2 * alpha_res);
+      Histogram new_histogram = Histogram(alpha_res);
+
+      propagateHistogram(propagated_histogram, reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
+      generateNewHistogram(new_histogram, final_cloud_, pose_);
+      combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+
       polar_histogram_old_ = polar_histogram_;
+      polar_histogram_ = new_histogram;
 
       //decide how to proceed
       if (hist_is_empty_) {

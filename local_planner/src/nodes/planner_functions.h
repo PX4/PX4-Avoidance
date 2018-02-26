@@ -63,9 +63,9 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_siz
 void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_msgs::Point &closest_point, geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point, int &counter_backoff, int &counter_sphere,
                       pcl::PointCloud<pcl::PointXYZ> complete_cloud, double min_cloud_size, double min_dist_backoff, double sphere_radius, Box histogram_box, geometry_msgs::Point position);
 void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
-Histogram propagateHistogram(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist, geometry_msgs::PoseStamped position);
-Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position);
-Histogram combinedHistogram(bool &hist_empty, Histogram new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
+void propagateHistogram(Histogram &polar_histogram_est, pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist, geometry_msgs::PoseStamped position);
+void generateNewHistogram(Histogram &polar_histogram, pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position);
+void combinedHistogram(bool &hist_empty, Histogram &new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max);
 double costFunction(int e, int z, nav_msgs::GridCells path_waypoints, geometry_msgs::Point goal, geometry_msgs::PoseStamped position, geometry_msgs::Point position_old, double goal_cost_param, double smooth_cost_param,
                     double height_change_cost_param_adapted, double height_change_cost_param, bool only_yawed);
 void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &path_ground,
