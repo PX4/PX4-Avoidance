@@ -157,9 +157,12 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
       int e_FOV_min, e_FOV_max;
       calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, tree_[origin].yaw, 0.0);  //assume pitch is zero at every node
 
-      Histogram propagated_histogram = propagateHistogram(reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
-      Histogram new_histogram = generateNewHistogram(cropped_cloud, pose_);
-      Histogram histogram = combinedHistogram(hist_is_empty, new_histogram, propagated_histogram, false, z_FOV_idx, e_FOV_min, e_FOV_max);
+      Histogram propagated_histogram = Histogram(2 * alpha_res);
+      Histogram histogram = Histogram(alpha_res);
+
+      propagateHistogram(propagated_histogram, reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
+      generateNewHistogram(histogram, cropped_cloud, pose_);
+      combinedHistogram(hist_is_empty, histogram, propagated_histogram, false, z_FOV_idx, e_FOV_min, e_FOV_max);
 
       //calculate candidates
       int e_min_idx = -1;

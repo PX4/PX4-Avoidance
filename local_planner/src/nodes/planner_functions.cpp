@@ -140,10 +140,7 @@ void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, d
 }
 
 //Build histogram estimate from reprojected points
-Histogram propagateHistogram(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist, geometry_msgs::PoseStamped position) {
-  std::clock_t start_time = std::clock();
-  Histogram polar_histogram_est = Histogram(2 * alpha_res);
-  Histogram polar_histogram = Histogram(alpha_res);
+void propagateHistogram(Histogram &polar_histogram_est, pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist, geometry_msgs::PoseStamped position) {
 
   for (int i = 0; i < reprojected_points.points.size(); i++) {
     int e_angle = elevationAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
@@ -173,13 +170,10 @@ Histogram propagateHistogram(pcl::PointCloud<pcl::PointXYZ> reprojected_points, 
 
   //Upsample propagated histogram
   polar_histogram_est.upsample();
-
-  return polar_histogram_est;
 }
 
 //Generate new histogram from pointcloud
-Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position) {
-  Histogram polar_histogram = Histogram(alpha_res);
+void generateNewHistogram(Histogram &polar_histogram, pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geometry_msgs::PoseStamped position) {
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
   geometry_msgs::Point temp;
   double dist;
@@ -209,13 +203,11 @@ Histogram generateNewHistogram(pcl::PointCloud<pcl::PointXYZ> cropped_cloud, geo
       }
     }
   }
-
-  return polar_histogram;
 }
 
 
 //Combine propagated histogram and new histogram to the final binary histogram
-Histogram combinedHistogram(bool &hist_empty, Histogram new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max) {
+void combinedHistogram(bool &hist_empty, Histogram &new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max) {
   hist_empty = true;
   for (int e = 0; e < grid_length_e; e++) {
     for (int z = 0; z < grid_length_z; z++) {
@@ -244,7 +236,6 @@ Histogram combinedHistogram(bool &hist_empty, Histogram new_hist, Histogram prop
       }
     }
   }
-  return new_hist;
 }
 
 //costfunction for every free histogram cell
