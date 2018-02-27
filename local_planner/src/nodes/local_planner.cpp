@@ -628,8 +628,8 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "/world";
   msg.angle_increment = alpha_res * PI / 180.0f;
-  msg.range_min = 0.2f * 100.0f; //0.2m
-  msg.range_max = 20.0f * 100.0f; //20m
+  msg.range_min = 0.2f; //0.2m
+  msg.range_max = 20.0f; //20m
 
   if (!std::isnan(middle_z_FOV_idx_)) {
     // turn idxs 180 degress to point to local north instead of south
@@ -661,7 +661,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
       if (hist.get_dist(0, hist_idx) == 0.0) {
         msg.ranges.push_back(msg.range_max + 1.0f);
       } else {
-        msg.ranges.push_back(hist.get_dist(0, hist_idx) * 100.0f); // 1 unit 1 cm
+        msg.ranges.push_back(hist.get_dist(0, hist_idx)); // 1 unit 1 cm
       }
     }
   }
@@ -673,8 +673,8 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "/world";
   msg.angle_increment = alpha_res * PI / 180.0f;
-  msg.range_min = 0.2f * 100.0f; //0.2m
-  msg.range_max = 20.0f * 100.0f; //20m
+  msg.range_min = 0.2f; //0.2m
+  msg.range_max = 20.0f; //20m
   distance_data_ = msg;
 }
 
