@@ -66,7 +66,7 @@ int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Poi
 
 int elevationAngletoIndex(int e, int res) {  //[-90,90]
   if (e == 90) {
-    e = e - 180;
+    e = 89;
   }
   e += 90;
   e = e + (res - (e % res));  //[-80,+90]
@@ -75,7 +75,7 @@ int elevationAngletoIndex(int e, int res) {  //[-90,90]
 
 int azimuthAngletoIndex(int z, int res) {  //[-180,180]
   if (z == 180) {
-    z = z - 360;
+    z = -180;
   }
   z += 180;
   z = z + (res - (z % res));  //[-80,+90]
