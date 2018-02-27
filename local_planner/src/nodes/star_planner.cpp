@@ -146,12 +146,12 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
     double safety_radius = adaptSafetyMarginHistogram(distance_to_closest_point, cropped_cloud.points.size(), min_cloud_size_);
 
     //if too close to obstacle, we do not want to go there (equivalent to back off)
-    if (backoff_points_counter > 20 && cropped_cloud.points.size() > 160) {
+    if (origin != 0 && backoff_points_counter > 20 && cropped_cloud.points.size() > 160) {
       tree_[origin].total_cost = inf;
       add_nodes = false;
     }
 
-    if (add_nodes || origin == 0) {
+    if (add_nodes) {
       //build new histogram
       std::vector<int> z_FOV_idx;
       int e_FOV_min, e_FOV_max;
