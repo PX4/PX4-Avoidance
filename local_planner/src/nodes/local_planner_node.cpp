@@ -639,29 +639,7 @@ void LocalPlannerNode::threadFunction() {
       lock.lock();
       point_cloud_updated_ = false;
       never_run_ = false;
-      geometry_msgs::PoseStamped drone_pos;
-      local_planner_.getPosition(drone_pos);
-      local_planner_.histogram_box_.setLimitsHistogramBox(drone_pos.pose.position, local_planner_.histogram_box_size_);
-
-      if (local_planner_.use_ground_detection_) {
-        local_planner_.ground_detector_.initializeGroundBox(local_planner_.min_dist_to_ground_);
-        local_planner_.ground_detector_.ground_box_.setLimitsGroundBox(drone_pos.pose.position, local_planner_.ground_detector_.ground_box_size_, local_planner_.min_dist_to_ground_);
-        local_planner_.ground_detector_.setParams(local_planner_.min_dist_to_ground_, local_planner_.min_cloud_size_);
-        local_planner_.ground_detector_.detectGround(local_planner_.complete_cloud_);
-      }
-
-      geometry_msgs::Point temp_sphere_center;
-      int sphere_points_counter = 0;
-      filterPointCloud(local_planner_.final_cloud_, local_planner_.closest_point_, temp_sphere_center, local_planner_.distance_to_closest_point_, local_planner_.counter_close_points_backoff_, sphere_points_counter, local_planner_.complete_cloud_,
-                       local_planner_.min_cloud_size_, local_planner_.min_dist_backoff_, local_planner_.avoid_radius_, local_planner_.histogram_box_, drone_pos.pose.position);
-
-      local_planner_.safety_radius_ = adaptSafetyMarginHistogram(local_planner_.distance_to_closest_point_, local_planner_.final_cloud_.points.size(), local_planner_.min_cloud_size_);
-
-      if (local_planner_.use_avoid_sphere_ && local_planner_.reach_altitude_) {
-        calculateSphere(local_planner_.avoid_centerpoint_, local_planner_.avoid_sphere_age_, temp_sphere_center, sphere_points_counter, local_planner_.speed_);
-      }
-
-      local_planner_.determineStrategy();
+      local_planner_.runPlanner();
       publishAll();
       lock.unlock();
 
