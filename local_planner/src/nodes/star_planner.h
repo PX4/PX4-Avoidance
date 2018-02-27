@@ -80,8 +80,6 @@ class StarPlanner
   int n_expanded_nodes_ = 5;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
-  double min_cloud_size_;
-  double min_dist_backoff_;
   double goal_cost_param_;
   double smooth_cost_param_;
   double height_change_cost_param_adapted_;
@@ -90,14 +88,11 @@ class StarPlanner
   double min_flight_height_;
   double ground_margin_;
 
-  Box histogram_box_;
-  Box histogram_box_size_;
-
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> cropped_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   geometry_msgs::Point goal_;
@@ -108,6 +103,7 @@ class StarPlanner
  public:
 
   std::vector<geometry_msgs::Point> path_node_positions_;
+  geometry_msgs::Point obstacle_position_;
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;
@@ -119,13 +115,12 @@ class StarPlanner
   StarPlanner();
   ~StarPlanner();
 
-  void setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
+  void setParams(nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
   void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist);
   void setCostParams(double goal_cost_param, double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param);
   void setPose(geometry_msgs::PoseStamped pose);
   void setGoal(geometry_msgs::Point pose);
-  void setBoxSize(Box histogram_box_size);
-  void setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud);
+  void setCloud(pcl::PointCloud<pcl::PointXYZ> cropped_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree(double origin_yaw);

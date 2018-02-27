@@ -59,6 +59,9 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   float distance;
   counter_backoff = 0;
   counter_sphere = 0;
+  temp_sphere_center.x = 0;
+  temp_sphere_center.y = 0;
+  temp_sphere_center.z = 0;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
     // Check if the point is invalid
@@ -87,9 +90,15 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
     }
   }
 
-  temp_sphere_center.x = temp_sphere_center.x / counter_sphere;
-  temp_sphere_center.y = temp_sphere_center.y / counter_sphere;
-  temp_sphere_center.z = temp_sphere_center.z / counter_sphere;
+  if (counter_sphere < 0) {
+    temp_sphere_center.x = temp_sphere_center.x / counter_sphere;
+    temp_sphere_center.y = temp_sphere_center.y / counter_sphere;
+    temp_sphere_center.z = temp_sphere_center.z / counter_sphere;
+  }else{
+    temp_sphere_center.x = position.x + 1000;
+    temp_sphere_center.y = position.y + 1000;
+    temp_sphere_center.z = position.z + 1000;
+  }
 
   cropped_cloud.header.stamp = complete_cloud.header.stamp;
   cropped_cloud.header.frame_id = complete_cloud.header.frame_id;
