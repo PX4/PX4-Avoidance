@@ -88,7 +88,7 @@ void LocalPlanner::logData() {
     std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
     myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y << "\t"
         << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_
-        << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << hovering_ << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
+        << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
     myfile1.close();
 
     ground_detector_.logData(log_name_);
@@ -111,6 +111,30 @@ void LocalPlanner::setGoal() {
   initGridCells(&path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);
+}
+
+void LocalPlanner::runPlanner() {
+  histogram_box_.setLimitsHistogramBox(pose_.pose.position, histogram_box_size_);
+
+  if (use_ground_detection_) {
+    ground_detector_.initializeGroundBox(min_dist_to_ground_);
+    ground_detector_.ground_box_.setLimitsGroundBox(pose_.pose.position, ground_detector_.ground_box_size_, min_dist_to_ground_);
+    ground_detector_.setParams(min_dist_to_ground_, min_cloud_size_);
+    ground_detector_.detectGround(complete_cloud_);
+  }
+
+  geometry_msgs::Point temp_sphere_center;
+  int sphere_points_counter = 0;
+  filterPointCloud(final_cloud_, closest_point_, temp_sphere_center, distance_to_closest_point_, counter_close_points_backoff_, sphere_points_counter, complete_cloud_,
+                   min_cloud_size_, min_dist_backoff_, avoid_radius_, histogram_box_, pose_.pose.position);
+
+  safety_radius_ = adaptSafetyMarginHistogram(distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
+
+  if (use_avoid_sphere_ && reach_altitude_) {
+    calculateSphere(avoid_centerpoint_, avoid_sphere_age_, temp_sphere_center, sphere_points_counter, speed_);
+  }
+
+  determineStrategy();
 }
 
 void LocalPlanner::determineStrategy() {

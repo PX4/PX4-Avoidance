@@ -76,7 +76,10 @@ class LocalPlanner
   bool use_VFH_star_;
   bool adapt_cost_params_;
   bool stop_in_front_;
+  bool use_avoid_sphere_;
+  bool use_ground_detection_;
 
+  bool reach_altitude_ = false;
   bool obstacle_ = false;
   bool reached_goal_ = false;
   bool first_brake_ = true;
@@ -96,6 +99,8 @@ class LocalPlanner
   int childs_per_node_;
   int n_expanded_nodes_;
   int reproj_age_;
+  int counter_close_points_backoff_ = 0;
+  int avoid_sphere_age_ = 1000;
 
   double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
   double curr_yaw_, last_yaw_;
@@ -115,6 +120,13 @@ class LocalPlanner
   double min_flight_height_ = 0;
   double ground_margin_ = 0;
   double new_yaw_;
+  double min_dist_to_ground_;
+  double distance_to_closest_point_;
+  double safety_radius_ = 25;
+  double min_cloud_size_ = 160;
+  double min_dist_backoff_;
+  double avoid_radius_;
+  double speed_ = 1.0;
 
 
   std::vector<int> e_FOV_idx_;
@@ -135,7 +147,9 @@ class LocalPlanner
 
   std::clock_t t_prev_ = 0.0f;
 
-  pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
+  pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
+
+  Box histogram_box_;
 
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
@@ -144,6 +158,8 @@ class LocalPlanner
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point back_off_start_point_;
   geometry_msgs::Point position_old_;
+  geometry_msgs::Point closest_point_;
+  geometry_msgs::Point avoid_centerpoint_;
   geometry_msgs::PoseStamped last_waypt_p_, last_last_waypt_p_;
   geometry_msgs::Vector3Stamped waypt_;
   geometry_msgs::Vector3Stamped waypt_adapted_;
@@ -187,14 +203,12 @@ class LocalPlanner
  public:
   GroundDetector ground_detector_;
 
-  bool use_avoid_sphere_;
-  bool use_ground_detection_;
+
+
 
   bool currently_armed_ = false;
   bool offboard_ = false;
-  bool new_cloud_;
-  bool hovering_ = false;
-  bool reach_altitude_ = false;
+
 
   std::vector<float> algorithm_total_time_;
 
@@ -208,24 +222,10 @@ class LocalPlanner
 
   geometry_msgs::PoseStamped take_off_pose_;
 
-  double min_dist_to_ground_;
-  double distance_to_closest_point_;
-  double safety_radius_ = 25;
-  double min_cloud_size_ = 160;
-  double min_dist_backoff_;
-  double avoid_radius_;
-  double speed_ = 1.0;
-
-  int counter_close_points_backoff_ = 0;
-  int avoid_sphere_age_ = 1000;
-
   Box histogram_box_size_;
-  Box histogram_box_;
 
-  pcl::PointCloud<pcl::PointXYZ> complete_cloud_, final_cloud_;
 
-  geometry_msgs::Point closest_point_;
-  geometry_msgs::Point avoid_centerpoint_;
+  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
 
   std::string log_name_;
 
@@ -247,6 +247,7 @@ class LocalPlanner
   void useHoverPoint();
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions);
   void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
+  void runPlanner();
 };
 
 #endif // LOCAL_PLANNER_H
