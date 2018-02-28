@@ -87,6 +87,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
   newest_pose_ = rot_msg;
   curr_yaw_ = tf::getYaw(rot_msg.pose.orientation);
+  position_received_ = true;
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
@@ -550,7 +551,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
       pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
       pcl::fromROSMsg(pc2cloud_world, complete_cloud);
       local_planner_.complete_cloud_ = complete_cloud;
-      new_variables_ = true;
+      point_cloud_updated_ = true;
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
     }
@@ -785,7 +786,7 @@ int main(int argc, char** argv) {
           geometry_msgs::PoseStamped drone_pos;
           NodePtr->local_planner_.getPosition(drone_pos);
           NodePtr->publishSetpoint(drone_pos, 5);
-          NodePtr->mavros_waypoint_pub_.publish(NodePtr->hover_current_pose_);
+          NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
           hovering = true;
           std::cout << "\033[1;33m Pointcloud timeout: Hovering at current position \n \033[0m";
         } else {

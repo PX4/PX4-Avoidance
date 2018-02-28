@@ -6,8 +6,8 @@ void initGridCells(nav_msgs::GridCells *cell) {
   cell->cells.clear();
   cell->header.stamp = ros::Time::now();
   cell->header.frame_id = "/world";
-  cell->cell_width = alpha_res;
-  cell->cell_height = alpha_res;
+  cell->cell_width = ALPHA_RES;
+  cell->cell_height = ALPHA_RES;
   cell->cells = {};
 }
 
@@ -42,7 +42,7 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_siz
 
   //increase safety radius if too close to the wall
   if (dist_to_closest_point < 1.7 && cloud_size > min_cloud_size) {
-    safety_margin = 25 + 2 * alpha_res;
+    safety_margin = 25 + 2 * ALPHA_RES;
   }
   return safety_margin;
 }
@@ -55,7 +55,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
-  distance_to_closest_point = inf;
+  distance_to_closest_point = INF;
   float distance;
   counter_backoff = 0;
   counter_sphere = 0;
@@ -113,33 +113,33 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch) {
 
-  double z_FOV_max = std::round((-yaw * 180.0 / PI + h_fov / 2.0 + 270.0) / alpha_res) - 1;
-  double z_FOV_min = std::round((-yaw * 180.0 / PI - h_fov / 2.0 + 270.0) / alpha_res) - 1;
-  e_FOV_max = std::round((-pitch * 180.0 / PI + v_fov / 2.0 + 90.0) / alpha_res) - 1;
-  e_FOV_min = std::round((-pitch * 180.0 / PI - v_fov / 2.0 + 90.0) / alpha_res) - 1;
+  double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  e_FOV_max = std::round((-pitch * 180.0 / PI + V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
+  e_FOV_min = std::round((-pitch * 180.0 / PI - V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
 
-  if (z_FOV_max >= grid_length_z && z_FOV_min >= grid_length_z) {
-    z_FOV_max -= grid_length_z;
-    z_FOV_min -= grid_length_z;
+  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
+    z_FOV_max -= GRID_LENGTH_Z;
+    z_FOV_min -= GRID_LENGTH_Z;
   }
   if (z_FOV_max < 0 && z_FOV_min < 0) {
-    z_FOV_max += grid_length_z;
-    z_FOV_min += grid_length_z;
+    z_FOV_max += GRID_LENGTH_Z;
+    z_FOV_min += GRID_LENGTH_Z;
   }
 
   z_FOV_idx.clear();
-  if (z_FOV_max >= grid_length_z && z_FOV_min < grid_length_z) {
-    for (int i = 0; i < z_FOV_max - grid_length_z; i++) {
+  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z) {
+    for (int i = 0; i < z_FOV_max - GRID_LENGTH_Z; i++) {
       z_FOV_idx.push_back(i);
     }
-    for (int i = z_FOV_min; i < grid_length_z; i++) {
+    for (int i = z_FOV_min; i < GRID_LENGTH_Z; i++) {
       z_FOV_idx.push_back(i);
     }
   } else if (z_FOV_min < 0 && z_FOV_max >= 0) {
     for (int i = 0; i < z_FOV_max; i++) {
       z_FOV_idx.push_back(i);
     }
-    for (int i = z_FOV_min + grid_length_z; i < grid_length_z; i++) {
+    for (int i = z_FOV_min + GRID_LENGTH_Z; i < GRID_LENGTH_Z; i++) {
       z_FOV_idx.push_back(i);
     }
   } else {
@@ -156,17 +156,17 @@ void propagateHistogram(Histogram &polar_histogram_est, pcl::PointCloud<pcl::Poi
     int e_angle = elevationAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
     int z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
 
-    int e_ind = elevationAngletoIndex(e_angle, 2*alpha_res);
-    int z_ind = azimuthAngletoIndex(z_angle, 2*alpha_res);
+    int e_ind = elevationAngletoIndex(e_angle, 2*ALPHA_RES);
+    int z_ind = azimuthAngletoIndex(z_angle, 2*ALPHA_RES);
 
     polar_histogram_est.set_bin(e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
     polar_histogram_est.set_age(e_ind, z_ind, polar_histogram_est.get_age(e_ind, z_ind) + 0.25 * reprojected_points_age[i]);
     polar_histogram_est.set_dist(e_ind, z_ind, polar_histogram_est.get_dist(e_ind, z_ind) + 0.25 * reprojected_points_dist[i]);
   }
 
-  for (int e = 0; e < grid_length_e / 2; e++) {
-    for (int z = 0; z < grid_length_z / 2; z++) {
-      if (polar_histogram_est.get_bin(e, z) >= min_bin) {
+  for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
+      if (polar_histogram_est.get_bin(e, z) >= MIN_BIN) {
         polar_histogram_est.set_dist(e, z, polar_histogram_est.get_dist(e, z) / polar_histogram_est.get_bin(e, z));
         polar_histogram_est.set_age(e, z, polar_histogram_est.get_age(e, z) / polar_histogram_est.get_bin(e, z));
         polar_histogram_est.set_bin(e, z, 1);
@@ -197,16 +197,16 @@ void generateNewHistogram(Histogram &polar_histogram, pcl::PointCloud<pcl::Point
     int e_angle = elevationAnglefromCartesian(temp.x, temp.y, temp.z, position.pose.position);
     int z_angle = azimuthAnglefromCartesian(temp.x, temp.y, temp.z, position.pose.position);
 
-    int e_ind = elevationAngletoIndex(e_angle, alpha_res);
-    int z_ind = azimuthAngletoIndex(z_angle, alpha_res);
+    int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
+    int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
     polar_histogram.set_bin(e_ind, z_ind, polar_histogram.get_bin(e_ind, z_ind) + 1);
     polar_histogram.set_dist(e_ind, z_ind, polar_histogram.get_dist(e_ind, z_ind) + dist);
   }
 
   //Normalize and get mean in distance bins
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (polar_histogram.get_bin(e, z) > 0) {
         polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) / polar_histogram.get_bin(e, z));
         polar_histogram.set_bin(e, z, 1);
@@ -219,8 +219,8 @@ void generateNewHistogram(Histogram &polar_histogram, pcl::PointCloud<pcl::Point
 //Combine propagated histogram and new histogram to the final binary histogram
 void combinedHistogram(bool &hist_empty, Histogram &new_hist, Histogram propagated_hist, bool waypoint_outside_FOV, std::vector<int> z_FOV_idx, int e_FOV_min, int e_FOV_max) {
   hist_empty = true;
-  for (int e = 0; e < grid_length_e; e++) {
-    for (int z = 0; z < grid_length_z; z++) {
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end() && e > e_FOV_min && e < e_FOV_max) {  //inside FOV
         if (new_hist.get_bin(e, z) > 0) {
           new_hist.set_age(e, z, 1);
@@ -321,12 +321,12 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
           else if(j < 0 && i >= 0 && i < e_dim) {
             b = j+z_dim;
           }
-          // Elevation index > grid_length_e
+          // Elevation index > GRID_LENGTH_E
           else if(i >= e_dim && j >= 0 && j < z_dim) {
             a = e_dim - (i % (e_dim - 1));
             b = z_dim - j - 1;
           }
-          // Azimuth index > grid_length_z
+          // Azimuth index > GRID_LENGTH_Z
           else if(j >= z_dim && i >= 0 && i < e_dim) {
             b = j - z_dim;
           }
@@ -335,8 +335,8 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
             a = i;
             b = j;
           }
-          // Elevation and azimuth index both < 0 OR elevation index > grid_length_e and azimuth index <> grid_length_z
-          // OR elevation index < 0 and azimuth index > grid_length_z OR elevation index > grid_length_e and azimuth index < 0.
+          // Elevation and azimuth index both < 0 OR elevation index > GRID_LENGTH_E and azimuth index <> GRID_LENGTH_Z
+          // OR elevation index < 0 and azimuth index > GRID_LENGTH_Z OR elevation index > GRID_LENGTH_E and azimuth index < 0.
           // These cells are not part of the polar histogram.
           else {
             corner = true;
@@ -425,7 +425,7 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
 
     int min_dist_idx = 0;
     int second_min_dist_idx = 0;
-    double min_dist = inf;
+    double min_dist = INF;
     double node_distance = distance3DCartesian(path_node_positions[0], path_node_positions[1]);
 
     std::vector<double> distances;

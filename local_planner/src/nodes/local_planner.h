@@ -61,7 +61,6 @@
 #define ALPHA_RES 6
 #define GRID_LENGTH_Z 360/ALPHA_RES
 #define GRID_LENGTH_E 180/ALPHA_RES
-#define AGE_LIM 100
 #define MIN_BIN 1.5
 #define H_FOV 59.0
 #define V_FOV 46.0

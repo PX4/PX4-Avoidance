@@ -24,10 +24,10 @@ void GroundDetector::dynamicReconfigureSetGroundParams(avoidance::LocalPlannerNo
   min_plane_percentage_ = config.min_plane_percentage_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
   ground_box_size_.zmin = 1.5 * min_dist_to_ground_;
-  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
+  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
 }
 
 void GroundDetector::getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height){
@@ -74,10 +74,10 @@ void GroundDetector::setParams(double min_dist_to_ground, double min_cloud_size)
 void GroundDetector::initializeGroundBox(double min_dist_to_ground){
   min_dist_to_ground_ = min_dist_to_ground;
   ground_box_size_.zmin = 1.5 * min_dist_to_ground;
-  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
-  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((v_fov / 2.0) * PI / 180));
+  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
 }
 
 void GroundDetector::setPose(geometry_msgs::PoseStamped  pose){
@@ -159,10 +159,10 @@ void GroundDetector::fitPlane() {
     }
 
     // Extract patch size from inliers
-    double xmin = inf;
-    double xmax = -inf;
-    double ymin = inf;
-    double ymax = -inf;
+    double xmin = INF;
+    double xmax = -INF;
+    double ymin = INF;
+    double ymax = -INF;
     std::vector<int> indices = inliers->indices;
     for (int i = 0; i < indices.size(); i++) {
       if (ground_cloud_.points[indices[i]].x > xmax) {
@@ -235,7 +235,7 @@ void GroundDetector::fitPlane() {
 int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height, int resolution) {
   // discard all bins which would lead too close to the ground
   int e_min_idx = -1;
-  int e_max = floor(v_fov / 2);
+  int e_max = floor(V_FOV / 2);
   int e_min;
 
   if (!is_near_min_height_ && over_obstacle_ && current_pose.pose.position.z < min_flight_height_ + 0.2) {
@@ -267,7 +267,7 @@ int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped curren
 double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old) {
   int i = 0;
   over_obstacle_ = false;
-  min_flight_height_ = -inf;
+  min_flight_height_ = -INF;
   double begin_rise_temp;
 
   for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
@@ -277,9 +277,9 @@ double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pos
       begin_rise = margin_old;
     } else if (flight_height > current_pose.pose.position.z) {
       double dist_diff = flight_height - current_pose.pose.position.z;
-      int e_max = floor(v_fov / 2);
-      e_max = e_max - e_max % alpha_res;
-      e_max = e_max + (alpha_res - e_max % alpha_res);  //[-80,+90]
+      int e_max = floor(V_FOV / 2);
+      e_max = e_max - e_max % ALPHA_RES;
+      e_max = e_max + (ALPHA_RES - e_max % ALPHA_RES);  //[-80,+90]
       begin_rise = dist_diff / tan(e_max * PI / 180.0);
     } else {
       begin_rise = 0;
