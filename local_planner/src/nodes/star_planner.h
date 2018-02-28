@@ -70,7 +70,6 @@
 class StarPlanner
 {
 
-  bool tree_available_ = false;
   bool over_obstacle_ = false;
   bool too_low_;
   bool is_near_min_height_;
@@ -107,7 +106,6 @@ class StarPlanner
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;
-  bool tree_new_ = false;
 
   GroundDetector ground_detector_;
 
@@ -124,7 +122,6 @@ class StarPlanner
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree(double origin_yaw);
-  bool getDirectionFromTree(nav_msgs::GridCells &path_waypoints);
   void dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
 
 };

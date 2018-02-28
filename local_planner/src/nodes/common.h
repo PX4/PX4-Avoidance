@@ -12,6 +12,8 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <geometry_msgs/Twist.h>
 
+#include <tf/transform_listener.h>
+
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 
@@ -38,6 +40,8 @@ int azimuthAnglefromCartesian(double x, double y, double z, geometry_msgs::Point
 int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos);
 int elevationAngletoIndex(int e, int res);
 int azimuthAngletoIndex(int z, int res);
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
+geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
 
 
 #endif // COMMON_H
