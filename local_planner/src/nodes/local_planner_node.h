@@ -40,12 +40,10 @@ public:
 
   bool point_cloud_updated_;
   bool never_run_;
-<<<<<<< 6127b0e5dcad72068fd179b02e749ac0d440b018
-  bool position_received_;
-=======
   bool tree_available_ = false;
   bool write_cloud_ = false;
->>>>>>> Enable drone to follow the precomputed tree path while the next calculation is in progress.
+  bool position_received_ = false;
+
 
   double curr_yaw_;
 

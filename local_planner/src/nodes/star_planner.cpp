@@ -55,7 +55,7 @@ double StarPlanner::treeCostFunction(int node_number) {
   int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);
   int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
 
-  double curr_yaw_z = std::round((-curr_yaw_ * 180.0 / PI + 270.0) / alpha_res) - 1;
+  double curr_yaw_z = std::round((-curr_yaw_ * 180.0 / PI + 270.0) / ALPHA_RES) - 1;
 
   double target_cost = 5 * indexAngleDifference(z, goal_z) + 5 * indexAngleDifference(e, goal_e);  //include effective direction?
   double turning_cost = 3*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
@@ -110,8 +110,6 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
   tree_.back().yaw = origin_yaw;
 
   int origin = 0;
-  double min_c = inf;
-  int min_c_node = 0;
   int n = 0;
 
   while (n < n_expanded_nodes_) {
@@ -125,8 +123,8 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
     int e_FOV_min, e_FOV_max;
     calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, tree_[origin].yaw, 0.0);  //assume pitch is zero at every node
 
-    Histogram propagated_histogram = Histogram(2 * alpha_res);
-    Histogram histogram = Histogram(alpha_res);
+    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
+    Histogram histogram = Histogram(ALPHA_RES);
 
     propagateHistogram(propagated_histogram, reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
     generateNewHistogram(histogram, cropped_cloud_, pose_);
@@ -142,25 +140,25 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
       velocity.twist.linear.z = origin_position.z - origin_origin_position.z;
 
       min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, velocity, over_obstacle_, min_flight_height_, ground_margin_);
-      e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, 2 * alpha_res);
+      e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, 2 * ALPHA_RES);
       ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
       ground_margin_ = ground_detector_.getMargin();
     }
 
     histogram.downsample();
     findFreeDirections(histogram, 25, path_candidates, path_selected, path_rejected, path_blocked, path_ground, path_waypoints_, cost_path_candidates, goal_, pose_, origin_origin_position, goal_cost_param_, smooth_cost_param_,
-                       height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false, 2 * alpha_res);
+                       height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false, 2 * ALPHA_RES);
 
     if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
-      tree_[origin].total_cost = inf;
+      tree_[origin].total_cost = INF;
     } else {
       //insert new nodes
       int depth = tree_[origin].depth + 1;
 
       int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);//azimuthal angle
       int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
-      int goal_e_idx = (goal_e - alpha_res + 90) / alpha_res;
-      int goal_z_idx = (goal_z - alpha_res + 180) / alpha_res;
+      int goal_e_idx = (goal_e - ALPHA_RES + 90) / ALPHA_RES;
+      int goal_z_idx = (goal_z - ALPHA_RES + 180) / ALPHA_RES;
 
       int childs = 0;
       for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
@@ -190,7 +188,7 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
     n++;
 
     //find best node to continue
-    double minimal_cost = inf;
+    double minimal_cost = INF;
     for (int i = 0; i < tree_.size(); i++) {
       bool closed = false;
       for (int j = 0; j < closed_set_.size(); j++) {

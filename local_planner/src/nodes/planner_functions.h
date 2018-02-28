@@ -44,18 +44,13 @@
 
 
 #define PI 3.14159265
-#define alpha_res 6
-#define grid_length_z 360/alpha_res
-#define grid_length_e 180/alpha_res
-#define age_lim 100
-#define min_bin 1.5
-#define h_fov 59.0
-#define v_fov 46.0
-#define inf  std::numeric_limits<double>::infinity()
-
-
-
-
+#define ALPHA_RES 6
+#define GRID_LENGTH_Z 360/ALPHA_RES
+#define GRID_LENGTH_E 180/ALPHA_RES
+#define MIN_BIN 1.5
+#define H_FOV 59.0
+#define V_FOV 46.0
+#define INF  std::numeric_limits<double>::infinity()
 
 void initGridCells(nav_msgs::GridCells *cell);
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geometry_msgs::Point temp_centerpoint, int counter_sphere_points, double sphere_speed);
