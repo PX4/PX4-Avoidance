@@ -40,9 +40,21 @@ public:
 
   bool point_cloud_updated_;
   bool never_run_;
+<<<<<<< 6127b0e5dcad72068fd179b02e749ac0d440b018
   bool position_received_;
+=======
+  bool tree_available_ = false;
+  bool write_cloud_ = false;
+>>>>>>> Enable drone to follow the precomputed tree path while the next calculation is in progress.
 
+  double curr_yaw_;
+
+  ros::CallbackQueue pointcloud_queue_;
+  ros::CallbackQueue main_queue_;
+
+  std::vector<geometry_msgs::Point> path_node_positions_;
   geometry_msgs::PoseStamped hover_point_;
+  geometry_msgs::PoseStamped newest_pose_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -63,11 +75,13 @@ public:
 
   void publishSetpoint(const geometry_msgs::PoseStamped wp, double mode);
   void threadFunction();
+  void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
+  void updatePlannerInfo();
 
 private:
   ros::NodeHandle nh_;
 
-  nav_msgs::Path path_actual;
+  nav_msgs::Path path_actual_;
 
   int i = 0 ;
 
@@ -108,6 +122,10 @@ private:
   ros::Publisher smoothed_wp_pub_;
 
   std::vector<float> algo_time;
+
+  geometry_msgs::TwistStamped vel_msg_;
+  bool armed_, offboard_, new_goal_;
+  geometry_msgs::PoseStamped goal_msg_;
 
   std::string depth_points_topic_;
 

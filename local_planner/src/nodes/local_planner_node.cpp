@@ -2,9 +2,7 @@
 
 LocalPlannerNode::LocalPlannerNode() {
 
-  //global queue node handle
   nh_ = ros::NodeHandle("~");
-
   readParams();
 
   // Set up Dynamic Reconfigure Server
@@ -62,33 +60,52 @@ void LocalPlannerNode::readParams() {
   nh_.param<std::string>("depth_points_topic", depth_points_topic_, "/camera/depth/points");
 }
 
+void LocalPlannerNode::updatePlannerInfo(){
+
+  //update position
+  local_planner_.setPose(newest_pose_);
+  publishPath(newest_pose_);
+
+  //Update velocity
+  local_planner_.setCurrentVelocity(vel_msg_);
+
+  //update state
+  local_planner_.currently_armed_ = armed_;
+  local_planner_.offboard_ = offboard_;
+
+  //update goal
+  if (new_goal_) {
+    local_planner_.goal_x_param_ = goal_msg_.pose.position.x;
+    local_planner_.goal_y_param_ = goal_msg_.pose.position.y;
+    local_planner_.setGoal();
+    new_goal_ = false;
+  }
+}
+
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
   auto rot_msg = msg;
   tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin", rot_msg);
-  local_planner_.setPose(rot_msg);
-  publishPath(rot_msg);
-  hover_current_pose_ = msg;
-  position_received_ = true;
+  newest_pose_ = rot_msg;
+  curr_yaw_ = tf::getYaw(rot_msg.pose.orientation);
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  auto transformed_msg = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
-  local_planner_.setCurrentVelocity(transformed_msg);
+  auto vel_msg_ = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
 }
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
-  local_planner_.currently_armed_ = msg.armed;
+  armed_ = msg.armed;
   if(msg.mode == "OFFBOARD"){
-    local_planner_.offboard_ = true;
+    offboard_ = true;
   }else{
-    local_planner_.offboard_ = false;
+    offboard_ = false;
   }
 }
 
 void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
-  path_actual.header.stamp = msg.header.stamp;
-  path_actual.header.frame_id = msg.header.frame_id;
-  path_actual.poses.push_back(msg);
+  path_actual_.header.stamp = msg.header.stamp;
+  path_actual_.header.frame_id = msg.header.frame_id;
+  path_actual_.poses.push_back(msg);
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green, float blue) {
@@ -473,8 +490,8 @@ void LocalPlannerNode::publishTree() {
 
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
-  std::vector<geometry_msgs::Point> path_node_positions;
-  local_planner_.getTree(tree, closed_set, path_node_positions);
+
+  local_planner_.getTree(tree, closed_set, path_node_positions_, tree_available_);
 
   for(int i=0; i<closed_set.size(); i++){
     int node_nr = closed_set[i];
@@ -485,10 +502,10 @@ void LocalPlannerNode::publishTree() {
     tree_marker.points.push_back(p2);
   }
 
-  if (path_node_positions.size() > 0) {
-    for (int i = 0; i < (path_node_positions.size() - 1); i++) {
-      path_marker.points.push_back(path_node_positions[i]);
-      path_marker.points.push_back(path_node_positions[i + 1]);
+  if (path_node_positions_.size() > 0) {
+    for (int i = 0; i < (path_node_positions_.size() - 1); i++) {
+      path_marker.points.push_back(path_node_positions_[i]);
+      path_marker.points.push_back(path_node_positions_[i + 1]);
     }
   }
 
@@ -501,9 +518,8 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped &m
 }
 
 void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg) {
-  local_planner_.goal_x_param_ = msg.pose.position.x;
-  local_planner_.goal_y_param_ = msg.pose.position.y;
-  local_planner_.setGoal();
+  new_goal_ = true;
+  goal_msg_ = msg;
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
@@ -524,18 +540,21 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
-  pcl::PointCloud<pcl::PointXYZ> complete_cloud;
-  sensor_msgs::PointCloud2 pc2cloud_world;
-  try {
-    tf_listener_.waitForTransform("/world",msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
-    tf::StampedTransform transform;
-    tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
-    pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
-    pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-    local_planner_.complete_cloud_ = complete_cloud;
-    point_cloud_updated_ = true;
-  } catch(tf::TransformException& ex) {
-    ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
+  if (write_cloud_) {
+    pcl::PointCloud < pcl::PointXYZ > complete_cloud;
+    sensor_msgs::PointCloud2 pc2cloud_world;
+    try {
+      tf_listener_.waitForTransform("/world", msg.header.frame_id, msg.header.stamp, ros::Duration(3.0));
+      tf::StampedTransform transform;
+      tf_listener_.lookupTransform("/world", msg.header.frame_id, msg.header.stamp, transform);
+      pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
+      pcl::fromROSMsg(pc2cloud_world, complete_cloud);
+      local_planner_.complete_cloud_ = complete_cloud;
+      new_variables_ = true;
+    } catch (tf::TransformException& ex) {
+      ROS_ERROR("Received an exception trying to transform a point from \"camera_optical_frame\" to \"world\": %s", ex.what());
+    }
+    write_cloud_ = false;
   }
 }
 
@@ -594,16 +613,15 @@ void LocalPlannerNode::publishAll() {
   geometry_msgs::PoseStamped waypt_p;
   local_planner_.getPathData(path_msg, waypt_p);
   waypoint_pub_.publish(path_msg);
-  path_pub_.publish(path_actual);
-
+  path_pub_.publish(path_actual_);
 
  //choose setpoint color depending on mode
   double mode = local_planner_.local_planner_mode_;
   publishSetpoint(waypt_p, mode);
+  hover_point_ = waypt_p;
 
   tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
   mavros_waypoint_pub_.publish(waypt_p);
-  hover_point_ = waypt_p;
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground, FOV_cells;
   local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, FOV_cells, path_ground);
@@ -641,6 +659,7 @@ void LocalPlannerNode::threadFunction() {
       never_run_ = false;
       local_planner_.runPlanner();
       publishAll();
+      never_run_ = false;
       lock.unlock();
 
       printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
@@ -660,6 +679,38 @@ void LocalPlannerNode::threadFunction() {
   }
 }
 
+void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
+
+  //check if at goal
+  double dist = std::abs(goal_msg_.pose.position.x - newest_pose_.pose.position.x) + std::abs(goal_msg_.pose.position.y - newest_pose_.pose.position.y);
+  geometry_msgs::Point p;
+  tree_available_ = getDirectionFromTree(p, tree_available_, path_node_positions_, newest_pose_.pose.position);
+
+  if (tree_available_ && dist > 0.5) {
+    std::cout << "\033[1;33m Pointcloud timeout: Following last tree path \n \033[0m";
+    geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(p.x, p.y, newest_pose_.pose.position);
+
+    //set waypoint to correct speed
+    tf::Vector3 pose_to_wp;
+    pose_to_wp.setX(setpoint.vector.x - newest_pose_.pose.position.x);
+    pose_to_wp.setY(setpoint.vector.y - newest_pose_.pose.position.y);
+    pose_to_wp.setZ(setpoint.vector.z - newest_pose_.pose.position.z);
+    pose_to_wp.normalize();
+    pose_to_wp *= 0.5;
+
+    setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.getX();
+    setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.getY();
+    setpoint.vector.z = newest_pose_.pose.position.z + pose_to_wp.getZ();
+
+    double new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
+    wp = createPoseMsg(setpoint, new_yaw);
+    hover_point_ = wp;
+    local_planner_.smooth_waypoints_ = false;
+  } else {
+    wp = hover_point_;
+    std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
+  }
+}
 
 
 int main(int argc, char** argv) {
@@ -682,9 +733,14 @@ int main(int argc, char** argv) {
 
     //spin node, execute callbacks
     if (lock.try_lock_for(std::chrono::milliseconds(20))) {
+      NodePtr->write_cloud_ = true;
       ros::spinOnce();
+      NodePtr->updatePlannerInfo();
+      NodePtr->pointcloud_queue_.callAvailable(ros::WallDuration(0));
       lock.unlock();
       writing = true;
+    }else{
+      ros::spinOnce();
     }
     std::clock_t t_loop2 = std::clock();
 
@@ -703,19 +759,26 @@ int main(int argc, char** argv) {
       landing = true;
       if (NodePtr->mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
         std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
+        std::cout <<"Time since last Pointcloud: "<< since_last_cloud<< " max time = "<<pointcloud_timeout_land<<"\n";
       } else {
         std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
       }
     } else if (since_last_cloud > pointcloud_timeout_hover && since_start > pointcloud_timeout_hover) {
       if (!NodePtr->never_run_) {
-        std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
-        NodePtr->local_planner_.useHoverPoint();
-        nav_msgs::Path path_msg;
+
         geometry_msgs::PoseStamped waypt_p;
-        NodePtr->local_planner_.getPathData(path_msg, waypt_p);
-        NodePtr->waypoint_pub_.publish(path_msg);
+        NodePtr->getInterimWaypoint(waypt_p);
         NodePtr->publishSetpoint(waypt_p, 5);
-        NodePtr->mavros_waypoint_pub_.publish(NodePtr->hover_point_);
+
+        try {
+          NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+          NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+        } catch (tf::TransformException& ex) {
+          ROS_ERROR("Received an exception trying to transform a point from \"local_origin\" to \"world\": %s", ex.what());
+        }
+
+        NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+
         hovering = true;
       } else {
         if (NodePtr->position_received_) {

@@ -31,7 +31,6 @@ void StarPlanner::setCloud(pcl::PointCloud<pcl::PointXYZ> cropped_cloud){
 
 void StarPlanner::setGoal(geometry_msgs::Point goal){
   goal_ = goal;
-  tree_new_ = false;
   tree_age_ = 1000;
 }
 
@@ -93,9 +92,6 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
 
 
 void StarPlanner::buildLookAheadTree(double origin_yaw){
-
-  tree_available_ = true;
-  tree_new_ = true;
 
   nav_msgs::GridCells path_candidates;
   nav_msgs::GridCells path_selected;
@@ -225,62 +221,3 @@ void StarPlanner::buildLookAheadTree(double origin_yaw){
 ROS_INFO("Tree calculated in %2.2fms.",(std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
 
-
-bool StarPlanner::getDirectionFromTree(nav_msgs::GridCells &path_waypoints) {
-  if (tree_available_) {
-    int size = path_node_positions_.size();
-    geometry_msgs::Point p;
-
-    if (tree_new_) {
-      int goal_node_nr = path_node_origins_[size-2];
-      p.x = tree_[goal_node_nr].last_e;
-      p.y = tree_[goal_node_nr].last_z;
-      p.z = 0;
-
-      path_waypoints.cells.push_back(p);
-    } else {
-      int min_dist_idx = 0;
-      int second_min_dist_idx = 0;
-      double min_dist = inf;
-
-      std::vector<double> distances;
-      for (int i = 0; i < size; i++) {
-        distances.push_back(distance3DCartesian(pose_.pose.position, path_node_positions_[i]));
-        if (distances[i] < min_dist) {
-          second_min_dist_idx = min_dist_idx;
-          min_dist = distances[i];
-          min_dist_idx = i;
-        }
-      }
-
-      int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-      if (min_dist > 3.0 || wp_idx == 0) {
-        tree_available_ = false;
-      } else {
-
-//        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
-//          wp_idx--;
-//        }
-        double cos_alpha = (tree_node_distance_ * tree_node_distance_ + distances[wp_idx] * distances[wp_idx] - distances[wp_idx + 1] * distances[wp_idx + 1]) / (2 * tree_node_distance_ * distances[wp_idx]);
-        double l_front = distances[wp_idx] * cos_alpha;
-        double l_frac = l_front / tree_node_distance_;
-
-        geometry_msgs::Point mean_point;
-        mean_point.x = (1.0 - l_frac) * path_node_positions_[wp_idx].x + l_frac * path_node_positions_[wp_idx - 1].x;
-        mean_point.y = (1.0 - l_frac) * path_node_positions_[wp_idx].y + l_frac * path_node_positions_[wp_idx - 1].y;
-        mean_point.z = (1.0 - l_frac) * path_node_positions_[wp_idx].z + l_frac * path_node_positions_[wp_idx - 1].z;
-
-        int wp_z = floor(atan2(mean_point.x - pose_.pose.position.x, mean_point.y - pose_.pose.position.y) * 180.0 / PI);  //azimuthal angle
-        int wp_e = floor(atan((mean_point.z - pose_.pose.position.z) / sqrt(pow((mean_point.x - pose_.pose.position.x), 2) + pow((mean_point.y - pose_.pose.position.y), 2))) * 180.0 / PI);
-
-        p.x = wp_e;
-        p.y = wp_z;
-        p.z = 0;
-
-        path_waypoints.cells.push_back(p);
-      }
-    }
-  }
-
-  return tree_available_;
-}

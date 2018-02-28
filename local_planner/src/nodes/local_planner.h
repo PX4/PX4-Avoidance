@@ -81,7 +81,6 @@ class LocalPlanner
 
   bool reach_altitude_ = false;
   bool obstacle_ = false;
-  bool reached_goal_ = false;
   bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
   bool over_obstacle_ = false;
@@ -91,6 +90,8 @@ class LocalPlanner
   bool back_off_ = false;
   bool only_yawed_ = false;
   bool hist_is_empty_ = false;
+  bool tree_available_ = false;
+  bool reached_goal_ = false;
 
   int e_FOV_max_, e_FOV_min_;
   int dist_incline_window_size_ = 50;
@@ -138,8 +139,6 @@ class LocalPlanner
   std::vector<int> closed_set_;
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
-  std::vector<geometry_msgs::Point> path_node_positions_;
-  std::vector<int> path_node_origins_;
   std::vector<float> tree_time_;
 
   std::vector<TreeNode> tree_;
@@ -195,8 +194,6 @@ class LocalPlanner
   void getDirectionFromCostMap();
   void adaptSpeed();
   void stopInFrontObstacles();
-  double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw);
-  geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw);
   geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
   geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(geometry_msgs::Vector3Stamped wp, geometry_msgs::Point avoid_centerpoint, double avoid_radius);
 
@@ -208,6 +205,8 @@ class LocalPlanner
 
   bool currently_armed_ = false;
   bool offboard_ = false;
+  bool smooth_waypoints_ = true;
+
 
 
   std::vector<float> algorithm_total_time_;
@@ -244,8 +243,7 @@ class LocalPlanner
   void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &FOV_cells, nav_msgs::GridCells &path_ground);
   void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
-  void useHoverPoint();
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions);
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions, bool &tree_available);
   void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
   void runPlanner();
 };

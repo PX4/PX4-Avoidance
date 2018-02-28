@@ -103,6 +103,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   cropped_cloud.header.stamp = complete_cloud.header.stamp;
   cropped_cloud.header.frame_id = complete_cloud.header.frame_id;
   cropped_cloud.height = 1;
+  cropped_cloud.width = cropped_cloud.points.size();
   if (cropped_cloud.points.size() <= min_cloud_size) {
     cropped_cloud.points.clear();
     cropped_cloud.width = 0;
@@ -415,6 +416,55 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, i
     std::cout << "\n";
   }
   std::cout << "--------------------------------------\n";
+}
+
+bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vector<geometry_msgs::Point> path_node_positions, geometry_msgs::Point position) {
+
+  if (tree_available) {
+    int size = path_node_positions.size();
+
+    int min_dist_idx = 0;
+    int second_min_dist_idx = 0;
+    double min_dist = inf;
+    double node_distance = distance3DCartesian(path_node_positions[0], path_node_positions[1]);
+
+    std::vector<double> distances;
+    for (int i = 0; i < size; i++) {
+      distances.push_back(distance3DCartesian(position, path_node_positions[i]));
+      if (distances[i] < min_dist) {
+        second_min_dist_idx = min_dist_idx;
+        min_dist = distances[i];
+        min_dist_idx = i;
+      }
+    }
+
+    int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
+    if (min_dist > 3.0 || wp_idx == 0) {
+      tree_available = false;
+    } else {
+
+//        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
+//          wp_idx--;
+//        }
+      double cos_alpha = (node_distance * node_distance + distances[wp_idx] * distances[wp_idx] - distances[wp_idx + 1] * distances[wp_idx + 1]) / (2 * node_distance * distances[wp_idx]);
+      double l_front = distances[wp_idx] * cos_alpha;
+      double l_frac = l_front / node_distance;
+
+      geometry_msgs::Point mean_point;
+      mean_point.x = (1.0 - l_frac) * path_node_positions[wp_idx].x + l_frac * path_node_positions[wp_idx - 1].x;
+      mean_point.y = (1.0 - l_frac) * path_node_positions[wp_idx].y + l_frac * path_node_positions[wp_idx - 1].y;
+      mean_point.z = (1.0 - l_frac) * path_node_positions[wp_idx].z + l_frac * path_node_positions[wp_idx - 1].z;
+
+      int wp_e = elevationAnglefromCartesian(mean_point.x, mean_point.y, mean_point.z, position);
+      int wp_z = azimuthAnglefromCartesian(mean_point.x, mean_point.y, mean_point.z, position);
+
+      p.x = wp_e;
+      p.y = wp_z;
+      p.z = 0;
+    }
+  }
+
+  return tree_available;
 }
 
 

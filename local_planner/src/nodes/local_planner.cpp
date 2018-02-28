@@ -144,7 +144,6 @@ void LocalPlanner::runPlanner() {
 
 void LocalPlanner::determineStrategy() {
   star_planner_.tree_age_++;
-  star_planner_.tree_new_ = false;
   tree_time_.push_back(0);
 
   if(!reach_altitude_){
@@ -204,7 +203,10 @@ void LocalPlanner::determineStrategy() {
       if (hist_is_empty_) {
         obstacle_ = false;
         local_planner_mode_ = 1;
-        if (star_planner_.getDirectionFromTree(path_waypoints_)) {
+        geometry_msgs::Point p;
+        tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position);
+        if (tree_available_) {
+          path_waypoints_.cells.push_back(p);
           std::cout << "\033[1;32m There is NO Obstacle Ahead reuse old Tree\n \033[0m";
           getNextWaypoint();
         } else {
@@ -226,9 +228,12 @@ void LocalPlanner::determineStrategy() {
 
           std::clock_t start_time = std::clock();
           star_planner_.buildLookAheadTree(yaw);
+          tree_available_ = true;
           tree_time_[tree_time_.size() - 1] = ((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
-          star_planner_.getDirectionFromTree(path_waypoints_);
+          geometry_msgs::Point p;
+          tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position);
+          path_waypoints_.cells.push_back(p);
         } else {
 
           int e_min_idx = -1;
@@ -695,28 +700,7 @@ bool LocalPlanner::withinGoalRadius() {
     return false;
 }
 
-geometry_msgs::PoseStamped LocalPlanner::createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
-  geometry_msgs::PoseStamped pose_msg;
-  pose_msg.header.stamp = ros::Time::now();
-  pose_msg.header.frame_id = "/world";
-  pose_msg.pose.position.x = waypt.vector.x;
-  pose_msg.pose.position.y = waypt.vector.y;
-  pose_msg.pose.position.z = waypt.vector.z;
-  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-  return pose_msg;
-}
 
-// calculate the yaw for the next waypoint
-double LocalPlanner::nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw_) {
-  double dx = v.vector.x - u.pose.position.x;
-  double dy = v.vector.y - u.pose.position.y;
-
-  if (reached_goal_) {
-    return yaw_reached_goal_;
-  }
-
-  return atan2(dy, dx);
-}
 
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst(){
@@ -875,8 +859,6 @@ void LocalPlanner::getPathMsg() {
   if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
     waypt_adapted_ = getSphereAdaptedWaypoint(waypt_, avoid_centerpoint_, avoid_radius_);
     ROS_INFO("Sphere adapted WP: [%f %f %f].", waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z);
-  }else{
-    std::cout<<"No sphere adaption done............\n";
   }
 
   //adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
@@ -891,9 +873,9 @@ void LocalPlanner::getPathMsg() {
     waypt_smoothed_ = waypt_;
   } else {
     if (!only_yawed_) {
-      if (!reached_goal_ && !stop_in_front_) {
-        waypt_smoothed_ = smoothWaypoint(waypt_adapted_);
-        new_yaw_ = nextYaw(pose_, waypt_smoothed_, last_yaw_);
+      if (!reached_goal_ && !stop_in_front_ && smooth_waypoints_) {
+//        waypt_smoothed_ = smoothWaypoint(waypt_adapted_);
+//        new_yaw_ = nextYaw(pose_, waypt_smoothed_, last_yaw_);
       }
     }
   }
@@ -932,6 +914,10 @@ void LocalPlanner::getPathMsg() {
     }
   }
 
+  if (reached_goal_) {
+    new_yaw_ = yaw_reached_goal_;
+  }
+
   ROS_INFO("Final waypoint: [%f %f %f].", waypt_smoothed_.vector.x, waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw_);
 
@@ -941,12 +927,8 @@ void LocalPlanner::getPathMsg() {
   last_waypt_p_ = waypt_p_;
   last_yaw_ = curr_yaw_;
   position_old_ = pose_.pose.position;
+  smooth_waypoints_ = true;
 }
-
-void LocalPlanner::useHoverPoint() {
-  path_msg_.poses.push_back(waypt_p_);
-}
-
 
 void LocalPlanner::printAlgorithmStatistics() {
   ROS_INFO("Current pose: [%f, %f, %f].", pose_.pose.position.x, pose_.pose.position.y, pose_.pose.position.z);
@@ -1028,10 +1010,11 @@ void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel) {
   curr_vel_ = vel;
 }
 
-void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions) {
+void LocalPlanner::getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions, bool &tree_available) {
   tree = star_planner_.tree_;
   closed_set = star_planner_.closed_set_;
   path_node_positions = star_planner_.path_node_positions_;
+  tree_available = tree_available_;
 }
 
 void LocalPlanner::getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed) {

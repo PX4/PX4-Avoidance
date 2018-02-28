@@ -61,7 +61,12 @@ int azimuthAnglefromCartesian(double x, double y, double z, geometry_msgs::Point
 }
 
 int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos) {
-  return floor(atan((z - pos.z) / sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y))) * 180.0 / PI);  //(-90.+90)
+  double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
+  if (den == 0){
+    return 0;
+  }else{
+    return floor(atan((z - pos.z) / den) * 180.0 / PI);  //(-90.+90)
+  }
 }
 
 int elevationAngletoIndex(int e, int res) {  //[-90,90]
@@ -80,4 +85,23 @@ int azimuthAngletoIndex(int z, int res) {  //[-180,180]
   z += 180;
   z = z + (res - (z % res));  //[-80,+90]
   return z / res - 1;  //[0,17]
+}
+
+// calculate the yaw for the next waypoint
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw_) {
+  double dx = v.vector.x - u.pose.position.x;
+  double dy = v.vector.y - u.pose.position.y;
+
+  return atan2(dy, dx);
+}
+
+geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
+  geometry_msgs::PoseStamped pose_msg;
+  pose_msg.header.stamp = ros::Time::now();
+  pose_msg.header.frame_id = "/world";
+  pose_msg.pose.position.x = waypt.vector.x;
+  pose_msg.pose.position.y = waypt.vector.y;
+  pose_msg.pose.position.z = waypt.vector.z;
+  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+  return pose_msg;
 }
