@@ -494,6 +494,7 @@ bool LocalPlanner::withinGoalRadius() {
     reached_goal_ = true;
     return true;
   } else
+    reached_goal_ = false;
     return false;
 }
 
@@ -683,6 +684,7 @@ void LocalPlanner::getPathMsg() {
     if (dist > min_dist_backoff_ + 1.0) {
       back_off_ = false;
     }
+    waypt_adapted_ = waypt_;
     waypt_smoothed_ = waypt_;
   }
 
