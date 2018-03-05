@@ -30,6 +30,14 @@ void GroundDetector::dynamicReconfigureSetGroundParams(avoidance::LocalPlannerNo
   ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
 }
 
+void GroundDetector::reset() {
+  ground_heights_.clear();
+  ground_xmax_.clear();
+  ground_xmin_.clear();
+  ground_ymax_.clear();
+  ground_ymin_.clear();
+}
+
 void GroundDetector::getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height){
   over_obstacle = over_obstacle_;
   too_low = too_low_;

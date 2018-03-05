@@ -117,6 +117,7 @@ class GroundDetector
   void getGroundCloudForVisualization(pcl::PointCloud<pcl::PointXYZ> &ground_cloud);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);
   void initializeGroundBox(double min_dist_to_ground);
+  void reset();
 
 
 };
