@@ -116,11 +116,15 @@ void LocalPlanner::setGoal() {
 void LocalPlanner::runPlanner() {
   histogram_box_.setLimitsHistogramBox(pose_.pose.position, histogram_box_size_);
 
-  if (use_ground_detection_) {
-    ground_detector_.initializeGroundBox(min_dist_to_ground_);
-    ground_detector_.ground_box_.setLimitsGroundBox(pose_.pose.position, ground_detector_.ground_box_size_, min_dist_to_ground_);
-    ground_detector_.setParams(min_dist_to_ground_, min_cloud_size_);
-    ground_detector_.detectGround(complete_cloud_);
+  if (use_ground_detection_ && currently_armed_) {
+    if (offboard_) {
+      ground_detector_.initializeGroundBox(min_dist_to_ground_);
+      ground_detector_.ground_box_.setLimitsGroundBox(pose_.pose.position, ground_detector_.ground_box_size_, min_dist_to_ground_);
+      ground_detector_.setParams(min_dist_to_ground_, min_cloud_size_);
+      ground_detector_.detectGround(complete_cloud_);
+    } else {
+      ground_detector_.reset();
+    }
   }
 
   geometry_msgs::Point temp_sphere_center;
