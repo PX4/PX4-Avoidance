@@ -90,7 +90,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
     }
   }
 
-  if (counter_sphere < 0) {
+  if (counter_sphere > 0) {
     temp_sphere_center.x = temp_sphere_center.x / counter_sphere;
     temp_sphere_center.y = temp_sphere_center.y / counter_sphere;
     temp_sphere_center.z = temp_sphere_center.z / counter_sphere;
