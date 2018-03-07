@@ -105,3 +105,16 @@ geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, do
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
   return pose_msg;
 }
+
+void normalize(geometry_msgs::Point &p) {
+  double length = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
+  if (length != 0) {
+    p.x = p.x / length;
+    p.y = p.y / length;
+    p.z = p.z / length;
+  } else {
+    p.x = 0;
+    p.y = 0;
+    p.z = 0;
+  }
+}
