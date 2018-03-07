@@ -186,15 +186,15 @@ void LocalPlanner::determineStrategy() {
       geometry_msgs::Point p;
       for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
         for (int i = 0; i < z_FOV_idx_.size(); i++) {
-          p.x = elevationIndexToAngle(j, alpha_res);
-          p.y = azimuthIndexToAngle(z_FOV_idx_[i], alpha_res);
+          p.x = elevationIndexToAngle(j, ALPHA_RES);
+          p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
           p.z = 0;
           FOV_cells_.cells.push_back(p);
         }
       }
 
-      Histogram propagated_histogram = Histogram(2 * alpha_res);
-      Histogram new_histogram = Histogram(alpha_res);
+      Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
+      Histogram new_histogram = Histogram(ALPHA_RES);
 
       propagateHistogram(propagated_histogram, reprojected_points_, reprojected_points_age_, reprojected_points_dist_, pose_);
       generateNewHistogram(new_histogram, final_cloud_, pose_);
@@ -243,7 +243,7 @@ void LocalPlanner::determineStrategy() {
           int e_min_idx = -1;
           if (use_ground_detection_) {
             min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, curr_vel_, over_obstacle_, min_flight_height_, ground_margin_);
-            e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, alpha_res);
+            e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, ALPHA_RES);
             ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
             ground_margin_ = ground_detector_.getMargin();
             if (over_obstacle_) {
@@ -252,7 +252,7 @@ void LocalPlanner::determineStrategy() {
           }
 
           findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_, pose_, position_old_, goal_cost_param_, smooth_cost_param_,
-                             height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_, alpha_res);
+                             height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, only_yawed_, ALPHA_RES);
           if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
             local_planner_mode_ = 3;
             stopInFrontObstacles();
@@ -608,8 +608,8 @@ void LocalPlanner::adaptSpeed() {
   int e_angle = elevationAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
   int z_angle = azimuthAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
 
-  int e_index = elevationAngletoIndex(e_angle, alpha_res);
-  int z_index = azimuthAngletoIndex(z_angle, alpha_res);
+  int e_index = elevationAngletoIndex(e_angle, ALPHA_RES);
+  int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
   if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) != z_FOV_idx_.end()) {
     waypoint_outside_FOV_ = false;
@@ -624,7 +624,7 @@ void LocalPlanner::adaptSpeed() {
         }
         i++;
       }
-      double angle_diff = alpha_res*ind_dist;
+      double angle_diff = ALPHA_RES*ind_dist;
       double hover_angle = 30;
       angle_diff = std::min(angle_diff, hover_angle);
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
