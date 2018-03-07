@@ -177,11 +177,10 @@ class LocalPlanner
   nav_msgs::GridCells path_waypoints_;
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
-  Histogram polar_histogram_old_ = Histogram(ALPHA_RES);
 
   void logData();
   void fitPlane();
-  void reprojectPoints();
+  void reprojectPoints(Histogram histogram);
   void getNextWaypoint();
   void goFast();
   void backOff();

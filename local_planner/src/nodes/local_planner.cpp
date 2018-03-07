@@ -172,7 +172,7 @@ void LocalPlanner::determineStrategy() {
 
     } else {
       evaluateProgressRate();
-      reprojectPoints();
+      reprojectPoints(polar_histogram_);
 
       tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z, pose_.pose.orientation.w);
       tf::Matrix3x3 m(q);
@@ -200,7 +200,6 @@ void LocalPlanner::determineStrategy() {
       generateNewHistogram(new_histogram, final_cloud_, pose_);
       combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
 
-      polar_histogram_old_ = polar_histogram_;
       polar_histogram_ = new_histogram;
 
       //decide how to proceed
@@ -273,7 +272,7 @@ void LocalPlanner::determineStrategy() {
 }
 
 // get 3D points from old histogram
-void LocalPlanner::reprojectPoints() {
+void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   double n_points = 0;
   double dist, age;
@@ -287,21 +286,21 @@ void LocalPlanner::reprojectPoints() {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (polar_histogram_old_.get_bin(e, z) != 0) {
+      if (histogram.get_bin(e, z) != 0) {
         n_points++;
         //transform from array index to angle
         double beta_e = elevationIndexToAngle(e, ALPHA_RES);
         double beta_z = azimuthIndexToAngle(z, ALPHA_RES);
 
         //transform from Polar to Cartesian
-        temp_array[0] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[1] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[2] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
-        temp_array[3] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2, polar_histogram_old_.get_dist(e, z), position_old_);
+        temp_array[0] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2, histogram.get_dist(e, z), position_old_);
+        temp_array[1] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2, histogram.get_dist(e, z), position_old_);
+        temp_array[2] = fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2, histogram.get_dist(e, z), position_old_);
+        temp_array[3] = fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2, histogram.get_dist(e, z), position_old_);
 
         for (int i = 0; i < 4; i++) {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
-          age = polar_histogram_old_.get_age(e, z);
+          age = histogram.get_age(e, z);
 
           if (dist < 2 * histogram_box_size_.xmax && dist > 0.3 && age < reproj_age_) {
             reprojected_points_.points.push_back(pcl::PointXYZ(temp_array[i].x, temp_array[i].y, temp_array[i].z));
