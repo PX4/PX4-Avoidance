@@ -636,16 +636,18 @@ void LocalPlanner::adaptSpeed() {
   }
 
   //set waypoint to correct speed
-  tf::Vector3 pose_to_wp;
-  pose_to_wp.setX(waypt_adapted_.vector.x - pose_.pose.position.x);
-  pose_to_wp.setY(waypt_adapted_.vector.y - pose_.pose.position.y);
-  pose_to_wp.setZ(waypt_adapted_.vector.z - pose_.pose.position.z);
-  pose_to_wp.normalize();
-  pose_to_wp *= speed_;
+  geometry_msgs::Point pose_to_wp;
+  pose_to_wp.x = waypt_adapted_.vector.x - pose_.pose.position.x;
+  pose_to_wp.y = waypt_adapted_.vector.y - pose_.pose.position.y;
+  pose_to_wp.z = waypt_adapted_.vector.z - pose_.pose.position.z;
+  normalize(pose_to_wp);
+  pose_to_wp.x *= speed_;
+  pose_to_wp.y *= speed_;
+  pose_to_wp.z *= speed_;
 
-  waypt_adapted_.vector.x = pose_.pose.position.x + pose_to_wp.getX();
-  waypt_adapted_.vector.y = pose_.pose.position.y + pose_to_wp.getY();
-  waypt_adapted_.vector.z = pose_.pose.position.z + pose_to_wp.getZ();
+  waypt_adapted_.vector.x = pose_.pose.position.x + pose_to_wp.x;
+  waypt_adapted_.vector.y = pose_.pose.position.y + pose_to_wp.y;
+  waypt_adapted_.vector.z = pose_.pose.position.z + pose_to_wp.z;
   ROS_INFO("Speed adapted WP: [%f %f %f].", waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z);
 }
 
