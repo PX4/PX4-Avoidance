@@ -86,8 +86,8 @@ void LocalPlanner::logData() {
   if (currently_armed_ && offboard_) {
     //Print general Algorithm Data
     std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
-    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y << "\t"
-        << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_
+    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t"<< waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y << "\t"
+        << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << reach_altitude_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_
         << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
     myfile1.close();
 
