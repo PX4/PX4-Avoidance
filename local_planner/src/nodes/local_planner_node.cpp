@@ -613,13 +613,25 @@ void LocalPlannerNode::publishAll() {
   waypoint_pub_.publish(path_msg);
   path_pub_.publish(path_actual_);
 
- //choose setpoint color depending on mode
-  double mode = local_planner_.local_planner_mode_;
-  publishSetpoint(waypt_p, mode);
-  hover_point_ = waypt_p;
+  publishTree();
 
-  tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
-  mavros_waypoint_pub_.publish(waypt_p);
+  ros::Duration time_diff = ros::Time::now() - last_wp_time_;
+  last_wp_time_ = ros::Time::now();
+  ros::Duration max_diff = ros::Duration(1.2 * pointcloud_timeout_hover_.toSec());
+
+  if (!(time_diff > max_diff && tree_available_)) {
+    //choose setpoint color depending on mode
+    double mode = local_planner_.local_planner_mode_;
+    publishSetpoint(waypt_p, mode);
+    hover_point_ = waypt_p;
+
+    tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
+    mavros_waypoint_pub_.publish(waypt_p);
+
+    std::ofstream myfile1(("WP_" + local_planner_.log_name_).c_str(), std::ofstream::app);
+    myfile1 << last_wp_time_.sec << "\t" << last_wp_time_.nsec << "\t" << waypt_p.pose.position.x << "\t" << waypt_p.pose.position.y << "\t" << waypt_p.pose.position.z << "\t" << 0 << "\n";
+    myfile1.close();
+  }
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected, path_blocked, path_ground, FOV_cells;
   local_planner_.getCandidateDataForVisualization(path_candidates, path_selected, path_rejected, path_blocked, FOV_cells, path_ground);
@@ -634,7 +646,6 @@ void LocalPlannerNode::publishAll() {
   publishBox();
   publishAvoidSphere();
   publishReachHeight();
-  publishTree();
   publishWaypoints();
   publishGround();
 }
@@ -649,6 +660,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeCon
 
 void LocalPlannerNode::threadFunction() {
   std::unique_lock < std::timed_mutex > lock(variable_mutex_, std::defer_lock);
+  std::unique_lock < std::timed_mutex > pub_lock(publisher_mutex_, std::defer_lock);
   while (true) {
     std::clock_t start_time = std::clock();
     if (point_cloud_updated_) {
@@ -656,18 +668,16 @@ void LocalPlannerNode::threadFunction() {
       point_cloud_updated_ = false;
       never_run_ = false;
       local_planner_.runPlanner();
+      pub_lock.lock();
       publishAll();
       never_run_ = false;
+      pub_lock.unlock();
       lock.unlock();
 
       printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
       local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
       local_planner_.printAlgorithmStatistics();
-
-      //Store timing for timeout detection
-      pointcloud_time_old_ = pointcloud_time_now_;
-      pcl_conversions::fromPCL(local_planner_.complete_cloud_.header.stamp, pointcloud_time_now_);
 
       //publish log name
       std_msgs::String msg;
@@ -688,21 +698,25 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     std::cout << "\033[1;33m Pointcloud timeout: Following last tree path \n \033[0m";
     geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(p.x, p.y, newest_pose_.pose.position);
 
-    //set waypoint to correct speed
-    tf::Vector3 pose_to_wp;
-    pose_to_wp.setX(setpoint.vector.x - newest_pose_.pose.position.x);
-    pose_to_wp.setY(setpoint.vector.y - newest_pose_.pose.position.y);
-    pose_to_wp.setZ(setpoint.vector.z - newest_pose_.pose.position.z);
-    pose_to_wp.normalize();
-    pose_to_wp *= 0.5;
-
-    setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.getX();
-    setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.getY();
-    setpoint.vector.z = newest_pose_.pose.position.z + pose_to_wp.getZ();
-
     if(use_sphere_){
       setpoint = getSphereAdaptedWaypoint(newest_pose_.pose.position, setpoint, avoid_centerpoint_, avoid_radius_);
     }
+
+    //set waypoint to correct speed
+    geometry_msgs::Point pose_to_wp;
+    pose_to_wp.x = setpoint.vector.x - newest_pose_.pose.position.x;
+    pose_to_wp.y = setpoint.vector.y - newest_pose_.pose.position.y;
+    pose_to_wp.z = setpoint.vector.z - newest_pose_.pose.position.z;
+    normalize(pose_to_wp);
+    double speed = 0.5;
+    pose_to_wp.x *= speed;
+    pose_to_wp.y *= speed;
+    pose_to_wp.z *= speed;
+
+    setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.x;
+    setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.y;
+    setpoint.vector.z = newest_pose_.pose.position.z + pose_to_wp.z;
+
 
     double new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
     wp = createPoseMsg(setpoint, new_yaw);
@@ -730,6 +744,7 @@ int main(int argc, char** argv) {
 
   std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
   std::unique_lock < std::timed_mutex > lock(NodePtr->variable_mutex_, std::defer_lock);
+  std::unique_lock < std::timed_mutex > pub_lock(NodePtr->publisher_mutex_, std::defer_lock);
 
   while (ros::ok()) {
     std::clock_t t_loop1 = std::clock();
@@ -749,10 +764,11 @@ int main(int argc, char** argv) {
     std::clock_t t_loop2 = std::clock();
 
     //Check if pointcloud message is published fast enough
+    pub_lock.lock();
     ros::Time now = ros::Time::now();
     ros::Duration pointcloud_timeout_hover = ros::Duration(NodePtr->local_planner_.pointcloud_timeout_hover_);
     ros::Duration pointcloud_timeout_land = ros::Duration(NodePtr->local_planner_.pointcloud_timeout_land_);
-    ros::Duration since_last_cloud = now - NodePtr->pointcloud_time_now_;
+    ros::Duration since_last_cloud = now - NodePtr->last_wp_time_;
     ros::Duration since_start = now - start_time;
     bool landing = false;
     bool hovering = false;
@@ -777,11 +793,15 @@ int main(int argc, char** argv) {
         try {
           NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world", waypt_p);
           NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+
+          ros::Time time = ros::Time::now();
+          std::ofstream myfile1(("WP_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
+          myfile1 << time.sec << "\t" << time.nsec << "\t" << waypt_p.pose.position.x << "\t" << waypt_p.pose.position.y << "\t" << waypt_p.pose.position.z << "\t" << 1 << "\n";
+          myfile1.close();
+
         } catch (tf::TransformException& ex) {
           ROS_ERROR("Received an exception trying to transform a point from \"local_origin\" to \"world\": %s", ex.what());
         }
-
-        NodePtr->mavros_waypoint_pub_.publish(waypt_p);
 
         hovering = true;
       } else {
@@ -790,6 +810,12 @@ int main(int argc, char** argv) {
           NodePtr->local_planner_.getPosition(drone_pos);
           NodePtr->publishSetpoint(drone_pos, 5);
           NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
+
+          ros::Time time = ros::Time::now();
+          std::ofstream myfile1(("WP_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
+          myfile1 << time.sec << "\t" << time.nsec << "\t" << NodePtr->newest_pose_.pose.position.x << "\t" << NodePtr->newest_pose_.pose.position.y << "\t" << NodePtr->newest_pose_.pose.position.z<< "\t" << 2 << "\n";
+          myfile1.close();
+
           hovering = true;
           std::cout << "\033[1;33m Pointcloud timeout: Hovering at current position \n \033[0m";
         } else {
@@ -797,14 +823,7 @@ int main(int argc, char** argv) {
         }
       }
     }
-
-    if (NodePtr->local_planner_.currently_armed_ && NodePtr->local_planner_.offboard_) {
-      ros::Duration time_diff = NodePtr->pointcloud_time_now_ - NodePtr->pointcloud_time_old_;
-      std::ofstream myfile(("PointcloudTimes_" + NodePtr->local_planner_.log_name_).c_str(), std::ofstream::app);
-      myfile << NodePtr->pointcloud_time_now_.sec << "\t" << NodePtr->pointcloud_time_now_.nsec << "\t" << time_diff << "\t" << hovering << "\t" << landing << "\t" << writing << "\t" << (t_loop2 - t_loop1) / (double) (CLOCKS_PER_SEC / 1000) << "\t"
-          << (std::clock() - t_loop2) / (double) (CLOCKS_PER_SEC / 1000) << "\n";
-      myfile.close();
-    }
+    pub_lock.unlock();
 
     rate.sleep();
   }

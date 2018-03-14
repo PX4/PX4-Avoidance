@@ -57,8 +57,7 @@ public:
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
-  ros::Time pointcloud_time_now_;
-  ros::Time pointcloud_time_old_;
+  ros::Time last_wp_time_;
 
   LocalPlanner local_planner_;
 
@@ -70,6 +69,7 @@ public:
   tf::TransformListener tf_listener_;
 
   std::timed_mutex variable_mutex_;
+  std::timed_mutex publisher_mutex_;
 
   void publishSetpoint(const geometry_msgs::PoseStamped wp, double mode);
   void threadFunction();
