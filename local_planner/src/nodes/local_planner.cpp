@@ -132,11 +132,6 @@ void LocalPlanner::runPlanner() {
   filterPointCloud(final_cloud_, closest_point_, temp_sphere_center, distance_to_closest_point_, counter_close_points_backoff_, sphere_points_counter, complete_cloud_,
                    min_cloud_size_, min_dist_backoff_, avoid_radius_, histogram_box_, pose_.pose.position);
 
-  if(use_VFH_star_){
-    star_planner_.obstacle_position_ = temp_sphere_center;
-    star_planner_.setCloud(final_cloud_);
-  }
-
   safety_radius_ = adaptSafetyMarginHistogram(distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
 
   if (use_avoid_sphere_ && reach_altitude_) {
@@ -208,7 +203,8 @@ void LocalPlanner::determineStrategy() {
         local_planner_mode_ = 1;
         geometry_msgs::Point p;
         tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position);
-        if (tree_available_) {
+        double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
+        if (tree_available_ && dist_goal > 4.0) {
           path_waypoints_.cells.push_back(p);
           std::cout << "\033[1;32m There is NO Obstacle Ahead reuse old Tree\n \033[0m";
           getNextWaypoint();
@@ -225,12 +221,14 @@ void LocalPlanner::determineStrategy() {
 
         if (use_VFH_star_) {
           star_planner_.ground_detector_ = GroundDetector(ground_detector_);
-          star_planner_.setParams(path_waypoints_, curr_yaw_, use_ground_detection_);
+          star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_, use_ground_detection_);
           star_planner_.setReprojectedPoints(reprojected_points_, reprojected_points_age_, reprojected_points_dist_);
           star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_, height_change_cost_param_adapted_, height_change_cost_param_);
+          star_planner_.setBoxSize(histogram_box_size_);
+          star_planner_.setCloud(complete_cloud_);
 
           std::clock_t start_time = std::clock();
-          star_planner_.buildLookAheadTree(yaw);
+          star_planner_.buildLookAheadTree();
           tree_available_ = true;
           tree_time_[tree_time_.size() - 1] = ((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
