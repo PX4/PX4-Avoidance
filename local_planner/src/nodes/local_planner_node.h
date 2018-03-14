@@ -83,6 +83,10 @@ private:
 
   int i = 0 ;
 
+  double avoid_radius_;
+  geometry_msgs::Point avoid_centerpoint_;
+  bool use_sphere_;
+
   // Subscribers
   ros::Subscriber pointcloud_sub_ ;
   ros::Subscriber pose_sub_ ;

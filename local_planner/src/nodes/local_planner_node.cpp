@@ -354,32 +354,29 @@ void LocalPlannerNode::publishBox() {
 }
 
 void LocalPlannerNode::publishAvoidSphere() {
-  geometry_msgs::Point center;
-  double radius;
   int age;
-  bool use_sphere;
-  local_planner_.getAvoidSphere(center, radius, age, use_sphere);
+  local_planner_.getAvoidSphere(avoid_centerpoint_, avoid_radius_, age, use_sphere_);
   visualization_msgs::Marker sphere;
   sphere.header.frame_id = "local_origin";
   sphere.header.stamp = ros::Time::now();
   sphere.id = 0;
   sphere.type = visualization_msgs::Marker::SPHERE;
   sphere.action = visualization_msgs::Marker::ADD;
-  sphere.pose.position.x = center.x;
-  sphere.pose.position.y = center.y;
-  sphere.pose.position.z = center.z;
+  sphere.pose.position.x = avoid_centerpoint_.x;
+  sphere.pose.position.y = avoid_centerpoint_.y;
+  sphere.pose.position.z = avoid_centerpoint_.z;
   sphere.pose.orientation.x = 0.0;
   sphere.pose.orientation.y = 0.0;
   sphere.pose.orientation.z = 0.0;
   sphere.pose.orientation.w = 1.0;
-  sphere.scale.x = 2*radius;
-  sphere.scale.y = 2*radius;
-  sphere.scale.z = 2*radius;
+  sphere.scale.x = 2*avoid_radius_;
+  sphere.scale.y = 2*avoid_radius_;
+  sphere.scale.z = 2*avoid_radius_;
   sphere.color.a = 0.5;
   sphere.color.r = 0.0;
   sphere.color.g = 1.0;
   sphere.color.b = 1.0;
-  if(use_sphere && age < 100){
+  if(use_sphere_ && age < 100){
     avoid_sphere_pub_.publish(sphere);
   }else{
     sphere.color.a = 0;
@@ -703,6 +700,10 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.getY();
     setpoint.vector.z = newest_pose_.pose.position.z + pose_to_wp.getZ();
 
+    if(use_sphere_){
+      setpoint = getSphereAdaptedWaypoint(newest_pose_.pose.position, setpoint, avoid_centerpoint_, avoid_radius_);
+    }
+
     double new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
     wp = createPoseMsg(setpoint, new_yaw);
     hover_point_ = wp;
@@ -711,6 +712,8 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     wp = hover_point_;
     std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
   }
+
+
 }
 
 
