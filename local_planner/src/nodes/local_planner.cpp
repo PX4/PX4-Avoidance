@@ -314,7 +314,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 //calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
 
-  if (reach_altitude_ && adapt_cost_params_) {
+  if (reach_altitude_ && adapt_cost_params_ && !reached_goal_) {
     double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
     double goal_dist_old = distance3DCartesian(position_old_, goal_);
     double time = std::clock() / (double) (CLOCKS_PER_SEC / 1000);
@@ -540,56 +540,6 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(geometry_msgs::Vector
   return smooth_waypt;
 }
 
-geometry_msgs::Vector3Stamped LocalPlanner::getSphereAdaptedWaypoint(geometry_msgs::Vector3Stamped wp, geometry_msgs::Point avoid_centerpoint, double avoid_radius) {
-  geometry_msgs::Vector3Stamped wp_adapted = wp;
-  double sphere_hysteresis_radius = 1.3 * avoid_radius;
-  double dist = sqrt((wp.vector.x - avoid_centerpoint.x) * (wp.vector.x - avoid_centerpoint.x) +
-                     (wp.vector.y - avoid_centerpoint.y) * (wp.vector.y - avoid_centerpoint.y) + (wp.vector.z - avoid_centerpoint.z) * (wp.vector.z - avoid_centerpoint.z));
-
-  if (dist < sphere_hysteresis_radius) {
-    //put waypoint closer to equator
-    if (wp.vector.z < avoid_centerpoint.z) {
-      wp_adapted.vector.z = wp.vector.z + 0.25 * std::abs(wp.vector.z - avoid_centerpoint.z);
-    } else {
-      wp_adapted.vector.z = wp.vector.z - 0.25 * std::abs(wp.vector.z - avoid_centerpoint.z);
-    }
-    //increase angle from pole
-    Eigen::Vector3f center_to_wp(wp_adapted.vector.x - avoid_centerpoint.x, wp_adapted.vector.y - avoid_centerpoint.y, wp_adapted.vector.z - avoid_centerpoint.z);
-    Eigen::Vector2f center_to_wp_2D(wp_adapted.vector.x - avoid_centerpoint.x, wp_adapted.vector.y - avoid_centerpoint.y);
-    Eigen::Vector2f pose_to_center_2D(pose_.pose.position.x - avoid_centerpoint.x, pose_.pose.position.y - avoid_centerpoint.y);
-    center_to_wp_2D = center_to_wp_2D.normalized();
-    pose_to_center_2D = pose_to_center_2D.normalized();
-    double cos_theta = center_to_wp_2D[0] * pose_to_center_2D[0] + center_to_wp_2D[1] * pose_to_center_2D[1];
-    Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0], center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
-    n = n.normalized();
-    double cos_new_theta = 0.9 * cos_theta;
-    double sin_new_theta = sin(acos(cos_new_theta));
-    Eigen::Vector2f center_to_wp_2D_new(cos_new_theta * pose_to_center_2D[0] + sin_new_theta * n[0], cos_new_theta * pose_to_center_2D[1] + sin_new_theta * n[1]);
-    center_to_wp = center_to_wp.normalized();
-    Eigen::Vector3f center_to_wp_new(center_to_wp_2D_new[0], center_to_wp_2D_new[1], center_to_wp[2]);
-
-    //project on sphere
-    center_to_wp_new = center_to_wp_new.normalized();
-
-    //hysteresis
-    if (dist < avoid_radius) {
-      center_to_wp_new *= avoid_radius;
-      wp_adapted.vector.x = avoid_centerpoint.x + center_to_wp_new[0];
-      wp_adapted.vector.y = avoid_centerpoint.y + center_to_wp_new[1];
-      wp_adapted.vector.z = avoid_centerpoint.z + center_to_wp_new[2];
-      std::cout << "\033[1;36m Inside sphere \n \033[0m";
-    } else {
-      center_to_wp_new *= dist;
-      double radius_percentage = (dist - avoid_radius) / (sphere_hysteresis_radius - avoid_radius);  //1 at hysteresis rad, 0 at avoid rad
-      wp_adapted.vector.x = (1.0 - radius_percentage) * (avoid_centerpoint.x + center_to_wp_new[0]) + radius_percentage * wp_adapted.vector.x;
-      wp_adapted.vector.y = (1.0 - radius_percentage) * (avoid_centerpoint.y + center_to_wp_new[1]) + radius_percentage * wp_adapted.vector.y;
-      wp_adapted.vector.z = (1.0 - radius_percentage) * (avoid_centerpoint.z + center_to_wp_new[2]) + radius_percentage * wp_adapted.vector.z;
-      std::cout << "\033[1;36m Inside sphere hysteresis \n \033[0m";
-    }
-  }
-  return wp_adapted;
-}
-
 void LocalPlanner::adaptSpeed() {
   double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_adapted_, new_yaw, last_yaw_) && !obstacle_) {
@@ -658,7 +608,7 @@ void LocalPlanner::getPathMsg() {
 
   //If avoid sphere is used, project waypoint on sphere
   if (use_avoid_sphere_ && avoid_sphere_age_ < 100 && reach_altitude_ && !reached_goal_ && !back_off_) {
-    waypt_adapted_ = getSphereAdaptedWaypoint(waypt_, avoid_centerpoint_, avoid_radius_);
+    waypt_adapted_ = getSphereAdaptedWaypoint(pose_.pose.position, waypt_, avoid_centerpoint_, avoid_radius_);
     ROS_INFO("Sphere adapted WP: [%f %f %f].", waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z);
   }
 

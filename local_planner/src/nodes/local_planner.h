@@ -193,7 +193,6 @@ class LocalPlanner
   void adaptSpeed();
   void stopInFrontObstacles();
   geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
-  geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(geometry_msgs::Vector3Stamped wp, geometry_msgs::Point avoid_centerpoint, double avoid_radius);
 
  public:
   GroundDetector ground_detector_;
