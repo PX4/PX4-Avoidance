@@ -109,8 +109,8 @@ class LocalPlanner
   double max_speed_;
   double goal_cost_param_;
   double smooth_cost_param_;
-  double height_change_cost_param_ = 4;
-  double height_change_cost_param_adapted_ = 4;
+  double height_change_cost_param_ = 6;
+  double height_change_cost_param_adapted_ = 6;
   double max_accel_xy_;
   double max_accel_z_;
   double keep_distance_;
