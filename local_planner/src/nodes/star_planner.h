@@ -80,18 +80,22 @@ class StarPlanner
   double curr_yaw_;
   double min_flight_height_;
   double ground_margin_;
+  double min_cloud_size_;
+  double min_dist_backoff_;
 
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> cropped_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   geometry_msgs::Point goal_;
   geometry_msgs::PoseStamped pose_;
 
   nav_msgs::GridCells path_waypoints_;
+  Box histogram_box_;
+  Box histogram_box_size_;
 
  public:
 
@@ -107,15 +111,16 @@ class StarPlanner
   StarPlanner();
   ~StarPlanner();
 
-  void setParams(nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
+  void setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
   void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist);
   void setCostParams(double goal_cost_param, double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param);
   void setPose(geometry_msgs::PoseStamped pose);
+  void setBoxSize(Box histogram_box_size);
   void setGoal(geometry_msgs::Point pose);
-  void setCloud(pcl::PointCloud<pcl::PointXYZ> cropped_cloud);
+  void setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
-  void buildLookAheadTree(double origin_yaw);
+  void buildLookAheadTree();
   void dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
 
 };
