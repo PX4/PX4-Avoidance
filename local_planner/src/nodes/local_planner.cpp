@@ -29,8 +29,11 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     reach_altitude_ = false;
   }
 
-  if(!offboard_){
+  if (!offboard_) {
     reach_altitude_ = false;
+    offboard_pose_.header = msg.header;
+    offboard_pose_.pose.position = msg.pose.position;
+    offboard_pose_.pose.orientation = msg.pose.orientation;
   }
 
   setVelocity();
@@ -61,7 +64,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_  = config.tree_node_distance_;
+  tree_node_distance_ = config.tree_node_distance_;
 
   if (goal_z_param_ != config.goal_z_param) {
     goal_z_param_ = config.goal_z_param;
@@ -86,9 +89,10 @@ void LocalPlanner::logData() {
   if (currently_armed_ && offboard_) {
     //Print general Algorithm Data
     std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(), std::ofstream::app);
-    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t"<< waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y << "\t"
-        << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << reach_altitude_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t" << over_obstacle_ << "\t" << too_low_
-        << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1] << "\n";
+    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t" << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t" << pose_.pose.position.z << "\t" << waypt_p_.pose.position.x << "\t" << waypt_p_.pose.position.y
+        << "\t" << waypt_p_.pose.position.z << "\t" << local_planner_mode_ << "\t" << reached_goal_ << "\t" << reach_altitude_ << "\t" << use_ground_detection_ << "\t" << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t"
+        << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t" << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t" << tree_time_[tree_time_.size() - 1]
+        << "\n";
     myfile1.close();
 
     ground_detector_.logData(log_name_);
@@ -129,8 +133,8 @@ void LocalPlanner::runPlanner() {
 
   geometry_msgs::Point temp_sphere_center;
   int sphere_points_counter = 0;
-  filterPointCloud(final_cloud_, closest_point_, temp_sphere_center, distance_to_closest_point_, counter_close_points_backoff_, sphere_points_counter, complete_cloud_,
-                   min_cloud_size_, min_dist_backoff_, avoid_radius_, histogram_box_, pose_.pose.position);
+  filterPointCloud(final_cloud_, closest_point_, temp_sphere_center, distance_to_closest_point_, counter_close_points_backoff_, sphere_points_counter, complete_cloud_, min_cloud_size_, min_dist_backoff_, avoid_radius_, histogram_box_,
+                   pose_.pose.position);
 
   safety_radius_ = adaptSafetyMarginHistogram(distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
 
@@ -145,8 +149,8 @@ void LocalPlanner::determineStrategy() {
   star_planner_.tree_age_++;
   tree_time_.push_back(0);
 
-  if(!reach_altitude_){
-    std::cout << "\033[1;32m Reach height ("<<starting_height_<<") first: Go fast\n \033[0m";
+  if (!reach_altitude_) {
+    std::cout << "\033[1;32m Reach height (" << starting_height_ << ") first: Go fast\n \033[0m";
     local_planner_mode_ = 0;
     goFast();
   } else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ && reach_altitude_) {
@@ -455,7 +459,10 @@ void LocalPlanner::backOff() {
   waypt_.vector.z = back_off_start_point_.z;
 
   // fill direction as straight ahead
-  geometry_msgs::Point p; p.x = 0; p.y = 90; p.z = 0;
+  geometry_msgs::Point p;
+  p.x = 0;
+  p.y = 90;
+  p.z = 0;
   path_waypoints_.cells.push_back(p);
 
   double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
@@ -496,18 +503,16 @@ bool LocalPlanner::withinGoalRadius() {
     return true;
   } else
     reached_goal_ = false;
-    return false;
+  return false;
 }
 
-
-
 // when taking off, first publish waypoints to reach the goal altitude
-void LocalPlanner::reachGoalAltitudeFirst(){
-  starting_height_ = std::max(goal_.z -0.5, take_off_pose_.pose.position.z + 1.0);
+void LocalPlanner::reachGoalAltitudeFirst() {
+  starting_height_ = std::max(goal_.z - 0.5, take_off_pose_.pose.position.z + 1.0);
   if (pose_.pose.position.z < starting_height_) {
-      waypt_.vector.x = pose_.pose.position.x;
-      waypt_.vector.y = pose_.pose.position.y;
-      waypt_.vector.z = pose_.pose.position.z + 0.5;
+    waypt_.vector.x = offboard_pose_.pose.position.x;
+    waypt_.vector.y = offboard_pose_.pose.position.y;
+    waypt_.vector.z = pose_.pose.position.z + 0.5;
   } else {
     reach_altitude_ = true;
     printf("Reached altitude %f, now going towards the goal_. \n\n", pose_.pose.position.z);
@@ -549,8 +554,9 @@ void LocalPlanner::adaptSpeed() {
   }
 
   //check if new point lies in FOV
-  double wp_dist = sqrt((waypt_adapted_.vector.x - pose_.pose.position.x) * (waypt_adapted_.vector.x - pose_.pose.position.x) +
-                        (waypt_adapted_.vector.y - pose_.pose.position.y) * (waypt_adapted_.vector.y - pose_.pose.position.y) + (waypt_adapted_.vector.z - pose_.pose.position.z) * (waypt_adapted_.vector.z - pose_.pose.position.z));
+  double wp_dist = sqrt(
+      (waypt_adapted_.vector.x - pose_.pose.position.x) * (waypt_adapted_.vector.x - pose_.pose.position.x) + (waypt_adapted_.vector.y - pose_.pose.position.y) * (waypt_adapted_.vector.y - pose_.pose.position.y)
+          + (waypt_adapted_.vector.z - pose_.pose.position.z) * (waypt_adapted_.vector.z - pose_.pose.position.z));
 
   int e_angle = elevationAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
   int z_angle = azimuthAnglefromCartesian(waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z, pose_.pose.position);
@@ -566,12 +572,12 @@ void LocalPlanner::adaptSpeed() {
       int ind_dist = 100;
       int i = 0;
       for (std::vector<int>::iterator it = z_FOV_idx_.begin(); it != z_FOV_idx_.end(); ++it) {
-        if(std::abs(z_FOV_idx_[i]-z_index)<ind_dist){
-          ind_dist = std::abs(z_FOV_idx_[i]-z_index);
+        if (std::abs(z_FOV_idx_[i] - z_index) < ind_dist) {
+          ind_dist = std::abs(z_FOV_idx_[i] - z_index);
         }
         i++;
       }
-      double angle_diff = ALPHA_RES*ind_dist;
+      double angle_diff = ALPHA_RES * ind_dist;
       double hover_angle = 30;
       angle_diff = std::min(angle_diff, hover_angle);
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
@@ -631,7 +637,7 @@ void LocalPlanner::getPathMsg() {
     }
   }
 
-  if(back_off_ && use_back_off_){
+  if (back_off_ && use_back_off_) {
     new_yaw_ = last_yaw_;
     double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
     if (dist > min_dist_backoff_ + 1.0) {

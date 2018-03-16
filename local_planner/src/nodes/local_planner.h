@@ -155,6 +155,7 @@ class LocalPlanner
   geometry_msgs::Point goal_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point back_off_start_point_;
+  geometry_msgs::PoseStamped offboard_pose_;
   geometry_msgs::Point position_old_;
   geometry_msgs::Point closest_point_;
   geometry_msgs::Point avoid_centerpoint_;
