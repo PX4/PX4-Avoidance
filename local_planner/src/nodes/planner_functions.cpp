@@ -418,7 +418,7 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min, i
   std::cout << "--------------------------------------\n";
 }
 
-bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vector<geometry_msgs::Point> path_node_positions, geometry_msgs::Point position) {
+bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vector<geometry_msgs::Point> path_node_positions, geometry_msgs::Point position, bool new_tree) {
 
   if (tree_available) {
     int size = path_node_positions.size();
@@ -463,7 +463,16 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
       p.z = 0;
     }
   }
+  if (new_tree) {
+    int size = path_node_positions.size();
+    tree_available = true;
+    int wp_e = elevationAnglefromCartesian(path_node_positions[size - 2].x, path_node_positions[size - 2].y, path_node_positions[size - 2].z, position);
+    int wp_z = azimuthAnglefromCartesian(path_node_positions[size - 2].x, path_node_positions[size - 2].y, path_node_positions[size - 2].z, position);
 
+    p.x = wp_e;
+    p.y = wp_z;
+    p.z = 0;
+  }
   return tree_available;
 }
 

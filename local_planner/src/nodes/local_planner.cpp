@@ -206,7 +206,7 @@ void LocalPlanner::determineStrategy() {
         obstacle_ = false;
         local_planner_mode_ = 1;
         geometry_msgs::Point p;
-        tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position);
+        tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position, false);
         double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
         if (tree_available_ && dist_goal > 4.0) {
           path_waypoints_.cells.push_back(p);
@@ -237,7 +237,7 @@ void LocalPlanner::determineStrategy() {
           tree_time_[tree_time_.size() - 1] = ((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
           geometry_msgs::Point p;
-          tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position);
+          tree_available_ = getDirectionFromTree(p, tree_available_, star_planner_.path_node_positions_, pose_.pose.position, true);
           path_waypoints_.cells.push_back(p);
         } else {
 
