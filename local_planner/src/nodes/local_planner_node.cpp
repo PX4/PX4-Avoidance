@@ -692,7 +692,7 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
   //check if at goal
   double dist = std::abs(goal_msg_.pose.position.x - newest_pose_.pose.position.x) + std::abs(goal_msg_.pose.position.y - newest_pose_.pose.position.y);
   geometry_msgs::Point p;
-  tree_available_ = getDirectionFromTree(p, tree_available_, path_node_positions_, newest_pose_.pose.position);
+  tree_available_ = getDirectionFromTree(p, tree_available_, path_node_positions_, newest_pose_.pose.position, false);
 
   if (tree_available_ && dist > 0.5) {
     std::cout << "\033[1;33m Pointcloud timeout: Following last tree path \n \033[0m";
