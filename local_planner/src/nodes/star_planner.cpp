@@ -61,13 +61,13 @@ double StarPlanner::treeCostFunction(int node_number) {
   int goal_z = azimuthAnglefromCartesian(goal_.x, goal_.y, goal_.z, origin_position);
   int goal_e = elevationAnglefromCartesian(goal_.x, goal_.y, goal_.z, origin_position);
 
-  double target_cost = 5 * indexAngleDifference(z, goal_z) + 8 * indexAngleDifference(e, goal_e);  //include effective direction?
-  double turning_cost = 3*indexAngleDifference(z, tree_[0].yaw);  //maybe include pitching cost?
+  double target_cost = 2 * indexAngleDifference(z, goal_z) + 50 * indexAngleDifference(e, goal_e);  //include effective direction?
+  double turning_cost = 1*indexAngleDifference(z, tree_[0].yaw);  //maybe include pitching cost?
 
   int last_e = tree_[origin].last_e;
   int last_z = tree_[origin].last_z;
 
-  double smooth_cost = 5 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e);
+  double smooth_cost = 2 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e);
 
   double smooth_cost_to_old_tree = 0;
   if(tree_age_<10){
@@ -76,7 +76,7 @@ double StarPlanner::treeCostFunction(int node_number) {
       geometry_msgs::Point partner_node_position = path_node_positions_[partner_node_idx];
       geometry_msgs::Point node_position = tree_[node_number].getPosition();
       double dist = distance3DCartesian(partner_node_position, node_position);
-      smooth_cost_to_old_tree = 250*dist/(0.5*tree_[node_number].depth);
+      smooth_cost_to_old_tree = 200*dist/(0.5*tree_[node_number].depth);
     }
   }
 
@@ -92,12 +92,12 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
   double origin_goal_dist = distance3DCartesian(goal_, origin_position);
   double goal_dist = distance3DCartesian(goal_, node_position);
-  double goal_cost = (goal_dist/origin_goal_dist - 0.9)*500;
+  double goal_cost = (goal_dist/origin_goal_dist - 0.9)*5000;
 
   //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
-  double smooth_cost = 1 * indexAngleDifference(goal_z, tree_[node_number].last_z) + 1 * indexAngleDifference(goal_e, tree_[node_number].last_e);
+  double smooth_cost = 10*(1 * indexAngleDifference(goal_z, tree_[node_number].last_z) + 1 * indexAngleDifference(goal_e, tree_[node_number].last_e));
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (smooth_cost);
+  return std::pow(tree_discount_factor_, tree_[node_number].depth) * (smooth_cost + goal_cost);
 }
 
 
