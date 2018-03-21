@@ -81,8 +81,9 @@ ENV GAZEBO_MODEL_PATH ${GAZEBO_MODEL_PATH}:${MODELS_DIR}
 
 RUN apt-get update && \
     apt-get install -y libopencv-dev \
+                       protobuf-compiler \
                        python-jinja2 \
-                       protobuf-compiler
+                       python-toml
 
 ENV QT_X11_NO_MITSHM=1
 
