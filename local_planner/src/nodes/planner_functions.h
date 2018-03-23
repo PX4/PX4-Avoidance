@@ -43,15 +43,6 @@
 #include <opencv2/imgproc/imgproc.hpp>
 
 
-#define PI 3.14159265
-#define ALPHA_RES 6
-#define GRID_LENGTH_Z 360/ALPHA_RES
-#define GRID_LENGTH_E 180/ALPHA_RES
-#define MIN_BIN 1.5
-#define H_FOV 59.0
-#define V_FOV 46.0
-#define INF  std::numeric_limits<double>::infinity()
-
 void initGridCells(nav_msgs::GridCells *cell);
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age, geometry_msgs::Point temp_centerpoint, int counter_sphere_points, double sphere_speed);
 double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_size, double min_cloud_size);

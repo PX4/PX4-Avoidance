@@ -94,7 +94,7 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
   double goal_dist = distance3DCartesian(goal_, node_position);
   double goal_cost = (goal_dist/origin_goal_dist - 0.9)*5000;
 
-  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);  //maybe include pitching cost?
+  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);
   double smooth_cost = 10*(1 * indexAngleDifference(goal_z, tree_[node_number].last_z) + 1 * indexAngleDifference(goal_e, tree_[node_number].last_e));
 
   return std::pow(tree_discount_factor_, tree_[node_number].depth) * (smooth_cost + goal_cost);
@@ -117,7 +117,7 @@ void StarPlanner::buildLookAheadTree(){
   //insert first node
   tree_.push_back(TreeNode(0, 0, pose_.pose.position));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw = std::round((-curr_yaw_ * 180.0 / PI)) + 90;  //from radian to angle and shift reference to y-axis
+  tree_.back().yaw = std::round((-curr_yaw_ * 180.0 / M_PI)) + 90;  //from radian to angle and shift reference to y-axis
   tree_.back().last_z = tree_.back().yaw;
 
   int origin = 0;
@@ -145,7 +145,7 @@ void StarPlanner::buildLookAheadTree(){
     double safety_radius = adaptSafetyMarginHistogram(distance_to_closest_point, cropped_cloud.points.size(), min_cloud_size_);
 
     if (origin != 0 && backoff_points_counter > 20 && cropped_cloud.points.size() > 160) {
-      tree_[origin].total_cost = inf;
+      tree_[origin].total_cost = HUGE_VAL;
       node_valid = false;
     }
 
@@ -174,7 +174,7 @@ void StarPlanner::buildLookAheadTree(){
 
         min_flight_height_ = ground_detector_.getMinFlightHeight(pose_, velocity, over_obstacle_, min_flight_height_, ground_margin_);
         e_min_idx = ground_detector_.getMinFlightElevationIndex(pose_, min_flight_height_, 2 * ALPHA_RES);
-        ground_detector_.getFlags(over_obstacle_, too_low_, is_near_min_height_);
+        ground_detector_.getHeightInformation(over_obstacle_, too_low_, is_near_min_height_);
         ground_margin_ = ground_detector_.getMargin();
       }
 
@@ -183,13 +183,13 @@ void StarPlanner::buildLookAheadTree(){
                          height_change_cost_param_adapted_, height_change_cost_param_, e_min_idx, over_obstacle_, false, 2 * ALPHA_RES);
 
       if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
-        tree_[origin].total_cost = INF;
+        tree_[origin].total_cost = HUGE_VAL;
       } else {
         //insert new nodes
         int depth = tree_[origin].depth + 1;
 
-        int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / PI);//azimuthal angle
-        int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / PI);
+        int goal_z = floor(atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) * 180.0 / M_PI);//azimuthal angle
+        int goal_e = floor(atan((goal_.z - origin_position.z) / sqrt(pow((goal_.x - origin_position.x), 2) + pow((goal_.y - origin_position.y), 2))) * 180.0 / M_PI);
         int goal_e_idx = (goal_e - ALPHA_RES + 90) / ALPHA_RES;
         int goal_z_idx = (goal_z - ALPHA_RES + 180) / ALPHA_RES;
 
@@ -229,7 +229,7 @@ void StarPlanner::buildLookAheadTree(){
     n++;
 
     //find best node to continue
-    double minimal_cost = INF;
+    double minimal_cost = HUGE_VAL;
     for (int i = 0; i < tree_.size(); i++) {
       bool closed = false;
       for (int j = 0; j < closed_set_.size(); j++) {

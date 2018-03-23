@@ -314,16 +314,16 @@ void LocalPlannerNode::publishBox() {
   box.id = 0;
   box.type = visualization_msgs::Marker::CUBE;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.histogram_box_size_.xmax - local_planner_.histogram_box_size_.xmin);
-  box.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.histogram_box_size_.ymax - local_planner_.histogram_box_size_.ymin);
-  box.pose.position.z = drone_pos.pose.position.z + 0.5 * (local_planner_.histogram_box_size_.zmax - local_planner_.histogram_box_size_.zmin);
+  box.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.histogram_box_size_.xmax_ - local_planner_.histogram_box_size_.xmin_);
+  box.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.histogram_box_size_.ymax_ - local_planner_.histogram_box_size_.ymin_);
+  box.pose.position.z = drone_pos.pose.position.z + 0.5 * (local_planner_.histogram_box_size_.zmax_ - local_planner_.histogram_box_size_.zmin_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = local_planner_.histogram_box_size_.xmax + local_planner_.histogram_box_size_.xmin;
-  box.scale.y = local_planner_.histogram_box_size_.ymax + local_planner_.histogram_box_size_.ymin;
-  box.scale.z = local_planner_.histogram_box_size_.zmax + local_planner_.histogram_box_size_.zmin;
+  box.scale.x = local_planner_.histogram_box_size_.xmax_ + local_planner_.histogram_box_size_.xmin_;
+  box.scale.y = local_planner_.histogram_box_size_.ymax_ + local_planner_.histogram_box_size_.ymin_;
+  box.scale.z = local_planner_.histogram_box_size_.zmax_ + local_planner_.histogram_box_size_.zmin_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
@@ -336,16 +336,16 @@ void LocalPlannerNode::publishBox() {
   groundbox.id = 0;
   groundbox.type = visualization_msgs::Marker::CUBE;
   groundbox.action = visualization_msgs::Marker::ADD;
-  groundbox.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.ground_detector_.ground_box_size_.xmax - local_planner_.ground_detector_.ground_box_size_.xmin);
-  groundbox.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.ground_detector_.ground_box_size_.ymax - local_planner_.ground_detector_.ground_box_size_.ymin);
-  groundbox.pose.position.z = drone_pos.pose.position.z - local_planner_.ground_detector_.ground_box_size_.zmin;
+  groundbox.pose.position.x = drone_pos.pose.position.x + 0.5 * (local_planner_.ground_detector_.ground_box_size_.xmax_ - local_planner_.ground_detector_.ground_box_size_.xmin_);
+  groundbox.pose.position.y = drone_pos.pose.position.y + 0.5 * (local_planner_.ground_detector_.ground_box_size_.ymax_ - local_planner_.ground_detector_.ground_box_size_.ymin_);
+  groundbox.pose.position.z = drone_pos.pose.position.z - local_planner_.ground_detector_.ground_box_size_.zmin_;
   groundbox.pose.orientation.x = 0.0;
   groundbox.pose.orientation.y = 0.0;
   groundbox.pose.orientation.z = 0.0;
   groundbox.pose.orientation.w = 1.0;
-  groundbox.scale.x = local_planner_.ground_detector_.ground_box_size_.xmax + local_planner_.ground_detector_.ground_box_size_.xmin;
-  groundbox.scale.y = local_planner_.ground_detector_.ground_box_size_.ymax + local_planner_.ground_detector_.ground_box_size_.ymin;
-  groundbox.scale.z = 2 * local_planner_.ground_detector_.ground_box_size_.zmin;
+  groundbox.scale.x = local_planner_.ground_detector_.ground_box_size_.xmax_ + local_planner_.ground_detector_.ground_box_size_.xmin_;
+  groundbox.scale.y = local_planner_.ground_detector_.ground_box_size_.ymax_ + local_planner_.ground_detector_.ground_box_size_.ymin_;
+  groundbox.scale.z = 2 * local_planner_.ground_detector_.ground_box_size_.zmin_;
   groundbox.color.a = 0.5;
   groundbox.color.r = 1.0;
   groundbox.color.g = 0.0;
@@ -523,17 +523,14 @@ void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped &msg
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   geometry_msgs::PoseStamped drone_pos;
   local_planner_.getPosition(drone_pos);
-  int beta_z = floor((atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y)*180.0/PI)); //(-180. +180]
-  int beta_e = floor((atan((z - drone_pos.pose.position.z) / sqrt((x - drone_pos.pose.position.x)*(x - drone_pos.pose.position.x) + (y - drone_pos.pose.position.y) * (y - drone_pos.pose.position.y)))*180.0/PI)); //(-90.+90)
+  int beta_z = floor((atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y)*180.0/M_PI)); //(-180. +180]
+  int beta_e = floor((atan((z - drone_pos.pose.position.z) / sqrt((x - drone_pos.pose.position.x)*(x - drone_pos.pose.position.x) + (y - drone_pos.pose.position.y) * (y - drone_pos.pose.position.y)))*180.0/M_PI)); //(-90.+90)
 
   beta_z = beta_z + (ALPHA_RES - beta_z%ALPHA_RES); //[-170,+190]
   beta_e = beta_e + (ALPHA_RES - beta_e%ALPHA_RES); //[-80,+90]
 
-//  float cost = local_planner_.costFunction(beta_e-10, beta_z-10);
-
   printf("----- Point: %f %f %f -----\n",x,y,z);
   printf("Elevation %d Azimuth %d \n",beta_e, beta_z);
-//  printf("Cost %f \n", cost);
   printf("-------------------------------------------- \n");
 }
 
@@ -674,7 +671,7 @@ void LocalPlannerNode::threadFunction() {
       pub_lock.unlock();
       lock.unlock();
 
-      printf("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+      ROS_DEBUG("Total time: %2.2f ms \n", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
       local_planner_.algorithm_total_time_.push_back((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
       local_planner_.printAlgorithmStatistics();
@@ -695,7 +692,7 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
   tree_available_ = getDirectionFromTree(p, tree_available_, path_node_positions_, newest_pose_.pose.position, false);
 
   if (tree_available_ && dist > 0.5) {
-    std::cout << "\033[1;33m Pointcloud timeout: Following last tree path \n \033[0m";
+    ROS_INFO("\033[1;33m Pointcloud timeout: Following last tree path \n \033[0m");
     geometry_msgs::Vector3Stamped setpoint = getWaypointFromAngle(p.x, p.y, newest_pose_.pose.position);
 
     if(use_sphere_){
@@ -724,10 +721,8 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     local_planner_.smooth_waypoints_ = false;
   } else {
     wp = hover_point_;
-    std::cout << "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m";
+    ROS_INFO("\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m");
   }
-
-
 }
 
 
@@ -778,10 +773,9 @@ int main(int argc, char** argv) {
       mode_msg.request.custom_mode = "AUTO.LAND";
       landing = true;
       if (NodePtr->mavros_set_mode_client_.call(mode_msg) && mode_msg.response.mode_sent) {
-        std::cout << "\033[1;33m Pointcloud timeout: Landing \n \033[0m";
-        std::cout <<"Time since last Pointcloud: "<< since_last_cloud<< " max time = "<<pointcloud_timeout_land<<"\n";
+        ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
       } else {
-        std::cout << "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m";
+        ROS_ERROR("\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
       }
     } else if (since_last_cloud > pointcloud_timeout_hover && since_start > pointcloud_timeout_hover) {
       if (!NodePtr->never_run_) {
@@ -817,9 +811,9 @@ int main(int argc, char** argv) {
           myfile1.close();
 
           hovering = true;
-          std::cout << "\033[1;33m Pointcloud timeout: Hovering at current position \n \033[0m";
+          ROS_INFO("\033[1;33m Pointcloud timeout: Hovering at current position \n \033[0m");
         } else {
-          std::cout << "\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m";
+          ROS_WARN("\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
         }
       }
     }

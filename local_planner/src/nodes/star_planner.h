@@ -53,13 +53,9 @@
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
 
-#define PI 3.14159265
-#define ALPHA_RES 6
-#define INF  std::numeric_limits<double>::infinity()
 
 class StarPlanner
 {

@@ -56,16 +56,6 @@
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
 
-
-#define PI 3.14159265
-#define ALPHA_RES 6
-#define GRID_LENGTH_Z 360/ALPHA_RES
-#define GRID_LENGTH_E 180/ALPHA_RES
-#define MIN_BIN 1.5
-#define H_FOV 59.0
-#define V_FOV 46.0
-#define INF  std::numeric_limits<double>::infinity()
-
 class LocalPlanner
 {
 
@@ -134,7 +124,7 @@ class LocalPlanner
   std::deque<double> goal_dist_incline_;
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
-  std::vector<float> cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
+  std::vector<float> ground_time_, cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
   std::vector<int> closed_set_;
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;

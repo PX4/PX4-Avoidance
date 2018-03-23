@@ -11,6 +11,8 @@
         <arg name="model" value="iris_depth_camera" />
         <arg name="world_path" value="$(arg world_path)" />
     </include>
+    
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
         <param name="goal_x_param" value="17" />

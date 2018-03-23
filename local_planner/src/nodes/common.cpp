@@ -15,9 +15,9 @@ float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
 // transform polar coordinates into Cartesian coordinates
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos) {
   geometry_msgs::Point p;
-  p.x = pos.x + radius * cos(e * (PI / 180)) * sin(z * (PI / 180));  //round
-  p.y = pos.y + radius * cos(e * (PI / 180)) * cos(z * (PI / 180));
-  p.z = pos.z + radius * sin(e * (PI / 180));
+  p.x = pos.x + radius * cos(e * (M_PI / 180)) * sin(z * (M_PI / 180));  //round
+  p.y = pos.y + radius * cos(e * (M_PI / 180)) * cos(z * (M_PI / 180));
+  p.z = pos.z + radius * sin(e * (M_PI / 180));
 
   return p;
 }
@@ -57,7 +57,7 @@ double azimuthIndexToAngle(int z, double res) {
 }
 
 int azimuthAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos) {
-  return floor(atan2(x - pos.x, y - pos.y) * 180.0 / PI);  //(-180. +180]
+  return floor(atan2(x - pos.x, y - pos.y) * 180.0 / M_PI);  //(-180. +180]
 }
 
 int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos) {
@@ -65,7 +65,7 @@ int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Poi
   if (den == 0){
     return 0;
   }else{
-    return floor(atan((z - pos.z) / den) * 180.0 / PI);  //(-90.+90)
+    return floor(atan((z - pos.z) / den) * 180.0 / M_PI);  //(-90.+90)
   }
 }
 
