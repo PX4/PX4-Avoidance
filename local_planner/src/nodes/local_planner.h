@@ -104,16 +104,16 @@ class LocalPlanner
   double max_accel_xy_;
   double max_accel_z_;
   double keep_distance_;
-  double integral_time_old_ = 0;
+  double integral_time_old_ = 0.0;
   double no_progress_slope_;
   double tree_node_distance_;
-  double min_flight_height_ = 0;
-  double ground_margin_ = 0;
+  double min_flight_height_ = 0.0;
+  double ground_margin_ = 0.0;
   double new_yaw_;
   double min_dist_to_ground_;
   double distance_to_closest_point_;
-  double safety_radius_ = 25;
-  double min_cloud_size_ = 160;
+  double safety_radius_ = 25.0;
+  double min_cloud_size_ = 160.0;
   double min_dist_backoff_;
   double avoid_radius_;
   double speed_ = 1.0;
@@ -205,7 +205,7 @@ class LocalPlanner
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
   double local_planner_mode_;
-  double starting_height_ = 0;
+  double starting_height_ = 0.0;
 
   geometry_msgs::PoseStamped take_off_pose_;
 

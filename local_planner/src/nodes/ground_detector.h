@@ -61,7 +61,7 @@ class GroundDetector
 
   pcl::PointCloud<pcl::PointXYZ> ground_cloud_;
 
-  double min_cloud_size_ = 160;
+  double min_cloud_size_ = 160.0;
 
   std::vector<double> ground_heights_;
   std::vector<double> ground_xmax_;
@@ -75,7 +75,7 @@ class GroundDetector
   double begin_rise_;
 
   double ground_dist_;
-  double min_plane_points_ = 100;
+  double min_plane_points_ = 100.0;
   double min_plane_percentage_ = 0.6;
 
   bool over_obstacle_ = false;
