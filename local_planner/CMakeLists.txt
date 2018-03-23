@@ -12,7 +12,10 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   tf
   pcl_ros
+  mavros
+  mavros_extras
   mavros_msgs
+  mavlink
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
