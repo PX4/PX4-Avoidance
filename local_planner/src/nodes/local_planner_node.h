@@ -12,6 +12,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
+#include <mavros_msgs/ObstacleAvoidance.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -62,6 +63,7 @@ class LocalPlannerNode {
   ros::Publisher log_name_pub_;
   ros::Publisher current_waypoint_pub_;
   ros::Publisher mavros_waypoint_pub_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;
@@ -73,6 +75,7 @@ class LocalPlannerNode {
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
   void updatePlannerInfo();
+  void transformPoseToObstacleAvoidance(mavros_msgs::ObstacleAvoidance &obst_avoid, geometry_msgs::PoseStamped pose);
 
  private:
   ros::NodeHandle nh_;
@@ -90,6 +93,7 @@ class LocalPlannerNode {
   ros::Subscriber state_sub_;
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
+  ros::Subscriber fcu_input_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
@@ -148,6 +152,7 @@ class LocalPlannerNode {
   void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
+  void fcuInputGoalCallback(const mavros_msgs::ObstacleAvoidance &msg);
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
