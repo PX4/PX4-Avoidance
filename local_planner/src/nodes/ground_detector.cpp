@@ -287,7 +287,7 @@ double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pos
       e_max = e_max + (ALPHA_RES - e_max % ALPHA_RES);  //[-80,+90]
       begin_rise = dist_diff / tan(e_max * M_PI / 180.0);
     } else {
-      begin_rise = 0;
+      begin_rise = 0.0;
     }
     double xmin_begin_rise = 0;
     double xmax_begin_rise = begin_rise;

@@ -69,7 +69,7 @@ double StarPlanner::treeCostFunction(int node_number) {
 
   double smooth_cost = 2 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e);
 
-  double smooth_cost_to_old_tree = 0;
+  double smooth_cost_to_old_tree = 0.0;
   if(tree_age_<10){
     int partner_node_idx = path_node_positions_.size() - 1 - tree_[node_number].depth;
     if(partner_node_idx >= 0){
@@ -135,7 +135,7 @@ void StarPlanner::buildLookAheadTree(){
     geometry_msgs::Point temp_sphere_center;  //unused
     int sphere_points_counter = 0;  //unused
     geometry_msgs::Point closest_point;  //unused
-    double avoid_radius = 0;  //unused
+    double avoid_radius = 0.0;  //unused
     bool hist_is_empty = false;  //unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;

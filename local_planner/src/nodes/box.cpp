@@ -10,12 +10,12 @@ Box::Box(double x_min, double x_max, double y_min, double y_max, double z_min, d
 }
 
 Box::Box()
-    : xmin_ { 0 },
-      xmax_ { 0 },
-      ymin_ { 0 },
-      ymax_ { 0 },
-      zmin_ { 0 },
-      zmax_ { 0 } {
+    : xmin_ { 0.0 },
+      xmax_ { 0.0 },
+      ymin_ { 0.0 },
+      ymax_ { 0.0 },
+      zmin_ { 0.0 },
+      zmax_ { 0.0 } {
 }
 
 Box::~Box() {

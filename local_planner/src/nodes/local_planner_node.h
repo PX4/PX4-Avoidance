@@ -81,8 +81,6 @@ private:
 
   nav_msgs::Path path_actual_;
 
-  int i = 0 ;
-
   double avoid_radius_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;

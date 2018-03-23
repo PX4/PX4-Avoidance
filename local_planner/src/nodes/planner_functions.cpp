@@ -59,9 +59,9 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   float distance;
   counter_backoff = 0;
   counter_sphere = 0;
-  temp_sphere_center.x = 0;
-  temp_sphere_center.y = 0;
-  temp_sphere_center.z = 0;
+  temp_sphere_center.x = 0.0;
+  temp_sphere_center.y = 0.0;
+  temp_sphere_center.z = 0.0;
 
   for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end(); ++pcl_it) {
     // Check if the point is invalid
@@ -260,8 +260,8 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints, geometry_m
   geometry_msgs::Point candidate_goal = fromPolarToCartesian(e, z, dist, position.pose.position);
   geometry_msgs::Point old_candidate_goal = fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x, path_waypoints.cells[waypoint_index - 1].y, dist_old, position_old);
   double yaw_cost = goal_cost_param * sqrt((goal.x - candidate_goal.x) * (goal.x - candidate_goal.x) + (goal.y - candidate_goal.y) * (goal.y - candidate_goal.y));
-  double pitch_cost_up = 0;
-  double pitch_cost_down = 0;
+  double pitch_cost_up = 0.0;
+  double pitch_cost_down = 0.0;
   if (candidate_goal.z > goal.z) {
     pitch_cost_up = goal_cost_param * sqrt((goal.z - candidate_goal.z) * (goal.z - candidate_goal.z));
   } else {
@@ -364,24 +364,24 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
       if (free && !height_reject) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0;
+        p.z = 0.0;
         path_candidates.cells.push_back(p);
         double cost = costFunction((int) p.x, (int) p.y, path_waypoints, goal, position, position_old, goal_cost_param, smooth_cost_param, height_change_cost_param_adapted, height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0 && !height_reject) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0;
+        p.z = 0.0;
         path_rejected.cells.push_back(p);
       } else if (height_reject) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0;
+        p.z = 0.0;
         path_ground.cells.push_back(p);
       } else {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0;
+        p.z = 0.0;
         path_blocked.cells.push_back(p);
       }
     }
@@ -456,7 +456,7 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
 
       p.x = wp_e;
       p.y = wp_z;
-      p.z = 0;
+      p.z = 0.0;
     }
   }
   if (new_tree) {
@@ -467,7 +467,7 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
 
     p.x = wp_e;
     p.y = wp_z;
-    p.z = 0;
+    p.z = 0.0;
   }
   return tree_available;
 }
