@@ -6,6 +6,7 @@
 #include "box.h"
 #include "planner_functions.h"
 #include "common.h"
+#include "histogram.h"
 
 
 #include <iostream>
@@ -54,10 +55,6 @@
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
 
-#define PI 3.14159265
-#define ALPHA_RES 6
-#define V_FOV 46.0
-#define INF  std::numeric_limits<double>::infinity()
 
 class GroundDetector
 {
@@ -74,7 +71,6 @@ class GroundDetector
 
   double ground_inlier_distance_threshold_;
   double ground_inlier_angle_threshold_;
-//  double min_dist_to_ground_;
   double min_flight_height_;
   double begin_rise_;
 
@@ -112,7 +108,7 @@ class GroundDetector
   void logData(std::string log_name);
   int getMinFlightElevationIndex(geometry_msgs::PoseStamped current_pose, double min_flight_height, int resolution);
   double getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old);
-  void getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height);
+  void getHeightInformation(bool &over_obstacle, bool &too_low, bool &is_near_min_height);
   double getMargin();
   void getGroundCloudForVisualization(pcl::PointCloud<pcl::PointXYZ> &ground_cloud);
   void getGroundDataForVisualization(geometry_msgs::Point &closest_point_on_ground, geometry_msgs::Quaternion &ground_orientation, std::vector<double> &ground_heights, std::vector<double> &ground_xmax, std::vector<double> &ground_xmin, std::vector<double> &ground_ymax, std::vector<double> &ground_ymin);

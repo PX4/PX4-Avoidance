@@ -23,11 +23,11 @@ void GroundDetector::dynamicReconfigureSetGroundParams(avoidance::LocalPlannerNo
   min_plane_points_ = config.min_plane_points_;
   min_plane_percentage_ = config.min_plane_percentage_;
   min_dist_to_ground_ = config.min_dist_to_ground_;
-  ground_box_size_.zmin = 1.5 * min_dist_to_ground_;
-  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.zmin_ = 1.5 * min_dist_to_ground_;
+  ground_box_size_.xmin_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.xmax_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.ymin_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.ymax_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
 }
 
 void GroundDetector::reset() {
@@ -38,7 +38,7 @@ void GroundDetector::reset() {
   ground_ymin_.clear();
 }
 
-void GroundDetector::getFlags(bool &over_obstacle, bool &too_low, bool &is_near_min_height){
+void GroundDetector::getHeightInformation(bool &over_obstacle, bool &too_low, bool &is_near_min_height){
   over_obstacle = over_obstacle_;
   too_low = too_low_;
   is_near_min_height = is_near_min_height_;
@@ -81,11 +81,11 @@ void GroundDetector::setParams(double min_dist_to_ground, double min_cloud_size)
 
 void GroundDetector::initializeGroundBox(double min_dist_to_ground){
   min_dist_to_ground_ = min_dist_to_ground;
-  ground_box_size_.zmin = 1.5 * min_dist_to_ground;
-  ground_box_size_.xmin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.xmax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.ymin = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
-  ground_box_size_.ymax = 1.5 * (ground_box_size_.zmin / tan((V_FOV / 2.0) * PI / 180));
+  ground_box_size_.zmin_ = 1.5 * min_dist_to_ground;
+  ground_box_size_.xmin_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.xmax_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.ymin_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
+  ground_box_size_.ymax_ = 1.5 * (ground_box_size_.zmin_ / tan((V_FOV / 2.0) * M_PI / 180));
 }
 
 void GroundDetector::setPose(geometry_msgs::PoseStamped  pose){
@@ -116,9 +116,8 @@ void GroundDetector::detectGround(pcl::PointCloud<pcl::PointXYZ>& complete_cloud
   ground_cloud_.points = cloud_temp->points;
 
   //fit horizontal plane for ground estimation
-
   fitPlane();
-  ROS_INFO("Ground detection took %2.2fms. Ground detected: %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), ground_detected_);
+  ROS_DEBUG("Ground detection took %2.2fms. Ground detected: %d.", (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000), ground_detected_);
 }
 
 
@@ -145,7 +144,7 @@ void GroundDetector::fitPlane() {
     seg.setDistanceThreshold(ground_inlier_distance_threshold_);
     seg.setInputCloud(cloud);
     seg.setAxis (Eigen::Vector3f (0.0, 0.0, 1.0));
-    seg.setEpsAngle (ground_inlier_angle_threshold_*PI/180.0);
+    seg.setEpsAngle (ground_inlier_angle_threshold_*M_PI/180.0);
     seg.segment(*inliers, *coefficients);
 
     double a = coefficients->values[0];
@@ -167,10 +166,10 @@ void GroundDetector::fitPlane() {
     }
 
     // Extract patch size from inliers
-    double xmin = INF;
-    double xmax = -INF;
-    double ymin = INF;
-    double ymax = -INF;
+    double xmin = HUGE_VAL;
+    double xmax = -HUGE_VAL;
+    double ymin = HUGE_VAL;
+    double ymax = -HUGE_VAL;
     std::vector<int> indices = inliers->indices;
     for (int i = 0; i < indices.size(); i++) {
       if (ground_cloud_.points[indices[i]].x > xmax) {
@@ -233,7 +232,7 @@ void GroundDetector::fitPlane() {
       }
     }
 
-    ROS_INFO("Plane fit %2.2fms. Inlier %d.Ground detected: %d", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000), inliers->indices.size(), ground_detected_);
+    ROS_DEBUG("Plane fit %2.2fms. Inlier %d.Ground detected: %d", (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000), inliers->indices.size(), ground_detected_);
   }else{
     ground_detected_ = false;
   }
@@ -261,12 +260,10 @@ int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped curren
 
   if (over_obstacle_ && too_low_) {
     e_min_idx =  elevationAngletoIndex(e_max, resolution);
-//    std::cout << "\033[1;36m Too low, discard points under elevation " << e_max << "\n \033[0m";
   }
   if (over_obstacle_ && is_near_min_height_ && !too_low_) {
     e_min = 0;
     e_min_idx = elevationAngletoIndex(e_min, resolution);
-//    std::cout << "\033[1;36m Prevent down flight, discard points under elevation " << e_min << "\n \033[0m";
   }
 
   return e_min_idx;
@@ -275,7 +272,7 @@ int GroundDetector::getMinFlightElevationIndex(geometry_msgs::PoseStamped curren
 double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pose, geometry_msgs::TwistStamped curr_vel, bool over_obstacle_old, double min_flight_height_old, double margin_old) {
   int i = 0;
   over_obstacle_ = false;
-  min_flight_height_ = -INF;
+  min_flight_height_ = -HUGE_VAL;
   double begin_rise_temp;
 
   for (std::vector<double>::iterator it = ground_heights_.begin(); it != ground_heights_.end(); ++it) {
@@ -288,7 +285,7 @@ double GroundDetector::getMinFlightHeight(geometry_msgs::PoseStamped current_pos
       int e_max = floor(V_FOV / 2);
       e_max = e_max - e_max % ALPHA_RES;
       e_max = e_max + (ALPHA_RES - e_max % ALPHA_RES);  //[-80,+90]
-      begin_rise = dist_diff / tan(e_max * PI / 180.0);
+      begin_rise = dist_diff / tan(e_max * M_PI / 180.0);
     } else {
       begin_rise = 0;
     }

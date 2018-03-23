@@ -1,21 +1,21 @@
 #include "box.h"
 
 Box::Box(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max)
-    : xmin { x_min },
-      xmax { x_max },
-      ymin { y_min },
-      ymax { y_max },
-      zmin { z_min },
-      zmax { z_max }{
+    : xmin_ { x_min },
+      xmax_ { x_max },
+      ymin_ { y_min },
+      ymax_ { y_max },
+      zmin_ { z_min },
+      zmax_ { z_max }{
 }
 
 Box::Box()
-    : xmin { 0 },
-      xmax { 0 },
-      ymin { 0 },
-      ymax { 0 },
-      zmin { 0 },
-      zmax { 0 } {
+    : xmin_ { 0 },
+      xmax_ { 0 },
+      ymin_ { 0 },
+      ymax_ { 0 },
+      zmin_ { 0 },
+      zmax_ { 0 } {
 }
 
 Box::~Box() {
@@ -23,25 +23,25 @@ Box::~Box() {
 
 // update bounding box limit coordinates around a new UAV pose
 void Box::setLimitsHistogramBox(geometry_msgs::Point pos, Box size) {
-  xmin = pos.x - size.xmin;
-  ymin = pos.y - size.ymin;
-  zmin = pos.z - size.zmin;
-  xmax = pos.x + size.xmax;
-  ymax = pos.y + size.ymax;
-  zmax = pos.z + size.zmax;
+  xmin_ = pos.x - size.xmin_;
+  ymin_ = pos.y - size.ymin_;
+  zmin_ = pos.z - size.zmin_;
+  xmax_ = pos.x + size.xmax_;
+  ymax_ = pos.y + size.ymax_;
+  zmax_ = pos.z + size.zmax_;
 }
 
 // update bounding box limit coordinates around a new UAV pose
 void Box::setLimitsGroundBox(geometry_msgs::Point pos, Box size, double min_dist) {
-  xmin = pos.x - size.xmin;
-  ymin = pos.y - size.ymin;
-  zmin = pos.z - min_dist - size.zmin;
-  xmax = pos.x + size.xmax;
-  ymax = pos.y + size.ymax;
-  zmax = pos.z;
+  xmin_ = pos.x - size.xmin_;
+  ymin_ = pos.y - size.ymin_;
+  zmin_ = pos.z - min_dist - size.zmin_;
+  xmax_ = pos.x + size.xmax_;
+  ymax_ = pos.y + size.ymax_;
+  zmax_ = pos.z;
 }
 
 bool Box::isPointWithin(double x, double y, double z) {
-  return x < xmax && x > xmin && y < ymax && y > ymin && z < zmax && z > zmin;
+  return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ && z > zmin_;
 }
 

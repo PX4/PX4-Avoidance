@@ -55,7 +55,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
-  distance_to_closest_point = INF;
+  distance_to_closest_point = HUGE_VAL;
   float distance;
   counter_backoff = 0;
   counter_sphere = 0;
@@ -113,10 +113,10 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_ms
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max, double yaw, double pitch) {
 
-  double z_FOV_max = std::round((-yaw * 180.0 / PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
-  double z_FOV_min = std::round((-yaw * 180.0 / PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
-  e_FOV_max = std::round((-pitch * 180.0 / PI + V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
-  e_FOV_min = std::round((-pitch * 180.0 / PI - V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
+  double z_FOV_max = std::round((-yaw * 180.0 / M_PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  double z_FOV_min = std::round((-yaw * 180.0 / M_PI - H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
+  e_FOV_max = std::round((-pitch * 180.0 / M_PI + V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
+  e_FOV_min = std::round((-pitch * 180.0 / M_PI - V_FOV / 2.0 + 90.0) / ALPHA_RES) - 1;
 
   if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
     z_FOV_max -= GRID_LENGTH_Z;
@@ -156,8 +156,8 @@ void propagateHistogram(Histogram &polar_histogram_est, pcl::PointCloud<pcl::Poi
     int e_angle = elevationAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
     int z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x, reprojected_points.points[i].y, reprojected_points.points[i].z, position.pose.position);
 
-    int e_ind = elevationAngletoIndex(e_angle, 2*ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(z_angle, 2*ALPHA_RES);
+    int e_ind = elevationAngletoIndex(e_angle, 2* ALPHA_RES);
+    int z_ind = azimuthAngletoIndex(z_angle, 2* ALPHA_RES);
 
     polar_histogram_est.set_bin(e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
     polar_histogram_est.set_age(e_ind, z_ind, polar_histogram_est.get_age(e_ind, z_ind) + 0.25 * reprojected_points_age[i]);
@@ -166,7 +166,7 @@ void propagateHistogram(Histogram &polar_histogram_est, pcl::PointCloud<pcl::Poi
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
     for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
-      if (polar_histogram_est.get_bin(e, z) >= MIN_BIN) {
+      if (polar_histogram_est.get_bin(e, z) >= 1.5) {
         polar_histogram_est.set_dist(e, z, polar_histogram_est.get_dist(e, z) / polar_histogram_est.get_bin(e, z));
         polar_histogram_est.set_age(e, z, polar_histogram_est.get_age(e, z) / polar_histogram_est.get_bin(e, z));
         polar_histogram_est.set_bin(e, z, 1);
@@ -391,7 +391,7 @@ void findFreeDirections(Histogram histogram, double safety_radius, nav_msgs::Gri
 // calculate the free direction which has the smallest cost for the UAV to travel to
 bool calculateCostMap(std::vector<float> cost_path_candidates, std::vector<int> &cost_idx_sorted) {
   if(cost_path_candidates.empty()){
-    std::cout << "\033[1;31mbold Empty candidates vector!--------------------------------\033[0m\n";
+    ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
     return 1;
   }else{
     cv::sortIdx(cost_path_candidates, cost_idx_sorted, CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
@@ -425,7 +425,7 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
 
     int min_dist_idx = 0;
     int second_min_dist_idx = 0;
-    double min_dist = INF;
+    double min_dist = HUGE_VAL;
     double node_distance = distance3DCartesian(path_node_positions[0], path_node_positions[1]);
 
     std::vector<double> distances;
@@ -442,10 +442,6 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available, std::vec
     if (min_dist > 3.0 || wp_idx == 0) {
       tree_available = false;
     } else {
-
-//        if (distances[wp_idx] < 0.3 && wp_idx != 0) {
-//          wp_idx--;
-//        }
       double cos_alpha = (node_distance * node_distance + distances[wp_idx] * distances[wp_idx] - distances[wp_idx + 1] * distances[wp_idx + 1]) / (2 * node_distance * distances[wp_idx]);
       double l_front = distances[wp_idx] * cos_alpha;
       double l_frac = l_front / node_distance;
@@ -514,14 +510,14 @@ geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(geometry_msgs::Point posi
       wp_adapted.vector.x = avoid_centerpoint.x + center_to_wp_new[0];
       wp_adapted.vector.y = avoid_centerpoint.y + center_to_wp_new[1];
       wp_adapted.vector.z = avoid_centerpoint.z + center_to_wp_new[2];
-      std::cout << "\033[1;36m Inside sphere \n \033[0m";
+      ROS_INFO("\033[1;36m Inside sphere \n \033[0m");
     } else {
       center_to_wp_new *= dist;
       double radius_percentage = (dist - avoid_radius) / (sphere_hysteresis_radius - avoid_radius);  //1 at hysteresis rad, 0 at avoid rad
       wp_adapted.vector.x = (1.0 - radius_percentage) * (avoid_centerpoint.x + center_to_wp_new[0]) + radius_percentage * wp_adapted.vector.x;
       wp_adapted.vector.y = (1.0 - radius_percentage) * (avoid_centerpoint.y + center_to_wp_new[1]) + radius_percentage * wp_adapted.vector.y;
       wp_adapted.vector.z = (1.0 - radius_percentage) * (avoid_centerpoint.z + center_to_wp_new[2]) + radius_percentage * wp_adapted.vector.z;
-      std::cout << "\033[1;36m Inside sphere hysteresis \n \033[0m";
+      ROS_INFO("\033[1;36m Inside sphere hysteresis \n \033[0m");
     }
   }
   return wp_adapted;

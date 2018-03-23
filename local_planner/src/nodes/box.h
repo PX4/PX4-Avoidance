@@ -15,12 +15,12 @@ class Box
   void setLimitsGroundBox(geometry_msgs::Point pos, Box size, double min_dist);
   bool isPointWithin(double x, double y, double z);
 
-  double xmin;
-  double xmax;
-  double ymin;
-  double ymax;
-  double zmin;
-  double zmax;
+  double xmin_;
+  double xmax_;
+  double ymin_;
+  double ymax_;
+  double zmin_;
+  double zmax_;
 };
 
 #endif // BOX_H
