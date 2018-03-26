@@ -8,16 +8,16 @@
 class TreeNode
 {
 
-  geometry_msgs::Point position;
+  geometry_msgs::Point position_;
 
  public:
-  double total_cost;
-  double heuristic;
-  int last_e;
-  int last_z;
-  int origin;
-  int depth;
-  double yaw;
+  double total_cost_;
+  double heuristic_;
+  int last_e_;
+  int last_z_;
+  int origin_;
+  int depth_;
+  double yaw_;
 
   TreeNode();
   TreeNode(int from, int d, geometry_msgs::Point pos);

@@ -1,29 +1,29 @@
 #include "tree_node.h"
 
 TreeNode::TreeNode()
-    : heuristic { 0.0 },
-      total_cost { 0.0 },
-      origin { 0 },
-      depth { 0 },
-      last_e { 0 },
-      last_z { 0 },
-      yaw { 0.0} {
+    : heuristic_ { 0.0 },
+      total_cost_ { 0.0 },
+      origin_ { 0 },
+      depth_ { 0 },
+      last_e_ { 0 },
+      last_z_ { 0 },
+      yaw_ { 0.0} {
 
-  position.x = 0.0;
-  position.y = 0.0;
-  position.z = 0.0;
+  position_.x = 0.0;
+  position_.y = 0.0;
+  position_.z = 0.0;
 }
 
 TreeNode::TreeNode(int from, int d, geometry_msgs::Point pos)
-    : heuristic { 0.0 },
-      total_cost { 0.0 },
-      origin { from },
-      depth { d },
-      last_e { 0 },
-      last_z { 0 },
-      yaw { 0.0 } {
+    : heuristic_ { 0.0 },
+      total_cost_ { 0.0 },
+      origin_ { from },
+      depth_ { d },
+      last_e_ { 0 },
+      last_z_ { 0 },
+      yaw_ { 0.0 } {
 
-  position = pos;
+  position_ = pos;
 }
 
 TreeNode::~TreeNode() {
@@ -31,11 +31,11 @@ TreeNode::~TreeNode() {
 
 
 void TreeNode::setCosts(double h, double c){
-  heuristic = h;
-  total_cost = c;
+  heuristic_ = h;
+  total_cost_ = c;
 }
 
 geometry_msgs::Point TreeNode::getPosition(){
-  return position;
+  return position_;
 }
 
