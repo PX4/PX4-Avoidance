@@ -494,7 +494,7 @@ void LocalPlannerNode::publishTree() {
   for(int i=0; i<closed_set.size(); i++){
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = tree[node_nr].getPosition();
-    int origin = tree[node_nr].origin;
+    int origin = tree[node_nr].origin_;
     geometry_msgs::Point p2 = tree[origin].getPosition();
     tree_marker.points.push_back(p1);
     tree_marker.points.push_back(p2);
