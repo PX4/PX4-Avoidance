@@ -691,6 +691,7 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
 
 void LocalPlannerNode::transformPoseToObstacleAvoidance(mavros_msgs::ObstacleAvoidance &obst_avoid, geometry_msgs::PoseStamped pose) {
 
+  obst_avoid.header = pose.header;
   obst_avoid.type = 0;
   obst_avoid.point_1.position.x = pose.pose.position.x;
   obst_avoid.point_1.position.y = pose.pose.position.y;
