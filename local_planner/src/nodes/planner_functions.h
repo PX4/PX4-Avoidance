@@ -71,6 +71,7 @@ void combinedHistogram(bool &hist_empty, Histogram &new_hist,
                        Histogram propagated_hist, bool waypoint_outside_FOV,
                        std::vector<int> z_FOV_idx, int e_FOV_min,
                        int e_FOV_max);
+void compressHistogramElevation(Histogram &new_hist, Histogram input_hist);
 double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
                     geometry_msgs::Point goal,
                     geometry_msgs::PoseStamped position,
