@@ -28,7 +28,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   }
 
   if (!offboard_) {
-    reach_altitude_ = false;
     offboard_pose_.header = msg.header;
     offboard_pose_.pose.position = msg.pose.position;
     offboard_pose_.pose.orientation = msg.pose.orientation;
