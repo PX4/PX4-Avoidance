@@ -64,6 +64,7 @@ class LocalPlannerNode {
   ros::Publisher current_waypoint_pub_;
   ros::Publisher mavros_waypoint_pub_;
   ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_obstacle_distance_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;

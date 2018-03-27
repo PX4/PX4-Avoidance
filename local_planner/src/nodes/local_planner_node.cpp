@@ -71,6 +71,7 @@ LocalPlannerNode::LocalPlannerNode() {
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
       "/mavros/setpoint_position/local", 10);
   mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::ObstacleAvoidance>("/mavros/obstacle/anchor_point", 10);
+  mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
   log_name_pub_ = nh_.advertise<std_msgs::String>("/log_name", 1);
@@ -755,6 +756,10 @@ void LocalPlannerNode::publishAll() {
   local_planner_.getCandidateDataForVisualization(
       path_candidates, path_selected, path_rejected, path_blocked, FOV_cells,
       path_ground);
+
+  sensor_msgs::LaserScan distance_data_to_fcu;
+  local_planner_.sendObstacleDistanceDataToFcu(distance_data_to_fcu);
+  mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
 
   publishMarkerCandidates(path_candidates);
   publishMarkerSelected(path_selected);
