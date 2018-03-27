@@ -345,6 +345,20 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
   return cost;
 }
 
+void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
+
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+
+      if (input_hist.get_bin(e, z) > 0) {
+        new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);
+        if (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) || (new_hist.get_dist(0, z) == 0.0)) 
+          new_hist.set_dist(0, z, input_hist.get_dist(e, z));
+      }
+    }
+  }
+}
+
 // search for free directions in the 2D polar histogram with a moving window
 // approach
 void findFreeDirections(
