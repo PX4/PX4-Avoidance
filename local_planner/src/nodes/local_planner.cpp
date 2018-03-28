@@ -220,14 +220,21 @@ void LocalPlanner::determineStrategy() {
 
       Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
       Histogram new_histogram = Histogram(ALPHA_RES);
+      to_fcu_histogram_.setZero();
 
       propagateHistogram(propagated_histogram, reprojected_points_,
                          reprojected_points_age_, reprojected_points_dist_,
                          pose_);
       generateNewHistogram(new_histogram, final_cloud_, pose_);
+<<<<<<< b020ac50aeb5fedef1c6432ca8170315588d2f4b
       combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
                         waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_,
                         e_FOV_max_);
+=======
+      combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+      compressHistogramElevation(to_fcu_histogram_, new_histogram);
+      updateObstacleDistanceMsg(to_fcu_histogram_);
+>>>>>>> local_planner: create histogram to send distance from obstacles to the fcu
 
       polar_histogram_ = new_histogram;
 
@@ -333,6 +340,28 @@ void LocalPlanner::determineStrategy() {
       first_brake_ = true;
     }
   }
+}
+
+void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
+  sensor_msgs::LaserScan msg = {};
+  msg.header.stamp = ros::Time::now();
+  msg.header.frame_id = "world";
+  msg.angle_increment = ALPHA_RES * M_PI / 180.0f;
+  msg.range_min = 0.2f;
+  msg.range_max = 20.0f;
+
+
+  distance_data_ = msg;
+}
+
+void LocalPlanner::updateObstacleDistanceMsg() {
+  sensor_msgs::LaserScan msg = {};
+  msg.header.stamp = ros::Time::now();
+  msg.header.frame_id = "world";
+  msg.angle_increment = ALPHA_RES * M_PI / 180.0f;
+  msg.range_min = 0.2f;
+  msg.range_max = 20.0f;
+  distance_data_ = msg;
 }
 
 // get 3D points from old histogram
@@ -904,4 +933,8 @@ void LocalPlanner::getWaypoints(geometry_msgs::Vector3Stamped &waypt,
   waypt = waypt_;
   waypt_adapted = waypt_adapted_;
   waypt_smoothed = waypt_smoothed_;
+}
+
+void LocalPlanner::sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance) {
+  obstacle_distance = distance_data_;
 }

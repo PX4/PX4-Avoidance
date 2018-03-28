@@ -40,6 +40,7 @@
 #include <tf/transform_listener.h>
 
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/LaserScan.h>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -163,6 +164,7 @@ class LocalPlanner {
   nav_msgs::GridCells path_waypoints_;
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
+  Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
 
   void logData();
   void fitPlane();
@@ -178,6 +180,8 @@ class LocalPlanner {
   void getDirectionFromCostMap();
   void adaptSpeed();
   void stopInFrontObstacles();
+  void updateObstacleDistanceMsg(Histogram hist);
+  void updateObstacleDistanceMsg();
   geometry_msgs::Vector3Stamped smoothWaypoint(
       geometry_msgs::Vector3Stamped wp);
 
@@ -199,6 +203,8 @@ class LocalPlanner {
   double starting_height_ = 0.0;
 
   geometry_msgs::PoseStamped take_off_pose_;
+
+  sensor_msgs::LaserScan distance_data_ = {};
 
   Box histogram_box_size_;
 
@@ -238,6 +244,7 @@ class LocalPlanner {
   void getWaypoints(geometry_msgs::Vector3Stamped &waypt,
                     geometry_msgs::Vector3Stamped &waypt_adapted,
                     geometry_msgs::Vector3Stamped &waypt_smoothed);
+  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
   void runPlanner();
 };
 
