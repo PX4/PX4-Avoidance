@@ -24,7 +24,7 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ =
       nh_.subscribe("/move_base_simple/goal", 1,
                     &LocalPlannerNode::clickedGoalCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/obstacle/input_pose", 1, &LocalPlannerNode::fcuInputGoalCallback, this); 
+  fcu_input_sub_ = nh_.subscribe("/mavros/avoidance/input", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
 
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
@@ -34,7 +34,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-
   groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
   avoid_sphere_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
@@ -70,7 +69,7 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
       "/mavros/setpoint_position/local", 10);
-  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::ObstacleAvoidance>("/mavros/obstacle/anchor_point", 10);
+ mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::ObstacleAvoidance>("/mavros/avoidance/output", 10);
   mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
