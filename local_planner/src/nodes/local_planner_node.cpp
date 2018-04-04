@@ -24,7 +24,7 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ =
       nh_.subscribe("/move_base_simple/goal", 1,
                     &LocalPlannerNode::clickedGoalCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/avoidance/input", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
+  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
 
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
@@ -69,7 +69,7 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
       "/mavros/setpoint_position/local", 10);
- mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::ObstacleAvoidance>("/mavros/avoidance/output", 10);
+  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
   mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
@@ -590,7 +590,7 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
 }
 
-void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::ObstacleAvoidance &msg) {
+void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory &msg) {
   
   if (msg.point_valid[1] == true) {
     new_goal_ = true;
@@ -688,7 +688,7 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
   current_waypoint_pub_.publish(setpoint);
 }
 
-void LocalPlannerNode::transformPoseToObstacleAvoidance(mavros_msgs::ObstacleAvoidance &obst_avoid, geometry_msgs::PoseStamped pose) {
+void LocalPlannerNode::transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose) {
 
   obst_avoid.header = pose.header;
   obst_avoid.type = 0;
@@ -705,7 +705,6 @@ void LocalPlannerNode::transformPoseToObstacleAvoidance(mavros_msgs::ObstacleAvo
   obst_avoid.point_1.yaw_rate = NAN;
 
   obst_avoid.point_valid = {true, false, false, false, false};
-  obst_avoid.field_of_view = {180, 90, (int)H_FOV / 2, (int)V_FOV /2};
 }
 
 void LocalPlannerNode::publishAll() {
@@ -739,8 +738,8 @@ void LocalPlannerNode::publishAll() {
                                waypt_p);
 
     mavros_waypoint_pub_.publish(waypt_p);
-    mavros_msgs::ObstacleAvoidance obst_free_path = {};
-    transformPoseToObstacleAvoidance(obst_free_path, waypt_p);
+    mavros_msgs::Trajectory obst_free_path = {};
+    transformPoseToTrajectory(obst_free_path, waypt_p);
     mavros_obstacle_free_path_pub_.publish(obst_free_path);
 
     std::ofstream myfile1(("WP_" + local_planner_.log_name_).c_str(),
@@ -927,13 +926,12 @@ int main(int argc, char **argv) {
         NodePtr->publishSetpoint(waypt_p, 5);
 
         try {
-
           NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0),
                                               waypt_p, "world", waypt_p);
           NodePtr->mavros_waypoint_pub_.publish(waypt_p);
 
-          mavros_msgs::ObstacleAvoidance obst_free_path = {};
-          NodePtr->transformPoseToObstacleAvoidance(obst_free_path, waypt_p);
+          mavros_msgs::Trajectory obst_free_path = {};
+          NodePtr->transformPoseToTrajectory(obst_free_path, waypt_p);
           NodePtr->mavros_obstacle_free_path_pub_.publish(obst_free_path);
 
           ros::Time time = ros::Time::now();
@@ -958,8 +956,8 @@ int main(int argc, char **argv) {
           geometry_msgs::PoseStamped drone_pos;
           NodePtr->local_planner_.getPosition(drone_pos);
           NodePtr->publishSetpoint(drone_pos, 5);
-          mavros_msgs::ObstacleAvoidance obst_free_path = {};
-          NodePtr->transformPoseToObstacleAvoidance(obst_free_path, NodePtr->newest_pose_);
+          mavros_msgs::Trajectory obst_free_path = {};
+          NodePtr->transformPoseToTrajectory(obst_free_path, NodePtr->newest_pose_);
           NodePtr->mavros_obstacle_free_path_pub_.publish(obst_free_path);
           NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
 
