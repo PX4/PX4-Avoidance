@@ -12,7 +12,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
-#include <mavros_msgs/ObstacleAvoidance.h>
+#include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -76,7 +76,7 @@ class LocalPlannerNode {
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
   void updatePlannerInfo();
-  void transformPoseToObstacleAvoidance(mavros_msgs::ObstacleAvoidance &obst_avoid, geometry_msgs::PoseStamped pose);
+  void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose);
 
  private:
   ros::NodeHandle nh_;
@@ -153,7 +153,7 @@ class LocalPlannerNode {
   void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
-  void fcuInputGoalCallback(const mavros_msgs::ObstacleAvoidance &msg);
+  void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);;
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
