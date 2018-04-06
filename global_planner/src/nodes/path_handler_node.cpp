@@ -27,6 +27,8 @@ PathHandlerNode::PathHandlerNode() {
   // Advertice topics
   mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>(
       "/mavros/setpoint_position/local", 10);
+  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>(
+    "/mavros/trajectory/generated", 10);
   current_waypoint_publisher_ =
       nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   three_point_path_publisher_ =
@@ -191,6 +193,25 @@ void PathHandlerNode::positionCallback(
   }
 }
 
+void PathHandlerNode::transformPoseToObstacleAvoidance(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose) {
+
+  obst_avoid.header = pose.header;
+  obst_avoid.type = 0;
+  obst_avoid.point_1.position.x = pose.pose.position.x;
+  obst_avoid.point_1.position.y = pose.pose.position.y;
+  obst_avoid.point_1.position.z = pose.pose.position.z;
+  obst_avoid.point_1.velocity.x = NAN;
+  obst_avoid.point_1.velocity.y = NAN;
+  obst_avoid.point_1.velocity.z = NAN;
+  obst_avoid.point_1.acceleration_or_force.x = NAN;
+  obst_avoid.point_1.acceleration_or_force.y = NAN;
+  obst_avoid.point_1.acceleration_or_force.z = NAN;
+  obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
+  obst_avoid.point_1.yaw_rate = NAN;
+
+  obst_avoid.point_valid = {true, false, false, false, false};
+}
+
 void PathHandlerNode::publishSetpoint() {
   // Vector pointing from current position to the current goal
   tf::Vector3 vec = toTfVector3(
@@ -213,6 +234,9 @@ void PathHandlerNode::publishSetpoint() {
 
   // Publish setpoint to Mavros
   mavros_waypoint_publisher_.publish(setpoint);
+  mavros_msgs::Trajectory obst_free_path = {};
+  transformPoseToObstacleAvoidance(obst_free_path, setpoint);
+  mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
 // Send a 3-point message representing the current path

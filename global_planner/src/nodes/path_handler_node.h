@@ -9,6 +9,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
+#include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
 #include <tf/transform_datatypes.h>
@@ -60,6 +61,7 @@ class PathHandlerNode {
   ros::Publisher three_point_path_publisher_;
   ros::Publisher three_point_msg_publisher_;
   ros::Publisher avoidance_triplet_msg_publisher_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
 
   tf::TransformListener listener_;
 
@@ -77,6 +79,7 @@ class PathHandlerNode {
   void receivePathWithRisk(const PathWithRiskMsg& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
   // Publishers
+  void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose);
   void publishSetpoint();
   void publishThreePointMsg();
 };
