@@ -353,26 +353,26 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   std::vector<int> z_FOV_idx_north;
 
   for (int i = 0; i < z_FOV_idx_.size(); i++) {
-    int new_idx = z_FOV_idx_[i] + grid_length_z / 2;
+    int new_idx = z_FOV_idx_[i] + GRID_LENGTH_Z / 2;
 
-    if (new_idx >= grid_length_z) {
-      new_idx = new_idx - grid_length_z;
+    if (new_idx >= GRID_LENGTH_Z) {
+      new_idx = new_idx - GRID_LENGTH_Z;
     }
 
     z_FOV_idx_north.push_back(new_idx);
   }
 
-  for (int idx = 0; idx < grid_length_z; idx++) {
+  for (int idx = 0; idx < GRID_LENGTH_Z; idx++) {
 
     if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) == z_FOV_idx_north.end()) {
       msg.ranges.push_back(UINT16_MAX);
       continue;
     }
 
-    int hist_idx = idx - grid_length_z / 2;
+    int hist_idx = idx - GRID_LENGTH_Z / 2;
 
     if (hist_idx < 0) {
-      hist_idx = hist_idx + grid_length_z;
+      hist_idx = hist_idx + GRID_LENGTH_Z;
     }
 
     if (hist.get_dist(0, hist_idx) == 0.0) {
