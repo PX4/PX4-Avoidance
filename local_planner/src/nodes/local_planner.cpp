@@ -702,16 +702,16 @@ void LocalPlanner::printAlgorithmStatistics() {
   if (withinGoalRadius()) {
     ROS_INFO("Goal Reached: Hoovering");
     cv::Scalar mean, std;
-    ROS_INFO("------------ TIMING ----------- \n");
+    ROS_DEBUG("------------ TIMING ----------- \n");
     cv::meanStdDev(algorithm_total_time_, mean, std);
-    ROS_INFO("total mean %f std %f \n", mean[0], std[0]);
+    ROS_DEBUG("total mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(cloud_time_, mean, std);
-    ROS_INFO("cloud mean %f std %f \n", mean[0], std[0]);
+    ROS_DEBUG("cloud mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(ground_time_, mean, std);
-    ROS_INFO("ground detection mean %f std %f \n", mean[0], std[0]);
+    ROS_DEBUG("ground detection mean %f std %f \n", mean[0], std[0]);
     cv::meanStdDev(tree_time_, mean, std);
-    ROS_INFO("tree build mean %f std %f \n", mean[0], std[0]);
-    ROS_INFO("------------------------------- \n");
+    ROS_DEBUG("tree build mean %f std %f \n", mean[0], std[0]);
+    ROS_DEBUG("------------------------------- \n");
   }
 }
 

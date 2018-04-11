@@ -47,7 +47,7 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point, double cloud_siz
   return safety_margin;
 }
 
-// trim the point cloud so that only points inside the bounding box are considered and
+// trim the point cloud so that only points inside the bounding box are considered
 void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud, geometry_msgs::Point &closest_point, geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point, int &counter_backoff, int &counter_sphere,
                                     pcl::PointCloud<pcl::PointXYZ> complete_cloud, double min_cloud_size, double min_dist_backoff, double sphere_radius, Box histogram_box, geometry_msgs::Point position) {
   double min_realsense_dist = 0.2;
