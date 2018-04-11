@@ -227,6 +227,9 @@ void LocalPlanner::determineStrategy() {
         ROS_INFO("\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m");
         local_planner_mode_ = 2;
 
+        findFreeDirections(polar_histogram_, safety_radius_, path_candidates_, path_selected_, path_rejected_, path_blocked_, path_ground_, path_waypoints_, cost_path_candidates_, goal_, pose_, position_old_, goal_cost_param_, smooth_cost_param_,
+                                     height_change_cost_param_adapted_, height_change_cost_param_, -1, false, only_yawed_, ALPHA_RES);
+
         if (use_VFH_star_) {
           star_planner_.ground_detector_ = GroundDetector(ground_detector_);
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_, path_waypoints_, curr_yaw_, use_ground_detection_);
