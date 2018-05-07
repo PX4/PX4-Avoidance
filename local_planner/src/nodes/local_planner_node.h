@@ -1,40 +1,39 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
-#include <iostream>
 #include <math.h>
+#include <iostream>
+#include <mutex>
 #include <string>
 #include <thread>
-#include <mutex>
 
-#include <boost/bind.hpp>
-#include <Eigen/Core>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <mavros_msgs/State.h>
 #include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/State.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h> // transformPointCloud
+#include <pcl_ros/transforms.h>  // transformPointCloud
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
-#include "std_msgs/String.h"
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <Eigen/Core>
+#include <boost/bind.hpp>
+#include "std_msgs/String.h"
 
 #include "avoidance/common_ros.h"
 #include "local_planner.h"
 #include "planner_functions.h"
 
 class LocalPlannerNode {
-
-public:
+ public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
@@ -43,7 +42,6 @@ public:
   bool tree_available_ = false;
   bool write_cloud_ = false;
   bool position_received_ = false;
-
 
   double curr_yaw_;
 
@@ -76,7 +74,7 @@ public:
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
   void updatePlannerInfo();
 
-private:
+ private:
   ros::NodeHandle nh_;
 
   nav_msgs::Path path_actual_;
@@ -86,10 +84,10 @@ private:
   bool use_sphere_;
 
   // Subscribers
-  ros::Subscriber pointcloud_sub_ ;
-  ros::Subscriber pose_sub_ ;
-  ros::Subscriber velocity_sub_ ;
-  ros::Subscriber state_sub_ ;
+  ros::Subscriber pointcloud_sub_;
+  ros::Subscriber pose_sub_;
+  ros::Subscriber velocity_sub_;
+  ros::Subscriber state_sub_;
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
 
@@ -101,7 +99,7 @@ private:
   ros::Publisher bounding_box_pub_;
   ros::Publisher groundbox_pub_;
   ros::Publisher height_map_pub_;
-  ros::Publisher cached_pointcloud_pub_ ;
+  ros::Publisher cached_pointcloud_pub_;
   ros::Publisher marker_pub_;
   ros::Publisher path_pub_;
   ros::Publisher marker_rejected_pub_;
@@ -131,7 +129,8 @@ private:
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
 
-  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
+  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig &config,
+                                  uint32_t level);
   void positionCallback(const geometry_msgs::PoseStamped msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
@@ -139,15 +138,16 @@ private:
   void readParams();
   void publishAll();
   void publishPath(const geometry_msgs::PoseStamped msg);
-  void initMarker(visualization_msgs::MarkerArray *marker, nav_msgs::GridCells path, float red, float green , float blue);
+  void initMarker(visualization_msgs::MarkerArray *marker,
+                  nav_msgs::GridCells path, float red, float green, float blue);
   void publishMarkerBlocked(nav_msgs::GridCells path_blocked);
   void publishMarkerRejected(nav_msgs::GridCells path_rejected);
   void publishMarkerCandidates(nav_msgs::GridCells path_candidates);
   void publishMarkerSelected(nav_msgs::GridCells path_selected);
   void publishMarkerGround(nav_msgs::GridCells path_ground);
   void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
-  void clickedPointCallback(const geometry_msgs::PointStamped & msg);
-  void clickedGoalCallback(const geometry_msgs::PoseStamped & msg);
+  void clickedPointCallback(const geometry_msgs::PointStamped &msg);
+  void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
@@ -156,7 +156,6 @@ private:
   void publishReachHeight();
   void publishTree();
   void publishWaypoints();
-
 };
 
-#endif // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
+#endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H

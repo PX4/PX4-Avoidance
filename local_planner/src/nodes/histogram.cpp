@@ -1,10 +1,7 @@
 #include "histogram.h"
 
 Histogram::Histogram(const int res)
-    : resolution { res },
-      z_dim { 360.0 / resolution },
-      e_dim { 180.0 / resolution } {
-
+    : resolution{res}, z_dim{360.0 / resolution}, e_dim{180.0 / resolution} {
   bin.resize(e_dim);
   age.resize(e_dim);
   dist.resize(e_dim);
@@ -16,37 +13,24 @@ Histogram::Histogram(const int res)
   setZero();
 }
 
-Histogram::~Histogram() {
-}
+Histogram::~Histogram() {}
 
-double Histogram::get_bin(int x, int y) const {
-  return bin[x][y];
-}
-double Histogram::get_age(int x, int y) const {
-  return age[x][y];
-}
+double Histogram::get_bin(int x, int y) const { return bin[x][y]; }
+double Histogram::get_age(int x, int y) const { return age[x][y]; }
 
-double Histogram::get_dist(int x, int y) const {
-  return dist[x][y];
-}
+double Histogram::get_dist(int x, int y) const { return dist[x][y]; }
 
-void Histogram::set_bin(int x, int y, double value) {
-  bin[x][y] = value;
-}
-void Histogram::set_age(int x, int y, double value) {
-  age[x][y] = value;
-}
-void Histogram::set_dist(int x, int y, double value) {
-  dist[x][y] = value;
-}
+void Histogram::set_bin(int x, int y, double value) { bin[x][y] = value; }
+void Histogram::set_age(int x, int y, double value) { age[x][y] = value; }
+void Histogram::set_dist(int x, int y, double value) { dist[x][y] = value; }
 
 void Histogram::upsample() {
   resolution = resolution / 2;
   z_dim = 2 * z_dim;
   e_dim = 2 * e_dim;
-  std::vector < std::vector<double> > temp_bin;
-  std::vector < std::vector<double> > temp_age;
-  std::vector < std::vector<double> > temp_dist;
+  std::vector<std::vector<double> > temp_bin;
+  std::vector<std::vector<double> > temp_age;
+  std::vector<std::vector<double> > temp_dist;
   temp_bin.resize(e_dim);
   temp_age.resize(e_dim);
   temp_dist.resize(e_dim);
@@ -70,12 +54,12 @@ void Histogram::upsample() {
 }
 
 void Histogram::downsample() {
-  resolution = 2*resolution;
-  z_dim = z_dim/2;
-  e_dim = e_dim/2;
-  std::vector < std::vector<double> > temp_bin;
-  std::vector < std::vector<double> > temp_age;
-  std::vector < std::vector<double> > temp_dist;
+  resolution = 2 * resolution;
+  z_dim = z_dim / 2;
+  e_dim = e_dim / 2;
+  std::vector<std::vector<double> > temp_bin;
+  std::vector<std::vector<double> > temp_age;
+  std::vector<std::vector<double> > temp_dist;
   temp_bin.resize(e_dim);
   temp_age.resize(e_dim);
   temp_dist.resize(e_dim);
@@ -86,16 +70,28 @@ void Histogram::downsample() {
   }
   for (int i = 0; i < e_dim; ++i) {
     for (int j = 0; j < z_dim; ++j) {
-      int i_high_res = 2*i;
-      int j_high_res = 2*j;
+      int i_high_res = 2 * i;
+      int j_high_res = 2 * j;
 
-      double mean_bin = (bin[i_high_res][j_high_res] + bin[i_high_res+1][j_high_res] + bin[i_high_res][j_high_res+1] + bin[i_high_res+1][j_high_res+1])/4.0;
-      double mean_age = (age[i_high_res][j_high_res] + age[i_high_res+1][j_high_res] + age[i_high_res][j_high_res+1] + age[i_high_res+1][j_high_res+1])/4.0;
-      double mean_dist = (dist[i_high_res][j_high_res] + dist[i_high_res+1][j_high_res] + dist[i_high_res][j_high_res+1] + dist[i_high_res+1][j_high_res+1])/4.0;
+      double mean_bin =
+          (bin[i_high_res][j_high_res] + bin[i_high_res + 1][j_high_res] +
+           bin[i_high_res][j_high_res + 1] +
+           bin[i_high_res + 1][j_high_res + 1]) /
+          4.0;
+      double mean_age =
+          (age[i_high_res][j_high_res] + age[i_high_res + 1][j_high_res] +
+           age[i_high_res][j_high_res + 1] +
+           age[i_high_res + 1][j_high_res + 1]) /
+          4.0;
+      double mean_dist =
+          (dist[i_high_res][j_high_res] + dist[i_high_res + 1][j_high_res] +
+           dist[i_high_res][j_high_res + 1] +
+           dist[i_high_res + 1][j_high_res + 1]) /
+          4.0;
 
-      if(mean_bin >= 0.5){
+      if (mean_bin >= 0.5) {
         temp_bin[i][j] = 1.0;
-      }else{
+      } else {
         temp_bin[i][j] = 0.0;
       }
       temp_age[i][j] = mean_age;

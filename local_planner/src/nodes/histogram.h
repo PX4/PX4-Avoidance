@@ -1,17 +1,16 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
-#include <vector>
 #include <math.h>
+#include <vector>
 
 const int ALPHA_RES = 6;
-const int GRID_LENGTH_Z = 360/ALPHA_RES;
-const int GRID_LENGTH_E = 180/ALPHA_RES;
+const int GRID_LENGTH_Z = 360 / ALPHA_RES;
+const int GRID_LENGTH_E = 180 / ALPHA_RES;
 const double H_FOV = 59.0;
 const double V_FOV = 46.0;
 
-class Histogram
-{
+class Histogram {
   int resolution;
   int z_dim;
   int e_dim;
@@ -34,4 +33,4 @@ class Histogram
   void setZero();
 };
 
-#endif // HISTOGRAM_H
+#endif  // HISTOGRAM_H

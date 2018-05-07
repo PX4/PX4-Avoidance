@@ -1,65 +1,60 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
-#include <vector>
 #include <math.h>
-#include "tree_node.h"
+#include <vector>
 #include "box.h"
-#include "histogram.h"
-#include "planner_functions.h"
 #include "common.h"
 #include "ground_detector.h"
+#include "histogram.h"
+#include "planner_functions.h"
+#include "tree_node.h"
 
-
-#include <iostream>
-#include <fstream>
 #include <math.h>
 #include <Eigen/Dense>
+#include <deque>
+#include <fstream>
+#include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
-#include <deque>
-#include <limits>
 
 #include <ros/ros.h>
 
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/crop_box.h>
 #include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/filters/extract_indices.h>
-
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 
 #include <tf/transform_listener.h>
 
 #include <sensor_msgs/PointCloud2.h>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
 
-
-class StarPlanner
-{
-
+class StarPlanner {
   bool over_obstacle_ = false;
   bool too_low_;
   bool is_near_min_height_;
@@ -94,7 +89,6 @@ class StarPlanner
   Box histogram_box_size_;
 
  public:
-
   std::vector<geometry_msgs::Point> path_node_positions_;
   geometry_msgs::Point obstacle_position_;
   std::vector<int> closed_set_;
@@ -103,13 +97,18 @@ class StarPlanner
 
   GroundDetector ground_detector_;
 
-
   StarPlanner();
   ~StarPlanner();
 
-  void setParams(double min_cloud_size, double min_dist_backoff, nav_msgs::GridCells path_waypoints, double curr_yaw, bool use_ground_detection);
-  void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points, std::vector<double> reprojected_points_age, std::vector<double> reprojected_points_dist);
-  void setCostParams(double goal_cost_param, double smooth_cost_param, double height_change_cost_param_adapted, double height_change_cost_param);
+  void setParams(double min_cloud_size, double min_dist_backoff,
+                 nav_msgs::GridCells path_waypoints, double curr_yaw,
+                 bool use_ground_detection);
+  void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points,
+                            std::vector<double> reprojected_points_age,
+                            std::vector<double> reprojected_points_dist);
+  void setCostParams(double goal_cost_param, double smooth_cost_param,
+                     double height_change_cost_param_adapted,
+                     double height_change_cost_param);
   void setPose(geometry_msgs::PoseStamped pose);
   void setBoxSize(Box histogram_box_size);
   void setGoal(geometry_msgs::Point pose);
@@ -117,8 +116,8 @@ class StarPlanner
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();
-  void dynamicReconfigureSetStarParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
-
+  void dynamicReconfigureSetStarParams(
+      avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 };
 
-#endif // STAR_PLANNER_H
+#endif  // STAR_PLANNER_H

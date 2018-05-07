@@ -1,66 +1,61 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
-#include <iostream>
-#include <fstream>
 #include <math.h>
 #include <Eigen/Dense>
+#include <deque>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <deque>
-#include <mutex>
-#include <limits>
 
 #include <ros/ros.h>
 
-#include "histogram.h"
-#include "tree_node.h"
 #include "box.h"
+#include "common.h"
+#include "ground_detector.h"
+#include "histogram.h"
 #include "planner_functions.h"
 #include "star_planner.h"
-#include "ground_detector.h"
-#include "common.h"
+#include "tree_node.h"
 
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/filters/crop_box.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/crop_box.h>
 #include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/filters/extract_indices.h>
-
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl_ros/transforms.h>
 
 #include <tf/transform_listener.h>
 
 #include <sensor_msgs/PointCloud2.h>
 
-#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
 #include <opencv2/imgproc/imgproc.hpp>
 
-
-#include <local_planner/LocalPlannerNodeConfig.h>
 #include <dynamic_reconfigure/server.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
 
-class LocalPlanner
-{
-
+class LocalPlanner {
  private:
-
   bool use_back_off_;
   bool use_VFH_star_;
   bool adapt_cost_params_;
@@ -118,13 +113,13 @@ class LocalPlanner
   double avoid_radius_;
   double speed_ = 1.0;
 
-
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
   std::deque<double> goal_dist_incline_;
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
-  std::vector<float> ground_time_, cloud_time_, polar_time_, free_time_, cost_time_, collision_time_;
+  std::vector<float> ground_time_, cloud_time_, polar_time_, free_time_,
+      cost_time_, collision_time_;
   std::vector<int> closed_set_;
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
@@ -183,19 +178,15 @@ class LocalPlanner
   void getDirectionFromCostMap();
   void adaptSpeed();
   void stopInFrontObstacles();
-  geometry_msgs::Vector3Stamped smoothWaypoint(geometry_msgs::Vector3Stamped wp);
+  geometry_msgs::Vector3Stamped smoothWaypoint(
+      geometry_msgs::Vector3Stamped wp);
 
  public:
   GroundDetector ground_detector_;
 
-
-
-
   bool currently_armed_ = false;
   bool offboard_ = false;
   bool smooth_waypoints_ = true;
-
-
 
   std::vector<float> algorithm_total_time_;
 
@@ -211,7 +202,6 @@ class LocalPlanner
 
   Box histogram_box_size_;
 
-
   pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
 
   std::string log_name_;
@@ -222,18 +212,33 @@ class LocalPlanner
   void setPose(const geometry_msgs::PoseStamped msg);
   void setGoal();
   void determineStrategy();
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig & config, uint32_t level);
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
+                                   uint32_t level);
   void printAlgorithmStatistics();
   void getPosition(geometry_msgs::PoseStamped &pos);
   void getGoalPosition(geometry_msgs::Point &goal);
-  void getAvoidSphere(geometry_msgs::Point &center, double &radius, int &avoid_sphere_age, bool &use_avoid_sphere);
-  void getCloudsForVisualization(pcl::PointCloud<pcl::PointXYZ> &final_cloud, pcl::PointCloud<pcl::PointXYZ> &ground_cloud, pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected, nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked, nav_msgs::GridCells &FOV_cells, nav_msgs::GridCells &path_ground);
-  void getPathData(nav_msgs::Path &path_msg, geometry_msgs::PoseStamped &waypt_p);
+  void getAvoidSphere(geometry_msgs::Point &center, double &radius,
+                      int &avoid_sphere_age, bool &use_avoid_sphere);
+  void getCloudsForVisualization(
+      pcl::PointCloud<pcl::PointXYZ> &final_cloud,
+      pcl::PointCloud<pcl::PointXYZ> &ground_cloud,
+      pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
+  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates,
+                                        nav_msgs::GridCells &path_selected,
+                                        nav_msgs::GridCells &path_rejected,
+                                        nav_msgs::GridCells &path_blocked,
+                                        nav_msgs::GridCells &FOV_cells,
+                                        nav_msgs::GridCells &path_ground);
+  void getPathData(nav_msgs::Path &path_msg,
+                   geometry_msgs::PoseStamped &waypt_p);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set, std::vector<geometry_msgs::Point> &path_node_positions, bool &tree_available);
-  void getWaypoints(geometry_msgs::Vector3Stamped &waypt, geometry_msgs::Vector3Stamped &waypt_adapted, geometry_msgs::Vector3Stamped &waypt_smoothed);
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
+               std::vector<geometry_msgs::Point> &path_node_positions,
+               bool &tree_available);
+  void getWaypoints(geometry_msgs::Vector3Stamped &waypt,
+                    geometry_msgs::Vector3Stamped &waypt_adapted,
+                    geometry_msgs::Vector3Stamped &waypt_smoothed);
   void runPlanner();
 };
 
-#endif // LOCAL_PLANNER_H
+#endif  // LOCAL_PLANNER_H

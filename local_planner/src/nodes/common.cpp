@@ -1,21 +1,26 @@
 #include "common.h"
 
-float distance2DPolar(int e1, int z1, int e2, int z2){
-  return sqrt(pow((e1-e2),2) + pow((z1-z2),2));
+float distance2DPolar(int e1, int z1, int e2, int z2) {
+  return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
 }
 
-float computeL2Dist(geometry_msgs::Point position, pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
-  return sqrt(pow(position.x - pcl_it->x, 2) + pow(position.y - pcl_it->y, 2) + pow(position.z - pcl_it->z, 2));
+float computeL2Dist(geometry_msgs::Point position,
+                    pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
+  return sqrt(pow(position.x - pcl_it->x, 2) + pow(position.y - pcl_it->y, 2) +
+              pow(position.z - pcl_it->z, 2));
 }
 
 float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
-  return sqrt((a.x-b.x)*(a.x-b.x) + (a.y-b.y)*(a.y-b.y) + (a.z-b.z)*(a.z-b.z));
+  return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
+              (a.z - b.z) * (a.z - b.z));
 }
 
 // transform polar coordinates into Cartesian coordinates
-geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_msgs::Point pos) {
+geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
+                                          geometry_msgs::Point pos) {
   geometry_msgs::Point p;
-  p.x = pos.x + radius * cos(e * (M_PI / 180)) * sin(z * (M_PI / 180));  //round
+  p.x =
+      pos.x + radius * cos(e * (M_PI / 180)) * sin(z * (M_PI / 180));  // round
   p.y = pos.y + radius * cos(e * (M_PI / 180)) * cos(z * (M_PI / 180));
   p.z = pos.z + radius * sin(e * (M_PI / 180));
 
@@ -23,12 +28,13 @@ geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius, geometry_
 }
 
 double indexAngleDifference(int a, int b) {
-return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)), std::abs(a - b + 360));
+  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)),
+                  std::abs(a - b + 360));
 }
 
-
 // transform a 2D polar histogram direction in a 3D Catesian coordinate point
-geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z, geometry_msgs::Point pos) {
+geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z,
+                                                   geometry_msgs::Point pos) {
   geometry_msgs::Point p = fromPolarToCartesian(e, z, 1.0, pos);
 
   geometry_msgs::Vector3Stamped waypoint;
@@ -42,29 +48,34 @@ geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z, geometry_msgs::
 }
 
 // check if two points have the same altitude and yaw
-bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp, geometry_msgs::Vector3Stamped new_wp, double new_yaw, double old_yaw){
-  return abs(new_yaw) >= abs(0.9*old_yaw) && abs(new_yaw) <= abs(1.1*old_yaw)
-         && abs(new_wp.vector.z) >= abs(0.9*old_wp.pose.position.z) && abs(new_wp.vector.z) <= abs(1.1*old_wp.pose.position.z);
-
+bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp,
+                           geometry_msgs::Vector3Stamped new_wp, double new_yaw,
+                           double old_yaw) {
+  return abs(new_yaw) >= abs(0.9 * old_yaw) &&
+         abs(new_yaw) <= abs(1.1 * old_yaw) &&
+         abs(new_wp.vector.z) >= abs(0.9 * old_wp.pose.position.z) &&
+         abs(new_wp.vector.z) <= abs(1.1 * old_wp.pose.position.z);
 }
 
 double elevationIndexToAngle(int e, double res) {
-  return e * res + res/2 - 90;
+  return e * res + res / 2 - 90;
 }
 
 double azimuthIndexToAngle(int z, double res) {
-  return z * res + res/2 - 180;
+  return z * res + res / 2 - 180;
 }
 
-int azimuthAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos) {
+int azimuthAnglefromCartesian(double x, double y, double z,
+                              geometry_msgs::Point pos) {
   return floor(atan2(x - pos.x, y - pos.y) * 180.0 / M_PI);  //(-180. +180]
 }
 
-int elevationAnglefromCartesian(double x, double y, double z, geometry_msgs::Point pos) {
+int elevationAnglefromCartesian(double x, double y, double z,
+                                geometry_msgs::Point pos) {
   double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
-  if (den == 0){
+  if (den == 0) {
     return 0;
-  }else{
+  } else {
     return floor(atan((z - pos.z) / den) * 180.0 / M_PI);  //(-90.+90)
   }
 }
@@ -75,7 +86,7 @@ int elevationAngletoIndex(int e, int res) {  //[-90,90]
   }
   e += 90;
   e = e + (res - (e % res));  //[-80,+90]
-  return e / res - 1;  //[0,17]
+  return e / res - 1;         //[0,17]
 }
 
 int azimuthAngletoIndex(int z, int res) {  //[-180,180]
@@ -84,18 +95,20 @@ int azimuthAngletoIndex(int z, int res) {  //[-180,180]
   }
   z += 180;
   z = z + (res - (z % res));  //[-80,+90]
-  return z / res - 1;  //[0,17]
+  return z / res - 1;         //[0,17]
 }
 
 // calculate the yaw for the next waypoint
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v, double last_yaw_) {
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v,
+               double last_yaw_) {
   double dx = v.vector.x - u.pose.position.x;
   double dy = v.vector.y - u.pose.position.y;
 
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt, double yaw) {
+geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt,
+                                         double yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "/world";

@@ -4,11 +4,11 @@
 
 #include <geometry_msgs/Point.h>
 
-class Box
-{
+class Box {
  public:
   Box();
-  Box(double x_min, double x_max, double y_min, double y_max, double z_min, double z_max);
+  Box(double x_min, double x_max, double y_min, double y_max, double z_min,
+      double z_max);
   ~Box();
 
   void setLimitsHistogramBox(geometry_msgs::Point pos, Box size);
@@ -23,4 +23,4 @@ class Box
   double zmax_;
 };
 
-#endif // BOX_H
+#endif  // BOX_H
