@@ -592,7 +592,8 @@ void LocalPlannerNode::clickedGoalCallback(
 
 void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory &msg) {
   
-  if (msg.point_valid[1] == true) {
+  if (msg.point_valid[1] == true && (std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) &&
+   (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001) ){
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
@@ -688,10 +689,24 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
   current_waypoint_pub_.publish(setpoint);
 }
 
+void LocalPlannerNode::fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point) {
+  point.position.x = NAN;
+  point.position.y = NAN;
+  point.position.z = NAN;
+  point.velocity.x = NAN;
+  point.velocity.y = NAN;
+  point.velocity.z = NAN;
+  point.acceleration_or_force.x = NAN;
+  point.acceleration_or_force.y = NAN;
+  point.acceleration_or_force.z = NAN;
+  point.yaw = NAN;
+  point.yaw_rate = NAN;
+}
+
 void LocalPlannerNode::transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose) {
 
   obst_avoid.header = pose.header;
-  obst_avoid.type = 0;
+  obst_avoid.type = 0; //MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = pose.pose.position.x;
   obst_avoid.point_1.position.y = pose.pose.position.y;
   obst_avoid.point_1.position.z = pose.pose.position.z;
@@ -703,6 +718,13 @@ void LocalPlannerNode::transformPoseToTrajectory(mavros_msgs::Trajectory &obst_a
   obst_avoid.point_1.acceleration_or_force.z = NAN;
   obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
   obst_avoid.point_1.yaw_rate = NAN;
+
+  fillUnusedTrajectoryPoint(obst_avoid.point_2);
+  fillUnusedTrajectoryPoint(obst_avoid.point_3);
+  fillUnusedTrajectoryPoint(obst_avoid.point_4);
+  fillUnusedTrajectoryPoint(obst_avoid.point_5);
+
+  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
 
   obst_avoid.point_valid = {true, false, false, false, false};
 }
@@ -932,6 +954,10 @@ int main(int argc, char **argv) {
 
           mavros_msgs::Trajectory obst_free_path = {};
           NodePtr->transformPoseToTrajectory(obst_free_path, waypt_p);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_2);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_3);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_4);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_5);
           NodePtr->mavros_obstacle_free_path_pub_.publish(obst_free_path);
 
           ros::Time time = ros::Time::now();
@@ -958,6 +984,10 @@ int main(int argc, char **argv) {
           NodePtr->publishSetpoint(drone_pos, 5);
           mavros_msgs::Trajectory obst_free_path = {};
           NodePtr->transformPoseToTrajectory(obst_free_path, NodePtr->newest_pose_);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_2);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_3);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_4);
+          NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_5);
           NodePtr->mavros_obstacle_free_path_pub_.publish(obst_free_path);
           NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
 

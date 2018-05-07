@@ -77,6 +77,7 @@ class LocalPlannerNode {
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
   void updatePlannerInfo();
   void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose);
+  void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point);
 
  private:
   ros::NodeHandle nh_;
