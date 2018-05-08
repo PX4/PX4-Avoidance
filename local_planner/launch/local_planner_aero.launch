@@ -9,7 +9,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
           args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
-          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
+          args="0 0 0 0 0 0 fcu camera_link 10"/>
           
           
           
