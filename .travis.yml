@@ -1,0 +1,83 @@
+# Based on https://github.com/felixduvallet/ros-travis-integration
+#
+# vim:set ts=2 sw=2 et:
+dist: xenial
+sudo: required
+language: generic
+compiler:
+  - gcc
+cache:
+  directories:
+    - $HOME/.cache/pip
+  before_cache:
+    - rm -f $HOME/.cache/pip/log/debug.log
+cache:
+  - apt
+
+env:
+  global:
+    - ROS_CI_DESKTOP="$(lsb_release -cs)"
+    - CI_SOURCE_PATH=$(pwd)
+    - ROS_DISTRO=kinetic
+
+before_install:
+  - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
+  - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+  - sudo apt-get update -qq
+  - sudo apt-get install -y build-essential cmake git curl g++ wget
+  - sudo apt-get install -y libgtk2.0-dev pkg-config libavcodec-dev libavformat-dev libswscale-dev
+  - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
+  # Install ROS Kinetic
+  - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
+  # Install MavLink and Mavros
+  - sudo apt-get install -y ros-$ROS_DISTRO-mavlink ros-$ROS_DISTRO-mavros ros-$ROS_DISTRO-mavros-extras
+  # Install clang-format-diff
+  - curl -sL http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py > ~/clang-format-diff.py
+  # Source environment
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+  # Prepare rosdep
+  - sudo rosdep init
+  - rosdep update
+
+install:
+  # Create catkin workspace
+  - mkdir -p ~/catkin_ws
+  - cd ~/catkin_ws
+  - catkin config --init --mkdirs
+  # Pull source depends
+  - cd src
+  - wstool init
+  # Link the repository we are testing to the new workspace
+  - ln -s $CI_SOURCE_PATH .
+  # Install dependencies using rosdep
+  - cd ~/catkin_ws
+  - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -q -y
+  # Install GeographicLib datasets
+  - sudo -H mkdir -p /usr/share/geographiclib
+  - wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+  - chmod +x install_geographiclib_datasets.sh
+  - sudo -H ./install_geographiclib_datasets.sh
+  # Install OpenCV
+  - curl -sL https://github.com/opencv/opencv/archive/2.4.13.6.zip > opencv.zip
+  - unzip opencv.zip
+  - cd opencv-2.4.13.6
+  - mkdir build
+  - cd build
+  - cmake -D CMAKE_BUILD_TYPE=RELEASE -D CMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_RULE_MESSAGES=OFF -D WITH_TBB=ON -D BUILD_NEW_PYTHON_SUPPORT=OFF -D WITH_V4L=ON -D INSTALL_C_EXAMPLES=OFF -D INSTALL_PYTHON_EXAMPLES=OFF -D BUILD_EXAMPLES=OFF -D WITH_QT=ON -D WITH_OPENGL=ON ..
+  - make -j"$(nproc)"  
+  - sudo make install
+  - sudo sh -c 'echo "/usr/local/lib" > /etc/ld.so.conf.d/opencv.conf'
+  - sudo ldconfig
+  - catkin init
+
+before_script:
+  # Source environment
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+
+script:
+  - cd ~/catkin_ws
+  - source /opt/ros/$ROS_DISTRO/setup.bash
+  - catkin build
+  # Check for clang format
+  - cd src/avoidance
+  - ./check_code_format.sh
