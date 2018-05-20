@@ -76,7 +76,8 @@ class LocalPlannerNode {
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
   void updatePlannerInfo();
-  void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose);
+  void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid,
+                                 geometry_msgs::PoseStamped pose);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point);
 
  private:
@@ -154,7 +155,8 @@ class LocalPlannerNode {
   void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
-  void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);;
+  void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);
+  ;
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();

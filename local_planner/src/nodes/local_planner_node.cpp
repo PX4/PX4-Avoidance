@@ -24,7 +24,8 @@ LocalPlannerNode::LocalPlannerNode() {
   clicked_goal_sub_ =
       nh_.subscribe("/move_base_simple/goal", 1,
                     &LocalPlannerNode::clickedGoalCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
+  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
+                                 &LocalPlannerNode::fcuInputGoalCallback, this);
 
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
@@ -69,8 +70,10 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
       "/mavros/setpoint_position/local", 10);
-  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
-  mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
+  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>(
+      "/mavros/trajectory/generated", 10);
+  mavros_obstacle_distance_pub_ =
+      nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
   log_name_pub_ = nh_.advertise<std_msgs::String>("/log_name", 1);
@@ -590,10 +593,11 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
 }
 
-void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory &msg) {
-  
-  if (msg.point_valid[1] == true && (std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) &&
-   (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001) ){
+void LocalPlannerNode::fcuInputGoalCallback(
+    const mavros_msgs::Trajectory &msg) {
+  if (msg.point_valid[1] == true &&
+      (std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) &&
+      (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001)) {
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
@@ -689,7 +693,8 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
   current_waypoint_pub_.publish(setpoint);
 }
 
-void LocalPlannerNode::fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point) {
+void LocalPlannerNode::fillUnusedTrajectoryPoint(
+    mavros_msgs::PositionTarget &point) {
   point.position.x = NAN;
   point.position.y = NAN;
   point.position.z = NAN;
@@ -703,10 +708,10 @@ void LocalPlannerNode::fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &po
   point.yaw_rate = NAN;
 }
 
-void LocalPlannerNode::transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose) {
-
+void LocalPlannerNode::transformPoseToTrajectory(
+    mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose) {
   obst_avoid.header = pose.header;
-  obst_avoid.type = 0; //MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
+  obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = pose.pose.position.x;
   obst_avoid.point_1.position.y = pose.pose.position.y;
   obst_avoid.point_1.position.z = pose.pose.position.z;
@@ -983,7 +988,8 @@ int main(int argc, char **argv) {
           NodePtr->local_planner_.getPosition(drone_pos);
           NodePtr->publishSetpoint(drone_pos, 5);
           mavros_msgs::Trajectory obst_free_path = {};
-          NodePtr->transformPoseToTrajectory(obst_free_path, NodePtr->newest_pose_);
+          NodePtr->transformPoseToTrajectory(obst_free_path,
+                                             NodePtr->newest_pose_);
           NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_2);
           NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_3);
           NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_4);

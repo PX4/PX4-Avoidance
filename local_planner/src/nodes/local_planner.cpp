@@ -225,15 +225,11 @@ void LocalPlanner::determineStrategy() {
                          reprojected_points_age_, reprojected_points_dist_,
                          pose_);
       generateNewHistogram(new_histogram, final_cloud_, pose_);
-<<<<<<< b020ac50aeb5fedef1c6432ca8170315588d2f4b
       combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
                         waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_,
                         e_FOV_max_);
-=======
-      combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram, waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
       compressHistogramElevation(to_fcu_histogram_, new_histogram);
       updateObstacleDistanceMsg(to_fcu_histogram_);
->>>>>>> local_planner: create histogram to send distance from obstacles to the fcu
 
       polar_histogram_ = new_histogram;
 
@@ -363,8 +359,8 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   }
 
   for (int idx = 0; idx < GRID_LENGTH_Z; idx++) {
-
-    if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) == z_FOV_idx_north.end()) {
+    if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) ==
+        z_FOV_idx_north.end()) {
       msg.ranges.push_back(UINT16_MAX);
       continue;
     }
@@ -967,6 +963,7 @@ void LocalPlanner::getWaypoints(geometry_msgs::Vector3Stamped &waypt,
   waypt_smoothed = waypt_smoothed_;
 }
 
-void LocalPlanner::sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance) {
+void LocalPlanner::sendObstacleDistanceDataToFcu(
+    sensor_msgs::LaserScan &obstacle_distance) {
   obstacle_distance = distance_data_;
 }
