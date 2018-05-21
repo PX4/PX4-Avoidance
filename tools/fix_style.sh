@@ -15,6 +15,6 @@ do
     if [ -f $arg ]; then
         clang-format -i -style=${STYLE} $arg
     elif [ -d $arg ]; then
-        find $arg -iname *.h -o -iname *.cpp | xargs clang-format -i -style=${STYLE}
+        find $arg -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i -style=${STYLE}
     fi
 done
