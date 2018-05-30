@@ -184,6 +184,8 @@ class LocalPlanner {
   void updateObstacleDistanceMsg();
   geometry_msgs::Vector3Stamped smoothWaypoint(
       geometry_msgs::Vector3Stamped wp);
+  void create2DObstacleRepresentation(const bool need_histogram,
+                                      const bool send_to_fcu);
 
  public:
   GroundDetector ground_detector_;
@@ -191,6 +193,7 @@ class LocalPlanner {
   bool currently_armed_ = false;
   bool offboard_ = false;
   bool smooth_waypoints_ = true;
+  bool send_obstacles_fcu_ = false;
 
   std::vector<float> algorithm_total_time_;
 
