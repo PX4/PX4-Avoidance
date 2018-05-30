@@ -783,9 +783,11 @@ void LocalPlannerNode::publishAll() {
       path_candidates, path_selected, path_rejected, path_blocked, FOV_cells,
       path_ground);
 
-  sensor_msgs::LaserScan distance_data_to_fcu;
-  local_planner_.sendObstacleDistanceDataToFcu(distance_data_to_fcu);
-  mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
+  if (local_planner_.send_obstacles_fcu_) {
+    sensor_msgs::LaserScan distance_data_to_fcu;
+    local_planner_.sendObstacleDistanceDataToFcu(distance_data_to_fcu);
+    mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
+  }
 
   publishMarkerCandidates(path_candidates);
   publishMarkerSelected(path_selected);
