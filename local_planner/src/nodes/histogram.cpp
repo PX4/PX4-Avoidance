@@ -1,7 +1,7 @@
 #include "histogram.h"
 
 Histogram::Histogram(const int res)
-    : resolution{res}, z_dim{360.0 / resolution}, e_dim{180.0 / resolution} {
+    : resolution{res}, z_dim{360 / resolution}, e_dim{180 / resolution} {
   bin.resize(e_dim);
   age.resize(e_dim);
   dist.resize(e_dim);
