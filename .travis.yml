@@ -31,8 +31,6 @@ before_install:
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
   # Install MavLink and Mavros
   - sudo apt-get install -y ros-$ROS_DISTRO-mavlink ros-$ROS_DISTRO-mavros ros-$ROS_DISTRO-mavros-extras
-  # Install clang-format-diff
-  - curl -sL http://llvm.org/svn/llvm-project/cfe/trunk/tools/clang-format/clang-format-diff.py > ~/clang-format-diff.py
   # Source environment
   - source /opt/ros/$ROS_DISTRO/setup.bash
   # Prepare rosdep
@@ -80,4 +78,5 @@ script:
   - catkin build
   # Check for clang format
   - cd src/avoidance
+  - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   - ./check_code_format.sh
