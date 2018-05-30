@@ -879,7 +879,7 @@ void LocalPlanner::getPathMsg() {
           ROS_DEBUG("Rising to goal");
         } else {
           waypt_smoothed_.vector.z = min_flight_height_;
-          ROS_INFO("Above Goal cannot go lower: Hoovering");
+          ROS_INFO("Above Goal cannot go lower: Hovering");
         }
       }
     }
@@ -916,7 +916,7 @@ void LocalPlanner::printAlgorithmStatistics() {
   logData();
 
   if (withinGoalRadius()) {
-    ROS_INFO("Goal Reached: Hoovering");
+    ROS_INFO("Goal Reached: Hovering");
     cv::Scalar mean, std;
     ROS_DEBUG("------------ TIMING ----------- \n");
     cv::meanStdDev(algorithm_total_time_, mean, std);

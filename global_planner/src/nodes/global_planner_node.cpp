@@ -419,7 +419,7 @@ int main(int argc, char** argv) {
         global_planner_node.waypoints_.push_back(global_planner::Cell(x, y, z));
       }
       wp_file.close();
-      ROS_INFO("  Read %d waypoints.", global_planner_node.waypoints_.size());
+      ROS_INFO("  Read %d waypoints.", static_cast<int>(global_planner_node.waypoints_.size()));
     } else {
       ROS_ERROR_STREAM("Unable to open goal file: " << args.at(1));
       return -1;

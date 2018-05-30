@@ -266,9 +266,9 @@ void GroundDetector::fitPlane() {
     }
 
     ROS_DEBUG("Plane fit %2.2fms. Inlier %d.Ground detected: %d",
-              (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000),
-              inliers->indices.size(), ground_detected_);
-  } else {
+              (std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000),
+               static_cast<int>(inliers->indices.size()), ground_detected_);
+  }else{
     ground_detected_ = false;
   }
 }
