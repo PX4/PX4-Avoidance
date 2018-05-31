@@ -117,6 +117,9 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.setGoal();
     new_goal_ = false;
   }
+
+  //save update time
+  local_planner_.update_time_ = ros::Time::now();
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
@@ -129,8 +132,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  auto vel_msg_ = avoidance::transformTwistMsg(
-      tf_listener_, "/world", "/local_origin", msg);  // 90 deg fix
+  vel_msg_ = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
 }
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
@@ -870,10 +872,12 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     pose_to_wp.y = setpoint.vector.y - newest_pose_.pose.position.y;
     pose_to_wp.z = setpoint.vector.z - newest_pose_.pose.position.z;
     normalize(pose_to_wp);
-    double speed = 0.5;
-    pose_to_wp.x *= speed;
-    pose_to_wp.y *= speed;
-    pose_to_wp.z *= speed;
+    double current_speed = sqrt(vel_msg_.twist.linear.x * vel_msg_.twist.linear.x
+    						+ vel_msg_.twist.linear.y * vel_msg_.twist.linear.y
+							+ vel_msg_.twist.linear.z * vel_msg_.twist.linear.z);
+    pose_to_wp.x *= current_speed;
+    pose_to_wp.y *= current_speed;
+    pose_to_wp.z *= current_speed;
 
     setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.x;
     setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.y;

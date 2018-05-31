@@ -769,6 +769,12 @@ void LocalPlanner::adaptSpeed() {
     }
   }
 
+  //calculate correction for computation delay
+  ros::Duration since_update = ros::Time::now() - update_time_;
+  double since_update_sec = since_update.toSec();
+  double delta_dist = since_update_sec * velocity_mod_;
+  speed_ += delta_dist;
+
   // set waypoint to correct speed
   geometry_msgs::Point pose_to_wp;
   pose_to_wp.x = waypt_adapted_.vector.x - pose_.pose.position.x;
