@@ -184,8 +184,7 @@ class LocalPlanner {
   void updateObstacleDistanceMsg();
   geometry_msgs::Vector3Stamped smoothWaypoint(
       geometry_msgs::Vector3Stamped wp);
-  void create2DObstacleRepresentation(const bool need_histogram,
-                                      const bool send_to_fcu);
+  void create2DObstacleRepresentation(const bool send_to_fcu);
 
  public:
   GroundDetector ground_detector_;
