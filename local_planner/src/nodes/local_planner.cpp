@@ -266,11 +266,8 @@ void LocalPlanner::determineStrategy() {
     	  int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
     	  int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
 
-    	  std::cout<<"goal [e,z]: ["<< goal_e_index<<", "<<goal_z_index<<"]\n";
-
     	  for (int e = goal_e_index - relevance_margin_e_cells; e < goal_e_index + relevance_margin_e_cells; e++) {
     	      for (int z = goal_z_index - relevance_margin_z_cells; z < goal_z_index + relevance_margin_z_cells; z++) {
-    	    	  std::cout<<"check [e,z]: ["<< e<<", "<<z<<"] value; "<<polar_histogram_.get_bin(e, z)<<"\n";
     	    	  if (polar_histogram_.get_bin(e, z) > 0){
     	    		  n_occupied_cells ++;
     	    	  }
@@ -279,8 +276,6 @@ void LocalPlanner::determineStrategy() {
     	  if (n_occupied_cells > 0){
     		  hist_relevant = true;
     	  }
-    	  std::cout<<"Histogram relevant: "<< hist_relevant<<"\n";
-    	  std::cout<<"n_occupied_cells: "<< n_occupied_cells<<"\n";
       }
 
       //decide how to proceed
