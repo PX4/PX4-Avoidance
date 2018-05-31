@@ -250,8 +250,41 @@ void LocalPlanner::determineStrategy() {
 
       create2DObstacleRepresentation(send_obstacles_fcu_);
 
-      // decide how to proceed
-      if (hist_is_empty_) {
+      //check histogram relevance
+      bool hist_relevant = true;
+      if(!hist_is_empty_){
+    	  hist_relevant = false;
+    	  double relevance_margin_z_degree = 40;
+    	  double relevance_margin_e_degree = 25;
+    	  int relevance_margin_z_cells = std::ceil(relevance_margin_z_degree/ALPHA_RES);
+    	  int relevance_margin_e_cells = std::ceil(relevance_margin_e_degree/ALPHA_RES);
+    	  int n_occupied_cells = 0;
+
+    	  int goal_e_angle = elevationAnglefromCartesian(goal_.x, goal_.y, goal_.z, pose_.pose.position);
+    	  int goal_z_angle = azimuthAnglefromCartesian(goal_.x, goal_.y, goal_.z, pose_.pose.position);
+
+    	  int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
+    	  int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
+
+    	  std::cout<<"goal [e,z]: ["<< goal_e_index<<", "<<goal_z_index<<"]\n";
+
+    	  for (int e = goal_e_index - relevance_margin_e_cells; e < goal_e_index + relevance_margin_e_cells; e++) {
+    	      for (int z = goal_z_index - relevance_margin_z_cells; z < goal_z_index + relevance_margin_z_cells; z++) {
+    	    	  std::cout<<"check [e,z]: ["<< e<<", "<<z<<"] value; "<<polar_histogram_.get_bin(e, z)<<"\n";
+    	    	  if (polar_histogram_.get_bin(e, z) > 0){
+    	    		  n_occupied_cells ++;
+    	    	  }
+    	      }
+    	  }
+    	  if (n_occupied_cells > 0){
+    		  hist_relevant = true;
+    	  }
+    	  std::cout<<"Histogram relevant: "<< hist_relevant<<"\n";
+    	  std::cout<<"n_occupied_cells: "<< n_occupied_cells<<"\n";
+      }
+
+      //decide how to proceed
+      if (hist_is_empty_ || !hist_relevant) {
         obstacle_ = false;
         local_planner_mode_ = 1;
         geometry_msgs::Point p;
@@ -270,7 +303,7 @@ void LocalPlanner::determineStrategy() {
         }
       }
 
-      if (!hist_is_empty_ && reach_altitude_) {
+      if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
         ROS_INFO(
             "\033[1;32m There is an Obstacle Ahead use Histogram\n \033[0m");
