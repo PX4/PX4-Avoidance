@@ -17,14 +17,15 @@ class Histogram {
   std::vector<std::vector<double> > bin;
   std::vector<std::vector<double> > age;
   std::vector<std::vector<double> > dist;
+  void wrapIndex(int &x, int &y);
 
  public:
   Histogram(const int res);
   ~Histogram();
 
-  double get_bin(int x, int y) const;
-  double get_age(int x, int y) const;
-  double get_dist(int x, int y) const;
+  double get_bin(int x, int y);
+  double get_age(int x, int y);
+  double get_dist(int x, int y);
   void set_bin(int x, int y, double value);
   void set_age(int x, int y, double value);
   void set_dist(int x, int y, double value);
