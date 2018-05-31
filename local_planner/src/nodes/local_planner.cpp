@@ -53,6 +53,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
   max_accel_z_ = config.max_accel_z_;
   keep_distance_ = config.keep_distance_;
   reproj_age_ = config.reproj_age_;
+  relevance_margin_e_degree_ = config.relevance_margin_e_degree_;
+  relevance_margin_z_degree_ = config.relevance_margin_z_degree_;
 
   no_progress_slope_ = config.no_progress_slope_;
   min_cloud_size_ = config.min_cloud_size_;
@@ -254,10 +256,8 @@ void LocalPlanner::determineStrategy() {
       bool hist_relevant = true;
       if(!hist_is_empty_){
     	  hist_relevant = false;
-    	  double relevance_margin_z_degree = 40;
-    	  double relevance_margin_e_degree = 25;
-    	  int relevance_margin_z_cells = std::ceil(relevance_margin_z_degree/ALPHA_RES);
-    	  int relevance_margin_e_cells = std::ceil(relevance_margin_e_degree/ALPHA_RES);
+    	  int relevance_margin_z_cells = std::ceil(relevance_margin_z_degree_/ALPHA_RES);
+    	  int relevance_margin_e_cells = std::ceil(relevance_margin_e_degree_/ALPHA_RES);
     	  int n_occupied_cells = 0;
 
     	  int goal_e_angle = elevationAnglefromCartesian(goal_.x, goal_.y, goal_.z, pose_.pose.position);

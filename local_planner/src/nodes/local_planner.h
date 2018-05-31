@@ -113,6 +113,8 @@ class LocalPlanner {
   double min_dist_backoff_;
   double avoid_radius_;
   double speed_ = 1.0;
+  double relevance_margin_z_degree_ = 40;
+  double relevance_margin_e_degree_ = 25;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
