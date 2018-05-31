@@ -165,29 +165,24 @@ void LocalPlanner::runPlanner() {
   determineStrategy();
 }
 
-void LocalPlanner::create2DObstacleRepresentation(const bool need_histogram,
-                                                  const bool send_to_fcu) {
+void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // construct histogram if it is needed for the current local_planner_mode_
   // or if it is required by the FCU
-  if (need_histogram || send_to_fcu) {
-    reprojectPoints(polar_histogram_);
-    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
-    Histogram new_histogram = Histogram(ALPHA_RES);
-    to_fcu_histogram_.setZero();
+  reprojectPoints(polar_histogram_);
+  Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
+  Histogram new_histogram = Histogram(ALPHA_RES);
+  to_fcu_histogram_.setZero();
 
-    propagateHistogram(propagated_histogram, reprojected_points_,
-                       reprojected_points_age_, reprojected_points_dist_,
-                       pose_);
-    generateNewHistogram(new_histogram, final_cloud_, pose_);
-    combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
-                      waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_,
-                      e_FOV_max_);
-    if (send_to_fcu) {
-      compressHistogramElevation(to_fcu_histogram_, new_histogram);
-      updateObstacleDistanceMsg(to_fcu_histogram_);
-    }
-    polar_histogram_ = new_histogram;
+  propagateHistogram(propagated_histogram, reprojected_points_,
+                     reprojected_points_age_, reprojected_points_dist_, pose_);
+  generateNewHistogram(new_histogram, final_cloud_, pose_);
+  combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
+                    waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+  if (send_to_fcu) {
+    compressHistogramElevation(to_fcu_histogram_, new_histogram);
+    updateObstacleDistanceMsg(to_fcu_histogram_);
   }
+  polar_histogram_ = new_histogram;
 }
 
 void LocalPlanner::determineStrategy() {
@@ -199,14 +194,20 @@ void LocalPlanner::determineStrategy() {
              starting_height_);
     local_planner_mode_ = 0;
     goFast();
-    create2DObstacleRepresentation(false, send_obstacles_fcu_);
+
+    if (send_obstacles_fcu_) {
+      create2DObstacleRepresentation(true);
+    }
   } else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ &&
              reach_altitude_) {
     obstacle_ = true;
     ROS_INFO("\033[1;32m There is an Obstacle Ahead stop in front\n \033[0m");
     local_planner_mode_ = 3;
     stopInFrontObstacles();
-    create2DObstacleRepresentation(false, send_obstacles_fcu_);
+
+    if (send_obstacles_fcu_) {
+      create2DObstacleRepresentation(true);
+    }
   } else {
     if (((counter_close_points_backoff_ > 20 &&
           final_cloud_.points.size() > min_cloud_size_) ||
@@ -220,7 +221,9 @@ void LocalPlanner::determineStrategy() {
         back_off_ = true;
       }
       backOff();
-      create2DObstacleRepresentation(false, send_obstacles_fcu_);
+      if (send_obstacles_fcu_) {
+        create2DObstacleRepresentation(true);
+      }
 
     } else {
       evaluateProgressRate();
@@ -245,7 +248,7 @@ void LocalPlanner::determineStrategy() {
         }
       }
 
-      create2DObstacleRepresentation(true, send_obstacles_fcu_);
+      create2DObstacleRepresentation(send_obstacles_fcu_);
 
       // decide how to proceed
       if (hist_is_empty_) {
