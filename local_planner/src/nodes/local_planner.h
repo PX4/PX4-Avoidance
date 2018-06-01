@@ -112,7 +112,6 @@ class LocalPlanner {
   double min_cloud_size_ = 160.0;
   double min_dist_backoff_;
   double avoid_radius_;
-  double speed_ = 1.0;
   double relevance_margin_z_degree_ = 40;
   double relevance_margin_e_degree_ = 25;
 
@@ -205,6 +204,7 @@ class LocalPlanner {
   double pointcloud_timeout_land_;
   double local_planner_mode_;
   double starting_height_ = 0.0;
+  double speed_ = 1.0;
   ros::Time update_time_;
 
   geometry_msgs::PoseStamped take_off_pose_;
