@@ -872,12 +872,10 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     pose_to_wp.y = setpoint.vector.y - newest_pose_.pose.position.y;
     pose_to_wp.z = setpoint.vector.z - newest_pose_.pose.position.z;
     normalize(pose_to_wp);
-    double current_speed = sqrt(vel_msg_.twist.linear.x * vel_msg_.twist.linear.x
-    						+ vel_msg_.twist.linear.y * vel_msg_.twist.linear.y
-							+ vel_msg_.twist.linear.z * vel_msg_.twist.linear.z);
-    pose_to_wp.x *= current_speed;
-    pose_to_wp.y *= current_speed;
-    pose_to_wp.z *= current_speed;
+
+    pose_to_wp.x *= local_planner_.speed_;
+    pose_to_wp.y *= local_planner_.speed_;
+    pose_to_wp.z *= local_planner_.speed_;
 
     setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.x;
     setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.y;
