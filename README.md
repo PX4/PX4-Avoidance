@@ -4,6 +4,8 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
   * A local, VFH+ based planner that plans (including some history) in a vector field histogram
   * A global, graph based planner that plans in a traditional occupancy grid
 
+[![PX4 Avoidance video](https://j.gifs.com/32mxmn.gif)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
+
 # Quick Start with Docker
 
 A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation, as a demo. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up` from the right folder. Find the corresponding instructions [here](docker/demo).
