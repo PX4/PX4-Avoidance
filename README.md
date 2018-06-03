@@ -1,5 +1,8 @@
 # Obstacle Detection and Avoidance
-ROS node for sensor fusion and obstacle avoidance.
+PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance. This repository contains two different implementations, targeting different use cases:
+
+  * A local, VFH+ based planner that plans (including some history) in a vector field histogram
+  * A global, graph based planner that plans in a traditional occupancy grid
 
 # Quick Start with Docker
 
