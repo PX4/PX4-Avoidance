@@ -106,8 +106,7 @@ class GlobalPlannerNode {
   void laserSensorCallback(const sensor_msgs::LaserScan& msg);
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
-  void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);
-
+  void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
   void publishGoal(const GoalCell& goal);
   void publishPath();
   void publishExploredCells();
