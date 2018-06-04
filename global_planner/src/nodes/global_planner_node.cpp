@@ -261,12 +261,17 @@ void GlobalPlannerNode::moveBaseSimpleCallback(
                       clicked_goal_alt_, clicked_goal_radius_));
 }
 
-void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory &msg) {
-
-  if (msg.point_valid[1] == true) {
-
-    setNewGoal(GoalCell(msg.point_2.position.x, msg.point_2.position.y,
-                       msg.point_2.position.z, 1.0));
+void GlobalPlannerNode::fcuInputGoalCallback(
+    const mavros_msgs::Trajectory& msg) {
+  const GoalCell new_goal =
+      GoalCell(msg.point_2.position.x, msg.point_2.position.y,
+               msg.point_2.position.z, 1.0);
+  if (msg.point_valid[1] == true &&
+      ((std::fabs(global_planner_.goal_pos_.xPos() - new_goal.xPos()) >
+        0.001) ||
+       (std::fabs(global_planner_.goal_pos_.yPos() - new_goal.yPos()) >
+        0.001))) {
+    setNewGoal(new_goal);
   }
 }
 
