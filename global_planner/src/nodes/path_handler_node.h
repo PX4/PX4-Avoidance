@@ -79,7 +79,9 @@ class PathHandlerNode {
   void receivePathWithRisk(const PathWithRiskMsg& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
   // Publishers
-  void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory &obst_avoid, geometry_msgs::PoseStamped pose);
+  void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
+  void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory& obst_avoid,
+                                        geometry_msgs::PoseStamped pose);
   void publishSetpoint();
   void publishThreePointMsg();
 };
