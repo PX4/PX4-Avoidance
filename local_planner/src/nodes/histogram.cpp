@@ -122,17 +122,17 @@ void Histogram::setZero() {
   }
 }
 
-void Histogram::wrapIndex(int &x, int &y){
-  while(x<0){
-	  x += e_dim;
+void Histogram::wrapIndex(int &x, int &y) {
+  while (x < 0) {
+    x += e_dim;
   }
-  while(x>e_dim-1){
-	  x -= e_dim;
+  while (x > e_dim - 1) {
+    x -= e_dim;
   }
-  while(y<0){
-	  y += z_dim;
+  while (y < 0) {
+    y += z_dim;
   }
-  while(y>z_dim-1){
-	  y -= z_dim;
+  while (y > z_dim - 1) {
+    y -= z_dim;
   }
 }

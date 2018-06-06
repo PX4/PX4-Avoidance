@@ -252,33 +252,39 @@ void LocalPlanner::determineStrategy() {
 
       create2DObstacleRepresentation(send_obstacles_fcu_);
 
-      //check histogram relevance
+      // check histogram relevance
       bool hist_relevant = true;
-      if(!hist_is_empty_){
-    	  hist_relevant = false;
-    	  int relevance_margin_z_cells = std::ceil(relevance_margin_z_degree_/ALPHA_RES);
-    	  int relevance_margin_e_cells = std::ceil(relevance_margin_e_degree_/ALPHA_RES);
-    	  int n_occupied_cells = 0;
+      if (!hist_is_empty_) {
+        hist_relevant = false;
+        int relevance_margin_z_cells =
+            std::ceil(relevance_margin_z_degree_ / ALPHA_RES);
+        int relevance_margin_e_cells =
+            std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
+        int n_occupied_cells = 0;
 
-    	  int goal_e_angle = elevationAnglefromCartesian(goal_.x, goal_.y, goal_.z, pose_.pose.position);
-    	  int goal_z_angle = azimuthAnglefromCartesian(goal_.x, goal_.y, goal_.z, pose_.pose.position);
+        int goal_e_angle = elevationAnglefromCartesian(
+            goal_.x, goal_.y, goal_.z, pose_.pose.position);
+        int goal_z_angle = azimuthAnglefromCartesian(goal_.x, goal_.y, goal_.z,
+                                                     pose_.pose.position);
 
-    	  int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
-    	  int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
+        int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
+        int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
 
-    	  for (int e = goal_e_index - relevance_margin_e_cells; e < goal_e_index + relevance_margin_e_cells; e++) {
-    	      for (int z = goal_z_index - relevance_margin_z_cells; z < goal_z_index + relevance_margin_z_cells; z++) {
-    	    	  if (polar_histogram_.get_bin(e, z) > 0){
-    	    		  n_occupied_cells ++;
-    	    	  }
-    	      }
-    	  }
-    	  if (n_occupied_cells > 0){
-    		  hist_relevant = true;
-    	  }
+        for (int e = goal_e_index - relevance_margin_e_cells;
+             e < goal_e_index + relevance_margin_e_cells; e++) {
+          for (int z = goal_z_index - relevance_margin_z_cells;
+               z < goal_z_index + relevance_margin_z_cells; z++) {
+            if (polar_histogram_.get_bin(e, z) > 0) {
+              n_occupied_cells++;
+            }
+          }
+        }
+        if (n_occupied_cells > 0) {
+          hist_relevant = true;
+        }
       }
 
-      //decide how to proceed
+      // decide how to proceed
       if (hist_is_empty_ || !hist_relevant) {
         obstacle_ = false;
         local_planner_mode_ = 1;
@@ -797,7 +803,7 @@ void LocalPlanner::adaptSpeed() {
     }
   }
 
-  //calculate correction for computation delay
+  // calculate correction for computation delay
   ros::Duration since_update = ros::Time::now() - update_time_;
   double since_update_sec = since_update.toSec();
   double delta_dist = since_update_sec * velocity_mod_;
