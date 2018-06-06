@@ -847,6 +847,7 @@ void LocalPlanner::getPathMsg() {
     reachGoalAltitudeFirst();
     waypt_adapted_ = waypt_;
     waypt_smoothed_ = waypt_;
+    new_yaw_ = curr_yaw_;
   } else {
     if (!only_yawed_) {
       if (!reached_goal_ && !stop_in_front_ && smooth_waypoints_) {
