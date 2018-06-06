@@ -119,7 +119,7 @@ void LocalPlannerNode::updatePlannerInfo() {
     new_goal_ = false;
   }
 
-  //save update time
+  // save update time
   local_planner_.update_time_ = ros::Time::now();
 }
 
@@ -133,7 +133,8 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  vel_msg_ = avoidance::transformTwistMsg(tf_listener_, "/world", "/local_origin", msg); // 90 deg fix
+  vel_msg_ = avoidance::transformTwistMsg(tf_listener_, "/world",
+                                          "/local_origin", msg);  // 90 deg fix
 }
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
@@ -606,12 +607,13 @@ void LocalPlannerNode::clickedGoalCallback(
 
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory &msg) {
-
   if (mission_ && (msg.point_valid[1] == true) &&
-      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) ||
-      (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001) ||
-      (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) > 0.001))) {
-
+      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
+        0.001) ||
+       (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) >
+        0.001) ||
+       (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) >
+        0.001))) {
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
