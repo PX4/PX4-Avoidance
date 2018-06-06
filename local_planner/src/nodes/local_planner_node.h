@@ -129,7 +129,7 @@ class LocalPlannerNode {
   std::vector<float> algo_time;
 
   geometry_msgs::TwistStamped vel_msg_;
-  bool armed_, offboard_, new_goal_;
+  bool armed_, offboard_, mission_, new_goal_;
   geometry_msgs::PoseStamped goal_msg_;
 
   std::string depth_points_topic_;
