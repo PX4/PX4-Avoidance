@@ -114,6 +114,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   if (new_goal_) {
     local_planner_.goal_x_param_ = goal_msg_.pose.position.x;
     local_planner_.goal_y_param_ = goal_msg_.pose.position.y;
+    local_planner_.goal_z_param_ = goal_msg_.pose.position.z;
     local_planner_.setGoal();
     new_goal_ = false;
   }
@@ -137,10 +138,15 @@ void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
   armed_ = msg.armed;
+
+  if (msg.mode == "AUTO.MISSION") {
+    offboard_ = false;
+    mission_ = true;
+  }
+
   if (msg.mode == "OFFBOARD") {
     offboard_ = true;
-  } else {
-    offboard_ = false;
+    mission_ = false;
   }
 }
 
@@ -593,13 +599,19 @@ void LocalPlannerNode::clickedGoalCallback(
     const geometry_msgs::PoseStamped &msg) {
   new_goal_ = true;
   goal_msg_ = msg;
+  /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
+   * the launch file */
+  goal_msg_.pose.position.z = local_planner_.goal_z_param_;
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory &msg) {
-  if (msg.point_valid[1] == true &&
-      (std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) &&
-      (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001)) {
+
+  if (mission_ && (msg.point_valid[1] == true) &&
+      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) > 0.001) ||
+      (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) > 0.001) ||
+      (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) > 0.001))) {
+
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
