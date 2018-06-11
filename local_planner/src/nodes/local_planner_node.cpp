@@ -808,9 +808,6 @@ void LocalPlannerNode::publishAll() {
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
   local_planner_.dynamicReconfigureSetParams(config, level);
-  depth_points_topic_ = config.callback_topic;
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-      depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
 }
 
 void LocalPlannerNode::threadFunction() {
