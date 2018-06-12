@@ -55,7 +55,7 @@
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/stereo/points2" />
+    <param name="depth_points_topic" value="/camera/depth_registered/points" />
   </node>
 
 </launch>
