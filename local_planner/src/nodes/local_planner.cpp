@@ -55,6 +55,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   reproj_age_ = config.reproj_age_;
   relevance_margin_e_degree_ = config.relevance_margin_e_degree_;
   relevance_margin_z_degree_ = config.relevance_margin_z_degree_;
+  velocity_sigmoid_slope_ = config.velocity_sigmoid_slope_;
 
   no_progress_slope_ = config.no_progress_slope_;
   min_cloud_size_ = config.min_cloud_size_;
@@ -572,10 +573,8 @@ void LocalPlanner::goFast() {
   vec.setX(goal_.x - pose_.pose.position.x);
   vec.setY(goal_.y - pose_.pose.position.y);
   vec.setZ(goal_.z - pose_.pose.position.z);
-  double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
   vec.normalize();
-  vec *= new_len;
 
   waypt_.vector.x = pose_.pose.position.x + vec.getX();
   waypt_.vector.y = pose_.pose.position.y + vec.getY();
@@ -750,23 +749,21 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(
 }
 
 void LocalPlanner::adaptSpeed() {
+
+  ros::Duration since_last_velocity = ros::Time::now() - velocity_time_;
+  double since_last_velocity_sec = since_last_velocity.toSec();
   double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
+
   if (hasSameYawAndAltitude(last_waypt_p_, waypt_adapted_, new_yaw,
-                            last_yaw_) &&
-      !obstacle_) {
-    speed_ = std::min(max_speed_, speed_ + 0.1);
+                            last_yaw_) &&  !obstacle_) {
+	speed_ = std::min(speed_, max_speed_);
+    speed_ = velocitySigmoid(max_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
   } else {
-    speed_ = min_speed_;
+	speed_ = std::min(speed_, min_speed_);
+	speed_ = velocitySigmoid(min_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
   }
 
   // check if new point lies in FOV
-  double wp_dist = sqrt((waypt_adapted_.vector.x - pose_.pose.position.x) *
-                            (waypt_adapted_.vector.x - pose_.pose.position.x) +
-                        (waypt_adapted_.vector.y - pose_.pose.position.y) *
-                            (waypt_adapted_.vector.y - pose_.pose.position.y) +
-                        (waypt_adapted_.vector.z - pose_.pose.position.z) *
-                            (waypt_adapted_.vector.z - pose_.pose.position.z));
-
   int e_angle = elevationAnglefromCartesian(
       waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z,
       pose_.pose.position);
@@ -782,7 +779,7 @@ void LocalPlanner::adaptSpeed() {
     waypoint_outside_FOV_ = false;
   } else {
     waypoint_outside_FOV_ = true;
-    if (reach_altitude_ && !reached_goal_ && obstacle_ && !back_off_) {
+    if (reach_altitude_ && !reached_goal_ && !back_off_) {
       int ind_dist = 100;
       int i = 0;
       for (std::vector<int>::iterator it = z_FOV_idx_.begin();
@@ -792,7 +789,7 @@ void LocalPlanner::adaptSpeed() {
         }
         i++;
       }
-      double angle_diff = ALPHA_RES * ind_dist;
+      double angle_diff = std::abs(ALPHA_RES * ind_dist);
       double hover_angle = 30;
       angle_diff = std::min(angle_diff, hover_angle);
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
@@ -802,6 +799,7 @@ void LocalPlanner::adaptSpeed() {
       }
     }
   }
+  velocity_time_ = ros::Time::now();
 
   // calculate correction for computation delay
   ros::Duration since_update = ros::Time::now() - update_time_;

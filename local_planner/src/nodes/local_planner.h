@@ -114,6 +114,7 @@ class LocalPlanner {
   double avoid_radius_;
   double relevance_margin_z_degree_ = 40;
   double relevance_margin_e_degree_ = 25;
+  double velocity_sigmoid_slope_ = 1;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
@@ -131,6 +132,7 @@ class LocalPlanner {
   StarPlanner star_planner_;
 
   std::clock_t t_prev_ = 0.0f;
+  ros::Time velocity_time_;
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 

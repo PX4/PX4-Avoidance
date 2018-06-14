@@ -618,7 +618,15 @@ geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(
                        center_to_wp_2D[1] * pose_to_center_2D[1];
     Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0],
                       center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
-    n = n.normalized();
+
+    double mag_n = sqrt(n[0] * n[0] + n[1] * n[1]);
+    if(mag_n > 0){
+    	n[0] = n[0]/mag_n;
+    	n[1] = n[1]/mag_n;
+    }else{
+    	n[0] = 0;
+    	n[1] = 0;
+    }
     double cos_new_theta = 0.9 * cos_theta;
     double sin_new_theta = sin(acos(cos_new_theta));
     Eigen::Vector2f center_to_wp_2D_new(
