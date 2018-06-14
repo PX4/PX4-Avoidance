@@ -43,4 +43,6 @@ geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt,
                                          double yaw);
 void normalize(geometry_msgs::Point &p);
 
+double velocitySigmoid(double max_vel, double min_vel, double slope, double v_old, double elapsed);
+
 #endif  // COMMON_H
