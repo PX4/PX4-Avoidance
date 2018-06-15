@@ -877,22 +877,23 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
                                           avoid_centerpoint_, avoid_radius_);
     }
 
-    // set waypoint to correct speed
-    geometry_msgs::Point pose_to_wp;
-    pose_to_wp.x = setpoint.vector.x - newest_pose_.pose.position.x;
-    pose_to_wp.y = setpoint.vector.y - newest_pose_.pose.position.y;
-    pose_to_wp.z = setpoint.vector.z - newest_pose_.pose.position.z;
-    normalize(pose_to_wp);
-
-    pose_to_wp.x *= local_planner_.speed_;
-    pose_to_wp.y *= local_planner_.speed_;
-    pose_to_wp.z *= local_planner_.speed_;
-
-    setpoint.vector.x = newest_pose_.pose.position.x + pose_to_wp.x;
-    setpoint.vector.y = newest_pose_.pose.position.y + pose_to_wp.y;
-    setpoint.vector.z = newest_pose_.pose.position.z + pose_to_wp.z;
-
     double new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
+
+    // set waypoint to correct speed
+    tf::Quaternion q(newest_pose_.pose.orientation.x, newest_pose_.pose.orientation.y,
+    				 newest_pose_.pose.orientation.z, newest_pose_.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    double roll, pitch, yaw;
+    std::vector<int> z_FOV_idx;
+    int e_FOV_min, e_FOV_max;
+    m.getRPY(roll, pitch, yaw);
+    calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, yaw, pitch);
+
+    std::unique_lock<std::timed_mutex> velocity_lock(local_planner_.velocity_mutex_, std::defer_lock);
+    velocity_lock.lock();
+    local_planner_.adaptSpeed(setpoint, newest_pose_, 0.0, z_FOV_idx);
+    velocity_lock.unlock();
+
     wp = createPoseMsg(setpoint, new_yaw);
     hover_point_ = wp;
     local_planner_.smooth_waypoints_ = false;

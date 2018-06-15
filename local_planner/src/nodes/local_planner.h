@@ -10,6 +10,9 @@
 #include <mutex>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <thread>
+#include <mutex>
 
 #include <ros/ros.h>
 
@@ -181,7 +184,6 @@ class LocalPlanner {
   void getPathMsg();
   bool withinGoalRadius();
   void getDirectionFromCostMap();
-  void adaptSpeed();
   void stopInFrontObstacles();
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
@@ -191,6 +193,8 @@ class LocalPlanner {
 
  public:
   GroundDetector ground_detector_;
+
+  std::timed_mutex velocity_mutex_;
 
   bool currently_armed_ = false;
   bool offboard_ = false;
@@ -252,6 +256,10 @@ class LocalPlanner {
                     geometry_msgs::Vector3Stamped &waypt_adapted,
                     geometry_msgs::Vector3Stamped &waypt_smoothed);
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
+  void adaptSpeed(geometry_msgs::Vector3Stamped &wp,
+		          geometry_msgs::PoseStamped position,
+				  double time_since_position_update,
+				  std::vector<int> h_FOV);
   void runPlanner();
 };
 
