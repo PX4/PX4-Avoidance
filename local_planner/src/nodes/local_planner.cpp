@@ -748,14 +748,13 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(
   return smooth_waypt;
 }
 
-void LocalPlanner::adaptSpeed() {
+void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp, geometry_msgs::PoseStamped position,
+		                      double time_since_pos_update, std::vector<int> h_FOV) {
 
   ros::Duration since_last_velocity = ros::Time::now() - velocity_time_;
   double since_last_velocity_sec = since_last_velocity.toSec();
-  double new_yaw = nextYaw(pose_, waypt_adapted_, last_yaw_);
 
-  if (hasSameYawAndAltitude(last_waypt_p_, waypt_adapted_, new_yaw,
-                            last_yaw_) &&  !obstacle_) {
+  if (!obstacle_) {
 	speed_ = std::min(speed_, max_speed_);
     speed_ = velocitySigmoid(max_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
   } else {
@@ -764,28 +763,24 @@ void LocalPlanner::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  int e_angle = elevationAnglefromCartesian(
-      waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z,
-      pose_.pose.position);
-  int z_angle = azimuthAnglefromCartesian(
-      waypt_adapted_.vector.x, waypt_adapted_.vector.y, waypt_adapted_.vector.z,
-      pose_.pose.position);
+  int e_angle = elevationAnglefromCartesian(wp.vector.x, wp.vector.y, wp.vector.z, position.pose.position);
+  int z_angle = azimuthAnglefromCartesian(wp.vector.x, wp.vector.y, wp.vector.z, position.pose.position);
 
   int e_index = elevationAngletoIndex(e_angle, ALPHA_RES);
   int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
-  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) !=
-      z_FOV_idx_.end()) {
+  if (std::find(h_FOV.begin(), h_FOV.end(), z_index) !=
+      h_FOV.end()) {
     waypoint_outside_FOV_ = false;
   } else {
     waypoint_outside_FOV_ = true;
     if (reach_altitude_ && !reached_goal_ && !back_off_) {
       int ind_dist = 100;
       int i = 0;
-      for (std::vector<int>::iterator it = z_FOV_idx_.begin();
-           it != z_FOV_idx_.end(); ++it) {
-        if (std::abs(z_FOV_idx_[i] - z_index) < ind_dist) {
-          ind_dist = std::abs(z_FOV_idx_[i] - z_index);
+      for (std::vector<int>::iterator it = h_FOV.begin();
+           it != h_FOV.end(); ++it) {
+        if (std::abs(h_FOV[i] - z_index) < ind_dist) {
+          ind_dist = std::abs(h_FOV[i] - z_index);
         }
         i++;
       }
@@ -801,27 +796,32 @@ void LocalPlanner::adaptSpeed() {
   }
   velocity_time_ = ros::Time::now();
 
+<<<<<<< 17905e9ef2f35e0700d145112c90f368ced8340f
   // calculate correction for computation delay
   ros::Duration since_update = ros::Time::now() - update_time_;
   double since_update_sec = since_update.toSec();
   double delta_dist = since_update_sec * velocity_mod_;
+=======
+  //calculate correction for computation delay
+  double delta_dist = time_since_pos_update * velocity_mod_;
+>>>>>>> Use the sigmoid function also for the communication thread waypoints. Have shared speed variables for planner and communication thread
   speed_ += delta_dist;
 
   // set waypoint to correct speed
   geometry_msgs::Point pose_to_wp;
-  pose_to_wp.x = waypt_adapted_.vector.x - pose_.pose.position.x;
-  pose_to_wp.y = waypt_adapted_.vector.y - pose_.pose.position.y;
-  pose_to_wp.z = waypt_adapted_.vector.z - pose_.pose.position.z;
+  pose_to_wp.x = wp.vector.x - position.pose.position.x;
+  pose_to_wp.y = wp.vector.y - position.pose.position.y;
+  pose_to_wp.z = wp.vector.z - position.pose.position.z;
   normalize(pose_to_wp);
   pose_to_wp.x *= speed_;
   pose_to_wp.y *= speed_;
   pose_to_wp.z *= speed_;
 
-  waypt_adapted_.vector.x = pose_.pose.position.x + pose_to_wp.x;
-  waypt_adapted_.vector.y = pose_.pose.position.y + pose_to_wp.y;
-  waypt_adapted_.vector.z = pose_.pose.position.z + pose_to_wp.z;
-  ROS_DEBUG("Speed adapted WP: [%f %f %f].", waypt_adapted_.vector.x,
-            waypt_adapted_.vector.y, waypt_adapted_.vector.z);
+  wp.vector.x = position.pose.position.x + pose_to_wp.x;
+  wp.vector.y = position.pose.position.y + pose_to_wp.y;
+  wp.vector.z = position.pose.position.z + pose_to_wp.z;
+  ROS_DEBUG("Speed adapted WP: [%f %f %f].", wp.vector.x,
+            wp.vector.y, wp.vector.z);
 }
 
 // create the message that is sent to the UAV
@@ -843,7 +843,12 @@ void LocalPlanner::getPathMsg() {
 
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   new_yaw_ = nextYaw(pose_, waypt_adapted_, last_yaw_);
-  adaptSpeed();
+  ros::Duration since_update = ros::Time::now() - update_time_;
+  double since_update_sec = since_update.toSec();
+  std::unique_lock<std::timed_mutex> velocity_lock(velocity_mutex_, std::defer_lock);
+  velocity_lock.lock();
+  adaptSpeed(waypt_adapted_, pose_, since_update_sec, z_FOV_idx_);
+  velocity_lock.unlock();
   waypt_smoothed_ = waypt_adapted_;
 
   // go to flight height first or smooth wp
