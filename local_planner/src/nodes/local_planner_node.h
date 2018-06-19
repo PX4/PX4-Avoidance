@@ -72,9 +72,9 @@ class LocalPlannerNode {
   std::timed_mutex variable_mutex_;
   std::timed_mutex publisher_mutex_;
 
-  void publishSetpoint(const geometry_msgs::PoseStamped wp, double mode);
+  void publishSetpoint(const geometry_msgs::Twist wp, double mode);
   void threadFunction();
-  void getInterimWaypoint(geometry_msgs::PoseStamped &wp);
+  void getInterimWaypoint(geometry_msgs::PoseStamped &wp, geometry_msgs::Twist &wp_vel);
   void updatePlannerInfo();
   void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid,
                                  geometry_msgs::PoseStamped pose);
