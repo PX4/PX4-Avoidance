@@ -665,6 +665,14 @@ void LocalPlanner::backOff() {
   curr_yaw_ = last_yaw_;
   position_old_ = pose_.pose.position;
 
+  //velocity wp
+  waypt_vel_.linear.x = waypt_p_.pose.position.x - pose_.pose.position.x;
+  waypt_vel_.linear.y = waypt_p_.pose.position.y - pose_.pose.position.y;
+  waypt_vel_.linear.z = waypt_p_.pose.position.z - pose_.pose.position.z;
+  waypt_vel_.angular.x = 0.0;
+  waypt_vel_.angular.y = 0.0;
+  waypt_vel_.angular.z = 0.0;
+
   ROS_DEBUG("Backoff Point: [%f, %f, %f].", back_off_point_.x,
             back_off_point_.y, back_off_point_.z);
   ROS_DEBUG("Distance to Back off Point: %f", dist);
@@ -908,6 +916,14 @@ void LocalPlanner::getPathMsg() {
             waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw_);
 
+  //velocity wp
+  waypt_vel_.linear.x = waypt_p_.pose.position.x - pose_.pose.position.x;
+  waypt_vel_.linear.y = waypt_p_.pose.position.y - pose_.pose.position.y;
+  waypt_vel_.linear.z = waypt_p_.pose.position.z - pose_.pose.position.z;
+  waypt_vel_.angular.x = 0.0;
+  waypt_vel_.angular.y = 0.0;
+  waypt_vel_.angular.z = getAngularVelocity(new_yaw_, curr_yaw_);
+
   path_msg_.poses.push_back(waypt_p_);
   curr_yaw_ = new_yaw_;
   last_last_waypt_p_ = last_waypt_p_;
@@ -997,9 +1013,11 @@ void LocalPlanner::getCandidateDataForVisualization(
 }
 
 void LocalPlanner::getPathData(nav_msgs::Path &path_msg,
-                               geometry_msgs::PoseStamped &waypt_p) {
+                               geometry_msgs::PoseStamped &waypt_p,
+							   geometry_msgs::Twist &waypt_vel) {
   path_msg = path_msg_;
   waypt_p = waypt_p_;
+  waypt_vel = waypt_vel_;
 }
 
 void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel) {

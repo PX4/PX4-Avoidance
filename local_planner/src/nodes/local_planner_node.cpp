@@ -68,8 +68,8 @@ LocalPlannerNode::LocalPlannerNode() {
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
-      "/mavros/setpoint_position/local", 10);
+  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
+      "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>(
       "/mavros/trajectory/generated", 10);
   mavros_obstacle_distance_pub_ =
@@ -666,7 +666,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   }
 }
 
-void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
+void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist wp,
                                        double mode) {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
@@ -674,8 +674,9 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::PoseStamped wp,
   setpoint.id = 0;
   setpoint.type = visualization_msgs::Marker::ARROW;
   setpoint.action = visualization_msgs::Marker::ADD;
-  setpoint.pose = wp.pose;
-  setpoint.scale.x = 1.0;
+  double length = std::sqrt(wp.linear.x * wp.linear.x + wp.linear.y *wp.linear.y + wp.linear.z *wp.linear.z);
+  setpoint.pose = newest_pose_.pose;
+  setpoint.scale.x = length;
   setpoint.scale.y = 0.1;
   setpoint.scale.z = 0.1;
   setpoint.color.a = 1.0;
@@ -760,7 +761,8 @@ void LocalPlannerNode::publishAll() {
 
   nav_msgs::Path path_msg;
   geometry_msgs::PoseStamped waypt_p;
-  local_planner_.getPathData(path_msg, waypt_p);
+  geometry_msgs::Twist waypt_vel;
+  local_planner_.getPathData(path_msg, waypt_p, waypt_vel);
   waypoint_pub_.publish(path_msg);
   path_pub_.publish(path_actual_);
 
@@ -774,13 +776,13 @@ void LocalPlannerNode::publishAll() {
   if (!(time_diff > max_diff && tree_available_)) {
     // choose setpoint color depending on mode
     double mode = local_planner_.local_planner_mode_;
-    publishSetpoint(waypt_p, mode);
+    publishSetpoint(waypt_vel, mode);
     hover_point_ = waypt_p;
 
-    tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world",
-                               waypt_p);
+//    tf_listener_.transformPose("local_origin", ros::Time(0), waypt_p, "world",
+//                               waypt_p);
 
-    mavros_waypoint_pub_.publish(waypt_p);
+    mavros_waypoint_pub_.publish(waypt_vel);
     mavros_msgs::Trajectory obst_free_path = {};
     transformPoseToTrajectory(obst_free_path, waypt_p);
     mavros_obstacle_free_path_pub_.publish(obst_free_path);
@@ -856,7 +858,8 @@ void LocalPlannerNode::threadFunction() {
   }
 }
 
-void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
+void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp,
+										  geometry_msgs::Twist &wp_vel) {
   // check if at goal
   double dist =
       std::abs(goal_msg_.pose.position.x - newest_pose_.pose.position.x) +
@@ -865,6 +868,17 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
   tree_available_ =
       getDirectionFromTree(p, tree_available_, path_node_positions_,
                            newest_pose_.pose.position, false);
+
+  tf::Quaternion q(newest_pose_.pose.orientation.x, newest_pose_.pose.orientation.y,
+      				 newest_pose_.pose.orientation.z, newest_pose_.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  double new_yaw;
+  std::vector<int> z_FOV_idx;
+  int e_FOV_min, e_FOV_max;
+  m.getRPY(roll, pitch, yaw);
+  calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, yaw, pitch);
+
 
   if (tree_available_ && dist > 0.5) {
     ROS_INFO(
@@ -877,18 +891,10 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
                                           avoid_centerpoint_, avoid_radius_);
     }
 
-    double new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
+
 
     // set waypoint to correct speed
-    tf::Quaternion q(newest_pose_.pose.orientation.x, newest_pose_.pose.orientation.y,
-    				 newest_pose_.pose.orientation.z, newest_pose_.pose.orientation.w);
-    tf::Matrix3x3 m(q);
-    double roll, pitch, yaw;
-    std::vector<int> z_FOV_idx;
-    int e_FOV_min, e_FOV_max;
-    m.getRPY(roll, pitch, yaw);
-    calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, yaw, pitch);
-
+    new_yaw = nextYaw(newest_pose_, setpoint, curr_yaw_);
     std::unique_lock<std::timed_mutex> velocity_lock(local_planner_.velocity_mutex_, std::defer_lock);
     velocity_lock.lock();
     local_planner_.adaptSpeed(setpoint, newest_pose_, 0.0, z_FOV_idx);
@@ -899,9 +905,18 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp) {
     local_planner_.smooth_waypoints_ = false;
   } else {
     wp = hover_point_;
+    new_yaw = curr_yaw_;
     ROS_INFO(
         "\033[1;33m Pointcloud timeout: Repeating last waypoint \n \033[0m");
   }
+
+  //velocity wp
+  wp_vel.linear.x = wp.pose.position.x - newest_pose_.pose.position.x;
+  wp_vel.linear.y = wp.pose.position.y - newest_pose_.pose.position.x;
+  wp_vel.linear.z = wp.pose.position.z - newest_pose_.pose.position.x;
+  wp_vel.angular.x = 0;
+  wp_vel.angular.y = 0;
+  wp_vel.angular.z = getAngularVelocity(new_yaw, yaw);
 }
 
 int main(int argc, char **argv) {
@@ -965,13 +980,15 @@ int main(int argc, char **argv) {
                since_start > pointcloud_timeout_hover) {
       if (!NodePtr->never_run_) {
         geometry_msgs::PoseStamped waypt_p;
-        NodePtr->getInterimWaypoint(waypt_p);
-        NodePtr->publishSetpoint(waypt_p, 5);
+        geometry_msgs::Twist waypt_vel;
+        NodePtr->getInterimWaypoint(waypt_p, waypt_vel);
+        NodePtr->publishSetpoint(waypt_vel, 5);
+        NodePtr->mavros_waypoint_pub_.publish(waypt_vel);
 
         try {
           NodePtr->tf_listener_.transformPose("local_origin", ros::Time(0),
                                               waypt_p, "world", waypt_p);
-          NodePtr->mavros_waypoint_pub_.publish(waypt_p);
+//          NodePtr->mavros_waypoint_pub_.publish(waypt_p);
 
           mavros_msgs::Trajectory obst_free_path = {};
           NodePtr->transformPoseToTrajectory(obst_free_path, waypt_p);
@@ -1002,7 +1019,6 @@ int main(int argc, char **argv) {
         if (NodePtr->position_received_) {
           geometry_msgs::PoseStamped drone_pos;
           NodePtr->local_planner_.getPosition(drone_pos);
-          NodePtr->publishSetpoint(drone_pos, 5);
           mavros_msgs::Trajectory obst_free_path = {};
           NodePtr->transformPoseToTrajectory(obst_free_path,
                                              NodePtr->newest_pose_);
@@ -1011,7 +1027,19 @@ int main(int argc, char **argv) {
           NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_4);
           NodePtr->fillUnusedTrajectoryPoint(obst_free_path.point_5);
           NodePtr->mavros_obstacle_free_path_pub_.publish(obst_free_path);
-          NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
+
+          //velocity wp
+          geometry_msgs::Twist waypt_vel;
+          waypt_vel.linear.x = 0;
+          waypt_vel.linear.y = 0;
+          waypt_vel.linear.z = 0;
+          waypt_vel.angular.x = 0;
+          waypt_vel.angular.y = 0;
+          waypt_vel.angular.z = 0;
+          NodePtr->mavros_waypoint_pub_.publish(waypt_vel);
+          NodePtr->publishSetpoint(waypt_vel, 5);
+
+//          NodePtr->mavros_waypoint_pub_.publish(NodePtr->newest_pose_);
 
           ros::Time time = ros::Time::now();
           std::ofstream myfile1(

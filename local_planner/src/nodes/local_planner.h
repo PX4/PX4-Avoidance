@@ -158,6 +158,7 @@ class LocalPlanner {
   geometry_msgs::Vector3Stamped hover_point_;
   geometry_msgs::Vector3Stamped last_hist_waypt_;
   geometry_msgs::PoseStamped waypt_p_;
+  geometry_msgs::Twist waypt_vel_;
   geometry_msgs::TwistStamped curr_vel_;
 
   nav_msgs::Path path_msg_;
@@ -247,7 +248,8 @@ class LocalPlanner {
                                         nav_msgs::GridCells &FOV_cells,
                                         nav_msgs::GridCells &path_ground);
   void getPathData(nav_msgs::Path &path_msg,
-                   geometry_msgs::PoseStamped &waypt_p);
+                   geometry_msgs::PoseStamped &waypt_p,
+				   geometry_msgs::Twist &waypt_vel);
   void setCurrentVelocity(geometry_msgs::TwistStamped vel);
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions,
