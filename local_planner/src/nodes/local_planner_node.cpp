@@ -912,8 +912,8 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp,
 
   //velocity wp
   wp_vel.linear.x = wp.pose.position.x - newest_pose_.pose.position.x;
-  wp_vel.linear.y = wp.pose.position.y - newest_pose_.pose.position.x;
-  wp_vel.linear.z = wp.pose.position.z - newest_pose_.pose.position.x;
+  wp_vel.linear.y = wp.pose.position.y - newest_pose_.pose.position.y;
+  wp_vel.linear.z = wp.pose.position.z - newest_pose_.pose.position.z;
   wp_vel.angular.x = 0;
   wp_vel.angular.y = 0;
   wp_vel.angular.z = getAngularVelocity(new_yaw, yaw);

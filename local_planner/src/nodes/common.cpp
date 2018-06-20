@@ -171,6 +171,6 @@ double getAngularVelocity(double new_yaw, double curr_yaw) {
 	  vel = yaw_vel2;
   }
 
-  return vel/2 * std::abs(vel/2);
+  return 0.3 * vel * std::abs(vel);
 
 }
