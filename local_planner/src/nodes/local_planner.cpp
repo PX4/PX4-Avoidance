@@ -764,10 +764,10 @@ void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp, geometry_msgs::
 
   if (!obstacle_) {
 	speed_ = std::min(speed_, max_speed_);
-    speed_ = velocitySigmoid(max_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
+    speed_ = velocityLinear(max_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
   } else {
 	speed_ = std::min(speed_, min_speed_);
-	speed_ = velocitySigmoid(min_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
+	speed_ = velocityLinear(min_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
   }
 
   // check if new point lies in FOV

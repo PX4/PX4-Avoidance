@@ -142,6 +142,14 @@ double velocitySigmoid(double max_vel, double min_vel, double slope, double v_ol
   return speed;
 }
 
+double velocityLinear(double max_vel, double min_vel, double slope, double v_old, double elapsed) {
+  v_old -= min_vel;
+  double t_old = v_old/slope;
+  double t_new = t_old + elapsed;
+  double speed = min_vel + t_new*slope;
+  return speed;
+}
+
 double getAngularVelocity(double new_yaw, double curr_yaw) {
   while (new_yaw > M_PI){
 	  new_yaw -= M_PI;
@@ -171,6 +179,6 @@ double getAngularVelocity(double new_yaw, double curr_yaw) {
 	  vel = yaw_vel2;
   }
 
-  return 0.3 * vel * std::abs(vel);
+  return vel;
 
 }
