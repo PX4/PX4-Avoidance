@@ -118,6 +118,7 @@ class LocalPlanner {
   double relevance_margin_z_degree_ = 40;
   double relevance_margin_e_degree_ = 25;
   double velocity_sigmoid_slope_ = 1;
+  double min_realsense_dist_ = 0.2;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;

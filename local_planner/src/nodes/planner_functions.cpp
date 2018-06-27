@@ -59,8 +59,8 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                       pcl::PointCloud<pcl::PointXYZ> complete_cloud,
                       double min_cloud_size, double min_dist_backoff,
                       double sphere_radius, Box histogram_box,
-                      geometry_msgs::Point position) {
-  double min_realsense_dist = 0.2;
+                      geometry_msgs::Point position, double min_realsense_dist) {
+
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
