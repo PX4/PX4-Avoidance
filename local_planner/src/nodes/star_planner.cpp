@@ -15,12 +15,14 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 
 void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist_backoff,
                             const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
-                            bool use_ground_detection) {
+                            bool use_ground_detection, const double& min_realsense_dist) {
+
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
   use_ground_detection_ = use_ground_detection;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
+  min_realsense_dist_ = min_realsense_dist;
 }
 
 void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) { pose_ = pose; }
@@ -163,7 +165,7 @@ void StarPlanner::buildLookAheadTree() {
                      distance_to_closest_point, backoff_points_counter,
                      sphere_points_counter, complete_cloud_, min_cloud_size_,
                      min_dist_backoff_, avoid_radius, histogram_box_,
-                     origin_position);
+                     origin_position, min_realsense_dist_);
     double safety_radius = adaptSafetyMarginHistogram(
         distance_to_closest_point, cropped_cloud.points.size(),
         min_cloud_size_);

@@ -59,6 +59,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   no_progress_slope_ = config.no_progress_slope_;
   min_cloud_size_ = config.min_cloud_size_;
+  min_realsense_dist_ = config.min_realsense_dist_;
   avoid_radius_ = config.avoid_radius_;
   min_dist_backoff_ = config.min_dist_backoff_;
   pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
@@ -154,7 +155,7 @@ void LocalPlanner::runPlanner() {
                    distance_to_closest_point_, counter_close_points_backoff_,
                    sphere_points_counter, complete_cloud_, min_cloud_size_,
                    min_dist_backoff_, avoid_radius_, histogram_box_,
-                   pose_.pose.position);
+                   pose_.pose.position, min_realsense_dist_);
 
   safety_radius_ = adaptSafetyMarginHistogram(
       distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
@@ -323,7 +324,7 @@ void LocalPlanner::determineStrategy() {
           star_planner_.ground_detector_ = GroundDetector(ground_detector_);
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
                                   path_waypoints_, curr_yaw_,
-                                  use_ground_detection_);
+                                  use_ground_detection_, min_realsense_dist_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
                                              reprojected_points_dist_);
