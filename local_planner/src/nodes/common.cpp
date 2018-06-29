@@ -132,53 +132,54 @@ void normalize(geometry_msgs::Point &p) {
   }
 }
 
-double velocitySigmoid(double max_vel, double min_vel, double slope, double v_old, double elapsed) {
-  max_vel+=0.05;
-  min_vel-=0.05;
+double velocitySigmoid(double max_vel, double min_vel, double slope,
+                       double v_old, double elapsed) {
+  max_vel += 0.05;
+  min_vel -= 0.05;
   v_old -= min_vel;
-  double t_old = - 1.0/slope *log((max_vel - min_vel)/v_old - 1.0);
+  double t_old = -1.0 / slope * log((max_vel - min_vel) / v_old - 1.0);
   double t_new = t_old + elapsed;
-  double speed = min_vel + (max_vel - min_vel)/(1.0 + exp(-slope * t_new ));
+  double speed = min_vel + (max_vel - min_vel) / (1.0 + exp(-slope * t_new));
   return speed;
 }
 
-double velocityLinear(double max_vel, double min_vel, double slope, double v_old, double elapsed) {
+double velocityLinear(double max_vel, double min_vel, double slope,
+                      double v_old, double elapsed) {
   v_old -= min_vel;
-  double t_old = v_old/slope;
+  double t_old = v_old / slope;
   double t_new = t_old + elapsed;
-  double speed = min_vel + t_new*slope;
+  double speed = min_vel + t_new * slope;
   return speed;
 }
 
 double getAngularVelocity(double new_yaw, double curr_yaw) {
-  while (new_yaw > M_PI){
-	  new_yaw -= M_PI;
+  while (new_yaw > M_PI) {
+    new_yaw -= M_PI;
   }
-  while (new_yaw < -M_PI){
-  	  new_yaw += M_PI;
+  while (new_yaw < -M_PI) {
+    new_yaw += M_PI;
   }
-  while (curr_yaw > M_PI){
-	  curr_yaw -= M_PI;
+  while (curr_yaw > M_PI) {
+    curr_yaw -= M_PI;
   }
-  while (curr_yaw < -M_PI){
-	  curr_yaw += M_PI;
+  while (curr_yaw < -M_PI) {
+    curr_yaw += M_PI;
   }
 
   double yaw_vel1 = new_yaw - curr_yaw;
   double yaw_vel2;
-  if (yaw_vel1 > 0){
-	  yaw_vel2 = -(2*M_PI - yaw_vel1);
-  }else{
-	  yaw_vel2 = 2*M_PI + yaw_vel1;
+  if (yaw_vel1 > 0) {
+    yaw_vel2 = -(2 * M_PI - yaw_vel1);
+  } else {
+    yaw_vel2 = 2 * M_PI + yaw_vel1;
   }
 
   double vel;
-  if (std::abs(yaw_vel1)<std::abs(yaw_vel2)){
-	  vel = yaw_vel1;
-  }else{
-	  vel = yaw_vel2;
+  if (std::abs(yaw_vel1) < std::abs(yaw_vel2)) {
+    vel = yaw_vel1;
+  } else {
+    vel = yaw_vel2;
   }
 
-  return vel;
-
+  return 0.5 * vel;
 }
