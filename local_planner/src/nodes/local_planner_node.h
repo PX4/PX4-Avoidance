@@ -74,10 +74,13 @@ class LocalPlannerNode {
 
   void publishSetpoint(const geometry_msgs::Twist wp, double mode);
   void threadFunction();
-  void getInterimWaypoint(geometry_msgs::PoseStamped &wp, geometry_msgs::Twist &wp_vel);
+  void getInterimWaypoint(geometry_msgs::PoseStamped &wp,
+                          geometry_msgs::Twist &wp_vel);
   void updatePlannerInfo();
   void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid,
                                  geometry_msgs::PoseStamped pose);
+  void transformVelocityToTrajectory(mavros_msgs::Trajectory &obst_avoid,
+                                     geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point);
 
  private:
