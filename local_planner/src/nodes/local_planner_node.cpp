@@ -767,7 +767,7 @@ void LocalPlannerNode::transformVelocityToTrajectory(
   obst_avoid.point_1.acceleration_or_force.y = NAN;
   obst_avoid.point_1.acceleration_or_force.z = NAN;
   obst_avoid.point_1.yaw = NAN;
-  obst_avoid.point_1.yaw_rate = vel.angular.z;
+  obst_avoid.point_1.yaw_rate = -vel.angular.z;
 
   fillUnusedTrajectoryPoint(obst_avoid.point_2);
   fillUnusedTrajectoryPoint(obst_avoid.point_3);
@@ -894,9 +894,9 @@ void LocalPlannerNode::getInterimWaypoint(geometry_msgs::PoseStamped &wp,
       std::abs(goal_msg_.pose.position.x - newest_pose_.pose.position.x) +
       std::abs(goal_msg_.pose.position.y - newest_pose_.pose.position.y);
   geometry_msgs::Point p;
-  tree_available_ =
-      getDirectionFromTree(p, tree_available_, path_node_positions_,
-                           newest_pose_.pose.position, false);
+  tree_available_ = getDirectionFromTree(
+      p, tree_available_, path_node_positions_, newest_pose_.pose.position,
+      goal_msg_.pose.position, false);
 
   tf::Quaternion q(
       newest_pose_.pose.orientation.x, newest_pose_.pose.orientation.y,

@@ -96,7 +96,8 @@ bool calculateCostMap(std::vector<float> cost_path_candidates,
                       std::vector<int> &cost_idx_sorted);
 bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available,
                           std::vector<geometry_msgs::Point> path_node_positions,
-                          geometry_msgs::Point position, bool new_tree);
+                          geometry_msgs::Point position,
+                          geometry_msgs::Point goal, bool new_tree);
 geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(
     geometry_msgs::Point position, geometry_msgs::Vector3Stamped wp,
     geometry_msgs::Point avoid_centerpoint, double avoid_radius);

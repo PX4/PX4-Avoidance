@@ -293,7 +293,7 @@ void LocalPlanner::determineStrategy() {
         geometry_msgs::Point p;
         tree_available_ = getDirectionFromTree(
             p, tree_available_, star_planner_.path_node_positions_,
-            pose_.pose.position, false);
+            pose_.pose.position, goal_, false);
         double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
         if (tree_available_ && dist_goal > 4.0) {
           path_waypoints_.cells.push_back(p);
@@ -343,7 +343,7 @@ void LocalPlanner::determineStrategy() {
           geometry_msgs::Point p;
           tree_available_ = getDirectionFromTree(
               p, tree_available_, star_planner_.path_node_positions_,
-              pose_.pose.position, true);
+              pose_.pose.position, goal_, true);
           path_waypoints_.cells.push_back(p);
         } else {
           int e_min_idx = -1;
@@ -666,7 +666,7 @@ void LocalPlanner::backOff() {
   curr_yaw_ = last_yaw_;
   position_old_ = pose_.pose.position;
 
-  //velocity wp
+  // velocity wp
   waypt_vel_.linear.x = waypt_p_.pose.position.x - pose_.pose.position.x;
   waypt_vel_.linear.y = waypt_p_.pose.position.y - pose_.pose.position.y;
   waypt_vel_.linear.z = waypt_p_.pose.position.z - pose_.pose.position.z;
@@ -757,37 +757,41 @@ geometry_msgs::Vector3Stamped LocalPlanner::smoothWaypoint(
   return smooth_waypt;
 }
 
-void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp, geometry_msgs::PoseStamped position,
-		                      double time_since_pos_update, std::vector<int> h_FOV) {
-
+void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp,
+                              geometry_msgs::PoseStamped position,
+                              double time_since_pos_update,
+                              std::vector<int> h_FOV) {
   ros::Duration since_last_velocity = ros::Time::now() - velocity_time_;
   double since_last_velocity_sec = since_last_velocity.toSec();
 
   if (!obstacle_) {
-	speed_ = std::min(speed_, max_speed_);
-    speed_ = velocityLinear(max_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
+    speed_ = std::min(speed_, max_speed_);
+    speed_ = velocityLinear(max_speed_, 0.0, velocity_sigmoid_slope_, speed_,
+                            since_last_velocity_sec);
   } else {
-	speed_ = std::min(speed_, min_speed_);
-	speed_ = velocityLinear(min_speed_, 0.0, velocity_sigmoid_slope_, speed_, since_last_velocity_sec);
+    speed_ = std::min(speed_, min_speed_);
+    speed_ = velocityLinear(min_speed_, 0.0, velocity_sigmoid_slope_, speed_,
+                            since_last_velocity_sec);
   }
 
   // check if new point lies in FOV
-  int e_angle = elevationAnglefromCartesian(wp.vector.x, wp.vector.y, wp.vector.z, position.pose.position);
-  int z_angle = azimuthAnglefromCartesian(wp.vector.x, wp.vector.y, wp.vector.z, position.pose.position);
+  int e_angle = elevationAnglefromCartesian(
+      wp.vector.x, wp.vector.y, wp.vector.z, position.pose.position);
+  int z_angle = azimuthAnglefromCartesian(wp.vector.x, wp.vector.y, wp.vector.z,
+                                          position.pose.position);
 
   int e_index = elevationAngletoIndex(e_angle, ALPHA_RES);
   int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
-  if (std::find(h_FOV.begin(), h_FOV.end(), z_index) !=
-      h_FOV.end()) {
+  if (std::find(h_FOV.begin(), h_FOV.end(), z_index) != h_FOV.end()) {
     waypoint_outside_FOV_ = false;
   } else {
     waypoint_outside_FOV_ = true;
     if (reach_altitude_ && !reached_goal_ && !back_off_) {
       int ind_dist = 100;
       int i = 0;
-      for (std::vector<int>::iterator it = h_FOV.begin();
-           it != h_FOV.end(); ++it) {
+      for (std::vector<int>::iterator it = h_FOV.begin(); it != h_FOV.end();
+           ++it) {
         if (std::abs(h_FOV[i] - z_index) < ind_dist) {
           ind_dist = std::abs(h_FOV[i] - z_index);
         }
@@ -805,15 +809,10 @@ void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp, geometry_msgs::
   }
   velocity_time_ = ros::Time::now();
 
-<<<<<<< 17905e9ef2f35e0700d145112c90f368ced8340f
   // calculate correction for computation delay
   ros::Duration since_update = ros::Time::now() - update_time_;
   double since_update_sec = since_update.toSec();
   double delta_dist = since_update_sec * velocity_mod_;
-=======
-  //calculate correction for computation delay
-  double delta_dist = time_since_pos_update * velocity_mod_;
->>>>>>> Use the sigmoid function also for the communication thread waypoints. Have shared speed variables for planner and communication thread
   speed_ += delta_dist;
 
   // set waypoint to correct speed
@@ -829,8 +828,8 @@ void LocalPlanner::adaptSpeed(geometry_msgs::Vector3Stamped &wp, geometry_msgs::
   wp.vector.x = position.pose.position.x + pose_to_wp.x;
   wp.vector.y = position.pose.position.y + pose_to_wp.y;
   wp.vector.z = position.pose.position.z + pose_to_wp.z;
-  ROS_DEBUG("Speed adapted WP: [%f %f %f].", wp.vector.x,
-            wp.vector.y, wp.vector.z);
+  ROS_DEBUG("Speed adapted WP: [%f %f %f].", wp.vector.x, wp.vector.y,
+            wp.vector.z);
 }
 
 // create the message that is sent to the UAV
@@ -854,7 +853,8 @@ void LocalPlanner::getPathMsg() {
   new_yaw_ = nextYaw(pose_, waypt_adapted_, last_yaw_);
   ros::Duration since_update = ros::Time::now() - update_time_;
   double since_update_sec = since_update.toSec();
-  std::unique_lock<std::timed_mutex> velocity_lock(velocity_mutex_, std::defer_lock);
+  std::unique_lock<std::timed_mutex> velocity_lock(velocity_mutex_,
+                                                   std::defer_lock);
   velocity_lock.lock();
   adaptSpeed(waypt_adapted_, pose_, since_update_sec, z_FOV_idx_);
   velocity_lock.unlock();
@@ -917,7 +917,7 @@ void LocalPlanner::getPathMsg() {
             waypt_smoothed_.vector.y, waypt_smoothed_.vector.z);
   waypt_p_ = createPoseMsg(waypt_smoothed_, new_yaw_);
 
-  //velocity wp
+  // velocity wp
   waypt_vel_.linear.x = waypt_p_.pose.position.x - pose_.pose.position.x;
   waypt_vel_.linear.y = waypt_p_.pose.position.y - pose_.pose.position.y;
   waypt_vel_.linear.z = waypt_p_.pose.position.z - pose_.pose.position.z;
@@ -1015,7 +1015,7 @@ void LocalPlanner::getCandidateDataForVisualization(
 
 void LocalPlanner::getPathData(nav_msgs::Path &path_msg,
                                geometry_msgs::PoseStamped &waypt_p,
-							   geometry_msgs::Twist &waypt_vel) {
+                               geometry_msgs::Twist &waypt_vel) {
   path_msg = path_msg_;
   waypt_p = waypt_p_;
   waypt_vel = waypt_vel_;

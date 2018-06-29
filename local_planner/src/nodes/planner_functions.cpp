@@ -59,8 +59,8 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                       pcl::PointCloud<pcl::PointXYZ> complete_cloud,
                       double min_cloud_size, double min_dist_backoff,
                       double sphere_radius, Box histogram_box,
-                      geometry_msgs::Point position, double min_realsense_dist) {
-
+                      geometry_msgs::Point position,
+                      double min_realsense_dist) {
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
@@ -516,7 +516,8 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 
 bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available,
                           std::vector<geometry_msgs::Point> path_node_positions,
-                          geometry_msgs::Point position, bool new_tree) {
+                          geometry_msgs::Point position,
+                          geometry_msgs::Point goal, bool new_tree) {
   if (tree_available) {
     int size = path_node_positions.size();
 
@@ -561,8 +562,18 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available,
       int wp_z = azimuthAnglefromCartesian(mean_point.x, mean_point.y,
                                            mean_point.z, position);
 
-      p.x = wp_e;
-      p.y = wp_z;
+      int goal_e =
+          elevationAnglefromCartesian(goal.x, goal.y, goal.z, position);
+      int goal_z = azimuthAnglefromCartesian(goal.x, goal.y, goal.z, position);
+
+      double tree_progression = 1.0 - double(wp_idx) / double(size);
+      double angle_difference =
+          std::abs(indexAngleDifference(wp_z, goal_z)) / 180.0;
+      double goal_weight = tree_progression * angle_difference;
+
+      p.x = wp_e * (1.0 - goal_weight) + goal_e * goal_weight;
+      p.y = wp_z * (1.0 - goal_weight) + goal_z * goal_weight;
+      ;
       p.z = 0.0;
     }
   }
@@ -620,12 +631,12 @@ geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(
                       center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
 
     double mag_n = sqrt(n[0] * n[0] + n[1] * n[1]);
-    if(mag_n > 0){
-    	n[0] = n[0]/mag_n;
-    	n[1] = n[1]/mag_n;
-    }else{
-    	n[0] = 0;
-    	n[1] = 0;
+    if (mag_n > 0) {
+      n[0] = n[0] / mag_n;
+      n[1] = n[1] / mag_n;
+    } else {
+      n[0] = 0;
+      n[1] = 0;
     }
     double cos_new_theta = 0.9 * cos_theta;
     double sin_new_theta = sin(acos(cos_new_theta));
