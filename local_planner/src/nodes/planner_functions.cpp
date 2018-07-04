@@ -566,14 +566,17 @@ bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available,
           elevationAnglefromCartesian(goal.x, goal.y, goal.z, position);
       int goal_z = azimuthAnglefromCartesian(goal.x, goal.y, goal.z, position);
 
-      double tree_progression = 1.0 - double(wp_idx) / double(size);
-      double angle_difference =
-          std::abs(indexAngleDifference(wp_z, goal_z)) / 180.0;
-      double goal_weight = tree_progression * angle_difference;
+//      double tree_progression = 1.0 - double(wp_idx) / double(size);
+//      double angle_difference =
+//          std::abs(indexAngleDifference(wp_z, goal_z)) / 180.0;
+//      double goal_weight = tree_progression * angle_difference;
+//
+//      p.x = wp_e * (1.0 - goal_weight) + goal_e * goal_weight;
+//      p.y = wp_z * (1.0 - goal_weight) + goal_z * goal_weight;
 
-      p.x = wp_e * (1.0 - goal_weight) + goal_e * goal_weight;
-      p.y = wp_z * (1.0 - goal_weight) + goal_z * goal_weight;
-      ;
+      p.x = wp_e;
+      p.y = wp_z;
+
       p.z = 0.0;
     }
   }
