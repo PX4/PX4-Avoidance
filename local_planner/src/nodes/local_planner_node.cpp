@@ -677,8 +677,13 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist wp,
   double length =
       std::sqrt(wp.linear.x * wp.linear.x + wp.linear.y * wp.linear.y +
                 wp.linear.z * wp.linear.z);
-  setpoint.pose = newest_pose_.pose;
-  setpoint.scale.x = length;
+  geometry_msgs::Point tip;
+  tip.x = newest_pose_.pose.position.x + wp.linear.x;
+  tip.y = newest_pose_.pose.position.y + wp.linear.y;
+  tip.z = newest_pose_.pose.position.z + wp.linear.z;
+  setpoint.points.push_back(newest_pose_.pose.position);
+  setpoint.points.push_back(tip);
+  setpoint.scale.x = 0.1;
   setpoint.scale.y = 0.1;
   setpoint.scale.z = 0.1;
   setpoint.color.a = 1.0;
