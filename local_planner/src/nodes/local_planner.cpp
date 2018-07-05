@@ -119,6 +119,12 @@ void LocalPlanner::setGoal() {
   goal_.pose.position.x = goal_x_param_;
   goal_.pose.position.y = goal_y_param_;
   goal_.pose.position.z = goal_z_param_;
+  tf::Quaternion q;
+  q.setRPY(0.0, 0.0, goal_yaw_param_);
+  goal_.pose.orientation.w = q.getW();
+  goal_.pose.orientation.x = q.getX();
+  goal_.pose.orientation.y = q.getY();
+  goal_.pose.orientation.z = q.getZ();
   reached_goal_ = false;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z);
   initGridCells(&path_waypoints_);
@@ -292,7 +298,7 @@ void LocalPlanner::determineStrategy() {
         tree_available_ = getDirectionFromTree(
             p, tree_available_, star_planner_.path_node_positions_,
             pose_.pose.position, false);
-        double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
+        double dist_goal = distance3DCartesian(goal_.pose.position, pose_.pose.position);
         if (tree_available_ && dist_goal > 4.0) {
           path_waypoints_.cells.push_back(p);
           ROS_INFO(
@@ -313,7 +319,7 @@ void LocalPlanner::determineStrategy() {
         findFreeDirections(
             polar_histogram_, safety_radius_, path_candidates_, path_selected_,
             path_rejected_, path_blocked_, path_ground_, path_waypoints_,
-            cost_path_candidates_, goal_, pose_, position_old_,
+            cost_path_candidates_, goal_.pose.position, pose_, position_old_,
             goal_cost_param_, smooth_cost_param_,
             height_change_cost_param_adapted_, height_change_cost_param_, -1,
             false, only_yawed_, ALPHA_RES);
@@ -363,7 +369,7 @@ void LocalPlanner::determineStrategy() {
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
               path_selected_, path_rejected_, path_blocked_, path_ground_,
-              path_waypoints_, cost_path_candidates_, goal_, pose_,
+              path_waypoints_, cost_path_candidates_, goal_.pose.position, pose_,
               position_old_, goal_cost_param_, smooth_cost_param_,
               height_change_cost_param_adapted_, height_change_cost_param_,
               e_min_idx, over_obstacle_, only_yawed_, ALPHA_RES);
@@ -497,8 +503,8 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 // calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_ && !reached_goal_) {
-    double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
-    double goal_dist_old = distance3DCartesian(position_old_, goal_);
+    double goal_dist = distance3DCartesian(pose_.pose.position, goal_.pose.position);
+    double goal_dist_old = distance3DCartesian(position_old_, goal_.pose.position);
     double time = std::clock() / (double)(CLOCKS_PER_SEC / 1000);
     double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
     integral_time_old_ = time;
@@ -686,7 +692,7 @@ bool LocalPlanner::withinGoalRadius() {
   if (a.x < goal_acceptance_radius && a.y < goal_acceptance_radius &&
       a.z < goal_acceptance_radius) {
     if (!reached_goal_) {
-      yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
+      yaw_reached_goal_ = tf::getYaw(goal_.pose.orientation);
     }
     reached_goal_ = true;
     return true;
@@ -959,7 +965,7 @@ void LocalPlanner::stopInFrontObstacles() {
 
 void LocalPlanner::getPosition(geometry_msgs::PoseStamped &pos) { pos = pose_; }
 
-void LocalPlanner::getGoalPosition(geometry_msgs::Point &goal) { goal = goal_; }
+void LocalPlanner::getGoalPosition(geometry_msgs::Point &goal) { goal = goal_.pose.position; }
 void LocalPlanner::getAvoidSphere(geometry_msgs::Point &center, double &radius,
                                   int &sphere_age, bool &use_avoid_sphere) {
   center = avoid_centerpoint_;
