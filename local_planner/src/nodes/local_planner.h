@@ -139,7 +139,7 @@ class LocalPlanner {
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point min_groundbox_, max_groundbox_;
-  geometry_msgs::Point goal_;
+  geometry_msgs::PoseStamped goal_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point back_off_start_point_;
   geometry_msgs::PoseStamped offboard_pose_;

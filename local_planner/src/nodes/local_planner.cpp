@@ -98,7 +98,7 @@ void LocalPlanner::logData() {
             << reach_altitude_ << "\t" << use_ground_detection_ << "\t"
             << obstacle_ << "\t" << height_change_cost_param_adapted_ << "\t"
             << over_obstacle_ << "\t" << too_low_ << "\t" << is_near_min_height_
-            << "\t" << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t"
+            << "\t" << goal_.pose.position.x << "\t" << goal_.pose.position.y << "\t" << goal_.pose.position.z << "\t"
             << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t"
             << tree_time_[tree_time_.size() - 1] << "\n";
     myfile1.close();
@@ -116,11 +116,11 @@ void LocalPlanner::setVelocity() {
 }
 
 void LocalPlanner::setGoal() {
-  goal_.x = goal_x_param_;
-  goal_.y = goal_y_param_;
-  goal_.z = goal_z_param_;
+  goal_.pose.position.x = goal_x_param_;
+  goal_.pose.position.y = goal_y_param_;
+  goal_.pose.position.z = goal_z_param_;
   reached_goal_ = false;
-  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
+  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z);
   initGridCells(&path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);
@@ -263,8 +263,8 @@ void LocalPlanner::determineStrategy() {
         int n_occupied_cells = 0;
 
         int goal_e_angle = elevationAnglefromCartesian(
-            goal_.x, goal_.y, goal_.z, pose_.pose.position);
-        int goal_z_angle = azimuthAnglefromCartesian(goal_.x, goal_.y, goal_.z,
+            goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z, pose_.pose.position);
+        int goal_z_angle = azimuthAnglefromCartesian(goal_.pose.position.x, goal_.pose.position.y, goal_.pose.position.z,
                                                      pose_.pose.position);
 
         int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
@@ -569,9 +569,9 @@ void LocalPlanner::getNextWaypoint() {
 // if there isn't any obstacle in front of the UAV, increase cruising speed
 void LocalPlanner::goFast() {
   tf::Vector3 vec;
-  vec.setX(goal_.x - pose_.pose.position.x);
-  vec.setY(goal_.y - pose_.pose.position.y);
-  vec.setZ(goal_.z - pose_.pose.position.z);
+  vec.setX(goal_.pose.position.x - pose_.pose.position.x);
+  vec.setY(goal_.pose.position.y - pose_.pose.position.y);
+  vec.setZ(goal_.pose.position.z - pose_.pose.position.z);
   double new_len = vec.length() < 1.0 ? vec.length() : speed_;
 
   vec.normalize();
@@ -678,9 +678,9 @@ void LocalPlanner::backOff() {
 // check if the UAV has reached the goal set for the mission
 bool LocalPlanner::withinGoalRadius() {
   geometry_msgs::Point a;
-  a.x = std::abs(goal_.x - pose_.pose.position.x);
-  a.y = std::abs(goal_.y - pose_.pose.position.y);
-  a.z = std::abs(goal_.z - pose_.pose.position.z);
+  a.x = std::abs(goal_.pose.position.x - pose_.pose.position.x);
+  a.y = std::abs(goal_.pose.position.y - pose_.pose.position.y);
+  a.z = std::abs(goal_.pose.position.z - pose_.pose.position.z);
   float goal_acceptance_radius = 0.5f;
 
   if (a.x < goal_acceptance_radius && a.y < goal_acceptance_radius &&
@@ -705,7 +705,7 @@ bool LocalPlanner::withinGoalRadius() {
 // when taking off, first publish waypoints to reach the goal altitude
 void LocalPlanner::reachGoalAltitudeFirst() {
   starting_height_ =
-      std::max(goal_.z - 0.5, take_off_pose_.pose.position.z + 1.0);
+      std::max(goal_.pose.position.z - 0.5, take_off_pose_.pose.position.z + 1.0);
   if (pose_.pose.position.z < starting_height_) {
     waypt_.vector.x = offboard_pose_.pose.position.x;
     waypt_.vector.y = offboard_pose_.pose.position.y;
@@ -879,10 +879,10 @@ void LocalPlanner::getPathMsg() {
     if (use_ground_detection_) {
       if (over_obstacle_ && (is_near_min_height_ || too_low_)) {
         over_goal = true;
-        waypt_smoothed_.vector.x = goal_.x;
-        waypt_smoothed_.vector.y = goal_.y;
-        if (pose_.pose.position.z < goal_.z) {
-          waypt_smoothed_.vector.z = goal_.z;
+        waypt_smoothed_.vector.x = goal_.pose.position.x;
+        waypt_smoothed_.vector.y = goal_.pose.position.y;
+        if (pose_.pose.position.z < goal_.pose.position.z) {
+          waypt_smoothed_.vector.z = goal_.pose.position.z;
           ROS_DEBUG("Rising to goal");
         } else {
           waypt_smoothed_.vector.z = min_flight_height_;
@@ -891,9 +891,9 @@ void LocalPlanner::getPathMsg() {
       }
     }
     if (!over_goal) {
-      waypt_smoothed_.vector.x = goal_.x;
-      waypt_smoothed_.vector.y = goal_.y;
-      waypt_smoothed_.vector.z = goal_.z;
+      waypt_smoothed_.vector.x = goal_.pose.position.x;
+      waypt_smoothed_.vector.y = goal_.pose.position.y;
+      waypt_smoothed_.vector.z = goal_.pose.position.z;
     }
   }
 
@@ -944,16 +944,16 @@ void LocalPlanner::stopInFrontObstacles() {
   if (first_brake_) {
     double braking_distance =
         fabsf(distance_to_closest_point_ - keep_distance_);
-    Eigen::Vector2f pose_to_goal(goal_.x - pose_.pose.position.x,
-                                 goal_.y - pose_.pose.position.y);
-    goal_.x = pose_.pose.position.x +
+    Eigen::Vector2f pose_to_goal(goal_.pose.position.x - pose_.pose.position.x,
+                                 goal_.pose.position.y - pose_.pose.position.y);
+    goal_.pose.position.x = pose_.pose.position.x +
               (braking_distance * pose_to_goal(0) / pose_to_goal.norm());
-    goal_.y = pose_.pose.position.y +
+    goal_.pose.position.y = pose_.pose.position.y +
               (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
     first_brake_ = false;
   }
-  ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.x,
-           goal_.y, goal_.z, distance_to_closest_point_);
+  ROS_INFO("New Stop Goal: [%.2f %.2f %.2f], obstacle distance %.2f. ", goal_.pose.position.x,
+           goal_.pose.position.y, goal_.pose.position.z, distance_to_closest_point_);
   goFast();
 }
 
