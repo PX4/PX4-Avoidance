@@ -13,8 +13,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
-                            nav_msgs::GridCells path_waypoints, double curr_yaw,
+void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist_backoff,
+                            const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
                             bool use_ground_detection) {
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
@@ -23,25 +23,25 @@ void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
   min_dist_backoff_ = min_dist_backoff;
 }
 
-void StarPlanner::setPose(geometry_msgs::PoseStamped pose) { pose_ = pose; }
+void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) { pose_ = pose; }
 
-void StarPlanner::setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud) {
+void StarPlanner::setCloud(const pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
   complete_cloud_ = complete_cloud;
 }
 
-void StarPlanner::setBoxSize(Box histogram_box_size) {
+void StarPlanner::setBoxSize(const Box& histogram_box_size) {
   histogram_box_size_ = histogram_box_size;
 }
 
-void StarPlanner::setGoal(geometry_msgs::Point goal) {
+void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
   goal_ = goal;
   tree_age_ = 1000;
 }
 
-void StarPlanner::setCostParams(double goal_cost_param,
-                                double smooth_cost_param,
-                                double height_change_cost_param_adapted,
-                                double height_change_cost_param) {
+void StarPlanner::setCostParams(const double& goal_cost_param,
+                                const double& smooth_cost_param,
+                                const double& height_change_cost_param_adapted,
+                                const double& height_change_cost_param) {
   goal_cost_param_ = goal_cost_param;
   smooth_cost_param_ = smooth_cost_param;
   height_change_cost_param_adapted_ = height_change_cost_param_adapted;
@@ -49,9 +49,9 @@ void StarPlanner::setCostParams(double goal_cost_param,
 }
 
 void StarPlanner::setReprojectedPoints(
-    pcl::PointCloud<pcl::PointXYZ> reprojected_points,
-    std::vector<double> reprojected_points_age,
-    std::vector<double> reprojected_points_dist) {
+    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+    const std::vector<double>& reprojected_points_age,
+    const std::vector<double>& reprojected_points_dist) {
   reprojected_points_ = reprojected_points;
   reprojected_points_age_ = reprojected_points_age;
   reprojected_points_dist_ = reprojected_points_dist;

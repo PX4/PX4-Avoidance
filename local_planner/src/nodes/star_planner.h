@@ -100,19 +100,20 @@ class StarPlanner {
   StarPlanner();
   ~StarPlanner();
 
-  void setParams(double min_cloud_size, double min_dist_backoff,
-                 nav_msgs::GridCells path_waypoints, double curr_yaw,
+  void setParams(const double& min_cloud_size, const double& min_dist_backoff,
+                 const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
                  bool use_ground_detection);
-  void setReprojectedPoints(pcl::PointCloud<pcl::PointXYZ> reprojected_points,
-                            std::vector<double> reprojected_points_age,
-                            std::vector<double> reprojected_points_dist);
-  void setCostParams(double goal_cost_param, double smooth_cost_param,
-                     double height_change_cost_param_adapted,
-                     double height_change_cost_param);
-  void setPose(geometry_msgs::PoseStamped pose);
-  void setBoxSize(Box histogram_box_size);
-  void setGoal(geometry_msgs::Point pose);
-  void setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud);
+
+  void setReprojectedPoints(const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+                            const std::vector<double>& reprojected_points_age,
+                            const std::vector<double>& reprojected_points_dist);
+  void setCostParams(const double& goal_cost_param, const double& smooth_cost_param,
+                     const double& height_change_cost_param_adapted,
+                     const double& height_change_cost_param);
+  void setPose(const geometry_msgs::PoseStamped& pose);
+  void setBoxSize(const Box& histogram_box_size);
+  void setGoal(const geometry_msgs::Point& pose);
+  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();
