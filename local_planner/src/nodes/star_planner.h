@@ -111,7 +111,7 @@ class StarPlanner {
                      double height_change_cost_param);
   void setPose(geometry_msgs::PoseStamped pose);
   void setBoxSize(Box histogram_box_size);
-  void setGoal(geometry_msgs::Point pose);
+  void setGoal(geometry_msgs::PoseStamped pose);
   void setCloud(pcl::PointCloud<pcl::PointXYZ> complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);

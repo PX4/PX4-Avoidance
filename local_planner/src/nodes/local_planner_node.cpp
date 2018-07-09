@@ -115,6 +115,7 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.goal_x_param_ = goal_msg_.pose.position.x;
     local_planner_.goal_y_param_ = goal_msg_.pose.position.y;
     local_planner_.goal_z_param_ = goal_msg_.pose.position.z;
+    local_planner_.goal_yaw_param_ = tf::getYaw(goal_msg_.pose.orientation);
     local_planner_.setGoal();
     new_goal_ = false;
   }
@@ -618,6 +619,13 @@ void LocalPlannerNode::fcuInputGoalCallback(
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
     goal_msg_.pose.position.z = msg.point_2.position.z;
+
+    tf::Quaternion q;
+    q.setRPY(0.0, 0.0, msg.point_2.yaw);
+    goal_msg_.pose.orientation.w = q.getW();
+    goal_msg_.pose.orientation.x = q.getX();
+    goal_msg_.pose.orientation.y = q.getY();
+    goal_msg_.pose.orientation.z = q.getZ();
   }
 }
 

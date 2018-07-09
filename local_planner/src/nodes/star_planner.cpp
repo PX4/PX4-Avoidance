@@ -33,8 +33,8 @@ void StarPlanner::setBoxSize(Box histogram_box_size) {
   histogram_box_size_ = histogram_box_size;
 }
 
-void StarPlanner::setGoal(geometry_msgs::Point goal) {
-  goal_ = goal;
+void StarPlanner::setGoal(geometry_msgs::PoseStamped goal) {
+  goal_ = goal.pose.position;
   tree_age_ = 1000;
 }
 
