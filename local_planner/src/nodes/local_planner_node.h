@@ -13,6 +13,8 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <mavros_msgs/WaypointReached.h>
+#include <mavros_msgs/WaypointSetCurrent.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -67,6 +69,7 @@ class LocalPlannerNode {
   ros::Publisher mavros_obstacle_distance_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
+  ros::ServiceClient mavros_set_mission_item_;
   tf::TransformListener tf_listener_;
 
   std::timed_mutex variable_mutex_;
@@ -88,6 +91,7 @@ class LocalPlannerNode {
   double avoid_radius_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;
+  int _reached_mission_item = 0;
 
   // Subscribers
   ros::Subscriber pointcloud_sub_;
@@ -97,6 +101,7 @@ class LocalPlannerNode {
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
   ros::Subscriber fcu_input_sub_;
+  ros::Subscriber mission_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
@@ -142,6 +147,7 @@ class LocalPlannerNode {
   void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
   void stateCallback(const mavros_msgs::State msg);
+  void missionCallback(const mavros_msgs::WaypointReached &msg);
   void readParams();
   void publishAll();
   void publishPath(const geometry_msgs::PoseStamped msg);

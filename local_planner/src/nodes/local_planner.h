@@ -114,6 +114,7 @@ class LocalPlanner {
   double avoid_radius_;
   double relevance_margin_z_degree_ = 40;
   double relevance_margin_e_degree_ = 25;
+  double time_without_progress_ = 0.0;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
@@ -194,6 +195,7 @@ class LocalPlanner {
   bool offboard_ = false;
   bool smooth_waypoints_ = true;
   bool send_obstacles_fcu_ = false;
+  bool _go_to_next_mission_item = false;
 
   std::vector<float> algorithm_total_time_;
 

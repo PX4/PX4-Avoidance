@@ -26,6 +26,8 @@ LocalPlannerNode::LocalPlannerNode() {
                     &LocalPlannerNode::clickedGoalCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
+  mission_sub_ = nh_.subscribe("/mavros/mission/reached", 1, 
+                              &LocalPlannerNode::missionCallback, this);
 
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
@@ -84,6 +86,8 @@ LocalPlannerNode::LocalPlannerNode() {
 
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
+  mavros_set_mission_item_ =
+      nh_.serviceClient<mavros_msgs::SetMode>("/mavros/mission/set_current");
 
   local_planner_.setGoal();
 }
@@ -607,6 +611,8 @@ void LocalPlannerNode::clickedGoalCallback(
 
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory &msg) {
+  ROS_INFO("\033[1;33m %f %f %f \n \033[0m",
+              msg.point_2.position.x,  msg.point_2.position.y,  msg.point_2.position.z);
   if (mission_ && (msg.point_valid[1] == true) &&
       ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
         0.001) ||
@@ -619,6 +625,11 @@ void LocalPlannerNode::fcuInputGoalCallback(
     goal_msg_.pose.position.y = msg.point_2.position.y;
     goal_msg_.pose.position.z = msg.point_2.position.z;
   }
+}
+
+void LocalPlannerNode::missionCallback(
+  const mavros_msgs::WaypointReached &msg) {
+  _reached_mission_item = msg.wp_seq;
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
@@ -804,6 +815,17 @@ void LocalPlannerNode::publishAll() {
     local_planner_.sendObstacleDistanceDataToFcu(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
   }
+
+  if (local_planner_._go_to_next_mission_item)
+  {
+    mavros_msgs::WaypointSetCurrent wpt_msg = {};
+    wpt_msg.request.wp_seq = _reached_mission_item + 1;
+    mavros_set_mission_item_.call(wpt_msg);
+    if (wpt_msg.response.success)
+    {
+      printf("updated mission item \n");
+    }
+ }
 
   publishMarkerCandidates(path_candidates);
   publishMarkerSelected(path_selected);

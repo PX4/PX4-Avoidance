@@ -501,7 +501,10 @@ void LocalPlanner::evaluateProgressRate() {
     double goal_dist_old = distance3DCartesian(position_old_, goal_);
     double time = std::clock() / (double)(CLOCKS_PER_SEC / 1000);
     double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
+    double delta_time = (time - integral_time_old_);
     integral_time_old_ = time;
+
+    printf("goal_dist %f, goal_dist_old %f, incline %f \n", goal_dist, goal_dist_old, incline);
 
     goal_dist_incline_.push_back(incline);
     if (goal_dist_incline_.size() > dist_incline_window_size_) {
@@ -530,6 +533,20 @@ void LocalPlanner::evaluateProgressRate() {
     }
     ROS_DEBUG("Progress rate to goal: %f, adapted height change cost: %f .",
               avg_incline, height_change_cost_param_adapted_);
+
+     _go_to_next_mission_item = false;
+    if (avg_incline > no_progress_slope_) {
+      time_without_progress_ += delta_time;
+      if (time_without_progress_ > 50 * 1000) {
+        _go_to_next_mission_item = true;
+        time_without_progress_ = 0.0;
+      }
+      printf("TIME WITHOUT PROGRESS %f ms \n", time_without_progress_ / 1000);
+    } else {
+      time_without_progress_ = 0.0;
+      printf("reset timewithoutprogress \n");
+    }
+
   } else {
     height_change_cost_param_adapted_ = height_change_cost_param_;
   }
@@ -915,7 +932,7 @@ void LocalPlanner::getPathMsg() {
 }
 
 void LocalPlanner::printAlgorithmStatistics() {
-  ROS_DEBUG("Current pose: [%f, %f, %f].", pose_.pose.position.x,
+  ROS_INFO("Current pose: [%f, %f, %f].", pose_.pose.position.x,
             pose_.pose.position.y, pose_.pose.position.z);
   ROS_DEBUG("Velocity: [%f, %f, %f], module: %f.", velocity_x_, velocity_y_,
             velocity_z_, velocity_mod_);
