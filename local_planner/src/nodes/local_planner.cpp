@@ -73,6 +73,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
     setGoal();
   }
 
+  use_vel_setpoints_ = config.use_vel_setpoints_;
   stop_in_front_ = config.stop_in_front_;
   use_avoid_sphere_ = config.use_avoid_sphere_;
   use_ground_detection_ = config.use_ground_detection_;

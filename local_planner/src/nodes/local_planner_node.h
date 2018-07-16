@@ -63,7 +63,8 @@ class LocalPlannerNode {
 
   ros::Publisher log_name_pub_;
   ros::Publisher current_waypoint_pub_;
-  ros::Publisher mavros_waypoint_pub_;
+  ros::Publisher mavros_pos_setpoint_pub_;
+  ros::Publisher mavros_vel_setpoint_pub_;
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_obstacle_distance_pub_;
   ros::Publisher waypoint_pub_;
