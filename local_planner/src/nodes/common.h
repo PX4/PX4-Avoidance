@@ -37,9 +37,9 @@ int elevationAnglefromCartesian(double x, double y, double z,
                                 geometry_msgs::Point pos);
 int elevationAngletoIndex(int e, int res);
 int azimuthAngletoIndex(int z, int res);
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v,
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v,
                double last_yaw);
-geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt,
+geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
                                          double yaw);
 void normalize(geometry_msgs::Point &p);
 

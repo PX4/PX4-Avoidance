@@ -99,22 +99,22 @@ int azimuthAngletoIndex(int z, int res) {  //[-180,180]
 }
 
 // calculate the yaw for the next waypoint
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Vector3Stamped v,
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v,
                double last_yaw_) {
-  double dx = v.vector.x - u.pose.position.x;
-  double dy = v.vector.y - u.pose.position.y;
+  double dx = v.x - u.pose.position.x;
+  double dy = v.y - u.pose.position.y;
 
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Vector3Stamped waypt,
+geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
                                          double yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "/world";
-  pose_msg.pose.position.x = waypt.vector.x;
-  pose_msg.pose.position.y = waypt.vector.y;
-  pose_msg.pose.position.z = waypt.vector.z;
+  pose_msg.pose.position.x = waypt.x;
+  pose_msg.pose.position.y = waypt.y;
+  pose_msg.pose.position.z = waypt.z;
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
   return pose_msg;
 }

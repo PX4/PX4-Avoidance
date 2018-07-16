@@ -303,6 +303,6 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 
-  ROS_INFO("Tree calculated in %2.2fms.",
+  ROS_INFO("\033[0;35m[SP]Tree calculated in %2.2fms.\033[0m",
            (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 }
