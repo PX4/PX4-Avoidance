@@ -211,6 +211,7 @@ class LocalPlanner {
   GroundDetector ground_detector_;
   Box histogram_box_size_;
 
+  bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;
   bool mission_ = false;

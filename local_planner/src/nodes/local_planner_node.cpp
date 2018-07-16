@@ -68,8 +68,10 @@ LocalPlannerNode::LocalPlannerNode() {
   path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-  mavros_waypoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
+  mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+  mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
+  "/mavros/setpoint_position/local", 10);
   mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>(
       "/mavros/trajectory/generated", 10);
   mavros_obstacle_distance_pub_ =
@@ -544,9 +546,14 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   publishSetpoint(result.velocity_waypoint, result.waypoint_type);
 
   // to mavros
-  mavros_waypoint_pub_.publish(result.velocity_waypoint);
   mavros_msgs::Trajectory obst_free_path = {};
-  transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
+  if(local_planner_.use_vel_setpoints_){
+      mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
+      transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
+  }else{
+	  mavros_pos_setpoint_pub_.publish(result.position_waypoint);
+	  transformPoseToTrajectory(obst_free_path, result.position_waypoint);
+  }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
