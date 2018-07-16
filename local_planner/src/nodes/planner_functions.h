@@ -94,12 +94,12 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
                     double resolution);
 bool calculateCostMap(std::vector<float> cost_path_candidates,
                       std::vector<int> &cost_idx_sorted);
-bool getDirectionFromTree(geometry_msgs::Point &p, bool tree_available,
+bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position,
-                          geometry_msgs::Point goal, bool new_tree);
-geometry_msgs::Vector3Stamped getSphereAdaptedWaypoint(
-    geometry_msgs::Point position, geometry_msgs::Vector3Stamped wp,
+                          geometry_msgs::Point goal);
+geometry_msgs::Point getSphereAdaptedWaypoint(
+    geometry_msgs::Point position, geometry_msgs::Point wp,
     geometry_msgs::Point avoid_centerpoint, double avoid_radius);
 
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

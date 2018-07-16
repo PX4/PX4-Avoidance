@@ -121,6 +121,7 @@ include_directories(
 # )
 add_library(local_planner
   src/nodes/local_planner.cpp
+  src/nodes/waypoint_generator.cpp
   src/nodes/histogram.cpp
   src/nodes/tree_node.cpp
   src/nodes/box.cpp

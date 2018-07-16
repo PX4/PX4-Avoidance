@@ -32,6 +32,7 @@
 #include "avoidance/common_ros.h"
 #include "local_planner.h"
 #include "planner_functions.h"
+#include "waypoint_generator.h"
 
 class LocalPlannerNode {
  public:
@@ -40,7 +41,6 @@ class LocalPlannerNode {
 
   bool point_cloud_updated_;
   bool never_run_;
-  bool tree_available_ = false;
   bool write_cloud_ = false;
   bool position_received_ = false;
 
@@ -59,6 +59,7 @@ class LocalPlannerNode {
   ros::Time last_wp_time_;
 
   LocalPlanner local_planner_;
+  WaypointGenerator wp_generator_;
 
   ros::Publisher log_name_pub_;
   ros::Publisher current_waypoint_pub_;
@@ -72,7 +73,8 @@ class LocalPlannerNode {
   std::timed_mutex variable_mutex_;
   std::timed_mutex publisher_mutex_;
 
-  void publishSetpoint(const geometry_msgs::Twist wp, double mode);
+  void publishSetpoint(const geometry_msgs::Twist wp,
+                       waypoint_choice waypoint_type);
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp,
                           geometry_msgs::Twist &wp_vel);
@@ -82,6 +84,7 @@ class LocalPlannerNode {
   void transformVelocityToTrajectory(mavros_msgs::Trajectory &obst_avoid,
                                      geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point);
+  void publishWaypoints(bool hover);
 
  private:
   ros::NodeHandle nh_;
@@ -146,7 +149,7 @@ class LocalPlannerNode {
   void velocityCallback(const geometry_msgs::TwistStamped msg);
   void stateCallback(const mavros_msgs::State msg);
   void readParams();
-  void publishAll();
+  void publishPlannerData();
   void publishPath(const geometry_msgs::PoseStamped msg);
   void initMarker(visualization_msgs::MarkerArray *marker,
                   nav_msgs::GridCells path, float red, float green, float blue);
@@ -159,7 +162,7 @@ class LocalPlannerNode {
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);
-  ;
+
   void printPointInfo(double x, double y, double z);
   void publishGoal();
   void publishBox();
@@ -167,7 +170,6 @@ class LocalPlannerNode {
   void publishGround();
   void publishReachHeight();
   void publishTree();
-  void publishWaypoints();
 };
 
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
