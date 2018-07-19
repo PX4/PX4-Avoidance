@@ -81,6 +81,8 @@ LocalPlannerNode::LocalPlannerNode() {
   log_name_pub_ = nh_.advertise<std_msgs::String>("/log_name", 1);
   takeoff_pose_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
+  offboard_pose_pub_ =
+        nh_.advertise<visualization_msgs::Marker>("/offboard_pose", 1);
   initial_height_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
 
@@ -365,6 +367,23 @@ void LocalPlannerNode::publishReachHeight() {
   t.id = 0;
   t.pose.position = local_planner_.take_off_pose_.pose.position;
   takeoff_pose_pub_.publish(t);
+
+  visualization_msgs::Marker a;
+  a.header.frame_id = "world";
+  a.header.stamp = ros::Time::now();
+  a.type = visualization_msgs::Marker::SPHERE;
+  a.action = visualization_msgs::Marker::ADD;
+  a.scale.x = 0.2;
+  a.scale.y = 0.2;
+  a.scale.z = 0.2;
+  a.color.a = 1.0;
+  a.color.r = 0.5;
+  a.color.g = 0.0;
+  a.color.b = 0.5;
+  a.lifetime = ros::Duration();
+  a.id = 0;
+  a.pose.position = local_planner_.offboard_pose_.pose.position;
+  offboard_pose_pub_.publish(a);
 }
 
 void LocalPlannerNode::publishBox() {
