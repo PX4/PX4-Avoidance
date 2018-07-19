@@ -128,18 +128,14 @@ void LocalPlannerNode::updatePlannerInfo() {
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
-  auto rot_msg = msg;
-  tf_listener_.transformPose("world", ros::Time(0), msg, "local_origin",
-                             rot_msg);
-  newest_pose_ = rot_msg;
+  newest_pose_ = msg;
   publishPath(newest_pose_);
-  curr_yaw_ = tf::getYaw(rot_msg.pose.orientation);
+  curr_yaw_ = tf::getYaw(msg.pose.orientation);
   position_received_ = true;
 }
 
 void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
-  vel_msg_ = avoidance::transformTwistMsg(tf_listener_, "/world",
-                                          "/local_origin", msg);  // 90 deg fix
+  vel_msg_ = msg;
 }
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
@@ -166,7 +162,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker,
                                   nav_msgs::GridCells path, float red,
                                   float green, float blue) {
   visualization_msgs::Marker m;
-  m.header.frame_id = "world";
+  m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
   m.action = 3;
@@ -243,7 +239,7 @@ void LocalPlannerNode::publishGoal() {
   geometry_msgs::Point goal;
   local_planner_.getGoalPosition(goal);
 
-  m.header.frame_id = "world";
+  m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::SPHERE;
   m.action = visualization_msgs::Marker::ADD;
@@ -273,7 +269,7 @@ void LocalPlannerNode::publishGround() {
   local_planner_.ground_detector_.getGroundDataForVisualization(
       closest_point_on_ground, ground_orientation, ground_heights, ground_xmax,
       ground_xmin, ground_ymax, ground_ymin);
-  m.header.frame_id = "world";
+  m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
   m.pose.position.x = closest_point_on_ground.x;
@@ -294,7 +290,7 @@ void LocalPlannerNode::publishGround() {
 
   visualization_msgs::MarkerArray marker_array;
   visualization_msgs::Marker g;
-  g.header.frame_id = "world";
+  g.header.frame_id = "local_origin";
   g.header.stamp = ros::Time::now();
   g.type = visualization_msgs::Marker::CUBE;
   g.action = 3;
@@ -329,7 +325,7 @@ void LocalPlannerNode::publishGround() {
 
 void LocalPlannerNode::publishReachHeight() {
   visualization_msgs::Marker m;
-  m.header.frame_id = "world";
+  m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
   m.pose.position.x = local_planner_.take_off_pose_.pose.position.x;
@@ -352,7 +348,7 @@ void LocalPlannerNode::publishReachHeight() {
   initial_height_pub_.publish(m);
 
   visualization_msgs::Marker t;
-  t.header.frame_id = "world";
+  t.header.frame_id = "local_origin";
   t.header.stamp = ros::Time::now();
   t.type = visualization_msgs::Marker::SPHERE;
   t.action = visualization_msgs::Marker::ADD;
@@ -369,7 +365,7 @@ void LocalPlannerNode::publishReachHeight() {
   takeoff_pose_pub_.publish(t);
 
   visualization_msgs::Marker a;
-  a.header.frame_id = "world";
+  a.header.frame_id = "local_origin";
   a.header.stamp = ros::Time::now();
   a.type = visualization_msgs::Marker::SPHERE;
   a.action = visualization_msgs::Marker::ADD;
@@ -565,6 +561,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   publishSetpoint(result.velocity_waypoint, result.waypoint_type);
 
   // to mavros
+
   mavros_msgs::Trajectory obst_free_path = {};
   if(local_planner_.use_vel_setpoints_){
       mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
@@ -684,19 +681,19 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
     pcl::PointCloud<pcl::PointXYZ> complete_cloud;
     sensor_msgs::PointCloud2 pc2cloud_world;
     try {
-      tf_listener_.waitForTransform("/world", msg.header.frame_id,
+      tf_listener_.waitForTransform("/local_origin", msg.header.frame_id,
                                     msg.header.stamp, ros::Duration(3.0));
       tf::StampedTransform transform;
-      tf_listener_.lookupTransform("/world", msg.header.frame_id,
+      tf_listener_.lookupTransform("/local_origin", msg.header.frame_id,
                                    msg.header.stamp, transform);
-      pcl_ros::transformPointCloud("/world", transform, msg, pc2cloud_world);
+      pcl_ros::transformPointCloud("/local_origin", transform, msg, pc2cloud_world);
       pcl::fromROSMsg(pc2cloud_world, complete_cloud);
       local_planner_.complete_cloud_ = complete_cloud;
       point_cloud_updated_ = true;
     } catch (tf::TransformException &ex) {
       ROS_ERROR(
           "Received an exception trying to transform a point from "
-          "\"camera_optical_frame\" to \"world\": %s",
+          "\"camera_optical_frame\" to \"local_origin\": %s",
           ex.what());
     }
     write_cloud_ = false;
