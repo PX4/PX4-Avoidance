@@ -125,6 +125,7 @@ void LocalPlanner::setGoal() {
   initGridCells(&path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);
+  goal_dist_incline_.clear();
 }
 
 void LocalPlanner::runPlanner() {
