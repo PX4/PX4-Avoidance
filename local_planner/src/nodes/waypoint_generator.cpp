@@ -37,7 +37,8 @@ void WaypointGenerator::calculateWaypoint() {
       bool tree_available = getDirectionFromTree(
           p, planner_info_.path_node_positions, pose_.pose.position, goal_);
       double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
-      if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0)) {
+      ros::Duration since_last_path = ros::Time::now() - planner_info_.last_path_time;
+      if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) && since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         output_.goto_position = fromPolarToCartesian(
             p.x, p.y, 1.0, planner_info_.pose.pose.position);
@@ -230,9 +231,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 }
 
 // smooth trajectory by liming the maximim accelleration possible
-geometry_msgs::Point WaypointGenerator::smoothWaypoint(
-    geometry_msgs::Point wp) {
-  geometry_msgs::Point smooth_waypt;
+void WaypointGenerator::smoothWaypoint() {
   std::clock_t t = std::clock();
   float dt = (t - last_t_smooth_) / (float)(CLOCKS_PER_SEC);
   dt = dt > 0.0f ? dt : 0.004f;
@@ -240,8 +239,8 @@ geometry_msgs::Point WaypointGenerator::smoothWaypoint(
 
   Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
   Eigen::Vector2f vel_waypt_xy(
-      (wp.x - last_position_waypoint_.pose.position.x) / dt,
-      (wp.y - last_position_waypoint_.pose.position.y) / dt);
+      (output_.adapted_goto_position.x - last_position_waypoint_.pose.position.x) / dt,
+      (output_.adapted_goto_position.y - last_position_waypoint_.pose.position.y) / dt);
   Eigen::Vector2f vel_waypt_xy_prev(
       (last_position_waypoint_.pose.position.x -
        last_last_position_waypoint_.pose.position.x) /
@@ -256,19 +255,15 @@ geometry_msgs::Point WaypointGenerator::smoothWaypoint(
              vel_waypt_xy_prev;
   }
 
-  smooth_waypt.x = last_position_waypoint_.pose.position.x + vel_xy(0) * dt;
-  smooth_waypt.y = last_position_waypoint_.pose.position.y + vel_xy(1) * dt;
-  smooth_waypt.z = wp.z;
+  output_.smoothed_goto_position.x = last_position_waypoint_.pose.position.x + vel_xy(0) * dt;
+  output_.smoothed_goto_position.y = last_position_waypoint_.pose.position.y + vel_xy(1) * dt;
+  output_.smoothed_goto_position.z = output_.adapted_goto_position.z;
 
-  ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].", smooth_waypt.x,
-            smooth_waypt.y, smooth_waypt.z);
-  return smooth_waypt;
+  ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].", output_.smoothed_goto_position.x,
+		  output_.smoothed_goto_position.y, output_.smoothed_goto_position.z);
 }
 
-void WaypointGenerator::adaptSpeed(geometry_msgs::Point &wp,
-                                   geometry_msgs::PoseStamped position,
-                                   double time_since_pos_update,
-                                   std::vector<int> h_FOV) {
+void WaypointGenerator::adaptSpeed() {
   ros::Duration since_last_velocity = ros::Time::now() - velocity_time_;
   double since_last_velocity_sec = since_last_velocity.toSec();
 
@@ -286,24 +281,24 @@ void WaypointGenerator::adaptSpeed(geometry_msgs::Point &wp,
 
   // check if new point lies in FOV
   int e_angle =
-      elevationAnglefromCartesian(wp.x, wp.y, wp.z, position.pose.position);
+      elevationAnglefromCartesian(output_.adapted_goto_position.x, output_.adapted_goto_position.y, output_.adapted_goto_position.z, pose_.pose.position);
   int z_angle =
-      azimuthAnglefromCartesian(wp.x, wp.y, wp.z, position.pose.position);
+      azimuthAnglefromCartesian(output_.adapted_goto_position.x, output_.adapted_goto_position.y, output_.adapted_goto_position.z, pose_.pose.position);
 
   int e_index = elevationAngletoIndex(e_angle, ALPHA_RES);
   int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
-  if (std::find(h_FOV.begin(), h_FOV.end(), z_index) != h_FOV.end()) {
+  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) != z_FOV_idx_.end()) {
     waypoint_outside_FOV_ = false;
   } else {
     waypoint_outside_FOV_ = true;
     if (reach_altitude_ && !reached_goal_) {
       int ind_dist = 100;
       int i = 0;
-      for (std::vector<int>::iterator it = h_FOV.begin(); it != h_FOV.end();
+      for (std::vector<int>::iterator it = z_FOV_idx_.begin(); it != z_FOV_idx_.end();
            ++it) {
-        if (std::abs(h_FOV[i] - z_index) < ind_dist) {
-          ind_dist = std::abs(h_FOV[i] - z_index);
+        if (std::abs(z_FOV_idx_[i] - z_index) < ind_dist) {
+          ind_dist = std::abs(z_FOV_idx_[i] - z_index);
         }
         i++;
       }
@@ -327,18 +322,19 @@ void WaypointGenerator::adaptSpeed(geometry_msgs::Point &wp,
 
   // set waypoint to correct speed
   geometry_msgs::Point pose_to_wp;
-  pose_to_wp.x = wp.x - position.pose.position.x;
-  pose_to_wp.y = wp.y - position.pose.position.y;
-  pose_to_wp.z = wp.z - position.pose.position.z;
+  pose_to_wp.x = output_.adapted_goto_position.x - pose_.pose.position.x;
+  pose_to_wp.y = output_.adapted_goto_position.y - pose_.pose.position.y;
+  pose_to_wp.z = output_.adapted_goto_position.z - pose_.pose.position.z;
   normalize(pose_to_wp);
   pose_to_wp.x *= speed_;
   pose_to_wp.y *= speed_;
   pose_to_wp.z *= speed_;
 
-  wp.x = position.pose.position.x + pose_to_wp.x;
-  wp.y = position.pose.position.y + pose_to_wp.y;
-  wp.z = position.pose.position.z + pose_to_wp.z;
-  ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f].", wp.x, wp.y, wp.z);
+  output_.adapted_goto_position.x = pose_.pose.position.x + pose_to_wp.x;
+  output_.adapted_goto_position.y = pose_.pose.position.y + pose_to_wp.y;
+  output_.adapted_goto_position.z = pose_.pose.position.z + pose_to_wp.z;
+  ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f].", output_.adapted_goto_position.x,
+		  output_.adapted_goto_position.y, output_.adapted_goto_position.z);
 }
 
 // create the message that is sent to the UAV
@@ -361,11 +357,8 @@ void WaypointGenerator::getPathMsg() {
   }
 
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
-  new_yaw_ = nextYaw(pose_, output_.adapted_goto_position, last_yaw_);
-  ros::Duration since_update = ros::Time::now() - update_time_;
-  double since_update_sec = since_update.toSec();
-  adaptSpeed(output_.adapted_goto_position, pose_, since_update_sec,
-             z_FOV_idx_);
+  new_yaw_ = nextYaw(pose_, output_.adapted_goto_position);
+  adaptSpeed();
   output_.smoothed_goto_position = output_.adapted_goto_position;
 
   // go to flight height first or smooth wp
@@ -381,9 +374,8 @@ void WaypointGenerator::getPathMsg() {
               pose_.pose.position.y, pose_.pose.position.z);
   } else {
     if (!only_yawed_ && !reached_goal_) {
-      output_.smoothed_goto_position =
-          smoothWaypoint(output_.adapted_goto_position);
-      new_yaw_ = nextYaw(pose_, output_.smoothed_goto_position, last_yaw_);
+      smoothWaypoint();
+      new_yaw_ = nextYaw(pose_, output_.smoothed_goto_position);
       ;
     }
   }

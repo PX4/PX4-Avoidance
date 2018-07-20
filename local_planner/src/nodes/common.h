@@ -37,8 +37,7 @@ int elevationAnglefromCartesian(double x, double y, double z,
                                 geometry_msgs::Point pos);
 int elevationAngletoIndex(int e, int res);
 int azimuthAngletoIndex(int z, int res);
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v,
-               double last_yaw);
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v);
 geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
                                          double yaw);
 void normalize(geometry_msgs::Point &p);
@@ -47,6 +46,7 @@ double velocitySigmoid(double max_vel, double min_vel, double slope,
                        double v_old, double elapsed);
 double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed);
-double getAngularVelocity(double new_yaw, double curr_yaw);
+void wrapAngleToPlusMinusPI(double &angle);
+double getAngularVelocity(double desired_yaw, double curr_yaw);
 
 #endif  // COMMON_H

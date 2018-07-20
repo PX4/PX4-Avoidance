@@ -4,47 +4,17 @@
 #include <math.h>
 #include <Eigen/Dense>
 #include <chrono>
-#include <deque>
 #include <fstream>
 #include <iostream>
 #include <limits>
-#include <mutex>
-#include <mutex>
 #include <string>
-#include <thread>
 #include <vector>
 
 #include <ros/ros.h>
 
-#include "box.h"
 #include "common.h"
-#include "ground_detector.h"
-#include "histogram.h"
-#include "local_planner.h"
 #include "planner_functions.h"
-#include "star_planner.h"
-#include "tree_node.h"
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/point_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
-
-#include <tf/transform_listener.h>
-
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud2.h>
+#include "local_planner.h"
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -54,10 +24,6 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
-#include <dynamic_reconfigure/server.h>
-#include <local_planner/LocalPlannerNodeConfig.h>
 
 struct waypointResult {
   waypoint_choice waypoint_type;
@@ -107,9 +73,8 @@ class WaypointGenerator {
   void transformPositionToVelocityWaypoint();
   bool withinGoalRadius();
   void reachGoalAltitudeFirst();
-  geometry_msgs::Point smoothWaypoint(geometry_msgs::Point wp);
-  void adaptSpeed(geometry_msgs::Point &wp, geometry_msgs::PoseStamped position,
-                  double time_since_pos_update, std::vector<int> h_FOV);
+  void smoothWaypoint();
+  void adaptSpeed();
   void getPathMsg();
 
  public:

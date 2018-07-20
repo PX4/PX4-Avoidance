@@ -39,7 +39,7 @@ geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z,
 
   geometry_msgs::Vector3Stamped waypoint;
   waypoint.header.stamp = ros::Time::now();
-  waypoint.header.frame_id = "/world";
+  waypoint.header.frame_id = "/local_origin";
   waypoint.vector.x = p.x;
   waypoint.vector.y = p.y;
   waypoint.vector.z = p.z;
@@ -99,8 +99,7 @@ int azimuthAngletoIndex(int z, int res) {  //[-180,180]
 }
 
 // calculate the yaw for the next waypoint
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v,
-               double last_yaw_) {
+double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v) {
   double dx = v.x - u.pose.position.x;
   double dy = v.y - u.pose.position.y;
 
@@ -111,7 +110,7 @@ geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
                                          double yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
-  pose_msg.header.frame_id = "/world";
+  pose_msg.header.frame_id = "/local_origin";
   pose_msg.pose.position.x = waypt.x;
   pose_msg.pose.position.y = waypt.y;
   pose_msg.pose.position.z = waypt.z;
@@ -152,21 +151,25 @@ double velocityLinear(double max_vel, double min_vel, double slope,
   return speed;
 }
 
-double getAngularVelocity(double new_yaw, double curr_yaw) {
-  while (new_yaw > M_PI) {
-    new_yaw -= M_PI;
+void wrapAngleToPlusMinusPI(double &angle){
+  while (angle > M_PI) {
+	  angle -= 2 * M_PI;
   }
-  while (new_yaw < -M_PI) {
-    new_yaw += M_PI;
+  while (angle < -M_PI) {
+	  angle += 2 * M_PI;
   }
-  while (curr_yaw > M_PI) {
-    curr_yaw -= M_PI;
+  while (angle > M_PI) {
+	  angle -= 2 * M_PI;
   }
-  while (curr_yaw < -M_PI) {
-    curr_yaw += M_PI;
+  while (angle < -M_PI) {
+	  angle += 2 * M_PI;
   }
+}
 
-  double yaw_vel1 = new_yaw - curr_yaw;
+double getAngularVelocity(double desired_yaw, double curr_yaw) {
+
+  wrapAngleToPlusMinusPI(desired_yaw);
+  double yaw_vel1 = desired_yaw - curr_yaw;
   double yaw_vel2;
   if (yaw_vel1 > 0) {
     yaw_vel2 = -(2 * M_PI - yaw_vel1);

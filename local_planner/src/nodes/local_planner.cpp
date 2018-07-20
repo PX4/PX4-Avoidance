@@ -345,6 +345,7 @@ void LocalPlanner::determineStrategy() {
               ((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
           waypoint_type_ = tryPath;
+          last_path_time_ = ros::Time::now();
         } else {
           int e_min_idx = -1;
           if (use_ground_detection_) {
@@ -386,7 +387,7 @@ void LocalPlanner::determineStrategy() {
 void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   sensor_msgs::LaserScan msg = {};
   msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "world";
+  msg.header.frame_id = "local_origin";
   msg.angle_increment = ALPHA_RES * M_PI / 180.0f;
   msg.range_min = 0.2f;
   msg.range_max = 20.0f;
@@ -430,7 +431,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
 void LocalPlanner::updateObstacleDistanceMsg() {
   sensor_msgs::LaserScan msg = {};
   msg.header.stamp = ros::Time::now();
-  msg.header.frame_id = "world";
+  msg.header.frame_id = "local_origin";
   msg.angle_increment = ALPHA_RES * M_PI / 180.0f;
   msg.range_min = 0.2f;
   msg.range_max = 20.0f;
@@ -448,7 +449,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
-  reprojected_points_.header.frame_id = "world";
+  reprojected_points_.header.frame_id = "local_origin";
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
@@ -619,6 +620,7 @@ void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
   out.min_speed = min_speed_;
   out.max_speed = max_speed_;
   out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
+  out.last_path_time = last_path_time_;
 
   out.use_avoid_sphere = use_avoid_sphere_;
   out.avoid_sphere_age = avoid_sphere_age_;
