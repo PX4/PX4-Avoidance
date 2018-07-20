@@ -68,6 +68,7 @@ struct avoidanceOutput {
   double min_speed;
   double max_speed;
   double velocity_sigmoid_slope;
+  ros::Time last_path_time;
 
   bool use_avoid_sphere;
   int avoid_sphere_age;
@@ -153,6 +154,7 @@ class LocalPlanner {
   double costmap_direction_z_;
 
   waypoint_choice waypoint_type_;
+  ros::Time last_path_time_;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
