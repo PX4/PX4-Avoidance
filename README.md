@@ -342,4 +342,4 @@ roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<poin
 
 # Running on Odroid
 
-Read the [Running on Odroid](https://github.com/PX4/avoidance/blob/global_planner/resource/odroid/README.md) instructions
+Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
