@@ -6,6 +6,13 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
   
 **The full PX4 Developer documentation is available on: https://dev.px4.io and includes more computer vision (including VIO) examples.**
 
+## Bi-weekly Dev Call
+The active developers of the avoidance repo are syncing up on a bi-weekly basis on the WG dev call.
+
+* Join the call: https://zoom.us/j/506512712
+* Time: Tuesday, 10AM CET
+* Meeting ID: 506512712
+* Dronecode calendar: https://www.dronecode.org/calendar/
 
 [![PX4 Avoidance video](http://img.youtube.com/vi/VqZkAWSl_U0/0.jpg)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
 
