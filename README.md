@@ -12,6 +12,7 @@ The active developers of the avoidance repo are syncing up on a bi-weekly basis 
 * Join the call: https://zoom.us/j/506512712
 * Time: Tuesday, 10AM CET
 * Meeting ID: 506512712
+* Dronecode calendar: https://www.dronecode.org/calendar/
 
 [![PX4 Avoidance video](http://img.youtube.com/vi/VqZkAWSl_U0/0.jpg)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
 
