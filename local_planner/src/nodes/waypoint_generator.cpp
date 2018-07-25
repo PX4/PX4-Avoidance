@@ -224,6 +224,14 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
     output_.goto_position.x = planner_info_.offboard_pose.pose.position.x;
     output_.goto_position.y = planner_info_.offboard_pose.pose.position.y;
     output_.goto_position.z = pose_.pose.position.z + 0.5;
+
+    //if goal lies directly overhead, do not yaw
+    double x_diff = std::abs(goal_.x - pose_.pose.position.x);
+    double y_diff = std::abs(goal_.y - pose_.pose.position.y);
+    float goal_acceptance_radius = 1.0f;
+    if (x_diff < goal_acceptance_radius && y_diff < goal_acceptance_radius) {
+    	new_yaw_ = curr_yaw_;
+    }
   } else {
     reach_altitude_ = true;
     getPathMsg();
