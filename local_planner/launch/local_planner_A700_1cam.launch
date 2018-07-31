@@ -15,9 +15,9 @@
     <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>
     <arg name="build" default="posix_sitl_default"/>
-    <arg name="fcu_url" default="/dev/ttyUSB0:921600"/>
+    <!-- <arg name="fcu_url" default="/dev/ttyUSB0:921600"/> -->
     <!-- <arg name="fcu_url" default="udp://:14540@localhost:14557"/> -->
-    <!-- <arg name="fcu_url" default="udp://:14547@localhost:14550"/> -->
+    <arg name="fcu_url" default="udp://:14547@localhost:14550"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
@@ -26,9 +26,9 @@
     <arg name="serial_no_camera_down"    default="817512071697"/>
     <arg name="serial_no_camera_left"    default="817612071531"/>
     <arg name="serial_no_camera_right"    default="817512070752"/>
-    <arg name="depth_fps"            default="60"/>
-    <arg name="infra1_fps"           default="60"/>
-    <arg name="infra2_fps"           default="60"/>
+    <arg name="depth_fps"            default="30"/>
+    <arg name="infra1_fps"           default="30"/>
+    <arg name="infra2_fps"           default="30"/>
     
    
 
@@ -53,33 +53,19 @@
 
   <!-- Launch cameras -->
   
-  <group ns="camera_front">
-   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
-     <arg name="serial_no"             value="$(arg serial_no_camera_front)"/>
+  <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+    <arg name="namespace"             value="camera_front" />
+    <arg name="serial_no"             value="$(arg serial_no_camera_front)"/>
+    
+    <arg name="depth_fps"             value="$(arg depth_fps)"/>
+    <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
+    <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
 
-     <arg name="depth_fps"             value="$(arg depth_fps)"/>
-     <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
-     <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
-
-     <arg name="enable_pointcloud"     value="true"/>      
-     <arg name="enable_imu"            value="false"/>
-     <arg name="enable_fisheye"        value="false"/>
-   </include>
-  </group>
+    <arg name="enable_pointcloud"     value="true"/>      
+    <arg name="enable_imu"            value="false"/>
+    <arg name="enable_fisheye"        value="false"/>
+  </include>
   
-  <group ns="camera_down">
-   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
-     <arg name="serial_no"             value="$(arg serial_no_camera_down)"/>
-
-     <arg name="depth_fps"             value="$(arg depth_fps)"/>
-     <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
-     <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
-
-     <arg name="enable_pointcloud"     value="true"/>      
-     <arg name="enable_imu"            value="false"/>
-     <arg name="enable_fisheye"        value="false"/>
-   </include>
-  </group>
 
   <!-- Launch avoidance -->
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
@@ -88,7 +74,7 @@
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/camera_front/camera/depth_registered/points" />
+    <param name="depth_points_topic" value="/camera_front/depth_registered/points" />
   </node>
 
 </launch>
