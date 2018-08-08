@@ -7,12 +7,13 @@
 
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
           args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
+    <!-- <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
+          args="0.21 0.032 -0.11 -0.026177 0 0.999657 0 fcu camera_link 10"/> -->
+          
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
           args="0.21 0.32 -0.11 0 0 3.14159 fcu front_camera_link 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_right_camera"
           args="0.10 -0.10 -0.11 -1.5708 0 3.14159 fcu right_camera_link 10"/>
-    <node pkg="tf" type="static_transform_publisher" name="tf_left_camera"
-          args="0.10 0.74 -0.11 1.5708 0 3.14159 fcu left_camera_link 10"/>
           
           
           
@@ -26,10 +27,8 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="est" default="ekf2"/>
-    <arg name="serial_no_camera_front"    default="819112072871"/>
-    <arg name="serial_no_camera_down"    default="817512071697"/>
-    <arg name="serial_no_camera_left"    default="817512070752"/>
-    <arg name="serial_no_camera_right"    default="817612070347"/>
+    <arg name="serial_no_camera_front"    default="819612070807"/>
+    <arg name="serial_no_camera_right"    default="819612070818"/>
     <arg name="depth_fps"            default="30"/>
     <arg name="infra1_fps"           default="30"/>
     <arg name="infra2_fps"           default="30"/>
@@ -84,29 +83,6 @@
     <arg name="enable_imu"            value="false"/>
     <arg name="enable_fisheye"        value="false"/>
   </include>
-  
-  <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
-    <arg name="namespace"             value="camera_left" />
-    <arg name="tf_prefix"             value="left_" />
-    <arg name="serial_no"             value="$(arg serial_no_camera_left)"/>
-    
-    <arg name="depth_fps"             value="$(arg depth_fps)"/>
-    <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
-    <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
-
-    <arg name="enable_pointcloud"     value="true"/>      
-    <arg name="enable_imu"            value="false"/>
-    <arg name="enable_fisheye"        value="false"/>
-  </include>
-  
-  <!-- <node name="setParam" pkg="local_planner" type="realsense_params.sh" /> -->
-    
-  <param name="/camera_front/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="false" />
-  <param name="/camera_front/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="true" />
-  <param name="/camera_left/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="false" />
-  <param name="/camera_left/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="true" />
-  <param name="/camera_right/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="false" />
-  <param name="/camera_right/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="true" />
   
 
   <!-- Launch avoidance -->
