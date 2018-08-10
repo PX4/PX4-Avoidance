@@ -216,6 +216,7 @@ void LocalPlanner::determineStrategy() {
 
     if (pose_.pose.position.z > starting_height_) {
       reach_altitude_ = true;
+      waypoint_type_ = direct;
     }
 
     if (send_obstacles_fcu_) {
@@ -618,6 +619,7 @@ void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
 
   out.pose = pose_;
   out.obstacle_ahead = obstacle_;
+  out.reach_altitude = reach_altitude_;
   out.min_speed = min_speed_;
   out.max_speed = max_speed_;
   out.velocity_sigmoid_slope = velocity_sigmoid_slope_;

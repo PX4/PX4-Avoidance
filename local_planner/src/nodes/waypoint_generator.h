@@ -49,7 +49,6 @@ class WaypointGenerator {
   geometry_msgs::TwistStamped curr_vel_;
 
   bool reached_goal_;
-  bool reach_altitude_ = false;
   bool waypoint_outside_FOV_;
   bool only_yawed_;
   double last_yaw_;
