@@ -145,6 +145,8 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.goal_z_param_ = goal_msg_.pose.position.z;
     local_planner_.setGoal();
     new_goal_ = false;
+  }else{
+	goal_msg_.pose.position.z = local_planner_.goal_z_param_;
   }
 }
 
