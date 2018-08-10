@@ -8,7 +8,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
           args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
-          args="0.21 0.032 -0.11 0 0 3.14159 fcu front_camera_link 10"/>
+          args="0.30 0.32 -0.11 0 0 0 fcu front_camera_link 10"/>
           
           
           
@@ -67,11 +67,6 @@
     <arg name="enable_fisheye"        value="false"/>
   </include>
   
-  <!-- <node name="setParam" pkg="local_planner" type="realsense_params.sh" /> -->
-  <param name="/camera_front/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="false" />
-  <param name="/camera_front/realsense2_camera_manager rs435_depth_enable_auto_exposure"         type="bool" value="true" />
-  
-
   <!-- Launch avoidance -->
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
 
@@ -81,5 +76,7 @@
     <param name="goal_z_param" value="4" />
     <param name="depth_points_topic" value="/camera_front/depth_registered/points" />
   </node>
+  
+  <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
 
 </launch>
