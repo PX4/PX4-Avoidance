@@ -218,24 +218,30 @@ bool WaypointGenerator::withinGoalRadius() {
 
 // when taking off, first publish waypoints to reach the goal altitude
 void WaypointGenerator::reachGoalAltitudeFirst() {
-  double starting_height = std::max(
-      goal_.z - 0.5, planner_info_.take_off_pose.pose.position.z + 1.0);
-  if (pose_.pose.position.z < starting_height) {
-    output_.goto_position.x = planner_info_.offboard_pose.pose.position.x;
-    output_.goto_position.y = planner_info_.offboard_pose.pose.position.y;
-    output_.goto_position.z = pose_.pose.position.z + 0.5;
+	output_.goto_position.x = planner_info_.offboard_pose.pose.position.x;
+	output_.goto_position.y = planner_info_.offboard_pose.pose.position.y;
+	output_.goto_position.z = pose_.pose.position.z + 0.5;
 
-    //if goal lies directly overhead, do not yaw
-    double x_diff = std::abs(goal_.x - pose_.pose.position.x);
-    double y_diff = std::abs(goal_.y - pose_.pose.position.y);
-    float goal_acceptance_radius = 1.0f;
-    if (x_diff < goal_acceptance_radius && y_diff < goal_acceptance_radius) {
-    	new_yaw_ = curr_yaw_;
-    }
-  } else {
-    reach_altitude_ = true;
-    getPathMsg();
-  }
+	//if goal lies directly overhead, do not yaw
+	double x_diff = std::abs(goal_.x - pose_.pose.position.x);
+	double y_diff = std::abs(goal_.y - pose_.pose.position.y);
+	float goal_acceptance_radius = 1.0f;
+	if (x_diff < goal_acceptance_radius && y_diff < goal_acceptance_radius) {
+		new_yaw_ = curr_yaw_;
+	}
+
+	//constrain speed
+	geometry_msgs::Point pose_to_wp;
+	pose_to_wp.x = output_.goto_position.x - pose_.pose.position.x;
+	pose_to_wp.y = output_.goto_position.y - pose_.pose.position.y;
+	pose_to_wp.z = output_.goto_position.z - pose_.pose.position.z;
+	normalize(pose_to_wp);
+	pose_to_wp.x *= planner_info_.min_speed;
+	pose_to_wp.y *= planner_info_.min_speed;
+	pose_to_wp.z *= planner_info_.min_speed;
+	output_.goto_position.x = pose_.pose.position.x + pose_to_wp.x;
+	output_.goto_position.y = pose_.pose.position.y + pose_to_wp.y;
+	output_.goto_position.z = pose_.pose.position.z + pose_to_wp.z;
 }
 
 // smooth trajectory by liming the maximim accelleration possible
@@ -300,7 +306,7 @@ void WaypointGenerator::adaptSpeed() {
     waypoint_outside_FOV_ = false;
   } else {
     waypoint_outside_FOV_ = true;
-    if (reach_altitude_ && !reached_goal_) {
+    if (planner_info_.reach_altitude && !reached_goal_) {
       int ind_dist = 100;
       int i = 0;
       for (std::vector<int>::iterator it = z_FOV_idx_.begin(); it != z_FOV_idx_.end();
@@ -355,7 +361,7 @@ void WaypointGenerator::getPathMsg() {
 
   // If avoid sphere is used, project waypoint on sphere
   if (planner_info_.use_avoid_sphere && planner_info_.avoid_sphere_age < 100 &&
-      reach_altitude_ && !reached_goal_) {
+		  planner_info_.reach_altitude && !reached_goal_) {
     output_.adapted_goto_position = getSphereAdaptedWaypoint(
         pose_.pose.position, output_.goto_position,
         planner_info_.avoid_centerpoint, planner_info_.avoid_radius);
@@ -370,7 +376,7 @@ void WaypointGenerator::getPathMsg() {
   output_.smoothed_goto_position = output_.adapted_goto_position;
 
   // go to flight height first or smooth wp
-  if (!reach_altitude_) {
+  if (!planner_info_.reach_altitude) {
     reachGoalAltitudeFirst();
     output_.adapted_goto_position = output_.goto_position;
     output_.smoothed_goto_position = output_.goto_position;

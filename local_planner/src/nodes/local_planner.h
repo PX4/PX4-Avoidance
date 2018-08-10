@@ -63,6 +63,7 @@ struct avoidanceOutput {
 
   geometry_msgs::PoseStamped pose;
   bool obstacle_ahead;
+  bool reach_altitude;
   double min_speed;
   double max_speed;
   double velocity_sigmoid_slope;
