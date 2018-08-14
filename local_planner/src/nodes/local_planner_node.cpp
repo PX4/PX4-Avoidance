@@ -10,7 +10,7 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
+  pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2&>(
       depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
   pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,

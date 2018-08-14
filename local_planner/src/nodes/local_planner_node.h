@@ -156,7 +156,7 @@ class LocalPlannerNode {
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig &config,
                                   uint32_t level);
   void positionCallback(const geometry_msgs::PoseStamped msg);
-  void pointCloudCallback(const sensor_msgs::PointCloud2 msg);
+  void pointCloudCallback(const sensor_msgs::PointCloud2& msg);
   void velocityCallback(const geometry_msgs::TwistStamped msg);
   void stateCallback(const mavros_msgs::State msg);
   void readParams();
