@@ -53,7 +53,7 @@
 
   <!-- Launch cameras -->
   
-  <include file="$(find realsense2_camera)/launch/rs_rgbd.launch">
+  <include file="$(find realsense2_camera)/launch/rs_depthcloud.launch">
     <arg name="namespace"             value="camera_front" />
     <arg name="tf_prefix"             value="front_" />
     <arg name="serial_no"             value="$(arg serial_no_camera_front)"/>
@@ -74,7 +74,7 @@
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/camera_front/depth_registered/points" />
+    <param name="depth_points_topic" value="/camera_front/depth/points" />
   </node>
   
   <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
