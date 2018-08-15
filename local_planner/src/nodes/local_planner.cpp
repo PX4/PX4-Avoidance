@@ -100,9 +100,7 @@ void LocalPlanner::logData() {
             << use_ground_detection_ << "\t" << obstacle_ << "\t"
             << height_change_cost_param_adapted_ << "\t" << over_obstacle_
             << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t"
-            << goal_.x << "\t" << goal_.y << "\t" << goal_.z << "\t"
-            << algorithm_total_time_[algorithm_total_time_.size() - 1] << "\t"
-            << tree_time_[tree_time_.size() - 1] << "\n";
+            << goal_.x << "\t" << goal_.y << "\t" << goal_.z  << "\n";
     myfile1.close();
 
     ground_detector_.logData(log_name_);
@@ -141,7 +139,6 @@ void LocalPlanner::runPlanner() {
 
   if (use_ground_detection_ && currently_armed_) {
     if (offboard_ || mission_) {
-      std::clock_t t1 = std::clock();
       ground_detector_.initializeGroundBox(min_dist_to_ground_);
       ground_detector_.ground_box_.setLimitsGroundBox(
           pose_.pose.position, ground_detector_.ground_box_size_,
@@ -154,9 +151,6 @@ void LocalPlanner::runPlanner() {
       ground_detector_.getHeightInformation(over_obstacle_, too_low_,
                                             is_near_min_height_);
       ground_margin_ = ground_detector_.getMargin();
-
-      ground_time_.push_back((std::clock() - t1) /
-                             (double)(CLOCKS_PER_SEC / 1000));
     } else {
       ground_detector_.reset();
     }
@@ -164,7 +158,6 @@ void LocalPlanner::runPlanner() {
 
   geometry_msgs::Point temp_sphere_center;
   int sphere_points_counter = 0;
-  std::clock_t t2 = std::clock();
   filterPointCloud(final_cloud_, closest_point_, temp_sphere_center,
                    distance_to_closest_point_, counter_close_points_backoff_,
                    sphere_points_counter, complete_cloud_, min_cloud_size_,
@@ -173,7 +166,6 @@ void LocalPlanner::runPlanner() {
 
   safety_radius_ = adaptSafetyMarginHistogram(
       distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
-  cloud_time_.push_back((std::clock() - t2) / (double)(CLOCKS_PER_SEC / 1000));
 
   if (use_avoid_sphere_ && reach_altitude_) {
     calculateSphere(avoid_centerpoint_, avoid_sphere_age_, temp_sphere_center,
@@ -205,7 +197,6 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
 
 void LocalPlanner::determineStrategy() {
   star_planner_.tree_age_++;
-  tree_time_.push_back(0);
 
   if (!reach_altitude_) {
     starting_height_ =
@@ -340,11 +331,7 @@ void LocalPlanner::determineStrategy() {
                                       height_change_cost_param_);
           star_planner_.setBoxSize(histogram_box_size_);
           star_planner_.setCloud(complete_cloud_);
-
-          std::clock_t start_time = std::clock();
           star_planner_.buildLookAheadTree();
-          tree_time_[tree_time_.size() - 1] =
-              ((std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
@@ -497,8 +484,10 @@ void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_) {
     double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
     double goal_dist_old = distance3DCartesian(position_old_, goal_);
-    double time = std::clock() / (double)(CLOCKS_PER_SEC / 1000);
-    double incline = (goal_dist - goal_dist_old) / (time - integral_time_old_);
+
+    ros::Time time = ros::Time::now();
+    ros::Duration time_diff = time - integral_time_old_;
+    double incline = (goal_dist - goal_dist_old) / (time_diff.toSec());
     integral_time_old_ = time;
 
     goal_dist_incline_.push_back(incline);
@@ -586,9 +575,9 @@ void LocalPlanner::getCloudsForVisualization(
 }
 
 void LocalPlanner::getCandidateDataForVisualization(
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells &FOV_cells, nav_msgs::GridCells &path_ground) {
+    nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
+    nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
+    nav_msgs::GridCells& FOV_cells, nav_msgs::GridCells& path_ground) {
   path_candidates = path_candidates_;
   path_selected = path_selected_;
   path_rejected = path_rejected_;
@@ -597,7 +586,7 @@ void LocalPlanner::getCandidateDataForVisualization(
   FOV_cells = FOV_cells_;
 }
 
-void LocalPlanner::setCurrentVelocity(geometry_msgs::TwistStamped vel) {
+void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped& vel) {
   curr_vel_ = vel;
 }
 

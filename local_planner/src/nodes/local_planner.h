@@ -133,7 +133,7 @@ class LocalPlanner {
   double max_accel_xy_;
   double max_accel_z_;
   double keep_distance_;
-  double integral_time_old_ = 0.0;
+  ros::Time integral_time_old_;
   double no_progress_slope_;
   double tree_node_distance_;
   double min_flight_height_ = 0.0;
@@ -160,12 +160,9 @@ class LocalPlanner {
   std::deque<double> goal_dist_incline_;
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
-  std::vector<float> ground_time_, cloud_time_, polar_time_, free_time_,
-      cost_time_, collision_time_;
   std::vector<int> closed_set_;
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
-  std::vector<float> tree_time_;
 
   std::vector<TreeNode> tree_;
   StarPlanner star_planner_;
@@ -231,7 +228,6 @@ class LocalPlanner {
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
   pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
-  std::vector<float> algorithm_total_time_;
 
   LocalPlanner();
   ~LocalPlanner();
@@ -249,13 +245,13 @@ class LocalPlanner {
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
       pcl::PointCloud<pcl::PointXYZ> &ground_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates,
-                                        nav_msgs::GridCells &path_selected,
-                                        nav_msgs::GridCells &path_rejected,
-                                        nav_msgs::GridCells &path_blocked,
-                                        nav_msgs::GridCells &FOV_cells,
-                                        nav_msgs::GridCells &path_ground);
-  void setCurrentVelocity(geometry_msgs::TwistStamped vel);
+  void getCandidateDataForVisualization(nav_msgs::GridCells& path_candidates,
+                                        nav_msgs::GridCells& path_selected,
+                                        nav_msgs::GridCells& path_rejected,
+                                        nav_msgs::GridCells& path_blocked,
+                                        nav_msgs::GridCells& FOV_cells,
+                                        nav_msgs::GridCells& path_ground);
+  void setCurrentVelocity(const geometry_msgs::TwistStamped& vel);
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);

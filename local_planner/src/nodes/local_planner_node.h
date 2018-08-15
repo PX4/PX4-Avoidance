@@ -80,8 +80,8 @@ class LocalPlannerNode {
   bool data_ready_ = false;
   std::condition_variable data_ready_cv_;
 
-  void publishSetpoint(const geometry_msgs::Twist wp,
-                       waypoint_choice waypoint_type);
+  void publishSetpoint(const geometry_msgs::Twist& wp,
+                       waypoint_choice& waypoint_type);
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp,
                           geometry_msgs::Twist &wp_vel);
@@ -155,21 +155,21 @@ class LocalPlannerNode {
 
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig &config,
                                   uint32_t level);
-  void positionCallback(const geometry_msgs::PoseStamped msg);
+  void positionCallback(const geometry_msgs::PoseStamped& msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2& msg);
-  void velocityCallback(const geometry_msgs::TwistStamped msg);
-  void stateCallback(const mavros_msgs::State msg);
+  void velocityCallback(const geometry_msgs::TwistStamped& msg);
+  void stateCallback(const mavros_msgs::State& msg);
   void readParams();
   void publishPlannerData();
-  void publishPath(const geometry_msgs::PoseStamped msg);
+  void publishPath(const geometry_msgs::PoseStamped& msg);
   void initMarker(visualization_msgs::MarkerArray *marker,
-                  nav_msgs::GridCells path, float red, float green, float blue);
-  void publishMarkerBlocked(nav_msgs::GridCells path_blocked);
-  void publishMarkerRejected(nav_msgs::GridCells path_rejected);
-  void publishMarkerCandidates(nav_msgs::GridCells path_candidates);
-  void publishMarkerSelected(nav_msgs::GridCells path_selected);
-  void publishMarkerGround(nav_msgs::GridCells path_ground);
-  void publishMarkerFOV(nav_msgs::GridCells FOV_cells);
+                  nav_msgs::GridCells& path, float red, float green, float blue);
+  void publishMarkerBlocked(nav_msgs::GridCells& path_blocked);
+  void publishMarkerRejected(nav_msgs::GridCells& path_rejected);
+  void publishMarkerCandidates(nav_msgs::GridCells& path_candidates);
+  void publishMarkerSelected(nav_msgs::GridCells& path_selected);
+  void publishMarkerGround(nav_msgs::GridCells& path_ground);
+  void publishMarkerFOV(nav_msgs::GridCells& FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);

@@ -246,10 +246,10 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 
 // smooth trajectory by liming the maximim accelleration possible
 void WaypointGenerator::smoothWaypoint() {
-  std::clock_t t = std::clock();
-  float dt = (t - last_t_smooth_) / (float)(CLOCKS_PER_SEC);
-  dt = dt > 0.0f ? dt : 0.004f;
-  last_t_smooth_ = t;
+  ros::Time time = ros::Time::now();
+  ros::Duration time_diff = time - last_t_smooth_;
+  double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
+  last_t_smooth_ = time;
 
   Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
   Eigen::Vector2f vel_waypt_xy(
