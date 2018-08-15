@@ -214,6 +214,7 @@ class LocalPlanner {
   bool mission_ = false;
   bool smooth_waypoints_ = true;
   bool send_obstacles_fcu_ = false;
+  bool stop_in_front_active_ = false;
 
   double goal_x_param_;
   double goal_y_param_;
