@@ -63,7 +63,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                       double sphere_radius, Box histogram_box,
                       geometry_msgs::Point position,
                       double min_realsense_dist) {
-  std::clock_t start_time = std::clock();
+
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
@@ -372,7 +372,7 @@ void findFreeDirections(
     double goal_cost_param, double smooth_cost_param,
     double height_change_cost_param_adapted, double height_change_cost_param,
     int e_min_idx, bool over_obstacle, bool only_yawed, int resolution_alpha) {
-  std::clock_t start_time = std::clock();
+
   int n = floor(safety_radius / resolution_alpha);  // safety radius
   int z_dim = 360 / resolution_alpha;
   int e_dim = 180 / resolution_alpha;

@@ -12,10 +12,10 @@ LocalPlannerNode::LocalPlannerNode() {
 
   pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2&>(
       depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
-  pose_sub_ = nh_.subscribe<geometry_msgs::PoseStamped>(
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
       this);
-  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1,
+  velocity_sub_ = nh_.subscribe<const geometry_msgs::TwistStamped&>("/mavros/local_position/velocity", 1,
                                 &LocalPlannerNode::velocityCallback, this);
   state_sub_ =
       nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
@@ -150,18 +150,18 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 }
 
-void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped msg) {
+void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   newest_pose_ = msg;
   publishPath(newest_pose_);
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   position_received_ = true;
 }
 
-void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped msg) {
+void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) {
   vel_msg_ = msg;
 }
 
-void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
+void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   armed_ = msg.armed;
 
   if (msg.mode == "AUTO.MISSION") {
@@ -175,14 +175,14 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State msg) {
   }
 }
 
-void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped msg) {
+void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped& msg) {
   path_actual_.header.stamp = msg.header.stamp;
   path_actual_.header.frame_id = msg.header.frame_id;
   path_actual_.poses.push_back(msg);
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker,
-                                  nav_msgs::GridCells path, float red,
+                                  nav_msgs::GridCells& path, float red,
                                   float green, float blue) {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
@@ -216,40 +216,40 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker,
   }
 }
 
-void LocalPlannerNode::publishMarkerBlocked(nav_msgs::GridCells path_blocked) {
+void LocalPlannerNode::publishMarkerBlocked(nav_msgs::GridCells& path_blocked) {
   visualization_msgs::MarkerArray marker_blocked;
   initMarker(&marker_blocked, path_blocked, 0.0, 0.0, 1.0);
   marker_blocked_pub_.publish(marker_blocked);
 }
 
 void LocalPlannerNode::publishMarkerRejected(
-    nav_msgs::GridCells path_rejected) {
+    nav_msgs::GridCells& path_rejected) {
   visualization_msgs::MarkerArray marker_rejected;
   initMarker(&marker_rejected, path_rejected, 1.0, 0.0, 0.0);
   marker_rejected_pub_.publish(marker_rejected);
 }
 
 void LocalPlannerNode::publishMarkerCandidates(
-    nav_msgs::GridCells path_candidates) {
+    nav_msgs::GridCells& path_candidates) {
   visualization_msgs::MarkerArray marker_candidates;
   initMarker(&marker_candidates, path_candidates, 0.0, 1.0, 0.0);
   marker_candidates_pub_.publish(marker_candidates);
 }
 
 void LocalPlannerNode::publishMarkerSelected(
-    nav_msgs::GridCells path_selected) {
+    nav_msgs::GridCells& path_selected) {
   visualization_msgs::MarkerArray marker_selected;
   initMarker(&marker_selected, path_selected, 0.8, 0.16, 0.8);
   marker_selected_pub_.publish(marker_selected);
 }
 
-void LocalPlannerNode::publishMarkerGround(nav_msgs::GridCells path_ground) {
+void LocalPlannerNode::publishMarkerGround(nav_msgs::GridCells& path_ground) {
   visualization_msgs::MarkerArray marker_ground;
   initMarker(&marker_ground, path_ground, 0.16, 0.8, 0.8);
   marker_ground_pub_.publish(marker_ground);
 }
 
-void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells FOV_cells) {
+void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells& FOV_cells) {
   visualization_msgs::MarkerArray FOV_marker;
   initMarker(&FOV_marker, FOV_cells, 0.16, 0.8, 0.8);
   marker_FOV_pub_.publish(FOV_marker);
@@ -703,8 +703,8 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
   newest_point_cloud_ = msg; // FIXME: avoid a copy
 }
 
-void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist wp,
-                                       waypoint_choice waypoint_type) {
+void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,
+                                       waypoint_choice& waypoint_type) {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
   setpoint.header.stamp = ros::Time::now();
@@ -900,8 +900,6 @@ void LocalPlannerNode::threadFunction() {
 
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-      local_planner_.algorithm_total_time_.push_back(
-          (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
     }
 
     // publish log name
@@ -913,44 +911,43 @@ void LocalPlannerNode::threadFunction() {
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner_node");
-  LocalPlannerNode *NodePtr = new LocalPlannerNode();
+  LocalPlannerNode Node;
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;
   avoidanceOutput planner_output;
 
-  std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
+  std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
   // spin node, execute callbacks
   while (ros::ok()) {
-    std::clock_t t_loop1 = std::clock();
     hover = false;
 
     // Process callbacks & wait for a position update
-    while (!NodePtr->position_received_ && ros::ok()) {
+    while (!Node.position_received_ && ros::ok()) {
       ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     }
 
     // Check if all information was received
     ros::Time now = ros::Time::now();
     ros::Duration pointcloud_timeout_land =
-        ros::Duration(NodePtr->local_planner_.pointcloud_timeout_land_);
-    ros::Duration since_last_cloud = now - NodePtr->last_wp_time_;
+    ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
+    ros::Duration since_last_cloud = now - Node.last_wp_time_;
     ros::Duration since_start = now - start_time;
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
       mavros_msgs::SetMode mode_msg;
       mode_msg.request.custom_mode = "AUTO.LAND";
-      if (NodePtr->mavros_set_mode_client_.call(mode_msg) &&
+      if (Node.mavros_set_mode_client_.call(mode_msg) &&
           mode_msg.response.mode_sent) {
         ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
       } else {
         ROS_ERROR("\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
       }
     } else {
-      if (NodePtr->never_run_) {
-        if (NodePtr->position_received_) {
+      if (Node.never_run_) {
+        if (Node.position_received_) {
           hover = true;
           ROS_INFO(
               "\033[1;33m Pointcloud timeout: Hovering at current position \n "
@@ -964,30 +961,29 @@ int main(int argc, char **argv) {
     }
 
     // If planner is not running, update planner info and get last results
-    if (NodePtr->canUpdatePlannerInfo()) {
-      if (NodePtr->running_mutex_.try_lock()) {
-        NodePtr->updatePlannerInfo();
-        NodePtr->local_planner_.getAvoidanceOutput(planner_output);
-        NodePtr->wp_generator_.setPlannerInfo(planner_output);
-        NodePtr->running_mutex_.unlock();
+    if (Node.canUpdatePlannerInfo()) {
+      if (Node.running_mutex_.try_lock()) {
+        Node.updatePlannerInfo();
+        Node.local_planner_.getAvoidanceOutput(planner_output);
+        Node.wp_generator_.setPlannerInfo(planner_output);
+        Node.running_mutex_.unlock();
         // Wake up the planner
-        std::unique_lock<std::mutex> lck(NodePtr->data_ready_mutex_);
-        NodePtr->data_ready_ = true;
-        NodePtr->data_ready_cv_.notify_one();
+        std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
+        Node.data_ready_ = true;
+        Node.data_ready_cv_.notify_one();
       }
     }
 
     // send waypoint
-    if (!NodePtr->never_run_) {
-      NodePtr->publishWaypoints(hover);
+    if (!Node.never_run_) {
+      Node.publishWaypoints(hover);
     }
 
-    NodePtr->position_received_ = false;
+    Node.position_received_ = false;
   }
 
-  NodePtr->should_exit_ = true;
-  NodePtr->data_ready_cv_.notify_all();
+  Node.should_exit_ = true;
+  Node.data_ready_cv_.notify_all();
   worker.join();
-  delete NodePtr;
   return 0;
 }
