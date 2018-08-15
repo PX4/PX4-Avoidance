@@ -55,6 +55,7 @@ class LocalPlannerNode {
   geometry_msgs::PoseStamped hover_point_;
   geometry_msgs::PoseStamped newest_pose_;
   sensor_msgs::PointCloud2 newest_point_cloud_;
+  geometry_msgs::PoseStamped goal_msg_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -147,7 +148,6 @@ class LocalPlannerNode {
 
   geometry_msgs::TwistStamped vel_msg_;
   bool armed_, offboard_, mission_, new_goal_;
-  geometry_msgs::PoseStamped goal_msg_;
 
   std::string depth_points_topic_;
 

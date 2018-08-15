@@ -133,6 +133,7 @@ void LocalPlanner::runPlanner() {
   initGridCells(&path_blocked_);
   initGridCells(&path_selected_);
   initGridCells(&path_ground_);
+  stop_in_front_active_ = false;
 
   histogram_box_.setLimitsHistogramBox(pose_.pose.position,
                                        histogram_box_size_);
@@ -543,6 +544,7 @@ void LocalPlanner::stopInFrontObstacles() {
     goal_.y = pose_.pose.position.y +
               (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
     first_brake_ = false;
+    stop_in_front_active_ = true;
   }
   ROS_INFO(
       "\033[0;35m [OA] New Stop Goal: [%.2f %.2f %.2f], obstacle distance "

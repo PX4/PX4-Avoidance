@@ -966,6 +966,9 @@ int main(int argc, char **argv) {
         Node.updatePlannerInfo();
         Node.local_planner_.getAvoidanceOutput(planner_output);
         Node.wp_generator_.setPlannerInfo(planner_output);
+        if(Node.local_planner_.stop_in_front_active_){
+           Node.local_planner_.getGoalPosition(Node.goal_msg_.pose.position);
+        }
         Node.running_mutex_.unlock();
         // Wake up the planner
         std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
