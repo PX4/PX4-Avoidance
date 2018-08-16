@@ -23,15 +23,6 @@
     <!--<arg name="mavros_transformation" default="-1.57" /> -->
     <arg name="est" default="ekf2"/>
     
-    
-    <!--<arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/> -->
-
-
-    <!-- Launch FCU -->
-    <!--<node name="sitl" pkg="px4" type="px4" output="screen"
-        args="$(find px4) $(arg rcS)">
-    </node> -->
-
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
         <include file="$(find mavros)/launch/node.launch">
