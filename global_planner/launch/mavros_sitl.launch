@@ -10,16 +10,12 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="mavros_transformation" default="-1.57" />
-    <arg name="est" default="ekf2"/>
-    <arg name="vehicle" default="iris"/>
-    <arg name="rcS" default="$(find px4)/posix-configs/SITL/init/$(arg est)/$(arg vehicle)"/>
 
     <param name="use_sim_time" value="true" />
 
-    <!-- Launch FCU -->
-    <node name="sitl" pkg="px4" type="px4" output="screen"
-        args="$(find px4) $(arg rcS)">
-    </node>
+    <!-- Launch PX4 SITL -->
+    <include file="$(find px4)/launch/px4.launch">
+    </include>
 
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
