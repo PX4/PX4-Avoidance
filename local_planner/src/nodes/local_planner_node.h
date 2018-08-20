@@ -6,6 +6,8 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <atomic>
+#include <condition_variable>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -39,10 +41,10 @@ class LocalPlannerNode {
   LocalPlannerNode();
   ~LocalPlannerNode();
 
-  bool point_cloud_updated_;
-  bool never_run_;
-  bool write_cloud_ = false;
+  bool never_run_ = true;
   bool position_received_ = false;
+
+  std::atomic<bool> should_exit_{false};
 
   double curr_yaw_;
 
@@ -52,6 +54,7 @@ class LocalPlannerNode {
   std::vector<geometry_msgs::Point> path_node_positions_;
   geometry_msgs::PoseStamped hover_point_;
   geometry_msgs::PoseStamped newest_pose_;
+  sensor_msgs::PointCloud2 newest_point_cloud_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -71,8 +74,11 @@ class LocalPlannerNode {
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;
 
-  std::timed_mutex variable_mutex_;
-  std::timed_mutex publisher_mutex_;
+  std::mutex running_mutex_; ///< guard against concurrent access to input & output data (point cloud, position, ...)
+
+  std::mutex data_ready_mutex_;
+  bool data_ready_ = false;
+  std::condition_variable data_ready_cv_;
 
   void publishSetpoint(const geometry_msgs::Twist wp,
                        waypoint_choice waypoint_type);
