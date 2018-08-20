@@ -106,6 +106,24 @@ void LocalPlannerNode::readParams() {
 }
 
 void LocalPlannerNode::updatePlannerInfo() {
+
+  // update the point cloud
+  sensor_msgs::PointCloud2 pc2cloud_world;
+  try {
+    tf_listener_.waitForTransform("/local_origin", newest_point_cloud_.header.frame_id,
+                                        newest_point_cloud_.header.stamp, ros::Duration(3.0));
+    tf::StampedTransform transform;
+    tf_listener_.lookupTransform("/local_origin", newest_point_cloud_.header.frame_id,
+                                 newest_point_cloud_.header.stamp, transform);
+    pcl_ros::transformPointCloud("/local_origin", transform, newest_point_cloud_, pc2cloud_world);
+    pcl::fromROSMsg(pc2cloud_world, local_planner_.complete_cloud_);
+  } catch (tf::TransformException &ex) {
+    ROS_ERROR(
+        "Received an exception trying to transform a point from "
+        "\"front_camera_optical_frame\" to \"local_origin\": %s",
+        ex.what());
+  }
+
   // update position
   local_planner_.setPose(newest_pose_);
 
@@ -484,9 +502,9 @@ void LocalPlannerNode::publishAvoidSphere() {
 
 void LocalPlannerNode::publishWaypoints(bool hover) {
   waypointResult result;
+  const ros::Time now = ros::Time::now();
 
-  wp_generator_.updateState(newest_pose_, goal_msg_, vel_msg_, hover,
-                            ros::Time::now());
+  wp_generator_.updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
   wp_generator_.getWaypoints(result);
 
   visualization_msgs::Marker sphere1;
@@ -494,7 +512,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   visualization_msgs::Marker sphere3;
 
   sphere1.header.frame_id = "local_origin";
-  sphere1.header.stamp = ros::Time::now();
+  sphere1.header.stamp = now;
   sphere1.id = 0;
   sphere1.type = visualization_msgs::Marker::SPHERE;
   sphere1.action = visualization_msgs::Marker::ADD;
@@ -514,7 +532,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere1.color.b = 0.0;
 
   sphere2.header.frame_id = "local_origin";
-  sphere2.header.stamp = ros::Time::now();
+  sphere2.header.stamp = now;
   sphere2.id = 0;
   sphere2.type = visualization_msgs::Marker::SPHERE;
   sphere2.action = visualization_msgs::Marker::ADD;
@@ -534,7 +552,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere2.color.b = 0.0;
 
   sphere3.header.frame_id = "local_origin";
-  sphere3.header.stamp = ros::Time::now();
+  sphere3.header.stamp = now;
   sphere3.id = 0;
   sphere3.type = visualization_msgs::Marker::SPHERE;
   sphere3.action = visualization_msgs::Marker::ADD;
@@ -677,27 +695,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
 }
 
 void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
-  if (write_cloud_) {
-    pcl::PointCloud<pcl::PointXYZ> complete_cloud;
-    sensor_msgs::PointCloud2 pc2cloud_world;
-    try {
-      tf_listener_.waitForTransform("/local_origin", msg.header.frame_id,
-                                    msg.header.stamp, ros::Duration(3.0));
-      tf::StampedTransform transform;
-      tf_listener_.lookupTransform("/local_origin", msg.header.frame_id,
-                                   msg.header.stamp, transform);
-      pcl_ros::transformPointCloud("/local_origin", transform, msg, pc2cloud_world);
-      pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-      local_planner_.complete_cloud_ = complete_cloud;
-      point_cloud_updated_ = true;
-    } catch (tf::TransformException &ex) {
-      ROS_ERROR(
-          "Received an exception trying to transform a point from "
-          "\"camera_optical_frame\" to \"local_origin\": %s",
-          ex.what());
-    }
-    write_cloud_ = false;
-  }
+  newest_point_cloud_ = msg; // FIXME: avoid a copy
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist wp,
@@ -873,32 +871,38 @@ void LocalPlannerNode::publishPlannerData() {
 
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
+  std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_.dynamicReconfigureSetParams(config, level);
 }
 
 void LocalPlannerNode::threadFunction() {
-  std::unique_lock<std::timed_mutex> lock(variable_mutex_, std::defer_lock);
+  while (!should_exit_) {
+    // wait for data
+    {
+      std::unique_lock<std::mutex> lk(data_ready_mutex_);
+      data_ready_cv_.wait(lk, [this]{return data_ready_ && !should_exit_;});
+      data_ready_ = false;
+    }
 
-  while (true) {
-    std::clock_t start_time = std::clock();
-    if (point_cloud_updated_) {
-      lock.lock();
-      point_cloud_updated_ = false;
+    if (should_exit_) break;
+
+    {
+      std::lock_guard<std::mutex> guard(running_mutex_);
       never_run_ = false;
+      std::clock_t start_time = std::clock();
       local_planner_.runPlanner();
       publishPlannerData();
-      never_run_ = false;
-      lock.unlock();
+
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
       local_planner_.algorithm_total_time_.push_back(
           (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-
-      // publish log name
-      std_msgs::String msg;
-      msg.data = local_planner_.log_name_;
-      log_name_pub_.publish(msg);
     }
+
+    // publish log name
+    std_msgs::String msg;
+    msg.data = local_planner_.log_name_;
+    log_name_pub_.publish(msg);
   }
 }
 
@@ -908,15 +912,10 @@ int main(int argc, char **argv) {
   ros::Duration(2).sleep();
   ros::Rate rate(20.0);
   ros::Time start_time = ros::Time::now();
-  NodePtr->point_cloud_updated_ = false;
-  NodePtr->never_run_ = true;
-  NodePtr->position_received_ = false;
   bool hover = false;
   avoidanceOutput planner_output;
 
   std::thread worker(&LocalPlannerNode::threadFunction, NodePtr);
-  std::unique_lock<std::timed_mutex> lock(NodePtr->variable_mutex_,
-                                          std::defer_lock);
 
   // spin node, execute callbacks
   while (ros::ok()) {
@@ -924,22 +923,20 @@ int main(int argc, char **argv) {
     hover = false;
 
     // If planner is not running, update planner info and get last results
-    if (lock.try_lock_for(std::chrono::milliseconds(20))) {
-      NodePtr->write_cloud_ = true;
-      ros::spinOnce();
+    if (NodePtr->running_mutex_.try_lock()) {
       NodePtr->updatePlannerInfo();
       NodePtr->local_planner_.getAvoidanceOutput(planner_output);
       NodePtr->wp_generator_.setPlannerInfo(planner_output);
-      lock.unlock();
-    } else {
-      ros::spinOnce();
+      NodePtr->running_mutex_.unlock();
+      // Wake up the planner
+      std::unique_lock<std::mutex> lck(NodePtr->data_ready_mutex_);
+      NodePtr->data_ready_ = true;
+      NodePtr->data_ready_cv_.notify_one();
     }
-    std::clock_t t_loop2 = std::clock();
+    ros::spinOnce();
 
     // Check if all information was received
     ros::Time now = ros::Time::now();
-    ros::Duration pointcloud_timeout_hover =
-        ros::Duration(NodePtr->local_planner_.pointcloud_timeout_hover_);
     ros::Duration pointcloud_timeout_land =
         ros::Duration(NodePtr->local_planner_.pointcloud_timeout_land_);
     ros::Duration since_last_cloud = now - NodePtr->last_wp_time_;
@@ -971,13 +968,15 @@ int main(int argc, char **argv) {
     }
 
     // send waypoint
-    if (!(NodePtr->never_run_ && !NodePtr->position_received_)) {
+    if (!NodePtr->never_run_ || NodePtr->position_received_) {
       NodePtr->publishWaypoints(hover);
     }
 
     rate.sleep();
   }
 
+  NodePtr->should_exit_ = true;
+  NodePtr->data_ready_cv_.notify_all();
   worker.join();
   delete NodePtr;
   return 0;
