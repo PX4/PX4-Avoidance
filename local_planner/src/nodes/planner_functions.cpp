@@ -1,5 +1,7 @@
 #include "planner_functions.h"
 
+#include <numeric>
+
 // initialize GridCell message
 void initGridCells(nav_msgs::GridCells *cell) {
   cell->cells.clear();
@@ -485,8 +487,12 @@ bool calculateCostMap(std::vector<float> cost_path_candidates,
     ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
     return 1;
   } else {
-    cv::sortIdx(cost_path_candidates, cost_idx_sorted,
-                CV_SORT_EVERY_ROW + CV_SORT_ASCENDING);
+    cost_idx_sorted.resize(cost_path_candidates.size());
+    std::iota(cost_idx_sorted.begin(), cost_idx_sorted.end(), 0);
+
+    std::sort(cost_idx_sorted.begin(), cost_idx_sorted.end(),
+      [&cost_path_candidates](size_t i1, size_t i2)
+      { return cost_path_candidates[i1] < cost_path_candidates[i2]; });
     return 0;
   }
 }

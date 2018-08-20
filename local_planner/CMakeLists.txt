@@ -18,7 +18,6 @@ find_package(catkin REQUIRED COMPONENTS
   mavlink
 )
 find_package(PCL 1.7 REQUIRED)
-find_package(OpenCV REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -151,7 +150,7 @@ add_executable(local_planner_node src/nodes/local_planner_node.cpp)
 # )
 target_link_libraries(local_planner_node
   local_planner
-  ${catkin_LIBRARIES} ${OpenCV_LIBS})
+  ${catkin_LIBRARIES})
 
 #############
 ## Install ##
