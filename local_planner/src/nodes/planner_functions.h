@@ -40,8 +40,6 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 void initGridCells(nav_msgs::GridCells *cell);
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age,
                      geometry_msgs::Point temp_centerpoint,

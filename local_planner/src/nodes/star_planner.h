@@ -49,8 +49,6 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
-#include <opencv2/imgproc/imgproc.hpp>
-
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
