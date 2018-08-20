@@ -105,13 +105,16 @@ void LocalPlannerNode::readParams() {
   goal_msg_.pose.position.z = local_planner_.goal_z_param_;
 }
 
+bool LocalPlannerNode::canUpdatePlannerInfo() {
+  // Check if we have a transformation available at the time of the current point cloud
+  return tf_listener_.canTransform("/local_origin", newest_point_cloud_.header.frame_id,
+                               newest_point_cloud_.header.stamp);
+}
 void LocalPlannerNode::updatePlannerInfo() {
 
   // update the point cloud
   sensor_msgs::PointCloud2 pc2cloud_world;
   try {
-    tf_listener_.waitForTransform("/local_origin", newest_point_cloud_.header.frame_id,
-                                        newest_point_cloud_.header.stamp, ros::Duration(3.0));
     tf::StampedTransform transform;
     tf_listener_.lookupTransform("/local_origin", newest_point_cloud_.header.frame_id,
                                  newest_point_cloud_.header.stamp, transform);
@@ -910,7 +913,6 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "local_planner_node");
   LocalPlannerNode *NodePtr = new LocalPlannerNode();
   ros::Duration(2).sleep();
-  ros::Rate rate(20.0);
   ros::Time start_time = ros::Time::now();
   bool hover = false;
   avoidanceOutput planner_output;
@@ -922,18 +924,10 @@ int main(int argc, char **argv) {
     std::clock_t t_loop1 = std::clock();
     hover = false;
 
-    // If planner is not running, update planner info and get last results
-    if (NodePtr->running_mutex_.try_lock()) {
-      NodePtr->updatePlannerInfo();
-      NodePtr->local_planner_.getAvoidanceOutput(planner_output);
-      NodePtr->wp_generator_.setPlannerInfo(planner_output);
-      NodePtr->running_mutex_.unlock();
-      // Wake up the planner
-      std::unique_lock<std::mutex> lck(NodePtr->data_ready_mutex_);
-      NodePtr->data_ready_ = true;
-      NodePtr->data_ready_cv_.notify_one();
+    // Process callbacks & wait for a position update
+    while (!NodePtr->position_received_ && ros::ok()) {
+      ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     }
-    ros::spinOnce();
 
     // Check if all information was received
     ros::Time now = ros::Time::now();
@@ -967,12 +961,26 @@ int main(int argc, char **argv) {
       }
     }
 
+    // If planner is not running, update planner info and get last results
+    if (NodePtr->canUpdatePlannerInfo()) {
+      if (NodePtr->running_mutex_.try_lock()) {
+        NodePtr->updatePlannerInfo();
+        NodePtr->local_planner_.getAvoidanceOutput(planner_output);
+        NodePtr->wp_generator_.setPlannerInfo(planner_output);
+        NodePtr->running_mutex_.unlock();
+        // Wake up the planner
+        std::unique_lock<std::mutex> lck(NodePtr->data_ready_mutex_);
+        NodePtr->data_ready_ = true;
+        NodePtr->data_ready_cv_.notify_one();
+      }
+    }
+
     // send waypoint
-    if (!NodePtr->never_run_ || NodePtr->position_received_) {
+    if (!NodePtr->never_run_) {
       NodePtr->publishWaypoints(hover);
     }
 
-    rate.sleep();
+    NodePtr->position_received_ = false;
   }
 
   NodePtr->should_exit_ = true;
