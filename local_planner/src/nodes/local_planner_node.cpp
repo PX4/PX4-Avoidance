@@ -699,7 +699,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   printf("-------------------------------------------- \n");
 }
 
-void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 msg) {
+void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2& msg) {
   newest_point_cloud_ = msg; // FIXME: avoid a copy
 }
 
