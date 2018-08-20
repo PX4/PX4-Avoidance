@@ -85,6 +85,7 @@ class LocalPlannerNode {
   void threadFunction();
   void getInterimWaypoint(geometry_msgs::PoseStamped &wp,
                           geometry_msgs::Twist &wp_vel);
+  bool canUpdatePlannerInfo();
   void updatePlannerInfo();
   void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid,
                                  geometry_msgs::PoseStamped pose);
@@ -92,6 +93,8 @@ class LocalPlannerNode {
                                      geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget &point);
   void publishWaypoints(bool hover);
+
+  const ros::NodeHandle &nodeHandle() const { return nh_; }
 
  private:
   ros::NodeHandle nh_;
