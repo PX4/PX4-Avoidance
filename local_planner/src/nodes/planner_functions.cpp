@@ -363,12 +363,12 @@ void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
 // search for free directions in the 2D polar histogram with a moving window
 // approach
 void findFreeDirections(
-    Histogram histogram, double safety_radius,
+    const Histogram &histogram, double safety_radius,
     nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells &path_ground, nav_msgs::GridCells path_waypoints,
-    std::vector<float> &cost_path_candidates, geometry_msgs::Point goal,
-    geometry_msgs::PoseStamped position, geometry_msgs::Point position_old,
+    std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,
+    const geometry_msgs::PoseStamped &position, const geometry_msgs::Point &position_old,
     double goal_cost_param, double smooth_cost_param,
     double height_change_cost_param_adapted, double height_change_cost_param,
     int e_min_idx, bool over_obstacle, bool only_yawed, int resolution_alpha) {
