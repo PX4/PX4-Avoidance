@@ -244,33 +244,31 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   output_.goto_position.z = pose_.pose.position.z + pose_to_wp.z;
 }
 
-// smooth trajectory by liming the maximim accelleration possible
-void WaypointGenerator::smoothWaypoint() {
-  ros::Time time = ros::Time::now();
-  ros::Duration time_diff = time - last_t_smooth_;
-  double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
-  last_t_smooth_ = time;
+void WaypointGenerator::smoothWaypoint(double dt) {
 
-  Eigen::Vector2f vel_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
-  Eigen::Vector2f vel_waypt_xy(
+  Eigen::Vector2f vel_cur_xy(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
+  Eigen::Vector2f vel_sp_xy(
       (output_.adapted_goto_position.x - last_position_waypoint_.pose.position.x) / dt,
       (output_.adapted_goto_position.y - last_position_waypoint_.pose.position.y) / dt);
-  Eigen::Vector2f vel_waypt_xy_prev(
-      (last_position_waypoint_.pose.position.x -
-       last_last_position_waypoint_.pose.position.x) /
-          dt,
-      (last_position_waypoint_.pose.position.y -
-       last_last_position_waypoint_.pose.position.y) /
-          dt);
-  Eigen::Vector2f acc_waypt_xy((vel_waypt_xy - vel_waypt_xy_prev) / dt);
 
-  if (acc_waypt_xy.norm() > (acc_waypt_xy.norm() / 2.0f)) {
-    vel_xy = (acc_waypt_xy.norm() / 2.0f) * acc_waypt_xy.normalized() * dt +
-             vel_waypt_xy_prev;
+  Eigen::Vector2f accel_diff = (vel_sp_xy - vel_cur_xy) / dt;
+  Eigen::Vector2f accel_cur = (vel_cur_xy - last_velocity_) / dt;
+  Eigen::Vector2f jerk_diff = (accel_diff - accel_cur) / dt;
+  float max_jerk = max_jerk_limit_param_;
+
+  // velocity-dependent max jerk
+  if (min_jerk_limit_param_ > 0.001f) {
+    max_jerk *= vel_cur_xy.norm();
+    if (max_jerk < min_jerk_limit_param_) max_jerk = min_jerk_limit_param_;
   }
 
-  output_.smoothed_goto_position.x = last_position_waypoint_.pose.position.x + vel_xy(0) * dt;
-  output_.smoothed_goto_position.y = last_position_waypoint_.pose.position.y + vel_xy(1) * dt;
+  if (jerk_diff.squaredNorm() > max_jerk * max_jerk && max_jerk > 0.001f) {
+    jerk_diff = max_jerk * jerk_diff.normalized();
+    vel_sp_xy = (jerk_diff * dt + accel_cur) * dt + vel_cur_xy;
+  }
+
+  output_.smoothed_goto_position.x = last_position_waypoint_.pose.position.x + vel_sp_xy(0) * dt;
+  output_.smoothed_goto_position.y = last_position_waypoint_.pose.position.y + vel_sp_xy(1) * dt;
   output_.smoothed_goto_position.z = output_.adapted_goto_position.z;
 
   ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].", output_.smoothed_goto_position.x,
@@ -354,10 +352,11 @@ void WaypointGenerator::adaptSpeed() {
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
   output_.path.header.frame_id = "/world";
-  last_last_position_waypoint_ = last_position_waypoint_;
-  last_position_waypoint_ = output_.position_waypoint;
-  last_yaw_ = curr_yaw_;
   output_.adapted_goto_position = output_.goto_position;
+
+  const ros::Time now = ros::Time::now();
+  ros::Duration time_diff = now - last_time_;
+  double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
   // If avoid sphere is used, project waypoint on sphere
   if (planner_info_.use_avoid_sphere && planner_info_.avoid_sphere_age < 100 &&
@@ -387,11 +386,7 @@ void WaypointGenerator::getPathMsg() {
     ROS_DEBUG("[WG] pose altitude func: [%f %f %f].", pose_.pose.position.x,
               pose_.pose.position.y, pose_.pose.position.z);
   } else {
-    if (!only_yawed_ && !reached_goal_) {
-      smoothWaypoint();
-      new_yaw_ = nextYaw(pose_, output_.smoothed_goto_position);
-      ;
-    }
+    smoothWaypoint(dt);
   }
 
   // change waypoint if drone is at goal or above
@@ -431,10 +426,10 @@ void WaypointGenerator::getPathMsg() {
   transformPositionToVelocityWaypoint();
 
   output_.path.poses.push_back(output_.position_waypoint);
-  curr_yaw_ = new_yaw_;
-  last_last_position_waypoint_ = last_position_waypoint_;
   last_position_waypoint_ = output_.position_waypoint;
   last_yaw_ = curr_yaw_;
+  last_velocity_ = Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
+  last_time_ = now;
 }
 
 void WaypointGenerator::getWaypoints(waypointResult &output) {
