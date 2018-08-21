@@ -182,8 +182,8 @@ void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped& msg) {
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker,
-                                  nav_msgs::GridCells& path, float red,
-                                  float green, float blue) {
+                                  nav_msgs::GridCells& path, const float red,
+                                  const float green, const float blue) {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();

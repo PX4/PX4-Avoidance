@@ -163,7 +163,7 @@ class LocalPlannerNode {
   void publishPlannerData();
   void publishPath(const geometry_msgs::PoseStamped& msg);
   void initMarker(visualization_msgs::MarkerArray *marker,
-                  nav_msgs::GridCells& path, float red, float green, float blue);
+                  nav_msgs::GridCells& path, const float red, const float green, const float blue);
   void publishMarkerBlocked(nav_msgs::GridCells& path_blocked);
   void publishMarkerRejected(nav_msgs::GridCells& path_rejected);
   void publishMarkerCandidates(nav_msgs::GridCells& path_candidates);
