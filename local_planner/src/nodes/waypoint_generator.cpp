@@ -218,30 +218,30 @@ bool WaypointGenerator::withinGoalRadius() {
 
 // when taking off, first publish waypoints to reach the goal altitude
 void WaypointGenerator::reachGoalAltitudeFirst() {
-	output_.goto_position.x = planner_info_.offboard_pose.pose.position.x;
-	output_.goto_position.y = planner_info_.offboard_pose.pose.position.y;
-	output_.goto_position.z = pose_.pose.position.z + 0.5;
+  output_.goto_position.x = planner_info_.offboard_pose.pose.position.x;
+  output_.goto_position.y = planner_info_.offboard_pose.pose.position.y;
+  output_.goto_position.z = pose_.pose.position.z + 0.5;
 
-	//if goal lies directly overhead, do not yaw
-	double x_diff = std::abs(goal_.x - pose_.pose.position.x);
-	double y_diff = std::abs(goal_.y - pose_.pose.position.y);
-	float goal_acceptance_radius = 1.0f;
-	if (x_diff < goal_acceptance_radius && y_diff < goal_acceptance_radius) {
-		new_yaw_ = curr_yaw_;
-	}
+  //if goal lies directly overhead, do not yaw
+  double x_diff = std::abs(goal_.x - pose_.pose.position.x);
+  double y_diff = std::abs(goal_.y - pose_.pose.position.y);
+  float goal_acceptance_radius = 1.0f;
+  if (x_diff < goal_acceptance_radius && y_diff < goal_acceptance_radius) {
+  	new_yaw_ = curr_yaw_;
+  }
 
-	//constrain speed
-	geometry_msgs::Point pose_to_wp;
-	pose_to_wp.x = output_.goto_position.x - pose_.pose.position.x;
-	pose_to_wp.y = output_.goto_position.y - pose_.pose.position.y;
-	pose_to_wp.z = output_.goto_position.z - pose_.pose.position.z;
-	normalize(pose_to_wp);
-	pose_to_wp.x *= planner_info_.min_speed;
-	pose_to_wp.y *= planner_info_.min_speed;
-	pose_to_wp.z *= planner_info_.min_speed;
-	output_.goto_position.x = pose_.pose.position.x + pose_to_wp.x;
-	output_.goto_position.y = pose_.pose.position.y + pose_to_wp.y;
-	output_.goto_position.z = pose_.pose.position.z + pose_to_wp.z;
+  //constrain speed
+  geometry_msgs::Point pose_to_wp;
+  pose_to_wp.x = output_.goto_position.x - pose_.pose.position.x;
+  pose_to_wp.y = output_.goto_position.y - pose_.pose.position.y;
+  pose_to_wp.z = output_.goto_position.z - pose_.pose.position.z;
+  normalize(pose_to_wp);
+  pose_to_wp.x *= planner_info_.min_speed;
+  pose_to_wp.y *= planner_info_.min_speed;
+  pose_to_wp.z *= planner_info_.min_speed;
+  output_.goto_position.x = pose_.pose.position.x + pose_to_wp.x;
+  output_.goto_position.y = pose_.pose.position.y + pose_to_wp.y;
+  output_.goto_position.z = pose_.pose.position.z + pose_to_wp.z;
 }
 
 // smooth trajectory by liming the maximim accelleration possible

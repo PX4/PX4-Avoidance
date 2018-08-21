@@ -80,5 +80,8 @@
       <param name="goal_z_param" value="4" />
       <param name="depth_points_topic" value="/camera_front/depth_registered/points" />
     </node>
+    
+    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
+    <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
    
 </launch>
