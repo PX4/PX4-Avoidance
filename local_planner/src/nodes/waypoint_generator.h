@@ -47,6 +47,10 @@ class WaypointGenerator {
   double curr_vel_magnitude_;
   ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
+  ros::Time last_time_{0.};
+
+  double max_jerk_limit_param_{500.};
+  double min_jerk_limit_param_{200.};
 
   bool reached_goal_;
   bool waypoint_outside_FOV_;
@@ -59,11 +63,10 @@ class WaypointGenerator {
 
   geometry_msgs::Point hover_position_;
   geometry_msgs::PoseStamped last_position_waypoint_;
-  geometry_msgs::PoseStamped last_last_position_waypoint_;
+  Eigen::Vector2f last_velocity_{0.f, 0.f}; ///< last vehicle's velocity
 
   ros::Time velocity_time_;
   std::vector<int> z_FOV_idx_;
-  ros::Time last_t_smooth_;
 
   void calculateWaypoint();
   void updateState();
@@ -72,16 +75,33 @@ class WaypointGenerator {
   void transformPositionToVelocityWaypoint();
   bool withinGoalRadius();
   void reachGoalAltitudeFirst();
-  void smoothWaypoint();
+  void smoothWaypoint(double dt);
   void adaptSpeed();
   void getPathMsg();
 
  public:
+
   void getWaypoints(waypointResult &output);
   void setPlannerInfo(avoidanceOutput input);
   void updateState(geometry_msgs::PoseStamped act_pose,
                    geometry_msgs::PoseStamped goal,
                    geometry_msgs::TwistStamped vel, bool stay, ros::Time t);
+
+  /**
+   * Set maximum jerk limitation. Set to 0 to disable.
+   */
+  void setMaxJerkLimit(double max_jerk_limit) {
+    max_jerk_limit_param_ = max_jerk_limit;
+  }
+
+  /**
+   * Set minimum jerk limitation for velocity-depdendent jerk limit.
+   * Set to 0 to disable velocity-dependent jerk limit, and use a fixed
+   * limit instead.
+   */
+  void setMinJerkLimit(double min_jerk_limit) {
+    min_jerk_limit_param_ = min_jerk_limit;
+  }
 
   WaypointGenerator();
   ~WaypointGenerator();
