@@ -226,7 +226,7 @@ void LocalPlanner::determineStrategy() {
       create2DObstacleRepresentation(true);
     }
   } else {
-    if (((counter_close_points_backoff_ > 20 &&
+    if (((counter_close_points_backoff_ > 200 &&
           final_cloud_.points.size() > min_cloud_size_) ||
          back_off_) &&
         reach_altitude_ && use_back_off_) {

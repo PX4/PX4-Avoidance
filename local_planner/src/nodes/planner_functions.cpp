@@ -16,7 +16,7 @@ void initGridCells(nav_msgs::GridCells *cell) {
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age,
                      geometry_msgs::Point temp_centerpoint,
                      int counter_sphere_points, double sphere_speed) {
-  if (counter_sphere_points > 50) {
+  if (counter_sphere_points > 200) {
     if (sphere_age < 10) {
       tf::Vector3 vec;
       vec.setX(temp_centerpoint.x - sphere_center.x);
