@@ -112,7 +112,7 @@ generate_dynamic_reconfigure_options(
 catkin_package(
   INCLUDE_DIRS include
   LIBRARIES global_planner cell node
-  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs mav_msgs sensor_msgs message_runtime tf
+  CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs sensor_msgs message_runtime tf
 #  DEPENDS system_lib
 )
 
