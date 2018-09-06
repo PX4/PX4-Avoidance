@@ -109,7 +109,7 @@ void GroundDetector::setPose(geometry_msgs::PoseStamped pose) { pose_ = pose; }
 
 // crop cloud to groundbox and estimate ground
 void GroundDetector::detectGround(
-    pcl::PointCloud<pcl::PointXYZ> &complete_cloud) {
+		std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud) {
   std::clock_t start_time = std::clock();
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_temp(
@@ -117,20 +117,22 @@ void GroundDetector::detectGround(
   ground_cloud_.points.clear();
   float distance;
 
-  for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end();
-       ++pcl_it) {
-    // Check if the point is invalid
-    if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
-        !std::isnan(pcl_it->z)) {
-      if (ground_box_.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
-        cloud_temp->points.push_back(
-            pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
-      }
-    }
+  for(int i=0; i<complete_cloud.size(); ++i){
+	  for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
+		   ++pcl_it) {
+		// Check if the point is invalid
+		if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
+			!std::isnan(pcl_it->z)) {
+		  if (ground_box_.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
+			cloud_temp->points.push_back(
+				pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+		  }
+		}
+	  }
   }
 
-  ground_cloud_.header.stamp = complete_cloud.header.stamp;
-  ground_cloud_.header.frame_id = complete_cloud.header.frame_id;
+  ground_cloud_.header.stamp = complete_cloud[0].header.stamp;
+  ground_cloud_.header.frame_id = complete_cloud[0].header.frame_id;
   ground_cloud_.width = cloud_temp->points.size();
   ground_cloud_.height = 1;
   ground_cloud_.points = cloud_temp->points;

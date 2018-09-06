@@ -3,6 +3,7 @@
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
   readParams();
+  newest_cloud_msgs_.resize(3);
 
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType
@@ -10,8 +11,12 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2&>(
-      depth_points_topic_, 1, &LocalPlannerNode::pointCloudCallback, this);
+  pointcloud_front_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
+        depth_points_topic_front_, 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, 0));
+  pointcloud_left_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
+        depth_points_topic_left_, 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, 1));
+  pointcloud_right_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
+        depth_points_topic_right_, 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, 2));
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
       this);
@@ -99,8 +104,12 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", local_planner_.goal_x_param_, 9.0);
   nh_.param<double>("goal_y_param", local_planner_.goal_y_param_, 13.0);
   nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
-  nh_.param<std::string>("depth_points_topic", depth_points_topic_,
-                         "/camera/depth/points");
+  nh_.param<std::string>("depth_points_topic_front", depth_points_topic_front_,
+                           "/camera_front/depth/points");
+  nh_.param<std::string>("depth_points_topic_left", depth_points_topic_left_,
+                             "/camera_left/depth/points");
+  nh_.param<std::string>("depth_points_topic_right", depth_points_topic_right_,
+                             "/camera_right/depth/points");
 
   nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position.x = local_planner_.goal_x_param_;
@@ -110,24 +119,43 @@ void LocalPlannerNode::readParams() {
 
 bool LocalPlannerNode::canUpdatePlannerInfo() {
   // Check if we have a transformation available at the time of the current point cloud
-  return tf_listener_.canTransform("/local_origin", newest_point_cloud_.header.frame_id,
-                               newest_point_cloud_.header.stamp);
+  int missing_transforms = 0;
+  for(int i=0; i<available_clouds_.size(); ++i){
+	  if(available_clouds_[i] == true){
+		  if(!tf_listener_.canTransform("/local_origin", newest_cloud_msgs_[i].header.frame_id,
+				  newest_cloud_msgs_[i].header.stamp)){
+			  missing_transforms ++;
+		  }
+	  }
+  }
+
+  if(missing_transforms == 0){
+	  return true;
+  }else{
+	  return false;
+  }
 }
 void LocalPlannerNode::updatePlannerInfo() {
 
   // update the point cloud
-  sensor_msgs::PointCloud2 pc2cloud_world;
-  try {
-    tf::StampedTransform transform;
-    tf_listener_.lookupTransform("/local_origin", newest_point_cloud_.header.frame_id,
-                                 newest_point_cloud_.header.stamp, transform);
-    pcl_ros::transformPointCloud("/local_origin", transform, newest_point_cloud_, pc2cloud_world);
-    pcl::fromROSMsg(pc2cloud_world, local_planner_.complete_cloud_);
-  } catch (tf::TransformException &ex) {
-    ROS_ERROR(
-        "Received an exception trying to transform a point from "
-        "\"front_camera_optical_frame\" to \"local_origin\": %s",
-        ex.what());
+  local_planner_.complete_cloud_.clear();
+  for(int i=0; i<available_clouds_.size(); ++i){
+	  if(available_clouds_[i] == true){
+		  sensor_msgs::PointCloud2 pc2cloud_world;
+		  pcl::PointCloud<pcl::PointXYZ> complete_cloud;
+		  try {
+			tf::StampedTransform transform;
+			tf_listener_.lookupTransform("/local_origin", newest_cloud_msgs_[i].header.frame_id,
+					newest_cloud_msgs_[i].header.stamp, transform);
+			pcl_ros::transformPointCloud("/local_origin", transform, newest_cloud_msgs_[i], pc2cloud_world);
+			pcl::fromROSMsg(pc2cloud_world, complete_cloud);
+			local_planner_.complete_cloud_.push_back(std::move(complete_cloud));
+		  } catch (tf::TransformException &ex) {
+			ROS_ERROR(
+				"Received an exception trying to transform a pointcloud: %s",
+				ex.what());
+		  }
+	  }
   }
 
   // update position
@@ -739,8 +767,11 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   printf("-------------------------------------------- \n");
 }
 
-void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2& msg) {
-  newest_point_cloud_ = msg; // FIXME: avoid a copy
+void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
+
+  available_clouds_[index] = true;
+  received_clouds_[index] = true;
+  newest_cloud_msgs_[index] = *msg; // FIXME: avoid a copy
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,
@@ -1008,20 +1039,23 @@ int main(int argc, char **argv) {
     }
 
     // If planner is not running, update planner info and get last results
-    if (Node.canUpdatePlannerInfo()) {
-      if (Node.running_mutex_.try_lock()) {
-        Node.updatePlannerInfo();
-        Node.local_planner_.getAvoidanceOutput(planner_output);
-        Node.wp_generator_.setPlannerInfo(planner_output);
-        if(Node.local_planner_.stop_in_front_active_){
-           Node.local_planner_.getGoalPosition(Node.goal_msg_.pose.position);
-        }
-        Node.running_mutex_.unlock();
-        // Wake up the planner
-        std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
-        Node.data_ready_ = true;
-        Node.data_ready_cv_.notify_one();
-      }
+    if(Node.received_clouds_ == Node.available_clouds_){
+		if (Node.canUpdatePlannerInfo()) {
+		  if (Node.running_mutex_.try_lock()) {
+			Node.updatePlannerInfo();
+			std::fill(Node.received_clouds_.begin(), Node.received_clouds_.end(), false);
+			Node.local_planner_.getAvoidanceOutput(planner_output);
+			Node.wp_generator_.setPlannerInfo(planner_output);
+			if(Node.local_planner_.stop_in_front_active_){
+			   Node.local_planner_.getGoalPosition(Node.goal_msg_.pose.position);
+			}
+			Node.running_mutex_.unlock();
+			// Wake up the planner
+			std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
+			Node.data_ready_ = true;
+			Node.data_ready_cv_.notify_one();
+		  }
+		}
     }
 
     // send waypoint

@@ -6,6 +6,9 @@
     <arg name="model" value="iris_stereo_camera" />
     <arg name="world_path" value="$(arg world_path)" />
   </include>
+  
+   <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
+          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
   <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
     <param name="stereo_algorithm" type="double" value="1.0" />
@@ -22,7 +25,7 @@
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/stereo/points2" />
+    <param name="depth_points_topic_front" value="/stereo/points2" />
     <param name="world_name" value="$(find local_planner)/../sim/worlds/simple_obstacle.yaml" />
   </node>
 
