@@ -27,7 +27,7 @@ void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist
 
 void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) { pose_ = pose; }
 
-void StarPlanner::setCloud(const pcl::PointCloud<pcl::PointXYZ>& complete_cloud) {
+void StarPlanner::setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud) {
   complete_cloud_ = complete_cloud;
 }
 

@@ -58,7 +58,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                       geometry_msgs::Point &temp_sphere_center,
                       double &distance_to_closest_point, int &counter_backoff,
                       int &counter_sphere,
-                      pcl::PointCloud<pcl::PointXYZ> complete_cloud,
+					  std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud,
                       double min_cloud_size, double min_dist_backoff,
                       double sphere_radius, Box histogram_box,
                       geometry_msgs::Point position,
@@ -75,34 +75,35 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
   temp_sphere_center.y = 0.0;
   temp_sphere_center.z = 0.0;
 
-  for (pcl_it = complete_cloud.begin(); pcl_it != complete_cloud.end();
-       ++pcl_it) {
-    // Check if the point is invalid
-    if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
-        !std::isnan(pcl_it->z)) {
-      if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
-        distance = computeL2Dist(position, pcl_it);
-        if (distance > min_realsense_dist) {
-          cropped_cloud.points.push_back(
-              pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
-          if (distance < distance_to_closest_point) {
-            distance_to_closest_point = distance;
-            closest_point.x = pcl_it->x;
-            closest_point.y = pcl_it->y;
-            closest_point.z = pcl_it->z;
-          }
-          if (distance < min_dist_backoff) {
-            counter_backoff++;
-          }
-          if (distance < sphere_radius + 1.5) {
-            counter_sphere++;
-            temp_sphere_center.x += pcl_it->x;
-            temp_sphere_center.y += pcl_it->y;
-            temp_sphere_center.z += pcl_it->z;
-          }
-        }
-      }
-    }
+  for(int i=0; i<complete_cloud.size(); ++i){
+	  for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
+		   ++pcl_it) {
+		// Check if the point is invalid
+		if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
+		  if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
+			distance = computeL2Dist(position, pcl_it);
+			if (distance > min_realsense_dist) {
+			  cropped_cloud.points.push_back(
+				  pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+			  if (distance < distance_to_closest_point) {
+				distance_to_closest_point = distance;
+				closest_point.x = pcl_it->x;
+				closest_point.y = pcl_it->y;
+				closest_point.z = pcl_it->z;
+			  }
+			  if (distance < min_dist_backoff) {
+				counter_backoff++;
+			  }
+			  if (distance < sphere_radius + 1.5) {
+				counter_sphere++;
+				temp_sphere_center.x += pcl_it->x;
+				temp_sphere_center.y += pcl_it->y;
+				temp_sphere_center.z += pcl_it->z;
+			  }
+			}
+		  }
+		}
+	  }
   }
 
   if (counter_sphere > 0) {
@@ -115,8 +116,8 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
     temp_sphere_center.z = position.z + 1000;
   }
 
-  cropped_cloud.header.stamp = complete_cloud.header.stamp;
-  cropped_cloud.header.frame_id = complete_cloud.header.frame_id;
+  cropped_cloud.header.stamp = complete_cloud[0].header.stamp;
+  cropped_cloud.header.frame_id = complete_cloud[0].header.frame_id;
   cropped_cloud.height = 1;
   cropped_cloud.width = cropped_cloud.points.size();
   if (cropped_cloud.points.size() <= min_cloud_size) {
