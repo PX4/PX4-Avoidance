@@ -1,82 +1,41 @@
-models:
- - box:
-    name: "Box1"
-    frame_id: "world"
-    position:
-      x: 20
-      y: 0
-      z: 1.25
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-    scale:
-      x: 10.0
-      y: 20.0
-      z: 2.5
- - box:
-    name: "Box2"
-    frame_id: "world"
-    position:
-      x: 27
-      y: 0
-      z: 2
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-    scale:
-      x: 4
-      y: 20.0
-      z: 4
- - box:
-    name: "Box3"
-    frame_id: "world"
-    position:
-      x: 33
-      y: 0
-      z: 0.5
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-    scale:
-      x: 8
-      y: 20.0
-      z: 1
- - box:
-    name: "Box4"
-    frame_id: "world"
-    position:
-      x: 48
-      y: 0
-      z: 0.5
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-    scale:
-      x: 8
-      y: 20.0
-      z: 1
- - box:
-    name: "Box5"
-    frame_id: "world"
-    position:
-      x: 18
-      y: 0
-      z: 4.5
-    orientation:
-      x: 0.0
-      y: 0.0
-      z: 0.0
-      w: 1.0
-    scale:
-      x: 2
-      y: 3
-      z: 4
+ - type: "cube"
+   name: "box1"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [20.0, 0.0, 1.25]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [10.0, 20.0, 2.5]
+
+ - type: "cube"
+   name: "box2"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [27, 0.0, 2.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [4.0, 20.0, 4.0]
+
+ - type: "cube"
+   name: "box3"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [33.0, 0.0, 0.5]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [8.0, 20.0, 1.0]
+
+ - type: "cube"
+   name: "box4"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [48, 0.0, 0.5]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [8.0, 20.0, 1.0]
+
+ - type: "cube"
+   name: "box5"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [18, 0.0, 4.5]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [2.0, 3.0, 4.0]
+
 

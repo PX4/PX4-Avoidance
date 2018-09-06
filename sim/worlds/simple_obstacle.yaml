@@ -1,0 +1,98 @@
+
+ - type: "mesh"
+   name: "pinetree1"
+   frame_id: "world"
+   mesh_resource: "model://pine_tree/meshes/pine_tree.dae"
+   position: [4.0, 7.0, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "pinetree2"
+   frame_id: "world"
+   mesh_resource: "model://pine_tree/meshes/pine_tree.dae"
+   position: [6.1, 7.6, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "pinetree3"
+   frame_id: "world"
+   mesh_resource: "model://pine_tree/meshes/pine_tree.dae"
+   position: [19.3, -14.0, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "pinetree4"
+   frame_id: "world"
+   mesh_resource: "model://pine_tree/meshes/pine_tree.dae"
+   position: [16.0, -11.5, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree1"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [10.0, 0.0, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree2"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [10.25, -4.25, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree3"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [20.2, 14.4, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree4"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [30.0, 8.5, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree5"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [136.2, -0.4, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree6"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [38.0, -9.8, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree7"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [38.6, -4.6, 0.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+ - type: "mesh"
+   name: "oaktree8"
+   frame_id: "world"
+   mesh_resource: "model://oak_tree/meshes/oak_tree.dae"
+   position: [16.0, 30.0, 1.6]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [1.0, 1.0, 1.0]
+
+
