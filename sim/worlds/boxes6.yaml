@@ -1,3 +1,12 @@
+ - type: "cube"
+   name: "box1"
+   frame_id: "world"
+   mesh_resource: ""
+   position: [20.0, 0.0, 1.25]
+   orientation: [0.0, 0.25, 0.0, 1.0]
+   scale: [10.0, 10.0, 2.5]
+
+
 models:
  - box:
     name: "Box1"

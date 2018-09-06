@@ -18,6 +18,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavlink
 )
 find_package(PCL 1.7 REQUIRED)
+find_package(yaml-cpp REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -112,6 +113,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIR}
 )
 
 ## Declare a C++ library
@@ -128,8 +130,9 @@ add_library(local_planner
   src/nodes/planner_functions.cpp
   src/nodes/ground_detector.cpp
   src/nodes/common.cpp
+  src/nodes/load_RVIZ_world.cpp
 )
-
+	
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -150,7 +153,8 @@ add_executable(local_planner_node src/nodes/local_planner_node.cpp)
 # )
 target_link_libraries(local_planner_node
   local_planner
-  ${catkin_LIBRARIES})
+  ${catkin_LIBRARIES}
+  ${YAML_CPP_LIBRARIES})
 
 #############
 ## Install ##

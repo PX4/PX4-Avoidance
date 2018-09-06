@@ -35,12 +35,14 @@
 #include "local_planner.h"
 #include "planner_functions.h"
 #include "waypoint_generator.h"
+#include "load_RVIZ_world.h"
 
 class LocalPlannerNode {
  public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
+  std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
 
@@ -65,6 +67,7 @@ class LocalPlannerNode {
   LocalPlanner local_planner_;
   WaypointGenerator wp_generator_;
 
+  ros::Publisher world_pub_;
   ros::Publisher log_name_pub_;
   ros::Publisher current_waypoint_pub_;
   ros::Publisher mavros_pos_setpoint_pub_;

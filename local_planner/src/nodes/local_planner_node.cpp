@@ -27,6 +27,8 @@ LocalPlannerNode::LocalPlannerNode() {
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
 
+  world_pub_ =
+        nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   ground_pointcloud_pub_ =
@@ -100,6 +102,8 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
   nh_.param<std::string>("depth_points_topic", depth_points_topic_,
                          "/camera/depth/points");
+
+  nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position.x = local_planner_.goal_x_param_;
   goal_msg_.pose.position.y = local_planner_.goal_y_param_;
   goal_msg_.pose.position.z = local_planner_.goal_z_param_;
@@ -918,12 +922,22 @@ int main(int argc, char **argv) {
   ros::Time start_time = ros::Time::now();
   bool hover = false;
   avoidanceOutput planner_output;
+  bool startup = true;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
   // spin node, execute callbacks
   while (ros::ok()) {
     hover = false;
+
+    //visualize world in RVIZ
+      if(!Node.world_path_.empty() && startup){
+      	  visualization_msgs::MarkerArray marker_array;
+      	  if(!visualizeRVIZWorld(marker_array, Node.world_path_)){
+      	     Node.world_pub_.publish(marker_array);
+      	  }
+      	  startup = false;
+      }
 
     // Process callbacks & wait for a position update
     while (!Node.position_received_ && ros::ok()) {
