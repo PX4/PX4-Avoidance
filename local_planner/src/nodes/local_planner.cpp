@@ -135,6 +135,9 @@ void LocalPlanner::runPlanner() {
   initGridCells(&path_ground_);
   stop_in_front_active_ = false;
 
+  ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
+                 static_cast<int>(complete_cloud_.size()));
+
   histogram_box_.setLimitsHistogramBox(pose_.pose.position,
                                        histogram_box_size_);
 

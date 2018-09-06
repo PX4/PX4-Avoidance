@@ -77,7 +77,7 @@ class StarPlanner {
   std::vector<double> reprojected_points_dist_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> complete_cloud_;
+  std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   geometry_msgs::Point goal_;
@@ -112,7 +112,7 @@ class StarPlanner {
   void setPose(const geometry_msgs::PoseStamped& pose);
   void setBoxSize(const Box& histogram_box_size);
   void setGoal(const geometry_msgs::Point& pose);
-  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& complete_cloud);
+  void setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();
