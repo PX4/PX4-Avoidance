@@ -49,7 +49,7 @@ int resolveUri(std::string& uri){
   return 1;
 }
 
-int visualizeRVIZWorld(visualization_msgs::MarkerArray& marker_array, std::string world_path){
+int visualizeRVIZWorld(std::string world_path, visualization_msgs::MarkerArray& marker_array){
 
   std::ifstream fin(world_path);
   YAML::Node doc = YAML::Load(fin);

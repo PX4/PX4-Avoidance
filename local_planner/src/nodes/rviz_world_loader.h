@@ -35,6 +35,6 @@ void operator >> (const YAML::Node& node, world_object& item);
 int resolveUri(std::string& uri);
 
 //yaml parsing and marker publishing
-int visualizeRVIZWorld(visualization_msgs::MarkerArray& marker_array, std::string world_path);
+int visualizeRVIZWorld(std::string world_path, visualization_msgs::MarkerArray& marker_array);
 
 #endif  // RVIZ_WORLD_H
