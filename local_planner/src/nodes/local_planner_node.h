@@ -34,8 +34,8 @@
 #include "avoidance/common_ros.h"
 #include "local_planner.h"
 #include "planner_functions.h"
+#include "rviz_world_loader.h"
 #include "waypoint_generator.h"
-#include "load_RVIZ_world.h"
 
 class LocalPlannerNode {
  public:
