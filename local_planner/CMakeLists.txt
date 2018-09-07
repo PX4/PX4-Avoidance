@@ -130,7 +130,7 @@ add_library(local_planner
   src/nodes/planner_functions.cpp
   src/nodes/ground_detector.cpp
   src/nodes/common.cpp
-  src/nodes/load_RVIZ_world.cpp
+  src/nodes/rviz_world_loader.cpp
 )
 	
 ## Add cmake target dependencies of the library
