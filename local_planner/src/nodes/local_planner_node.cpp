@@ -933,7 +933,7 @@ int main(int argc, char **argv) {
     //visualize world in RVIZ
     if(!Node.world_path_.empty() && startup){
       visualization_msgs::MarkerArray marker_array;
-      if(!visualizeRVIZWorld(marker_array, Node.world_path_)){
+      if(!visualizeRVIZWorld(Node.world_path_, marker_array)){
         Node.world_pub_.publish(marker_array);
       }
       startup = false;
