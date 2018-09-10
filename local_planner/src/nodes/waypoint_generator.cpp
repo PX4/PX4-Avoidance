@@ -69,6 +69,10 @@ void WaypointGenerator::calculateWaypoint() {
     }
   }
   last_wp_type_ = planner_info_.waypoint_type;
+  last_time_ = ros::Time::now();
+  last_position_waypoint_ = output_.position_waypoint;
+  last_yaw_ = curr_yaw_;
+  last_velocity_ = Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
 }
 
 void WaypointGenerator::updateState(geometry_msgs::PoseStamped act_pose,
@@ -426,10 +430,6 @@ void WaypointGenerator::getPathMsg() {
   transformPositionToVelocityWaypoint();
 
   output_.path.poses.push_back(output_.position_waypoint);
-  last_position_waypoint_ = output_.position_waypoint;
-  last_yaw_ = curr_yaw_;
-  last_velocity_ = Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
-  last_time_ = now;
 }
 
 void WaypointGenerator::getWaypoints(waypointResult &output) {
