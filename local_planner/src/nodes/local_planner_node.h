@@ -68,7 +68,8 @@ class LocalPlannerNode {
   WaypointGenerator wp_generator_;
 
   ros::Publisher world_pub_;
-  ros::Publisher log_name_pub_;
+  ros::Publisher cpu_pub_;
+  ros::Publisher memory_pub_;
   ros::Publisher current_waypoint_pub_;
   ros::Publisher mavros_pos_setpoint_pub_;
   ros::Publisher mavros_vel_setpoint_pub_;

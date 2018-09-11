@@ -6,6 +6,11 @@
 #include <iostream>
 #include <limits>
 #include <vector>
+#include <cstdio>
+#include <memory>
+#include <stdexcept>
+#include <string>
+#include <array>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
@@ -48,5 +53,6 @@ double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed);
 void wrapAngleToPlusMinusPI(double &angle);
 double getAngularVelocity(double desired_yaw, double curr_yaw);
+std::string exec(const char* cmd);
 
 #endif  // COMMON_H
