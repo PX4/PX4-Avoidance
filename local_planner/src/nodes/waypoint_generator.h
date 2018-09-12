@@ -44,6 +44,7 @@ class WaypointGenerator {
   ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{0.};
+  ros::Time current_time_{0.};
 
   double max_jerk_limit_param_{500.};
   double min_jerk_limit_param_{200.};
