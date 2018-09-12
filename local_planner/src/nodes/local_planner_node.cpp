@@ -66,8 +66,8 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  waypoint_pub_ = nh_.advertise<nav_msgs::Path>("/waypoint", 1);
-  path_pub_ = nh_.advertise<nav_msgs::Path>("/path_actual", 1);
+  path_actual_pub_ = nh_.advertise<visualization_msgs::Marker>("/path_actual", 1);
+  path_waypoint_pub_ = nh_.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
@@ -156,8 +156,8 @@ void LocalPlannerNode::updatePlannerInfo() {
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
+  last_pose_ = newest_pose_;
   newest_pose_ = msg;
-  publishPath(newest_pose_);
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   position_received_ = true;
 }
@@ -180,10 +180,45 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   }
 }
 
-void LocalPlannerNode::publishPath(const geometry_msgs::PoseStamped& msg) {
-  path_actual_.header.stamp = msg.header.stamp;
-  path_actual_.header.frame_id = msg.header.frame_id;
-  path_actual_.poses.push_back(msg);
+void LocalPlannerNode::publishPaths() {
+
+  //publish actual path
+  visualization_msgs::Marker path_actual_marker;
+  path_actual_marker.header.frame_id = "local_origin";
+  path_actual_marker.header.stamp = ros::Time::now();
+  path_actual_marker.id = path_length_;
+  path_actual_marker.type = visualization_msgs::Marker::LINE_STRIP;
+  path_actual_marker.action = visualization_msgs::Marker::ADD;
+  path_actual_marker.pose.orientation.w = 1.0;
+  path_actual_marker.scale.x = 0.03;
+  path_actual_marker.color.a = 1.0;
+  path_actual_marker.color.r = 0.0;
+  path_actual_marker.color.g = 1.0;
+  path_actual_marker.color.b = 0.0;
+
+  path_actual_marker.points.push_back(last_pose_.pose.position);
+  path_actual_marker.points.push_back(newest_pose_.pose.position);
+  path_actual_pub_.publish(path_actual_marker);
+
+  //publish path set by calculated waypoints
+  visualization_msgs::Marker path_waypoint_marker;
+  path_waypoint_marker.header.frame_id = "local_origin";
+  path_waypoint_marker.header.stamp = ros::Time::now();
+  path_waypoint_marker.id = path_length_;
+  path_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
+  path_waypoint_marker.action = visualization_msgs::Marker::ADD;
+  path_waypoint_marker.pose.orientation.w = 1.0;
+  path_waypoint_marker.scale.x = 0.02;
+  path_waypoint_marker.color.a = 1.0;
+  path_waypoint_marker.color.r = 1.0;
+  path_waypoint_marker.color.g = 0.0;
+  path_waypoint_marker.color.b = 0.0;
+
+  path_waypoint_marker.points.push_back(last_waypoint_position_);
+  path_waypoint_marker.points.push_back(newest_waypoint_position_);
+  path_waypoint_pub_.publish(path_waypoint_marker);
+
+  path_length_ ++;
 }
 
 void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray *marker,
@@ -584,8 +619,10 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   original_wp_pub_.publish(sphere1);
   adapted_wp_pub_.publish(sphere2);
   smoothed_wp_pub_.publish(sphere3);
-  waypoint_pub_.publish(result.path);
-  path_pub_.publish(path_actual_);
+
+  last_waypoint_position_ = newest_waypoint_position_;
+  newest_waypoint_position_ = result.smoothed_goto_position;
+  publishPaths();
   publishSetpoint(result.velocity_waypoint, result.waypoint_type);
 
   // to mavros
