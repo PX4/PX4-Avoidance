@@ -80,8 +80,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  cpu_pub_ = nh_.advertise<std_msgs::String>("/cpu_usage", 1);
-  memory_pub_ = nh_.advertise<std_msgs::String>("/memory_usage", 1);
   takeoff_pose_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
   offboard_pose_pub_ =
@@ -945,18 +943,6 @@ void LocalPlannerNode::threadFunction() {
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
     }
-
-    // publish performance data
-    std_msgs::String cpu_msg;
-    std_msgs::String mem_msg;
-    std::string cpu = exec(" top -bn 1 | awk '{print $9}' | tail -n +8 | awk '{s+=$1} END {print s/8}'");
-    std::string mem = exec(" top -b -n1 | grep Mem | head -1 | awk '{print $4, $5, $6, $7, $8, $9, $10, $11}'");
-
-    cpu_msg.data = cpu;
-    mem_msg.data = mem;
-
-    cpu_pub_.publish(cpu_msg);
-    memory_pub_.publish(mem_msg);
   }
 }
 

@@ -11,6 +11,11 @@ void WaypointGenerator::calculateWaypoint() {
       pose_.pose.position.x, pose_.pose.position.y, pose_.pose.position.z);
   output_.waypoint_type = planner_info_.waypoint_type;
 
+  //Timing
+  last_time_ = current_time_;
+  current_time_ = ros::Time::now();
+
+
   switch (planner_info_.waypoint_type) {
     case hover: {
       if (last_wp_type_ != hover) {
@@ -69,7 +74,6 @@ void WaypointGenerator::calculateWaypoint() {
     }
   }
   last_wp_type_ = planner_info_.waypoint_type;
-  last_time_ = ros::Time::now();
   last_position_waypoint_ = output_.position_waypoint;
   last_yaw_ = curr_yaw_;
   last_velocity_ = Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
@@ -356,8 +360,7 @@ void WaypointGenerator::adaptSpeed() {
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
 
-  const ros::Time now = ros::Time::now();
-  ros::Duration time_diff = now - last_time_;
+  ros::Duration time_diff = current_time_ - last_time_;
   double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
   // If avoid sphere is used, project waypoint on sphere
