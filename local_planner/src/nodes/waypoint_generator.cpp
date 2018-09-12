@@ -171,7 +171,6 @@ void WaypointGenerator::backOff() {
   output_.goto_position.z = planner_info_.back_off_start_point.z;
 
   output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
-  output_.path.poses.push_back(output_.position_waypoint);
   transformPositionToVelocityWaypoint();
   last_yaw_ = curr_yaw_;
 
@@ -355,7 +354,6 @@ void WaypointGenerator::adaptSpeed() {
 
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
-  output_.path.header.frame_id = "/world";
   output_.adapted_goto_position = output_.goto_position;
 
   const ros::Time now = ros::Time::now();
@@ -428,8 +426,6 @@ void WaypointGenerator::getPathMsg() {
   output_.position_waypoint =
       createPoseMsg(output_.smoothed_goto_position, new_yaw_);
   transformPositionToVelocityWaypoint();
-
-  output_.path.poses.push_back(output_.position_waypoint);
 }
 
 void WaypointGenerator::getWaypoints(waypointResult &output) {

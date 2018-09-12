@@ -56,6 +56,9 @@ class LocalPlannerNode {
   std::vector<geometry_msgs::Point> path_node_positions_;
   geometry_msgs::PoseStamped hover_point_;
   geometry_msgs::PoseStamped newest_pose_;
+  geometry_msgs::PoseStamped last_pose_;
+  geometry_msgs::Point newest_waypoint_position_;
+  geometry_msgs::Point last_waypoint_position_;
   sensor_msgs::PointCloud2 newest_point_cloud_;
   geometry_msgs::PoseStamped goal_msg_;
 
@@ -104,11 +107,10 @@ class LocalPlannerNode {
  private:
   ros::NodeHandle nh_;
 
-  nav_msgs::Path path_actual_;
-
   double avoid_radius_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;
+  int path_length_ = 0;
 
   // Subscribers
   ros::Subscriber pointcloud_sub_;
@@ -129,7 +131,8 @@ class LocalPlannerNode {
   ros::Publisher height_map_pub_;
   ros::Publisher cached_pointcloud_pub_;
   ros::Publisher marker_pub_;
-  ros::Publisher path_pub_;
+  ros::Publisher path_actual_pub_;
+  ros::Publisher path_waypoint_pub_;
   ros::Publisher marker_rejected_pub_;
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
@@ -165,7 +168,7 @@ class LocalPlannerNode {
   void stateCallback(const mavros_msgs::State& msg);
   void readParams();
   void publishPlannerData();
-  void publishPath(const geometry_msgs::PoseStamped& msg);
+  void publishPaths();
   void initMarker(visualization_msgs::MarkerArray *marker,
                   nav_msgs::GridCells& path, const float red, const float green, const float blue);
   void publishMarkerBlocked(nav_msgs::GridCells& path_blocked);

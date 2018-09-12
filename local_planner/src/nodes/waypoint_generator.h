@@ -21,13 +21,9 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
 
-#include <nav_msgs/GridCells.h>
-#include <nav_msgs/Path.h>
-
 
 struct waypointResult {
   waypoint_choice waypoint_type;
-  nav_msgs::Path path;
   geometry_msgs::PoseStamped position_waypoint;
   geometry_msgs::Twist velocity_waypoint;
   geometry_msgs::Point goto_position;
