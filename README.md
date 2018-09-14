@@ -66,7 +66,7 @@ mkdir -p ~/catkin_ws/src
 5. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
 
 ```bash
-apt install ros-kinetic-mavros
+apt install ros-kinetic-mavros ros-kinetic-mavros-extras
 ```
 
 6. Install avoidance module dependencies (pointcloud library and octomap).
