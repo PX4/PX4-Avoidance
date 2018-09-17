@@ -93,7 +93,9 @@
       <param name="goal_x_param" value="15" />
       <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="4" />
-      <param name="depth_points_topic" value="/camera_front/depth/points" />
+      <param name="depth_points_topic_front" value="/camera_front/depth/points" />
+      <param name="depth_points_topic_left" value="/camera_left/depth/points" />
+      <param name="depth_points_topic_right" value="/camera_right/depth/points" />
     </node>
     
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
