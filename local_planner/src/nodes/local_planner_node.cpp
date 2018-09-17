@@ -1039,7 +1039,8 @@ int main(int argc, char **argv) {
     }
 
     // If planner is not running, update planner info and get last results
-    if(Node.received_clouds_ == Node.available_clouds_){
+    std::vector<bool> no_clouds_received {false, false, false};
+    if(Node.received_clouds_ == Node.available_clouds_ && Node.available_clouds_!= no_clouds_received){
 		if (Node.canUpdatePlannerInfo()) {
 		  if (Node.running_mutex_.try_lock()) {
 			Node.updatePlannerInfo();
