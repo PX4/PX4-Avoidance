@@ -983,6 +983,7 @@ int main(int argc, char **argv) {
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;
+  bool landing = false;
   avoidanceOutput planner_output;
   bool startup = true;
 
@@ -1015,13 +1016,16 @@ int main(int argc, char **argv) {
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
-      mavros_msgs::SetMode mode_msg;
-      mode_msg.request.custom_mode = "AUTO.LAND";
-      if (Node.mavros_set_mode_client_.call(mode_msg) &&
-          mode_msg.response.mode_sent) {
-        ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
-      } else {
-        ROS_ERROR("\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
+      if(!landing){
+        mavros_msgs::SetMode mode_msg;
+        mode_msg.request.custom_mode = "AUTO.LAND";
+        landing = true;
+        if (Node.mavros_set_mode_client_.call(mode_msg) &&
+            mode_msg.response.mode_sent) {
+          ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
+        } else {
+          ROS_ERROR("\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
+        }
       }
     } else {
       if (Node.never_run_) {
