@@ -1011,6 +1011,8 @@ int main(int argc, char **argv) {
     ros::Time now = ros::Time::now();
     ros::Duration pointcloud_timeout_land =
     ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
+    ros::Duration pointcloud_timeout_hover =
+    ros::Duration(Node.local_planner_.pointcloud_timeout_hover_);
     ros::Duration since_last_cloud = now - Node.last_wp_time_;
     ros::Duration since_start = now - start_time;
 
@@ -1028,7 +1030,8 @@ int main(int argc, char **argv) {
         }
       }
     } else {
-      if (Node.never_run_) {
+      if (Node.never_run_ || (since_last_cloud > pointcloud_timeout_hover &&
+    		  since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
           ROS_INFO(
