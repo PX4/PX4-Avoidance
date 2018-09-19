@@ -71,7 +71,7 @@ double StarPlanner::treeCostFunction(int node_number) {
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
-      50 * indexAngleDifference(e, goal_e);  // include effective direction?
+      20 * indexAngleDifference(e, goal_e);  // include effective direction?
   double turning_cost =
       1 *
       indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
@@ -80,7 +80,10 @@ double StarPlanner::treeCostFunction(int node_number) {
   int last_z = tree_[origin].last_z_;
 
   double smooth_cost =
-      2 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e);
+      5*(2 * indexAngleDifference(z, last_z) + 5 * indexAngleDifference(e, last_e));
+  if(indexAngleDifference(z, last_z) > 100){
+	  smooth_cost = HUGE_VAL;
+  }
 
   double smooth_cost_to_old_tree = 0.0;
   if (tree_age_ < 10) {
