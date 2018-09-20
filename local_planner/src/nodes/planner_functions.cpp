@@ -341,8 +341,8 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
            pitch_cost_smooth;
   } else {
     cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
-           height_change_cost_param * pitch_cost_down + 0.1 * yaw_cost_smooth +
-           0.1 * pitch_cost_smooth;
+           height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
+           0.5 * pitch_cost_smooth;
   }
 
   return cost;
