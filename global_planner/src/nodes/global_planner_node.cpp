@@ -190,6 +190,11 @@ void GlobalPlannerNode::positionCallback(
     popNextGoal();
   }
 
+  // If the current cell is blocked, try finding a path again
+  if(global_planner_.current_cell_blocked_){
+	  planPath();
+  }
+
   // Print and publish info
   if (is_in_goal && !waypoints_.empty()) {
     ROS_INFO("Reached current goal %s, %d goals left\n\n",
