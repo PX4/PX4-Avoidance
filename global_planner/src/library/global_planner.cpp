@@ -513,13 +513,14 @@ bool GlobalPlanner::findPath(std::vector<Cell>& path) {
 bool GlobalPlanner::getGlobalPath() {
   Cell s = Cell(curr_pos_);
   Cell t = Cell(goal_pos_);
+  current_cell_blocked_ = isOccupied(s);
 
   if (goal_must_be_free_ && getRisk(t) > max_cell_risk_) {
     // If goal is occupied, no path is published
     ROS_INFO("Goal position is occupied");
     goal_is_blocked_ = true;
     return false;
-  } else if (isOccupied(s)) {
+  } else if (current_cell_blocked_) {
     // If current position is occupied the way back is published
     ROS_INFO("Current position is occupied, going back.");
     // goBack();

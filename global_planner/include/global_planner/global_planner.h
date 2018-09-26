@@ -95,6 +95,7 @@ class GlobalPlanner {
   double max_overestimate_factor_ = 2.0;
   int max_iterations_ = 2000;
   bool goal_is_blocked_ = false;
+  bool current_cell_blocked_ = false;
   bool goal_must_be_free_ =
       true;  // If false, the planner may try to find a path close to the goal
   bool use_current_yaw_ =
