@@ -37,6 +37,14 @@
 #include "rviz_world_loader.h"
 #include "waypoint_generator.h"
 
+
+struct cameraData {
+	std::string topic_;
+	ros::Subscriber pointcloud_sub_;
+	sensor_msgs::PointCloud2 newest_cloud_msg_;
+	bool received_;
+};
+
 class LocalPlannerNode {
  public:
   LocalPlannerNode();
@@ -50,8 +58,7 @@ class LocalPlannerNode {
 
   double curr_yaw_;
 
-  std::vector<bool> available_clouds_ {false, false, false};
-  std::vector<bool> received_clouds_ {false, false, false};
+  std::vector<cameraData> cameras_;
 
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
@@ -62,7 +69,6 @@ class LocalPlannerNode {
   geometry_msgs::PoseStamped last_pose_;
   geometry_msgs::Point newest_waypoint_position_;
   geometry_msgs::Point last_waypoint_position_;
-  std::vector<sensor_msgs::PointCloud2> newest_cloud_msgs_;
   geometry_msgs::PoseStamped goal_msg_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
@@ -96,6 +102,7 @@ class LocalPlannerNode {
                           geometry_msgs::Twist &wp_vel);
   bool canUpdatePlannerInfo();
   void updatePlannerInfo();
+  int numReceivedClouds();
   void transformPoseToTrajectory(mavros_msgs::Trajectory &obst_avoid,
                                  geometry_msgs::PoseStamped pose);
   void transformVelocityToTrajectory(mavros_msgs::Trajectory &obst_avoid,
@@ -114,9 +121,6 @@ class LocalPlannerNode {
   int path_length_ = 0;
 
   // Subscribers
-  ros::Subscriber pointcloud_front_sub_;
-  ros::Subscriber pointcloud_left_sub_;
-  ros::Subscriber pointcloud_right_sub_;
   ros::Subscriber pose_sub_;
   ros::Subscriber velocity_sub_;
   ros::Subscriber state_sub_;
@@ -159,14 +163,11 @@ class LocalPlannerNode {
   geometry_msgs::TwistStamped vel_msg_;
   bool armed_, offboard_, mission_, new_goal_;
 
-  std::string depth_points_topic_front_;
-  std::string depth_points_topic_left_;
-  std::string depth_points_topic_right_;
-
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
 
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig &config,
                                   uint32_t level);
+  void initializeCameraSubscribers(std::vector<std::string> &camera_topics);
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);

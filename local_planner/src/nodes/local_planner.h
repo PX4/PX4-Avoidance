@@ -228,6 +228,8 @@ class LocalPlanner {
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
+
+  //complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
 
   LocalPlanner();

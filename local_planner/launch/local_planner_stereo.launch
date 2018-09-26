@@ -2,6 +2,7 @@
 
   <arg name="world_file_name"    default="simple_obstacle" />
   <arg name="world_path" default="$(find local_planner)/../sim/worlds/$(arg world_file_name).world" />
+  <arg name="pointcloud_topics" default="[/stereo/points2]"/>
 
   <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
     <arg name="model" value="iris_stereo_camera" />
@@ -26,8 +27,8 @@
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/stereo/points2" />
     <param name="world_name" value="$(find local_planner)/../sim/worlds/$(arg world_file_name).yaml" />
+    <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
