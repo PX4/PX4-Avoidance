@@ -6,7 +6,9 @@
     <arg name="record_position"    default="true" />
     <arg name="world_file_name"    default="simple_obstacle" />
     <arg name="world_path" default="$(find local_planner)/../sim/worlds/$(arg world_file_name).world" />
+    <arg name="pointcloud_topics" default="[/camera/depth/points]"/>
     
+    <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
@@ -22,6 +24,7 @@
         <param name="goal_y_param" value="15"/>
         <param name="goal_z_param" value="3" />
         <param name="world_name" value="$(find local_planner)/../sim/worlds/$(arg world_file_name).yaml" />
+        <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />

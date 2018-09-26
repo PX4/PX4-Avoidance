@@ -3,7 +3,9 @@
     <arg name="record_histogram"   default="true" />
     <arg name="record_waypoints"   default="true" />
     <arg name="record_position"    default="true" />
+    <arg name="pointcloud_topics" default="[/camera_front/depth_registered/points,/camera_left/depth_registered/points,/camera_right/depth_registered/points]"/>
     
+    <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
           args="0 0 0 -1.57 0 -1.57 fcu front_camera_link 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_right_camera"
@@ -22,9 +24,7 @@
         <param name="goal_x_param" value="17" />
         <param name="goal_y_param" value="15"/>
         <param name="goal_z_param" value="3" />
-        <param name="depth_points_topic_front" value="/camera_front/depth_registered/points" />
-        <param name="depth_points_topic_left" value="/camera_left/depth_registered/points" />
-        <param name="depth_points_topic_right" value="/camera_right/depth_registered/points" />
+        <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
         <param name="world_name" value="$(find local_planner)/../sim/worlds/simple_obstacle.yaml" />
     </node>
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
