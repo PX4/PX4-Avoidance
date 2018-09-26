@@ -10,6 +10,14 @@ LocalPlannerNode::LocalPlannerNode() {
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
+  //disable memory if using more than one camera
+  if(cameras_.size() > 1){
+	rqt_param_config_.reproj_age_ = 0;
+    server_.updateConfig(rqt_param_config_);
+    dynamicReconfigureCallback(rqt_param_config_, 1);
+  }
+
+  //initialize subscribers and publishers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
       this);
@@ -116,7 +124,6 @@ void LocalPlannerNode::initializeCameraSubscribers(std::vector<std::string> &cam
             camera_topics[i], 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
   }
-
 }
 
 int LocalPlannerNode::numReceivedClouds(){
@@ -137,11 +144,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
     }
   }
 
-  if(missing_transforms == 0){
-	  return true;
-  }else{
-	  return false;
-  }
+  return missing_transforms == 0;
 }
 void LocalPlannerNode::updatePlannerInfo() {
 
@@ -953,6 +956,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(
   local_planner_.dynamicReconfigureSetParams(config, level);
   wp_generator_.setMinJerkLimit(config.min_jerk_limit_);
   wp_generator_.setMaxJerkLimit(config.max_jerk_limit_);
+  rqt_param_config_ = config;
 }
 
 void LocalPlannerNode::threadFunction() {
