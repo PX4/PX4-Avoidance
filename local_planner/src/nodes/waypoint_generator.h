@@ -50,6 +50,7 @@ class WaypointGenerator {
   double min_jerk_limit_param_{200.};
 
   bool reached_goal_;
+  bool limit_speed_close_to_goal_ = false;
   bool waypoint_outside_FOV_;
   bool only_yawed_;
   double last_yaw_;
