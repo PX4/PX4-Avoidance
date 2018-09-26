@@ -83,6 +83,12 @@ void WaypointGenerator::updateState(geometry_msgs::PoseStamped act_pose,
                                     geometry_msgs::PoseStamped goal,
                                     geometry_msgs::TwistStamped vel, bool stay,
                                     ros::Time t) {
+
+  if(goal_.x != goal.pose.position.x || goal_.y != goal.pose.position.y ||
+	  goal_.z != goal.pose.position.z){
+	  reached_goal_ = false;
+	  limit_speed_close_to_goal_ = false;
+  }
   update_time_ = t;
   pose_ = act_pose;
   curr_vel_ = vel;
@@ -202,25 +208,25 @@ bool WaypointGenerator::withinGoalRadius() {
   a.x = std::abs(goal_.x - pose_.pose.position.x);
   a.y = std::abs(goal_.y - pose_.pose.position.y);
   a.z = std::abs(goal_.z - pose_.pose.position.z);
-  float goal_acceptance_radius = 0.5f;
+  float goal_acceptance_radius_in = 0.5;
+  float goal_acceptance_radius_out = 1.5;
+  double sqrd_dist = a.x * a.x + a.y * a.y + a.z * a.z;
 
-  if (a.x < goal_acceptance_radius && a.y < goal_acceptance_radius &&
-      a.z < goal_acceptance_radius) {
+  if (sqrd_dist < goal_acceptance_radius_in * goal_acceptance_radius_in) {
     if (!reached_goal_) {
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
     reached_goal_ = true;
-    return true;
-  } else if (planner_info_.over_obstacle && a.x < goal_acceptance_radius &&
-             a.y < goal_acceptance_radius) {
+  } else if (planner_info_.over_obstacle && a.x < goal_acceptance_radius_in &&
+             a.y < goal_acceptance_radius_in) {
     if (!reached_goal_) {
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
     reached_goal_ = true;
-    return true;
-  } else
+  } else if(sqrd_dist > goal_acceptance_radius_out * goal_acceptance_radius_out){
     reached_goal_ = false;
-  return false;
+  }
+  return reached_goal_;
 }
 
 // when taking off, first publish waypoints to reach the goal altitude
@@ -339,6 +345,21 @@ void WaypointGenerator::adaptSpeed() {
   double delta_dist = since_update_sec * curr_vel_magnitude_;
   speed_ += delta_dist;
 
+  //break before goal
+  geometry_msgs::Point a;
+  a.x = std::abs(goal_.x - pose_.pose.position.x);
+  a.y = std::abs(goal_.y - pose_.pose.position.y);
+  a.z = std::abs(goal_.z - pose_.pose.position.z);
+  if (a.x < 3 * curr_vel_magnitude_ && a.y < 3 * curr_vel_magnitude_) {
+	  limit_speed_close_to_goal_ = true;
+  }else if(a.x > 4 * curr_vel_magnitude_ || a.y > 4 * curr_vel_magnitude_){
+	  limit_speed_close_to_goal_ = false;
+  }
+  if(limit_speed_close_to_goal_){
+	  speed_ = std::min(speed_, 0.1*std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z));
+	  speed_ = std::max(speed_, 0.4);
+  }
+
   // set waypoint to correct speed
   geometry_msgs::Point pose_to_wp;
   pose_to_wp.x = output_.adapted_goto_position.x - pose_.pose.position.x;
@@ -352,6 +373,7 @@ void WaypointGenerator::adaptSpeed() {
   output_.adapted_goto_position.x = pose_.pose.position.x + pose_to_wp.x;
   output_.adapted_goto_position.y = pose_.pose.position.y + pose_to_wp.y;
   output_.adapted_goto_position.z = pose_.pose.position.z + pose_to_wp.z;
+
   ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f].", output_.adapted_goto_position.x,
 		  output_.adapted_goto_position.y, output_.adapted_goto_position.z);
 }
