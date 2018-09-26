@@ -114,6 +114,7 @@ class LocalPlannerNode {
 
  private:
   ros::NodeHandle nh_;
+  avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   double avoid_radius_;
   geometry_msgs::Point avoid_centerpoint_;
