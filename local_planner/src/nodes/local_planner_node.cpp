@@ -68,8 +68,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/path_actual", 1);
   path_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
-  bounding_box_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
@@ -414,27 +412,21 @@ void LocalPlannerNode::publishBox() {
   box.header.frame_id = "local_origin";
   box.header.stamp = ros::Time::now();
   box.id = 0;
-  box.type = visualization_msgs::Marker::CUBE;
+  box.type = visualization_msgs::Marker::CYLINDER;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = drone_pos.pose.position.x +
-                        0.5 * (local_planner_.histogram_box_size_.xmax_ -
-                               local_planner_.histogram_box_size_.xmin_);
-  box.pose.position.y = drone_pos.pose.position.y +
-                        0.5 * (local_planner_.histogram_box_size_.ymax_ -
-                               local_planner_.histogram_box_size_.ymin_);
+  box.pose.position.x = drone_pos.pose.position.x;
+  box.pose.position.y = drone_pos.pose.position.y;
   box.pose.position.z = drone_pos.pose.position.z +
-                        0.5 * (local_planner_.histogram_box_size_.zmax_ -
-                               local_planner_.histogram_box_size_.zmin_);
+                        0.5 * (local_planner_.histogram_box_.zmax_ -
+                               local_planner_.histogram_box_.zmin_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = local_planner_.histogram_box_size_.xmax_ +
-                local_planner_.histogram_box_size_.xmin_;
-  box.scale.y = local_planner_.histogram_box_size_.ymax_ +
-                local_planner_.histogram_box_size_.ymin_;
-  box.scale.z = local_planner_.histogram_box_size_.zmax_ +
-                local_planner_.histogram_box_size_.zmin_;
+  box.scale.x = 2 * local_planner_.histogram_box_.radius_;
+  box.scale.y = 2 * local_planner_.histogram_box_.radius_;
+  box.scale.z = local_planner_.histogram_box_.zsize_up_ +
+		        local_planner_.histogram_box_.zsize_down_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
