@@ -31,12 +31,9 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
-  histogram_box_size_.xmin_ = config.box_radius_;
-  histogram_box_size_.xmax_ = config.box_radius_;
-  histogram_box_size_.ymin_ = config.box_radius_;
-  histogram_box_size_.ymax_ = config.box_radius_;
-  histogram_box_size_.zmin_ = config.min_box_z_;
-  histogram_box_size_.zmax_ = config.max_box_z_;
+  histogram_box_.radius_ = config.box_radius_;
+  histogram_box_.zsize_up_ = config.box_size_up_;
+  histogram_box_.zsize_down_ = config.box_size_down_;
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
@@ -107,8 +104,7 @@ void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
                  static_cast<int>(complete_cloud_.size()));
 
-  histogram_box_.setLimitsHistogramBox(pose_.pose.position,
-                                       histogram_box_size_);
+  histogram_box_.setBoxLimits(pose_.pose.position);
 
   geometry_msgs::Point temp_sphere_center;
   int sphere_points_counter = 0;
@@ -281,7 +277,7 @@ void LocalPlanner::determineStrategy() {
           star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_,
                                       height_change_cost_param_adapted_,
                                       height_change_cost_param_);
-          star_planner_.setBoxSize(histogram_box_size_);
+          star_planner_.setBoxSize(histogram_box_);
           star_planner_.setCloud(complete_cloud_);
           star_planner_.buildLookAheadTree();
 
@@ -409,7 +405,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = histogram.get_age(e, z);
 
-          if (dist < 2 * histogram_box_size_.xmax_ && dist > 0.3 &&
+          if (dist < 2 * histogram_box_.radius_ && dist > 0.3 &&
               age < reproj_age_) {
             reprojected_points_.points.push_back(pcl::PointXYZ(
                 temp_array[i].x, temp_array[i].y, temp_array[i].z));

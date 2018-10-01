@@ -79,7 +79,6 @@ class StarPlanner {
 
   nav_msgs::GridCells path_waypoints_;
   Box histogram_box_;
-  Box histogram_box_size_;
 
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
@@ -102,7 +101,7 @@ class StarPlanner {
                      const double& height_change_cost_param_adapted,
                      const double& height_change_cost_param);
   void setPose(const geometry_msgs::PoseStamped& pose);
-  void setBoxSize(const Box& histogram_box_size);
+  void setBoxSize(const Box& histogram_box);
   void setGoal(const geometry_msgs::Point& pose);
   void setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
   double treeCostFunction(int node_number);

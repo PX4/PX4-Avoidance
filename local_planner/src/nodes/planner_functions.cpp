@@ -80,9 +80,9 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
 		   ++pcl_it) {
 		// Check if the point is invalid
 		if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-		  if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
+		  if (histogram_box.isPointWithinBox(pcl_it->x, pcl_it->y, pcl_it->z)) {
 			distance = computeL2Dist(position, pcl_it);
-			if (distance > min_realsense_dist && distance < histogram_box.xmax_) {
+			if (distance > min_realsense_dist && distance < histogram_box.radius_) {
 			  cropped_cloud.points.push_back(
 				  pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
 			  if (distance < distance_to_closest_point) {

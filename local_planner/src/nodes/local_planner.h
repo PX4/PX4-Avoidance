@@ -154,8 +154,6 @@ class LocalPlanner {
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
-  Box histogram_box_;
-
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
   geometry_msgs::Point goal_;
@@ -187,8 +185,8 @@ class LocalPlanner {
   void create2DObstacleRepresentation(const bool send_to_fcu);
 
  public:
-  Box histogram_box_size_;
 
+  Box histogram_box_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;
