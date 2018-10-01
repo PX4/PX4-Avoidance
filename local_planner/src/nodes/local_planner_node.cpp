@@ -37,13 +37,10 @@ LocalPlannerNode::LocalPlannerNode() {
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
-  ground_pointcloud_pub_ =
-      nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/ground_pointcloud", 1);
   reprojected_points_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
-  groundbox_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_box", 1);
   avoid_sphere_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
   original_wp_pub_ =
@@ -52,9 +49,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
   smoothed_wp_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
-  ground_est_pub_ = nh_.advertise<visualization_msgs::Marker>("/ground_est", 1);
-  height_map_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/height_map", 1);
   complete_tree_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
   tree_path_pub_ = nh_.advertise<visualization_msgs::Marker>("/tree_path", 1);
@@ -64,8 +58,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
   marker_candidates_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
-  marker_ground_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/ground_marker", 1);
   marker_FOV_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/FOV_marker", 1);
   marker_selected_pub_ =
@@ -325,12 +317,6 @@ void LocalPlannerNode::publishMarkerSelected(
   marker_selected_pub_.publish(marker_selected);
 }
 
-void LocalPlannerNode::publishMarkerGround(nav_msgs::GridCells& path_ground) {
-  visualization_msgs::MarkerArray marker_ground;
-  initMarker(&marker_ground, path_ground, 0.16, 0.8, 0.8);
-  marker_ground_pub_.publish(marker_ground);
-}
-
 void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells& FOV_cells) {
   visualization_msgs::MarkerArray FOV_marker;
   initMarker(&FOV_marker, FOV_cells, 0.16, 0.8, 0.8);
@@ -360,72 +346,6 @@ void LocalPlannerNode::publishGoal() {
   m.pose.position = goal;
   marker_goal.markers.push_back(m);
   marker_goal_pub_.publish(marker_goal);
-}
-
-void LocalPlannerNode::publishGround() {
-  visualization_msgs::Marker m;
-  geometry_msgs::Point closest_point_on_ground;
-  geometry_msgs::Quaternion ground_orientation;
-  std::vector<double> ground_heights;
-  std::vector<double> ground_xmax;
-  std::vector<double> ground_xmin;
-  std::vector<double> ground_ymax;
-  std::vector<double> ground_ymin;
-  local_planner_.ground_detector_.getGroundDataForVisualization(
-      closest_point_on_ground, ground_orientation, ground_heights, ground_xmax,
-      ground_xmin, ground_ymax, ground_ymin);
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = closest_point_on_ground.x;
-  m.pose.position.y = closest_point_on_ground.y;
-  m.pose.position.z = closest_point_on_ground.z;
-  m.pose.orientation = ground_orientation;
-  m.scale.x = 10;
-  m.scale.y = 10;
-  m.scale.z = 0.001;
-  m.color.a = 0.5;
-  m.color.r = 0.0;
-  m.color.g = 0.0;
-  m.color.b = 1.0;
-  m.lifetime = ros::Duration(0.5);
-  m.id = 0;
-
-  ground_est_pub_.publish(m);
-
-  visualization_msgs::MarkerArray marker_array;
-  visualization_msgs::Marker g;
-  g.header.frame_id = "local_origin";
-  g.header.stamp = ros::Time::now();
-  g.type = visualization_msgs::Marker::CUBE;
-  g.action = 3;
-  g.scale.x = 0.1;
-  g.scale.y = 0.1;
-  g.scale.z = 0.5;
-  g.color.a = 0.5;
-  g.lifetime = ros::Duration();
-  g.id = 0;
-  marker_array.markers.push_back(g);
-
-  for (int i = 0; i < ground_heights.size(); i++) {
-    g.id = i + 1;
-    g.action = visualization_msgs::Marker::ADD;
-    g.scale.x = std::abs(ground_xmax[i] - ground_xmin[i]);
-    g.scale.y = std::abs(ground_ymax[i] - ground_ymin[i]);
-
-    g.pose.position.x =
-        ground_xmax[i] - 0.5 * std::abs(ground_xmax[i] - ground_xmin[i]);
-    g.pose.position.y =
-        ground_ymax[i] - 0.5 * std::abs(ground_ymax[i] - ground_ymin[i]);
-    g.pose.position.z = ground_heights[i] - 0.5 * g.scale.z;
-
-    g.color.r = 1;
-    g.color.g = 0;
-    g.color.b = 0;
-
-    marker_array.markers.push_back(g);
-  }
-  height_map_pub_.publish(marker_array);
 }
 
 void LocalPlannerNode::publishReachHeight() {
@@ -520,39 +440,6 @@ void LocalPlannerNode::publishBox() {
   box.color.g = 1.0;
   box.color.b = 0.0;
   bounding_box_pub_.publish(box);
-
-  visualization_msgs::Marker groundbox;
-  groundbox.header.frame_id = "local_origin";
-  groundbox.header.stamp = ros::Time::now();
-  groundbox.id = 0;
-  groundbox.type = visualization_msgs::Marker::CUBE;
-  groundbox.action = visualization_msgs::Marker::ADD;
-  groundbox.pose.position.x =
-      drone_pos.pose.position.x +
-      0.5 * (local_planner_.ground_detector_.ground_box_size_.xmax_ -
-             local_planner_.ground_detector_.ground_box_size_.xmin_);
-  groundbox.pose.position.y =
-      drone_pos.pose.position.y +
-      0.5 * (local_planner_.ground_detector_.ground_box_size_.ymax_ -
-             local_planner_.ground_detector_.ground_box_size_.ymin_);
-  groundbox.pose.position.z =
-      drone_pos.pose.position.z -
-      local_planner_.ground_detector_.ground_box_size_.zmin_;
-  groundbox.pose.orientation.x = 0.0;
-  groundbox.pose.orientation.y = 0.0;
-  groundbox.pose.orientation.z = 0.0;
-  groundbox.pose.orientation.w = 1.0;
-  groundbox.scale.x = local_planner_.ground_detector_.ground_box_size_.xmax_ +
-                      local_planner_.ground_detector_.ground_box_size_.xmin_;
-  groundbox.scale.y = local_planner_.ground_detector_.ground_box_size_.ymax_ +
-                      local_planner_.ground_detector_.ground_box_size_.ymin_;
-  groundbox.scale.z =
-      2 * local_planner_.ground_detector_.ground_box_size_.zmin_;
-  groundbox.color.a = 0.5;
-  groundbox.color.r = 1.0;
-  groundbox.color.g = 0.0;
-  groundbox.color.b = 0.0;
-  groundbox_pub_.publish(groundbox);
 }
 
 void LocalPlannerNode::publishAvoidSphere() {
@@ -921,11 +808,9 @@ void LocalPlannerNode::transformVelocityToTrajectory(
 }
 
 void LocalPlannerNode::publishPlannerData() {
-  pcl::PointCloud<pcl::PointXYZ> final_cloud, ground_cloud, reprojected_points;
-  local_planner_.getCloudsForVisualization(final_cloud, ground_cloud,
-                                           reprojected_points);
+  pcl::PointCloud<pcl::PointXYZ> final_cloud, reprojected_points;
+  local_planner_.getCloudsForVisualization(final_cloud, reprojected_points);
   local_pointcloud_pub_.publish(final_cloud);
-  ground_pointcloud_pub_.publish(ground_cloud);
   reprojected_points_pub_.publish(reprojected_points);
 
   publishTree();
@@ -936,10 +821,9 @@ void LocalPlannerNode::publishPlannerData() {
       ros::Duration(1.2 * pointcloud_timeout_hover_.toSec());
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_ground, FOV_cells;
+      path_blocked, FOV_cells;
   local_planner_.getCandidateDataForVisualization(
-      path_candidates, path_selected, path_rejected, path_blocked, FOV_cells,
-      path_ground);
+      path_candidates, path_selected, path_rejected, path_blocked, FOV_cells);
 
   if (local_planner_.send_obstacles_fcu_) {
     sensor_msgs::LaserScan distance_data_to_fcu;
@@ -951,13 +835,11 @@ void LocalPlannerNode::publishPlannerData() {
   publishMarkerSelected(path_selected);
   publishMarkerRejected(path_rejected);
   publishMarkerBlocked(path_blocked);
-  publishMarkerGround(path_ground);
   publishMarkerFOV(FOV_cells);
   publishGoal();
   publishBox();
   publishAvoidSphere();
   publishReachHeight();
-  publishGround();
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(

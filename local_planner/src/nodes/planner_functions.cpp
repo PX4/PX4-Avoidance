@@ -82,7 +82,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
 		if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
 		  if (histogram_box.isPointWithin(pcl_it->x, pcl_it->y, pcl_it->z)) {
 			distance = computeL2Dist(position, pcl_it);
-			if (distance > min_realsense_dist) {
+			if (distance > min_realsense_dist && distance < histogram_box.xmax_) {
 			  cropped_cloud.points.push_back(
 				  pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
 			  if (distance < distance_to_closest_point) {
@@ -367,12 +367,12 @@ void findFreeDirections(
     const Histogram &histogram, double safety_radius,
     nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells &path_ground, nav_msgs::GridCells path_waypoints,
+    nav_msgs::GridCells path_waypoints,
     std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,
     const geometry_msgs::PoseStamped &position, const geometry_msgs::Point &position_old,
     double goal_cost_param, double smooth_cost_param,
     double height_change_cost_param_adapted, double height_change_cost_param,
-    int e_min_idx, bool over_obstacle, bool only_yawed, int resolution_alpha) {
+    bool only_yawed, int resolution_alpha) {
 
   int n = floor(safety_radius / resolution_alpha);  // safety radius
   int z_dim = 360 / resolution_alpha;
@@ -380,7 +380,6 @@ void findFreeDirections(
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
-  bool height_reject = false;
   geometry_msgs::Point p;
   cost_path_candidates.clear();
 
@@ -388,7 +387,6 @@ void findFreeDirections(
   initGridCells(&path_rejected);
   initGridCells(&path_blocked);
   initGridCells(&path_selected);
-  initGridCells(&path_ground);
 
   // determine which bins are candidates
   for (int e = 0; e < e_dim; e++) {
@@ -397,7 +395,6 @@ void findFreeDirections(
         for (int j = (z - n); j <= (z + n); j++) {
           free = true;
           corner = false;
-          height_reject = false;
 
           // Elevation index < 0
           if (i < 0 && j >= 0 && j < z_dim) {
@@ -442,14 +439,7 @@ void findFreeDirections(
         if (!free) break;
       }
 
-      // reject points which lead the drone too close to the ground
-      if (over_obstacle) {
-        if (e <= e_min_idx) {
-          height_reject = true;
-        }
-      }
-
-      if (free && !height_reject) {
+      if (free) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0.0;
@@ -460,16 +450,11 @@ void findFreeDirections(
                          height_change_cost_param_adapted,
                          height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
-      } else if (!free && histogram.get_bin(e, z) != 0 && !height_reject) {
+      } else if (!free && histogram.get_bin(e, z) != 0) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
         p.z = 0.0;
         path_rejected.cells.push_back(p);
-      } else if (height_reject) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
-        path_ground.cells.push_back(p);
       } else {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);

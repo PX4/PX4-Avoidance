@@ -5,7 +5,6 @@
 #include <vector>
 #include "box.h"
 #include "common.h"
-#include "ground_detector.h"
 #include "histogram.h"
 #include "planner_functions.h"
 #include "tree_node.h"
@@ -53,11 +52,6 @@
 #include <local_planner/LocalPlannerNodeConfig.h>
 
 class StarPlanner {
-  bool over_obstacle_ = false;
-  bool too_low_;
-  bool is_near_min_height_;
-  bool use_ground_detection_;
-
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   double tree_node_distance_ = 1.0;
@@ -94,14 +88,12 @@ class StarPlanner {
   int tree_age_;
   std::vector<TreeNode> tree_;
 
-  GroundDetector ground_detector_;
-
   StarPlanner();
   ~StarPlanner();
 
   void setParams(const double& min_cloud_size, const double& min_dist_backoff,
                  const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
-                 bool use_ground_detection, const double& min_realsense_dist);
+                 const double& min_realsense_dist);
 
   void setReprojectedPoints(const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
                             const std::vector<double>& reprojected_points_age,

@@ -128,7 +128,6 @@ add_library(local_planner
   src/nodes/box.cpp
   src/nodes/star_planner.cpp
   src/nodes/planner_functions.cpp
-  src/nodes/ground_detector.cpp
   src/nodes/common.cpp
   src/nodes/rviz_world_loader.cpp
 )
