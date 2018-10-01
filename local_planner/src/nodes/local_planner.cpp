@@ -11,19 +11,11 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.pose.orientation = msg.pose.orientation;
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   star_planner_.setPose(pose_);
-  ground_detector_.setPose(pose_);
 
   if (!currently_armed_) {
     take_off_pose_.header = msg.header;
     take_off_pose_.pose.position = msg.pose.position;
     take_off_pose_.pose.orientation = msg.pose.orientation;
-
-    time_t t = time(0);
-    struct tm *now = localtime(&t);
-    std::string buffer(80, '\0');
-    strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
-    log_name_ = buffer;
-
     reach_altitude_ = false;
   }
 
@@ -39,13 +31,12 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
-  histogram_box_size_.xmin_ = config.min_box_x_;
-  histogram_box_size_.xmax_ = config.max_box_x_;
-  histogram_box_size_.ymin_ = config.min_box_y_;
-  histogram_box_size_.ymax_ = config.max_box_y_;
+  histogram_box_size_.xmin_ = config.box_radius_;
+  histogram_box_size_.xmax_ = config.box_radius_;
+  histogram_box_size_.ymin_ = config.box_radius_;
+  histogram_box_size_.ymax_ = config.box_radius_;
   histogram_box_size_.zmin_ = config.min_box_z_;
   histogram_box_size_.zmax_ = config.max_box_z_;
-  min_dist_to_ground_ = config.min_dist_to_ground_;
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
@@ -76,35 +67,14 @@ void LocalPlanner::dynamicReconfigureSetParams(
   use_vel_setpoints_ = config.use_vel_setpoints_;
   stop_in_front_ = config.stop_in_front_;
   use_avoid_sphere_ = config.use_avoid_sphere_;
-  use_ground_detection_ = config.use_ground_detection_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
   send_obstacles_fcu_ = config.send_obstacles_fcu_;
 
   star_planner_.dynamicReconfigureSetStarParams(config, level);
-  ground_detector_.dynamicReconfigureSetGroundParams(config, level);
 
   ROS_DEBUG("\033[0;35m[OA] Dynamic reconfigure call \033[0m");
-}
-
-// log Data
-void LocalPlanner::logData() {
-  if (currently_armed_ && offboard_) {
-    // Print general Algorithm Data
-    std::ofstream myfile1(("LocalPlanner_" + log_name_).c_str(),
-                          std::ofstream::app);
-    myfile1 << pose_.header.stamp.sec << "\t" << pose_.header.stamp.nsec << "\t"
-            << pose_.pose.position.x << "\t" << pose_.pose.position.y << "\t"
-            << pose_.pose.position.z << "\t" << reach_altitude_ << "\t"
-            << use_ground_detection_ << "\t" << obstacle_ << "\t"
-            << height_change_cost_param_adapted_ << "\t" << over_obstacle_
-            << "\t" << too_low_ << "\t" << is_near_min_height_ << "\t"
-            << goal_.x << "\t" << goal_.y << "\t" << goal_.z  << "\n";
-    myfile1.close();
-
-    ground_detector_.logData(log_name_);
-  }
 }
 
 void LocalPlanner::setVelocity() {
@@ -132,7 +102,6 @@ void LocalPlanner::runPlanner() {
   initGridCells(&path_rejected_);
   initGridCells(&path_blocked_);
   initGridCells(&path_selected_);
-  initGridCells(&path_ground_);
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -140,25 +109,6 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setLimitsHistogramBox(pose_.pose.position,
                                        histogram_box_size_);
-
-  if (use_ground_detection_ && currently_armed_) {
-    if (offboard_ || mission_) {
-      ground_detector_.initializeGroundBox(min_dist_to_ground_);
-      ground_detector_.ground_box_.setLimitsGroundBox(
-          pose_.pose.position, ground_detector_.ground_box_size_,
-          min_dist_to_ground_);
-      ground_detector_.setParams(min_dist_to_ground_, min_cloud_size_);
-      ground_detector_.detectGround(complete_cloud_);
-
-      min_flight_height_ = ground_detector_.getMinFlightHeight(
-          pose_, curr_vel_, over_obstacle_, min_flight_height_, ground_margin_);
-      ground_detector_.getHeightInformation(over_obstacle_, too_low_,
-                                            is_near_min_height_);
-      ground_margin_ = ground_detector_.getMargin();
-    } else {
-      ground_detector_.reset();
-    }
-  }
 
   geometry_msgs::Point temp_sphere_center;
   int sphere_points_counter = 0;
@@ -316,17 +266,15 @@ void LocalPlanner::determineStrategy() {
 
         findFreeDirections(
             polar_histogram_, safety_radius_, path_candidates_, path_selected_,
-            path_rejected_, path_blocked_, path_ground_, path_waypoints_,
+            path_rejected_, path_blocked_, path_waypoints_,
             cost_path_candidates_, goal_, pose_, position_old_,
             goal_cost_param_, smooth_cost_param_,
-            height_change_cost_param_adapted_, height_change_cost_param_, -1,
-            false, velocity_mod_ < 0.1, ALPHA_RES);
+            height_change_cost_param_adapted_, height_change_cost_param_,
+            velocity_mod_ < 0.1, ALPHA_RES);
 
         if (use_VFH_star_) {
-          star_planner_.ground_detector_ = GroundDetector(ground_detector_);
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
-                                  path_waypoints_, curr_yaw_,
-                                  use_ground_detection_, min_realsense_dist_);
+                                  path_waypoints_, curr_yaw_, min_realsense_dist_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
                                              reprojected_points_dist_);
@@ -341,22 +289,13 @@ void LocalPlanner::determineStrategy() {
           last_path_time_ = ros::Time::now();
         } else {
           int e_min_idx = -1;
-          if (use_ground_detection_) {
-            e_min_idx = ground_detector_.getMinFlightElevationIndex(
-                pose_, min_flight_height_, ALPHA_RES);
-            if (over_obstacle_) {
-              ROS_DEBUG("\033[1;36m[OA] Minimal flight height: %f) \n \033[0m",
-                        min_flight_height_);
-            }
-          }
-
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
-              path_selected_, path_rejected_, path_blocked_, path_ground_,
+              path_selected_, path_rejected_, path_blocked_,
               path_waypoints_, cost_path_candidates_, goal_, pose_,
               position_old_, goal_cost_param_, smooth_cost_param_,
               height_change_cost_param_adapted_, height_change_cost_param_,
-              e_min_idx, over_obstacle_, velocity_mod_ < 0.1, ALPHA_RES);
+              velocity_mod_ < 0.1, ALPHA_RES);
           if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
             stopInFrontObstacles();
             waypoint_type_ = direct;
@@ -568,26 +507,19 @@ void LocalPlanner::getAvoidSphere(geometry_msgs::Point &center, double &radius,
 
 void LocalPlanner::getCloudsForVisualization(
     pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-    pcl::PointCloud<pcl::PointXYZ> &ground_cloud,
     pcl::PointCloud<pcl::PointXYZ> &reprojected_points) {
   final_cloud = final_cloud_;
   reprojected_points = reprojected_points_;
-  if (use_ground_detection_) {
-    ground_detector_.getGroundCloudForVisualization(ground_cloud);
-  } else {
-    pcl::PointCloud<pcl::PointXYZ> ground_cloud;
-  }
 }
 
 void LocalPlanner::getCandidateDataForVisualization(
     nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
     nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells& FOV_cells, nav_msgs::GridCells& path_ground) {
+    nav_msgs::GridCells& FOV_cells) {
   path_candidates = path_candidates_;
   path_selected = path_selected_;
   path_rejected = path_rejected_;
   path_blocked = path_blocked_;
-  path_ground = path_ground_;
   FOV_cells = FOV_cells_;
 }
 
@@ -623,12 +555,6 @@ void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
   out.avoid_sphere_age = avoid_sphere_age_;
   out.avoid_centerpoint = avoid_centerpoint_;
   out.avoid_radius = avoid_radius_;
-
-  out.use_ground_detection = use_ground_detection_;
-  out.over_obstacle = over_obstacle_;
-  out.is_near_min_height = is_near_min_height_;
-  out.too_low = too_low_;
-  out.min_flight_height = min_flight_height_;
 
   out.back_off_point = back_off_point_;
   out.back_off_start_point = back_off_start_point_;

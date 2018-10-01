@@ -18,7 +18,6 @@
 
 #include "box.h"
 #include "common.h"
-#include "ground_detector.h"
 #include "histogram.h"
 #include "planner_functions.h"
 #include "star_planner.h"
@@ -74,12 +73,6 @@ struct avoidanceOutput {
   geometry_msgs::Point avoid_centerpoint;
   double avoid_radius;
 
-  bool use_ground_detection;
-  bool over_obstacle;
-  bool is_near_min_height;
-  bool too_low;
-  double min_flight_height;
-
   geometry_msgs::Point back_off_point;
   geometry_msgs::Point back_off_start_point;
   double min_dist_backoff;
@@ -99,16 +92,11 @@ class LocalPlanner {
   bool adapt_cost_params_;
   bool stop_in_front_;
   bool use_avoid_sphere_;
-  bool use_ground_detection_;
 
   bool reach_altitude_ = false;
   bool obstacle_ = false;
   bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
-  bool over_obstacle_ = false;
-  bool is_near_min_height_ = false;
-  bool too_low_ = false;
-  bool ground_detected_ = false;
   bool back_off_ = false;
   bool hist_is_empty_ = false;
 
@@ -136,10 +124,7 @@ class LocalPlanner {
   ros::Time integral_time_old_;
   double no_progress_slope_;
   double tree_node_distance_;
-  double min_flight_height_ = 0.0;
-  double ground_margin_ = 0.0;
   double new_yaw_;
-  double min_dist_to_ground_;
   double distance_to_closest_point_;
   double safety_radius_ = 25.0;
   double min_cloud_size_ = 160.0;
@@ -173,7 +158,6 @@ class LocalPlanner {
 
   geometry_msgs::PoseStamped pose_;
   geometry_msgs::Point min_box_, max_box_, pose_stop_;
-  geometry_msgs::Point min_groundbox_, max_groundbox_;
   geometry_msgs::Point goal_;
   geometry_msgs::Point back_off_point_;
   geometry_msgs::Point back_off_start_point_;
@@ -187,13 +171,11 @@ class LocalPlanner {
   nav_msgs::GridCells path_selected_;
   nav_msgs::GridCells path_rejected_;
   nav_msgs::GridCells path_blocked_;
-  nav_msgs::GridCells path_ground_;
   nav_msgs::GridCells path_waypoints_;
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
 
-  void logData();
   void fitPlane();
   void reprojectPoints(Histogram histogram);
   void setVelocity();
@@ -205,7 +187,6 @@ class LocalPlanner {
   void create2DObstacleRepresentation(const bool send_to_fcu);
 
  public:
-  GroundDetector ground_detector_;
   Box histogram_box_size_;
 
   bool use_vel_setpoints_;
@@ -223,7 +204,6 @@ class LocalPlanner {
   double pointcloud_timeout_land_;
   double starting_height_ = 0.0;
   double speed_ = 1.0;
-  std::string log_name_;
 
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;
@@ -246,14 +226,12 @@ class LocalPlanner {
                       int &avoid_sphere_age, bool &use_avoid_sphere);
   void getCloudsForVisualization(
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-      pcl::PointCloud<pcl::PointXYZ> &ground_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
   void getCandidateDataForVisualization(nav_msgs::GridCells& path_candidates,
                                         nav_msgs::GridCells& path_selected,
                                         nav_msgs::GridCells& path_rejected,
                                         nav_msgs::GridCells& path_blocked,
-                                        nav_msgs::GridCells& FOV_cells,
-                                        nav_msgs::GridCells& path_ground);
+                                        nav_msgs::GridCells& FOV_cells);
   void setCurrentVelocity(const geometry_msgs::TwistStamped& vel);
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);

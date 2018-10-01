@@ -15,11 +15,10 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 
 void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist_backoff,
                             const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
-                            bool use_ground_detection, const double& min_realsense_dist) {
+                            const double& min_realsense_dist) {
 
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
-  use_ground_detection_ = use_ground_detection;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
   min_realsense_dist_ = min_realsense_dist;
@@ -128,7 +127,6 @@ void StarPlanner::buildLookAheadTree() {
   nav_msgs::GridCells path_selected;
   nav_msgs::GridCells path_rejected;
   nav_msgs::GridCells path_blocked;
-  nav_msgs::GridCells path_ground;
   std::vector<float> cost_path_candidates;
   std::vector<int> cost_idx_sorted;
   std::clock_t start_time = std::clock();
@@ -194,32 +192,13 @@ void StarPlanner::buildLookAheadTree() {
                         z_FOV_idx, e_FOV_min, e_FOV_max);
 
       // calculate candidates
-      int e_min_idx = -1;
-      if (use_ground_detection_) {
-        // calculate velocity direction
-        geometry_msgs::TwistStamped velocity;
-        velocity.twist.linear.x = origin_position.x - origin_origin_position.x;
-        velocity.twist.linear.y = origin_position.y - origin_origin_position.y;
-        velocity.twist.linear.z = origin_position.z - origin_origin_position.z;
-
-        min_flight_height_ = ground_detector_.getMinFlightHeight(
-            pose_, velocity, over_obstacle_, min_flight_height_,
-            ground_margin_);
-        e_min_idx = ground_detector_.getMinFlightElevationIndex(
-            pose_, min_flight_height_, 2 * ALPHA_RES);
-        ground_detector_.getHeightInformation(over_obstacle_, too_low_,
-                                              is_near_min_height_);
-        ground_margin_ = ground_detector_.getMargin();
-      }
-
       histogram.downsample();
       findFreeDirections(histogram, 25, path_candidates, path_selected,
-                         path_rejected, path_blocked, path_ground,
-                         path_waypoints_, cost_path_candidates, goal_, pose_,
+                         path_rejected, path_blocked, path_waypoints_,
+						 cost_path_candidates, goal_, pose_,
                          origin_origin_position, goal_cost_param_,
                          smooth_cost_param_, height_change_cost_param_adapted_,
-                         height_change_cost_param_, e_min_idx, over_obstacle_,
-                         false, 2 * ALPHA_RES);
+                         height_change_cost_param_, false, 2 * ALPHA_RES);
 
       if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
         tree_[origin].total_cost_ = HUGE_VAL;

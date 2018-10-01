@@ -122,38 +122,6 @@ void WaypointGenerator::goFast() {
   output_.goto_position.y = pose_.pose.position.y + vec.getY();
   output_.goto_position.z = pose_.pose.position.z + vec.getZ();
 
-  // Prevent downward motion or move up if too close to ground
-  if (planner_info_.use_ground_detection) {
-    vec.normalize();
-
-    if (planner_info_.over_obstacle &&
-        pose_.pose.position.z <= planner_info_.min_flight_height &&
-        output_.goto_position.z <= planner_info_.min_flight_height) {
-      if ((planner_info_.min_flight_height - pose_.pose.position.z) > 0.5) {
-        output_.goto_position.z = pose_.pose.position.z + 0.5;
-      } else {
-        output_.goto_position.z = planner_info_.min_flight_height;
-      }
-      planner_info_.too_low = true;
-      ROS_INFO(
-          "\033[1;36m [WG] Go Fast: Flight altitude too low (Minimal flight "
-          "height: "
-          "%f ) rising.\n \033[0m",
-          planner_info_.min_flight_height);
-    }
-    if (planner_info_.over_obstacle &&
-        pose_.pose.position.z > planner_info_.min_flight_height &&
-        pose_.pose.position.z < planner_info_.min_flight_height + 0.5 &&
-        vec.getZ() < 0) {
-      output_.goto_position.z = pose_.pose.position.z;
-      planner_info_.is_near_min_height = true;
-      ROS_INFO(
-          "\033[1;36m [WG] Go Fast: Preventing downward motion (Minimal flight "
-          "height: %f ) \n \033[0m",
-          planner_info_.min_flight_height);
-    }
-  }
-
   ROS_DEBUG("[WG] Go fast selected waypoint: [%f, %f, %f].",
             output_.goto_position.x, output_.goto_position.y,
             output_.goto_position.z);
@@ -206,13 +174,6 @@ bool WaypointGenerator::withinGoalRadius() {
 
   if (a.x < goal_acceptance_radius && a.y < goal_acceptance_radius &&
       a.z < goal_acceptance_radius) {
-    if (!reached_goal_) {
-      yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
-    }
-    reached_goal_ = true;
-    return true;
-  } else if (planner_info_.over_obstacle && a.x < goal_acceptance_radius &&
-             a.y < goal_acceptance_radius) {
     if (!reached_goal_) {
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
@@ -396,27 +357,9 @@ void WaypointGenerator::getPathMsg() {
 
   // change waypoint if drone is at goal or above
   if (withinGoalRadius()) {
-    bool over_goal = false;
-    if (planner_info_.use_ground_detection) {
-      if (planner_info_.over_obstacle &&
-          (planner_info_.is_near_min_height || planner_info_.too_low)) {
-        over_goal = true;
-        output_.smoothed_goto_position.x = goal_.x;
-        output_.smoothed_goto_position.y = goal_.y;
-        if (pose_.pose.position.z < goal_.z) {
-          output_.smoothed_goto_position.z = goal_.z;
-          ROS_DEBUG("[WG] Rising to goal");
-        } else {
-          output_.smoothed_goto_position.z = planner_info_.min_flight_height;
-          ROS_INFO("[WG] Above Goal cannot go lower: Hovering");
-        }
-      }
-    }
-    if (!over_goal) {
-      output_.smoothed_goto_position.x = goal_.x;
-      output_.smoothed_goto_position.y = goal_.y;
-      output_.smoothed_goto_position.z = goal_.z;
-    }
+    output_.smoothed_goto_position.x = goal_.x;
+    output_.smoothed_goto_position.y = goal_.y;
+    output_.smoothed_goto_position.z = goal_.z;
   }
 
   if (reached_goal_) {

@@ -131,11 +131,9 @@ class LocalPlannerNode {
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
-  ros::Publisher ground_pointcloud_pub_;
   ros::Publisher front_pointcloud_pub_;
   ros::Publisher reprojected_points_pub_;
   ros::Publisher bounding_box_pub_;
-  ros::Publisher groundbox_pub_;
   ros::Publisher height_map_pub_;
   ros::Publisher cached_pointcloud_pub_;
   ros::Publisher marker_pub_;
@@ -145,10 +143,8 @@ class LocalPlannerNode {
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
   ros::Publisher marker_selected_pub_;
-  ros::Publisher marker_ground_pub_;
   ros::Publisher marker_FOV_pub_;
   ros::Publisher marker_goal_pub_;
-  ros::Publisher ground_est_pub_;
   ros::Publisher avoid_sphere_pub_;
   ros::Publisher takeoff_pose_pub_;
   ros::Publisher offboard_pose_pub_;
@@ -182,7 +178,6 @@ class LocalPlannerNode {
   void publishMarkerRejected(nav_msgs::GridCells& path_rejected);
   void publishMarkerCandidates(nav_msgs::GridCells& path_candidates);
   void publishMarkerSelected(nav_msgs::GridCells& path_selected);
-  void publishMarkerGround(nav_msgs::GridCells& path_ground);
   void publishMarkerFOV(nav_msgs::GridCells& FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
@@ -192,7 +187,6 @@ class LocalPlannerNode {
   void publishGoal();
   void publishBox();
   void publishAvoidSphere();
-  void publishGround();
   void publishReachHeight();
   void publishTree();
 };
