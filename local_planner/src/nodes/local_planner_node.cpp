@@ -205,11 +205,12 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   if (msg.mode == "AUTO.MISSION") {
     offboard_ = false;
     mission_ = true;
-  }
-
-  if (msg.mode == "OFFBOARD") {
+  }else if (msg.mode == "OFFBOARD") {
     offboard_ = true;
     mission_ = false;
+  }else{
+	offboard_ = false;
+	mission_ = false;
   }
 }
 
