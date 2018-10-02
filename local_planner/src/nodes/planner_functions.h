@@ -92,6 +92,9 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
                     double resolution);
 bool calculateCostMap(std::vector<float> cost_path_candidates,
                       std::vector<int> &cost_idx_sorted);
+void getLocationOnPath(std::vector<geometry_msgs::Point> path_node_positions,
+	geometry_msgs::Point position, double& frac, int& idx_further,
+	double& dist_to_closest_node);
 bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position,
