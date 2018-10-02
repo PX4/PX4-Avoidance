@@ -123,6 +123,29 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
          (smooth_cost + goal_cost);
 }
 
+void StarPlanner::getNewOrigin(geometry_msgs::Point& new_origin){
+
+  if(path_node_positions_.size() == 0){
+	  new_origin = pose_.pose.position;
+  }else{
+	  double l_frac, dist_to_closest_node;
+	  int wp_idx;
+	  getLocationOnPath(path_node_positions_, pose_.pose.position,
+			            l_frac, wp_idx, dist_to_closest_node);
+	  if(dist_to_closest_node < 5.0  && wp_idx != 0){
+	    new_origin.x = (1.0 - l_frac) * path_node_positions_[wp_idx].x +
+		                       l_frac * path_node_positions_[wp_idx + 1].x;
+		new_origin.y = (1.0 - l_frac) * path_node_positions_[wp_idx].y +
+		                       l_frac * path_node_positions_[wp_idx + 1].y;
+		new_origin.z = (1.0 - l_frac) * path_node_positions_[wp_idx].z +
+		                       l_frac * path_node_positions_[wp_idx + 1].z;
+	  }else{
+	    std::cout<<"DIVERGED FROM TREE!\n";
+		new_origin = pose_.pose.position;
+	  }
+  }
+}
+
 void StarPlanner::buildLookAheadTree() {
   nav_msgs::GridCells path_candidates;
   nav_msgs::GridCells path_selected;
@@ -136,7 +159,9 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, pose_.pose.position));
+  geometry_msgs::Point new_origin;
+  getNewOrigin(new_origin);
+  tree_.push_back(TreeNode(0, 0, new_origin));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = std::round((-curr_yaw_ * 180.0 / M_PI)) +
                       90;  // from radian to angle and shift reference to y-axis

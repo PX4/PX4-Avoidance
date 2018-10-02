@@ -521,6 +521,42 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
   std::cout << "--------------------------------------\n";
 }
 
+void getLocationOnPath(std::vector<geometry_msgs::Point> path_node_positions,
+		               geometry_msgs::Point position, double& frac,
+					   int& idx_further, double& dist_to_closest_node){
+  int min_dist_idx = 0;
+  int second_min_dist_idx = 0;
+  double min_dist = HUGE_VAL;
+  double second_min_dist = HUGE_VAL;
+  double node_distance =
+      distance3DCartesian(path_node_positions[0], path_node_positions[1]);
+
+  std::vector<double> distances;
+  for (int i = 0; i < path_node_positions.size(); i++) {
+    distances.push_back(
+        distance3DCartesian(position, path_node_positions[i]));
+    if (distances[i] < min_dist) {
+      second_min_dist_idx = min_dist_idx;
+      second_min_dist = min_dist;
+      min_dist = distances[i];
+      min_dist_idx = i;
+    } else if (distances[i] < second_min_dist) {
+      second_min_dist = distances[i];
+      second_min_dist_idx = i;
+    }
+  }
+
+  dist_to_closest_node = min_dist;
+  idx_further = std::min(min_dist_idx, second_min_dist_idx);
+
+  double cos_alpha = (node_distance * node_distance +
+                      distances[idx_further] * distances[idx_further] -
+                      distances[idx_further + 1] * distances[idx_further + 1]) /
+                      (2 * node_distance * distances[idx_further]);
+  double l_front = distances[idx_further] * cos_alpha;
+  frac = l_front / node_distance;
+}
+
 bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position,
@@ -529,37 +565,14 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
   bool tree_available = true;
 
   if (size > 0) {
-    int min_dist_idx = 0;
-    int second_min_dist_idx = 0;
-    double min_dist = HUGE_VAL;
-    double second_min_dist = HUGE_VAL;
-    double node_distance =
-        distance3DCartesian(path_node_positions[0], path_node_positions[1]);
+	double l_frac, dist_to_closest_node;
+	int wp_idx;
 
-    std::vector<double> distances;
-    for (int i = 0; i < size; i++) {
-      distances.push_back(
-          distance3DCartesian(position, path_node_positions[i]));
-      if (distances[i] < min_dist) {
-        second_min_dist_idx = min_dist_idx;
-        second_min_dist = min_dist;
-        min_dist = distances[i];
-        min_dist_idx = i;
-      } else if (distances[i] < second_min_dist) {
-        second_min_dist = distances[i];
-        second_min_dist_idx = i;
-      }
-    }
-    int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-    if (min_dist > 3.0 || wp_idx == 0) {
+	getLocationOnPath(path_node_positions, position,
+			          l_frac, wp_idx, dist_to_closest_node);
+    if (dist_to_closest_node > 5.0 || wp_idx == 0) {
       tree_available = false;
     } else {
-      double cos_alpha = (node_distance * node_distance +
-                          distances[wp_idx] * distances[wp_idx] -
-                          distances[wp_idx + 1] * distances[wp_idx + 1]) /
-                         (2 * node_distance * distances[wp_idx]);
-      double l_front = distances[wp_idx] * cos_alpha;
-      double l_frac = l_front / node_distance;
 
       geometry_msgs::Point mean_point;
       mean_point.x = (1.0 - l_frac) * path_node_positions[wp_idx - 1].x +

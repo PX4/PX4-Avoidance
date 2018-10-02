@@ -115,6 +115,7 @@ class StarPlanner {
   void setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
+  void getNewOrigin(geometry_msgs::Point& new_origin);
   void buildLookAheadTree();
   void dynamicReconfigureSetStarParams(
       avoidance::LocalPlannerNodeConfig& config, uint32_t level);
