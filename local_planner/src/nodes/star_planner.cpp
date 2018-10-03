@@ -169,9 +169,6 @@ void StarPlanner::buildLookAheadTree() {
                      sphere_points_counter, complete_cloud_, min_cloud_size_,
                      min_dist_backoff_, avoid_radius, histogram_box_,
                      origin_position, min_realsense_dist_);
-    double safety_radius = adaptSafetyMarginHistogram(
-        distance_to_closest_point, cropped_cloud.points.size(),
-        min_cloud_size_);
 
     if (origin != 0 && backoff_points_counter > 20 &&
         cropped_cloud.points.size() > 160) {
@@ -229,17 +226,6 @@ void StarPlanner::buildLookAheadTree() {
       } else {
         // insert new nodes
         int depth = tree_[origin].depth_ + 1;
-
-        int goal_z = floor(
-            atan2(goal_.x - origin_position.x, goal_.y - origin_position.y) *
-            180.0 / M_PI);  // azimuthal angle
-        int goal_e = floor(atan((goal_.z - origin_position.z) /
-                                sqrt(pow((goal_.x - origin_position.x), 2) +
-                                     pow((goal_.y - origin_position.y), 2))) *
-                           180.0 / M_PI);
-        int goal_e_idx = (goal_e - ALPHA_RES + 90) / ALPHA_RES;
-        int goal_z_idx = (goal_z - ALPHA_RES + 180) / ALPHA_RES;
-
         int childs = 0;
         for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
           int e = path_candidates.cells[cost_idx_sorted[i]].x;
