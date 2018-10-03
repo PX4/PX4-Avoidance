@@ -136,7 +136,7 @@ void StarPlanner::getNewOrigin(geometry_msgs::Point& new_origin){
 	  getLocationOnPath(path_node_positions_, pose_.pose.position,
 			            l_frac, wp_idx, dist_to_closest_node);
 	  double max_path_dist = std::min(6.0, vel_magnitude_);
-	  if(dist_to_closest_node < 4.0  && wp_idx != 0){
+	  if(dist_to_closest_node < max_path_dist  && wp_idx != 0){
 	    new_origin.x = (1.0 - l_frac) * path_node_positions_[wp_idx].x +
 		                       l_frac * path_node_positions_[wp_idx + 1].x;
 		new_origin.y = (1.0 - l_frac) * path_node_positions_[wp_idx].y +
