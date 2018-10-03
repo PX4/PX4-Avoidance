@@ -545,9 +545,13 @@ void getLocationOnPath(std::vector<geometry_msgs::Point> path_node_positions,
 bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position,
+                          geometry_msgs::TwistStamped vel,
                           geometry_msgs::Point goal) {
   int size = path_node_positions.size();
   bool tree_available = true;
+  double curr_vel_magnitude = sqrt(pow(vel.twist.linear.x, 2) +
+                              pow(vel.twist.linear.y, 2) +
+                              pow(vel.twist.linear.z, 2));
 
   if (size > 0) {
 	double l_frac, dist_to_closest_node;
@@ -555,7 +559,8 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
 
 	getLocationOnPath(path_node_positions, position,
 			          l_frac, wp_idx, dist_to_closest_node);
-    if (dist_to_closest_node > 5.0 || wp_idx == 0) {
+	double max_path_dist = std::min(6.0, curr_vel_magnitude) + 0.5;
+    if (dist_to_closest_node > max_path_dist || wp_idx == 0) {
       tree_available = false;
     } else {
 

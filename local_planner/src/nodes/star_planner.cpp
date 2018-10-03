@@ -26,6 +26,8 @@ void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist
 
 void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) { pose_ = pose; }
 
+void StarPlanner::setVelocity(double vel_magnitude) { vel_magnitude_ = vel_magnitude; }
+
 void StarPlanner::setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud) {
   complete_cloud_ = complete_cloud;
 }
@@ -133,7 +135,8 @@ void StarPlanner::getNewOrigin(geometry_msgs::Point& new_origin){
 	  int wp_idx;
 	  getLocationOnPath(path_node_positions_, pose_.pose.position,
 			            l_frac, wp_idx, dist_to_closest_node);
-	  if(dist_to_closest_node < 5.0  && wp_idx != 0){
+	  double max_path_dist = std::min(6.0, vel_magnitude_);
+	  if(dist_to_closest_node < 4.0  && wp_idx != 0){
 	    new_origin.x = (1.0 - l_frac) * path_node_positions_[wp_idx].x +
 		                       l_frac * path_node_positions_[wp_idx + 1].x;
 		new_origin.y = (1.0 - l_frac) * path_node_positions_[wp_idx].y +
@@ -141,7 +144,6 @@ void StarPlanner::getNewOrigin(geometry_msgs::Point& new_origin){
 		new_origin.z = (1.0 - l_frac) * path_node_positions_[wp_idx].z +
 		                       l_frac * path_node_positions_[wp_idx + 1].z;
 	  }else{
-	    std::cout<<"DIVERGED FROM TREE!\n";
 		new_origin = pose_.pose.position;
 	  }
   }

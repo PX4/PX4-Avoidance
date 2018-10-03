@@ -98,6 +98,7 @@ void getLocationOnPath(std::vector<geometry_msgs::Point> path_node_positions,
 bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position,
+                          geometry_msgs::TwistStamped vel,
                           geometry_msgs::Point goal);
 geometry_msgs::Point getSphereAdaptedWaypoint(
     geometry_msgs::Point position, geometry_msgs::Point wp,

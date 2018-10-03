@@ -80,6 +80,7 @@ void LocalPlanner::setVelocity() {
   velocity_z_ = curr_vel_.twist.linear.z;
   velocity_mod_ =
       sqrt(pow(velocity_x_, 2) + pow(velocity_y_, 2) + pow(velocity_z_, 2));
+  star_planner_.setVelocity(velocity_mod_);
 }
 
 void LocalPlanner::setGoal() {

@@ -40,7 +40,7 @@ void WaypointGenerator::calculateWaypoint() {
     case tryPath: {
       geometry_msgs::Point p;
       bool tree_available = getDirectionFromTree(
-          p, planner_info_.path_node_positions, pose_.pose.position, goal_);
+          p, planner_info_.path_node_positions, pose_.pose.position, curr_vel_, goal_);
       double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
       ros::Duration since_last_path = ros::Time::now() - planner_info_.last_path_time;
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) && since_last_path < ros::Duration(5)) {

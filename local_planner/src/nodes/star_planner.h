@@ -66,6 +66,7 @@ class StarPlanner {
   double min_cloud_size_;
   double min_dist_backoff_;
   double min_realsense_dist_;
+  double vel_magnitude_;
 
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
@@ -101,6 +102,7 @@ class StarPlanner {
                      const double& height_change_cost_param_adapted,
                      const double& height_change_cost_param);
   void setPose(const geometry_msgs::PoseStamped& pose);
+  void setVelocity(const double velocity_magnitude);
   void setBoxSize(const Box& histogram_box);
   void setGoal(const geometry_msgs::Point& pose);
   void setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
