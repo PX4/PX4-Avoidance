@@ -418,8 +418,8 @@ void LocalPlannerNode::publishBox() {
   box.pose.position.x = drone_pos.pose.position.x;
   box.pose.position.y = drone_pos.pose.position.y;
   box.pose.position.z = drone_pos.pose.position.z +
-                        0.5 * (local_planner_.histogram_box_.zmax_ -
-                               local_planner_.histogram_box_.zmin_);
+                        0.5 * (local_planner_.histogram_box_.zsize_up_ -
+                               local_planner_.histogram_box_.zsize_down_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
