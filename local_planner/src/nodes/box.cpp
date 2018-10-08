@@ -1,6 +1,6 @@
 #include "box.h"
 
-Box::Box(double radius)
+Box::Box(const double radius)
     : radius_{radius} {}
 
 Box::Box()
@@ -10,7 +10,7 @@ Box::Box()
 Box::~Box() {}
 
 // update bounding box limit coordinates around a new UAV pose
-void Box::setBoxLimits(geometry_msgs::Point pos) {
+void Box::setBoxLimits(const geometry_msgs::Point& pos) {
   xmin_ = pos.x - radius_;
   ymin_ = pos.y - radius_;
   zmin_ = pos.z - zsize_down_;
@@ -19,7 +19,7 @@ void Box::setBoxLimits(geometry_msgs::Point pos) {
   zmax_ = pos.z + zsize_up_;
 }
 
-bool Box::isPointWithinBox(double x, double y, double z) {
+bool Box::isPointWithinBox(const double x, const double y, const double z) {
   return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ &&
          z > zmin_;
 }

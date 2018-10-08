@@ -94,6 +94,8 @@ LocalPlannerNode::LocalPlannerNode() {
 LocalPlannerNode::~LocalPlannerNode() {}
 
 void LocalPlannerNode::readParams() {
+
+  //Parameter from launch file
   nh_.param<double>("goal_x_param", local_planner_.goal_x_param_, 9.0);
   nh_.param<double>("goal_y_param", local_planner_.goal_y_param_, 13.0);
   nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
@@ -106,6 +108,17 @@ void LocalPlannerNode::readParams() {
   goal_msg_.pose.position.x = local_planner_.goal_x_param_;
   goal_msg_.pose.position.y = local_planner_.goal_y_param_;
   goal_msg_.pose.position.z = local_planner_.goal_z_param_;
+
+  //Read in parameter for waypoint generator
+  waypointGenerator_params new_params;
+  nh_.param<double>("goal_acceptance_radius_in", new_params.goal_acceptance_radius_in, 0.5);
+  nh_.param<double>("goal_acceptance_radius_out", new_params.goal_acceptance_radius_out, 1.5);
+  nh_.param<double>("factor_close_to_goal_start_speed_limitation", new_params.factor_close_to_goal_start_speed_limitation, 3.0);
+  nh_.param<double>("factor_close_to_goal_stop_speed_limitation", new_params.factor_close_to_goal_stop_speed_limitation, 4.0);
+  nh_.param<double>("max_speed_close_to_goal_factor", new_params.max_speed_close_to_goal_factor, 0.1);
+  nh_.param<double>("min_speed_close_to_goal", new_params.min_speed_close_to_goal, 0.5);
+
+  wp_generator_.param_ = new_params;
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
@@ -424,8 +437,8 @@ void LocalPlannerNode::publishBox() {
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = 2 * local_planner_.histogram_box_.radius_;
-  box.scale.y = 2 * local_planner_.histogram_box_.radius_;
+  box.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
+  box.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
   box.scale.z = local_planner_.histogram_box_.zsize_up_ +
 		        local_planner_.histogram_box_.zsize_down_;
   box.color.a = 0.5;
@@ -452,9 +465,9 @@ void LocalPlannerNode::publishAvoidSphere() {
   sphere.pose.orientation.y = 0.0;
   sphere.pose.orientation.z = 0.0;
   sphere.pose.orientation.w = 1.0;
-  sphere.scale.x = 2 * avoid_radius_;
-  sphere.scale.y = 2 * avoid_radius_;
-  sphere.scale.z = 2 * avoid_radius_;
+  sphere.scale.x = 2.0 * avoid_radius_;
+  sphere.scale.y = 2.0 * avoid_radius_;
+  sphere.scale.z = 2.0 * avoid_radius_;
   sphere.color.a = 0.5;
   sphere.color.r = 0.0;
   sphere.color.g = 1.0;

@@ -31,6 +31,15 @@ struct waypointResult {
   geometry_msgs::Point smoothed_goto_position;
 };
 
+struct waypointGenerator_params {
+  double goal_acceptance_radius_in;
+  double goal_acceptance_radius_out;
+  double factor_close_to_goal_start_speed_limitation;
+  double factor_close_to_goal_stop_speed_limitation;
+  double min_speed_close_to_goal;
+  double max_speed_close_to_goal_factor;
+};
+
 class WaypointGenerator {
  private:
   avoidanceOutput planner_info_;
@@ -79,6 +88,7 @@ class WaypointGenerator {
 
  public:
 
+  waypointGenerator_params param_;
   void getWaypoints(waypointResult &output);
   void setPlannerInfo(avoidanceOutput input);
   void updateState(geometry_msgs::PoseStamped act_pose,
