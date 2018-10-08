@@ -42,6 +42,7 @@
   </include>
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
+  <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
 
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
     <param name="goal_x_param" value="15" />

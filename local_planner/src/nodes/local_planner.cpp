@@ -405,7 +405,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
           dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
           age = histogram.get_age(e, z);
 
-          if (dist < 2 * histogram_box_.radius_ && dist > 0.3 &&
+          if (dist < 2.0 * histogram_box_.radius_ && dist > 0.3 &&
               age < reproj_age_) {
             reprojected_points_.points.push_back(pcl::PointXYZ(
                 temp_array[i].x, temp_array[i].y, temp_array[i].z));

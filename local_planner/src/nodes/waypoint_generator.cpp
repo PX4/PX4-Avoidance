@@ -176,16 +176,14 @@ bool WaypointGenerator::withinGoalRadius() {
   a.x = std::abs(goal_.x - pose_.pose.position.x);
   a.y = std::abs(goal_.y - pose_.pose.position.y);
   a.z = std::abs(goal_.z - pose_.pose.position.z);
-  float goal_acceptance_radius_in = 0.5;
-  float goal_acceptance_radius_out = 1.5;
   double sqrd_dist = a.x * a.x + a.y * a.y + a.z * a.z;
 
-  if (sqrd_dist < goal_acceptance_radius_in * goal_acceptance_radius_in) {
+  if (sqrd_dist < param_.goal_acceptance_radius_in * param_.goal_acceptance_radius_in) {
     if (!reached_goal_) {
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
     reached_goal_ = true;
-  } else if(sqrd_dist > goal_acceptance_radius_out * goal_acceptance_radius_out){
+  } else if(sqrd_dist > param_.goal_acceptance_radius_out * param_.goal_acceptance_radius_out){
     reached_goal_ = false;
   }
   return reached_goal_;
@@ -307,19 +305,24 @@ void WaypointGenerator::adaptSpeed() {
   double delta_dist = since_update_sec * curr_vel_magnitude_;
   speed_ += delta_dist;
 
-  //break before goal
-  geometry_msgs::Point a;
-  a.x = std::abs(goal_.x - pose_.pose.position.x);
-  a.y = std::abs(goal_.y - pose_.pose.position.y);
-  a.z = std::abs(goal_.z - pose_.pose.position.z);
-  if (a.x < 3 * curr_vel_magnitude_ && a.y < 3 * curr_vel_magnitude_) {
+  //break before goal: if the vehicle is closer to the goal than a velocity
+  //dependent distance, the speed is limited
+  geometry_msgs::Point pos_to_goal;
+  pos_to_goal.x = std::abs(goal_.x - pose_.pose.position.x);
+  pos_to_goal.y = std::abs(goal_.y - pose_.pose.position.y);
+  pos_to_goal.z = std::abs(goal_.z - pose_.pose.position.z);
+
+  if (pos_to_goal.x < param_.factor_close_to_goal_start_speed_limitation * curr_vel_magnitude_
+      && pos_to_goal.y < param_.factor_close_to_goal_start_speed_limitation * curr_vel_magnitude_) {
 	  limit_speed_close_to_goal_ = true;
-  }else if(a.x > 4 * curr_vel_magnitude_ || a.y > 4 * curr_vel_magnitude_){
+  }else if(pos_to_goal.x > param_.factor_close_to_goal_stop_speed_limitation * curr_vel_magnitude_
+		   || pos_to_goal.y > param_.factor_close_to_goal_stop_speed_limitation * curr_vel_magnitude_){
 	  limit_speed_close_to_goal_ = false;
   }
   if(limit_speed_close_to_goal_){
-	  speed_ = std::min(speed_, 0.1*std::sqrt(a.x * a.x + a.y * a.y + a.z * a.z));
-	  speed_ = std::max(speed_, 0.4);
+	  speed_ = std::min(speed_, param_.max_speed_close_to_goal_factor* std::sqrt(pos_to_goal.x *
+			   pos_to_goal.x + pos_to_goal.y * pos_to_goal.y + pos_to_goal.z * pos_to_goal.z));
+	  speed_ = std::max(speed_, param_.min_speed_close_to_goal);
   }
 
   // set waypoint to correct speed
