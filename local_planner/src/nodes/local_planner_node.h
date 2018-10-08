@@ -30,6 +30,7 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 #include "std_msgs/String.h"
+#include "std_msgs/Int8.h"
 
 #include "avoidance/common_ros.h"
 #include "local_planner.h"
@@ -45,11 +46,14 @@ struct cameraData {
 	bool received_;
 };
 
+enum systemStatus {healthy, timeout, landing, not_ready};
+
 class LocalPlannerNode {
  public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
+  systemStatus system_status_;
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
@@ -85,6 +89,7 @@ class LocalPlannerNode {
   ros::Publisher mavros_vel_setpoint_pub_;
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_obstacle_distance_pub_;
+  ros::Publisher mavros_system_status_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
   tf::TransformListener tf_listener_;

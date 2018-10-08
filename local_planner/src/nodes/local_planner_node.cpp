@@ -84,6 +84,8 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/offboard_pose", 1);
   initial_height_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
+  mavros_system_status_pub_ =
+      nh_.advertise<std_msgs::Int8>("/mavros/avoidance/status", 1);
 
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
@@ -887,9 +889,10 @@ int main(int argc, char** argv) {
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;
-  bool landing = false;
+  bool landing_active = false;
   avoidanceOutput planner_output;
   bool startup = true;
+  Node.system_status_ = not_ready;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
@@ -922,10 +925,11 @@ int main(int argc, char** argv) {
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
-      if (!landing) {
+      if (!landing_active) {
         mavros_msgs::SetMode mode_msg;
         mode_msg.request.custom_mode = "AUTO.LAND";
-        landing = true;
+        landing_active = true;
+        Node.system_status_ = landing;
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
             mode_msg.response.mode_sent) {
           ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
@@ -939,6 +943,7 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
+          Node.system_status_ = timeout;
           std::string not_received = ", no cloud received on topic ";
           for (int i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
@@ -947,7 +952,7 @@ int main(int argc, char** argv) {
             }
           }
 
-          ROS_INFO(
+          ROS_WARN(
               "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
               "\n "
               "\033[0m",
@@ -985,11 +990,17 @@ int main(int argc, char** argv) {
     }
 
     // send waypoint
-    if (!Node.never_run_) {
+    if (!Node.never_run_ && !landing_active) {
       Node.publishWaypoints(hover);
+      if(!hover) Node.system_status_ = healthy;
     }
 
     Node.position_received_ = false;
+
+    //publish system status
+    std_msgs::Int8 status_msg;
+    status_msg.data = (int)Node.system_status_;
+    Node.mavros_system_status_pub_.publish(status_msg);
   }
 
   Node.should_exit_ = true;
