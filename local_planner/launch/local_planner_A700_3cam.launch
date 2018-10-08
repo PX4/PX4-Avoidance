@@ -13,6 +13,8 @@
           args="0.15 -0.10 -0.11 -1.3 0 0 fcu right_camera_link 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_left_camera"
           args="0.15 0.74 -0.11 1.3 0 3.14159 fcu left_camera_link 10"/>
+    <node pkg="tf" type="static_transform_publisher" name="tf_left_camera_rotated"
+          args="0 0 0 3.1415 0 0 left_camera_color_optical_frame left_camera_rotated_link 10"/>
                   
     <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>
