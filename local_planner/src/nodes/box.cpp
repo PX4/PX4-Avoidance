@@ -1,6 +1,6 @@
 #include "box.h"
 
-Box::Box(const double radius)
+Box::Box(const double& radius)
     : radius_{radius} {}
 
 Box::Box()
@@ -19,7 +19,7 @@ void Box::setBoxLimits(const geometry_msgs::Point& pos) {
   zmax_ = pos.z + zsize_up_;
 }
 
-bool Box::isPointWithinBox(const double x, const double y, const double z) {
+bool Box::isPointWithinBox(const double& x, const double& y, const double& z) {
   return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ &&
          z > zmin_;
 }
