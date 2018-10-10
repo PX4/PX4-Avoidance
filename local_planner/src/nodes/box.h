@@ -7,11 +7,11 @@
 class Box {
  public:
   Box();
-  Box(const double radius);
+  Box(const double& radius);
   ~Box();
 
   void setBoxLimits(const geometry_msgs::Point& pos);
-  bool isPointWithinBox(const double x, const double y, const double z);
+  bool isPointWithinBox(const double& x, const double& y, const double& z);
 
 
   double radius_;
