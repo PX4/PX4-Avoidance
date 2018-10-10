@@ -55,7 +55,7 @@
       <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
       <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
 
-      <arg name="enable_pointcloud"     value="true"/>      
+      <arg name="enable_pointcloud"     value="false"/>      
       <arg name="enable_imu"            value="false"/>
       <arg name="enable_fisheye"        value="false"/>
     </include>
@@ -69,7 +69,7 @@
       <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
       <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
 
-      <arg name="enable_pointcloud"     value="true"/>      
+      <arg name="enable_pointcloud"     value="false"/>      
       <arg name="enable_imu"            value="false"/>
       <arg name="enable_fisheye"        value="false"/>
     </include>
@@ -83,7 +83,7 @@
       <arg name="infra1_fps"            value="$(arg infra1_fps)"/>
       <arg name="infra2_fps"            value="$(arg infra2_fps)"/>
 
-      <arg name="enable_pointcloud"     value="true"/>      
+      <arg name="enable_pointcloud"     value="false"/>      
       <arg name="enable_imu"            value="false"/>
       <arg name="enable_fisheye"        value="false"/>
     </include>
