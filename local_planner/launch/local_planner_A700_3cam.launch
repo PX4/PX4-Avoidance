@@ -46,7 +46,7 @@
     </group>
 
     <!-- Launch cameras -->
-    <include file="$(find realsense2_camera)/launch/rs_depthcloud.launch">
+    <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_front" />
       <arg name="tf_prefix"             value="front_" />
       <arg name="serial_no"             value="$(arg serial_no_camera_front)"/>
@@ -60,7 +60,7 @@
       <arg name="enable_fisheye"        value="false"/>
     </include>
   
-    <include file="$(find realsense2_camera)/launch/rs_depthcloud.launch">
+    <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_right" />
       <arg name="tf_prefix"             value="right_" />
       <arg name="serial_no"             value="$(arg serial_no_camera_right)"/>
@@ -74,7 +74,7 @@
       <arg name="enable_fisheye"        value="false"/>
     </include>
   
-    <include file="$(find realsense2_camera)/launch/rs_depthcloud.launch">
+    <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_left" />
       <arg name="tf_prefix"             value="left_" />
       <arg name="serial_no"             value="$(arg serial_no_camera_left)"/>
