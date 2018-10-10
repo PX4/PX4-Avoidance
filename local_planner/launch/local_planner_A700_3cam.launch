@@ -48,7 +48,7 @@
     <!-- Launch cameras -->
     <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_front" />
-      <arg name="tf_prefix"             value="front_" />
+      <arg name="tf_prefix"             value="front_camera" />
       <arg name="serial_no"             value="$(arg serial_no_camera_front)"/>
     
       <arg name="depth_fps"             value="$(arg depth_fps)"/>
@@ -62,7 +62,7 @@
   
     <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_right" />
-      <arg name="tf_prefix"             value="right_" />
+      <arg name="tf_prefix"             value="right_camera" />
       <arg name="serial_no"             value="$(arg serial_no_camera_right)"/>
     
       <arg name="depth_fps"             value="$(arg depth_fps)"/>
@@ -76,7 +76,7 @@
   
     <include file="$(find local_planner)/launch/rs_depthcloud.launch">
       <arg name="namespace"             value="camera_left" />
-      <arg name="tf_prefix"             value="left_" />
+      <arg name="tf_prefix"             value="left_camera" />
       <arg name="serial_no"             value="$(arg serial_no_camera_left)"/>
     
       <arg name="depth_fps"             value="$(arg depth_fps)"/>
