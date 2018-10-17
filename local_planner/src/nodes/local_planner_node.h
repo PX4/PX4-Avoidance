@@ -160,7 +160,8 @@ class LocalPlannerNode {
   geometry_msgs::TwistStamped vel_msg_;
   bool armed_, offboard_, mission_, new_goal_;
 
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig> server_;
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
+  boost::recursive_mutex config_mutex_;
 
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig &config,
                                   uint32_t level);

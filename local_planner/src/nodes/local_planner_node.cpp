@@ -5,15 +5,17 @@ LocalPlannerNode::LocalPlannerNode() {
   readParams();
 
   // Set up Dynamic Reconfigure Server
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType
-      f;
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, nh_);
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
-  server_.setCallback(f);
+  server_->setCallback(f);
 
   // disable memory if using more than one camera
   if (cameras_.size() > 1) {
+    config_mutex_.lock();
     rqt_param_config_.reproj_age_ = 0;
-    server_.updateConfig(rqt_param_config_);
+    config_mutex_.unlock();
+    server_->updateConfig(rqt_param_config_);
     dynamicReconfigureCallback(rqt_param_config_, 1);
   }
 
@@ -91,7 +93,9 @@ LocalPlannerNode::LocalPlannerNode() {
   local_planner_.setGoal();
 }
 
-LocalPlannerNode::~LocalPlannerNode() {}
+LocalPlannerNode::~LocalPlannerNode() {
+  delete server_;
+}
 
 void LocalPlannerNode::readParams() {
 
