@@ -104,6 +104,27 @@ void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
                  static_cast<int>(complete_cloud_.size()));
 
+  //calculate Field of View
+  tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
+                         pose_.pose.orientation.z, pose_.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  z_FOV_idx_.clear();
+  calculateFOV(z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
+
+  // visualization of FOV in RViz
+  initGridCells(&FOV_cells_);
+  geometry_msgs::Point p;
+  for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
+     for (int i = 0; i < z_FOV_idx_.size(); i++) {
+        p.x = elevationIndexToAngle(j, ALPHA_RES);
+        p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
+        p.z = 0;
+        FOV_cells_.cells.push_back(p);
+      }
+  }
+
   histogram_box_.setBoxLimits(pose_.pose.position);
 
   geometry_msgs::Point temp_sphere_center;
@@ -196,26 +217,6 @@ void LocalPlanner::determineStrategy() {
 
     } else {
       evaluateProgressRate();
-
-      tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
-                       pose_.pose.orientation.z, pose_.pose.orientation.w);
-      tf::Matrix3x3 m(q);
-      double roll, pitch, yaw;
-      m.getRPY(roll, pitch, yaw);
-      z_FOV_idx_.clear();
-      calculateFOV(z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
-
-      // visualization of FOV in RViz
-      initGridCells(&FOV_cells_);
-      geometry_msgs::Point p;
-      for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
-        for (int i = 0; i < z_FOV_idx_.size(); i++) {
-          p.x = elevationIndexToAngle(j, ALPHA_RES);
-          p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
-          p.z = 0;
-          FOV_cells_.cells.push_back(p);
-        }
-      }
 
       create2DObstacleRepresentation(send_obstacles_fcu_);
 
