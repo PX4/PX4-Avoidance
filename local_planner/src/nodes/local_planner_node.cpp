@@ -825,10 +825,7 @@ void LocalPlannerNode::publishPlannerData() {
 
   publishTree();
 
-  ros::Duration time_diff = ros::Time::now() - last_wp_time_;
   last_wp_time_ = ros::Time::now();
-  ros::Duration max_diff =
-      ros::Duration(1.2 * pointcloud_timeout_hover_.toSec());
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected,
       path_blocked, FOV_cells;
