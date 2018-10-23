@@ -152,7 +152,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
   for (int i = 0; i < cameras_.size(); ++i) {
     if (!tf_listener_.canTransform(
             "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
-            cameras_[i].newest_cloud_msg_.header.stamp)) {
+            ros::Time(0))) {
       missing_transforms++;
     }
   }
@@ -169,7 +169,7 @@ void LocalPlannerNode::updatePlannerInfo() {
       tf::StampedTransform transform;
       tf_listener_.lookupTransform(
           "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
-          cameras_[i].newest_cloud_msg_.header.stamp, transform);
+		  ros::Time(0), transform);
       pcl_ros::transformPointCloud("/local_origin", transform,
                                    cameras_[i].newest_cloud_msg_,
                                    pc2cloud_world);
@@ -940,14 +940,16 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
-          std::string not_received = ", no cloud received on topic ";
+          std::string not_received = "";
           for (int i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
+              not_received.append(" , no cloud received on topic ");
               not_received.append(Node.cameras_[i].topic_);
-              not_received.append(" ");
             }
           }
-
+          if (!Node.canUpdatePlannerInfo()){
+        	  not_received.append(" , missing transforms ");
+          }
           ROS_INFO(
               "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
               "\n "
