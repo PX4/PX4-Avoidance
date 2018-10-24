@@ -110,11 +110,8 @@ void WaypointGenerator::updateState(geometry_msgs::PoseStamped act_pose,
   z_FOV_idx_.clear();
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
-  double velocity_x_ = curr_vel_.twist.linear.x;
-  double velocity_y_ = curr_vel_.twist.linear.y;
-  double velocity_z_ = curr_vel_.twist.linear.z;
-  curr_vel_magnitude_ =
-      sqrt(pow(velocity_x_, 2) + pow(velocity_y_, 2) + pow(velocity_z_, 2));
+  curr_vel_magnitude_ = Eigen::Vector3f(curr_vel_.twist.linear.x,
+    curr_vel_.twist.linear.y, curr_vel_.twist.linear.z).norm();
 
   if (stay) {
     planner_info_.waypoint_type = hover;
