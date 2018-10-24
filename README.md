@@ -10,7 +10,7 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 The active developers of the avoidance repo are syncing up on a bi-weekly basis on the WG dev call.
 
 * Join the call: https://zoom.us/j/506512712
-* Time: Tuesday, 10AM CET
+* Time: Monday, 9PM CET
 * Meeting ID: 506512712
 * Dronecode calendar: https://www.dronecode.org/calendar/
 
