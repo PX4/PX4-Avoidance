@@ -110,7 +110,7 @@ class LocalPlanner {
   int counter_close_points_backoff_ = 0;
   int avoid_sphere_age_ = 1000;
 
-  double velocity_x_, velocity_y_, velocity_z_, velocity_mod_;
+  double velocity_mod_;
   double curr_yaw_, last_yaw_;
   double min_speed_;
   double max_speed_;
@@ -118,8 +118,6 @@ class LocalPlanner {
   double smooth_cost_param_;
   double height_change_cost_param_ = 4;
   double height_change_cost_param_adapted_ = 4;
-  double max_accel_xy_;
-  double max_accel_z_;
   double keep_distance_;
   ros::Time integral_time_old_;
   double no_progress_slope_;

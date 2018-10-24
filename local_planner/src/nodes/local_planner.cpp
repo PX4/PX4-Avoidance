@@ -38,7 +38,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
-  max_accel_z_ = config.max_accel_z_;
   keep_distance_ = config.keep_distance_;
   reproj_age_ = config.reproj_age_;
   relevance_margin_e_degree_ = config.relevance_margin_e_degree_;
@@ -75,11 +74,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
 }
 
 void LocalPlanner::setVelocity() {
-  velocity_x_ = curr_vel_.twist.linear.x;
-  velocity_y_ = curr_vel_.twist.linear.y;
-  velocity_z_ = curr_vel_.twist.linear.z;
-  velocity_mod_ =
-      sqrt(pow(velocity_x_, 2) + pow(velocity_y_, 2) + pow(velocity_z_, 2));
+  velocity_mod_ = Eigen::Vector3f(curr_vel_.twist.linear.x,
+    curr_vel_.twist.linear.y, curr_vel_.twist.linear.z).norm();
 }
 
 void LocalPlanner::setGoal() {
