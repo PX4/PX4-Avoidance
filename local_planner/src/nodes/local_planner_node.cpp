@@ -85,7 +85,7 @@ LocalPlannerNode::LocalPlannerNode() {
   initial_height_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
   mavros_system_status_pub_ =
-      nh_.advertise<std_msgs::Int8>("/mavros/avoidance/status", 1);
+      nh_.advertise<mavros_msgs::CompanionStatus>("/mavros/companion/status", 1);
 
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
@@ -892,7 +892,7 @@ int main(int argc, char** argv) {
   bool landing_active = false;
   avoidanceOutput planner_output;
   bool startup = true;
-  Node.system_status_ = not_ready;
+  Node.status_msg_.state = 3; //COMPANION_STATE_STARTING
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
@@ -929,7 +929,7 @@ int main(int argc, char** argv) {
         mavros_msgs::SetMode mode_msg;
         mode_msg.request.custom_mode = "AUTO.LAND";
         landing_active = true;
-        Node.system_status_ = landing;
+        Node.status_msg_.state = 2; //COMPANION_STATE_ABORT
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
             mode_msg.response.mode_sent) {
           ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
@@ -943,7 +943,7 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
-          Node.system_status_ = timeout;
+          Node.status_msg_.state = 1; //COMPANION_STATE_TIMEOUT
           std::string not_received = ", no cloud received on topic ";
           for (int i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
@@ -992,15 +992,15 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_ && !landing_active) {
       Node.publishWaypoints(hover);
-      if(!hover) Node.system_status_ = healthy;
+      if(!hover) Node.status_msg_.state = 0; //COMPANION_STATE_HEALTHY
     }
 
     Node.position_received_ = false;
 
     //publish system status
-    std_msgs::Int8 status_msg;
-    status_msg.data = (int)Node.system_status_;
-    Node.mavros_system_status_pub_.publish(status_msg);
+    Node.status_msg_.header.stamp = ros::Time::now();
+    Node.status_msg_.source = 1;    //COMPANION_SOURCE_AVOIDANCE
+    Node.mavros_system_status_pub_.publish(Node.status_msg_);
   }
 
   Node.should_exit_ = true;

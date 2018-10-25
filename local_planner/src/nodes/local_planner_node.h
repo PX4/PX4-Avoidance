@@ -15,6 +15,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <mavros_msgs/CompanionStatus.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -46,14 +47,12 @@ struct cameraData {
 	bool received_;
 };
 
-enum systemStatus {healthy, timeout, landing, not_ready};
-
 class LocalPlannerNode {
  public:
   LocalPlannerNode();
   ~LocalPlannerNode();
 
-  systemStatus system_status_;
+  mavros_msgs::CompanionStatus status_msg_;
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
