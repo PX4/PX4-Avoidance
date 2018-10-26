@@ -78,6 +78,7 @@ class LocalPlannerNode {
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
   ros::Time last_wp_time_;
+  ros::Time t_status_sent_;
 
   LocalPlanner local_planner_;
   WaypointGenerator wp_generator_;

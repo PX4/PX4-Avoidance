@@ -998,10 +998,13 @@ int main(int argc, char** argv) {
     Node.position_received_ = false;
 
     //publish system status
-    Node.status_msg_.header.stamp = ros::Time::now();
-    Node.status_msg_.type = 1;  		   //COMPANION_SOURCE_AVOIDANCE
-    Node.status_msg_.pid = getpid();       //Process PID
-    Node.mavros_system_status_pub_.publish(Node.status_msg_);
+    if(now - Node.t_status_sent_ > ros::Duration(1)){
+      Node.status_msg_.header.stamp = ros::Time::now();
+      Node.status_msg_.type = 1;  		     //COMPANION_SOURCE_AVOIDANCE
+      Node.status_msg_.pid = getpid();       //Process PID
+      Node.mavros_system_status_pub_.publish(Node.status_msg_);
+      Node.t_status_sent_ = now;
+    }
   }
 
   Node.should_exit_ = true;
