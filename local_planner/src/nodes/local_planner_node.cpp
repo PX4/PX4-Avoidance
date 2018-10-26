@@ -999,7 +999,8 @@ int main(int argc, char** argv) {
 
     //publish system status
     Node.status_msg_.header.stamp = ros::Time::now();
-    Node.status_msg_.source = 1;    //COMPANION_SOURCE_AVOIDANCE
+    Node.status_msg_.type = 1;  		   //COMPANION_SOURCE_AVOIDANCE
+    Node.status_msg_.pid = getpid();       //Process PID
     Node.mavros_system_status_pub_.publish(Node.status_msg_);
   }
 
