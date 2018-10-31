@@ -166,6 +166,15 @@ sudo apt-get install ros-indigo-octomap ros-indigo-octomap-mapping
 ```bash
 source ~/catkin_ws/devel/setup.bash
 ```
+Add the Firmware directory on the ROS_PACKAGE_PATH so that it can launch the PX4 simulation.
+```bash
+export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
+
+# Add the models from the avoidance module to GAZEBO_MODEL_PATH
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
+
+```
+
 
 2. Run the simulation.
 
