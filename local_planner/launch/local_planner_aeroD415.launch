@@ -1,28 +1,15 @@
 <launch>
 
-
-    <arg name="mavros_transformation" default="0" />
-    
     <param name="use_sim_time" value="false" />
 
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
-          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
           args="0 0 0 0 0 0 fcu camera_link 10"/>
-          
-          
-          
-    <arg name="headless" default="false"/>
+
     <arg name="ns" default="/"/>
-    <arg name="build" default="posix_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
-    <!-- <arg name="fcu_url" default="udp://:14547@localhost:14550"/> -->
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
-    <!--<arg name="mavros_transformation" default="-1.57" /> -->
-    <arg name="est" default="ekf2"/>
-    
 
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
@@ -37,18 +24,20 @@
         </include>
     </group>
 
-  
+  <!-- Launch Realsense Camera -->
   <include file="$(find realsense2_camera)/launch/rs_rgbd.launch" >
   </include>
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
   <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
+  <arg name="pointcloud_topics" default="[/camera/depth_registered/points]"/>
 
+  <!-- Launch Local Planner -->
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/camera/depth_registered/points" />
+    <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
   </node>
 
 </launch>
