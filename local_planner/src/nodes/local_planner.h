@@ -204,6 +204,7 @@ class LocalPlanner {
   double pointcloud_timeout_land_;
   double starting_height_ = 0.0;
   double speed_ = 1.0;
+  double ground_distance_ = 2.0;
 
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;

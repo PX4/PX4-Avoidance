@@ -35,10 +35,9 @@ void StarPlanner::setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& co
   complete_cloud_ = complete_cloud;
 }
 
-void StarPlanner::setBoxSize(const Box& histogram_box) {
+void StarPlanner::setBoxSize(const Box& histogram_box, const double ground_distance) {
   histogram_box_.radius_ = histogram_box.radius_;
-  histogram_box_.zsize_up_ = histogram_box.zsize_up_;
-  histogram_box_.zsize_down_ = histogram_box.zsize_down_;
+  ground_distance_ = ground_distance;
 }
 
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
@@ -167,7 +166,7 @@ void StarPlanner::buildLookAheadTree() {
     bool hist_is_empty = false;               // unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;
-    histogram_box_.setBoxLimits(origin_position);
+    histogram_box_.setBoxLimits(origin_position, ground_distance_);
 
     filterPointCloud(cropped_cloud, closest_point, temp_sphere_center,
                      distance_to_closest_point, backoff_points_counter,
