@@ -10,13 +10,11 @@ class Box {
   Box(const double& radius);
   ~Box();
 
-  void setBoxLimits(const geometry_msgs::Point& pos);
+  void setBoxLimits(const geometry_msgs::Point& pos, const double ground_distance);
   bool isPointWithinBox(const double& x, const double& y, const double& z);
 
 
   double radius_;
-  double zsize_up_;
-  double zsize_down_;
 
  private:
   double xmin_;

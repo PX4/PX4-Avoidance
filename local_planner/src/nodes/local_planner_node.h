@@ -17,6 +17,7 @@
 #include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/Range.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>  // transformPointCloud
@@ -117,6 +118,7 @@ class LocalPlannerNode {
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   double avoid_radius_;
+  sensor_msgs::Range ground_distance_msg_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;
   int path_length_ = 0;
@@ -128,6 +130,7 @@ class LocalPlannerNode {
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
   ros::Subscriber fcu_input_sub_;
+  ros::Subscriber distance_sensor_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
@@ -183,6 +186,7 @@ class LocalPlannerNode {
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);
+  void distanceSensorCallback(const sensor_msgs::Range& msg);
 
   void printPointInfo(double x, double y, double z);
   void publishGoal();
