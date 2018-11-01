@@ -125,7 +125,6 @@ int visualizeRVIZWorld(const std::string& world_path, visualization_msgs::Marker
 
 int visualizeDrone(const geometry_msgs::PoseStamped& pose, visualization_msgs::Marker& drone){
 
-	//add drone model
 	  drone.header.frame_id = "local_origin";
 	  drone.header.stamp = ros::Time::now();
 	  drone.type = visualization_msgs::Marker::MESH_RESOURCE;
@@ -137,9 +136,9 @@ int visualizeDrone(const geometry_msgs::PoseStamped& pose, visualization_msgs::M
 	    }
 	  }
 	  drone.mesh_use_embedded_materials = true;
-	  drone.scale.x = 1.0;
-	  drone.scale.y = 1.0;
-	  drone.scale.z = 1.0;
+	  drone.scale.x = 1.5;
+	  drone.scale.y = 1.5;
+	  drone.scale.z = 1.5;
 	  drone.pose.position.x = pose.pose.position.x;
 	  drone.pose.position.y = pose.pose.position.y;
 	  drone.pose.position.z = pose.pose.position.z;
