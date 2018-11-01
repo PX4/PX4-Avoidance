@@ -3,7 +3,8 @@ Panels:
     Help Height: 0
     Name: Displays
     Property Tree Widget:
-      Expanded: ~
+      Expanded:
+        - /Global Options1
       Splitter Ratio: 0.5
     Tree Height: 571
   - Class: rviz/Selection
@@ -82,7 +83,7 @@ Visualization Manager:
       Axes Radius: 0.100000001
       Class: rviz/Pose
       Color: 255; 25; 0
-      Enabled: true
+      Enabled: false
       Head Length: 0.300000012
       Head Radius: 0.100000001
       Name: Vehicle pose
@@ -91,15 +92,15 @@ Visualization Manager:
       Shape: Arrow
       Topic: /mavros/local_position/pose
       Unreliable: false
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /current_setpoint
       Name: currenSetpoint
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/MarkerArray
       Enabled: true
       Marker Topic: /selected_marker
@@ -235,21 +236,21 @@ Visualization Manager:
       Unreliable: false
       Value: true
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /complete_tree
       Name: Tree
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /tree_path
       Name: TreePath
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
       Enabled: false
       Marker Topic: /initial_height
@@ -259,40 +260,40 @@ Visualization Manager:
       Queue Size: 100
       Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /take_off_pose
       Name: TakeOff
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /original_waypoint
       Name: WpOriginal
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /smoothed_waypoint
       Name: WpSmoothed
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
     - Class: rviz/Marker
-      Enabled: true
+      Enabled: false
       Marker Topic: /adapted_waypoint
       Name: WpAdapted
       Namespaces:
-        "": true
+        {}
       Queue Size: 100
-      Value: true
+      Value: false
   Enabled: true
   Global Options:
-    Background Color: 48; 48; 48
+    Background Color: 89; 120; 76
     Default Light: true
     Fixed Frame: local_origin
     Frame Rate: 30
@@ -313,7 +314,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/ThirdPersonFollower
-      Distance: 15.3948088
+      Distance: 17.6060429
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
@@ -328,10 +329,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.739983916
+      Pitch: 0.589796185
       Target Frame: fcu
       Value: ThirdPersonFollower (rviz)
-      Yaw: 2.5842886
+      Yaw: 2.99610424
     Saved:
       - Class: rviz/ThirdPersonFollower
         Distance: 10
