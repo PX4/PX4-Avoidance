@@ -12,6 +12,7 @@
 #include <ros/ros.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <sys/stat.h>
 
@@ -36,5 +37,6 @@ int resolveUri(std::string& uri);
 
 //yaml parsing and marker publishing
 int visualizeRVIZWorld(const std::string& world_path, visualization_msgs::MarkerArray& marker_array);
+int visualizeDrone(const geometry_msgs::PoseStamped& pose, visualization_msgs::Marker& marker);
 
 #endif  // RVIZ_WORLD_H

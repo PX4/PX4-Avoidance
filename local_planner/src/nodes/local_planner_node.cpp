@@ -37,6 +37,7 @@ LocalPlannerNode::LocalPlannerNode() {
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
+  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
   local_pointcloud_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   reprojected_points_pub_ =
@@ -209,6 +210,12 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   newest_pose_ = msg;
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   position_received_ = true;
+
+  //visualize drone in RVIZ
+  visualization_msgs::Marker marker;
+  if (!visualizeDrone(msg, marker)) {
+    drone_pub_.publish(marker);
+  }
 }
 
 void LocalPlannerNode::velocityCallback(
