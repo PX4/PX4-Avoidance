@@ -213,8 +213,10 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 
   //visualize drone in RVIZ
   visualization_msgs::Marker marker;
-  if (!visualizeDrone(msg, marker)) {
-    drone_pub_.publish(marker);
+  if(!world_path_.empty()){
+    if (!visualizeDrone(msg, marker)) {
+      drone_pub_.publish(marker);
+    }
   }
 }
 
