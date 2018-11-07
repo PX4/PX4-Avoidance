@@ -26,6 +26,8 @@
         <param name="goal_x_param" value="17" />
         <param name="goal_y_param" value="15"/>
         <param name="goal_z_param" value="3" />
+        <param name="horizontal_FOV" value="180" />
+        <param name="vertical_FOV" value="45" />
         <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
         <param name="world_name" value="$(find local_planner)/../sim/worlds/simple_obstacle.yaml" />
     </node>

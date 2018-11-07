@@ -186,6 +186,8 @@ class LocalPlanner {
 
  public:
 
+  double H_FOV_ = 59.0;
+  double V_FOV_ = 46.0;
   Box histogram_box_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;

@@ -127,7 +127,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void calculateFOV(std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max,
+void calculateFOV(double H_FOV, double V_FOV, std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max,
                   double yaw, double pitch) {
   double z_FOV_max =
       std::round((-yaw * 180.0 / M_PI + H_FOV / 2.0 + 270.0) / ALPHA_RES) - 1;
