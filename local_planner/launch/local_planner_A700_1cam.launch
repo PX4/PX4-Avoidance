@@ -63,6 +63,8 @@
       <param name="goal_x_param" value="15" />
       <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="4" />
+      <param name="horizontal_FOV" value="90" />
+      <param name="vertical_FOV" value="59" />
       <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
     </node>
   

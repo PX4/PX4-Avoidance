@@ -111,7 +111,7 @@ void LocalPlanner::runPlanner() {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   z_FOV_idx_.clear();
-  calculateFOV(z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
+  calculateFOV(H_FOV_, V_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
   // visualization of FOV in RViz
   initGridCells(&FOV_cells_);
@@ -272,6 +272,7 @@ void LocalPlanner::determineStrategy() {
         if (use_VFH_star_) {
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
                                   path_waypoints_, curr_yaw_, min_realsense_dist_);
+          star_planner_.setFOV(H_FOV_, V_FOV_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
                                              reprojected_points_dist_);

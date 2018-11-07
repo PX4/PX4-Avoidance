@@ -24,6 +24,11 @@ void StarPlanner::setParams(const double& min_cloud_size, const double& min_dist
   min_realsense_dist_ = min_realsense_dist;
 }
 
+void StarPlanner::setFOV(double& H_FOV, double& V_FOV){
+	H_FOV_ = H_FOV;
+	V_FOV_ = V_FOV;
+}
+
 void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) { pose_ = pose; }
 
 void StarPlanner::setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud) {
@@ -180,7 +185,7 @@ void StarPlanner::buildLookAheadTree() {
       // build new histogram
       std::vector<int> z_FOV_idx;
       int e_FOV_min, e_FOV_max;
-      calculateFOV(z_FOV_idx, e_FOV_min, e_FOV_max, tree_[origin].yaw_,
+      calculateFOV(H_FOV_, V_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max, tree_[origin].yaw_,
                    0.0);  // assume pitch is zero at every node
 
       Histogram propagated_histogram = Histogram(2 * ALPHA_RES);

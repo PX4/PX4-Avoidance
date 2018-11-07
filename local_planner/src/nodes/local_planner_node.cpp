@@ -124,6 +124,13 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("min_speed_close_to_goal", new_params.min_speed_close_to_goal, 0.5);
 
   wp_generator_.param_ = new_params;
+
+  //set field of view
+  nh_.param<double>("horizontal_FOV", local_planner_.H_FOV_, 59.0);
+  nh_.param<double>("vertical_FOV", local_planner_.V_FOV_, 46.0);
+  local_planner_.H_FOV_ = local_planner_.H_FOV_;
+  local_planner_.V_FOV_ = local_planner_.V_FOV_;
+  wp_generator_.setFOV(local_planner_.H_FOV_, local_planner_.V_FOV_);
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
