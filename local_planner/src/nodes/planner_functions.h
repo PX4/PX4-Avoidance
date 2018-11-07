@@ -55,7 +55,7 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                       double min_cloud_size, double min_dist_backoff,
                       double sphere_radius, Box histogram_box,
                       geometry_msgs::Point position, double min_realsense_dist);
-void calculateFOV(double H_FOV, double V_FOV, std::vector<int> &z_FOV_idx, int &e_FOV_min,
+void calculateFOV(double h_FOV, double v_FOV, std::vector<int> &z_FOV_idx, int &e_FOV_min,
 		          int &e_FOV_max, double yaw, double pitch);
 void propagateHistogram(Histogram &polar_histogram_est,
                         pcl::PointCloud<pcl::PointXYZ> reprojected_points,

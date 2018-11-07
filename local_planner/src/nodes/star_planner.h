@@ -52,8 +52,8 @@
 #include <local_planner/LocalPlannerNodeConfig.h>
 
 class StarPlanner {
-  double H_FOV_ = 59.0;
-  double V_FOV_ = 46.0;
+  double h_FOV_ = 59.0;
+  double v_FOV_ = 46.0;
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   double tree_node_distance_ = 1.0;
@@ -95,7 +95,7 @@ class StarPlanner {
   void setParams(const double& min_cloud_size, const double& min_dist_backoff,
                  const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
                  const double& min_realsense_dist);
-  void setFOV(double& H_FOV, double& V_FOV);
+  void setFOV(double& h_FOV, double& v_FOV);
   void setReprojectedPoints(const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
                             const std::vector<double>& reprojected_points_age,
                             const std::vector<double>& reprojected_points_dist);
