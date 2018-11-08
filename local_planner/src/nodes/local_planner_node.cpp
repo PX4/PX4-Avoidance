@@ -35,7 +35,7 @@ LocalPlannerNode::LocalPlannerNode() {
                     &LocalPlannerNode::clickedGoalCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
-  distance_sensor_sub_ = nh_.subscribe("/distance_sensor/range", 1,
+  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1,
                                    &LocalPlannerNode::distanceSensorCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
@@ -207,7 +207,7 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   //update ground distance
   if(ros::Time::now() - ground_distance_msg_.header.stamp < ros::Duration(0.5)){
-	  local_planner_.ground_distance_ = ground_distance_msg_.range;
+	  local_planner_.ground_distance_ = ground_distance_msg_.bottom_clearance;
   }else{
 	  local_planner_.ground_distance_ = 2.0;  // in case where no range data is available assume vehicle is close to ground
   }
@@ -695,8 +695,9 @@ void LocalPlannerNode::fcuInputGoalCallback(
   }
 }
 
-void LocalPlannerNode::distanceSensorCallback(const sensor_msgs::Range& msg){
+void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg){
 	ground_distance_msg_ = msg;
+	std::cout<<"Range received: "<<msg.bottom_clearance<<"\n";
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
