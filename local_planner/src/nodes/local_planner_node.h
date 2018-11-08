@@ -13,6 +13,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/Altitude.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/GridCells.h>
@@ -119,7 +120,7 @@ class LocalPlannerNode {
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   double avoid_radius_;
-  sensor_msgs::Range ground_distance_msg_;
+  mavros_msgs::Altitude ground_distance_msg_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;
   int path_length_ = 0;
@@ -187,7 +188,7 @@ class LocalPlannerNode {
   void clickedPointCallback(const geometry_msgs::PointStamped &msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped &msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory &msg);
-  void distanceSensorCallback(const sensor_msgs::Range& msg);
+  void distanceSensorCallback(const mavros_msgs::Altitude& msg);
 
   void printPointInfo(double x, double y, double z);
   void publishGoal();
