@@ -710,8 +710,10 @@ void LocalPlannerNode::fcuInputGoalCallback(
 }
 
 void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg){
-	ground_distance_msg_ = msg;
-	std::cout<<"Range received: "<<msg.bottom_clearance<<"\n";
+	if(!std::isnan(msg.bottom_clearance)){
+		ground_distance_msg_ = msg;
+		std::cout<<"Range received: "<<msg.bottom_clearance<<"\n";
+	}
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
