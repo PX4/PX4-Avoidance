@@ -15,7 +15,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
-#include <mavros_msgs/CompanionStatus.h>
+#include <mavros_msgs/CompanionProcessStatus.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -52,7 +52,7 @@ class LocalPlannerNode {
   LocalPlannerNode();
   ~LocalPlannerNode();
 
-  mavros_msgs::CompanionStatus status_msg_;
+  mavros_msgs::CompanionProcessStatus status_msg_;
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
