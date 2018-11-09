@@ -1,4 +1,5 @@
 #include "local_planner_node.h"
+#include <boost/algorithm/string.hpp>
 
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
@@ -125,21 +126,36 @@ void LocalPlannerNode::readParams() {
 
   wp_generator_.param_ = new_params;
 
-  //set field of view
-  nh_.param<double>("horizontal_FOV", local_planner_.h_FOV_, 59.0);
-  nh_.param<double>("vertical_FOV", local_planner_.v_FOV_, 46.0);
-  wp_generator_.setFOV(local_planner_.h_FOV_, local_planner_.v_FOV_);
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
     std::vector<std::string>& camera_topics) {
   cameras_.resize(camera_topics.size());
 
+  // create sting containing the topic with the camera info from
+  // the pointcloud topic
+  std::string s;
+  s.reserve(50);
+  std::vector<std::string> camera_info(camera_topics.size(), s);
+
   for (int i = 0; i < camera_topics.size(); i++) {
     cameras_[i].pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
         camera_topics[i], 1,
         boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
+
+    // get each namespace in the pointcloud topic and construct the camera_info topic
+    std::vector<std::string> name_space;
+    boost::split(name_space, camera_topics[i], [](char c){return c == '/';});
+    for (int k = 0; k < (name_space.size() -1); ++k)
+    {
+      camera_info[i].append(name_space[k]);
+      camera_info[i].append("/");
+    }
+    camera_info[i].append("camera_info");
+    cameras_[i].camera_info_sub_ = nh_.subscribe<sensor_msgs::CameraInfo>(
+        camera_info[i], 1,
+        boost::bind(&LocalPlannerNode::cameraInfoCallback, this, _1, i));
   }
 }
 
@@ -698,6 +714,16 @@ void LocalPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
   cameras_[index].received_ = true;
+}
+
+void LocalPlannerNode::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg, int index) {
+  // calculate the horizontal and vertical field of view from the image size and focal length:
+  // h_fov = 2 * atan (image_width / (2 * focal_length_x))
+  // v_fov = 2 * atan (image_height / (2 * focal_length_y))
+  // Assumption: if there are n cameras the total horizonal field of view is n times the horizontal field of view of a single camera
+  local_planner_.h_FOV_ = static_cast<double>(cameras_.size()) * 2.0 * atan(msg->width / (2.0 * msg->K[0])) * 180.0 / M_PI;
+  local_planner_.v_FOV_ = 2.0 * atan(msg->height / (2.0 * msg->K[4])) * 180.0 / M_PI;
+  wp_generator_.setFOV(local_planner_.h_FOV_, local_planner_.v_FOV_);
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,

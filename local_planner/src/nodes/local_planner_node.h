@@ -22,6 +22,7 @@
 #include <pcl_ros/transforms.h>  // transformPointCloud
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <tf/transform_listener.h>
@@ -41,6 +42,7 @@
 struct cameraData {
 	std::string topic_;
 	ros::Subscriber pointcloud_sub_;
+  ros::Subscriber camera_info_sub_;
 	sensor_msgs::PointCloud2 newest_cloud_msg_;
 	bool received_;
 };
@@ -169,6 +171,7 @@ class LocalPlannerNode {
   void initializeCameraSubscribers(std::vector<std::string> &camera_topics);
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index);
+  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg, int index);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);
   void stateCallback(const mavros_msgs::State& msg);
   void readParams();
