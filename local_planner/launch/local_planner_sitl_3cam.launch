@@ -3,7 +3,7 @@
     <arg name="record_histogram"   default="true" />
     <arg name="record_waypoints"   default="true" />
     <arg name="record_position"    default="true" />
-    <arg name="pointcloud_topics" default="[/camera_front/depth_registered/points,/camera_left/depth_registered/points,/camera_right/depth_registered/points]"/>
+    <arg name="pointcloud_topics" default="[/camera_front/depth/points,/camera_left/depth/points,/camera_right/depth/points]"/>
     
     <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
@@ -26,8 +26,6 @@
         <param name="goal_x_param" value="17" />
         <param name="goal_y_param" value="15"/>
         <param name="goal_z_param" value="3" />
-        <param name="horizontal_FOV" value="180" />
-        <param name="vertical_FOV" value="45" />
         <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
         <param name="world_name" value="$(find local_planner)/../sim/worlds/simple_obstacle.yaml" />
     </node>
