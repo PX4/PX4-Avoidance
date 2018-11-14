@@ -13,14 +13,13 @@
 #include <ros/ros.h>
 
 #include "common.h"
-#include "planner_functions.h"
 #include "local_planner.h"
+#include "planner_functions.h"
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
-
 
 struct waypointResult {
   waypoint_choice waypoint_type;
@@ -72,7 +71,7 @@ class WaypointGenerator {
 
   geometry_msgs::Point hover_position_;
   geometry_msgs::PoseStamped last_position_waypoint_;
-  Eigen::Vector2f last_velocity_{0.f, 0.f}; ///< last vehicle's velocity
+  Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 
   ros::Time velocity_time_;
   std::vector<int> z_FOV_idx_;
@@ -89,9 +88,8 @@ class WaypointGenerator {
   void getPathMsg();
 
  public:
-
   waypointGenerator_params param_;
-  void getWaypoints(waypointResult &output);
+  void getWaypoints(waypointResult& output);
   void setPlannerInfo(avoidanceOutput input);
   void setFOV(double& h_FOV, double& v_FOV);
   void updateState(geometry_msgs::PoseStamped act_pose,

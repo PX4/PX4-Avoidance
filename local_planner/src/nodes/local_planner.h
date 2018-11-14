@@ -185,7 +185,6 @@ class LocalPlanner {
   void create2DObstacleRepresentation(const bool send_to_fcu);
 
  public:
-
   double h_FOV_ = 59.0;
   double v_FOV_ = 46.0;
   Box histogram_box_;
@@ -209,7 +208,7 @@ class LocalPlanner {
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
 
-  //complete_cloud_ contains n complete clouds from the cameras
+  // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
 
   LocalPlanner();
@@ -227,12 +226,12 @@ class LocalPlanner {
   void getCloudsForVisualization(
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells& path_candidates,
-                                        nav_msgs::GridCells& path_selected,
-                                        nav_msgs::GridCells& path_rejected,
-                                        nav_msgs::GridCells& path_blocked,
-                                        nav_msgs::GridCells& FOV_cells);
-  void setCurrentVelocity(const geometry_msgs::TwistStamped& vel);
+  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates,
+                                        nav_msgs::GridCells &path_selected,
+                                        nav_msgs::GridCells &path_rejected,
+                                        nav_msgs::GridCells &path_blocked,
+                                        nav_msgs::GridCells &FOV_cells);
+  void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);

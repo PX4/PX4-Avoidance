@@ -93,19 +93,22 @@ class StarPlanner {
   ~StarPlanner();
 
   void setParams(const double& min_cloud_size, const double& min_dist_backoff,
-                 const nav_msgs::GridCells& path_waypoints, const double& curr_yaw,
-                 const double& min_realsense_dist);
+                 const nav_msgs::GridCells& path_waypoints,
+                 const double& curr_yaw, const double& min_realsense_dist);
   void setFOV(double& h_FOV, double& v_FOV);
-  void setReprojectedPoints(const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-                            const std::vector<double>& reprojected_points_age,
-                            const std::vector<double>& reprojected_points_dist);
-  void setCostParams(const double& goal_cost_param, const double& smooth_cost_param,
+  void setReprojectedPoints(
+      const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+      const std::vector<double>& reprojected_points_age,
+      const std::vector<double>& reprojected_points_dist);
+  void setCostParams(const double& goal_cost_param,
+                     const double& smooth_cost_param,
                      const double& height_change_cost_param_adapted,
                      const double& height_change_cost_param);
   void setPose(const geometry_msgs::PoseStamped& pose);
   void setBoxSize(const Box& histogram_box);
   void setGoal(const geometry_msgs::Point& pose);
-  void setCloud(const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
+  void setCloud(
+      const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();
