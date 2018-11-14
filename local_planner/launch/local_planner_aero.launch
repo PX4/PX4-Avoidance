@@ -42,12 +42,13 @@
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
   <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
+  <arg name="pointcloud_topics" default="[/camera/depth/points]"/>
 
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
     <param name="goal_x_param" value="15" />
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
-    <param name="depth_points_topic" value="/camera/depth/points" />
+    <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
   </node>
 
 </launch>
