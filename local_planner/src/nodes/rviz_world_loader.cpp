@@ -1,47 +1,46 @@
 #include "rviz_world_loader.h"
 
 // extraction operators
-void operator >> (const YAML::Node& node, Eigen::Vector3f& v) {
-   v.x() = node[0].as<float>();
-   v.y() = node[1].as<float>();
-   v.z() = node[2].as<float>();
+void operator>>(const YAML::Node& node, Eigen::Vector3f& v) {
+  v.x() = node[0].as<float>();
+  v.y() = node[1].as<float>();
+  v.z() = node[2].as<float>();
 }
 
-void operator >> (const YAML::Node& node, Eigen::Vector4f& v) {
-   v.x() = node[0].as<float>();
-   v.y() = node[1].as<float>();
-   v.z() = node[2].as<float>();
-   v.w() = node[3].as<float>();
+void operator>>(const YAML::Node& node, Eigen::Vector4f& v) {
+  v.x() = node[0].as<float>();
+  v.y() = node[1].as<float>();
+  v.z() = node[2].as<float>();
+  v.w() = node[3].as<float>();
 }
 
-void operator >> (const YAML::Node& node, world_object& item) {
-   item.type = node["type"].as<std::string>();
-   item.name = node["name"].as<std::string>();
-   item.frame_id = node["frame_id"].as<std::string>();
-   item.mesh_resource = node["mesh_resource"].as<std::string>();
-   node["position"] >> item.position;
-   node["orientation"] >> item.orientation;
-   node["scale"] >> item.scale;
+void operator>>(const YAML::Node& node, world_object& item) {
+  item.type = node["type"].as<std::string>();
+  item.name = node["name"].as<std::string>();
+  item.frame_id = node["frame_id"].as<std::string>();
+  item.mesh_resource = node["mesh_resource"].as<std::string>();
+  node["position"] >> item.position;
+  node["orientation"] >> item.orientation;
+  node["scale"] >> item.scale;
 }
 
-int resolveUri(std::string& uri){
-
+int resolveUri(std::string& uri) {
   // Iterate through all locations in GAZEBO_MODEL_PATH
   char* gazebo_model_path = getenv("GAZEBO_MODEL_PATH");
   char* home = getenv("HOME");
   uri = uri.substr(7, std::string::npos);
-  std::stringstream all_locations(gazebo_model_path, std::ios_base::app | std::ios_base::out | std::ios_base::in);
+  std::stringstream all_locations(gazebo_model_path, std::ios_base::app |
+                                                         std::ios_base::out |
+                                                         std::ios_base::in);
   all_locations << ":" << home << "/.gazebo/models";
   std::string current_location;
-  while (getline(all_locations, current_location, ':'))
-  {
+  while (getline(all_locations, current_location, ':')) {
     struct stat s;
     std::string temp = current_location + uri;
-    if (stat(temp.c_str(), &s) == 0)
-    {
-      if (s.st_mode & S_IFREG)  //this path describes a file
+    if (stat(temp.c_str(), &s) == 0) {
+      if (s.st_mode & S_IFREG)  // this path describes a file
       {
-        uri =  "file://" + current_location + uri;
+        uri = "file://" + current_location + uri;
         return 0;
       }
     }
@@ -49,26 +48,26 @@ int resolveUri(std::string& uri){
   return 1;
 }
 
-int visualizeRVIZWorld(const std::string& world_path, visualization_msgs::MarkerArray& marker_array){
-
+int visualizeRVIZWorld(const std::string& world_path,
+                       visualization_msgs::MarkerArray& marker_array) {
   std::ifstream fin(world_path);
   YAML::Node doc = YAML::Load(fin);
   int object_counter = 0;
 
-  for(YAML::const_iterator it = doc.begin(); it != doc.end(); ++it) {
+  for (YAML::const_iterator it = doc.begin(); it != doc.end(); ++it) {
     const YAML::Node& node = *it;
     world_object item;
     node >> item;
-    object_counter ++;
+    object_counter++;
 
-    //convert object to marker
+    // convert object to marker
     visualization_msgs::Marker m;
     m.header.frame_id = item.frame_id;
     m.header.stamp = ros::Time::now();
 
-    if(item.type == "mesh"){
-      if(item.mesh_resource.find("model://")!=std::string::npos){
-        if(resolveUri(item.mesh_resource)){
+    if (item.type == "mesh") {
+      if (item.mesh_resource.find("model://") != std::string::npos) {
+        if (resolveUri(item.mesh_resource)) {
           ROS_ERROR("RVIZ world loader could not find model");
           return 1;
         }
@@ -76,25 +75,25 @@ int visualizeRVIZWorld(const std::string& world_path, visualization_msgs::Marker
       m.type = visualization_msgs::Marker::MESH_RESOURCE;
       m.mesh_resource = item.mesh_resource;
       m.mesh_use_embedded_materials = true;
-    }else if(item.type == "cube"){
+    } else if (item.type == "cube") {
       m.type = visualization_msgs::Marker::CUBE;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
-   	}else if(item.type == "sphere"){
+    } else if (item.type == "sphere") {
       m.type = visualization_msgs::Marker::SPHERE;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
-    }else if(item.type == "cylinder"){
+    } else if (item.type == "cylinder") {
       m.type = visualization_msgs::Marker::CYLINDER;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
-    }else{
+    } else {
       ROS_ERROR("RVIZ world loader invalid object type in yaml file");
       return 1;
     }
@@ -115,40 +114,40 @@ int visualizeRVIZWorld(const std::string& world_path, visualization_msgs::Marker
     marker_array.markers.push_back(m);
   }
 
-  if(object_counter != marker_array.markers.size()){
+  if (object_counter != marker_array.markers.size()) {
     ROS_ERROR("Could not display all world objects");
   }
 
-   ROS_INFO("Successfully loaded rviz world");
-   return 0;
+  ROS_INFO("Successfully loaded rviz world");
+  return 0;
 }
 
-int visualizeDrone(const geometry_msgs::PoseStamped& pose, visualization_msgs::Marker& drone){
+int visualizeDrone(const geometry_msgs::PoseStamped& pose,
+                   visualization_msgs::Marker& drone) {
+  drone.header.frame_id = "local_origin";
+  drone.header.stamp = ros::Time::now();
+  drone.type = visualization_msgs::Marker::MESH_RESOURCE;
+  drone.mesh_resource = "model://matrice_100/meshes/Matrice_100.dae";
+  if (drone.mesh_resource.find("model://") != std::string::npos) {
+    if (resolveUri(drone.mesh_resource)) {
+      ROS_ERROR("RVIZ world loader could not find drone model");
+      return 1;
+    }
+  }
+  drone.mesh_use_embedded_materials = true;
+  drone.scale.x = 1.5;
+  drone.scale.y = 1.5;
+  drone.scale.z = 1.5;
+  drone.pose.position.x = pose.pose.position.x;
+  drone.pose.position.y = pose.pose.position.y;
+  drone.pose.position.z = pose.pose.position.z;
+  drone.pose.orientation.x = pose.pose.orientation.x;
+  drone.pose.orientation.y = pose.pose.orientation.y;
+  drone.pose.orientation.z = pose.pose.orientation.z;
+  drone.pose.orientation.w = pose.pose.orientation.w;
+  drone.id = 0;
+  drone.lifetime = ros::Duration();
+  drone.action = visualization_msgs::Marker::ADD;
 
-	  drone.header.frame_id = "local_origin";
-	  drone.header.stamp = ros::Time::now();
-	  drone.type = visualization_msgs::Marker::MESH_RESOURCE;
-	  drone.mesh_resource = "model://matrice_100/meshes/Matrice_100.dae";
-	  if(drone.mesh_resource.find("model://")!=std::string::npos){
-	       if(resolveUri(drone.mesh_resource)){
-	       ROS_ERROR("RVIZ world loader could not find drone model");
-	      return 1;
-	    }
-	  }
-	  drone.mesh_use_embedded_materials = true;
-	  drone.scale.x = 1.5;
-	  drone.scale.y = 1.5;
-	  drone.scale.z = 1.5;
-	  drone.pose.position.x = pose.pose.position.x;
-	  drone.pose.position.y = pose.pose.position.y;
-	  drone.pose.position.z = pose.pose.position.z;
-	  drone.pose.orientation.x = pose.pose.orientation.x;
-	  drone.pose.orientation.y = pose.pose.orientation.y;
-	  drone.pose.orientation.z = pose.pose.orientation.z;
-	  drone.pose.orientation.w = pose.pose.orientation.w;
-	  drone.id = 0;
-	  drone.lifetime = ros::Duration();
-	  drone.action = visualization_msgs::Marker::ADD;
-
-	  return 0;
+  return 0;
 }

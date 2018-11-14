@@ -102,11 +102,11 @@ void LocalPlanner::runPlanner() {
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
-                 static_cast<int>(complete_cloud_.size()));
+           static_cast<int>(complete_cloud_.size()));
 
-  //calculate Field of View
+  // calculate Field of View
   tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
-                         pose_.pose.orientation.z, pose_.pose.orientation.w);
+                   pose_.pose.orientation.z, pose_.pose.orientation.w);
   tf::Matrix3x3 m(q);
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
@@ -117,12 +117,12 @@ void LocalPlanner::runPlanner() {
   initGridCells(&FOV_cells_);
   geometry_msgs::Point p;
   for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
-     for (int i = 0; i < z_FOV_idx_.size(); i++) {
-        p.x = elevationIndexToAngle(j, ALPHA_RES);
-        p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
-        p.z = 0;
-        FOV_cells_.cells.push_back(p);
-      }
+    for (int i = 0; i < z_FOV_idx_.size(); i++) {
+      p.x = elevationIndexToAngle(j, ALPHA_RES);
+      p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
+      p.z = 0;
+      FOV_cells_.cells.push_back(p);
+    }
   }
 
   histogram_box_.setBoxLimits(pose_.pose.position);
@@ -261,17 +261,18 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
 
-        findFreeDirections(
-            polar_histogram_, safety_radius_, path_candidates_, path_selected_,
-            path_rejected_, path_blocked_, path_waypoints_,
-            cost_path_candidates_, goal_, pose_, position_old_,
-            goal_cost_param_, smooth_cost_param_,
-            height_change_cost_param_adapted_, height_change_cost_param_,
-            velocity_mod_ < 0.1, ALPHA_RES);
+        findFreeDirections(polar_histogram_, safety_radius_, path_candidates_,
+                           path_selected_, path_rejected_, path_blocked_,
+                           path_waypoints_, cost_path_candidates_, goal_, pose_,
+                           position_old_, goal_cost_param_, smooth_cost_param_,
+                           height_change_cost_param_adapted_,
+                           height_change_cost_param_, velocity_mod_ < 0.1,
+                           ALPHA_RES);
 
         if (use_VFH_star_) {
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
-                                  path_waypoints_, curr_yaw_, min_realsense_dist_);
+                                  path_waypoints_, curr_yaw_,
+                                  min_realsense_dist_);
           star_planner_.setFOV(h_FOV_, v_FOV_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
@@ -289,9 +290,9 @@ void LocalPlanner::determineStrategy() {
           int e_min_idx = -1;
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
-              path_selected_, path_rejected_, path_blocked_,
-              path_waypoints_, cost_path_candidates_, goal_, pose_,
-              position_old_, goal_cost_param_, smooth_cost_param_,
+              path_selected_, path_rejected_, path_blocked_, path_waypoints_,
+              cost_path_candidates_, goal_, pose_, position_old_,
+              goal_cost_param_, smooth_cost_param_,
               height_change_cost_param_adapted_, height_change_cost_param_,
               velocity_mod_ < 0.1, ALPHA_RES);
           if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
@@ -511,9 +512,9 @@ void LocalPlanner::getCloudsForVisualization(
 }
 
 void LocalPlanner::getCandidateDataForVisualization(
-    nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
-    nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells& FOV_cells) {
+    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
+    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
+    nav_msgs::GridCells &FOV_cells) {
   path_candidates = path_candidates_;
   path_selected = path_selected_;
   path_rejected = path_rejected_;
@@ -521,7 +522,7 @@ void LocalPlanner::getCandidateDataForVisualization(
   FOV_cells = FOV_cells_;
 }
 
-void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped& vel) {
+void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {
   curr_vel_ = vel;
 }
 

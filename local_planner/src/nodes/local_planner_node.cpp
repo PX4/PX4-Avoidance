@@ -6,8 +6,10 @@ LocalPlannerNode::LocalPlannerNode() {
   readParams();
 
   // Set up Dynamic Reconfigure Server
-  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, nh_);
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
+      config_mutex_, nh_);
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType
+      f;
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_->setCallback(f);
 
@@ -95,13 +97,10 @@ LocalPlannerNode::LocalPlannerNode() {
   local_planner_.setGoal();
 }
 
-LocalPlannerNode::~LocalPlannerNode() {
-  delete server_;
-}
+LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
-
-  //Parameter from launch file
+  // Parameter from launch file
   nh_.param<double>("goal_x_param", local_planner_.goal_x_param_, 9.0);
   nh_.param<double>("goal_y_param", local_planner_.goal_y_param_, 13.0);
   nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
@@ -115,17 +114,23 @@ void LocalPlannerNode::readParams() {
   goal_msg_.pose.position.y = local_planner_.goal_y_param_;
   goal_msg_.pose.position.z = local_planner_.goal_z_param_;
 
-  //Read in parameter for waypoint generator
+  // Read in parameter for waypoint generator
   waypointGenerator_params new_params;
-  nh_.param<double>("goal_acceptance_radius_in", new_params.goal_acceptance_radius_in, 0.5);
-  nh_.param<double>("goal_acceptance_radius_out", new_params.goal_acceptance_radius_out, 1.5);
-  nh_.param<double>("factor_close_to_goal_start_speed_limitation", new_params.factor_close_to_goal_start_speed_limitation, 3.0);
-  nh_.param<double>("factor_close_to_goal_stop_speed_limitation", new_params.factor_close_to_goal_stop_speed_limitation, 4.0);
-  nh_.param<double>("max_speed_close_to_goal_factor", new_params.max_speed_close_to_goal_factor, 0.1);
-  nh_.param<double>("min_speed_close_to_goal", new_params.min_speed_close_to_goal, 0.5);
+  nh_.param<double>("goal_acceptance_radius_in",
+                    new_params.goal_acceptance_radius_in, 0.5);
+  nh_.param<double>("goal_acceptance_radius_out",
+                    new_params.goal_acceptance_radius_out, 1.5);
+  nh_.param<double>("factor_close_to_goal_start_speed_limitation",
+                    new_params.factor_close_to_goal_start_speed_limitation,
+                    3.0);
+  nh_.param<double>("factor_close_to_goal_stop_speed_limitation",
+                    new_params.factor_close_to_goal_stop_speed_limitation, 4.0);
+  nh_.param<double>("max_speed_close_to_goal_factor",
+                    new_params.max_speed_close_to_goal_factor, 0.1);
+  nh_.param<double>("min_speed_close_to_goal",
+                    new_params.min_speed_close_to_goal, 0.5);
 
   wp_generator_.param_ = new_params;
-
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
@@ -144,11 +149,11 @@ void LocalPlannerNode::initializeCameraSubscribers(
         boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
 
-    // get each namespace in the pointcloud topic and construct the camera_info topic
+    // get each namespace in the pointcloud topic and construct the camera_info
+    // topic
     std::vector<std::string> name_space;
-    boost::split(name_space, camera_topics[i], [](char c){return c == '/';});
-    for (int k = 0; k < (name_space.size() -1); ++k)
-    {
+    boost::split(name_space, camera_topics[i], [](char c) { return c == '/'; });
+    for (int k = 0; k < (name_space.size() - 1); ++k) {
       camera_info[i].append(name_space[k]);
       camera_info[i].append("/");
     }
@@ -191,7 +196,7 @@ void LocalPlannerNode::updatePlannerInfo() {
       tf::StampedTransform transform;
       tf_listener_.lookupTransform(
           "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
-		  ros::Time(0), transform);
+          ros::Time(0), transform);
       pcl_ros::transformPointCloud("/local_origin", transform,
                                    cameras_[i].newest_cloud_msg_,
                                    pc2cloud_world);
@@ -232,9 +237,9 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   position_received_ = true;
 
-  //visualize drone in RVIZ
+  // visualize drone in RVIZ
   visualization_msgs::Marker marker;
-  if(!world_path_.empty()){
+  if (!world_path_.empty()) {
     if (!visualizeDrone(msg, marker)) {
       drone_pub_.publish(marker);
     }
@@ -252,12 +257,12 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   if (msg.mode == "AUTO.MISSION") {
     offboard_ = false;
     mission_ = true;
-  }else if (msg.mode == "OFFBOARD") {
+  } else if (msg.mode == "OFFBOARD") {
     offboard_ = true;
     mission_ = false;
-  }else{
-	offboard_ = false;
-	mission_ = false;
+  } else {
+    offboard_ = false;
+    mission_ = false;
   }
 }
 
@@ -474,7 +479,7 @@ void LocalPlannerNode::publishBox() {
   box.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
   box.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
   box.scale.z = local_planner_.histogram_box_.zsize_up_ +
-		        local_planner_.histogram_box_.zsize_down_;
+                local_planner_.histogram_box_.zsize_down_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
@@ -716,13 +721,18 @@ void LocalPlannerNode::pointCloudCallback(
   cameras_[index].received_ = true;
 }
 
-void LocalPlannerNode::cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg, int index) {
-  // calculate the horizontal and vertical field of view from the image size and focal length:
+void LocalPlannerNode::cameraInfoCallback(
+    const sensor_msgs::CameraInfo::ConstPtr& msg, int index) {
+  // calculate the horizontal and vertical field of view from the image size and
+  // focal length:
   // h_fov = 2 * atan (image_width / (2 * focal_length_x))
   // v_fov = 2 * atan (image_height / (2 * focal_length_y))
-  // Assumption: if there are n cameras the total horizonal field of view is n times the horizontal field of view of a single camera
-  local_planner_.h_FOV_ = static_cast<double>(cameras_.size()) * 2.0 * atan(msg->width / (2.0 * msg->K[0])) * 180.0 / M_PI;
-  local_planner_.v_FOV_ = 2.0 * atan(msg->height / (2.0 * msg->K[4])) * 180.0 / M_PI;
+  // Assumption: if there are n cameras the total horizonal field of view is n
+  // times the horizontal field of view of a single camera
+  local_planner_.h_FOV_ = static_cast<double>(cameras_.size()) * 2.0 *
+                          atan(msg->width / (2.0 * msg->K[0])) * 180.0 / M_PI;
+  local_planner_.v_FOV_ =
+      2.0 * atan(msg->height / (2.0 * msg->K[4])) * 180.0 / M_PI;
   wp_generator_.setFOV(local_planner_.h_FOV_, local_planner_.v_FOV_);
 }
 
@@ -987,8 +997,8 @@ int main(int argc, char** argv) {
               not_received.append(Node.cameras_[i].topic_);
             }
           }
-          if (!Node.canUpdatePlannerInfo()){
-        	  not_received.append(" , missing transforms ");
+          if (!Node.canUpdatePlannerInfo()) {
+            not_received.append(" , missing transforms ");
           }
           ROS_INFO(
               "\033[1;33m Pointcloud timeout %s (Hovering at current position) "

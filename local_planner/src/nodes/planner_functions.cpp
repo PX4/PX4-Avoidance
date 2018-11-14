@@ -53,17 +53,15 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
 
 // trim the point cloud so that only points inside the bounding box are
 // considered
-void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
-                      geometry_msgs::Point &closest_point,
-                      geometry_msgs::Point &temp_sphere_center,
-                      double &distance_to_closest_point, int &counter_backoff,
-                      int &counter_sphere,
-					  std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud,
-                      double min_cloud_size, double min_dist_backoff,
-                      double sphere_radius, Box histogram_box,
-                      geometry_msgs::Point position,
-                      double min_realsense_dist) {
-
+void filterPointCloud(
+    pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
+    geometry_msgs::Point &closest_point,
+    geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
+    int &counter_backoff, int &counter_sphere,
+    std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud,
+    double min_cloud_size, double min_dist_backoff, double sphere_radius,
+    Box histogram_box, geometry_msgs::Point position,
+    double min_realsense_dist) {
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
@@ -75,35 +73,37 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
   temp_sphere_center.y = 0.0;
   temp_sphere_center.z = 0.0;
 
-  for(int i=0; i<complete_cloud.size(); ++i){
-	  for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
-		   ++pcl_it) {
-		// Check if the point is invalid
-		if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-		  if (histogram_box.isPointWithinBox(pcl_it->x, pcl_it->y, pcl_it->z)) {
-			distance = computeL2Dist(position, pcl_it);
-			if (distance > min_realsense_dist && distance < histogram_box.radius_) {
-			  cropped_cloud.points.push_back(
-				  pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
-			  if (distance < distance_to_closest_point) {
-				distance_to_closest_point = distance;
-				closest_point.x = pcl_it->x;
-				closest_point.y = pcl_it->y;
-				closest_point.z = pcl_it->z;
-			  }
-			  if (distance < min_dist_backoff) {
-				counter_backoff++;
-			  }
-			  if (distance < sphere_radius + 1.5) {
-				counter_sphere++;
-				temp_sphere_center.x += pcl_it->x;
-				temp_sphere_center.y += pcl_it->y;
-				temp_sphere_center.z += pcl_it->z;
-			  }
-			}
-		  }
-		}
-	  }
+  for (int i = 0; i < complete_cloud.size(); ++i) {
+    for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
+         ++pcl_it) {
+      // Check if the point is invalid
+      if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
+          !std::isnan(pcl_it->z)) {
+        if (histogram_box.isPointWithinBox(pcl_it->x, pcl_it->y, pcl_it->z)) {
+          distance = computeL2Dist(position, pcl_it);
+          if (distance > min_realsense_dist &&
+              distance < histogram_box.radius_) {
+            cropped_cloud.points.push_back(
+                pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+            if (distance < distance_to_closest_point) {
+              distance_to_closest_point = distance;
+              closest_point.x = pcl_it->x;
+              closest_point.y = pcl_it->y;
+              closest_point.z = pcl_it->z;
+            }
+            if (distance < min_dist_backoff) {
+              counter_backoff++;
+            }
+            if (distance < sphere_radius + 1.5) {
+              counter_sphere++;
+              temp_sphere_center.x += pcl_it->x;
+              temp_sphere_center.y += pcl_it->y;
+              temp_sphere_center.z += pcl_it->z;
+            }
+          }
+        }
+      }
+    }
   }
 
   if (counter_sphere > 0) {
@@ -127,8 +127,8 @@ void filterPointCloud(pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void calculateFOV(double h_fov, double v_fov, std::vector<int> &z_FOV_idx, int &e_FOV_min, int &e_FOV_max,
-                  double yaw, double pitch) {
+void calculateFOV(double h_fov, double v_fov, std::vector<int> &z_FOV_idx,
+                  int &e_FOV_min, int &e_FOV_max, double yaw, double pitch) {
   double z_FOV_max =
       std::round((-yaw * 180.0 / M_PI + h_fov / 2.0 + 270.0) / ALPHA_RES) - 1;
   double z_FOV_min =
@@ -369,11 +369,10 @@ void findFreeDirections(
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells path_waypoints,
     std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,
-    const geometry_msgs::PoseStamped &position, const geometry_msgs::Point &position_old,
-    double goal_cost_param, double smooth_cost_param,
-    double height_change_cost_param_adapted, double height_change_cost_param,
-    bool only_yawed, int resolution_alpha) {
-
+    const geometry_msgs::PoseStamped &position,
+    const geometry_msgs::Point &position_old, double goal_cost_param,
+    double smooth_cost_param, double height_change_cost_param_adapted,
+    double height_change_cost_param, bool only_yawed, int resolution_alpha) {
   int n = floor(safety_radius / resolution_alpha);  // safety radius
   int z_dim = 360 / resolution_alpha;
   int e_dim = 180 / resolution_alpha;
@@ -477,8 +476,9 @@ bool calculateCostMap(std::vector<float> cost_path_candidates,
     std::iota(cost_idx_sorted.begin(), cost_idx_sorted.end(), 0);
 
     std::sort(cost_idx_sorted.begin(), cost_idx_sorted.end(),
-      [&cost_path_candidates](size_t i1, size_t i2)
-      { return cost_path_candidates[i1] < cost_path_candidates[i2]; });
+              [&cost_path_candidates](size_t i1, size_t i2) {
+                return cost_path_candidates[i1] < cost_path_candidates[i2];
+              });
     return 0;
   }
 }
