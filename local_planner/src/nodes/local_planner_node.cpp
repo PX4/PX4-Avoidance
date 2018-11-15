@@ -1040,6 +1040,11 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_) {
       Node.publishWaypoints(hover);
+    } else {
+      for (int i = 0; i < Node.cameras_.size(); ++i) {
+        // once the camera info have been set once, unsubscribe from topic
+        Node.cameras_[i].camera_info_sub_.shutdown();
+      }
     }
 
     Node.position_received_ = false;
