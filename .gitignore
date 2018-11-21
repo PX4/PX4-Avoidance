@@ -4,3 +4,4 @@
 *.tags
 *.tags_sorted_by_file
 .clang_complete
+*.kdev4
