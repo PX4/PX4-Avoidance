@@ -5,15 +5,21 @@
     according to the specific setup. Please measure the dispacement between the
     camera and the flight controller in ENU body frame and update the x, y, z,
     yaw, pitch, and roll in meters-->
+    <arg name="tf_x" default="0.30" />
+    <arg name="tf_y" default="0.32" />
+    <arg name="tf_z" default="-0.11" />
+    <arg name="tf_yaw" default="0.0" />
+    <arg name="tf_pitch" default="0.0" />
+    <arg name="tf_roll" default="0.0" />
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
-          args="0.30 0.32 -0.11 0 0 0 fcu front_camera_link 10"/>
+          args="tf_x tf_y tf_z tf_yaw tf_ppitch tf_yaw fcu front_camera_link 10"/>
+
+    <!-- Change the serial or udp port to match your setup-->
+    <arg name="fcu_url" default="/dev/ttyACM0:57600"/>
 
     <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>
     <arg name="build" default="posix_sitl_default"/>
-
-    <!-- Change the serial or udp port to match your setup-->
-    <arg name="fcu_url" default="/dev/ttyACM0:57600"/>
     <arg name="gcs_url" default="" />
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
