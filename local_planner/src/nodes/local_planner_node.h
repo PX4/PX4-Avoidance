@@ -105,7 +105,7 @@ class LocalPlannerNode {
                           geometry_msgs::Twist& wp_vel);
   bool canUpdatePlannerInfo();
   void updatePlannerInfo();
-  int numReceivedClouds();
+  size_t numReceivedClouds();
   void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
                                  geometry_msgs::PoseStamped pose);
   void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,

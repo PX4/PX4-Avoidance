@@ -1,5 +1,5 @@
-#include "local_planner_node.h"
 #include <boost/algorithm/string.hpp>
+#include "local_planner_node.h"
 
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
@@ -143,7 +143,7 @@ void LocalPlannerNode::initializeCameraSubscribers(
   s.reserve(50);
   std::vector<std::string> camera_info(camera_topics.size(), s);
 
-  for (int i = 0; i < camera_topics.size(); i++) {
+  for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
         camera_topics[i], 1,
         boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
@@ -153,7 +153,7 @@ void LocalPlannerNode::initializeCameraSubscribers(
     // topic
     std::vector<std::string> name_space;
     boost::split(name_space, camera_topics[i], [](char c) { return c == '/'; });
-    for (int k = 0; k < (name_space.size() - 1); ++k) {
+    for (int k = 0, name_spaces = name_space.size() - 1; k < name_spaces; ++k) {
       camera_info[i].append(name_space[k]);
       camera_info[i].append("/");
     }
@@ -164,9 +164,9 @@ void LocalPlannerNode::initializeCameraSubscribers(
   }
 }
 
-int LocalPlannerNode::numReceivedClouds() {
-  int num_received_clouds = 0;
-  for (int i = 0; i < cameras_.size(); i++) {
+size_t LocalPlannerNode::numReceivedClouds() {
+  size_t num_received_clouds = 0;
+  for (size_t i = 0; i < cameras_.size(); i++) {
     if (cameras_[i].received_) num_received_clouds++;
   }
   return num_received_clouds;
@@ -175,8 +175,8 @@ int LocalPlannerNode::numReceivedClouds() {
 bool LocalPlannerNode::canUpdatePlannerInfo() {
   // Check if we have a transformation available at the time of the current
   // point cloud
-  int missing_transforms = 0;
-  for (int i = 0; i < cameras_.size(); ++i) {
+  size_t missing_transforms = 0;
+  for (size_t i = 0; i < cameras_.size(); ++i) {
     if (!tf_listener_.canTransform(
             "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
             ros::Time(0))) {
@@ -189,7 +189,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_.complete_cloud_.clear();
-  for (int i = 0; i < cameras_.size(); ++i) {
+  for (size_t i = 0; i < cameras_.size(); ++i) {
     sensor_msgs::PointCloud2 pc2cloud_world;
     pcl::PointCloud<pcl::PointXYZ> complete_cloud;
     try {
@@ -325,7 +325,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
   geometry_msgs::PoseStamped drone_pos;
   local_planner_.getPosition(drone_pos);
 
-  for (int i = 0; i < path.cells.size(); i++) {
+  for (size_t i = 0; i < path.cells.size(); i++) {
     m.id = i + 1;
     m.action = visualization_msgs::Marker::ADD;
     geometry_msgs::Point p =
@@ -644,7 +644,7 @@ void LocalPlannerNode::publishTree() {
 
   local_planner_.getTree(tree, closed_set, path_node_positions_);
 
-  for (int i = 0; i < closed_set.size(); i++) {
+  for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = tree[node_nr].getPosition();
     int origin = tree[node_nr].origin_;
@@ -653,11 +653,9 @@ void LocalPlannerNode::publishTree() {
     tree_marker.points.push_back(p2);
   }
 
-  if (path_node_positions_.size() > 0) {
-    for (int i = 0; i < (path_node_positions_.size() - 1); i++) {
-      path_marker.points.push_back(path_node_positions_[i]);
-      path_marker.points.push_back(path_node_positions_[i + 1]);
-    }
+  for (size_t i = 1; i < path_node_positions_.size(); i++) {
+    path_marker.points.push_back(path_node_positions_[i - 1]);
+    path_marker.points.push_back(path_node_positions_[i]);
   }
 
   complete_tree_pub_.publish(tree_marker);
@@ -744,9 +742,7 @@ void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,
   setpoint.id = 0;
   setpoint.type = visualization_msgs::Marker::ARROW;
   setpoint.action = visualization_msgs::Marker::ADD;
-  double length =
-      std::sqrt(wp.linear.x * wp.linear.x + wp.linear.y * wp.linear.y +
-                wp.linear.z * wp.linear.z);
+
   geometry_msgs::Point tip;
   tip.x = newest_pose_.pose.position.x + wp.linear.x;
   tip.y = newest_pose_.pose.position.y + wp.linear.y;
@@ -991,7 +987,7 @@ int main(int argc, char** argv) {
         if (Node.position_received_) {
           hover = true;
           std::string not_received = "";
-          for (int i = 0; i < Node.cameras_.size(); i++) {
+          for (size_t i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
               not_received.append(" , no cloud received on topic ");
               not_received.append(Node.cameras_[i].topic_);
@@ -1020,7 +1016,7 @@ int main(int argc, char** argv) {
         if (Node.running_mutex_.try_lock()) {
           Node.updatePlannerInfo();
           // reset all clouds to not yet received
-          for (int i = 0; i < Node.cameras_.size(); i++) {
+          for (size_t i = 0; i < Node.cameras_.size(); i++) {
             Node.cameras_[i].received_ = false;
           }
           Node.local_planner_.getAvoidanceOutput(planner_output);
@@ -1041,7 +1037,7 @@ int main(int argc, char** argv) {
     if (!Node.never_run_) {
       Node.publishWaypoints(hover);
     } else {
-      for (int i = 0; i < Node.cameras_.size(); ++i) {
+      for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
         Node.cameras_[i].camera_info_sub_.shutdown();
       }

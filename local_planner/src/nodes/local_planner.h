@@ -101,7 +101,7 @@ class LocalPlanner {
   bool hist_is_empty_ = false;
 
   int e_FOV_max_, e_FOV_min_;
-  int dist_incline_window_size_ = 50;
+  size_t dist_incline_window_size_ = 50;
   int origin_;
   int tree_age_ = 0;
   int childs_per_node_;
