@@ -31,8 +31,11 @@ bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp,
                            double old_yaw);
 double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
-int azimuthAnglefromCartesian(double x, double y, double z,
-                              geometry_msgs::Point pos);
+int azimuthAnglefromCartesian(geometry_msgs::Point position,
+                              geometry_msgs::Point origin);
+int azimuthAnglefromCartesian(double x, double y, geometry_msgs::Point pos);
+int elevationAnglefromCartesian(geometry_msgs::Point pos,
+                                geometry_msgs::Point origin);
 int elevationAnglefromCartesian(double x, double y, double z,
                                 geometry_msgs::Point pos);
 int elevationAngletoIndex(int e, int res);

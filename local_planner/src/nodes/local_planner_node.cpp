@@ -1,5 +1,6 @@
-#include <boost/algorithm/string.hpp>
 #include "local_planner_node.h"
+
+#include <boost/algorithm/string.hpp>
 
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");

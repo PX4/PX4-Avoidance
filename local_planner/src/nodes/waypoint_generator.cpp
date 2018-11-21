@@ -39,7 +39,7 @@ void WaypointGenerator::calculateWaypoint() {
     case tryPath: {
       geometry_msgs::Point p;
       bool tree_available = getDirectionFromTree(
-          p, planner_info_.path_node_positions, pose_.pose.position, goal_);
+          p, planner_info_.path_node_positions, pose_.pose.position);
       double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
       ros::Duration since_last_path =
           ros::Time::now() - planner_info_.last_path_time;
@@ -276,9 +276,8 @@ void WaypointGenerator::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  int z_angle = azimuthAnglefromCartesian(
-      output_.adapted_goto_position.x, output_.adapted_goto_position.y,
-      output_.adapted_goto_position.z, pose_.pose.position);
+  int z_angle = azimuthAnglefromCartesian(output_.adapted_goto_position,
+                                          pose_.pose.position);
 
   int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
