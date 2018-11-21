@@ -65,10 +65,15 @@ double azimuthIndexToAngle(int z, double res) {
   return z * res + res / 2 - 180;
 }
 
-int azimuthAnglefromCartesian(double x, double y, double z,
-                              geometry_msgs::Point pos) {
+int azimuthAnglefromCartesian(geometry_msgs::Point position,
+                              geometry_msgs::Point origin) {
+  return azimuthAnglefromCartesian(position.x, position.y, origin);
+}
+
+int azimuthAnglefromCartesian(double x, double y, geometry_msgs::Point pos) {
   return floor(atan2(x - pos.x, y - pos.y) * 180.0 / M_PI);  //(-180. +180]
 }
+
 
 int elevationAnglefromCartesian(double x, double y, double z,
                                 geometry_msgs::Point pos) {
@@ -78,6 +83,11 @@ int elevationAnglefromCartesian(double x, double y, double z,
   } else {
     return floor(atan((z - pos.z) / den) * 180.0 / M_PI);  //(-90.+90)
   }
+}
+
+int elevationAnglefromCartesian(geometry_msgs::Point pos,
+                                geometry_msgs::Point origin) {
+  return elevationAnglefromCartesian(pos.x, pos.y, pos.z, origin);
 }
 
 int elevationAngletoIndex(int e, int res) {  //[-90,90]
