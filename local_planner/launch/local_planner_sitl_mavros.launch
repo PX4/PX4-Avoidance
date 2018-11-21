@@ -1,18 +1,47 @@
 <launch>
-    <arg name="mavros_transformation" default="0" />
-    <arg name="model" default="iris_depth_camera"/>
-    <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
-
     <param name="use_sim_time" value="true" />
 
-    <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
-          args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
+    <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
+    <arg name="headless" default="false"/>
+    <arg name="gui" default="true"/>
+    <arg name="ns" default="/"/>
+    <arg name="model" default="iris_depth_camera"/>
+    <arg name="build" default="posix_sitl_default"/>
+    <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+    <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
+    <arg name="tgt_system" default="1" />
+    <arg name="tgt_component" default="1" />
 
-    <!-- Mavros and Sitl -->
-    <include file="$(find local_planner)/launch/mavros_sitl.launch" >
-        <arg name="model" value="$(arg model)" />
-        <arg name="world_path" value="$(arg world_path)" />
+    <!-- Launch rqt_reconfigure -->
+    <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
+
+    <!-- Launch PX4 SITL -->
+    <include file="$(find px4)/launch/px4.launch">
     </include>
+
+    <!-- Launch MavROS -->
+    <group ns="$(arg ns)">
+        <include file="$(find mavros)/launch/node.launch">
+            <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+            <!-- Need to change the config file to get the tf topic and get local position in terms of local origin -->
+            <arg name="config_yaml" value="$(find local_planner)/resource/px4_config.yaml" />
+            <arg name="fcu_url" value="$(arg fcu_url)" />
+            <arg name="gcs_url" value="$(arg gcs_url)" />
+            <arg name="tgt_system" value="$(arg tgt_system)" />
+            <arg name="tgt_component" value="$(arg tgt_component)" />
+        </include>
+    </group>
+
+    <!-- Launch Gazebo -->
+    <include file="$(find gazebo_ros)/launch/empty_world.launch">
+        <arg name="headless" value="$(arg headless)"/>
+        <arg name="gui" value="$(arg gui)"/>
+        <arg name="world_name" value="$(arg world_path)" />
+    </include>
+
+    <!-- Spawn vehicle model -->
+    <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
+          args="-sdf -database $(arg model) -model iris">
+    </node>
 
 </launch>
