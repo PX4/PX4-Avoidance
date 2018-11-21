@@ -226,7 +226,7 @@ void StarPlanner::buildLookAheadTree() {
           geometry_msgs::Point node_location =
               fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
           int close_nodes = 0;
-          for (int i = 0; i < tree_.size(); i++) {
+          for (size_t i = 0; i < tree_.size(); i++) {
             double dist =
                 distance3DCartesian(tree_[i].getPosition(), node_location);
             if (dist < 0.2) {
@@ -257,10 +257,10 @@ void StarPlanner::buildLookAheadTree() {
 
     // find best node to continue
     double minimal_cost = HUGE_VAL;
-    for (int i = 0; i < tree_.size(); i++) {
+    for (size_t i = 0; i < tree_.size(); i++) {
       bool closed = false;
-      for (int j = 0; j < closed_set_.size(); j++) {
-        if (closed_set_[j] == i) {
+      for (size_t j = 0; j < closed_set_.size(); j++) {
+        if (closed_set_[j] == (int)i) {
           closed = true;
         }
       }

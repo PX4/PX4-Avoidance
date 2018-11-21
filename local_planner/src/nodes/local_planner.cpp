@@ -113,7 +113,7 @@ void LocalPlanner::runPlanner() {
   initGridCells(&FOV_cells_);
   geometry_msgs::Point p;
   for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
-    for (int i = 0; i < z_FOV_idx_.size(); i++) {
+    for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
       p.x = elevationIndexToAngle(j, ALPHA_RES);
       p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
       p.z = 0;
@@ -283,7 +283,6 @@ void LocalPlanner::determineStrategy() {
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          int e_min_idx = -1;
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
               path_selected_, path_rejected_, path_blocked_, path_waypoints_,
@@ -322,7 +321,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   // turn idxs 180 degress to point to local north instead of south
   std::vector<int> z_FOV_idx_north;
 
-  for (int i = 0; i < z_FOV_idx_.size(); i++) {
+  for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
     int new_idx = z_FOV_idx_[i] + GRID_LENGTH_Z / 2;
 
     if (new_idx >= GRID_LENGTH_Z) {
@@ -435,7 +434,7 @@ void LocalPlanner::evaluateProgressRate() {
 
     double sum_incline = 0;
     int n_incline = 0;
-    for (int i = 0; i < goal_dist_incline_.size(); i++) {
+    for (size_t i = 0; i < goal_dist_incline_.size(); i++) {
       sum_incline += goal_dist_incline_[i];
       n_incline++;
     }

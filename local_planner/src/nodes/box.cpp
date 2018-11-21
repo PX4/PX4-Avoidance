@@ -3,15 +3,15 @@
 Box::Box(const double& radius) : radius_{radius} {}
 
 Box::Box()
-    : xmin_{0.0},
+    : radius_{0.0},
+      zsize_up_{0.0},
+      zsize_down_{0.0},
+      xmin_{0.0},
       xmax_{0.0},
       ymin_{0.0},
       ymax_{0.0},
       zmin_{0.0},
-      zmax_{0.0},
-      radius_{0.0},
-      zsize_up_{0.0},
-      zsize_down_{0.0} {}
+      zmax_{0.0} {}
 
 Box::~Box() {}
 

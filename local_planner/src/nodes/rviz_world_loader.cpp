@@ -52,7 +52,7 @@ int visualizeRVIZWorld(const std::string& world_path,
                        visualization_msgs::MarkerArray& marker_array) {
   std::ifstream fin(world_path);
   YAML::Node doc = YAML::Load(fin);
-  int object_counter = 0;
+  size_t object_counter = 0;
 
   for (YAML::const_iterator it = doc.begin(); it != doc.end(); ++it) {
     const YAML::Node& node = *it;

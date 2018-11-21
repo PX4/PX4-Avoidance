@@ -73,7 +73,7 @@ void filterPointCloud(
   temp_sphere_center.y = 0.0;
   temp_sphere_center.z = 0.0;
 
-  for (int i = 0; i < complete_cloud.size(); ++i) {
+  for (size_t i = 0; i < complete_cloud.size(); ++i) {
     for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
          ++pcl_it) {
       // Check if the point is invalid
@@ -175,7 +175,7 @@ void propagateHistogram(Histogram &polar_histogram_est,
                         std::vector<double> reprojected_points_age,
                         std::vector<double> reprojected_points_dist,
                         geometry_msgs::PoseStamped position) {
-  for (int i = 0; i < reprojected_points.points.size(); i++) {
+  for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     int e_angle = elevationAnglefromCartesian(
         reprojected_points.points[i].x, reprojected_points.points[i].y,
         reprojected_points.points[i].z, position.pose.position);
@@ -558,13 +558,6 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
                                              mean_point.z, position);
       int wp_z = azimuthAnglefromCartesian(mean_point.x, mean_point.y,
                                            mean_point.z, position);
-
-      int goal_z = azimuthAnglefromCartesian(goal.x, goal.y, goal.z, position);
-
-      double tree_progression = 1.0 - (double(wp_idx) - l_frac) / double(size);
-      double angle_difference =
-          std::abs(indexAngleDifference(wp_z, goal_z)) / 180.0;
-      double goal_weight = tree_progression * angle_difference;
 
       p.x = wp_e;
       p.y = wp_z;
