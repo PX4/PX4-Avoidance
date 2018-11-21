@@ -892,7 +892,7 @@ int main(int argc, char** argv) {
   bool landing_active = false;
   avoidanceOutput planner_output;
   bool startup = true;
-  Node.status_msg_.state = 3; //COMPANION_PROCESS_STATE_STARTING
+  Node.status_msg_.state = 1; //COMPANION_PROCESS_STATE_STARTING
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
@@ -929,7 +929,7 @@ int main(int argc, char** argv) {
         mavros_msgs::SetMode mode_msg;
         mode_msg.request.custom_mode = "AUTO.LAND";
         landing_active = true;
-        Node.status_msg_.state = 2; //COMPANION_PROCESS_STATE_ABORT
+        Node.status_msg_.state = 8; //COMPANION_PROCESS_STATE_ABORT
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
             mode_msg.response.mode_sent) {
           ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
@@ -943,7 +943,7 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
-          Node.status_msg_.state = 1; //COMPANION_PROCESS_STATE_TIMEOUT
+          Node.status_msg_.state = 5; //COMPANION_PROCESS_STATE_TIMEOUT
           std::string not_received = ", no cloud received on topic ";
           for (int i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
@@ -992,7 +992,7 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_ && !landing_active) {
       Node.publishWaypoints(hover);
-      if(!hover) Node.status_msg_.state = 0; //COMPANION_PROCESS_STATE_HEALTHY
+      if(!hover) Node.status_msg_.state = 4; //COMPANION_PROCESS_STATE_HEALTHY
     }
 
     Node.position_received_ = false;
@@ -1000,8 +1000,8 @@ int main(int argc, char** argv) {
     //publish system status
     if(now - Node.t_status_sent_ > ros::Duration(1)){
       Node.status_msg_.header.stamp = ros::Time::now();
-      Node.status_msg_.type = 1;  		     //COMPANION_PROCESS_SOURCE_AVOIDANCE
-      Node.status_msg_.pid = getpid();       //Process PID
+      Node.status_msg_.component = 196;  		     //COMPANION_PROCESS_SOURCE_AVOIDANCE
+      //Node.status_msg_.pid = getpid();       //Process PID
       Node.mavros_system_status_pub_.publish(Node.status_msg_);
       Node.t_status_sent_ = now;
     }
