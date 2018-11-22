@@ -10,13 +10,34 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 The active developers of the avoidance repo are syncing up on a bi-weekly basis on the WG dev call.
 
 * Join the call: https://zoom.us/j/506512712
-* Time: Monday, 9PM CET
+* Time: Monday, 5PM CET
 * Meeting ID: 506512712
 * Dronecode calendar: https://www.dronecode.org/calendar/
 
 [![PX4 Avoidance video](http://img.youtube.com/vi/VqZkAWSl_U0/0.jpg)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
 
-# Quick Start with Docker
+# Table of Contents
+- [Getting Started](#getting-started)
+  - [Installation](#installation)
+    - [Quick Start with Docker](#quick-start-with-docker)
+    - [Installation for Ubuntu 16.04 and ROS Kinetic](#installation-for-ubuntu-16.04-and-ros-kinetic)
+  - [Run the Simulation](#run-the-simulation)
+    - [Local Planner](#local-planner)
+    - [Global Planner](#global-planner)
+  - [Run on Hardware](#run-on-hardware)
+    - [Prerequisite](#prerequisite)
+    - [Local Planner](#local-planner)
+    - [Global Planner](#global-planner)
+- [Troubleshooting](#troubleshooting)
+- [Advanced](#advanced)
+  - [Interaction with PX4 Autopilot](#interaction-with-px4-autopilot)
+- [Contributing](#contributing)
+
+# Getting Started
+
+## Installation
+
+### Quick Start with Docker
 
 A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation, as a demo. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up` from the right folder. Find the corresponding instructions [here](docker/demo).
 
@@ -24,9 +45,7 @@ For __deployment__ instructions, check "[Deploying with Docker](docker#deploying
 
 If you want to leverage docker in your __development__ environment, check the "[Developing with Docker](docker#developing-with-docker)" section.
 
-# Prerequisites
-
-## Installation for Ubuntu 16.04 and ROS Kinetic
+### Installation for Ubuntu 16.04 and ROS Kinetic
 
 This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed. A corresponding docker container is defined [here](docker/ubuntu/Dockerfile) as reference.
 
@@ -96,6 +115,8 @@ Note that you can build the node in release mode this way:
 catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
+## Run the Simulation
+
 9. Clone the PX4 Firmware and all its submodules (it may take some time).
 
 ```bash
@@ -135,31 +156,7 @@ export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
 
 You should now be ready to run the simulation.
 
-## Installation for Ubuntu 14.04 and ROS Indigo
-
-A full step-by-step guide is not available for this configuration. You might find the [instructions for Ubuntu 16.04 and ROS Kinetic](#installation-for-ubuntu-1604-and-ros-kinetic) useful, though. Another source of information is also the [PX4 dev guide](http://dev.px4.io).
-
-Notable differences with ROS Kinetic are:
-
-* Installing the pointcloud library requires another package from another repository:
-
-```bash
-# Install PCL
-sudo add-apt-repository ppa:v-launchpad-jochen-sprickerhof-de/pcl
-sudo apt-get update
-sudo apt-get install libpcl-all
-```
-
-* Octomap has different packages for Indigo:
-
-```bash
-# Install the Octomap Library
-sudo apt-get install ros-indigo-octomap ros-indigo-octomap-mapping
-```
-
-# Running the Planner in Simulation
-
-## Simulating a depth camera
+### Global Planner
 
 1. Make sure that you have sources the catkin setup.bash from your catkin workspace.
 
@@ -226,7 +223,7 @@ rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_ms
 
 Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
 
-## Running the Local Planner
+### Local Planner
 
 The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm simulating stereo vision
 
@@ -242,7 +239,7 @@ Another option is to simulate a kinect depth sensor:
 roslaunch local_planner local_planner_depth-camera.lauch
 ```
 
-You will see the Iris drone unarmed in the Gazebo world. To start flying, put the drone in OFFBOARD mode and arm it. The avoidance node will then take control of it.
+You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOAD, run:
 
 ```bash
 # In another terminal
@@ -255,18 +252,10 @@ The drone will first change its altitude to reach the goal height. It is possibl
 Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then chosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-### How to recover the logs
+For MISSIONS, open [QGroundControl]() and plan a mission as described [here](). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
-It is possible to log the point cloud, the polar histogram, the waypoints and the drone position when simulating the local planner. In order to (dis)enable logging, you need to set the following arguments to `false`/`true` in the `local_planner_depth-camera.launch` launch file:
-```bash
-<arg name="record_point_cloud" default="true" />
-<arg name="record_histogram"   default="true" />
-<arg name="record_waypoints"   default="true" />
-<arg name="record_position"    default="true" />
-```
-You can retrieve the logs in the `~/.ros/` folder of you computer.
 
-## Troubleshooting
+# Troubleshooting
 
 ### I see the drone position in rviz (shown as a red arrow), but the world around is empty
 Check that some camera topics (including */camera/depth/points*) are published with the following command:
