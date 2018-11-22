@@ -117,9 +117,15 @@ Note that you can build the node in release mode this way:
 catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
+9. Source the catkin setup.bash from your catkin workspace.
+
+```bash
+source ~/catkin_ws/devel/setup.bash
+```
+
 ## Run the Simulation
 
-9. Clone the PX4 Firmware and all its submodules (it may take some time).
+1. Clone the PX4 Firmware and all its submodules (it may take some time).
 
 ```bash
 cd ~
@@ -128,13 +134,13 @@ cd ~/Firmware
 git submodule update --init --recursive
 ```
 
-10. Install Firmware dependencies.
+2. Install Firmware dependencies.
 
 ```bash
 apt install libopencv-dev python-jinja2 protobuf-compiler
 ```
 
-11. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
+3. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
 ```bash
 # Add the models from the avoidance module to GAZEBO_MODEL_PATH
@@ -150,7 +156,7 @@ export QT_X11_NO_MITSHM=1
 make posix_sitl_default gazebo
 ```
 
-12. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start the PX4.
+4. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start the PX4.
 
 ```bash
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
@@ -160,13 +166,7 @@ You should now be ready to run the simulation.
 
 ### Global Planner
 
-1. Make sure that you have sources the catkin setup.bash from your catkin workspace.
-
-```bash
-source ~/catkin_ws/devel/setup.bash
-```
-
-2. Run the simulation.
+To run the simulation.
 
 ```bash
 roslaunch global_planner global_planner_sitl_mavros.launch
@@ -227,7 +227,9 @@ Now the disparity map can be visualized by rviz or rqt under the topic */stereo/
 
 ### Local Planner
 
-The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm simulating stereo vision
+The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it possible to
+
+* simulate a forward looking stereo camera running OpenCV's block matching algorithm
 
 ```bash
 # if stereo-image-proc not yet installed
@@ -235,10 +237,16 @@ sudo apt-get install ros-kinetic-stereo-image-proc
 
 roslaunch local_planner local_planner_stereo.launch
 ```
-Another option is to simulate a kinect depth sensor:
+* simulate a forward looking kinect depth sensor:
 
 ```bash
 roslaunch local_planner local_planner_depth-camera.lauch
+```
+
+* simulate a three kinect depth sensors:
+
+```bash
+roslaunch local_planner local_planner_sitl_3cam.lauch
 ```
 
 You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOAD, run:
@@ -255,6 +263,62 @@ Then the drone will start moving towards the goal. The default x, y goal positio
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
 For MISSIONS, open [QGroundControl]() and plan a mission as described [here](). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+
+# Run on Hardware
+
+## Prerequisite
+
+### Camera
+
+### PX4 Autopilot
+
+### Companion Computer
+
+## Global Planner
+
+The global planner uses the octomap_servers to get probabilistic information about the evironment.
+The octomap_server needs a stream of point-clouds to generate the accumulated data.
+
+## Generating Point-clouds from Depth-maps
+
+In case the point-cloud stream already exists, this step can be skipped.
+
+Assuming there already exists a stream of depth-maps on the ROS-topic <depthmap_topic>, we need to generate a corresponding stream of depth-maps.
+Start by following the instructions from [PX4/disparity_to_point_cloud](https://github.com/PX4/disparity_to_point_cloud).
+Now run the point-cloud generation with the parameters for the camera intrinsics:
+
+```bash
+rosrun disparity_to_point_cloud disparity_to_point_cloud_node \
+    fx_:=fx fy_:=fy cx_:=cx cy_:=cy base_line_:=base_line disparity:=<depthmap_topic>
+```
+
+A stream of point-clouds should now be published to */point_cloud*.
+
+### Running the planner
+
+The planner can be built with:
+
+```bash
+catkin build
+```
+
+Note that you can build it in release mode by adding `--cmake-args -DCMAKE_BUILD_TYPE=Release` as an argument to catkin:
+
+```bash
+catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
+```
+
+And then just run with the corresponding launch file:
+
+```bash
+roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
+```
+
+### Running on Odroid
+
+Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
+
+## Local Planner
 
 
 # Troubleshooting
@@ -297,50 +361,6 @@ Some tuning may be required in the file *"<Firmware_dir>/posix-configs/SITL/init
 
 ### I see the drone and world in rviz, I am in OFFBOARD mode, but the planner is still not working
 Some parameters that can be tuned in *rqt reconfigure*.
-
-# Running the Planner on Hardware
-
-The global planner uses the octomap_servers to get probabilistic information about the evironment.
-The octomap_server needs a stream of point-clouds to generate the accumulated data.
-
-## Generating Point-clouds from Depth-maps
-
-In case the point-cloud stream already exists, this step can be skipped.
-
-Assuming there already exists a stream of depth-maps on the ROS-topic <depthmap_topic>, we need to generate a corresponding stream of depth-maps.
-Start by following the instructions from [PX4/disparity_to_point_cloud](https://github.com/PX4/disparity_to_point_cloud).
-Now run the point-cloud generation with the parameters for the camera intrinsics:
-
-```bash
-rosrun disparity_to_point_cloud disparity_to_point_cloud_node \
-    fx_:=fx fy_:=fy cx_:=cx cy_:=cy base_line_:=base_line disparity:=<depthmap_topic>
-```
-
-A stream of point-clouds should now be published to */point_cloud*.
-
-## Running the planner
-
-The planner can be built with:
-
-```bash
-catkin build
-```
-
-Note that you can build it in release mode by adding `--cmake-args -DCMAKE_BUILD_TYPE=Release` as an argument to catkin:
-
-```bash
-catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
-```
-
-And then just run with the corresponding launch file:
-
-```bash
-roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
-```
-
-# Running on Odroid
-
-Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
 
 # Advanced
 
