@@ -1,5 +1,13 @@
 #include "common.h"
 
+#include <math.h>
+#include <fstream>
+#include <iostream>
+#include <limits>
+#include <vector>
+
+#include <tf/transform_listener.h>
+
 float distance2DPolar(int e1, int z1, int e2, int z2) {
   return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
 }
