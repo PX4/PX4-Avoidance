@@ -30,7 +30,9 @@ The active developers of the avoidance repo are syncing up on a bi-weekly basis 
     - [Global Planner](#global-planner)
 - [Troubleshooting](#troubleshooting)
 - [Advanced](#advanced)
-  - [Interaction with PX4 Autopilot](#interaction-with-px4-autopilot)
+  - [Message Flows](#message-flow)
+    - [PX4 and local planner](#px4-and-local-planner)
+    - [PX4 and global planner](#px4-and-gloabl-planner)
 - [Contributing](#contributing)
 
 # Getting Started
@@ -340,10 +342,11 @@ roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<poin
 
 Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
 
+# Advanced
 
-# Message Flows
+## Message Flows
 
-## PX4 and local planner
+### PX4 and local planner
 
 This is the complete message flow *from* PX4 Firmware to the local planner.
 
@@ -367,7 +370,7 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 /mavros/obstacle/send | sensor_msgs::LaserScan | obstacle_distance | OBSTACLE_DISTANCE | obstacle_distance
 /mavros/set_mode | mavros_msgs::SetMode | sys_status | SET_MODE | vehicle_command
 
-## PX4 and global planner
+### PX4 and global planner
 
 This is the complete message flow *from* PX4 Firmware *to* the global planner.
 
@@ -381,3 +384,5 @@ This is the complete message flow *to* PX4 Firmware *from* the global planner.
 ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic 
 --- | --- | --- | --- | ---
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
+
+# Contributing
