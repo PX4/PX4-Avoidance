@@ -4,20 +4,21 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
   return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
 }
 
-float computeL2Dist(geometry_msgs::Point position,
-                    pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it) {
+float computeL2Dist(const geometry_msgs::Point& position,
+                    const pcl::PointCloud<pcl::PointXYZ>::iterator& pcl_it) {
   return sqrt(pow(position.x - pcl_it->x, 2) + pow(position.y - pcl_it->y, 2) +
               pow(position.z - pcl_it->z, 2));
 }
 
-float distance3DCartesian(geometry_msgs::Point a, geometry_msgs::Point b) {
+float distance3DCartesian(const geometry_msgs::Point& a,
+                          const geometry_msgs::Point& b) {
   return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
               (a.z - b.z) * (a.z - b.z));
 }
 
 // transform polar coordinates into Cartesian coordinates
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
-                                          geometry_msgs::Point pos) {
+                                          const geometry_msgs::Point& pos) {
   geometry_msgs::Point p;
   p.x =
       pos.x + radius * cos(e * (M_PI / 180)) * sin(z * (M_PI / 180));  // round
@@ -33,8 +34,8 @@ double indexAngleDifference(int a, int b) {
 }
 
 // transform a 2D polar histogram direction in a 3D Catesian coordinate point
-geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z,
-                                                   geometry_msgs::Point pos) {
+geometry_msgs::Vector3Stamped getWaypointFromAngle(
+    int e, int z, const geometry_msgs::Point& pos) {
   geometry_msgs::Point p = fromPolarToCartesian(e, z, 1.0, pos);
 
   geometry_msgs::Vector3Stamped waypoint;
@@ -48,9 +49,9 @@ geometry_msgs::Vector3Stamped getWaypointFromAngle(int e, int z,
 }
 
 // check if two points have the same altitude and yaw
-bool hasSameYawAndAltitude(geometry_msgs::PoseStamped old_wp,
-                           geometry_msgs::Vector3Stamped new_wp, double new_yaw,
-                           double old_yaw) {
+bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
+                           const geometry_msgs::Vector3Stamped& new_wp,
+                           double new_yaw, double old_yaw) {
   return abs(new_yaw) >= abs(0.9 * old_yaw) &&
          abs(new_yaw) <= abs(1.1 * old_yaw) &&
          abs(new_wp.vector.z) >= abs(0.9 * old_wp.pose.position.z) &&
@@ -65,18 +66,18 @@ double azimuthIndexToAngle(int z, double res) {
   return z * res + res / 2 - 180;
 }
 
-int azimuthAnglefromCartesian(geometry_msgs::Point position,
-                              geometry_msgs::Point origin) {
+int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
+                              const geometry_msgs::Point& origin) {
   return azimuthAnglefromCartesian(position.x, position.y, origin);
 }
 
-int azimuthAnglefromCartesian(double x, double y, geometry_msgs::Point pos) {
+int azimuthAnglefromCartesian(double x, double y,
+                              const geometry_msgs::Point& pos) {
   return floor(atan2(x - pos.x, y - pos.y) * 180.0 / M_PI);  //(-180. +180]
 }
 
-
 int elevationAnglefromCartesian(double x, double y, double z,
-                                geometry_msgs::Point pos) {
+                                const geometry_msgs::Point& pos) {
   double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
   if (den == 0) {
     return 0;
@@ -85,8 +86,8 @@ int elevationAnglefromCartesian(double x, double y, double z,
   }
 }
 
-int elevationAnglefromCartesian(geometry_msgs::Point pos,
-                                geometry_msgs::Point origin) {
+int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
+                                const geometry_msgs::Point& origin) {
   return elevationAnglefromCartesian(pos.x, pos.y, pos.z, origin);
 }
 
@@ -109,14 +110,15 @@ int azimuthAngletoIndex(int z, int res) {  //[-180,180]
 }
 
 // calculate the yaw for the next waypoint
-double nextYaw(geometry_msgs::PoseStamped u, geometry_msgs::Point v) {
+double nextYaw(const geometry_msgs::PoseStamped& u,
+               const geometry_msgs::Point& v) {
   double dx = v.x - u.pose.position.x;
   double dy = v.y - u.pose.position.y;
 
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
+geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          double yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
@@ -128,7 +130,7 @@ geometry_msgs::PoseStamped createPoseMsg(geometry_msgs::Point waypt,
   return pose_msg;
 }
 
-void normalize(geometry_msgs::Point &p) {
+void normalize(geometry_msgs::Point& p) {
   double length = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
   if (length != 0) {
     p.x = p.x / length;
@@ -161,7 +163,7 @@ double velocityLinear(double max_vel, double min_vel, double slope,
   return speed;
 }
 
-void wrapAngleToPlusMinusPI(double &angle) {
+void wrapAngleToPlusMinusPI(double& angle) {
   while (angle > M_PI) {
     angle -= 2 * M_PI;
   }
