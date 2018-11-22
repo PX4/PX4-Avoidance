@@ -350,3 +350,45 @@ roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<poin
 # Running on Odroid
 
 Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
+
+
+# Message Flows
+
+## PX4 and local planner
+
+This is the complete message flow *from* PX4 Firmware to the local planner.
+
+PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic 
+--- | --- | --- | --- | ---
+vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
+vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
+vehicle_local_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude 
+home_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
+vehicle_air_data | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
+vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
+vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
+
+This is the complete message flow *to* PX4 Firmware from the local planner.
+
+ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic 
+--- | --- | --- | --- | ---
+/mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
+/mavros/setpoint_velocity/cmd_vel_unstamped (offboard) | geometry_msgs::TwistStamped | setpoint_velocity | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
+/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
+/mavros/obstacle/send | sensor_msgs::LaserScan | obstacle_distance | OBSTACLE_DISTANCE | obstacle_distance
+/mavros/set_mode | mavros_msgs::SetMode | sys_status | SET_MODE | vehicle_command
+
+## PX4 and global planner
+
+This is the complete message flow *from* PX4 Firmware *to* the global planner.
+
+PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | Topic 
+--- | --- | --- | --- | ---
+vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
+vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
+
+This is the complete message flow *to* PX4 Firmware *from* the global planner.
+
+ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic 
+--- | --- | --- | --- | ---
+/mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
