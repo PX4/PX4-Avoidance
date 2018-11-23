@@ -208,7 +208,7 @@ The graph of the ROS nodes is shown below:
 One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
 
-## Simulating stereo-vision
+#### Simulating stereo-vision
 To simulate obstacle avoidance with stereo-cameras, the package `stereo-image-proc` must be installed.
 
 ```bash
@@ -287,6 +287,10 @@ Orther tested camera models are: Intel Realsense D415 and R200.
 
 ### PX4 Autopilot
 
+Parameters to set trough QGC:
+* MPC_OBS_AVOID to 1
+* SYS_COMPANION to 57600 or
+
 ### Companion Computer
 
 * OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system). 
@@ -302,7 +306,7 @@ Tested models for the local planner Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (
 The global planner uses the octomap_servers to get probabilistic information about the evironment.
 The octomap_server needs a stream of point-clouds to generate the accumulated data.
 
-## Generating Point-clouds from Depth-maps
+### Generating Point-clouds from Depth-maps
 
 In case the point-cloud stream already exists, this step can be skipped.
 
@@ -342,6 +346,27 @@ roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<poin
 Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
 
 ## Local Planner
+
+To run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
+
+1. `tf_*` representing the dispacement between the camera and the flight controller
+2. `fcu_url` representing the port connecting the companion computer to the flight controller
+3. `serial_no_camera_front` representing the Realsense serial number
+
+The planner is running correctly when
+
+```bash
+[OA] Planning started, using 1 cameras
+```
+
+is displayed on the console.
+
+The local planner supports also multi camera setups. `local_planner_example.launch` needs to be modified by:
+
+1. launching one RealSense nodlet (`rs_depthcloud.launch`) for each camera making sure that each of them has a unique `namespace`
+2. launch one static_transform_publsher node for each camera
+
+An example of a three camera launch file is [local_planner_A700_3cam.launch](https://github.com/PX4/avoidance/blob/master/local_planner/launch/local_planner_A700_3cam.launch).
 
 
 # Troubleshooting
