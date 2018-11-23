@@ -43,7 +43,7 @@ LocalPlannerNode::LocalPlannerNode() {
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
   local_pointcloud_pub_ =
-      nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+      nh_.advertise<pcl::PointCloud<pcl::PointXYZI>>("/local_pointcloud", 1);
   reprojected_points_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ =
@@ -867,7 +867,30 @@ void LocalPlannerNode::transformVelocityToTrajectory(
 void LocalPlannerNode::publishPlannerData() {
   pcl::PointCloud<pcl::PointXYZ> final_cloud, reprojected_points;
   local_planner_.getCloudsForVisualization(final_cloud, reprojected_points);
-  local_pointcloud_pub_.publish(final_cloud);
+
+  pcl::PointCloud<pcl::PointXYZI> colored_cloud;
+  pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
+  double distance,intensity;
+  double max_dist_rs = 15;
+  double min_dist_rs = 0;
+
+  for (pcl_it = final_cloud.begin(); pcl_it != final_cloud.end(); ++pcl_it) {
+      // Check if the point is invalid
+      if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
+          distance = sqrt(pow(newest_pose_.pose.position.x - pcl_it->x, 2) + pow(newest_pose_.pose.position.y - pcl_it->y, 2) +
+                     pow(newest_pose_.pose.position.z - pcl_it->z, 2));
+          intensity = std::max(255.0/(max_dist_rs - min_dist_rs) * std::min(max_dist_rs , distance - min_dist_rs), 0.0);
+          pcl::PointXYZI p;
+          p.intensity = intensity;
+          p.x = pcl_it->x;
+          p.y = pcl_it->y;
+          p.z = pcl_it->z;
+          colored_cloud.points.push_back(p);
+        }
+  }
+  colored_cloud.header = final_cloud.header;
+  local_pointcloud_pub_.publish(colored_cloud);
+
   reprojected_points_pub_.publish(reprojected_points);
 
   publishTree();
