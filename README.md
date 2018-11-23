@@ -90,20 +90,27 @@ mkdir -p ~/catkin_ws/src
 apt install ros-kinetic-mavros ros-kinetic-mavros-extras
 ```
 
-6. Install avoidance module dependencies (pointcloud library and octomap).
+6. Install the geographiclib dataset
 
 ```bash
-apt install libpcl1 ros-kinetic-octomap-*
+wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+sudo ./install_geographiclib_datasets.sh
 ```
 
-7. Clone this repository in your catkin workspace in order to build the avoidance node.
+7. Install avoidance module dependencies (pointcloud library and octomap).
+
+```bash
+apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
+```
+
+8. Clone this repository in your catkin workspace in order to build the avoidance node.
 
 ```bash
 cd ~/catkin_ws/src
 git clone https://github.com/PX4/avoidance.git
 ```
 
-8. Actually build the avoidance node.
+9. Actually build the avoidance node.
 
 ```bash
 catkin build -w ~/catkin_ws
@@ -117,7 +124,7 @@ Note that you can build the node in release mode this way:
 catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
 ```
 
-9. Source the catkin setup.bash from your catkin workspace.
+10. Source the catkin setup.bash from your catkin workspace.
 
 ```bash
 source ~/catkin_ws/devel/setup.bash
@@ -262,7 +269,7 @@ The drone will first change its altitude to reach the goal height. It is possibl
 Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then chosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-For MISSIONS, open [QGroundControl]() and plan a mission as described [here](). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
 # Run on Hardware
 
@@ -381,6 +388,8 @@ Some parameters that can be tuned in *rqt reconfigure*.
 # Advanced
 
 ## Message Flows
+
+More information about the communication between avoidance system and the Autopilot can be found in the [PX4 User Guide](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
 
 ### PX4 and local planner
 
