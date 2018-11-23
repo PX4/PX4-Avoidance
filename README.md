@@ -270,9 +270,25 @@ For MISSIONS, open [QGroundControl]() and plan a mission as described [here](). 
 
 ### Camera
 
+Both planners require a 3D point cloud of type `sensor_msgs::PointCloud2`. Any camera that can provide such data is compatible.
+
+The officially supported camera is Intel Realsense D435. We recommend using Firmware version 5.9.13.0. The instructions on how to update the Firmware of the camera can be found [here](https://www.intel.com/content/www/us/en/support/articles/000028171/emerging-technologies/intel-realsense-technology.html)
+
+Pro Tip: Be careful when attaching the camera with a USB3 cable. USB3 might might interfere with GPS and other signals. If possible, always use USB2 cables.
+
+Orther tested camera models are: Intel Realsense D415 and R200.
+
 ### PX4 Autopilot
 
 ### Companion Computer
+
+* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system). 
+* ROS Kinetic: see [Installation](installaton)
+* Other Required Components for Intel Realsense:
+  - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
+  - [Librealsense ROS wrappers)](https://github.com/intel-ros/realsense.git)
+
+Tested models for the local planner Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone), for the global planner Odroid.
 
 ## Global Planner
 
