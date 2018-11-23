@@ -13,11 +13,11 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(const double& min_cloud_size,
-                            const double& min_dist_backoff,
+void StarPlanner::setParams(double min_cloud_size,
+                            double min_dist_backoff,
                             const nav_msgs::GridCells& path_waypoints,
-                            const double& curr_yaw,
-                            const double& min_realsense_dist) {
+                            double curr_yaw,
+                            double min_realsense_dist) {
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
@@ -25,7 +25,7 @@ void StarPlanner::setParams(const double& min_cloud_size,
   min_realsense_dist_ = min_realsense_dist;
 }
 
-void StarPlanner::setFOV(double& h_FOV, double& v_FOV) {
+void StarPlanner::setFOV(double h_FOV, double v_FOV) {
   h_FOV_ = h_FOV;
   v_FOV_ = v_FOV;
 }
@@ -50,10 +50,10 @@ void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
   tree_age_ = 1000;
 }
 
-void StarPlanner::setCostParams(const double& goal_cost_param,
-                                const double& smooth_cost_param,
-                                const double& height_change_cost_param_adapted,
-                                const double& height_change_cost_param) {
+void StarPlanner::setCostParams(double goal_cost_param,
+                                double smooth_cost_param,
+                                double height_change_cost_param_adapted,
+                                double height_change_cost_param) {
   goal_cost_param_ = goal_cost_param;
   smooth_cost_param_ = smooth_cost_param;
   height_change_cost_param_adapted_ = height_change_cost_param_adapted;
