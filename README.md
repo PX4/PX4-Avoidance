@@ -285,28 +285,7 @@ Pro Tip: Be careful when attaching the camera with a USB3 cable. USB3 might migh
 
 Orther tested camera models are: Intel Realsense D415 and R200.
 
-### PX4 Autopilot
-
-Parameters to set trough QGC:
-* MPC_OBS_AVOID to 1
-* SYS_COMPANION to 57600 or
-
-### Companion Computer
-
-* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system). 
-* ROS Kinetic: see [Installation](installaton)
-* Other Required Components for Intel Realsense:
-  - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
-  - [Librealsense ROS wrappers)](https://github.com/intel-ros/realsense.git)
-
-Tested models for the local planner Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone), for the global planner Odroid.
-
-## Global Planner
-
-The global planner uses the octomap_servers to get probabilistic information about the evironment.
-The octomap_server needs a stream of point-clouds to generate the accumulated data.
-
-### Generating Point-clouds from Depth-maps
+#### Generating Point-clouds from Depth-maps
 
 In case the point-cloud stream already exists, this step can be skipped.
 
@@ -321,33 +300,31 @@ rosrun disparity_to_point_cloud disparity_to_point_cloud_node \
 
 A stream of point-clouds should now be published to */point_cloud*.
 
-### Running the planner
+### PX4 Autopilot
 
-The planner can be built with:
+Parameters to set trough QGC:
+* MPC_OBS_AVOID to 1
+* SYS_COMPANION to 57600 or
 
-```bash
-catkin build
-```
+### Companion Computer
 
-Note that you can build it in release mode by adding `--cmake-args -DCMAKE_BUILD_TYPE=Release` as an argument to catkin:
+* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system). 
+* ROS Kinetic: see [Installation](#installaton)
+* Other Required Components for Intel Realsense:
+  - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
+  - [Librealsense ROS wrappers)](https://github.com/intel-ros/realsense.git)
 
-```bash
-catkin build --cmake-args -DCMAKE_BUILD_TYPE=Release
-```
+Tested models for the local planner Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone), for the global planner Odroid.
 
-And then just run with the corresponding launch file:
+## Global Planner
 
-```bash
-roslaunch global_planner global_planner_offboard.launch point_cloud_topic:=<point_cloud_topic>
-```
+The global planner has been so far tested on a Odroid by the development team. 
 
-### Running on Odroid
-
-Read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
+For more information, read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
 
 ## Local Planner
 
-To run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
+Once the catkin workspace has been buit, to run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
 
 1. `tf_*` representing the dispacement between the camera and the flight controller
 2. `fcu_url` representing the port connecting the companion computer to the flight controller
@@ -456,3 +433,4 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
 
 # Contributing
+
