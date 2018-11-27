@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include <cmath>
+
 #include "../src/nodes/local_planner.h"
 
 // Stateless tests:
@@ -12,21 +14,33 @@ class LocalPlannerTests : public ::testing::Test {
 
   void SetUp() override {
     ros::Time::init();
+
+    avoidance::LocalPlannerNodeConfig config =
+        avoidance::LocalPlannerNodeConfig::__getDefault__();
+    config.send_obstacles_fcu_ = true;
+    planner.dynamicReconfigureSetParams(config, 1);
+
+    // start with basic pose
     geometry_msgs::PoseStamped msg;
     msg.header.seq = 42;
     msg.header.stamp = ros::Time(500, 0);
     msg.header.frame_id = 1;
-
-    // start with basic pose
     msg.pose.position.x = 0;
     msg.pose.position.y = 0;
     msg.pose.position.z = 0;
     msg.pose.orientation.w = 1;
+    planner.currently_armed_ = false;
+    planner.setPose(msg);
+
+    // rise to altitude
+    planner.currently_armed_ = true;
+    msg.pose.position.z = 30;
+    planner.setPose(msg);
 
     // goal straight in front, 100m away
     planner.goal_x_param_ = 100;
     planner.goal_y_param_ = 0;
-    planner.goal_z_param_ = 0;
+    planner.goal_z_param_ = 30;
     planner.setGoal();
 
     planner.complete_cloud_.clear();
@@ -40,19 +54,29 @@ TEST_F(LocalPlannerTests, no_obstacles) {
 
   // WHEN: we run the local planner
   planner.runPlanner();
+  planner.runPlanner();
 
-  // THEN: it shouldn't modify the path
+  // THEN: it shouldn't find any obstacles
   avoidanceOutput avoidance;
   planner.getAvoidanceOutput(avoidance);
   EXPECT_FALSE(avoidance.obstacle_ahead);
+
+  // AND: the scan shouldn't have any data
+  sensor_msgs::LaserScan scan;
+  planner.sendObstacleDistanceDataToFcu(scan);
+
+  for (size_t i = 0; i < scan.ranges.size(); i++) {
+    EXPECT_GT(scan.ranges[i], scan.range_max);
+  }
 }
 
 TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  for (float y = -3; y < 3; y += 0.1) {
-    for (float z = -2; z < 2; z += 0.1) {
-      cloud.push_back(pcl::PointXYZ(1, y, z));
+  float max_y = std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f), min_y = -max_y;
+  for (float y = min_y; y <= max_y; y += 0.01) {
+    for (float z = -1; z <= 1; z += 0.1) {
+      cloud.push_back(pcl::PointXYZ(1, y, z + 30));
     }
   }
 
@@ -61,9 +85,27 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // WHEN: we run the local planner
   planner.runPlanner();
 
+  // THEN: it should get a scan showing the obstacle
+  sensor_msgs::LaserScan scan;
+  planner.sendObstacleDistanceDataToFcu(scan);
+
+  for (size_t i = 0; i < scan.ranges.size(); i++) {
+    if (10 <= i && i <= 18)
+    // width determined empirically, TODO investigate why it isn't symmetrical
+    {
+      EXPECT_LT(scan.ranges[i], 2.f);
+    } else {
+      EXPECT_GT(scan.ranges[i], scan.range_max);
+    }
+  }
+
+  // WHEN: we run the local planner again
+  planner.runPlanner();
+
   // THEN: it should stop the drone
   avoidanceOutput avoidance;
   planner.getAvoidanceOutput(avoidance);
+
   EXPECT_TRUE(avoidance.obstacle_ahead);
 }
 
