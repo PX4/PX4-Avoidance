@@ -13,9 +13,9 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
 }
 
 float computeL2Dist(const geometry_msgs::Point& position,
-                    const pcl::PointCloud<pcl::PointXYZ>::iterator& pcl_it) {
-  return sqrt(pow(position.x - pcl_it->x, 2) + pow(position.y - pcl_it->y, 2) +
-              pow(position.z - pcl_it->z, 2));
+                    const pcl::PointXYZ& xyz) {
+  return sqrt(pow(position.x - xyz.x, 2) + pow(position.y - xyz.y, 2) +
+              pow(position.z - xyz.z, 2));
 }
 
 float distance3DCartesian(const geometry_msgs::Point& a,

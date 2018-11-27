@@ -72,14 +72,17 @@ TEST_F(LocalPlannerTests, no_obstacles) {
 
 TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
+  float shift = 0.f;
+  float distance = 2.f;
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
+
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  float max_y = std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f), min_y = -max_y;
   for (float y = min_y; y <= max_y; y += 0.01) {
     for (float z = -1; z <= 1; z += 0.1) {
-      cloud.push_back(pcl::PointXYZ(1, y, z + 30));
+      cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
     }
   }
-
   planner.complete_cloud_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
@@ -90,13 +93,11 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   planner.sendObstacleDistanceDataToFcu(scan);
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (10 <= i && i <= 18)
     // width determined empirically, TODO investigate why it isn't symmetrical
-    {
-      EXPECT_LT(scan.ranges[i], 2.f);
-    } else {
+    if (10 <= i && i <= 18)
+      EXPECT_LT(scan.ranges[i], distance * 1.5f);
+    else
       EXPECT_GT(scan.ranges[i], scan.range_max);
-    }
   }
 
   // WHEN: we run the local planner again
@@ -107,37 +108,109 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   planner.getAvoidanceOutput(avoidance);
 
   EXPECT_TRUE(avoidance.obstacle_ahead);
+  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  float node_max_y = 0.f;
+  for (auto it = avoidance.path_node_positions.rbegin();
+       it != avoidance.path_node_positions.rend(); ++it) {
+    auto node = *it;
+    if (node.x > distance) break;
+    if (node.y > node_max_y) node_max_y = node.y;
+  }
+  EXPECT_GT(node_max_y, max_y)
+      << "this might fail if the algorithm decides to go left instead";
 }
 
-/*
 TEST_F(LocalPlannerTests, obstacles_left) {
   // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
+  float shift = -0.5f;
+  float distance = 2.f;
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
+
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  for (float y = min_y; y <= max_y; y += 0.01) {
+    for (float z = -1; z <= 1; z += 0.1) {
+      cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
+    }
+  }
+  planner.complete_cloud_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
+  planner.runPlanner();
+
+  // THEN: it should get a scan showing the obstacle
+  sensor_msgs::LaserScan scan;
+  planner.sendObstacleDistanceDataToFcu(scan);
+  for (size_t i = 0; i < scan.ranges.size(); i++) {
+    // width determined empirically, TODO investigate why it doesnt match angles
+    if (12 <= i && i <= 18)
+      EXPECT_LT(scan.ranges[i], distance * 1.5f);
+    else
+      EXPECT_GT(scan.ranges[i], scan.range_max);
+  }
+
+  // WHEN: we run the local planner again
+  planner.runPlanner();
 
   // THEN: it should modify the path to the right
+  avoidanceOutput avoidance;
+  planner.getAvoidanceOutput(avoidance);
+
+  EXPECT_TRUE(avoidance.obstacle_ahead);
+  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  float node_max_y = 0.f;
+  for (auto it = avoidance.path_node_positions.rbegin();
+       it != avoidance.path_node_positions.rend(); ++it) {
+    auto node = *it;
+    if (node.x > distance) break;
+    if (node.y > node_max_y) node_max_y = node.y;
+  }
+  EXPECT_GT(node_max_y, max_y);
 }
 
 TEST_F(LocalPlannerTests, obstacles_right) {
   // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
+  float shift = 0.5f;
+  float distance = 2.f;
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
+
+  pcl::PointCloud<pcl::PointXYZ> cloud;
+  for (float y = min_y; y <= max_y; y += 0.01) {
+    for (float z = -1; z <= 1; z += 0.1) {
+      cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
+    }
+  }
+  planner.complete_cloud_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
+  planner.runPlanner();
+
+  // THEN: it should get a scan showing the obstacle
+  sensor_msgs::LaserScan scan;
+  planner.sendObstacleDistanceDataToFcu(scan);
+  for (size_t i = 0; i < scan.ranges.size(); i++) {
+    // width determined empirically, TODO investigate why it doesnt match angles
+    if (9 <= i && i <= 17)
+      EXPECT_LT(scan.ranges[i], distance * 1.5f);
+    else
+      EXPECT_GT(scan.ranges[i], scan.range_max);
+  }
+
+  // WHEN: we run the local planner again
+  planner.runPlanner();
 
   // THEN: it should modify the path to the left
+  avoidanceOutput avoidance;
+  planner.getAvoidanceOutput(avoidance);
+  EXPECT_TRUE(avoidance.obstacle_ahead);
+  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  float node_min_y = 0.f;
+  for (auto it = avoidance.path_node_positions.rbegin();
+       it != avoidance.path_node_positions.rend(); ++it) {
+    auto node = *it;
+    if (node.x > distance) break;
+    if (node.y < node_min_y) node_min_y = node.y;
+  }
+  EXPECT_LT(node_min_y, min_y);
 }
-
-TEST_F(LocalPlannerTests, obstacles_middle) {
-  // GIVEN: a local planner, a scan with obstacles in the middle, pose and goal
-
-  // WHEN: we run the local planner
-
-  // THEN: it should modify the path to the right or left or stop, but not
-  // straight
-}*/
-
-// Stateful tests (local planning with history) - should these be done as a full
-// simulation?
-// Set up a more complex 3D environment
-// Put the camera in a location
-// Set a goal
-// Check that with incremental movements it doesn't get stuck in local minima

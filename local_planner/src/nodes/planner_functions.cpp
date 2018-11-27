@@ -58,11 +58,10 @@ void filterPointCloud(
     geometry_msgs::Point &closest_point,
     geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
     int &counter_backoff, int &counter_sphere,
-    std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     double min_cloud_size, double min_dist_backoff, double sphere_radius,
-    Box histogram_box, geometry_msgs::Point position,
+    Box histogram_box, const geometry_msgs::Point& position,
     double min_realsense_dist) {
-  pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
   distance_to_closest_point = HUGE_VAL;
@@ -74,31 +73,30 @@ void filterPointCloud(
   temp_sphere_center.z = 0.0;
 
   for (size_t i = 0; i < complete_cloud.size(); ++i) {
-    for (pcl_it = complete_cloud[i].begin(); pcl_it != complete_cloud[i].end();
-         ++pcl_it) {
+    for (const pcl::PointXYZ& xyz : complete_cloud[i]) {
       // Check if the point is invalid
-      if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
-          !std::isnan(pcl_it->z)) {
-        if (histogram_box.isPointWithinBox(pcl_it->x, pcl_it->y, pcl_it->z)) {
-          distance = computeL2Dist(position, pcl_it);
+      if (!std::isnan(xyz.x) && !std::isnan(xyz.y) &&
+          !std::isnan(xyz.z)) {
+        if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
+          distance = computeL2Dist(position, xyz);
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
             cropped_cloud.points.push_back(
-                pcl::PointXYZ(pcl_it->x, pcl_it->y, pcl_it->z));
+                pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
             if (distance < distance_to_closest_point) {
               distance_to_closest_point = distance;
-              closest_point.x = pcl_it->x;
-              closest_point.y = pcl_it->y;
-              closest_point.z = pcl_it->z;
+              closest_point.x = xyz.x;
+              closest_point.y = xyz.y;
+              closest_point.z = xyz.z;
             }
             if (distance < min_dist_backoff) {
               counter_backoff++;
             }
             if (distance < sphere_radius + 1.5) {
               counter_sphere++;
-              temp_sphere_center.x += pcl_it->x;
-              temp_sphere_center.y += pcl_it->y;
-              temp_sphere_center.z += pcl_it->z;
+              temp_sphere_center.x += xyz.x;
+              temp_sphere_center.y += xyz.y;
+              temp_sphere_center.z += xyz.z;
             }
           }
         }
