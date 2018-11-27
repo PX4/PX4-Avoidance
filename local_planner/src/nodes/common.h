@@ -10,7 +10,7 @@
 
 float distance2DPolar(int e1, int z1, int e2, int z2);
 float computeL2Dist(const geometry_msgs::Point& position,
-                    const pcl::PointCloud<pcl::PointXYZ>::iterator& pcl_it);
+                    const pcl::PointXYZ& xyz);
 float distance3DCartesian(const geometry_msgs::Point& a,
                           const geometry_msgs::Point& b);
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,

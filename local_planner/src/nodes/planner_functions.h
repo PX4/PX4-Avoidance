@@ -51,9 +51,9 @@ void filterPointCloud(
     geometry_msgs::Point &closest_point,
     geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
     int &counter_backoff, int &counter_sphere,
-    std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     double min_cloud_size, double min_dist_backoff, double sphere_radius,
-    Box histogram_box, geometry_msgs::Point position,
+    Box histogram_box, const geometry_msgs::Point& position,
     double min_realsense_dist);
 void calculateFOV(double h_FOV, double v_FOV, std::vector<int> &z_FOV_idx,
                   int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
