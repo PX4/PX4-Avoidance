@@ -434,3 +434,8 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 
 # Contributing
 
+Fork the project and then close you repository. Create a new branch off of master for your new feature or bug fix.
+
+Please, take into consideration our [coding style](https://github.com/PX4/avoidance/blob/master/tools/fix_style.sh).
+
+Commit your changes with informative commit messages, push your branch and open a new pull request. Please provide ROS bags and the Autopilot flight logs relevant to the changes you have made.
