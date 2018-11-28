@@ -302,7 +302,7 @@ A stream of point-clouds should now be published to */point_cloud*.
 
 ### PX4 Autopilot
 
-Parameters to set trough QGC:
+Parameters to set through QGC:
 * MPC_OBS_AVOID to 1
 * SYS_COMPANION to 57600 or
 
@@ -324,7 +324,7 @@ For more information, read the [Running on Odroid](https://github.com/PX4/avoida
 
 ## Local Planner
 
-Once the catkin workspace has been buit, to run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
+Once the catkin workspace has been built, to run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
 
 1. `tf_*` representing the dispacement between the camera and the flight controller
 2. `fcu_url` representing the port connecting the companion computer to the flight controller
