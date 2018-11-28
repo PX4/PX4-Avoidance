@@ -61,10 +61,10 @@ apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD
 apt-get update
 ```
 
-2. Install gazebo with ROS (many dependencies including gazebo7 will come with those two packages).
+2. Install gazebo with ROS.
 
 ```bash
-apt install ros-kinetic-gazebo-ros-control ros-kinetic-gazebo-ros-pkgs
+apt install ros-kinetic-desktop-full
 
 # Source ROS
 source /opt/ros/kinetic/setup.bash
