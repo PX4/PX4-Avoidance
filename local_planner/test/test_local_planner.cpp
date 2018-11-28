@@ -103,7 +103,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // WHEN: we run the local planner again
   planner.runPlanner();
 
-  // THEN: it should stop the drone
+  // THEN: it should detect the obstacle and go left
   avoidanceOutput avoidance;
   planner.getAvoidanceOutput(avoidance);
 
@@ -117,11 +117,11 @@ TEST_F(LocalPlannerTests, all_obstacles) {
     if (node.y > node_max_y) node_max_y = node.y;
   }
   EXPECT_GT(node_max_y, max_y)
-      << "this might fail if the algorithm decides to go left instead";
+      << "this might fail if the algorithm decides to go right instead";
 }
 
-TEST_F(LocalPlannerTests, obstacles_left) {
-  // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
+TEST_F(LocalPlannerTests, obstacles_right) {
+  // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
   float shift = -0.5f;
   float distance = 2.f;
   float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
@@ -152,7 +152,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // WHEN: we run the local planner again
   planner.runPlanner();
 
-  // THEN: it should modify the path to the right
+  // THEN: it should modify the path to the left
   avoidanceOutput avoidance;
   planner.getAvoidanceOutput(avoidance);
 
@@ -168,8 +168,8 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   EXPECT_GT(node_max_y, max_y);
 }
 
-TEST_F(LocalPlannerTests, obstacles_right) {
-  // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
+TEST_F(LocalPlannerTests, obstacles_left) {
+  // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
   float shift = 0.5f;
   float distance = 2.f;
   float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
@@ -200,7 +200,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // WHEN: we run the local planner again
   planner.runPlanner();
 
-  // THEN: it should modify the path to the left
+  // THEN: it should modify the path to the right
   avoidanceOutput avoidance;
   planner.getAvoidanceOutput(avoidance);
   EXPECT_TRUE(avoidance.obstacle_ahead);
