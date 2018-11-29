@@ -157,10 +157,10 @@ export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/mode
 export QT_X11_NO_MITSHM=1
 
 # Setup some more Gazebo-related environment variables
-. ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/posix_sitl_default
+. ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
 
 # Build and run simulation
-make posix_sitl_default gazebo
+make px4_sitl_default gazebo
 ```
 
 4. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start the PX4.
@@ -369,7 +369,7 @@ Check that the clock is being published by Gazebo:
 rostopic echo /clock
 ```
 
-If it is not, you have a problem with Gazebo (Did it finish loading the world? Do you see the buildings and the drone in the Gazebo UI?). However, if it is publishing the clock, then it might be a problem with the depth camera plugin. Make sure the package `ros-kinetic-gazebo-ros-pkgs` is installed. If not, install it and rebuild the Firmware (with `$ make posix_sitl_default gazebo` as explained above).
+If it is not, you have a problem with Gazebo (Did it finish loading the world? Do you see the buildings and the drone in the Gazebo UI?). However, if it is publishing the clock, then it might be a problem with the depth camera plugin. Make sure the package `ros-kinetic-gazebo-ros-pkgs` is installed. If not, install it and rebuild the Firmware (with `$ make px4_sitl_default gazebo` as explained above).
 
 ### I see the drone and world in rviz, but the drone does not move when I set a new "2D Nav Goal"
 Is the drone in OFFBOARD mode? Is it armed and flying?
