@@ -45,14 +45,14 @@ Processing enabled by this node:
   <!-- Camera device specific arguments -->
 
   <arg name="serial_no"           default=""/>
-  <arg name="json_file_path"      default=""/>
+  <arg name="json_file_path"      default="/usr/auterion_ws/src/avoidance/local_planner/resource/stereo_calib.json"/>
 
   <arg name="fisheye_width"       default="480"/>
   <arg name="fisheye_height"      default="270"/>
   <arg name="enable_fisheye"      default="false"/>
 
-  <arg name="depth_width"         default="480"/>
-  <arg name="depth_height"        default="270"/>
+  <arg name="depth_width"         default="640"/>
+  <arg name="depth_height"        default="480"/>
   <arg name="enable_depth"        default="true"/>
 
   <arg name="infra1_width"        default="480"/>

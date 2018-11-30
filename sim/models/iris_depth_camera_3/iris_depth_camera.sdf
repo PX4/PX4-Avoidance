@@ -50,7 +50,7 @@
           <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
           <depthImageTopicName>depth/image_raw</depthImageTopicName>
           <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
-          <pointCloudTopicName>depth/points</pointCloudTopicName>
+          <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
           <frameName>front_camera_link</frameName>
           <distortion_k1>0.0</distortion_k1>
           <distortion_k2>0.0</distortion_k2>
@@ -58,33 +58,7 @@
           <distortion_t1>0.0</distortion_t1>
           <distortion_t2>0.0</distortion_t2>
         </plugin>
-      </sensor>
-      <!-- <sensor name="laser" type="ray">
-        <pose>0.01 0 0.0175 0 -0 0</pose>
-        <ray>
-          <scan>
-            <horizontal>
-              <samples>640</samples>
-              <resolution>1</resolution>
-              <min_angle>-1.26889</min_angle>
-              <max_angle>1.268899</max_angle>
-            </horizontal>
-          </scan>
-          <range>
-            <min>0.08</min>
-            <max>10</max>
-            <resolution>0.01</resolution>
-          </range>
-        </ray> -->
-        <!-- <plugin name="laser" filename="libRayPlugin.so"> -->
-        <!-- <plugin name="laser" filename="libgazebo_ros_laser.so">
-          <robotNamespace></robotNamespace>
-          <topicName>sensor</topicName>
-        </plugin>
-        <always_on>1</always_on>
-        <update_rate>30</update_rate>
-        <visualize>true</visualize>
-      </sensor> -->
+      </sensor>  
     </link>
   </model>
   
@@ -101,7 +75,7 @@
     </joint>
     
     
-    <model name="left_camera">
+  <model name="left_camera">
     <pose>0.05 0.05 -0.03 0 0 1.57</pose>
     <link name="link">
       <inertial>
@@ -148,7 +122,7 @@
           <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
           <depthImageTopicName>depth/image_raw</depthImageTopicName>
           <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
-          <pointCloudTopicName>depth/points</pointCloudTopicName>
+          <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
           <frameName>left_camera_link</frameName>
           <distortion_k1>0.0</distortion_k1>
           <distortion_k2>0.0</distortion_k2>
@@ -157,32 +131,6 @@
           <distortion_t2>0.0</distortion_t2>
         </plugin>
       </sensor>
-      <!-- <sensor name="laser" type="ray">
-        <pose>0.01 0 0.0175 0 -0 0</pose>
-        <ray>
-          <scan>
-            <horizontal>
-              <samples>640</samples>
-              <resolution>1</resolution>
-              <min_angle>-1.26889</min_angle>
-              <max_angle>1.268899</max_angle>
-            </horizontal>
-          </scan>
-          <range>
-            <min>0.08</min>
-            <max>10</max>
-            <resolution>0.01</resolution>
-          </range>
-        </ray> -->
-        <!-- <plugin name="laser" filename="libRayPlugin.so"> -->
-        <!-- <plugin name="laser" filename="libgazebo_ros_laser.so">
-          <robotNamespace></robotNamespace>
-          <topicName>sensor</topicName>
-        </plugin>
-        <always_on>1</always_on>
-        <update_rate>30</update_rate>
-        <visualize>true</visualize>
-      </sensor> -->
     </link>
   </model>
   
@@ -198,7 +146,7 @@
       </axis>
     </joint>
     
-    <model name="right_camera">
+  <model name="right_camera">
     <pose>0.05 -0.05 -0.03 0 0 -1.57</pose>
     <link name="link">
       <inertial>
@@ -245,7 +193,7 @@
           <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>
           <depthImageTopicName>depth/image_raw</depthImageTopicName>
           <depthImageCameraInfoTopicName>depth/camera_info</depthImageCameraInfoTopicName>
-          <pointCloudTopicName>depth/points</pointCloudTopicName>
+          <pointCloudTopicName>depth_registered/points</pointCloudTopicName>
           <frameName>right_camera_link</frameName>
           <distortion_k1>0.0</distortion_k1>
           <distortion_k2>0.0</distortion_k2>
@@ -254,32 +202,6 @@
           <distortion_t2>0.0</distortion_t2>
         </plugin>
       </sensor>
-      <!-- <sensor name="laser" type="ray">
-        <pose>0.01 0 0.0175 0 -0 0</pose>
-        <ray>
-          <scan>
-            <horizontal>
-              <samples>640</samples>
-              <resolution>1</resolution>
-              <min_angle>-1.26889</min_angle>
-              <max_angle>1.268899</max_angle>
-            </horizontal>
-          </scan>
-          <range>
-            <min>0.08</min>
-            <max>10</max>
-            <resolution>0.01</resolution>
-          </range>
-        </ray> -->
-        <!-- <plugin name="laser" filename="libRayPlugin.so"> -->
-        <!-- <plugin name="laser" filename="libgazebo_ros_laser.so">
-          <robotNamespace></robotNamespace>
-          <topicName>sensor</topicName>
-        </plugin>
-        <always_on>1</always_on>
-        <update_rate>30</update_rate>
-        <visualize>true</visualize>
-      </sensor> -->
     </link>
   </model>
   
@@ -295,14 +217,12 @@
       </axis>
     </joint>
     
-    
-    
     <include>
-      <uri>model://distance_sensor</uri>
-      <pose>0 0 -0.1 0 0 0</pose>
+      <uri>model://lidar</uri>
+      <pose>-0.12 0 0 0 3.1415 0</pose>
     </include>
-    <joint name="distance_sensor_joint" type="revolute">
-      <child>distance_sensor::laser_link</child>
+    <joint name="lidar_joint" type="fixed">
+      <child>lidar::link</child>
       <parent>iris::base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>
@@ -312,12 +232,52 @@
         </limit>
       </axis>
     </joint>
-    <!-- <include>
-      <uri>model://odometry_sensor</uri>
-      <pose>-0.12 0.05 0 0 1.5708 1.5708</pose>
-    </include>
-    <joint name="odo_joint" type="revolute">
-      <child>odometry_sensor::odometry_sensor_link</child>
+  
+  <!--<model name="distance_sensor">
+    <pose>-0.01 0 -0.02 0 1.57 0</pose>
+    <link name="link">
+      <inertial>
+        <pose>0.01 0.025 0.025 0 0 0</pose>
+        <mass>0.01</mass>
+        <inertia>
+          <ixx>4.15e-6</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>2.407e-6</iyy>
+          <iyz>0</iyz>
+          <izz>2.407e-6</izz>
+        </inertia>
+      </inertial>
+      <visual name="visual">
+        <pose>0 0 0 0 1.57 0</pose>
+        <geometry>
+          <mesh>
+            <uri>model://depth_camera_new/meshes/hokuyo.dae</uri>
+          </mesh>
+        </geometry>
+      </visual>
+      <sensor name="laser" type="ray">
+        <pose>0.01 0 0.0175 0 -0 0</pose>
+        <ray>
+          <range>
+            <min>0.1</min>
+            <max>10</max>
+            <resolution>0.01</resolution>
+          </range>
+        </ray>
+        <plugin name="laser" filename="libgazebo_ros_range.so">
+          <robotNamespace>distance_sensor</robotNamespace>
+          <topicName>range</topicName>
+        </plugin>
+        <always_on>1</always_on>
+        <update_rate>30</update_rate>
+        <visualize>true</visualize>
+	    </sensor>
+      </link>
+    </model> -->
+    
+    <!-- <joint name="distance_sensor_new_joint_right" type="revolute">
+      <child>distance_sensor::link</child>
       <parent>iris::base_link</parent>
       <axis>
         <xyz>0 0 1</xyz>
@@ -326,7 +286,7 @@
           <lower>0</lower>
         </limit>
       </axis>
-    </joint>
-     -->
+    </joint> -->
+  
   </model>
 </sdf> 

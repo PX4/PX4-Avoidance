@@ -43,6 +43,8 @@ LocalPlannerNode::LocalPlannerNode() {
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
   goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1,
 		  &LocalPlannerNode::updateGoalCallback, this);
+  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1,
+		  &LocalPlannerNode::distanceSensorCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
@@ -51,9 +53,11 @@ LocalPlannerNode::LocalPlannerNode() {
   reprojected_points_pub_ =
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/bounding_box", 1);
+      nh_.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
   avoid_sphere_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
+  ground_measurement_pub_ =
+		  nh_.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
   original_wp_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
   adapted_wp_pub_ =
@@ -233,6 +237,13 @@ void LocalPlannerNode::updatePlannerInfo() {
   if (new_goal_) {
     local_planner_.setGoal(goal_msg_.pose.position);
     new_goal_ = false;
+  }
+
+  //update ground distance
+  if(ros::Time::now() - ground_distance_msg_.header.stamp < ros::Duration(0.5)){
+    local_planner_.ground_distance_ = ground_distance_msg_.bottom_clearance;
+  }else{
+    local_planner_.ground_distance_ = 2.0;  // in case where no range data is available assume vehicle is close to ground
   }
 }
 
@@ -462,31 +473,55 @@ void LocalPlannerNode::publishReachHeight() {
 }
 
 void LocalPlannerNode::publishBox() {
+
+  visualization_msgs::MarkerArray marker_array;
   geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
+
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
   box.header.stamp = ros::Time::now();
   box.id = 0;
-  box.type = visualization_msgs::Marker::CYLINDER;
+  box.type = visualization_msgs::Marker::SPHERE;
   box.action = visualization_msgs::Marker::ADD;
   box.pose.position.x = drone_pos.pose.position.x;
   box.pose.position.y = drone_pos.pose.position.y;
-  box.pose.position.z = drone_pos.pose.position.z +
-                        0.5 * (local_planner_.histogram_box_.zsize_up_ -
-                               local_planner_.histogram_box_.zsize_down_);
+  box.pose.position.z = drone_pos.pose.position.z;
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
   box.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
   box.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
-  box.scale.z = local_planner_.histogram_box_.zsize_up_ +
-                local_planner_.histogram_box_.zsize_down_;
+  box.scale.z = 2.0 * local_planner_.histogram_box_.radius_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
   box.color.b = 0.0;
-  bounding_box_pub_.publish(box);
+  marker_array.markers.push_back(box);
+
+  visualization_msgs::Marker plane;
+  plane.header.frame_id = "local_origin";
+  plane.header.stamp = ros::Time::now();
+  plane.id = 1;
+  plane.type = visualization_msgs::Marker::CUBE;
+  plane.action = visualization_msgs::Marker::ADD;
+  plane.pose.position.x = drone_pos.pose.position.x;
+  plane.pose.position.y = drone_pos.pose.position.y;
+  plane.pose.position.z = local_planner_.histogram_box_.zmin_;
+  plane.pose.orientation.x = 0.0;
+  plane.pose.orientation.y = 0.0;
+  plane.pose.orientation.z = 0.0;
+  plane.pose.orientation.w = 1.0;
+  plane.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.z = 0.001;
+  plane.color.a = 0.5;
+  plane.color.r = 0.0;
+  plane.color.g = 1.0;
+  plane.color.b = 0.0;
+  marker_array.markers.push_back(plane);
+
+  bounding_box_pub_.publish(marker_array);
 }
 
 void LocalPlannerNode::publishAvoidSphere() {
@@ -702,6 +737,38 @@ void LocalPlannerNode::fcuInputGoalCallback(
     goal_msg_.pose.position.y = msg.point_2.position.y;
     goal_msg_.pose.position.z = msg.point_2.position.z;
   }
+}
+
+void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg){
+  if(!std::isnan(msg.bottom_clearance)){
+    ground_distance_msg_ = msg;
+    publishGround();
+  }
+}
+void LocalPlannerNode::publishGround() {
+  geometry_msgs::PoseStamped drone_pos;
+  local_planner_.getPosition(drone_pos);
+  visualization_msgs::Marker plane;
+  plane.header.frame_id = "local_origin";
+  plane.header.stamp = ros::Time::now();
+  plane.id = 1;
+  plane.type = visualization_msgs::Marker::CUBE;
+  plane.action = visualization_msgs::Marker::ADD;
+  plane.pose.position.x = drone_pos.pose.position.x;
+  plane.pose.position.y = drone_pos.pose.position.y;
+  plane.pose.position.z = drone_pos.pose.position.z - local_planner_.ground_distance_;
+  plane.pose.orientation.x = 0.0;
+  plane.pose.orientation.y = 0.0;
+  plane.pose.orientation.z = 0.0;
+  plane.pose.orientation.w = 1.0;
+  plane.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.z = 0.001;;
+  plane.color.a = 0.5;
+  plane.color.r = 0.0;
+  plane.color.g = 0.0;
+  plane.color.b = 1.0;
+  ground_measurement_pub_.publish(plane);
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {

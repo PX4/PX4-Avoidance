@@ -13,6 +13,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/SetMode.h>
+#include <mavros_msgs/Altitude.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
 #include <mavros_msgs/CompanionProcessStatus.h>
@@ -24,6 +25,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Range.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <tf/transform_listener.h>
@@ -141,6 +143,7 @@ class LocalPlannerNode {
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   double avoid_radius_;
+  mavros_msgs::Altitude ground_distance_msg_;
   geometry_msgs::Point avoid_centerpoint_;
   bool use_sphere_;
   int path_length_ = 0;
@@ -153,12 +156,14 @@ class LocalPlannerNode {
   ros::Subscriber clicked_goal_sub_;
   ros::Subscriber fcu_input_sub_;
   ros::Subscriber goal_topic_sub_;
+  ros::Subscriber distance_sensor_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
   ros::Publisher front_pointcloud_pub_;
   ros::Publisher reprojected_points_pub_;
   ros::Publisher bounding_box_pub_;
+  ros::Publisher ground_measurement_pub_;
   ros::Publisher height_map_pub_;
   ros::Publisher cached_pointcloud_pub_;
   ros::Publisher marker_pub_;
@@ -214,6 +219,7 @@ class LocalPlannerNode {
   void clickedGoalCallback(const geometry_msgs::PoseStamped& msg);
   void updateGoalCallback(const visualization_msgs::MarkerArray& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
+  void distanceSensorCallback(const mavros_msgs::Altitude& msg);
 
   void printPointInfo(double x, double y, double z);
   void publishGoal();
@@ -222,6 +228,7 @@ class LocalPlannerNode {
   void publishReachHeight();
   void publishTree();
   void publishHistogramImage();
+  void publishGround();
 };
 }
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H

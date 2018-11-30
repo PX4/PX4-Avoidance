@@ -34,8 +34,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
   histogram_box_.radius_ = config.box_radius_;
-  histogram_box_.zsize_up_ = config.box_size_up_;
-  histogram_box_.zsize_down_ = config.box_size_down_;
   goal_cost_param_ = config.goal_cost_param_;
   smooth_cost_param_ = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
@@ -128,7 +126,7 @@ void LocalPlanner::runPlanner() {
     }
   }
 
-  histogram_box_.setBoxLimits(pose_.pose.position);
+  histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
   geometry_msgs::Point temp_sphere_center;
   int sphere_points_counter = 0;
@@ -314,7 +312,7 @@ void LocalPlanner::determineStrategy() {
           star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_,
                                       height_change_cost_param_adapted_,
                                       height_change_cost_param_);
-          star_planner_.setBoxSize(histogram_box_);
+          star_planner_.setBoxSize(histogram_box_, ground_distance_);
           star_planner_.setCloud(complete_cloud_);
           star_planner_.buildLookAheadTree();
 
