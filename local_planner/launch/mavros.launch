@@ -1,7 +1,7 @@
 <launch>
  
     <arg name="ns" default="/"/>
-    <arg name="build" default="posix_sitl_default"/>
+    <arg name="build" default="px4_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />

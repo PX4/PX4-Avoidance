@@ -4,7 +4,7 @@
     <arg name="ns" default="/"/>
     <arg name="model" default="iris"/>
     <arg name="world" default="test_city_2"/>
-    <arg name="build" default="posix_sitl_default"/>
+    <arg name="build" default="px4_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="udp://:14550@:14555" />
     <arg name="tgt_system" default="1" />
