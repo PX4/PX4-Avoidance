@@ -15,6 +15,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <mavros_msgs/CompanionProcessStatus.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
@@ -51,6 +52,8 @@ class LocalPlannerNode {
   LocalPlannerNode();
   ~LocalPlannerNode();
 
+  mavros_msgs::CompanionProcessStatus status_msg_;
+
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
@@ -76,6 +79,7 @@ class LocalPlannerNode {
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
   ros::Time last_wp_time_;
+  ros::Time t_status_sent_;
 
   LocalPlanner local_planner_;
   WaypointGenerator wp_generator_;
@@ -89,6 +93,7 @@ class LocalPlannerNode {
   ros::Publisher mavros_obstacle_distance_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
+  ros::Publisher mavros_system_status_pub_;
   tf::TransformListener tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
