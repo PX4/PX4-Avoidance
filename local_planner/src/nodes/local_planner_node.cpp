@@ -940,7 +940,7 @@ int main(int argc, char** argv) {
   bool landing = false;
   avoidanceOutput planner_output;
   bool startup = true;
-  Node.status_msg_.state = 1; //COMPANION_PROCESS_STATE_STARTING
+  Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
@@ -977,7 +977,7 @@ int main(int argc, char** argv) {
         mavros_msgs::SetMode mode_msg;
         mode_msg.request.custom_mode = "AUTO.LAND";
         landing = true;
-        Node.status_msg_.state = 8; //COMPANION_PROCESS_STATE_ABORT
+        Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
             mode_msg.response.mode_sent) {
           ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
@@ -991,7 +991,7 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
-          Node.status_msg_.state = 5; //COMPANION_PROCESS_STATE_TIMEOUT
+          Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
           std::string not_received = "";
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
@@ -1042,7 +1042,7 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_ && !landing) {
       Node.publishWaypoints(hover);
-      if(!hover) Node.status_msg_.state = 4; //COMPANION_PROCESS_STATE_HEALTHY
+      if(!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
