@@ -206,4 +206,19 @@ double getAngularVelocity(double desired_yaw, double curr_yaw) {
 
   return 0.5 * vel;
 }
+
+
+Eigen::Vector3f convert(const geometry_msgs::Point& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+geometry_msgs::Point convert(const Eigen::Vector3f& p) {
+  geometry_msgs::Point gmp;
+  gmp.x = p.x();
+  gmp.y = p.y();
+  gmp.z = p.z();
+  return gmp;
+}
+
 }
