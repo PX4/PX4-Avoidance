@@ -420,9 +420,9 @@ void WaypointGenerator::getPathMsg() {
   transformPositionToVelocityWaypoint();
 }
 
-void WaypointGenerator::getWaypoints(waypointResult& output) {
+waypointResult WaypointGenerator::getWaypoints() {
   calculateWaypoint();
-  output = output_;
+  return output_;
 }
 
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) {

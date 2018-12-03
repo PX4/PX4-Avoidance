@@ -212,13 +212,12 @@ class LocalPlanner {
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  void setGoal(const geometry_msgs::Point& goal);
+  void setGoal(const geometry_msgs::Point &goal);
   geometry_msgs::Point getGoal();
   void applyGoal();
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
-  void getPosition(geometry_msgs::PoseStamped &pos);
-  void getGoalPosition(geometry_msgs::Point &goal);
+  geometry_msgs::PoseStamped getPosition();
   void getAvoidSphere(geometry_msgs::Point &center, double &radius,
                       int &avoid_sphere_age, bool &use_avoid_sphere);
   void getCloudsForVisualization(
@@ -233,8 +232,8 @@ class LocalPlanner {
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
-  void getAvoidanceOutput(avoidanceOutput &out);
-  
+  avoidanceOutput getAvoidanceOutput();
+
   void determineStrategy();
   void runPlanner();
 };

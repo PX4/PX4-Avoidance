@@ -91,7 +91,7 @@ class WaypointGenerator {
 
  public:
   waypointGenerator_params param_;
-  void getWaypoints(waypointResult& output);
+  waypointResult getWaypoints();
   void setPlannerInfo(const avoidanceOutput& input);
   void setFOV(double h_FOV, double v_FOV);
   void updateState(const geometry_msgs::PoseStamped& act_pose,

@@ -2,13 +2,13 @@
 
 namespace avoidance {
 
-StarPlanner::StarPlanner() {}
+StarPlanner::StarPlanner() : tree_age_(0) {}
 
 StarPlanner::~StarPlanner() {}
 
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
-    avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+    const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
