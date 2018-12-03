@@ -59,8 +59,7 @@ TEST_F(LocalPlannerTests, no_obstacles) {
   planner.runPlanner();
 
   // THEN: it shouldn't find any obstacles
-  avoidanceOutput output;
-  planner.getAvoidanceOutput(output);
+  avoidanceOutput output = planner.getAvoidanceOutput();
   EXPECT_FALSE(output.obstacle_ahead);
 
   // AND: the scan shouldn't have any data
@@ -106,8 +105,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   planner.runPlanner();
 
   // THEN: it should detect the obstacle and go left
-  avoidanceOutput output;
-  planner.getAvoidanceOutput(output);
+  avoidanceOutput output = planner.getAvoidanceOutput();
 
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
@@ -155,8 +153,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   planner.runPlanner();
 
   // THEN: it should modify the path to the left
-  avoidanceOutput output;
-  planner.getAvoidanceOutput(output);
+  avoidanceOutput output = planner.getAvoidanceOutput();
 
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
@@ -203,8 +200,8 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   planner.runPlanner();
 
   // THEN: it should modify the path to the right
-  avoidanceOutput output;
-  planner.getAvoidanceOutput(output);
+  avoidanceOutput output = planner.getAvoidanceOutput();
+
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_min_y = 0.f;

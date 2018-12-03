@@ -497,9 +497,8 @@ void LocalPlanner::stopInFrontObstacles() {
       goal_.x, goal_.y, goal_.z, distance_to_closest_point_);
 }
 
-void LocalPlanner::getPosition(geometry_msgs::PoseStamped &pos) { pos = pose_; }
+geometry_msgs::PoseStamped LocalPlanner::getPosition() { return pose_; }
 
-void LocalPlanner::getGoalPosition(geometry_msgs::Point &goal) { goal = goal_; }
 void LocalPlanner::getAvoidSphere(geometry_msgs::Point &center, double &radius,
                                   int &sphere_age, bool &use_avoid_sphere) {
   center = avoid_centerpoint_;
@@ -543,7 +542,8 @@ void LocalPlanner::sendObstacleDistanceDataToFcu(
   obstacle_distance = distance_data_;
 }
 
-void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
+avoidanceOutput LocalPlanner::getAvoidanceOutput() {
+  avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
 
   out.pose = pose_;
@@ -569,5 +569,6 @@ void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
   out.costmap_direction_e = costmap_direction_e_;
   out.costmap_direction_z = costmap_direction_z_;
   out.path_node_positions = star_planner_.path_node_positions_;
+  return out;
 }
 }

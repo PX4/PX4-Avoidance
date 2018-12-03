@@ -114,7 +114,7 @@ class StarPlanner {
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();
   void dynamicReconfigureSetStarParams(
-      avoidance::LocalPlannerNodeConfig& config, uint32_t level);
+      const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 };
 }
 #endif  // STAR_PLANNER_H

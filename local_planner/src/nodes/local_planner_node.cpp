@@ -321,8 +321,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
   m.id = 0;
   marker->markers.push_back(m);
 
-  geometry_msgs::PoseStamped drone_pos;
-  local_planner_.getPosition(drone_pos);
+  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
 
   for (size_t i = 0; i < path.cells.size(); i++) {
     m.id = i + 1;
@@ -377,8 +376,7 @@ void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
-  geometry_msgs::Point goal;
-  local_planner_.getGoalPosition(goal);
+  geometry_msgs::Point goal = local_planner_.getGoal();
 
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -458,8 +456,7 @@ void LocalPlannerNode::publishReachHeight() {
 }
 
 void LocalPlannerNode::publishBox() {
-  geometry_msgs::PoseStamped drone_pos;
-  local_planner_.getPosition(drone_pos);
+  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
   box.header.stamp = ros::Time::now();
@@ -519,11 +516,10 @@ void LocalPlannerNode::publishAvoidSphere() {
 }
 
 void LocalPlannerNode::publishWaypoints(bool hover) {
-  waypointResult result;
   const ros::Time now = ros::Time::now();
 
   wp_generator_.updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
-  wp_generator_.getWaypoints(result);
+  waypointResult result = wp_generator_.getWaypoints();
 
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
@@ -692,8 +688,7 @@ void LocalPlannerNode::fcuInputGoalCallback(
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
-  geometry_msgs::PoseStamped drone_pos;
-  local_planner_.getPosition(drone_pos);
+  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
   int beta_z = floor(
       (atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y) *
        180.0 / M_PI));  //(-180. +180]
@@ -1023,10 +1018,10 @@ int main(int argc, char** argv) {
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             Node.cameras_[i].received_ = false;
           }
-          Node.local_planner_.getAvoidanceOutput(planner_output);
-          Node.wp_generator_.setPlannerInfo(planner_output);
+          Node.wp_generator_.setPlannerInfo(
+              Node.local_planner_.getAvoidanceOutput());
           if (Node.local_planner_.stop_in_front_active_) {
-            Node.local_planner_.getGoalPosition(Node.goal_msg_.pose.position);
+            Node.goal_msg_.pose.position = Node.local_planner_.getGoal();
           }
           Node.running_mutex_.unlock();
           // Wake up the planner
