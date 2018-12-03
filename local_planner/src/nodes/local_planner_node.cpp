@@ -99,25 +99,24 @@ LocalPlannerNode::LocalPlannerNode() {
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
-  local_planner_.setGoal();
+  local_planner_.applyGoal();
 }
 
 LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  nh_.param<double>("goal_x_param", local_planner_.goal_x_param_, 9.0);
-  nh_.param<double>("goal_y_param", local_planner_.goal_y_param_, 13.0);
-  nh_.param<double>("goal_z_param", local_planner_.goal_z_param_, 3.5);
+  auto goal = local_planner_.getGoal();
+  nh_.param<double>("goal_x_param", goal.x, 9.0);
+  nh_.param<double>("goal_y_param", goal.y, 13.0);
+  nh_.param<double>("goal_z_param", goal.z, 3.5);
 
   std::vector<std::string> camera_topics;
   nh_.getParam("pointcloud_topics", camera_topics);
   initializeCameraSubscribers(camera_topics);
 
   nh_.param<std::string>("world_name", world_path_, "");
-  goal_msg_.pose.position.x = local_planner_.goal_x_param_;
-  goal_msg_.pose.position.y = local_planner_.goal_y_param_;
-  goal_msg_.pose.position.z = local_planner_.goal_z_param_;
+  goal_msg_.pose.position = goal;
 
   // Read in parameter for waypoint generator
   waypointGenerator_params new_params;
@@ -226,13 +225,8 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update goal
   if (new_goal_) {
-    local_planner_.goal_x_param_ = goal_msg_.pose.position.x;
-    local_planner_.goal_y_param_ = goal_msg_.pose.position.y;
-    local_planner_.goal_z_param_ = goal_msg_.pose.position.z;
-    local_planner_.setGoal();
+    local_planner_.setGoal(goal_msg_.pose.position);
     new_goal_ = false;
-  } else {
-    goal_msg_.pose.position.z = local_planner_.goal_z_param_;
   }
 }
 
@@ -678,7 +672,7 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_msg_.pose.position.z = local_planner_.goal_z_param_;
+  goal_msg_.pose.position.z = local_planner_.getGoal().z;
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(

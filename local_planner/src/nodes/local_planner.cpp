@@ -57,9 +57,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
 
-  if (goal_z_param_ != config.goal_z_param) {
-    goal_z_param_ = config.goal_z_param;
-    setGoal();
+  if (getGoal().z != config.goal_z_param) {
+    auto goal = getGoal();
+    goal.z = config.goal_z_param;
+    setGoal(goal);
   }
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
@@ -82,11 +83,15 @@ void LocalPlanner::setVelocity() {
           .norm();
 }
 
-void LocalPlanner::setGoal() {
-  goal_.x = goal_x_param_;
-  goal_.y = goal_y_param_;
-  goal_.z = goal_z_param_;
+void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
+  goal_ = goal;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
+  applyGoal();
+}
+
+geometry_msgs::Point LocalPlanner::getGoal() { return goal_; }
+
+void LocalPlanner::applyGoal() {
   initGridCells(&path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_.setGoal(goal_);

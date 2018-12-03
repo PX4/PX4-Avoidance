@@ -39,10 +39,11 @@ class LocalPlannerTests : public ::testing::Test {
     planner.setPose(msg);
 
     // goal straight in front, 100m away
-    planner.goal_x_param_ = 100;
-    planner.goal_y_param_ = 0;
-    planner.goal_z_param_ = 30;
-    planner.setGoal();
+    geometry_msgs::Point goal;
+    goal.x = 100;
+    goal.y = 0;
+    goal.z = 30;
+    planner.setGoal(goal);
 
     planner.complete_cloud_.clear();
   }
