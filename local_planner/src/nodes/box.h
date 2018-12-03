@@ -14,7 +14,7 @@ class Box {
   bool isPointWithinBox(const double& x, const double& y, const double& z);
 
   double radius_;
-  double box_dist_to_ground_ = 1.0;
+  double box_dist_to_ground_ = 2.0;
   double zmin_;
 
  private:
