@@ -196,9 +196,6 @@ class LocalPlanner {
   bool send_obstacles_fcu_ = false;
   bool stop_in_front_active_ = false;
 
-  double goal_x_param_;
-  double goal_y_param_;
-  double goal_z_param_;
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
   double starting_height_ = 0.0;
@@ -215,8 +212,9 @@ class LocalPlanner {
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  void setGoal();
-  void determineStrategy();
+  void setGoal(const geometry_msgs::Point& goal);
+  geometry_msgs::Point getGoal();
+  void applyGoal();
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
   void getPosition(geometry_msgs::PoseStamped &pos);
@@ -235,8 +233,10 @@ class LocalPlanner {
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
-  void runPlanner();
   void getAvoidanceOutput(avoidanceOutput &out);
+  
+  void determineStrategy();
+  void runPlanner();
 };
 }
 
