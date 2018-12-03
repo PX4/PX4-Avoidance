@@ -14,7 +14,7 @@
 
 namespace avoidance {
 
-geometry_msgs::TwistStamped transformTwistMsg(
+inline geometry_msgs::TwistStamped transformTwistMsg(
     const tf::TransformListener& listener, const std::string& target_frame,
     const std::string& fixed_frame, const geometry_msgs::TwistStamped& msg) {
   auto transformed_msg = msg;
@@ -29,7 +29,7 @@ geometry_msgs::TwistStamped transformTwistMsg(
 }
 
 // Returns true if msg1 and msg2 have both the same altitude and orientation
-bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1,
+inline bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1,
                            const geometry_msgs::Pose& msg2) {
   return msg1.orientation.z == msg2.orientation.z &&
          msg1.orientation.w == msg2.orientation.w &&
