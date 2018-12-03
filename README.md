@@ -247,13 +247,13 @@ roslaunch local_planner local_planner_stereo.launch
 * simulate a forward looking kinect depth sensor:
 
 ```bash
-roslaunch local_planner local_planner_depth-camera.lauch
+roslaunch local_planner local_planner_depth-camera.launch
 ```
 
 * simulate a three kinect depth sensors:
 
 ```bash
-roslaunch local_planner local_planner_sitl_3cam.lauch
+roslaunch local_planner local_planner_sitl_3cam.launch
 ```
 
 You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOAD, run:
