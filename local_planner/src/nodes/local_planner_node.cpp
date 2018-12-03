@@ -2,6 +2,8 @@
 
 #include <boost/algorithm/string.hpp>
 
+namespace avoidance {
+
 LocalPlannerNode::LocalPlannerNode() {
   nh_ = ros::NodeHandle("~");
   readParams();
@@ -930,8 +932,10 @@ void LocalPlannerNode::threadFunction() {
     }
   }
 }
+}
 
 int main(int argc, char** argv) {
+  using namespace avoidance;
   ros::init(argc, argv, "local_planner_node");
   LocalPlannerNode Node;
   ros::Duration(2).sleep();

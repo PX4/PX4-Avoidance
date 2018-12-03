@@ -51,6 +51,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
+namespace avoidance {
+
 class StarPlanner {
   double h_FOV_ = 59.0;
   double v_FOV_ = 46.0;
@@ -114,5 +116,5 @@ class StarPlanner {
   void dynamicReconfigureSetStarParams(
       avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 };
-
+}
 #endif  // STAR_PLANNER_H

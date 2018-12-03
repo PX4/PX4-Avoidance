@@ -39,6 +39,8 @@
 #include "rviz_world_loader.h"
 #include "waypoint_generator.h"
 
+namespace avoidance {
+
 struct cameraData {
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
@@ -215,5 +217,5 @@ class LocalPlannerNode {
   void publishReachHeight();
   void publishTree();
 };
-
+}
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H

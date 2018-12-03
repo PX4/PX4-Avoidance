@@ -8,6 +8,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
 
+namespace avoidance {
+
 float distance2DPolar(int e1, int z1, int e2, int z2);
 float computeL2Dist(const geometry_msgs::Point& position,
                     const pcl::PointXYZ& xyz);
@@ -45,5 +47,6 @@ double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed);
 void wrapAngleToPlusMinusPI(double& angle);
 double getAngularVelocity(double desired_yaw, double curr_yaw);
+}
 
 #endif  // COMMON_H

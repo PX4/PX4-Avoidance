@@ -5,6 +5,8 @@
 #include <math.h>
 #include <vector>
 
+namespace avoidance {
+
 class TreeNode {
   geometry_msgs::Point position_;
 
@@ -24,5 +26,6 @@ class TreeNode {
   void setCosts(double h, double c);
   geometry_msgs::Point getPosition();
 };
+}
 
 #endif  // TREE_NODE_H

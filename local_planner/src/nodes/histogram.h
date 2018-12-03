@@ -4,6 +4,8 @@
 #include <math.h>
 #include <vector>
 
+namespace avoidance {
+
 const int ALPHA_RES = 6;
 const int GRID_LENGTH_Z = 360 / ALPHA_RES;
 const int GRID_LENGTH_E = 180 / ALPHA_RES;
@@ -52,5 +54,6 @@ class Histogram {
   void downsample();
   void setZero();
 };
+}
 
 #endif  // HISTOGRAM_H

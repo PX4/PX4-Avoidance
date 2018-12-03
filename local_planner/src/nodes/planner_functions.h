@@ -40,6 +40,8 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
+namespace avoidance {
+
 void initGridCells(nav_msgs::GridCells *cell);
 void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age,
                      geometry_msgs::Point temp_centerpoint,
@@ -51,9 +53,9 @@ void filterPointCloud(
     geometry_msgs::Point &closest_point,
     geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
     int &counter_backoff, int &counter_sphere,
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
     double min_cloud_size, double min_dist_backoff, double sphere_radius,
-    Box histogram_box, const geometry_msgs::Point& position,
+    Box histogram_box, const geometry_msgs::Point &position,
     double min_realsense_dist);
 void calculateFOV(double h_FOV, double v_FOV, std::vector<int> &z_FOV_idx,
                   int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
@@ -98,5 +100,5 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
 geometry_msgs::Point getSphereAdaptedWaypoint(
     geometry_msgs::Point position, geometry_msgs::Point wp,
     geometry_msgs::Point avoid_centerpoint, double avoid_radius);
-
+}
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

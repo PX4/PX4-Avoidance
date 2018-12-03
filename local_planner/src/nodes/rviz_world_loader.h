@@ -15,6 +15,8 @@
 
 #include <sys/stat.h>
 
+namespace avoidance {
+
 // data types
 struct world_object {
   std::string type;
@@ -39,5 +41,6 @@ int visualizeRVIZWorld(const std::string& world_path,
                        visualization_msgs::MarkerArray& marker_array);
 int visualizeDrone(const geometry_msgs::PoseStamped& pose,
                    visualization_msgs::Marker& marker);
+}
 
 #endif  // RVIZ_WORLD_H

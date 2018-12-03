@@ -1,5 +1,7 @@
 #include "tree_node.h"
 
+namespace avoidance {
+
 TreeNode::TreeNode()
     : total_cost_{0.0},
       heuristic_{0.0},
@@ -14,7 +16,7 @@ TreeNode::TreeNode()
 }
 
 TreeNode::TreeNode(int from, int d, geometry_msgs::Point pos)
-    :total_cost_{0.0},
+    : total_cost_{0.0},
       heuristic_{0.0},
       last_e_{0},
       last_z_{0},
@@ -32,3 +34,4 @@ void TreeNode::setCosts(double h, double c) {
 }
 
 geometry_msgs::Point TreeNode::getPosition() { return position_; }
+}

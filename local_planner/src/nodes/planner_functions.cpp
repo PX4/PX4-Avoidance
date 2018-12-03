@@ -2,6 +2,8 @@
 
 #include <numeric>
 
+namespace avoidance {
+
 // initialize GridCell message
 void initGridCells(nav_msgs::GridCells *cell) {
   cell->cells.clear();
@@ -58,9 +60,9 @@ void filterPointCloud(
     geometry_msgs::Point &closest_point,
     geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
     int &counter_backoff, int &counter_sphere,
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
     double min_cloud_size, double min_dist_backoff, double sphere_radius,
-    Box histogram_box, const geometry_msgs::Point& position,
+    Box histogram_box, const geometry_msgs::Point &position,
     double min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
@@ -73,16 +75,14 @@ void filterPointCloud(
   temp_sphere_center.z = 0.0;
 
   for (size_t i = 0; i < complete_cloud.size(); ++i) {
-    for (const pcl::PointXYZ& xyz : complete_cloud[i]) {
+    for (const pcl::PointXYZ &xyz : complete_cloud[i]) {
       // Check if the point is invalid
-      if (!std::isnan(xyz.x) && !std::isnan(xyz.y) &&
-          !std::isnan(xyz.z)) {
+      if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
           distance = computeL2Dist(position, xyz);
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
-            cropped_cloud.points.push_back(
-                pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
+            cropped_cloud.points.push_back(pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
             if (distance < distance_to_closest_point) {
               distance_to_closest_point = distance;
               closest_point.x = xyz.x;
@@ -640,4 +640,5 @@ geometry_msgs::Point getSphereAdaptedWaypoint(
     }
   }
   return wp_adapted;
+}
 }

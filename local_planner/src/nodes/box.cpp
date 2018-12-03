@@ -1,5 +1,5 @@
 #include "box.h"
-
+namespace avoidance {
 Box::Box(const double& radius) : radius_{radius} {}
 
 Box::Box()
@@ -28,4 +28,5 @@ void Box::setBoxLimits(const geometry_msgs::Point& pos) {
 bool Box::isPointWithinBox(const double& x, const double& y, const double& z) {
   return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ &&
          z > zmin_;
+}
 }
