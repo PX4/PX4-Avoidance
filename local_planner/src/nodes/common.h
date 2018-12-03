@@ -47,6 +47,10 @@ double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed);
 void wrapAngleToPlusMinusPI(double& angle);
 double getAngularVelocity(double desired_yaw, double curr_yaw);
+
+Eigen::Vector3f convert(const geometry_msgs::Point& p);
+geometry_msgs::Point convert(const Eigen::Vector3f& p);
+
 }
 
 #endif  // COMMON_H

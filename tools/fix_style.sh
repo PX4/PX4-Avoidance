@@ -13,8 +13,8 @@ fi
 for arg in "$@"
 do
     if [ -f $arg ]; then
-        clang-format -i -style=${STYLE} $arg
+        clang-format-3.8 -i -style=${STYLE} $arg
     elif [ -d $arg ]; then
-        find $arg -iname '*.h' -o -iname '*.cpp' | xargs clang-format -i -style=${STYLE}
+        find $arg -iname '*.h' -o -iname '*.cpp' | xargs clang-format-3.8 -i -style=${STYLE}
     fi
 done
