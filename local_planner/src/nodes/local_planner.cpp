@@ -1,5 +1,7 @@
 #include "local_planner.h"
 
+namespace avoidance {
+
 LocalPlanner::LocalPlanner() {}
 
 LocalPlanner::~LocalPlanner() {}
@@ -74,8 +76,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
 }
 
 void LocalPlanner::setVelocity() {
-  velocity_mod_ = Eigen::Vector3f(curr_vel_.twist.linear.x,
-    curr_vel_.twist.linear.y, curr_vel_.twist.linear.z).norm();
+  velocity_mod_ =
+      Eigen::Vector3f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y,
+                      curr_vel_.twist.linear.z)
+          .norm();
 }
 
 void LocalPlanner::setGoal() {
@@ -560,4 +564,5 @@ void LocalPlanner::getAvoidanceOutput(avoidanceOutput &out) {
   out.costmap_direction_e = costmap_direction_e_;
   out.costmap_direction_z = costmap_direction_z_;
   out.path_node_positions = star_planner_.path_node_positions_;
+}
 }

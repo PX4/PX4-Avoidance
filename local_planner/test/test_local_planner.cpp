@@ -7,6 +7,7 @@
 // Stateless tests:
 // Create some hardcoded scan data of obstacles in different positions
 // For each one check that the planner response is correct
+using namespace avoidance;
 
 class LocalPlannerTests : public ::testing::Test {
  public:
@@ -57,9 +58,9 @@ TEST_F(LocalPlannerTests, no_obstacles) {
   planner.runPlanner();
 
   // THEN: it shouldn't find any obstacles
-  avoidanceOutput avoidance;
-  planner.getAvoidanceOutput(avoidance);
-  EXPECT_FALSE(avoidance.obstacle_ahead);
+  avoidanceOutput output;
+  planner.getAvoidanceOutput(output);
+  EXPECT_FALSE(output.obstacle_ahead);
 
   // AND: the scan shouldn't have any data
   sensor_msgs::LaserScan scan;
@@ -104,14 +105,14 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   planner.runPlanner();
 
   // THEN: it should detect the obstacle and go left
-  avoidanceOutput avoidance;
-  planner.getAvoidanceOutput(avoidance);
+  avoidanceOutput output;
+  planner.getAvoidanceOutput(output);
 
-  EXPECT_TRUE(avoidance.obstacle_ahead);
-  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  EXPECT_TRUE(output.obstacle_ahead);
+  ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
-  for (auto it = avoidance.path_node_positions.rbegin();
-       it != avoidance.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin();
+       it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x > distance) break;
     if (node.y > node_max_y) node_max_y = node.y;
@@ -153,14 +154,14 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   planner.runPlanner();
 
   // THEN: it should modify the path to the left
-  avoidanceOutput avoidance;
-  planner.getAvoidanceOutput(avoidance);
+  avoidanceOutput output;
+  planner.getAvoidanceOutput(output);
 
-  EXPECT_TRUE(avoidance.obstacle_ahead);
-  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  EXPECT_TRUE(output.obstacle_ahead);
+  ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
-  for (auto it = avoidance.path_node_positions.rbegin();
-       it != avoidance.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin();
+       it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x > distance) break;
     if (node.y > node_max_y) node_max_y = node.y;
@@ -201,13 +202,13 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   planner.runPlanner();
 
   // THEN: it should modify the path to the right
-  avoidanceOutput avoidance;
-  planner.getAvoidanceOutput(avoidance);
-  EXPECT_TRUE(avoidance.obstacle_ahead);
-  ASSERT_GE(avoidance.path_node_positions.size(), 2);
+  avoidanceOutput output;
+  planner.getAvoidanceOutput(output);
+  EXPECT_TRUE(output.obstacle_ahead);
+  ASSERT_GE(output.path_node_positions.size(), 2);
   float node_min_y = 0.f;
-  for (auto it = avoidance.path_node_positions.rbegin();
-       it != avoidance.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin();
+       it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x > distance) break;
     if (node.y < node_min_y) node_min_y = node.y;

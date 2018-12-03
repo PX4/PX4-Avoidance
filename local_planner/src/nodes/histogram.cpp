@@ -1,5 +1,5 @@
 #include "histogram.h"
-
+namespace avoidance {
 Histogram::Histogram(const int res)
     : resolution{res}, z_dim{360 / resolution}, e_dim{180 / resolution} {
   bin.resize(e_dim);
@@ -102,4 +102,5 @@ void Histogram::setZero() {
       dist[i][j] = 0.0;
     }
   }
+}
 }

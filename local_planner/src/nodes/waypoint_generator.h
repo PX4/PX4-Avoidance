@@ -21,6 +21,8 @@
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
 
+namespace avoidance {
+
 struct waypointResult {
   waypoint_choice waypoint_type;
   geometry_msgs::PoseStamped position_waypoint;
@@ -90,11 +92,12 @@ class WaypointGenerator {
  public:
   waypointGenerator_params param_;
   void getWaypoints(waypointResult& output);
-  void setPlannerInfo(avoidanceOutput input);
-  void setFOV(double& h_FOV, double& v_FOV);
-  void updateState(geometry_msgs::PoseStamped act_pose,
-                   geometry_msgs::PoseStamped goal,
-                   geometry_msgs::TwistStamped vel, bool stay, ros::Time t);
+  void setPlannerInfo(const avoidanceOutput& input);
+  void setFOV(double h_FOV, double v_FOV);
+  void updateState(const geometry_msgs::PoseStamped& act_pose,
+                   const geometry_msgs::PoseStamped& goal,
+                   const geometry_msgs::TwistStamped& vel, bool stay,
+                   ros::Time t);
 
   /**
    * Set maximum jerk limitation. Set to 0 to disable.
@@ -115,5 +118,5 @@ class WaypointGenerator {
   WaypointGenerator();
   ~WaypointGenerator();
 };
-
+}
 #endif  // WAYPOINT_GENERATOR_H

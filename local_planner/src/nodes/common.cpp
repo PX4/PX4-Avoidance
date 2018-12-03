@@ -7,6 +7,7 @@
 #include <vector>
 
 #include <tf/transform_listener.h>
+namespace avoidance {
 
 float distance2DPolar(int e1, int z1, int e2, int z2) {
   return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
@@ -204,4 +205,5 @@ double getAngularVelocity(double desired_yaw, double curr_yaw) {
   }
 
   return 0.5 * vel;
+}
 }

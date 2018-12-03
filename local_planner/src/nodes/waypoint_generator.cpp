@@ -1,5 +1,7 @@
 #include "waypoint_generator.h"
 
+namespace avoidance {
+
 WaypointGenerator::WaypointGenerator() {}
 
 WaypointGenerator::~WaypointGenerator() {}
@@ -81,15 +83,15 @@ void WaypointGenerator::calculateWaypoint() {
       Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
 }
 
-void WaypointGenerator::setFOV(double& h_FOV, double& v_FOV) {
+void WaypointGenerator::setFOV(double h_FOV, double v_FOV) {
   h_FOV_ = h_FOV;
   v_FOV_ = v_FOV;
 }
 
-void WaypointGenerator::updateState(geometry_msgs::PoseStamped act_pose,
-                                    geometry_msgs::PoseStamped goal,
-                                    geometry_msgs::TwistStamped vel, bool stay,
-                                    ros::Time t) {
+void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
+                                    const geometry_msgs::PoseStamped& goal,
+                                    const geometry_msgs::TwistStamped& vel,
+                                    bool stay, ros::Time t) {
   if (goal_.x != goal.pose.position.x || goal_.y != goal.pose.position.y ||
       goal_.z != goal.pose.position.z) {
     reached_goal_ = false;
@@ -110,8 +112,10 @@ void WaypointGenerator::updateState(geometry_msgs::PoseStamped act_pose,
   z_FOV_idx_.clear();
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
-  curr_vel_magnitude_ = Eigen::Vector3f(curr_vel_.twist.linear.x,
-    curr_vel_.twist.linear.y, curr_vel_.twist.linear.z).norm();
+  curr_vel_magnitude_ =
+      Eigen::Vector3f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y,
+                      curr_vel_.twist.linear.z)
+          .norm();
 
   if (stay) {
     planner_info_.waypoint_type = hover;
@@ -421,6 +425,7 @@ void WaypointGenerator::getWaypoints(waypointResult& output) {
   output = output_;
 }
 
-void WaypointGenerator::setPlannerInfo(avoidanceOutput input) {
+void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) {
   planner_info_ = input;
+}
 }

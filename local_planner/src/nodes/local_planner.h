@@ -55,6 +55,8 @@
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
+namespace avoidance {
+
 enum waypoint_choice { hover, costmap, tryPath, direct, reachHeight, goBack };
 
 struct avoidanceOutput {
@@ -236,5 +238,6 @@ class LocalPlanner {
   void runPlanner();
   void getAvoidanceOutput(avoidanceOutput &out);
 };
+}
 
 #endif  // LOCAL_PLANNER_H

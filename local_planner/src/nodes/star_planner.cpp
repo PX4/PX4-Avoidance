@@ -1,5 +1,7 @@
 #include "star_planner.h"
 
+namespace avoidance {
+
 StarPlanner::StarPlanner() {}
 
 StarPlanner::~StarPlanner() {}
@@ -13,11 +15,9 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(double min_cloud_size,
-                            double min_dist_backoff,
+void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
                             const nav_msgs::GridCells& path_waypoints,
-                            double curr_yaw,
-                            double min_realsense_dist) {
+                            double curr_yaw, double min_realsense_dist) {
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
@@ -74,10 +74,8 @@ double StarPlanner::treeCostFunction(int node_number) {
   int e = tree_[node_number].last_e_;
   int z = tree_[node_number].last_z_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  int goal_z =
-      azimuthAnglefromCartesian(goal_, origin_position);
-  int goal_e =
-      elevationAnglefromCartesian(goal_, origin_position);
+  int goal_z = azimuthAnglefromCartesian(goal_, origin_position);
+  int goal_e = elevationAnglefromCartesian(goal_, origin_position);
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
@@ -113,10 +111,8 @@ double StarPlanner::treeCostFunction(int node_number) {
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
   geometry_msgs::Point node_position = tree_[node_number].getPosition();
-  int goal_z =
-      azimuthAnglefromCartesian(goal_, node_position);
-  int goal_e =
-      elevationAnglefromCartesian(goal_, node_position);
+  int goal_z = azimuthAnglefromCartesian(goal_, node_position);
+  int goal_e = elevationAnglefromCartesian(goal_, node_position);
 
   int origin = tree_[node_number].origin_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
@@ -285,4 +281,5 @@ void StarPlanner::buildLookAheadTree() {
 
   ROS_INFO("\033[0;35m[SP]Tree calculated in %2.2fms.\033[0m",
            (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+}
 }

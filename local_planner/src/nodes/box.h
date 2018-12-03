@@ -3,7 +3,7 @@
 #define BOX_H
 
 #include <geometry_msgs/Point.h>
-
+namespace avoidance {
 class Box {
  public:
   Box();
@@ -25,5 +25,5 @@ class Box {
   double zmin_;
   double zmax_;
 };
-
+}
 #endif  // BOX_H

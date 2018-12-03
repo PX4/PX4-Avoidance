@@ -1,5 +1,7 @@
 #include "rviz_world_loader.h"
 
+namespace avoidance {
+
 // extraction operators
 void operator>>(const YAML::Node& node, Eigen::Vector3f& v) {
   v.x() = node[0].as<float>();
@@ -150,4 +152,5 @@ int visualizeDrone(const geometry_msgs::PoseStamped& pose,
   drone.action = visualization_msgs::Marker::ADD;
 
   return 0;
+}
 }
