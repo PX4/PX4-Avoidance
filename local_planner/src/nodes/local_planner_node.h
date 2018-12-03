@@ -47,6 +47,18 @@ struct cameraData {
   bool received_;
 };
 
+enum class MAV_STATE {
+  MAV_STATE_UNINIT,
+  MAV_STATE_BOOT,
+  MAV_STATE_CALIBRATIN,
+  MAV_STATE_STANDBY,
+  MAV_STATE_ACTIVE,
+  MAV_STATE_CRITICAL,
+  MAV_STATE_EMERGENCY,
+  MAV_STATE_POWEROFF,
+  MAV_STATE_FLIGHT_TERMINATION,
+};
+
 class LocalPlannerNode {
  public:
   LocalPlannerNode();
