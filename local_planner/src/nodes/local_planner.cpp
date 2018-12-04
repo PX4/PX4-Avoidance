@@ -77,10 +77,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
 }
 
 void LocalPlanner::setVelocity() {
-  velocity_mod_ =
-      Eigen::Vector3f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y,
-                      curr_vel_.twist.linear.z)
-          .norm();
+  const auto& p = curr_vel_.twist.linear;
+  velocity_mod_ = Eigen::Vector3f(p.x, p.y, p.z).norm();
 }
 
 void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
