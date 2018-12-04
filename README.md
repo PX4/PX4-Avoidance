@@ -4,7 +4,11 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
   * A local, VFH+ based planner that plans (including some history) in a vector field histogram
   * A global, graph based planner that plans in a traditional occupancy grid
   
-**The full PX4 Developer documentation is available on: https://dev.px4.io and includes more computer vision (including VIO) examples.**
+The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 16.04, for both avoidance and collision prevention use cases.
+
+> **Note** PX4-side setup is covered in the PX4 User Guide:
+  - [Ostacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
+  - [Collision Prevention](https://docs.px4.io/en/computer_vision/collision_prevention.html)
 
 ## Bi-weekly Dev Call
 The active developers of the avoidance repo are syncing up on a bi-weekly basis on the WG dev call.
@@ -21,7 +25,7 @@ The active developers of the avoidance repo are syncing up on a bi-weekly basis 
   - [Installation](#installation)
     - [Quick Start with Docker](#quick-start-with-docker)
     - [Installation for Ubuntu 16.04 and ROS Kinetic](#installation-for-ubuntu-16.04-and-ros-kinetic)
-  - [Run the Simulation](#run-the-simulation)
+  - [Run the Avoidance Gazebo Simulation](#run-the-avoidance-gazebosimulation)
     - [Local Planner](#local-planner)
     - [Global Planner](#global-planner)
   - [Run on Hardware](#run-on-hardware)
@@ -130,7 +134,11 @@ catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
 source ~/catkin_ws/devel/setup.bash
 ```
 
-## Run the Simulation
+## Run the Avoidance Gazebo Simulation
+
+In the following section we guide you trough installing and running a Gazebo simulation of both local and global planner. 
+
+### Build and Run the Simulator
 
 1. Clone the PX4 Firmware and all its submodules (it may take some time).
 
@@ -141,11 +149,7 @@ cd ~/Firmware
 git submodule update --init --recursive
 ```
 
-2. Install Firmware dependencies.
-
-```bash
-apt install libopencv-dev python-jinja2 protobuf-compiler
-```
+2. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies).
 
 3. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
@@ -163,13 +167,13 @@ export QT_X11_NO_MITSHM=1
 make px4_sitl_default gazebo
 ```
 
-4. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start the PX4.
+4. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
 
 ```bash
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
 ```
 
-You should now be ready to run the simulation.
+You should now be ready to run the simulation using local or global planner.
 
 ### Global Planner
 
@@ -234,7 +238,7 @@ Now the disparity map can be visualized by rviz or rqt under the topic */stereo/
 
 ### Local Planner
 
-The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it possible to
+The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
 
 * simulate a forward looking stereo camera running OpenCV's block matching algorithm
 
@@ -281,9 +285,9 @@ Both planners require a 3D point cloud of type `sensor_msgs::PointCloud2`. Any c
 
 The officially supported camera is Intel Realsense D435. We recommend using Firmware version 5.9.13.0. The instructions on how to update the Firmware of the camera can be found [here](https://www.intel.com/content/www/us/en/support/articles/000028171/emerging-technologies/intel-realsense-technology.html)
 
-Pro Tip: Be careful when attaching the camera with a USB3 cable. USB3 might might interfere with GPS and other signals. If possible, always use USB2 cables.
+> **Tip:** Be careful when attaching the camera with a USB3 cable. USB3 might might interfere with GPS and other signals. If possible, always use USB2 cables.
 
-Orther tested camera models are: Intel Realsense D415 and R200.
+Other tested camera models are: Intel Realsense D415 and R200.
 
 #### Generating Point-clouds from Depth-maps
 
@@ -303,8 +307,8 @@ A stream of point-clouds should now be published to */point_cloud*.
 ### PX4 Autopilot
 
 Parameters to set through QGC:
-* MPC_OBS_AVOID to 1
-* SYS_COMPANION to 57600 or
+* `MPC_OBS_AVOID` to Enabled
+* `MAV_1_CONFIG`, `MAV_1_MODE`, `SER_TEL2_BAUD` to enable MAVLink on a serial port. For more information: [PX4 Dev Guide](http://dev.px4.io/en/companion_computer/pixhawk_companion.html#pixhawk-setup)
 
 ### Companion Computer
 
@@ -314,7 +318,9 @@ Parameters to set through QGC:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
   - [Librealsense ROS wrappers)](https://github.com/intel-ros/realsense.git)
 
-Tested models for the local planner Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone), for the global planner Odroid.
+Tested models:
+- local planner: Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone)
+- global planner: Odroid
 
 ## Global Planner
 
@@ -324,11 +330,16 @@ For more information, read the [Running on Odroid](https://github.com/PX4/avoida
 
 ## Local Planner
 
-Once the catkin workspace has been built, to run the planner with a Realsense D435 camera launch local_planner_example.launch editing the arguments:
+Once the catkin workspace has been built, to run the planner with a Realsense D435 camera launch *local_planner_example.launch* editing the arguments:
 
 1. `tf_*` representing the dispacement between the camera and the flight controller
 2. `fcu_url` representing the port connecting the companion computer to the flight controller
 3. `serial_no_camera_front` representing the Realsense serial number
+
+For example:
+```bash
+roslaunch local_planner local_planner_example.launch tf_x:=0.20 tf_y:=0.0 tf_z:=-0.2
+```
 
 The planner is running correctly when
 
@@ -341,7 +352,7 @@ is displayed on the console.
 The local planner supports also multi camera setups. `local_planner_example.launch` needs to be modified by:
 
 1. launching one RealSense nodlet (`rs_depthcloud.launch`) for each camera making sure that each of them has a unique `namespace`
-2. launch one static_transform_publsher node for each camera
+2. launch one `static_transform_publsher` node for each camera
 
 An example of a three camera launch file is [local_planner_A700_3cam.launch](https://github.com/PX4/avoidance/blob/master/local_planner/launch/local_planner_A700_3cam.launch).
 
@@ -434,7 +445,7 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 
 # Contributing
 
-Fork the project and then close you repository. Create a new branch off of master for your new feature or bug fix.
+Fork the project and then clone your repository. Create a new branch off of master for your new feature or bug fix.
 
 Please, take into consideration our [coding style](https://github.com/PX4/avoidance/blob/master/tools/fix_style.sh).
 
