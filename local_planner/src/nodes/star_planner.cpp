@@ -46,7 +46,7 @@ void StarPlanner::setBoxSize(const Box& histogram_box,
 }
 
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
-  goal_ = goal;
+  goal_ = toEigen(goal);
   tree_age_ = 1000;
 }
 
@@ -74,8 +74,8 @@ double StarPlanner::treeCostFunction(int node_number) {
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  float goal_z = azimuthAnglefromCartesian(goal_, origin_position);
-  float goal_e = elevationAnglefromCartesian(goal_, origin_position);
+  float goal_z = azimuthAnglefromCartesian(toPoint(goal_), origin_position);
+  float goal_e = elevationAnglefromCartesian(toPoint(goal_), origin_position);
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
@@ -111,13 +111,14 @@ double StarPlanner::treeCostFunction(int node_number) {
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
   geometry_msgs::Point node_position = tree_[node_number].getPosition();
-  int goal_z = floor(azimuthAnglefromCartesian(goal_, node_position));
-  int goal_e = floor(elevationAnglefromCartesian(goal_, node_position));
+  int goal_z = floor(azimuthAnglefromCartesian(toPoint(goal_), node_position));
+  int goal_e = floor(elevationAnglefromCartesian(toPoint(goal_), node_position));
 
   int origin = tree_[node_number].origin_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  double origin_goal_dist = distance3DCartesian(goal_, origin_position);
-  double goal_dist = distance3DCartesian(goal_, node_position);
+  double origin_goal_dist =
+      distance3DCartesian(toPoint(goal_), origin_position);
+  double goal_dist = distance3DCartesian(toPoint(goal_), node_position);
   double goal_cost = (goal_dist / origin_goal_dist - 0.9) * 5000;
 
   //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);
@@ -160,8 +161,8 @@ void StarPlanner::buildLookAheadTree() {
 
     // crop pointcloud
     pcl::PointCloud<pcl::PointXYZ> cropped_cloud;
-    geometry_msgs::Point closest_point;       // unused
-    bool hist_is_empty = false;               // unused
+    Eigen::Vector3f closest_point;       // unused
+    bool hist_is_empty = false;          // unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;
     histogram_box_.setBoxLimits(origin_position, ground_distance_);
@@ -200,8 +201,9 @@ void StarPlanner::buildLookAheadTree() {
       histogram.downsample();
       findFreeDirections(histogram, 25, path_candidates, path_selected,
                          path_rejected, path_blocked, path_waypoints_,
-                         cost_path_candidates, goal_, pose_,
-                         origin_origin_position, goal_cost_param_,
+                         cost_path_candidates, goal_,
+                         toEigen(pose_.pose.position),
+                         toEigen(origin_origin_position), goal_cost_param_,
                          smooth_cost_param_, height_change_cost_param_adapted_,
                          height_change_cost_param_, false, 2 * ALPHA_RES);
 

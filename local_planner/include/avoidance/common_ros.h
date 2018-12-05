@@ -30,7 +30,7 @@ inline geometry_msgs::TwistStamped transformTwistMsg(
 
 // Returns true if msg1 and msg2 have both the same altitude and orientation
 inline bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1,
-                           const geometry_msgs::Pose& msg2) {
+                                  const geometry_msgs::Pose& msg2) {
   return msg1.orientation.z == msg2.orientation.z &&
          msg1.orientation.w == msg2.orientation.w &&
          msg1.position.z == msg2.position.z;

@@ -106,8 +106,13 @@ void wrapAngleToPlusMinusPI(double& angle);
 **/
 double getAngularVelocity(double desired_yaw, double curr_yaw);
 
-Eigen::Vector3f convert(const geometry_msgs::Point& p);
-geometry_msgs::Point convert(const Eigen::Vector3f& p);
+Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
+Eigen::Vector3f toEigen(const pcl::PointXYZ& xyz);
+Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
+
+geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
+pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
+geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3);
 }
 
 #endif  // COMMON_H

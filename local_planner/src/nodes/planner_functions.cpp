@@ -30,7 +30,7 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
 // considered
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
-    geometry_msgs::Point &closest_point,
+    Eigen::Vector3f &closest_point,
     double &distance_to_closest_point,
     int &counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
@@ -42,6 +42,7 @@ void filterPointCloud(
   distance_to_closest_point = HUGE_VAL;
   float distance;
   counter_backoff = 0;
+  temp_sphere_center.x = 0.0;
 
   for (size_t i = 0; i < complete_cloud.size(); ++i) {
     for (const pcl::PointXYZ &xyz : complete_cloud[i]) {
@@ -54,9 +55,7 @@ void filterPointCloud(
             cropped_cloud.points.push_back(pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
             if (distance < distance_to_closest_point) {
               distance_to_closest_point = distance;
-              closest_point.x = xyz.x;
-              closest_point.y = xyz.y;
-              closest_point.z = xyz.z;
+              closest_point = toEigen(xyz);
             }
             if (distance < min_dist_backoff) {
               counter_backoff++;
@@ -244,45 +243,41 @@ void combinedHistogram(bool &hist_empty, Histogram &new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
-                    geometry_msgs::Point goal,
-                    geometry_msgs::PoseStamped position,
-                    geometry_msgs::Point position_old, double goal_cost_param,
+double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
+                    const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position,
+                    const Eigen::Vector3f &position_old, double goal_cost_param,
                     double smooth_cost_param,
                     double height_change_cost_param_adapted,
                     double height_change_cost_param, bool only_yawed) {
   double cost;
   int waypoint_index = path_waypoints.cells.size();
 
-  double dist = distance3DCartesian(position.pose.position, goal);
-  double dist_old = distance3DCartesian(position_old, goal);
-  geometry_msgs::Point candidate_goal =
-      fromPolarToCartesian(e, z, dist, position.pose.position);
-  geometry_msgs::Point old_candidate_goal = fromPolarToCartesian(
-      path_waypoints.cells[waypoint_index - 1].x,
-      path_waypoints.cells[waypoint_index - 1].y, dist_old, position_old);
-  double yaw_cost =
-      goal_cost_param *
-      sqrt((goal.x - candidate_goal.x) * (goal.x - candidate_goal.x) +
-           (goal.y - candidate_goal.y) * (goal.y - candidate_goal.y));
+  double dist = (position - goal).norm();
+  double dist_old = (position_old - goal).norm();
+  Eigen::Vector3f candidate_goal =
+      toEigen(fromPolarToCartesian(e, z, dist, toPoint(position)));
+  Eigen::Vector3f old_candidate_goal =
+      toEigen(fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
+                                   path_waypoints.cells[waypoint_index - 1].y,
+                                   dist_old, toPoint(position_old)));
+  double yaw_cost = goal_cost_param *
+                    (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
+
   double pitch_cost_up = 0.0;
   double pitch_cost_down = 0.0;
-  if (candidate_goal.z > goal.z) {
-    pitch_cost_up = goal_cost_param * sqrt((goal.z - candidate_goal.z) *
-                                           (goal.z - candidate_goal.z));
+  if (candidate_goal.z() > goal.z()) {
+    pitch_cost_up = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
   } else {
-    pitch_cost_down = goal_cost_param * sqrt((goal.z - candidate_goal.z) *
-                                             (goal.z - candidate_goal.z));
+    pitch_cost_down = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
   }
 
   double yaw_cost_smooth =
-      smooth_cost_param * sqrt((old_candidate_goal.x - candidate_goal.x) *
-                                   (old_candidate_goal.x - candidate_goal.x) +
-                               (old_candidate_goal.y - candidate_goal.y) *
-                                   (old_candidate_goal.y - candidate_goal.y));
+      smooth_cost_param *
+      (old_candidate_goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
+
   double pitch_cost_smooth =
-      smooth_cost_param * sqrt((old_candidate_goal.z - candidate_goal.z) *
-                               (old_candidate_goal.z - candidate_goal.z));
+      smooth_cost_param * std::abs(old_candidate_goal.z() - candidate_goal.z());
 
   if (!only_yawed) {
     cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
@@ -323,11 +318,11 @@ void findFreeDirections(
     nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells path_waypoints,
-    std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,
-    const geometry_msgs::PoseStamped &position,
-    const geometry_msgs::Point &position_old, double goal_cost_param,
-    double smooth_cost_param, double height_change_cost_param_adapted,
-    double height_change_cost_param, bool only_yawed, int resolution_alpha) {
+    std::vector<float> &cost_path_candidates, const Eigen::Vector3f &goal,
+    const Eigen::Vector3f &position, const Eigen::Vector3f &position_old,
+    double goal_cost_param, double smooth_cost_param,
+    double height_change_cost_param_adapted, double height_change_cost_param,
+    bool only_yawed, int resolution_alpha) {
   int n = floor(safety_radius / resolution_alpha);  // safety radius
   int z_dim = 360 / resolution_alpha;
   int e_dim = 180 / resolution_alpha;
