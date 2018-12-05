@@ -149,7 +149,7 @@ class LocalPlanner {
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f back_off_start_point_;
+  Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f avoid_centerpoint_ = Eigen::Vector3f::Zero();
