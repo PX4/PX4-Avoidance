@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
         since_start > pointcloud_timeout_land) {
       if (!landing) {
         mavros_msgs::SetMode mode_msg;
-        mode_msg.request.custom_mode = "AUTO.LAND";
+        mode_msg.request.custom_mode = "AUTO.LOITER";
         landing = true;
         Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
