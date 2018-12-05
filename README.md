@@ -212,15 +212,18 @@ The graph of the ROS nodes is shown below:
 One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
 
-#### Simulating stereo-vision
-To simulate obstacle avoidance with stereo-cameras, the package `stereo-image-proc` must be installed.
+### Local Planner
+
+The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
+
+*   simulate a forward looking stereo camera running OpenCV's block matching algorithm
 
 ```bash
-# Launch simulation
-roslaunch global_planner global_planner_stereo.launch
-```
+# if stereo-image-proc not yet installed
+sudo apt-get install ros-kinetic-stereo-image-proc
 
-Simulated stereo-vision is prone to errors due to artificial texture, which may make obstacles appear extremely close to the camera. For better results, choose a more natural [world](https://github.com/PX4/avoidance/blob/master/sim/worlds/simple_obstacle.world).
+roslaunch local_planner local_planner_stereo.launch
+```
 
 The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message, either run:
 
@@ -236,18 +239,6 @@ rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_ms
 
 Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
 
-### Local Planner
-
-The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
-
-* simulate a forward looking stereo camera running OpenCV's block matching algorithm
-
-```bash
-# if stereo-image-proc not yet installed
-sudo apt-get install ros-kinetic-stereo-image-proc
-
-roslaunch local_planner local_planner_stereo.launch
-```
 * simulate a forward looking kinect depth sensor:
 
 ```bash
