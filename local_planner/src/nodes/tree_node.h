@@ -1,8 +1,8 @@
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
 
-#include <eigen3/Eigen/Core>
 #include <math.h>
+#include <eigen3/Eigen/Core>
 #include <vector>
 
 namespace avoidance {

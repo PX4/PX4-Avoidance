@@ -127,11 +127,9 @@ void propagateHistogram(Histogram &polar_histogram_est,
                         geometry_msgs::PoseStamped position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     float e_angle = elevationAnglefromCartesian(
-        reprojected_points.points[i].x, reprojected_points.points[i].y,
-        reprojected_points.points[i].z, position.pose.position);
-    float z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x,
-                                            reprojected_points.points[i].y,
-                                            position.pose.position);
+        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
+    float z_angle = azimuthAnglefromCartesian(
+        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
 
     int e_ind = elevationAngletoIndex(e_angle, 2 * ALPHA_RES);
     int z_ind = azimuthAngletoIndex(z_angle, 2 * ALPHA_RES);
@@ -180,8 +178,8 @@ void generateNewHistogram(Histogram &polar_histogram,
     float e_angle = elevationAnglefromCartesian(toPoint(p), position.pose.position);
     float z_angle = azimuthAnglefromCartesian(toPoint(p), position.pose.position);
     int e_angle =
-        elevationAnglefromCartesian(toPoint(p), position.pose.position);
-    int z_angle = azimuthAnglefromCartesian(toPoint(p), position.pose.position);
+        elevationAnglefromCartesian(p, toEigen(position.pose.position));
+    int z_angle = azimuthAnglefromCartesian(p, toEigen(position.pose.position));
 
     int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
     int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
@@ -457,7 +455,7 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 bool getDirectionFromTree(
     Eigen::Vector3f &p,
     const std::vector<geometry_msgs::Point> &path_node_positions,
-    const Eigen::Vector3f& position) {
+    const Eigen::Vector3f &position) {
   int size = path_node_positions.size();
   bool tree_available = true;
 
@@ -498,8 +496,8 @@ bool getDirectionFromTree(
           (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
           l_frac * toEigen(path_node_positions[wp_idx]);
 
-      int wp_e = floor(elevationAnglefromCartesian(toPoint(mean_point), position));
-      int wp_z = floor(azimuthAnglefromCartesian(toPoint(mean_point), position));
+      int wp_e = floor(elevationAnglefromCartesian(mean_point, position));
+      int wp_z = floor(azimuthAnglefromCartesian(mean_point, position));
 
       p = Eigen::Vector3f(wp_e, wp_z, 0.f);
     }

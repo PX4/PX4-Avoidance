@@ -347,8 +347,8 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
     m.id = i + 1;
     m.action = visualization_msgs::Marker::ADD;
     geometry_msgs::Point p =
-        toPoint(fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0,
-                             drone_pos.pose.position));
+        toPoint(fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y,
+                                     1.0, drone_pos.pose.position));
     m.pose.position = p;
 
     m.color.r = red;

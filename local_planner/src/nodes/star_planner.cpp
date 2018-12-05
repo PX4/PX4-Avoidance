@@ -74,10 +74,8 @@ double StarPlanner::treeCostFunction(int node_number) {
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
   Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  float goal_z = azimuthAnglefromCartesian(toPoint(goal_), toPoint(origin_position));
-  float goal_e = elevationAnglefromCartesian(toPoint(goal_), toPoint(origin_position));
-  int goal_e =
-      elevationAnglefromCartesian(toPoint(goal_), toPoint(origin_position));
+  float goal_z = azimuthAnglefromCartesian(goal_, origin_position);
+  float goal_e = elevationAnglefromCartesian(goal_, origin_position);
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
@@ -113,10 +111,8 @@ double StarPlanner::treeCostFunction(int node_number) {
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
-  int goal_z = floor(azimuthAnglefromCartesian(toPoint(goal_), toPoint(node_position)));
-  int goal_e = floor(elevationAnglefromCartesian(toPoint(goal_), toPoint(node_position)));
-  int goal_e =
-      elevationAnglefromCartesian(toPoint(goal_), toPoint(node_position));
+  int goal_z = float(azimuthAnglefromCartesian(goal_, node_position));
+  int goal_e = float(elevationAnglefromCartesian(goal_, node_position));
 
   int origin = tree_[node_number].origin_;
   Eigen::Vector3f origin_position = tree_[origin].getPosition();

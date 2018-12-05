@@ -48,7 +48,7 @@ class WaypointGenerator {
   waypoint_choice last_wp_type_;
 
   geometry_msgs::PoseStamped pose_;
-  geometry_msgs::Point goal_;
+  Eigen::Vector3f goal_;
   double curr_yaw_;
   double curr_vel_magnitude_;
   ros::Time update_time_;
@@ -71,7 +71,7 @@ class WaypointGenerator {
   double h_FOV_ = 59.0;
   double v_FOV_ = 46.0;
 
-  geometry_msgs::Point hover_position_;
+  Eigen::Vector3f hover_position_;
   geometry_msgs::PoseStamped last_position_waypoint_;
   Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 

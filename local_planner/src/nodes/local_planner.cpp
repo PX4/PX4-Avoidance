@@ -256,9 +256,9 @@ void LocalPlanner::determineStrategy() {
         int n_occupied_cells = 0;
 
         int goal_e_angle =
-            floor(elevationAnglefromCartesian(toPoint(goal_), pose_.pose.position));
+            floor(elevationAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
         int goal_z_angle =
-            floor(azimuthAnglefromCartesian(toPoint(goal_), pose_.pose.position));
+            floor(azimuthAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
 
         int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
         int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);

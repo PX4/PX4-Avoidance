@@ -94,6 +94,6 @@ bool calculateCostMap(std::vector<float> cost_path_candidates,
 bool getDirectionFromTree(
     Eigen::Vector3f &p,
     const std::vector<geometry_msgs::Point> &path_node_positions,
-    const Eigen::Vector3f& position);
+    const Eigen::Vector3f &position);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
