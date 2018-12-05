@@ -59,80 +59,78 @@ Note that in the following instructions, we assume your catkin workspace (in whi
 
 1. Add ROS to sources.list.
 
-```bash
-echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
-apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
-apt-get update
-```
+   ```bash
+   echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
+   apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+   apt-get update
+   ```
 
-2. Install gazebo with ROS.
+1. Install gazebo with ROS.
 
-```bash
-apt install ros-kinetic-desktop-full
+   ```bash
+   apt install ros-kinetic-desktop-full
+   
+   # Source ROS
+   source /opt/ros/kinetic/setup.bash
+   ```
 
-# Source ROS
-source /opt/ros/kinetic/setup.bash
-```
+1. Initialize rosdep.
 
-3. Initialize rosdep.
+   ```bash
+   rosdep init
+   rosdep update
+   ```
 
-```bash
-rosdep init
-rosdep update
-```
+1. Install catkin and create your catkin workspace directory.
 
-4. Install catkin and create your catkin workspace directory.
+   ```bash
+   apt install python-catkin-tools
+   mkdir -p ~/catkin_ws/src
+   ```
 
-```bash
-apt install python-catkin-tools
-mkdir -p ~/catkin_ws/src
-```
+1. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
 
-5. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
+   ```bash
+   apt install ros-kinetic-mavros ros-kinetic-mavros-extras
+   ```
 
-```bash
-apt install ros-kinetic-mavros ros-kinetic-mavros-extras
-```
+1. Install the geographiclib dataset
 
-6. Install the geographiclib dataset
+   ```bash
+   wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+   sudo ./install_geographiclib_datasets.sh
+   ```
 
-```bash
-wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
-sudo ./install_geographiclib_datasets.sh
-```
+1. Install avoidance module dependencies (pointcloud library and octomap).
 
-7. Install avoidance module dependencies (pointcloud library and octomap).
+   ```bash
+   apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
+   ```
 
-```bash
-apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
-```
+1. Clone this repository in your catkin workspace in order to build the avoidance node.
 
-8. Clone this repository in your catkin workspace in order to build the avoidance node.
+   ```bash
+   cd ~/catkin_ws/src
+   git clone https://github.com/PX4/avoidance.git
+   ```
 
-```bash
-cd ~/catkin_ws/src
-git clone https://github.com/PX4/avoidance.git
-```
+1. Actually build the avoidance node.
 
-9. Actually build the avoidance node.
+   ```bash
+   catkin build -w ~/catkin_ws
+   ```
+   
+   Note that you can build the node in release mode this way:
+   
+   ```bash
+   catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
+   ```
 
-```bash
-catkin build -w ~/catkin_ws
-```
+1. Source the catkin setup.bash from your catkin workspace.
 
-If it fails, try to build again. It seems like it sometimes fails in an undeterministic way.
-
-Note that you can build the node in release mode this way:
-
-```bash
-catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
-```
-
-10. Source the catkin setup.bash from your catkin workspace.
-
-```bash
-source ~/catkin_ws/devel/setup.bash
-```
+   ```bash
+   source ~/catkin_ws/devel/setup.bash
+   ```
 
 ## Run the Avoidance Gazebo Simulation
 
@@ -142,36 +140,36 @@ In the following section we guide you trough installing and running a Gazebo sim
 
 1. Clone the PX4 Firmware and all its submodules (it may take some time).
 
-```bash
-cd ~
-git clone https://github.com/PX4/Firmware.git
-cd ~/Firmware
-git submodule update --init --recursive
-```
+   ```bash
+   cd ~
+   git clone https://github.com/PX4/Firmware.git
+   cd ~/Firmware
+   git submodule update --init --recursive
+   ```
 
-2. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies).
+1. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies).
 
-3. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
+1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
-```bash
-# Add the models from the avoidance module to GAZEBO_MODEL_PATH
-export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
+   ```bash
+   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
+   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
+   
+   # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
+   export QT_X11_NO_MITSHM=1
+   
+   # Setup some more Gazebo-related environment variables
+   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+   
+   # Build and run simulation
+   make px4_sitl_default gazebo
+   ```
 
-# This is necessary to prevent some Qt-related errors (feel free to try to omit it)
-export QT_X11_NO_MITSHM=1
+1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
 
-# Setup some more Gazebo-related environment variables
-. ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
-
-# Build and run simulation
-make px4_sitl_default gazebo
-```
-
-4. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
-
-```bash
-export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
-```
+   ```bash
+   export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
+   ```
 
 You should now be ready to run the simulation using local or global planner.
 
@@ -216,40 +214,40 @@ One can plan a new path by setting a new goal with the *2D Nav Goal* button in r
 
 The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
 
-*   simulate a forward looking stereo camera running OpenCV's block matching algorithm
+* simulate a forward looking stereo camera running OpenCV's block matching algorithm
 
-```bash
-# if stereo-image-proc not yet installed
-sudo apt-get install ros-kinetic-stereo-image-proc
+   ```bash
+   # if stereo-image-proc not yet installed
+   sudo apt-get install ros-kinetic-stereo-image-proc
+   
+   roslaunch local_planner local_planner_stereo.launch
+   ```
 
-roslaunch local_planner local_planner_stereo.launch
-```
+   The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the    message, either run:
 
-The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the message, either run:
+   ```bash
+   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
+   ```
 
-```bash
-rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
-```
+   or publish the DisparityImage as a simple sensor_msgs/Image
 
-or publish the DisparityImage as a simple sensor_msgs/Image
+   ```bash
+   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
+   ```
 
-```bash
-rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
-```
-
-Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
+   Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
 
 * simulate a forward looking kinect depth sensor:
 
-```bash
-roslaunch local_planner local_planner_depth-camera.launch
-```
+   ```bash
+   roslaunch local_planner local_planner_depth-camera.launch
+   ```
 
 * simulate a three kinect depth sensors:
 
-```bash
-roslaunch local_planner local_planner_sitl_3cam.launch
-```
+   ```bash
+   roslaunch local_planner local_planner_sitl_3cam.launch
+   ```
 
 You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOAD, run:
 
