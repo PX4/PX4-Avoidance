@@ -10,12 +10,10 @@ TreeNode::TreeNode()
       origin_{0},
       depth_{0},
       yaw_{0.0} {
-  position_.x = 0.0;
-  position_.y = 0.0;
-  position_.z = 0.0;
+  position_ = Eigen::Vector3f::Zero();
 }
 
-TreeNode::TreeNode(int from, int d, geometry_msgs::Point pos)
+TreeNode::TreeNode(int from, int d, const Eigen::Vector3f& pos)
     : total_cost_{0.0},
       heuristic_{0.0},
       last_e_{0},
@@ -33,5 +31,5 @@ void TreeNode::setCosts(double h, double c) {
   total_cost_ = c;
 }
 
-geometry_msgs::Point TreeNode::getPosition() { return position_; }
+Eigen::Vector3f TreeNode::getPosition() { return position_; }
 }

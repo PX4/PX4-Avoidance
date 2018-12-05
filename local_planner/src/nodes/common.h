@@ -11,10 +11,6 @@
 namespace avoidance {
 
 float distance2DPolar(int e1, int z1, int e2, int z2);
-float computeL2Dist(const geometry_msgs::Point& position,
-                    const pcl::PointXYZ& xyz);
-float distance3DCartesian(const geometry_msgs::Point& a,
-                          const geometry_msgs::Point& b);
 
 /**
 * @brief     Convertes the point from polar CS to cartesian CS

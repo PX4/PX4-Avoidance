@@ -29,9 +29,9 @@ void WaypointGenerator::calculateWaypoint() {
       break;
     }
     case costmap: {
-      output_.goto_position = fromPolarToCartesian(
+      output_.goto_position = toPoint(fromPolarToCartesian(
           planner_info_.costmap_direction_e, planner_info_.costmap_direction_z,
-          1.0, planner_info_.pose.pose.position);
+          1.0, planner_info_.pose.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
       getPathMsg();
@@ -39,17 +39,17 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      geometry_msgs::Point p;
+      Eigen::Vector3f p;
       bool tree_available = getDirectionFromTree(
-          p, planner_info_.path_node_positions, pose_.pose.position);
-      double dist_goal = distance3DCartesian(goal_, pose_.pose.position);
+          p, planner_info_.path_node_positions, toEigen(pose_.pose.position));
+      double dist_goal = (toEigen(goal_) - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
           ros::Time::now() - planner_info_.last_path_time;
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
-        output_.goto_position = fromPolarToCartesian(
-            p.x, p.y, 1.0, planner_info_.pose.pose.position);
+        output_.goto_position = toPoint(fromPolarToCartesian(
+            p.x(), p.y(), 1.0, planner_info_.pose.pose.position));
         getPathMsg();
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");

@@ -1,14 +1,14 @@
 #ifndef TREE_NODE_H
 #define TREE_NODE_H
 
-#include <geometry_msgs/Point.h>
+#include <eigen3/Eigen/Core>
 #include <math.h>
 #include <vector>
 
 namespace avoidance {
 
 class TreeNode {
-  geometry_msgs::Point position_;
+  Eigen::Vector3f position_;
 
  public:
   double total_cost_;
@@ -20,11 +20,11 @@ class TreeNode {
   double yaw_;
 
   TreeNode();
-  TreeNode(int from, int d, geometry_msgs::Point pos);
+  TreeNode(int from, int d, const Eigen::Vector3f& pos);
   ~TreeNode();
 
   void setCosts(double h, double c);
-  geometry_msgs::Point getPosition();
+  Eigen::Vector3f getPosition();
 };
 }
 

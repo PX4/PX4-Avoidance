@@ -13,26 +13,15 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
   return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
 }
 
-float computeL2Dist(const geometry_msgs::Point& position,
-                    const pcl::PointXYZ& xyz) {
-  return sqrt((position.x - xyz.x) * (position.x - xyz.x) +
-              (position.y - xyz.y) * (position.y - xyz.y) +
               (position.z - xyz.z) * (position.z - xyz.z));
-}
-
-float distance3DCartesian(const geometry_msgs::Point& a,
-                          const geometry_msgs::Point& b) {
-  return sqrt((a.x - b.x) * (a.x - b.x) + (a.y - b.y) * (a.y - b.y) +
-              (a.z - b.z) * (a.z - b.z));
-}
-
 // transform polar coordinates into Cartesian coordinates
-geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
-                                          const geometry_msgs::Point& pos) {
-  geometry_msgs::Point p;
-  p.x = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));
-  p.y = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
-  p.z = pos.z + radius * sin(e * (M_PI / 180.f));
+Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
+                                     const geometry_msgs::Point& pos) {
+  Eigen::Vector3f p;
+  p.x() =
+      pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));  // round
+  p.y() = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
+  p.z() = pos.z + radius * sin(e * (M_PI / 180.f));
 
   return p;
 }
@@ -41,6 +30,8 @@ double indexAngleDifference(float a, float b) {
   return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
                   std::abs(a - b + 360.f));
 }
+
+
 
 double elevationIndexToAngle(int e, double res) {
   return e * res + res / 2 - 90;

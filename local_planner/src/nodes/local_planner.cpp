@@ -131,7 +131,7 @@ void LocalPlanner::runPlanner() {
                    distance_to_closest_point_, counter_close_points_backoff_,
                    complete_cloud_, min_cloud_size_,
                    min_dist_backoff_, histogram_box_,
-                   pose_.pose.position, min_realsense_dist_);
+                   toEigen(pose_.pose.position), min_realsense_dist_);
 
   safety_radius_ = adaptSafetyMarginHistogram(
       distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
@@ -398,7 +398,7 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 void LocalPlanner::reprojectPoints(Histogram histogram) {
   double n_points = 0;
   double dist, age;
-  geometry_msgs::Point temp_array[4];
+  Eigen::Vector3f temp_array[4];
   reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
 
@@ -429,13 +429,12 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
             histogram.get_dist(e, z), toPoint(position_old_));
 
         for (int i = 0; i < 4; i++) {
-          dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
+          dist = (toEigen(pose_.pose.position) - temp_array[i]).norm();
           age = histogram.get_age(e, z);
 
           if (dist < 2.0 * histogram_box_.radius_ && dist > 0.3 &&
               age < reproj_age_) {
-            reprojected_points_.points.push_back(pcl::PointXYZ(
-                temp_array[i].x, temp_array[i].y, temp_array[i].z));
+            reprojected_points_.points.push_back(toXYZ(temp_array[i]));
             reprojected_points_age_.push_back(age);
             reprojected_points_dist_.push_back(dist);
           }

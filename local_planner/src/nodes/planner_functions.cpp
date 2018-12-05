@@ -35,7 +35,7 @@ void filterPointCloud(
     int &counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
     double min_cloud_size, double min_dist_backoff,
-    Box histogram_box, const geometry_msgs::Point &position,
+    Box histogram_box, const Eigen::Vector3f &position,
     double min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
@@ -49,7 +49,7 @@ void filterPointCloud(
       // Check if the point is invalid
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
-          distance = computeL2Dist(position, xyz);
+          distance = (position - toEigen(xyz)).norm();
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
             cropped_cloud.points.push_back(pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
@@ -173,17 +173,15 @@ void generateNewHistogram(Histogram &polar_histogram,
                           pcl::PointCloud<pcl::PointXYZ> cropped_cloud,
                           geometry_msgs::PoseStamped position) {
   pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
-  geometry_msgs::Point temp;
-  double dist;
 
-  for (it = cropped_cloud.begin(); it != cropped_cloud.end(); ++it) {
-    temp.x = it->x;
-    temp.y = it->y;
-    temp.z = it->z;
-    dist = distance3DCartesian(position.pose.position, temp);
+  for (auto xyz : cropped_cloud) {
+    Eigen::Vector3f p = toEigen(xyz);
 
-    float e_angle = elevationAnglefromCartesian(temp, position.pose.position);
-    float z_angle = azimuthAnglefromCartesian(temp, position.pose.position);
+    float e_angle = elevationAnglefromCartesian(toPoint(p), position.pose.position);
+    float z_angle = azimuthAnglefromCartesian(toPoint(p), position.pose.position);
+    int e_angle =
+        elevationAnglefromCartesian(toPoint(p), position.pose.position);
+    int z_angle = azimuthAnglefromCartesian(toPoint(p), position.pose.position);
 
     int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
     int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
@@ -256,11 +254,11 @@ double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
   double dist = (position - goal).norm();
   double dist_old = (position_old - goal).norm();
   Eigen::Vector3f candidate_goal =
-      toEigen(fromPolarToCartesian(e, z, dist, toPoint(position)));
+      fromPolarToCartesian(e, z, dist, toPoint(position));
   Eigen::Vector3f old_candidate_goal =
-      toEigen(fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
-                                   path_waypoints.cells[waypoint_index - 1].y,
-                                   dist_old, toPoint(position_old)));
+      fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
+                           path_waypoints.cells[waypoint_index - 1].y, dist_old,
+                           toPoint(position_old));
   double yaw_cost = goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
@@ -456,9 +454,10 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
   std::cout << "--------------------------------------\n";
 }
 
-bool getDirectionFromTree(geometry_msgs::Point &p,
-                          std::vector<geometry_msgs::Point> path_node_positions,
-                          geometry_msgs::Point position) {
+bool getDirectionFromTree(
+    Eigen::Vector3f &p,
+    const std::vector<geometry_msgs::Point> &path_node_positions,
+    const Eigen::Vector3f& position) {
   int size = path_node_positions.size();
   bool tree_available = true;
 
@@ -468,12 +467,12 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
     double min_dist = HUGE_VAL;
     double second_min_dist = HUGE_VAL;
     double node_distance =
-        distance3DCartesian(path_node_positions[0], path_node_positions[1]);
+        (toEigen(path_node_positions[0]) - toEigen(path_node_positions[1]))
+            .norm();
 
     std::vector<double> distances;
     for (int i = 0; i < size; i++) {
-      distances.push_back(
-          distance3DCartesian(position, path_node_positions[i]));
+      distances.push_back((position - toEigen(path_node_positions[i])).norm());
       if (distances[i] < min_dist) {
         second_min_dist_idx = min_dist_idx;
         second_min_dist = min_dist;
@@ -495,20 +494,14 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
       double l_front = distances[wp_idx] * cos_alpha;
       double l_frac = l_front / node_distance;
 
-      geometry_msgs::Point mean_point;
-      mean_point.x = (1.0 - l_frac) * path_node_positions[wp_idx - 1].x +
-                     l_frac * path_node_positions[wp_idx].x;
-      mean_point.y = (1.0 - l_frac) * path_node_positions[wp_idx - 1].y +
-                     l_frac * path_node_positions[wp_idx].y;
-      mean_point.z = (1.0 - l_frac) * path_node_positions[wp_idx - 1].z +
-                     l_frac * path_node_positions[wp_idx].z;
+      Eigen::Vector3f mean_point =
+          (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
+          l_frac * toEigen(path_node_positions[wp_idx]);
 
-      int wp_e = floor(elevationAnglefromCartesian(mean_point, position));
-      int wp_z = floor(azimuthAnglefromCartesian(mean_point, position));
+      int wp_e = floor(elevationAnglefromCartesian(toPoint(mean_point), position));
+      int wp_z = floor(azimuthAnglefromCartesian(toPoint(mean_point), position));
 
-      p.x = wp_e;
-      p.y = wp_z;
-      p.z = 0.0;
+      p = Eigen::Vector3f(wp_e, wp_z, 0.f);
     }
   } else {
     tree_available = false;
