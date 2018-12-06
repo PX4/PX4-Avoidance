@@ -746,8 +746,7 @@ void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg){
   }
 }
 void LocalPlannerNode::publishGround() {
-  geometry_msgs::PoseStamped drone_pos;
-  local_planner_.getPosition(drone_pos);
+  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
   visualization_msgs::Marker plane;
   plane.header.frame_id = "local_origin";
   plane.header.stamp = ros::Time::now();
