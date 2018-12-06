@@ -1,8 +1,12 @@
 # Obstacle Detection and Avoidance
-PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance. This repository contains two different implementations, targeting different use cases:
+PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance. This repository contains two different implementations:
 
-  * A local, VFH+ based planner that plans (including some history) in a vector field histogram
-  * A global, graph based planner that plans in a traditional occupancy grid
+  * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
+  * *global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
+
+The two algorithms are standalone and they are not meant to be used together.
+
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the expolred environment. On the other hand, the *global_planner* buils a map of the envirnment leading to optima
   
 The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 16.04, for both avoidance and collision prevention use cases.
 
@@ -341,7 +345,7 @@ is displayed on the console.
 The local planner supports also multi camera setups. `local_planner_example.launch` needs to be modified by:
 
 1. launching one RealSense nodlet (`rs_depthcloud.launch`) for each camera making sure that each of them has a unique `namespace`
-2. launch one `static_transform_publsher` node for each camera
+2. launch one `static_transform_publisher` node for each camera
 
 An example of a three camera launch file is [local_planner_A700_3cam.launch](https://github.com/PX4/avoidance/blob/master/local_planner/launch/local_planner_A700_3cam.launch).
 
