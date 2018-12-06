@@ -22,9 +22,9 @@
     <arg name="serial_no_camera_down"    default="817512071697"/>
     <arg name="serial_no_camera_left"    default="817612071531"/>
     <arg name="serial_no_camera_right"    default="817512070752"/>
-    <arg name="depth_fps"            default="15"/>
-    <arg name="infra1_fps"           default="15"/>
-    <arg name="infra2_fps"           default="15"/>
+    <arg name="depth_fps"            default="30"/>
+    <arg name="infra1_fps"           default="30"/>
+    <arg name="infra2_fps"           default="30"/>
 
     <!-- Launch MavROS -->
     <group ns="$(arg ns)">
