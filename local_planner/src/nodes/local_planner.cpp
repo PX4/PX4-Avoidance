@@ -167,6 +167,33 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
     updateObstacleDistanceMsg(to_fcu_histogram_);
   }
   polar_histogram_ = new_histogram;
+
+  //generate histogram image for logging
+  histogram_image_ = generateHistogramImage(polar_histogram_);
+}
+
+sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram& histogram) {
+
+	sensor_msgs::Image image;
+	double sensor_max_dist = 20.0;
+	image.header.stamp = ros::Time::now();
+	image.height = GRID_LENGTH_E;
+	image.width = GRID_LENGTH_Z;
+	image.encoding = sensor_msgs::image_encodings::MONO8;
+	image.is_bigendian = 0;
+	image.step = 255;
+
+	int image_size = (int)(image.height * image.width);
+	image.data.reserve(image_size);
+
+	//fill image data
+	for (int e = GRID_LENGTH_E - 1; e >= 0 ; e--) {
+	   for (int z = 0; z < GRID_LENGTH_Z; z++) {
+		  double depth_val = image.step * histogram.get_dist(e, z)/sensor_max_dist;
+	      image.data.push_back((int)std::max(0.0, std::min((double)image.step, depth_val)));
+	    }
+	}
+	return image;
 }
 
 void LocalPlanner::determineStrategy() {

@@ -9,10 +9,11 @@
 #include <iostream>
 #include <limits>
 #include <mutex>
-#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
+#include <sensor_msgs/image_encodings.h>
+
 
 #include <ros/ros.h>
 
@@ -183,11 +184,13 @@ class LocalPlanner {
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
   void create2DObstacleRepresentation(const bool send_to_fcu);
+  sensor_msgs::Image generateHistogramImage(Histogram& histogram);
 
  public:
   double h_FOV_ = 59.0;
   double v_FOV_ = 46.0;
   Box histogram_box_;
+  sensor_msgs::Image histogram_image_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;
