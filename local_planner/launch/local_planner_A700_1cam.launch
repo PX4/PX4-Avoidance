@@ -18,10 +18,7 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="est" default="ekf2"/>
-    <arg name="serial_no_camera_front"    default="819112072871"/>
-    <arg name="serial_no_camera_down"    default="817512071697"/>
-    <arg name="serial_no_camera_left"    default="817612071531"/>
-    <arg name="serial_no_camera_right"    default="817512070752"/>
+    <arg name="serial_no_camera_front"    default="819612070807"/>
     <arg name="depth_fps"            default="30"/>
     <arg name="infra1_fps"           default="30"/>
     <arg name="infra2_fps"           default="30"/>
