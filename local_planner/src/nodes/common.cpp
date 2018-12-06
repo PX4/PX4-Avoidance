@@ -180,30 +180,18 @@ geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   return gmp;
 }
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
-  pcl::PointXYZ gmp;
-  gmp.x = ev3.x();
-  gmp.y = ev3.y();
-  gmp.z = ev3.z();
-  return gmp;
+  pcl::PointXYZ xyz;
+  xyz.x = ev3.x();
+  xyz.y = ev3.y();
+  xyz.z = ev3.z();
+  return xyz;
 }
 geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
-  geometry_msgs::Vector3 gmp;
-  gmp.x = ev3.x();
-  gmp.y = ev3.y();
-  gmp.z = ev3.z();
-  return gmp;
+  geometry_msgs::Vector3 gv3;
+  gv3.x = ev3.x();
+  gv3.y = ev3.y();
+  gv3.z = ev3.z();
+  return gv3;
 }
 
-Eigen::Vector3f convert(const geometry_msgs::Point& p) {
-  Eigen::Vector3f ev3(p.x, p.y, p.z);
-  return ev3;
-}
-
-geometry_msgs::Point convert(const Eigen::Vector3f& ev3) {
-  geometry_msgs::Point gmp;
-  gmp.x = ev3.x();
-  gmp.y = ev3.y();
-  gmp.z = ev3.z();
-  return gmp;
-}
 }

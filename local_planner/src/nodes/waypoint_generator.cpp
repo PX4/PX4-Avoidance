@@ -188,7 +188,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   output_.goto_position.z = pose_.pose.position.z + 0.5;
 
   // if goal lies directly overhead, do not yaw
-  Eigen::Vector3f diff = goal_ - toEigen(pose_.pose.position);
+  Eigen::Vector3f diff = (goal_ - toEigen(pose_.pose.position)).cwiseAbs();
   float goal_acceptance_radius = 1.0f;
   if (diff.x() < goal_acceptance_radius && diff.y() < goal_acceptance_radius) {
     new_yaw_ = curr_yaw_;
@@ -324,9 +324,8 @@ void WaypointGenerator::adaptSpeed() {
   // set waypoint to correct speed
   Eigen::Vector3f pose_to_wp =
       toEigen(output_.adapted_goto_position) - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > 0.01) {
-    pose_to_wp.normalize();
-  }
+  if (pose_to_wp.norm() > 0.01) pose_to_wp.normalize();
+
   pose_to_wp *= speed_;
 
   output_.adapted_goto_position =
