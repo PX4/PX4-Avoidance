@@ -6,12 +6,14 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 
 The two algorithms are standalone and they are not meant to be used together.
 
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the expolred environment. On the other hand, the *global_planner* buils a map of the envirnment leading to optima
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. On the other hand, the *global_planner* is computatonally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. 
+
+> **Note** The development team is right now focused on the *local_planner*.
   
 The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 16.04, for both avoidance and collision prevention use cases.
 
 > **Note** PX4-side setup is covered in the PX4 User Guide:
-  - [Ostacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
+  - [Obstacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
   - [Collision Prevention](https://docs.px4.io/en/computer_vision/collision_prevention.html)
 
 ## Bi-weekly Dev Call
@@ -179,7 +181,7 @@ You should now be ready to run the simulation using local or global planner.
 
 ### Global Planner
 
-To run the simulation.
+This section shows how to start the *global_planner* and use it for avoidance in offboard mode.
 
 ```bash
 roslaunch global_planner global_planner_sitl_mavros.launch
@@ -216,7 +218,9 @@ One can plan a new path by setting a new goal with the *2D Nav Goal* button in r
 
 ### Local Planner
 
-The local planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
+This section shows how to start the *local_planner* and use it for avoidance in mission or offboard mode.
+
+The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
 
 * simulate a forward looking stereo camera running OpenCV's block matching algorithm
 
@@ -263,7 +267,7 @@ rosrun mavros mavsafety arm
 
 The drone will first change its altitude to reach the goal height. It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
 ![Screenshot rqt_reconfigure goal height](docs/lp_goal_height.png)
-Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then chosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
+Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
 For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
@@ -309,7 +313,7 @@ Parameters to set through QGC:
 * ROS Kinetic: see [Installation](#installaton)
 * Other Required Components for Intel Realsense:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
-  - [Librealsense ROS wrappers)](https://github.com/intel-ros/realsense.git)
+  - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
 
 Tested models:
 - local planner: Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone)
@@ -317,7 +321,7 @@ Tested models:
 
 ## Global Planner
 
-The global planner has been so far tested on a Odroid by the development team. 
+The global planner has been so far tested on a Odroid companion computer by the development team. 
 
 For more information, read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
 
@@ -325,7 +329,7 @@ For more information, read the [Running on Odroid](https://github.com/PX4/avoida
 
 Once the catkin workspace has been built, to run the planner with a Realsense D435 camera launch *local_planner_example.launch* editing the arguments:
 
-1. `tf_*` representing the dispacement between the camera and the flight controller
+1. `tf_*` representing the displacement between the camera and the flight controller
 2. `fcu_url` representing the port connecting the companion computer to the flight controller
 3. `serial_no_camera_front` representing the Realsense serial number
 
