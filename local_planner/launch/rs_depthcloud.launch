@@ -45,7 +45,7 @@ Processing enabled by this node:
   <!-- Camera device specific arguments -->
 
   <arg name="serial_no"           default=""/>
-  <arg name="json_file_path"      default="/usr/auterion_ws/src/avoidance/local_planner/resource/stereo_calib.json"/>
+  <arg name="json_file_path"      default="$(find local_planner)/resource/stereo_calib.json"/>
 
   <arg name="fisheye_width"       default="480"/>
   <arg name="fisheye_height"      default="270"/>
