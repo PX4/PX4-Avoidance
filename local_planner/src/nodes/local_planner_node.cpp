@@ -43,8 +43,8 @@ LocalPlannerNode::LocalPlannerNode() {
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
   goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1,
 		  &LocalPlannerNode::updateGoalCallback, this);
-  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1,
-		  &LocalPlannerNode::distanceSensorCallback, this);
+  distance_sensor_sub_ = nh_.subscribe(
+      "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
@@ -57,7 +57,7 @@ LocalPlannerNode::LocalPlannerNode() {
   avoid_sphere_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
   ground_measurement_pub_ =
-		  nh_.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
+      nh_.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
   original_wp_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
   adapted_wp_pub_ =
@@ -92,7 +92,8 @@ LocalPlannerNode::LocalPlannerNode() {
   mavros_obstacle_distance_pub_ =
       nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   mavros_system_status_pub_ =
-      nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
+      nh_.advertise<mavros_msgs::CompanionProcessStatus>(
+          "/mavros/companion_process/status", 1);
   current_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
   takeoff_pose_pub_ =
@@ -239,11 +240,14 @@ void LocalPlannerNode::updatePlannerInfo() {
     new_goal_ = false;
   }
 
-  //update ground distance
-  if(ros::Time::now() - ground_distance_msg_.header.stamp < ros::Duration(0.5)){
+  // update ground distance
+  if (ros::Time::now() - ground_distance_msg_.header.stamp <
+      ros::Duration(0.5)) {
     local_planner_.ground_distance_ = ground_distance_msg_.bottom_clearance;
-  }else{
-    local_planner_.ground_distance_ = 2.0;  // in case where no range data is available assume vehicle is close to ground
+  } else {
+    local_planner_.ground_distance_ = 2.0;  // in case where no range data is
+                                            // available assume vehicle is close
+                                            // to ground
   }
 }
 
@@ -473,7 +477,6 @@ void LocalPlannerNode::publishReachHeight() {
 }
 
 void LocalPlannerNode::publishBox() {
-
   visualization_msgs::MarkerArray marker_array;
   geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
 
@@ -739,8 +742,9 @@ void LocalPlannerNode::fcuInputGoalCallback(
   }
 }
 
-void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg){
-  if(!std::isnan(msg.bottom_clearance)){
+void LocalPlannerNode::distanceSensorCallback(
+    const mavros_msgs::Altitude& msg) {
+  if (!std::isnan(msg.bottom_clearance)) {
     ground_distance_msg_ = msg;
     publishGround();
   }
@@ -755,14 +759,16 @@ void LocalPlannerNode::publishGround() {
   plane.action = visualization_msgs::Marker::ADD;
   plane.pose.position.x = drone_pos.pose.position.x;
   plane.pose.position.y = drone_pos.pose.position.y;
-  plane.pose.position.z = drone_pos.pose.position.z - local_planner_.ground_distance_;
+  plane.pose.position.z =
+      drone_pos.pose.position.z - local_planner_.ground_distance_;
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
   plane.pose.orientation.w = 1.0;
   plane.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
   plane.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
-  plane.scale.z = 0.001;;
+  plane.scale.z = 0.001;
+  ;
   plane.color.a = 0.5;
   plane.color.r = 0.0;
   plane.color.g = 0.0;

@@ -12,11 +12,11 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
-#include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/Altitude.h>
+#include <mavros_msgs/CompanionProcessStatus.h>
+#include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
-#include <mavros_msgs/CompanionProcessStatus.h>
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg

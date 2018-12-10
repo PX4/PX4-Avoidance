@@ -345,10 +345,11 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
 }
 
 void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
-
- int vertical_FOV_range_sensor = 20;
- int lower_index = elevationAngletoIndex(-(int)(vertical_FOV_range_sensor/2.0), ALPHA_RES);
- int upper_index = elevationAngletoIndex((int)(vertical_FOV_range_sensor/2.0), ALPHA_RES);
+  int vertical_FOV_range_sensor = 20;
+  int lower_index =
+      elevationAngletoIndex(-(int)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  int upper_index =
+      elevationAngletoIndex((int)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
 
   for (int e = lower_index; e <= upper_index; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
