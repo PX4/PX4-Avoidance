@@ -7,6 +7,7 @@
     <arg name="start_pos_x" default="0.5" />
     <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
+    <arg name="model" default="iris_depth_camera" />
 
     <param name="use_sim_time" value="true" />
 
@@ -22,6 +23,7 @@
     <!-- Mavros and Sitl -->
     <include file="$(find global_planner)/launch/mavros_sitl.launch" >
         <arg name="world_path" value="$(arg world_path)" />
+        <arg name="model" value="$(arg model)" />
     </include>
 
     <!-- Global planner -->
