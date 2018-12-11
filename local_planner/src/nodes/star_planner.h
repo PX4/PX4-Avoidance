@@ -107,7 +107,7 @@ class StarPlanner {
                      double height_change_cost_param_adapted,
                      double height_change_cost_param);
   void setPose(const geometry_msgs::PoseStamped& pose);
-  void setBoxSize(const Box& histogram_box, const double ground_distance);
+  void setBoxSize(const Box& histogram_box, double ground_distance);
   void setGoal(const geometry_msgs::Point& pose);
   void setCloud(
       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
