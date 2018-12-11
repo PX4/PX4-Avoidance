@@ -10,6 +10,7 @@
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="mavros_transformation" default="-1.57" />
+    <arg name="model" default="iris_depth_camera"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -39,6 +40,6 @@
 
     <!-- Spawn iris with depth camera -->
     <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-sdf -database iris_depth_camera -model iris">
+          args="-sdf -database $(arg model) -model iris">
     </node>
 </launch>
