@@ -321,9 +321,7 @@ Tested models:
 
 ## Global Planner
 
-The global planner has been so far tested on a Odroid companion computer by the development team. 
-
-For more information, read the [Running on Odroid](https://github.com/PX4/avoidance/tree/master/global_planner/resource/odroid) instructions.
+The global planner has been so far tested on a Odroid companion computer by the development team.
 
 ## Local Planner
 
