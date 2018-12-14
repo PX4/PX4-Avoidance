@@ -14,7 +14,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
   star_planner_.setPose(pose_);
 
-  if (!currently_armed_) {
+  if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_.header = msg.header;
     take_off_pose_.pose.position = msg.pose.position;
     take_off_pose_.pose.orientation = msg.pose.orientation;
@@ -198,6 +198,10 @@ sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram& histogram) {
 
 void LocalPlanner::determineStrategy() {
   star_planner_.tree_age_++;
+
+  if(disable_rise_to_goal_altitude_){
+	  reach_altitude_ = true;
+  }
 
   if (!reach_altitude_) {
     starting_height_ =
