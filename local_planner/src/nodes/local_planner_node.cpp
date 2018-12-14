@@ -683,7 +683,6 @@ void LocalPlannerNode::clickedGoalCallback(
 
 void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg){
 	if(accept_goal_input_topic_ && msg.markers.size()>0){
-		std::cout<<"Getting a goal input\n";
 		goal_msg_.pose = msg.markers[0].pose;
 		new_goal_ = true;
 	}
