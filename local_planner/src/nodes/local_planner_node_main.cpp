@@ -11,6 +11,7 @@ int main(int argc, char** argv) {
   bool hover = false;
   bool landing = false;
   avoidanceOutput planner_output;
+  Node.local_planner_.disable_rise_to_goal_altitude_ = Node.disable_rise_to_goal_altitude_;
   bool startup = true;
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 

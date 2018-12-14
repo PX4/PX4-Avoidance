@@ -71,6 +71,8 @@ class LocalPlannerNode {
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
+  bool disable_rise_to_goal_altitude_;
+  bool accept_goal_input_topic_;
 
   std::atomic<bool> should_exit_{false};
 
@@ -150,6 +152,7 @@ class LocalPlannerNode {
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber clicked_goal_sub_;
   ros::Subscriber fcu_input_sub_;
+  ros::Subscriber goal_topic_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
@@ -209,6 +212,7 @@ class LocalPlannerNode {
   void publishMarkerFOV(nav_msgs::GridCells& FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped& msg);
+  void updateGoalCallback(const visualization_msgs::MarkerArray& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
 
   void printPointInfo(double x, double y, double z);

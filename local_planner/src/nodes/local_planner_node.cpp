@@ -41,6 +41,8 @@ LocalPlannerNode::LocalPlannerNode() {
                     &LocalPlannerNode::clickedGoalCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
+  goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1,
+		  &LocalPlannerNode::updateGoalCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
@@ -112,6 +114,8 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
+  nh_.param<bool>("disable_rise_to_goal_altitude", disable_rise_to_goal_altitude_, false);
+  nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
   nh_.getParam("pointcloud_topics", camera_topics);
@@ -675,6 +679,14 @@ void LocalPlannerNode::clickedGoalCallback(
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
   goal_msg_.pose.position.z = local_planner_.getGoal().z;
+}
+
+void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg){
+	if(accept_goal_input_topic_ && msg.markers.size()>0){
+		std::cout<<"Getting a goal input\n";
+		goal_msg_.pose = msg.markers[0].pose;
+		new_goal_ = true;
+	}
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(

@@ -1,0 +1,64 @@
+<launch>
+
+    <param name="use_sim_time" value="true" />
+    <arg name="bag_name" default="/not_specified_bag_name" />
+
+    <node pkg="rosbag" type="play" name="player" required="true" output="screen" args="--clock $(arg bag_name)">
+       <remap from="/adapted_waypoint" to="/rosbag/adapted_waypoint"/>
+       <remap from="/avoid_sphere" to="/rosbag/avoid_sphere"/>
+       <remap from="/blocked_marker" to="/rosbag/blocked_marker"/>
+       <remap from="/bounding_box" to="/rosbag/bounding_box"/>
+       <remap from="/camera_front/color/camera_info" to="/rosbag/camera_front/color/camera_info"/>
+       <remap from="/camera_front/color/image_raw" to="/rosbag/camera_front/color/image_raw"/>
+       <remap from="/camera_front/realsense2_camera_manager/parameter_descriptions" to="/rosbag/camera_front/realsense2_camera_manager/parameter_descriptions"/>
+       <remap from="/camera_front/realsense2_camera_manager/parameter_updates" to="/rosbag/camera_front/realsense2_camera_manager/parameter_updates"/>
+       <remap from="/camera_left/color/camera_info" to="/rosbag/camera_left/color/camera_info"/>
+       <remap from="/camera_left/color/image_raw" to="/rosbag/camera_left/color/image_raw"/>
+       <remap from="/camera_right/color/camera_info" to="/rosbag/camera_right/color/camera_info"/>
+       <remap from="/camera_right/color/image_raw" to="/rosbag/camera_right/color/image_raw"/>
+       <remap from="/camera_right/realsense2_camera_manager/parameter_descriptions" to="/rosbag/camera_right/realsense2_camera_manager/parameter_descriptions"/>
+       <remap from="/camera_right/realsense2_camera_manager/parameter_updates" to="/rosbag/camera_right/realsense2_camera_manager/parameter_updates"/>
+       <remap from="/complete_tree" to="/rosbag/complete_tree"/>
+       <remap from="/cpu_usage" to="/rosbag/cpu_usage"/>
+       <remap from="/current_setpoint" to="/rosbag/current_setpoint"/>
+       <remap from="/ground_measurement" to="/rosbag/ground_measurement"/>
+       <remap from="/histogram_image" to="/rosbag/histogram_image"/>
+       <remap from="/initial_height" to="/rosbag/initial_height"/>
+       <remap from="/local_planner_node/parameter_descriptions" to="/rosbag/local_planner_node/parameter_descriptions"/>
+       <remap from="/local_planner_node/parameter_updates" to="/rosbag/local_planner_node/parameter_updates"/>
+       <remap from="/local_pointcloud" to="/rosbag/local_pointcloud"/>
+       <remap from="/mavros/companion_process/status" to="/rosbag/mavros/companion_process/status"/>
+       <remap from="/mavros/obstacle/send" to="/rosbag/mavros/obstacle/send"/>
+       <remap from="/mavros/setpoint_position/local" to="/rosbag/mavros/setpoint_position/local"/>
+       <remap from="/mavros/trajectory/desired" to="/rosbag/mavros/trajectory/desired"/>
+       <remap from="/mavros/trajectory/generated" to="/rosbag/mavros/trajectory/generated"/>
+       <remap from="/memory_usage" to="/rosbag/memory_usage"/>
+       <remap from="/offboard_pose" to="/rosbag/offboard_pose"/>
+       <remap from="/original_waypoint" to="/rosbag/original_waypoint"/>
+       <remap from="/path_actual" to="/rosbag/path_actual"/>
+       <remap from="/path_waypoint" to="/rosbag/path_waypoint"/>
+       <remap from="/processes" to="/rosbag/processes"/>
+       <remap from="/rejected_marker" to="/rosbag/rejected_marker"/>
+       <remap from="/reprojected_points" to="/rosbag/reprojected_points"/>
+       <remap from="/selected_marker" to="/rosbag/selected_marker"/>
+       <remap from="/smoothed_waypoint" to="/rosbag/smoothed_waypoint"/>
+       <remap from="/take_off_pose" to="/rosbag/take_off_pose"/>
+       <remap from="/tree_path" to="/rosbag/tree_path"/>  
+       <remap from="/goal_position" to="/input/goal_position"/>   
+    </node>
+
+    <!-- Launch avoidance -->
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
+    <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
+    <arg name="pointcloud_topics" default="[/rosbag/local_pointcloud]"/>
+
+    <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
+      <param name="goal_x_param" value="15" />
+      <param name="goal_y_param" value="15"/>
+      <param name="goal_z_param" value="4" />
+      <param name="disable_rise_to_goal_altitude" value="true" />
+      <param name="accept_goal_input_topic" value="true" />
+      <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
+    </node>
+
+</launch>
