@@ -94,11 +94,7 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    mkdir -p ~/catkin_ws/src
    ```
 
-1. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
-
-   ```bash
-   apt install ros-kinetic-mavros ros-kinetic-mavros-extras
-   ```
+1. Install mavros. The package has to be installed from sources, instructions can be found here: https://dev.px4.io/en/ros/mavros_installation.html. Check that you have checked out the latest master branch.
 
 1. Install the geographiclib dataset
 
