@@ -41,8 +41,9 @@ int main(int argc, char** argv) {
         ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
     ros::Duration pointcloud_timeout_hover =
         ros::Duration(Node.local_planner_.pointcloud_timeout_hover_);
-    ros::Duration since_last_cloud = now - Node.last_wp_time_;
+    ros::Duration since_last_cloud = now - Node.last_pc_time_;
     ros::Duration since_start = now - start_time;
+
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
@@ -87,6 +88,9 @@ int main(int argc, char** argv) {
         }
       }
     }
+    if(!Node.isGoalValid()){
+        ROS_WARN("Waiting for valid goal");
+    }
 
     // If planner is not running, update planner info and get last results
     if (Node.cameras_.size() == Node.numReceivedClouds() &&
@@ -113,7 +117,7 @@ int main(int argc, char** argv) {
     }
 
     // send waypoint
-    if (!Node.never_run_ && !landing) {
+    if (!Node.never_run_ && !landing && Node.isGoalValid()) {
       Node.publishWaypoints(hover);
       if(!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {

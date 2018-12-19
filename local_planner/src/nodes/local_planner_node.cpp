@@ -111,9 +111,6 @@ LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
   auto goal = local_planner_.getGoal();
-  nh_.param<double>("goal_x_param", goal.x, 9.0);
-  nh_.param<double>("goal_y_param", goal.y, 13.0);
-  nh_.param<double>("goal_z_param", goal.z, 3.5);
   nh_.param<bool>("disable_rise_to_goal_altitude", disable_rise_to_goal_altitude_, false);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
@@ -122,7 +119,9 @@ void LocalPlannerNode::readParams() {
   initializeCameraSubscribers(camera_topics);
 
   nh_.param<std::string>("world_name", world_path_, "");
-  goal_msg_.pose.position = goal;
+  goal_msg_.pose.position.x = NAN;
+  goal_msg_.pose.position.y = NAN;
+  goal_msg_.pose.position.z = NAN;
 
   // Read in parameter for waypoint generator
   waypointGenerator_params new_params;
@@ -193,7 +192,6 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
       missing_transforms++;
     }
   }
-
   return missing_transforms == 0;
 }
 void LocalPlannerNode::updatePlannerInfo() {
@@ -234,6 +232,8 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.setGoal(goal_msg_.pose.position);
     new_goal_ = false;
   }
+   last_pc_time_ = ros::Time::now();
+
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -691,12 +691,12 @@ void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray&
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory& msg) {
   if (mission_ && (msg.point_valid[1] == true) &&
-      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
+      (!isGoalValid() || ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
         0.001) ||
        (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) >
         0.001) ||
        (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) >
-        0.001))) {
+        0.001)))) {
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
@@ -882,8 +882,6 @@ void LocalPlannerNode::publishPlannerData() {
 
   publishTree();
 
-  last_wp_time_ = ros::Time::now();
-
   nav_msgs::GridCells path_candidates, path_selected, path_rejected,
       path_blocked, FOV_cells;
   local_planner_.getCandidateDataForVisualization(
@@ -921,7 +919,7 @@ void LocalPlannerNode::threadFunction() {
     // wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
+      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_ && isGoalValid(); });
       data_ready_ = false;
     }
 
@@ -934,9 +932,15 @@ void LocalPlannerNode::threadFunction() {
       local_planner_.runPlanner();
       publishPlannerData();
 
+
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
     }
   }
 }
+
+bool LocalPlannerNode::isGoalValid(){
+  return !(std::isnan(goal_msg_.pose.position.x) || std::isnan(goal_msg_.pose.position.y) || std::isnan(goal_msg_.pose.position.z));
 }
+
+} // Namespace avoidance
