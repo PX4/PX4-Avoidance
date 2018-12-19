@@ -94,7 +94,7 @@ class LocalPlannerNode {
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
-  ros::Time last_wp_time_;
+  ros::Time last_pointcloud_update_time_;
   ros::Time t_status_sent_;
 
   LocalPlanner local_planner_;
@@ -133,6 +133,9 @@ class LocalPlannerNode {
                                      geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
   void publishWaypoints(bool hover);
+  bool goalValid() {
+      return ! (std::isnan(goal_msg_.pose.position.x) || std::isnan(goal_msg_.pose.position.y) || std::isnan(goal_msg_.pose.position.z));
+  };
 
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 

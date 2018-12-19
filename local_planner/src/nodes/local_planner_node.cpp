@@ -124,6 +124,11 @@ void LocalPlannerNode::readParams() {
   nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position = goal;
 
+  //initialize goal to NAN
+  goal_msg_.pose.position.x = NAN;
+  goal_msg_.pose.position.y = NAN;
+  goal_msg_.pose.position.z = NAN;
+
   // Read in parameter for waypoint generator
   waypointGenerator_params new_params;
   nh_.param<double>("goal_acceptance_radius_in",
@@ -234,6 +239,8 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.setGoal(goal_msg_.pose.position);
     new_goal_ = false;
   }
+
+  last_pointcloud_update_time_ = ros::Time::now();
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -689,14 +696,15 @@ void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray&
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(
-    const mavros_msgs::Trajectory& msg) {
+  const mavros_msgs::Trajectory& msg) {
+
   if (mission_ && (msg.point_valid[1] == true) &&
-      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
+      (((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
         0.001) ||
        (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) >
         0.001) ||
        (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) >
-        0.001))) {
+        0.001)) || !goalValid())) {
     new_goal_ = true;
     goal_msg_.pose.position.x = msg.point_2.position.x;
     goal_msg_.pose.position.y = msg.point_2.position.y;
@@ -882,8 +890,6 @@ void LocalPlannerNode::publishPlannerData() {
 
   publishTree();
 
-  last_wp_time_ = ros::Time::now();
-
   nav_msgs::GridCells path_candidates, path_selected, path_rejected,
       path_blocked, FOV_cells;
   local_planner_.getCandidateDataForVisualization(
@@ -921,7 +927,7 @@ void LocalPlannerNode::threadFunction() {
     // wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
+      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_ && goalValid(); });
       data_ready_ = false;
     }
 

@@ -41,52 +41,58 @@ int main(int argc, char** argv) {
         ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
     ros::Duration pointcloud_timeout_hover =
         ros::Duration(Node.local_planner_.pointcloud_timeout_hover_);
-    ros::Duration since_last_cloud = now - Node.last_wp_time_;
+    ros::Duration since_last_cloud = now - Node.last_pointcloud_update_time_;
     ros::Duration since_start = now - start_time;
 
-    if (since_last_cloud > pointcloud_timeout_land &&
-        since_start > pointcloud_timeout_land) {
-      if (!landing) {
-        mavros_msgs::SetMode mode_msg;
-        mode_msg.request.custom_mode = "AUTO.LOITER";
-        landing = true;
-        Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
-        if (Node.mavros_set_mode_client_.call(mode_msg) &&
-            mode_msg.response.mode_sent) {
-          ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
-        } else {
-          ROS_ERROR(
-              "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
-        }
-      }
-    } else {
-      if (Node.never_run_ || (since_last_cloud > pointcloud_timeout_hover &&
-                              since_start > pointcloud_timeout_hover)) {
-        if (Node.position_received_) {
-          hover = true;
-          Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
-          std::string not_received = "";
-          for (size_t i = 0; i < Node.cameras_.size(); i++) {
-            if (!Node.cameras_[i].received_) {
-              not_received.append(" , no cloud received on topic ");
-              not_received.append(Node.cameras_[i].topic_);
-            }
-          }
-          if (!Node.canUpdatePlannerInfo()) {
-            not_received.append(" , missing transforms ");
-          }
-          ROS_INFO(
-              "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
-              "\n "
-              "\033[0m",
-              not_received.c_str());
-        } else {
-          ROS_WARN(
-              "\033[1;33m Pointcloud timeout: No position received, no WP to "
-              "output.... \n \033[0m");
-        }
-      }
+	if (since_last_cloud > pointcloud_timeout_land &&
+		since_start > pointcloud_timeout_land) {
+	  if (!landing) {
+		mavros_msgs::SetMode mode_msg;
+		mode_msg.request.custom_mode = "AUTO.LOITER";
+		landing = true;
+		Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+		if (Node.mavros_set_mode_client_.call(mode_msg) &&
+			mode_msg.response.mode_sent) {
+		  ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
+		} else {
+		  ROS_ERROR(
+			  "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
+		}
+	  }
+	} else if ((since_last_cloud > pointcloud_timeout_hover &&
+							  since_start > pointcloud_timeout_hover)) {
+		if (Node.position_received_) {
+		  hover = true;
+		  Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
+		  std::string not_received = "";
+		  for (size_t i = 0; i < Node.cameras_.size(); i++) {
+			if (!Node.cameras_[i].received_) {
+			  not_received.append(" , no cloud received on topic ");
+			  not_received.append(Node.cameras_[i].topic_);
+			}
+		  }
+		  if (!Node.canUpdatePlannerInfo()) {
+			not_received.append(" , missing transforms ");
+		  }
+		  ROS_INFO(
+			  "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
+			  "\n "
+			  "\033[0m",
+			  not_received.c_str());
+		} else {
+		  ROS_WARN(
+			  "\033[1;33m Pointcloud timeout: No position received, no WP to "
+			  "output.... \n \033[0m");
+		}
+	  }
+	}
+
+	if(!Node.goalValid()){
+    	 ROS_WARN("\033[1;33m Waiting for valid goal \n \033[0m");
     }
+	if(Node.never_run_ && Node.position_received_){
+		hover = true;
+	}
 
     // If planner is not running, update planner info and get last results
     if (Node.cameras_.size() == Node.numReceivedClouds() &&
@@ -113,7 +119,7 @@ int main(int argc, char** argv) {
     }
 
     // send waypoint
-    if (!Node.never_run_ && !landing) {
+    if (!Node.never_run_ && !landing && Node.goalValid()) {
       Node.publishWaypoints(hover);
       if(!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
