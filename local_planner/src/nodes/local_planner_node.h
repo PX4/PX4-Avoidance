@@ -94,7 +94,7 @@ class LocalPlannerNode {
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
-  ros::Time last_pc_time_;
+  ros::Time last_pointcloud_time_;
   ros::Time t_status_sent_;
 
   LocalPlanner local_planner_;

@@ -41,7 +41,7 @@ int main(int argc, char** argv) {
         ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
     ros::Duration pointcloud_timeout_hover =
         ros::Duration(Node.local_planner_.pointcloud_timeout_hover_);
-    ros::Duration since_last_cloud = now - Node.last_pc_time_;
+    ros::Duration since_last_cloud = now - Node.last_pointcloud_time_;
     ros::Duration since_start = now - start_time;
 
 

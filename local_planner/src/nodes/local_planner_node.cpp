@@ -232,7 +232,7 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_.setGoal(goal_msg_.pose.position);
     new_goal_ = false;
   }
-   last_pc_time_ = ros::Time::now();
+   last_pointcloud_time_ = ros::Time::now();
 
 }
 
