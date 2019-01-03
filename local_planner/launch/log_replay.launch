@@ -53,8 +53,6 @@
     <arg name="pointcloud_topics" default="[/rosbag/local_pointcloud]"/>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
-      <param name="goal_x_param" value="15" />
-      <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="4" />
       <param name="disable_rise_to_goal_altitude" value="true" />
       <param name="accept_goal_input_topic" value="true" />
