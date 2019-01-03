@@ -110,7 +110,6 @@ LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  auto goal = local_planner_.getGoal();
   nh_.param<bool>("disable_rise_to_goal_altitude", disable_rise_to_goal_altitude_, false);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
@@ -121,7 +120,7 @@ void LocalPlannerNode::readParams() {
   nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position.x = NAN;
   goal_msg_.pose.position.y = NAN;
-  goal_msg_.pose.position.z = NAN;
+  nh_.param<double>("goal_z_param", goal_msg_.pose.position.z, 3.5);
 
   // Read in parameter for waypoint generator
   waypointGenerator_params new_params;
@@ -676,8 +675,7 @@ void LocalPlannerNode::clickedGoalCallback(
     const geometry_msgs::PoseStamped& msg) {
   new_goal_ = true;
   goal_msg_ = msg;
-  /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
-   * the launch file */
+  /* Selecting the goal from Rviz sets x and y. Leave the z coordiante unchanged */
   goal_msg_.pose.position.z = local_planner_.getGoal().z;
 }
 
