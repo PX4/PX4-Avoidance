@@ -168,10 +168,8 @@ void propagateHistogram(Histogram &polar_histogram_est,
 
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram &polar_histogram,
-                          pcl::PointCloud<pcl::PointXYZ> cropped_cloud,
+                          const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           geometry_msgs::PoseStamped position) {
-  pcl::PointCloud<pcl::PointXYZ>::const_iterator it;
-
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
 
