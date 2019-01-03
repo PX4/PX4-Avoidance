@@ -1,8 +1,8 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
-#include "avoidance_output.h"
 #include <sensor_msgs/image_encodings.h>
+#include "avoidance_output.h"
 #include "box.h"
 #include "histogram.h"
 
@@ -129,7 +129,7 @@ class LocalPlanner {
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
   void create2DObstacleRepresentation(const bool send_to_fcu);
-  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
+  sensor_msgs::Image generateHistogramImage(Histogram& histogram);
 
  public:
   double h_FOV_ = 59.0;

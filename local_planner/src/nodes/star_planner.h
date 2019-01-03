@@ -1,7 +1,6 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
-
 #include "box.h"
 #include "histogram.h"
 
