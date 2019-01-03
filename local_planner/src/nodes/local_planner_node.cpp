@@ -1,10 +1,24 @@
 #include "local_planner_node.h"
 
+#include "common.h"
+#include "local_planner.h"
+#include "planner_functions.h"
+#include "tree_node.h"
+#include "waypoint_generator.h"
+
 #include <boost/algorithm/string.hpp>
+
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
+#include <thread>
 
 namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode() {
+  local_planner_.reset(new LocalPlanner());
+  wp_generator_.reset(new WaypointGenerator());
   nh_ = ros::NodeHandle("~");
   readParams();
 
@@ -106,14 +120,14 @@ LocalPlannerNode::LocalPlannerNode() {
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
-  local_planner_.applyGoal();
+  local_planner_->applyGoal();
 }
 
 LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  auto goal = local_planner_.getGoal();
+  auto goal = local_planner_->getGoal();
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
@@ -144,7 +158,7 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("min_speed_close_to_goal",
                     new_params.min_speed_close_to_goal, 0.5);
 
-  wp_generator_.param_ = new_params;
+  wp_generator_->param_ = new_params;
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
@@ -202,7 +216,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
 }
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
-  local_planner_.complete_cloud_.clear();
+  local_planner_->complete_cloud_.clear();
   for (size_t i = 0; i < cameras_.size(); ++i) {
     sensor_msgs::PointCloud2 pc2cloud_world;
     pcl::PointCloud<pcl::PointXYZ> complete_cloud;
@@ -215,7 +229,7 @@ void LocalPlannerNode::updatePlannerInfo() {
                                    cameras_[i].newest_cloud_msg_,
                                    pc2cloud_world);
       pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-      local_planner_.complete_cloud_.push_back(std::move(complete_cloud));
+      local_planner_->complete_cloud_.push_back(std::move(complete_cloud));
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
@@ -223,19 +237,19 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update position
-  local_planner_.setPose(newest_pose_);
+  local_planner_->setPose(newest_pose_);
 
   // Update velocity
-  local_planner_.setCurrentVelocity(vel_msg_);
+  local_planner_->setCurrentVelocity(vel_msg_);
 
   // update state
-  local_planner_.currently_armed_ = armed_;
-  local_planner_.offboard_ = offboard_;
-  local_planner_.mission_ = mission_;
+  local_planner_->currently_armed_ = armed_;
+  local_planner_->offboard_ = offboard_;
+  local_planner_->mission_ = mission_;
 
   // update goal
   if (new_goal_) {
-    local_planner_.setGoal(goal_msg_.pose.position);
+    local_planner_->setGoal(goal_msg_.pose.position);
     new_goal_ = false;
   }
 
@@ -341,7 +355,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
   m.id = 0;
   marker->markers.push_back(m);
 
-  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
+  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
 
   for (size_t i = 0; i < path.cells.size(); i++) {
     m.id = i + 1;
@@ -396,7 +410,7 @@ void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
-  geometry_msgs::Point goal = local_planner_.getGoal();
+  geometry_msgs::Point goal = local_planner_->getGoal();
 
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -421,9 +435,9 @@ void LocalPlannerNode::publishReachHeight() {
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = local_planner_.take_off_pose_.pose.position.x;
-  m.pose.position.y = local_planner_.take_off_pose_.pose.position.y;
-  m.pose.position.z = local_planner_.starting_height_;
+  m.pose.position.x = local_planner_->take_off_pose_.pose.position.x;
+  m.pose.position.y = local_planner_->take_off_pose_.pose.position.y;
+  m.pose.position.z = local_planner_->starting_height_;
   m.pose.orientation.x = 0.0;
   m.pose.orientation.y = 0.0;
   m.pose.orientation.z = 0.0;
@@ -454,7 +468,7 @@ void LocalPlannerNode::publishReachHeight() {
   t.color.b = 0.0;
   t.lifetime = ros::Duration();
   t.id = 0;
-  t.pose.position = local_planner_.take_off_pose_.pose.position;
+  t.pose.position = local_planner_->take_off_pose_.pose.position;
   takeoff_pose_pub_.publish(t);
 
   visualization_msgs::Marker a;
@@ -471,13 +485,13 @@ void LocalPlannerNode::publishReachHeight() {
   a.color.b = 0.5;
   a.lifetime = ros::Duration();
   a.id = 0;
-  a.pose.position = local_planner_.offboard_pose_.pose.position;
+  a.pose.position = local_planner_->offboard_pose_.pose.position;
   offboard_pose_pub_.publish(a);
 }
 
 void LocalPlannerNode::publishBox() {
   visualization_msgs::MarkerArray marker_array;
-  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
+  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
 
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
@@ -488,13 +502,16 @@ void LocalPlannerNode::publishBox() {
   box.pose.position.x = drone_pos.pose.position.x;
   box.pose.position.y = drone_pos.pose.position.y;
   box.pose.position.z = drone_pos.pose.position.z;
+                        0.5 * (local_planner_->histogram_box_.zsize_up_ -
+                               local_planner_->histogram_box_.zsize_down_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
-  box.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
-  box.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
-  box.scale.z = 2.0 * local_planner_.histogram_box_.radius_;
+  box.scale.x = 2.0 * local_planner_->histogram_box_.radius_;
+  box.scale.y = 2.0 * local_planner_->histogram_box_.radius_;
+  box.scale.z = local_planner_->histogram_box_.zsize_up_ +
+                local_planner_->histogram_box_.zsize_down_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
@@ -529,8 +546,8 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   const ros::Time now = ros::Time::now();
 
-  wp_generator_.updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
-  waypointResult result = wp_generator_.getWaypoints();
+  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
+  waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
@@ -608,7 +625,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   // to mavros
 
   mavros_msgs::Trajectory obst_free_path = {};
-  if (local_planner_.use_vel_setpoints_) {
+  if (local_planner_->use_vel_setpoints_) {
     mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
     transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
   } else {
@@ -619,7 +636,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
 }
 
 void LocalPlannerNode::publishHistogramImage() {
-  histogram_image_pub_.publish(local_planner_.histogram_image_);
+  histogram_image_pub_.publish(local_planner_->histogram_image_);
 }
 
 void LocalPlannerNode::publishTree() {
@@ -652,7 +669,7 @@ void LocalPlannerNode::publishTree() {
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
 
-  local_planner_.getTree(tree, closed_set, path_node_positions_);
+  local_planner_->getTree(tree, closed_set, path_node_positions_);
 
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
@@ -683,7 +700,7 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_msg_.pose.position.z = local_planner_.getGoal().z;
+  goal_msg_.pose.position.z = local_planner_->getGoal().z;
 }
 
 void LocalPlannerNode::updateGoalCallback(
@@ -745,7 +762,7 @@ void LocalPlannerNode::publishGround() {
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
-  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
+  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
   int beta_z = floor(
       (atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y) *
        180.0 / M_PI));  //(-180. +180]
@@ -778,11 +795,11 @@ void LocalPlannerNode::cameraInfoCallback(
   // v_fov = 2 * atan (image_height / (2 * focal_length_y))
   // Assumption: if there are n cameras the total horizonal field of view is n
   // times the horizontal field of view of a single camera
-  local_planner_.h_FOV_ = static_cast<double>(cameras_.size()) * 2.0 *
-                          atan(msg->width / (2.0 * msg->K[0])) * 180.0 / M_PI;
-  local_planner_.v_FOV_ =
+  local_planner_->h_FOV_ = static_cast<double>(cameras_.size()) * 2.0 *
+                           atan(msg->width / (2.0 * msg->K[0])) * 180.0 / M_PI;
+  local_planner_->v_FOV_ =
       2.0 * atan(msg->height / (2.0 * msg->K[4])) * 180.0 / M_PI;
-  wp_generator_.setFOV(local_planner_.h_FOV_, local_planner_.v_FOV_);
+  wp_generator_->setFOV(local_planner_->h_FOV_, local_planner_->v_FOV_);
 }
 
 void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,
@@ -916,7 +933,7 @@ void LocalPlannerNode::transformVelocityToTrajectory(
 
 void LocalPlannerNode::publishPlannerData() {
   pcl::PointCloud<pcl::PointXYZ> final_cloud, reprojected_points;
-  local_planner_.getCloudsForVisualization(final_cloud, reprojected_points);
+  local_planner_->getCloudsForVisualization(final_cloud, reprojected_points);
   local_pointcloud_pub_.publish(final_cloud);
   reprojected_points_pub_.publish(reprojected_points);
 
@@ -926,12 +943,12 @@ void LocalPlannerNode::publishPlannerData() {
 
   nav_msgs::GridCells path_candidates, path_selected, path_rejected,
       path_blocked, FOV_cells;
-  local_planner_.getCandidateDataForVisualization(
+  local_planner_->getCandidateDataForVisualization(
       path_candidates, path_selected, path_rejected, path_blocked, FOV_cells);
 
-  if (local_planner_.send_obstacles_fcu_) {
+  if (local_planner_->send_obstacles_fcu_) {
     sensor_msgs::LaserScan distance_data_to_fcu;
-    local_planner_.sendObstacleDistanceDataToFcu(distance_data_to_fcu);
+    local_planner_->sendObstacleDistanceDataToFcu(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
   }
 
@@ -949,9 +966,9 @@ void LocalPlannerNode::publishPlannerData() {
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
-  local_planner_.dynamicReconfigureSetParams(config, level);
-  wp_generator_.setMinJerkLimit(config.min_jerk_limit_);
-  wp_generator_.setMaxJerkLimit(config.max_jerk_limit_);
+  local_planner_->dynamicReconfigureSetParams(config, level);
+  wp_generator_->setMinJerkLimit(config.min_jerk_limit_);
+  wp_generator_->setMaxJerkLimit(config.max_jerk_limit_);
   rqt_param_config_ = config;
 }
 
@@ -970,7 +987,7 @@ void LocalPlannerNode::threadFunction() {
       std::lock_guard<std::mutex> guard(running_mutex_);
       never_run_ = false;
       std::clock_t start_time = std::clock();
-      local_planner_.runPlanner();
+      local_planner_->runPlanner();
       publishPlannerData();
 
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",

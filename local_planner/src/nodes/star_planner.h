@@ -1,57 +1,27 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
-#include <math.h>
-#include <vector>
+
 #include "box.h"
-#include "common.h"
 #include "histogram.h"
-#include "planner_functions.h"
-#include "tree_node.h"
 
-#include <math.h>
 #include <Eigen/Dense>
-#include <deque>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
 
-#include <ros/ros.h>
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/point_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
-
-#include <tf/transform_listener.h>
-
-#include <sensor_msgs/PointCloud2.h>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3Stamped.h>
 
 #include <nav_msgs/GridCells.h>
-#include <nav_msgs/Path.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
+#include <vector>
+
 namespace avoidance {
+class TreeNode;
 
 class StarPlanner {
   double h_FOV_ = 59.0;

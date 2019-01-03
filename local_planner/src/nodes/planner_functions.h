@@ -1,44 +1,21 @@
 #ifndef LOCAL_PLANNER_FUNCTIONS_H
 #define LOCAL_PLANNER_FUNCTIONS_H
 
-#include <math.h>
-#include <Eigen/Dense>
-#include <deque>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
-
-#include <tf/transform_listener.h>
-
 #include "box.h"
-#include "common.h"
 #include "histogram.h"
+
+#include <Eigen/Dense>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3Stamped.h>
 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/point_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
+
+#include <vector>
 
 namespace avoidance {
 

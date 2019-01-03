@@ -1,4 +1,6 @@
+#include "local_planner.h"
 #include "local_planner_node.h"
+#include "waypoint_generator.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -11,7 +13,7 @@ int main(int argc, char** argv) {
   bool hover = false;
   bool landing = false;
   avoidanceOutput planner_output;
-  Node.local_planner_.disable_rise_to_goal_altitude_ =
+  Node.local_planner_->disable_rise_to_goal_altitude_ =
       Node.disable_rise_to_goal_altitude_;
   bool startup = true;
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
@@ -39,9 +41,9 @@ int main(int argc, char** argv) {
     // Check if all information was received
     ros::Time now = ros::Time::now();
     ros::Duration pointcloud_timeout_land =
-        ros::Duration(Node.local_planner_.pointcloud_timeout_land_);
+        ros::Duration(Node.local_planner_->pointcloud_timeout_land_);
     ros::Duration pointcloud_timeout_hover =
-        ros::Duration(Node.local_planner_.pointcloud_timeout_hover_);
+        ros::Duration(Node.local_planner_->pointcloud_timeout_hover_);
     ros::Duration since_last_cloud = now - Node.last_wp_time_;
     ros::Duration since_start = now - start_time;
 
@@ -99,10 +101,10 @@ int main(int argc, char** argv) {
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             Node.cameras_[i].received_ = false;
           }
-          Node.wp_generator_.setPlannerInfo(
-              Node.local_planner_.getAvoidanceOutput());
-          if (Node.local_planner_.stop_in_front_active_) {
-            Node.goal_msg_.pose.position = Node.local_planner_.getGoal();
+          Node.wp_generator_->setPlannerInfo(
+              Node.local_planner_->getAvoidanceOutput());
+          if (Node.local_planner_->stop_in_front_active_) {
+            Node.goal_msg_.pose.position = Node.local_planner_->getGoal();
           }
           Node.running_mutex_.unlock();
           // Wake up the planner

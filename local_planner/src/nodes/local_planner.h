@@ -1,86 +1,41 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
-#include <math.h>
+#include "avoidance_output.h"
 #include <sensor_msgs/image_encodings.h>
-#include <Eigen/Dense>
-#include <chrono>
-#include <deque>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <vector>
-
-#include <ros/ros.h>
-
 #include "box.h"
-#include "common.h"
 #include "histogram.h"
-#include "planner_functions.h"
-#include "star_planner.h"
-#include "tree_node.h"
 
-#include <pcl/ModelCoefficients.h>
-#include <pcl/filters/crop_box.h>
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/io/pcd_io.h>
+#include <dynamic_reconfigure/server.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
+
+#include <Eigen/Dense>
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/point_types.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/sample_consensus/sac_model_perpendicular_plane.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 
 #include <tf/transform_listener.h>
 
+#include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3Stamped.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
-#include <dynamic_reconfigure/server.h>
-#include <local_planner/LocalPlannerNodeConfig.h>
+#include <ros/time.h>
+#include <deque>
+#include <string>
+#include <vector>
 
 namespace avoidance {
 
-enum waypoint_choice { hover, costmap, tryPath, direct, reachHeight, goBack };
-
-struct avoidanceOutput {
-  waypoint_choice waypoint_type;
-
-  geometry_msgs::PoseStamped pose;
-  bool obstacle_ahead;
-  bool reach_altitude;
-  double min_speed;
-  double max_speed;
-  double velocity_sigmoid_slope;
-  ros::Time last_path_time;
-
-  geometry_msgs::Point back_off_point;
-  geometry_msgs::Point back_off_start_point;
-  double min_dist_backoff;
-
-  geometry_msgs::PoseStamped take_off_pose;
-  geometry_msgs::PoseStamped offboard_pose;
-
-  double costmap_direction_e;
-  double costmap_direction_z;
-  std::vector<geometry_msgs::Point> path_node_positions;
-};
+class StarPlanner;
+class TreeNode;
 
 class LocalPlanner {
  private:
@@ -142,7 +97,7 @@ class LocalPlanner {
   std::vector<double> reprojected_points_dist_;
 
   std::vector<TreeNode> tree_;
-  StarPlanner star_planner_;
+  std::unique_ptr<StarPlanner> star_planner_;
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
@@ -207,24 +162,24 @@ class LocalPlanner {
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  void setGoal(const geometry_msgs::Point &goal);
+  void setGoal(const geometry_msgs::Point& goal);
   geometry_msgs::Point getGoal();
   void applyGoal();
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
                                    uint32_t level);
   geometry_msgs::PoseStamped getPosition();
   void getCloudsForVisualization(
-      pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-      pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates,
-                                        nav_msgs::GridCells &path_selected,
-                                        nav_msgs::GridCells &path_rejected,
-                                        nav_msgs::GridCells &path_blocked,
-                                        nav_msgs::GridCells &FOV_cells);
-  void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-               std::vector<geometry_msgs::Point> &path_node_positions);
-  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
+      pcl::PointCloud<pcl::PointXYZ>& final_cloud,
+      pcl::PointCloud<pcl::PointXYZ>& reprojected_points);
+  void getCandidateDataForVisualization(nav_msgs::GridCells& path_candidates,
+                                        nav_msgs::GridCells& path_selected,
+                                        nav_msgs::GridCells& path_rejected,
+                                        nav_msgs::GridCells& path_blocked,
+                                        nav_msgs::GridCells& FOV_cells);
+  void setCurrentVelocity(const geometry_msgs::TwistStamped& vel);
+  void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
+               std::vector<geometry_msgs::Point>& path_node_positions);
+  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan& obstacle_distance);
   avoidanceOutput getAvoidanceOutput();
 
   void determineStrategy();

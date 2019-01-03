@@ -1,5 +1,9 @@
 #include "planner_functions.h"
 
+#include "common.h"
+
+#include <ros/console.h>
+
 #include <numeric>
 
 namespace avoidance {

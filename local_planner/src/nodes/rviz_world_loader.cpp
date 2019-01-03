@@ -1,5 +1,7 @@
 #include "rviz_world_loader.h"
 
+#include <ros/console.h>
+
 namespace avoidance {
 
 // extraction operators
