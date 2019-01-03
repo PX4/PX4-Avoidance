@@ -32,18 +32,20 @@ void filterPointCloud(
 void calculateFOV(double h_FOV, double v_FOV, std::vector<int>& z_FOV_idx,
                   int& e_FOV_min, int& e_FOV_max, double yaw, double pitch);
 void propagateHistogram(Histogram& polar_histogram_est,
-                        pcl::PointCloud<pcl::PointXYZ> reprojected_points,
-                        std::vector<double> reprojected_points_age,
-                        std::vector<double> reprojected_points_dist,
+                        const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+                        const std::vector<double>& reprojected_points_age,
+                        const std::vector<double>& reprojected_points_dist,
                         geometry_msgs::PoseStamped position);
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           geometry_msgs::PoseStamped position);
 void combinedHistogram(bool& hist_empty, Histogram& new_hist,
-                       Histogram propagated_hist, bool waypoint_outside_FOV,
-                       std::vector<int> z_FOV_idx, int e_FOV_min,
+                       const Histogram& propagated_hist,
+                       bool waypoint_outside_FOV,
+                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max);
-void compressHistogramElevation(Histogram& new_hist, Histogram input_hist);
+void compressHistogramElevation(Histogram& new_hist,
+                                const Histogram& input_hist);
 double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
@@ -55,7 +57,7 @@ void findFreeDirections(
     const Histogram& histogram, double safety_radius,
     nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
     nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells path_waypoints,
+    const nav_msgs::GridCells& path_waypoints,
     std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
     const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
     double goal_cost_param, double smooth_cost_param,
@@ -64,7 +66,7 @@ void findFreeDirections(
 void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
                     int e_FOV_max, int e_chosen, int z_chosen,
                     double resolution);
-bool calculateCostMap(std::vector<float> cost_path_candidates,
+bool calculateCostMap(const std::vector<float>& cost_path_candidates,
                       std::vector<int>& cost_idx_sorted);
 bool getDirectionFromTree(
     Eigen::Vector3f& p,

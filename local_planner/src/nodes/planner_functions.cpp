@@ -122,9 +122,9 @@ void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
 
 // Build histogram estimate from reprojected points
 void propagateHistogram(Histogram& polar_histogram_est,
-                        pcl::PointCloud<pcl::PointXYZ> reprojected_points,
-                        std::vector<double> reprojected_points_age,
-                        std::vector<double> reprojected_points_dist,
+                        const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+                        const std::vector<double>& reprojected_points_age,
+                        const std::vector<double>& reprojected_points_dist,
                         geometry_msgs::PoseStamped position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     float e_angle = elevationAnglefromCartesian(
@@ -201,8 +201,9 @@ void generateNewHistogram(Histogram& polar_histogram,
 
 // Combine propagated histogram and new histogram to the final binary histogram
 void combinedHistogram(bool& hist_empty, Histogram& new_hist,
-                       Histogram propagated_hist, bool waypoint_outside_FOV,
-                       std::vector<int> z_FOV_idx, int e_FOV_min,
+                       const Histogram& propagated_hist,
+                       bool waypoint_outside_FOV,
+                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max) {
   hist_empty = true;
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -285,7 +286,8 @@ double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
   return cost;
 }
 
-void compressHistogramElevation(Histogram& new_hist, Histogram input_hist) {
+void compressHistogramElevation(Histogram& new_hist,
+                                const Histogram& input_hist) {
   int vertical_FOV_range_sensor = 20;
   int lower_index = elevationAngletoIndex(
       -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
@@ -310,7 +312,7 @@ void findFreeDirections(
     const Histogram& histogram, double safety_radius,
     nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
     nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells path_waypoints,
+    const nav_msgs::GridCells& path_waypoints,
     std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
     const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
     double goal_cost_param, double smooth_cost_param,
@@ -409,7 +411,7 @@ void findFreeDirections(
 
 // calculate the free direction which has the smallest cost for the UAV to
 // travel to
-bool calculateCostMap(std::vector<float> cost_path_candidates,
+bool calculateCostMap(const std::vector<float>& cost_path_candidates,
                       std::vector<int>& cost_idx_sorted) {
   if (cost_path_candidates.empty()) {
     ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
