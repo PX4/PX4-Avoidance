@@ -8,7 +8,7 @@
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
           args="0 0 0 $(arg mavros_transformation) 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_front_camera"
-          args="0.30 0.32 -0.11 0 0 0 fcu front_camera_link 10"/>
+          args="0.30 0.32 -0.11 0 0.052 0 fcu front_camera_link 10"/>
                 
     <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>

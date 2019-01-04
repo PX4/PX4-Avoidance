@@ -345,7 +345,13 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
 }
 
 void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
-  for (int e = 0; e < GRID_LENGTH_E; e++) {
+  int vertical_FOV_range_sensor = 20;
+  int lower_index =
+      elevationAngletoIndex(-(int)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  int upper_index =
+      elevationAngletoIndex((int)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+
+  for (int e = lower_index; e <= upper_index; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (input_hist.get_bin(e, z) > 0) {
         new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);
