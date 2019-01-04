@@ -163,7 +163,7 @@ void StarPlanner::buildLookAheadTree() {
     bool hist_is_empty = false;          // unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;
-    histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance);
+    histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance_);
 
     filterPointCloud(cropped_cloud, closest_point,
                      distance_to_closest_point, backoff_points_counter,
