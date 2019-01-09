@@ -86,16 +86,16 @@ TEST(Common, elevationAnglefromCartesian){
   const geometry_msgs::Point origin = createPoint(0.0d, 0.0d, 0.0d);
 
   //WHEN:
-  int angle_front = elevationAnglefromCartesian(point_front, origin);
-  int angle_up = elevationAnglefromCartesian(point_up, origin);
-  int angle_behind = elevationAnglefromCartesian(point_behind, origin);
-  int angle_down = elevationAnglefromCartesian(point_down, origin);
-  int angle_undetermined = elevationAnglefromCartesian(origin, origin);
-  int angle_q1 = elevationAnglefromCartesian(point_q1, origin);
-  int angle_q2 = elevationAnglefromCartesian(point_q2, origin);
-  int angle_q3 = elevationAnglefromCartesian(point_q3, origin);
-  int angle_q4 = elevationAnglefromCartesian(point_q4, origin);
-  int angle_non_zero_origin = elevationAnglefromCartesian(point_q1, point_q2);
+  const int angle_front = elevationAnglefromCartesian(point_front, origin);
+  const int angle_up = elevationAnglefromCartesian(point_up, origin);
+  const int angle_behind = elevationAnglefromCartesian(point_behind, origin);
+  const int angle_down = elevationAnglefromCartesian(point_down, origin);
+  const int angle_undetermined = elevationAnglefromCartesian(origin, origin);
+  const int angle_q1 = elevationAnglefromCartesian(point_q1, origin);
+  const int angle_q2 = elevationAnglefromCartesian(point_q2, origin);
+  const int angle_q3 = elevationAnglefromCartesian(point_q3, origin);
+  const int angle_q4 = elevationAnglefromCartesian(point_q4, origin);
+  const int angle_non_zero_origin = elevationAnglefromCartesian(point_q1, point_q2);
 
   //THEN:
   EXPECT_EQ(0, angle_front);
@@ -108,7 +108,37 @@ TEST(Common, elevationAnglefromCartesian){
   EXPECT_EQ(-51, angle_q3);
   EXPECT_EQ(-49, angle_q4);
   EXPECT_EQ(-27, angle_non_zero_origin);
+}
 
+TEST(Common, elevationAngletoIndex){
+  //GIVEN:
+  const int elevation_1 = 0;
+  const int elevation_2 = 34;
+  const int resolution_1 = 3;
+  const int resolution_2 = 12;
+  const int elevation_invalid_1 = 94;
+  const int elevation_invalid_2 = -999;
+  const int resolution_invalid_1 = 0;
+  const int resolution_invalid_2 = -1;
 
+  //WHEN:
+  const int index_1 = elevationAngletoIndex(elevation_1, resolution_1);
+  const int index_2 = elevationAngletoIndex(elevation_2, resolution_1);
+  const int index_3 = elevationAngletoIndex(elevation_1, resolution_2);
+  const int index_4 = elevationAngletoIndex(elevation_2, resolution_2);
+  const int index_invalid_1 = elevationAngletoIndex(elevation_invalid_1, resolution_1);
+  const int index_invalid_2 = elevationAngletoIndex(elevation_invalid_2, resolution_1);
+  const int index_invalid_3 = elevationAngletoIndex(elevation_1, resolution_invalid_1);
+  const int index_invalid_4 = elevationAngletoIndex(elevation_1, resolution_invalid_2);
+
+  //THEN:
+  EXPECT_EQ(30, index_1);
+  EXPECT_EQ(41, index_2);
+  EXPECT_EQ(7, index_3);
+  EXPECT_EQ(10, index_4);
+  EXPECT_EQ(0, index_invalid_1);
+  EXPECT_EQ(0, index_invalid_2);
+  EXPECT_EQ(0, index_invalid_3);
+  EXPECT_EQ(0, index_invalid_4);
 
 }

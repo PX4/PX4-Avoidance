@@ -27,21 +27,21 @@ double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
 
 /**
-* @brief Compute the bearing angle of a given vector relative to an
-*        origin.
-*@param[in] position Position of the location to which to compute the bearing
-*           angle to.
-*@param[in] origin Origin from which to compute the bearing vector.
-*@details For a point given in cartesian x/y coordinates this is the
-*          angle in degrees from the positive y-axis in (-180, 180].
+* @brief     Compute the bearing angle of a given vector relative to an
+*            origin.
+* @param[in] position Position of the location to which to compute the bearing
+*            angle to.
+* @param[in] origin Origin from which to compute the bearing vector.
+* @details   For a point given in cartesian x/y coordinates this is the
+*            angle in degrees from the positive y-axis in (-180, 180].
 *
-* @returns Angle in integer degrees from the positive y-axis (-180, 180]
-* @warning If the origin and the position coincide, the output is 0 degrees
+* @returns   Angle in integer degrees from the positive y-axis (-180, 180]
+* @warning   If the origin and the position coincide, the output is 0 degrees
 **/
 int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
                               const geometry_msgs::Point& origin);
 int azimuthAnglefromCartesian(double x, double y,
-                              const geometry_msgs::Point& pos);b
+                              const geometry_msgs::Point& pos);
 
 /**
 * @brief   Compute the elevation angle for a point given in cartesian coordinates
@@ -53,6 +53,13 @@ int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
                                 const geometry_msgs::Point& origin);
 int elevationAnglefromCartesian(double x, double y, double z,
                                 const geometry_msgs::Point& pos);
+/**
+* @brief     Compute the histogram index given an elevation angle and resolution
+* @param[in] e Elevation angle in degrees
+* @param[in] res resolution of the histogram in degrees
+* @returns   Index of the histogram cell for the given elevation
+* @note      If there is an invalid input, the output index will be 0
+**/
 int elevationAngletoIndex(int e, int res);
 int azimuthAngletoIndex(int z, int res);
 double nextYaw(const geometry_msgs::PoseStamped& u,
