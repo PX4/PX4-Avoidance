@@ -101,6 +101,11 @@ int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
 }
 
 int elevationAngletoIndex(int e, int res) {  //[-90,90]
+  // Do some input-checks
+  if(res <= 0 || e < 0 || e > 90){
+    return 0;
+  }
+  
   if (e == 90) {
     e = 89;
   }
