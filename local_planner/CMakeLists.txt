@@ -199,7 +199,9 @@ if(CATKIN_ENABLE_TESTING)
 	catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
 	                                      test/test_example.cpp
 	                                      test/test_common.cpp
-	                                      test/test_local_planner.cpp)
+	                                      test/test_local_planner.cpp
+                                              test/test_star_planner.cpp
+                                              test/test_waypoint_generator.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
 	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
 	                                             ${catkin_LIBRARIES}
