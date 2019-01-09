@@ -200,6 +200,7 @@ if(CATKIN_ENABLE_TESTING)
 	                                      test/test_example.cpp
 	                                      test/test_common.cpp
 	                                      test/test_local_planner.cpp
+	                                      test/test_planner_functions.cpp
                                               test/test_star_planner.cpp
                                               test/test_waypoint_generator.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
