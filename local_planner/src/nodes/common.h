@@ -25,6 +25,19 @@ bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
                            double new_yaw, double old_yaw);
 double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
+
+/**
+* @brief Compute the bearing angle of a given vector relative to an
+*        origin.
+*@param[in] position Position of the location to which to compute the bearing
+*           angle to.
+*@param[in] origin Origin from which to compute the bearing vector.
+*@details For a point given in cartesian x/y coordinates this is the
+*          angle in degrees from the positive y-axis in (-180, 180].
+*
+* @returns Angle in integer degrees from the positive y-axis (-180, 180]
+* @warning If the origin and the position coincide, the output is 0 degrees
+**/
 int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
                               const geometry_msgs::Point& origin);
 int azimuthAnglefromCartesian(double x, double y,
