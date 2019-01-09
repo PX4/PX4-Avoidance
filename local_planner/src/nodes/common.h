@@ -41,7 +41,14 @@ double azimuthIndexToAngle(int z, double res);
 int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
                               const geometry_msgs::Point& origin);
 int azimuthAnglefromCartesian(double x, double y,
-                              const geometry_msgs::Point& pos);
+                              const geometry_msgs::Point& pos);b
+
+/**
+* @brief   Compute the elevation angle for a point given in cartesian coordinates
+* @note    Output is in degrees (-90, 90)
+* @warning For the poles on the sphere, the Output is 0 degrees.
+*          (As opposed to the expected +/- 90)
+**/
 int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
                                 const geometry_msgs::Point& origin);
 int elevationAnglefromCartesian(double x, double y, double z,
