@@ -63,9 +63,9 @@
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
     <physics name='default_physics' default='0' type='ode'>
-      <max_step_size>0.001</max_step_size>
+      <max_step_size>0.004</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <real_time_update_rate>250</real_time_update_rate>
     </physics>
     <scene>
       <ambient>0.4 0.4 0.4 1</ambient>
@@ -80,7 +80,7 @@
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
 
-    
+
      <model name="box">
       <static>true</static>
       <link name='box'>
@@ -107,7 +107,7 @@
         </visual>
       </link>
     </model>
-    
+
     <!--
     <model name='unit_box_0'>
       <pose frame=''>1.47447 -1.48615 0.5 0 -0 0</pose>
@@ -141,6 +141,6 @@
       </link>
 
       <plugin name="push_animate" filename="libanimated_box.so"/>
-    </model>       
+    </model>
   </world>
 </sdf>
