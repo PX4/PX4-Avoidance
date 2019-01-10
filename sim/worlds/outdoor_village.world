@@ -29,9 +29,9 @@
           <contact_surface_layer>0.001</contact_surface_layer>
         </constraints>
       </ode>
-      <max_step_size>0.002</max_step_size>
+      <max_step_size>0.004</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>500</real_time_update_rate>
+      <real_time_update_rate>250</real_time_update_rate>
       <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     </physics>
 
@@ -49,7 +49,7 @@
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
-    
+
     <!--
     <light type="point" name="light_bulb">
       <cast_shadows>false</cast_shadows>
@@ -64,7 +64,7 @@
       </attenuation>
     </light>
     -->
-    
+
     <!--
     <light type="spot" name="lamp_post_light">
       <cast_shadows>true</cast_shadows>
@@ -82,86 +82,86 @@
         <inner_angle>0.6</inner_angle>
         <outer_angle>1.0</outer_angle>
         <falloff>1.0</falloff>
-      </spot> 
+      </spot>
     </light>
     -->
-    
-    
+
+
     <include>
       <uri>model://vrc_driving_terrain</uri>
     </include>
-    
+
     <!--
     <include>
       <uri>model://grass_plane</uri>
     </include>
-    
-    
+
+
     <include>
       <uri>model://ground_plane_small</uri>
     </include>
     -->
-    
+
     <include>
       <name>house_2</name>
       <uri>model://house_2</uri>
       <pose>4 -7 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>house_2_2</name>
       <uri>model://house_2</uri>
       <pose>-12 8 0   0 0 1.5707</pose>
     </include>
-    
+
     <include>
       <name>house_1</name>
       <uri>model://house_1</uri>
       <pose>-10 -12 0   0 0 3.1415</pose>
     </include>
-    
+
     <include>
       <name>mailbox_1</name>
       <uri>model://mailbox</uri>
       <pose>3 -2.4 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>mailbox_2</name>
       <uri>model://mailbox</uri>
       <pose>-11 -2.5 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>dumpster</name>
       <uri>model://dumpster</uri>
       <pose>-13 3 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>speed_limit_sign</name>
       <uri>model://speed_limit_sign</uri>
       <pose>6.5 2.4 0   0 0 1.5707</pose>
     </include>
-    
+
     <include>
       <name>air_speed_limit</name>
       <uri>model://speed_limit_sign</uri>
       <pose>-20.5 69.4 1.6  0 0 2.3</pose>
     </include>
-    
+
     <include>
       <name>construction_barrel_1</name>
       <uri>model://construction_barrel</uri>
       <pose>-19 14 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>lamp_post_1</name>
       <uri>model://lamp_post</uri>
       <pose>-11.5 2.6 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>lamp_post_2</name>
       <uri>model://lamp_post</uri>
@@ -173,19 +173,19 @@
       <uri>model://lamp_post</uri>
       <pose>3 2.6 0   0 0 0</pose>
     </include>
-    
+
     <include>
       <name>lamp_post_4</name>
       <uri>model://lamp_post</uri>
       <pose>9 -2.6 0   0 0 3.1415</pose>
     </include>
-    
+
     <include>
       <name>lamp_post_5</name>
       <uri>model://lamp_post</uri>
       <pose>-22 5 0   0 0 1.5707</pose>
     </include>
-    
+
     <include>
       <name>construction_cone_1</name>
       <uri>model://construction_cone</uri>
@@ -206,7 +206,7 @@
       <uri>model://construction_cone</uri>
       <pose>-1.5 -1.5 0   0 0 0</pose>
     </include>
-    
+
     <!-- Trees -->
     <include>
       <name>pine_tree_1</name>
@@ -253,7 +253,7 @@
       <uri>model://pine_tree</uri>
       <pose>16 -11.5 0  0 0 0</pose>
     </include>
-    
+
     <!-- Roads & Garage ways -->
     <road name="main_street">
       <width>4</width>
@@ -263,7 +263,7 @@
       <point>-18.12 0.88 0.01</point>
       <point>-17.15 0.23 0.01</point>
       <point>-16    0    0.01</point>
-      
+
       <point>10 0 0.01</point>
       <point>11.15 -0.23 0.01</point>
       <point>12.12 -0.88 0.01</point>
@@ -271,7 +271,7 @@
       <point>13    -3    0.01</point>
       <point>13    -14   0.01</point>
     </road>
-        
+
    <!-- <include>
       <name>recorder_camera</name>
       <uri>model://recorder_camera</uri>
@@ -289,7 +289,7 @@
         </script>
       </material>
     </road>
-    
+
     <road name="garage_way_2">
       <width>2.5</width>
       <point>-12.5 -2 0.01</point>

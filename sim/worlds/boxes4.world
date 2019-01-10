@@ -63,9 +63,9 @@
     <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     <atmosphere type='adiabatic'/>
     <physics name='default_physics' default='0' type='ode'>
-      <max_step_size>0.001</max_step_size>
+      <max_step_size>0.004</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>1000</real_time_update_rate>
+      <real_time_update_rate>250</real_time_update_rate>
     </physics>
     <scene>
       <ambient>0.4 0.4 0.4 1</ambient>
@@ -79,8 +79,8 @@
       <elevation>0</elevation>
       <heading_deg>0</heading_deg>
     </spherical_coordinates>
-    
-    
+
+
     <model name="box1">
       <static>true</static>
       <link name='box'>
@@ -107,8 +107,8 @@
         </visual>
       </link>
     </model>
-    
-        
+
+
     <model name="box2">
       <static>true</static>
       <link name='box'>
@@ -135,7 +135,7 @@
         </visual>
       </link>
     </model>
-    
+
     <model name="box3">
       <static>true</static>
       <link name='box'>
@@ -162,7 +162,7 @@
         </visual>
       </link>
     </model>
-    
+
     <model name="box4">
       <static>true</static>
       <link name='box'>
@@ -189,7 +189,7 @@
         </visual>
       </link>
     </model>
-    
+
     <model name="box5">
       <static>true</static>
       <link name='box'>
@@ -216,7 +216,7 @@
         </visual>
       </link>
     </model>
-    
+
     <model name="box6">
       <static>true</static>
       <link name='box'>
@@ -243,7 +243,7 @@
         </visual>
       </link>
     </model>
-    
+
     <model name="box7">
       <static>true</static>
       <link name='box'>
@@ -270,7 +270,7 @@
         </visual>
       </link>
     </model>
-   
+
 
   </world>
 </sdf>

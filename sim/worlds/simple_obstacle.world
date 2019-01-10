@@ -29,9 +29,9 @@
           <contact_surface_layer>0.001</contact_surface_layer>
         </constraints>
       </ode>
-      <max_step_size>0.002</max_step_size>
+      <max_step_size>0.004</max_step_size>
       <real_time_factor>1</real_time_factor>
-      <real_time_update_rate>500</real_time_update_rate>
+      <real_time_update_rate>250</real_time_update_rate>
       <magnetic_field>6e-06 2.3e-05 -4.2e-05</magnetic_field>
     </physics>
 
@@ -49,11 +49,11 @@
       </attenuation>
       <direction>-0.5 0.1 -0.9</direction>
     </light>
-    
+
     <include>
       <uri>model://vrc_driving_terrain</uri>
     </include>
-    
+
     <!-- Trees -->
     <include>
       <name>pine_tree_1</name>
@@ -75,7 +75,7 @@
       <uri>model://pine_tree</uri>
       <pose>16 -11.5 0  0 0 0</pose>
     </include>
-    
+
     <include>
       <name>oak_tree_1</name>
       <uri>model://oak_tree</uri>
