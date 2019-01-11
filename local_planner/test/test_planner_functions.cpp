@@ -34,8 +34,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 	location.pose.position.z = 0;
 	double distance  = 1.0;
 
-	std::vector<double> e_angle_filled = {-90, -10, 0, 20, 40, 90};
-	std::vector<double> z_angle_filled = {-180, -50, 0, 70, 100, 175};
+	std::vector<double> e_angle_filled = {-90, -30, 0, 20, 40, 90};
+	std::vector<double> z_angle_filled = {-180, -50, 0, 59, 100, 175};
 	std::vector<geometry_msgs::Point> middle_of_cell;
 
 	for(int i = 0; i<e_angle_filled.size(); i++){

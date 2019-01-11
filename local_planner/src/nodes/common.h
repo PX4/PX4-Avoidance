@@ -38,9 +38,9 @@ double azimuthIndexToAngle(int z, double res);
 * @returns   Angle in integer degrees from the positive y-axis (-180, 180]
 * @warning   If the origin and the position coincide, the output is 0 degrees
 **/
-int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
+float azimuthAnglefromCartesian(const geometry_msgs::Point& position,
                               const geometry_msgs::Point& origin);
-int azimuthAnglefromCartesian(double x, double y,
+float azimuthAnglefromCartesian(double x, double y,
                               const geometry_msgs::Point& pos);
 
 /**
@@ -49,9 +49,9 @@ int azimuthAnglefromCartesian(double x, double y,
 * @warning For the poles on the sphere, the Output is 0 degrees.
 *          (As opposed to the expected +/- 90)
 **/
-int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
+float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
                                 const geometry_msgs::Point& origin);
-int elevationAnglefromCartesian(double x, double y, double z,
+float elevationAnglefromCartesian(double x, double y, double z,
                                 const geometry_msgs::Point& pos);
 /**
 * @brief     Compute the histogram index given an elevation angle and resolution
@@ -60,8 +60,8 @@ int elevationAnglefromCartesian(double x, double y, double z,
 * @returns   Index of the histogram cell for the given elevation
 * @note      If there is an invalid input, the output index will be 0
 **/
-int elevationAngletoIndex(int e, int res);
-int azimuthAngletoIndex(int z, int res);
+int elevationAngletoIndex(float e, int res);
+int azimuthAngletoIndex(float z, int res);
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v);
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,

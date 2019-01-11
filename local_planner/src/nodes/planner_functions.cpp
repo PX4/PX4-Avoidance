@@ -174,10 +174,10 @@ void propagateHistogram(Histogram &polar_histogram_est,
                         std::vector<double> reprojected_points_dist,
                         geometry_msgs::PoseStamped position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    int e_angle = elevationAnglefromCartesian(
+    float e_angle = elevationAnglefromCartesian(
         reprojected_points.points[i].x, reprojected_points.points[i].y,
         reprojected_points.points[i].z, position.pose.position);
-    int z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x,
+    float z_angle = azimuthAnglefromCartesian(reprojected_points.points[i].x,
                                             reprojected_points.points[i].y,
                                             position.pose.position);
 
@@ -230,8 +230,8 @@ void generateNewHistogram(Histogram &polar_histogram,
     temp.z = it->z;
     dist = distance3DCartesian(position.pose.position, temp);
 
-    int e_angle = elevationAnglefromCartesian(temp, position.pose.position);
-    int z_angle = azimuthAnglefromCartesian(temp, position.pose.position);
+    float e_angle = elevationAnglefromCartesian(temp, position.pose.position);
+    float z_angle = azimuthAnglefromCartesian(temp, position.pose.position);
 
     int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
     int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
@@ -555,8 +555,8 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
       mean_point.z = (1.0 - l_frac) * path_node_positions[wp_idx - 1].z +
                      l_frac * path_node_positions[wp_idx].z;
 
-      int wp_e = elevationAnglefromCartesian(mean_point, position);
-      int wp_z = azimuthAnglefromCartesian(mean_point, position);
+      int wp_e = floor(elevationAnglefromCartesian(mean_point, position));
+      int wp_z = floor(azimuthAnglefromCartesian(mean_point, position));
 
       p.x = wp_e;
       p.y = wp_z;
