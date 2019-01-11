@@ -74,8 +74,8 @@ double StarPlanner::treeCostFunction(int node_number) {
   int e = tree_[node_number].last_e_;
   int z = tree_[node_number].last_z_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  int goal_z = azimuthAnglefromCartesian(goal_, origin_position);
-  int goal_e = elevationAnglefromCartesian(goal_, origin_position);
+  int goal_z = floor(azimuthAnglefromCartesian(goal_, origin_position));
+  int goal_e = floor(elevationAnglefromCartesian(goal_, origin_position));
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
@@ -111,8 +111,8 @@ double StarPlanner::treeCostFunction(int node_number) {
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
   geometry_msgs::Point node_position = tree_[node_number].getPosition();
-  int goal_z = azimuthAnglefromCartesian(goal_, node_position);
-  int goal_e = elevationAnglefromCartesian(goal_, node_position);
+  int goal_z = floor(azimuthAnglefromCartesian(goal_, node_position));
+  int goal_e = floor(elevationAnglefromCartesian(goal_, node_position));
 
   int origin = tree_[node_number].origin_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();

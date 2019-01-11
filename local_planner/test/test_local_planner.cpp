@@ -71,6 +71,7 @@ TEST_F(LocalPlannerTests, no_obstacles) {
   }
 }
 
+
 TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   float shift = 0.f;

@@ -75,51 +75,54 @@ double azimuthIndexToAngle(int z, double res) {
   return z * res + res / 2 - 180;
 }
 
-int azimuthAnglefromCartesian(const geometry_msgs::Point& position,
+float azimuthAnglefromCartesian(const geometry_msgs::Point& position,
                               const geometry_msgs::Point& origin) {
   return azimuthAnglefromCartesian(position.x, position.y, origin);
 }
 
-int azimuthAnglefromCartesian(double x, double y,
+float azimuthAnglefromCartesian(double x, double y,
                               const geometry_msgs::Point& pos) {
-  return floor(atan2(x - pos.x, y - pos.y) * 180.0 / M_PI);  //(-180. +180]
+  return atan2(x - pos.x, y - pos.y) * 180.0 / M_PI;  //(-180. +180]
 }
 
-int elevationAnglefromCartesian(double x, double y, double z,
+float elevationAnglefromCartesian(double x, double y, double z,
                                 const geometry_msgs::Point& pos) {
   double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
   if (den == 0) {
     return 0;
   } else {
-    return floor(atan((z - pos.z) / den) * 180.0 / M_PI);  //(-90.+90)
+    return atan((z - pos.z) / den) * 180.0 / M_PI;  //(-90.+90)
   }
 }
 
-int elevationAnglefromCartesian(const geometry_msgs::Point& pos,
+float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
                                 const geometry_msgs::Point& origin) {
   return elevationAnglefromCartesian(pos.x, pos.y, pos.z, origin);
 }
 
-int elevationAngletoIndex(int e, int res) {  //[-90,90]
+int elevationAngletoIndex(float e, int res) {  //[-90,90]
   // Do some input-checks
-  if(res <= 0 || e < 0 || e > 90){
-    return 0;
+  if(res <= 0.f || e < -90.f || e > 90.f){
+    return 0.f;
   }
   
-  if (e == 90) {
+  if (e == 90.f) {
     e = 89;
   }
   e += 90;
-  e = e + (res - (e % res));  //[-80,+90]
-  return e / res - 1;         //[0,17]
+  e = e + (res - ((int)e % res));  //[-80,+90]
+  return floor(e / res )- 1;         //[0,17]
 }
 
-int azimuthAngletoIndex(int z, int res) {  //[-180,180]
-  if (z == 180) {
+int azimuthAngletoIndex(float z, int res) {  //[-180,180]
+  if(res <= 0.f || z < -180.f || z > 180.f){
+    return 0.f;
+  }
+    if (z == 180.f) {
     z = -180;
   }
   z += 180;
-  z = z + (res - (z % res));  //[-80,+90]
+  z = z + (res - ((int)z % res));  //[-80,+90]
   return z / res - 1;         //[0,17]
 }
 
