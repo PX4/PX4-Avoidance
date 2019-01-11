@@ -35,6 +35,26 @@ TEST(Common, polar2DdistanceOnKnownPoints) {
   EXPECT_FLOAT_EQ(54.083271f, dist);
 }
 
+TEST(Common, indexAngleDifferenceCheck) {
+  // GIVEN: two angles
+  const float a1 = 0.f, b1 = 0.f;
+  const float a2 = 180.f, b2 = -180.f;
+  const float a3 = 0.f, b3 = 360.f;
+  const float a4 = 8.45860, b4 = 9.45859;
+
+  // WHEN: we get the minimal different angle between the two angles
+  double angle_diff1 = indexAngleDifference(a1, b1);
+  double angle_diff2 = indexAngleDifference(a2, b2);
+  double angle_diff3 = indexAngleDifference(a3, b3);
+  double angle_diff4 = indexAngleDifference(a4, b4);
+
+  // THEN: the angle should be...
+  EXPECT_DOUBLE_EQ(0., angle_diff1);
+  EXPECT_DOUBLE_EQ(0., angle_diff2);
+  EXPECT_DOUBLE_EQ(0., angle_diff3);
+  EXPECT_DOUBLE_EQ(0.99999, angle_diff4);
+}
+
 
 TEST(Common, azimuthAnglefromCartesian){
   //GIVEN:
@@ -155,28 +175,37 @@ TEST(Common, azimuthAngletoIndex){
   //GIVEN:
   const float elevation_1 = 0.f;
   const float elevation_2 = 34.f;
+  const float elevation_3 = 180.f;
+  const float elevation_4 = 179.f;
+  const float elevation_5 = -180.f;
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
-  const float elevation_invalid_1 = 94.f;
+  const float elevation_invalid_1 = 194.f;
   const float elevation_invalid_2 = -999.f;
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
 
   //WHEN:
-  const int index_1 = elevationAngletoIndex(elevation_1, resolution_1);
-  const int index_2 = elevationAngletoIndex(elevation_2, resolution_1);
-  const int index_3 = elevationAngletoIndex(elevation_1, resolution_2);
-  const int index_4 = elevationAngletoIndex(elevation_2, resolution_2);
-  const int index_invalid_1 = elevationAngletoIndex(elevation_invalid_1, resolution_1);
-  const int index_invalid_2 = elevationAngletoIndex(elevation_invalid_2, resolution_1);
-  const int index_invalid_3 = elevationAngletoIndex(elevation_1, resolution_invalid_1);
-  const int index_invalid_4 = elevationAngletoIndex(elevation_1, resolution_invalid_2);
+  const int index_1 = azimuthAngletoIndex(elevation_1, resolution_1);
+  const int index_2 = azimuthAngletoIndex(elevation_2, resolution_1);
+  const int index_3 = azimuthAngletoIndex(elevation_1, resolution_2);
+  const int index_4 = azimuthAngletoIndex(elevation_2, resolution_2);
+  const int index_5 = azimuthAngletoIndex(elevation_3, resolution_2);
+  const int index_6 = azimuthAngletoIndex(elevation_4, resolution_2);
+  const int index_7 = azimuthAngletoIndex(elevation_5, resolution_2);
+  const int index_invalid_1 = azimuthAngletoIndex(elevation_invalid_1, resolution_1);
+  const int index_invalid_2 = azimuthAngletoIndex(elevation_invalid_2, resolution_1);
+  const int index_invalid_3 = azimuthAngletoIndex(elevation_1, resolution_invalid_1);
+  const int index_invalid_4 = azimuthAngletoIndex(elevation_1, resolution_invalid_2);
 
   //THEN:
-  EXPECT_EQ(30, index_1);
-  EXPECT_EQ(41, index_2);
-  EXPECT_EQ(7, index_3);
-  EXPECT_EQ(10, index_4);
+  EXPECT_EQ(60, index_1);
+  EXPECT_EQ(71, index_2);
+  EXPECT_EQ(15, index_3);
+  EXPECT_EQ(17, index_4);
+  EXPECT_EQ(0, index_5);
+  EXPECT_EQ(29, index_6);
+  EXPECT_EQ(0, index_7);
   EXPECT_EQ(0, index_invalid_1);
   EXPECT_EQ(0, index_invalid_2);
   EXPECT_EQ(0, index_invalid_3);
