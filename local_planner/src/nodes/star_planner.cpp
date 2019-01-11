@@ -71,11 +71,11 @@ void StarPlanner::setReprojectedPoints(
 
 double StarPlanner::treeCostFunction(int node_number) {
   int origin = tree_[node_number].origin_;
-  int e = tree_[node_number].last_e_;
-  int z = tree_[node_number].last_z_;
+  float e = tree_[node_number].last_e_;
+  float z = tree_[node_number].last_z_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  int goal_z = floor(azimuthAnglefromCartesian(goal_, origin_position));
-  int goal_e = floor(elevationAnglefromCartesian(goal_, origin_position));
+  float goal_z = azimuthAnglefromCartesian(goal_, origin_position);
+  float goal_e = elevationAnglefromCartesian(goal_, origin_position);
 
   double target_cost =
       2 * indexAngleDifference(z, goal_z) +
@@ -84,8 +84,8 @@ double StarPlanner::treeCostFunction(int node_number) {
       1 *
       indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
 
-  int last_e = tree_[origin].last_e_;
-  int last_z = tree_[origin].last_z_;
+  float last_e = tree_[origin].last_e_;
+  float last_z = tree_[origin].last_z_;
 
   double smooth_cost = 5 * (2 * indexAngleDifference(z, last_z) +
                             5 * indexAngleDifference(e, last_e));

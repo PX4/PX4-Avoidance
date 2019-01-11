@@ -37,9 +37,9 @@ geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
   return p;
 }
 
-double indexAngleDifference(int a, int b) {
-  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360)),
-                  std::abs(a - b + 360));
+double indexAngleDifference(float a, float b) {
+  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
+                  std::abs(a - b + 360.f));
 }
 
 // transform a 2D polar histogram direction in a 3D Catesian coordinate point
@@ -118,7 +118,7 @@ int azimuthAngletoIndex(float z, int res) {  //[-180,180]
   if(res <= 0.f || z < -180.f || z > 180.f){
     return 0.f;
   }
-    if (z == 180.f) {
+  if (z == 180.f) {
     z = -180;
   }
   z += 180;

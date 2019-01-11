@@ -17,7 +17,7 @@ float distance3DCartesian(const geometry_msgs::Point& a,
                           const geometry_msgs::Point& b);
 geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
                                           const geometry_msgs::Point& pos);
-double indexAngleDifference(int a, int b);
+double indexAngleDifference(float a, float b);
 geometry_msgs::Vector3Stamped getWaypointFromAngle(
     int e, int z, const geometry_msgs::Point& pos);
 bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
