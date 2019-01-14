@@ -15,6 +15,15 @@ float computeL2Dist(const geometry_msgs::Point& position,
                     const pcl::PointXYZ& xyz);
 float distance3DCartesian(const geometry_msgs::Point& a,
                           const geometry_msgs::Point& b);
+
+/**
+* @brief     Convertes the point from polar CS to cartesian CS
+* @param[in] e elevation angle (-90, 90]
+* @param[in] z azimuth angle (-180,180]
+* @param[in] radius  
+* @param[in] pos Position from which to convert the point
+* @returns   point in cartesian CS
+**/
 geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
@@ -60,15 +69,26 @@ float elevationAnglefromCartesian(double x, double y, double z,
 int elevationAngletoIndex(float e, int res);
 int azimuthAngletoIndex(float z, int res);
 
-
+/**
+* @brief     Compute the yaw angle between current position and point
+* @returns   angle between two points in rad
+**/
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v);
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          double yaw);
 void normalize(geometry_msgs::Point& p);
 
-
-double velocityLinear(double max_vel, double min_vel, double slope,
+/**
+* @brief     Compute the histogram index given an elevation angle and resolution
+* @param[in] max_vel upper limit for speed
+* @param[in] min_vel lower limit for speed, currently always set as 0.0 hence not used
+* @param[in] slope hard coded as 1.0
+* @param[in] v_old 
+* @param[in] elapsed time [s]
+* @returns   speed within the given limits
+**/
+double velocityLinear(double max_vel, double slope,
                       double v_old, double elapsed);
 void wrapAngleToPlusMinusPI(double& angle);
 double getAngularVelocity(double desired_yaw, double curr_yaw);
