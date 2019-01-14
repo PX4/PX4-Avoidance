@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <cmath>
 
 #include "../src/nodes/planner_functions.h"
 
@@ -77,4 +78,65 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 
 	  }
 	}
+}
+
+TEST(PlannerFunctions, calculateFOV) {
+  // GIVEN: the horizontal and vertical Field of View, the vehicle yaw and pitc
+  double h_fov = 90.0;
+  double v_fov = 45.0;
+  double yaw_z_greater_grid_length =
+      3.14;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
+  double yaw_z_max_greater_grid =
+      -2.3;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
+  double yaw_z_min_smaller_zero = 3.9;  // z_FOV_min < 0 && z_FOV_max >= 0
+  double yaw_z_smaller_zero = 5.6;      // z_FOV_max < 0 && z_FOV_min < 0
+  double pitch = 0.0;
+
+  // WHEN: we calculate the Field of View
+  std::vector<int> z_FOV_idx_z_greater_grid_length;
+  std::vector<int> z_FOV_idx_z_max_greater_grid;
+  std::vector<int> z_FOV_idx3_z_min_smaller_zero;
+  std::vector<int> z_FOV_idx_z_smaller_zero;
+  int e_FOV_min;
+  int e_FOV_max;
+
+  calculateFOV(h_fov, v_fov, z_FOV_idx_z_greater_grid_length, e_FOV_min,
+               e_FOV_max, yaw_z_greater_grid_length, pitch);
+  calculateFOV(h_fov, v_fov, z_FOV_idx_z_max_greater_grid, e_FOV_min, e_FOV_max,
+               yaw_z_max_greater_grid, pitch);
+  calculateFOV(h_fov, v_fov, z_FOV_idx3_z_min_smaller_zero, e_FOV_min,
+               e_FOV_max, yaw_z_min_smaller_zero, pitch);
+  calculateFOV(h_fov, v_fov, z_FOV_idx_z_smaller_zero, e_FOV_min, e_FOV_max,
+               yaw_z_smaller_zero, pitch);
+
+  // THEN:
+  std::vector<int> output_z_greater_grid_length = {
+      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
+  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6, 7,
+                                                8, 9, 10, 11, 12, 58, 59};
+  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6, 7,
+                                                8, 9, 10, 11, 12, 13, 59};
+  std::vector<int> output_z_smaller_zero = {43, 44, 45, 46, 47, 48, 49, 50,
+                                            51, 52, 53, 54, 55, 56, 57, 58};
+
+  EXPECT_EQ(18, e_FOV_max);
+  EXPECT_EQ(10, e_FOV_min);
+  for (size_t i = 0; i < z_FOV_idx_z_greater_grid_length.size(); i++) {
+    EXPECT_EQ(output_z_greater_grid_length.at(i),
+              z_FOV_idx_z_greater_grid_length.at(i));
+  }
+
+  for (size_t i = 0; i < z_FOV_idx_z_max_greater_grid.size(); i++) {
+    EXPECT_EQ(output_z_max_greater_grid.at(i),
+              z_FOV_idx_z_max_greater_grid.at(i));
+  }
+
+  for (size_t i = 0; i < z_FOV_idx3_z_min_smaller_zero.size(); i++) {
+    EXPECT_EQ(output_z_min_smaller_zero.at(i),
+              z_FOV_idx3_z_min_smaller_zero.at(i));
+  }
+
+  for (size_t i = 0; i < z_FOV_idx_z_smaller_zero.size(); i++) {
+    EXPECT_EQ(output_z_smaller_zero.at(i), z_FOV_idx_z_smaller_zero.at(i));
+  }
 }
