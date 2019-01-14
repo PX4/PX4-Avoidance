@@ -40,7 +40,7 @@ TEST(Common, indexAngleDifferenceCheck) {
   const float a1 = 0.f, b1 = 0.f;
   const float a2 = 180.f, b2 = -180.f;
   const float a3 = 0.f, b3 = 360.f;
-  const float a4 = 8.45860, b4 = 9.45859;
+  const float a4 = 8.45860f, b4 = 9.45859f;
 
   // WHEN: we get the minimal different angle between the two angles
   double angle_diff1 = indexAngleDifference(a1, b1);
@@ -49,15 +49,15 @@ TEST(Common, indexAngleDifferenceCheck) {
   double angle_diff4 = indexAngleDifference(a4, b4);
 
   // THEN: the angle should be...
-  EXPECT_DOUBLE_EQ(0., angle_diff1);
-  EXPECT_DOUBLE_EQ(0., angle_diff2);
-  EXPECT_DOUBLE_EQ(0., angle_diff3);
-  EXPECT_DOUBLE_EQ(0.99999, angle_diff4);
+  EXPECT_FLOAT_EQ(0., angle_diff1);
+  EXPECT_FLOAT_EQ(0., angle_diff2);
+  EXPECT_FLOAT_EQ(0., angle_diff3);
+  ASSERT_NEAR(0.99999, angle_diff4, .00001);
 }
 
 
 TEST(Common, azimuthAnglefromCartesian){
-  //GIVEN:
+  //GIVEN: two points
   const geometry_msgs::Point point_right = createPoint(1.0d, 0.0d, 0.0d);
   const geometry_msgs::Point point_up = createPoint(0.0d, 1.0d, 0.0d);
   const geometry_msgs::Point point_left = createPoint(-1.0d, 0.0d, 0.0d);
@@ -68,7 +68,7 @@ TEST(Common, azimuthAnglefromCartesian){
   const geometry_msgs::Point point_q4 = createPoint(7.0d, -8.0d, 0.0d);
   const geometry_msgs::Point origin = createPoint(0.0d, 0.0d, 0.0d);
 
-  //WHEN:
+  //WHEN: calculating the azimuth angle between the two points
   float angle_right = azimuthAnglefromCartesian(point_right, origin);
   float angle_up = azimuthAnglefromCartesian(point_up, origin);
   float angle_left = azimuthAnglefromCartesian(point_left, origin);
@@ -80,7 +80,7 @@ TEST(Common, azimuthAnglefromCartesian){
   float angle_q4 = azimuthAnglefromCartesian(point_q4, origin);
   float angle_non_zero_origin = azimuthAnglefromCartesian(point_q1, point_q2);
 
-  //THEN:
+  //THEN:  angle should be ..
   EXPECT_FLOAT_EQ(90, angle_right);
   EXPECT_FLOAT_EQ(0, angle_up);
   EXPECT_FLOAT_EQ(180, angle_down);
@@ -94,7 +94,7 @@ TEST(Common, azimuthAnglefromCartesian){
 }
 
 TEST(Common, elevationAnglefromCartesian){
-  //GIVEN:
+  //GIVEN: two points
   const geometry_msgs::Point point_front = createPoint(0.0d, 1.0d, 0.0d);
   const geometry_msgs::Point point_up = createPoint(0.0d, 0.0d, 1.0d);
   const geometry_msgs::Point point_behind = createPoint(0.0d, -1.0d, 0.0d);
@@ -106,7 +106,7 @@ TEST(Common, elevationAnglefromCartesian){
   const geometry_msgs::Point point_q4 = createPoint(0.0d, 7.0d, -8.0d);
   const geometry_msgs::Point origin = createPoint(0.0d, 0.0d, 0.0d);
 
-  //WHEN:
+  //WHEN: we get the elevation angle between the two points
   const float angle_front = elevationAnglefromCartesian(point_front, origin);
   const float angle_up = elevationAnglefromCartesian(point_up, origin);
   const float angle_behind = elevationAnglefromCartesian(point_behind, origin);
@@ -119,7 +119,7 @@ TEST(Common, elevationAnglefromCartesian){
   const float angle_q4 = elevationAnglefromCartesian(point_q4, origin);
   const float angle_non_zero_origin = elevationAnglefromCartesian(point_q4, point_q2);
 
-  //THEN:
+  //THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
   EXPECT_FLOAT_EQ(0.f, angle_up);
   EXPECT_FLOAT_EQ(0.f, angle_behind);
@@ -134,7 +134,7 @@ TEST(Common, elevationAnglefromCartesian){
 }
 
 TEST(Common, elevationAngletoIndex){
-  //GIVEN:
+  //GIVEN: the elevation angle of a point and the histogram resolution 
   const float elevation_1 = 0.f;
   const float elevation_2 = 34.f;
   const float elevation_3 = 90.f;
@@ -146,7 +146,7 @@ TEST(Common, elevationAngletoIndex){
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
 
-  //WHEN:
+  //WHEN: we convert the elevation angle to a histogram index
   const int index_1 = elevationAngletoIndex(elevation_1, resolution_1);
   const int index_2 = elevationAngletoIndex(elevation_2, resolution_1);
   const int index_3 = elevationAngletoIndex(elevation_1, resolution_2);
@@ -158,7 +158,7 @@ TEST(Common, elevationAngletoIndex){
   const int index_invalid_3 = elevationAngletoIndex(elevation_1, resolution_invalid_1);
   const int index_invalid_4 = elevationAngletoIndex(elevation_1, resolution_invalid_2);
 
-  //THEN:
+  //THEN: the vertical histogram index should be ..
   EXPECT_EQ(30, index_1);
   EXPECT_EQ(41, index_2);
   EXPECT_EQ(7, index_3);
@@ -172,7 +172,7 @@ TEST(Common, elevationAngletoIndex){
 
 }
 TEST(Common, azimuthAngletoIndex){
-  //GIVEN:
+  //GIVEN: the azimuth angle of a point and the histogram resolution
   const float elevation_1 = 0.f;
   const float elevation_2 = 34.f;
   const float elevation_3 = 180.f;
@@ -185,7 +185,7 @@ TEST(Common, azimuthAngletoIndex){
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
 
-  //WHEN:
+  //WHEN: we convert the azimuth angle to a histogram index
   const int index_1 = azimuthAngletoIndex(elevation_1, resolution_1);
   const int index_2 = azimuthAngletoIndex(elevation_2, resolution_1);
   const int index_3 = azimuthAngletoIndex(elevation_1, resolution_2);
@@ -198,7 +198,7 @@ TEST(Common, azimuthAngletoIndex){
   const int index_invalid_3 = azimuthAngletoIndex(elevation_1, resolution_invalid_1);
   const int index_invalid_4 = azimuthAngletoIndex(elevation_1, resolution_invalid_2);
 
-  //THEN:
+  //THEN: the horizontal histogram index should be ..
   EXPECT_EQ(60, index_1);
   EXPECT_EQ(71, index_2);
   EXPECT_EQ(15, index_3);
@@ -211,4 +211,60 @@ TEST(Common, azimuthAngletoIndex){
   EXPECT_EQ(0, index_invalid_3);
   EXPECT_EQ(0, index_invalid_4);
 
+}
+
+TEST(Common, fromPolarToCartesian){
+
+//GIVEN: the elevation angle, azimuth angle, a radius and the position
+std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};  //[-90, 90]
+std::vector<float> z = {-180.f, -90.f, 180.f, 0.f, 45.f}; //[-180, 180]
+
+std::vector<double> radius = {0.f, 2.f};
+
+geometry_msgs::Point pos;
+pos.x = 0.f;
+pos.y = 0.f;
+pos.z = 0.f;
+
+std::vector<geometry_msgs::Point> pos_out;
+
+//WHEN: converting the point in polar CS to cartesian CS
+
+for(int i = 0; i<e.size(); i++){
+     pos_out.push_back(fromPolarToCartesian(e[i], z[3], radius[0], pos));
+}
+
+for(int i = 0; i<e.size(); i++){  
+       pos_out.push_back(fromPolarToCartesian(e[i], z[i], radius[1], pos));
+}
+
+
+//THEN: the cartesian coordinates are
+
+for(int i = 0; i<e.size(); i++){
+    EXPECT_FLOAT_EQ(0.f, pos_out[i].x);
+    EXPECT_FLOAT_EQ(0.f, pos_out[i].y);
+    EXPECT_FLOAT_EQ(0.f, pos_out[i].z);  
+}
+
+
+EXPECT_NEAR(-0.f, pos_out[5].x, 0.00001);
+EXPECT_NEAR(-0.f, pos_out[5].y, 0.00001);
+EXPECT_FLOAT_EQ(-2.f, pos_out[5].z);  
+
+EXPECT_NEAR(-0.f, pos_out[6].x, 0.00001);
+EXPECT_NEAR(0.f, pos_out[6].y, 0.00001);
+EXPECT_FLOAT_EQ(-2.f, pos_out[6].z);  
+
+EXPECT_NEAR(0.f, pos_out[7].x, 0.00001);
+EXPECT_NEAR(-0.f, pos_out[7].y, 0.00001);
+EXPECT_FLOAT_EQ(2.f, pos_out[7].z);  
+
+EXPECT_NEAR(0.f, pos_out[8].x, 0.00001);
+EXPECT_NEAR(2.f, pos_out[8].y, 0.00001);
+EXPECT_NEAR(0.f, pos_out[8].z, 0.00001);
+
+EXPECT_NEAR(1.f, pos_out[9].x, 0.00001);
+EXPECT_NEAR(1.f, pos_out[9].y, 0.00001);
+EXPECT_NEAR(1.414213562, pos_out[9].z, 0.00001);
 }
