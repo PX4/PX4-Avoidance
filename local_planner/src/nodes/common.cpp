@@ -42,20 +42,7 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-// transform a 2D polar histogram direction in a 3D Catesian coordinate point
-geometry_msgs::Vector3Stamped getWaypointFromAngle(
-    int e, int z, const geometry_msgs::Point& pos) {
-  geometry_msgs::Point p = fromPolarToCartesian(e, z, 1.0, pos);
 
-  geometry_msgs::Vector3Stamped waypoint;
-  waypoint.header.stamp = ros::Time::now();
-  waypoint.header.frame_id = "/local_origin";
-  waypoint.vector.x = p.x;
-  waypoint.vector.y = p.y;
-  waypoint.vector.z = p.z;
-
-  return waypoint;
-}
 
 // check if two points have the same altitude and yaw
 bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
