@@ -26,13 +26,13 @@ float distance3DCartesian(const geometry_msgs::Point& a,
 }
 
 // transform polar coordinates into Cartesian coordinates
-geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
+geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos) {
   geometry_msgs::Point p;
   p.x =
-      pos.x + radius * cos(e * (M_PI / 180)) * sin(z * (M_PI / 180));  // round
-  p.y = pos.y + radius * cos(e * (M_PI / 180)) * cos(z * (M_PI / 180));
-  p.z = pos.z + radius * sin(e * (M_PI / 180));
+      pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));  // round
+  p.y = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
+  p.z = pos.z + radius * sin(e * (M_PI / 180.f));
 
   return p;
 }

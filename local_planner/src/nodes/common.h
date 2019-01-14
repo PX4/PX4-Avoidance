@@ -15,7 +15,7 @@ float computeL2Dist(const geometry_msgs::Point& position,
                     const pcl::PointXYZ& xyz);
 float distance3DCartesian(const geometry_msgs::Point& a,
                           const geometry_msgs::Point& b);
-geometry_msgs::Point fromPolarToCartesian(int e, int z, double radius,
+geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 geometry_msgs::Vector3Stamped getWaypointFromAngle(
@@ -62,6 +62,8 @@ float elevationAnglefromCartesian(double x, double y, double z,
 **/
 int elevationAngletoIndex(float e, int res);
 int azimuthAngletoIndex(float z, int res);
+
+
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v);
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
