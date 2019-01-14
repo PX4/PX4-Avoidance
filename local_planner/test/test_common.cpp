@@ -51,7 +51,7 @@ TEST(Common, L2Dfrom2points) {
   EXPECT_NEAR(10.049875621, dist, 0.00001);
 }
 
-TEST(Common, 3Dpoints) {
+TEST(Common, distance3DCartesian) {
   // GIVEN: two points
   geometry_msgs::Point a = createPoint(1.0d, 1.0d, 0.0d);
   geometry_msgs::Point b = createPoint(0.0d, 7.0d, 8.0d);
