@@ -35,6 +35,32 @@ TEST(Common, polar2DdistanceOnKnownPoints) {
   EXPECT_FLOAT_EQ(54.083271f, dist);
 }
 
+
+TEST(Common, L2Dfrom2points) {
+  // GIVEN: two points
+  geometry_msgs::Point position = createPoint(1.0d, 1.0d, 0.0d);
+
+  pcl::PointXYZ xyz;
+  xyz.x = 0.0d;
+  xyz.y = 7.0d;
+  xyz.z = -8.0d;
+  // WHEN: we get the distance between the same points
+  float dist = computeL2Dist(position, xyz);
+
+  // THEN: the distance should be...
+  EXPECT_NEAR(10.049875621, dist, 0.00001);
+}
+
+TEST(Common, 3Dpoints) {
+  // GIVEN: two points
+  geometry_msgs::Point a = createPoint(1.0d, 1.0d, 0.0d);
+  geometry_msgs::Point b = createPoint(0.0d, 7.0d, 8.0d);
+
+  // WHEN: we get the distance between the same points
+  float dist = distance3DCartesian(a, b) ;
+  // THEN: the distance should be...
+  EXPECT_NEAR(10.049875621, dist, 0.00001);
+}
 TEST(Common, indexAngleDifferenceCheck) {
   // GIVEN: two angles
   const float a1 = 0.f, b1 = 0.f;
