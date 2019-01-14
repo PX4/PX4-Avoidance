@@ -126,8 +126,8 @@ int main(int argc, char** argv) {
 
     Node.position_received_ = false;
 
-    // publish system status
-    if (now - Node.t_status_sent_ > ros::Duration(1)) {
+    //publish system status
+    if(now - Node.t_status_sent_ > ros::Duration(0.2)){
       Node.status_msg_.header.stamp = ros::Time::now();
       Node.status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
       Node.mavros_system_status_pub_.publish(Node.status_msg_);
