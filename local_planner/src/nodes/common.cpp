@@ -144,6 +144,9 @@ double velocityLinear(double max_vel, double min_vel, double slope,
   double t_old = v_old / slope;
   double t_new = t_old + elapsed;
   double speed = min_vel + t_new * slope;
+  if(speed>max_vel){
+    speed=max_vel;
+  }
   return speed;
 }
 
