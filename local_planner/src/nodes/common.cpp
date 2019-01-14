@@ -138,12 +138,11 @@ void normalize(geometry_msgs::Point& p) {
 }
 
 
-double velocityLinear(double max_vel, double min_vel, double slope,
+double velocityLinear(double max_vel,  double slope,
                       double v_old, double elapsed) {
-  v_old -= min_vel;
-  double t_old = v_old / slope;
-  double t_new = t_old + elapsed;
-  double speed = min_vel + t_new * slope;
+  double t_old = v_old / slope; // slope hard-coded as 1.f
+  double t_new = t_old + elapsed; //v_old + elapsed
+  double speed = t_new * slope; //v_old+elapsed
   if(speed>max_vel){
     speed=max_vel;
   }
