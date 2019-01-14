@@ -243,7 +243,7 @@ TEST(Common, fromPolarToCartesian){
 
 //GIVEN: the elevation angle, azimuth angle, a radius and the position
 std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};  //[-90, 90]
-std::vector<float> z = {-180.f, -90.f, 180.f, 0.f, 45.f}; //[-180, 180]
+std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f}; //[-180, 180]
 
 std::vector<double> radius = {0.f, 2.f};
 
@@ -293,4 +293,65 @@ EXPECT_NEAR(0.f, pos_out[8].z, 0.00001);
 EXPECT_NEAR(1.f, pos_out[9].x, 0.00001);
 EXPECT_NEAR(1.f, pos_out[9].y, 0.00001);
 EXPECT_NEAR(1.414213562, pos_out[9].z, 0.00001);
+}
+
+
+TEST(Common, nextYaw) {
+  // GIVEN: two points
+  geometry_msgs::PoseStamped location;
+  location.pose.position.x = 0;
+  location.pose.position.y = 0;
+  location.pose.position.z = 0;
+  geometry_msgs::Point next_pos1= createPoint(1.0d, 1.0d, 0.0d);
+  geometry_msgs::Point next_pos2= createPoint(0.0d, 0.0d, 0.0d);
+
+ // WHEN: we get the yaw between the two points
+  double yaw1 = nextYaw(location, next_pos1);
+  double yaw2 = nextYaw(location, next_pos2);
+  
+  // THEN: the angle in rad should be...
+  EXPECT_NEAR(0.785398163, yaw1, 0.00001);
+  EXPECT_NEAR(0.f, yaw2, 0.00001);
+}
+
+
+
+TEST(Common, normalizePoint) {
+  // GIVEN: a point
+  geometry_msgs::Point next_pos1= createPoint(1.0d, 1.0d, 0.0d);
+  geometry_msgs::Point next_pos2= createPoint(0.0d, 0.0d, 0.0d);
+  // WHEN: normalize the point
+  normalize(next_pos1);
+  normalize(next_pos2);
+  // THEN: the point should be...
+  EXPECT_FLOAT_EQ(0.707106781, next_pos1.x);
+  EXPECT_FLOAT_EQ(0.707106781, next_pos1.y);
+  EXPECT_FLOAT_EQ(0.f, next_pos1.z);
+  EXPECT_FLOAT_EQ(0.f, next_pos2.x);
+  EXPECT_FLOAT_EQ(0.f, next_pos2.y);
+  EXPECT_FLOAT_EQ(0.f, next_pos2.z);
+}
+
+
+TEST(Common, speedCalc) {
+  // GIVEN: maximum and minimum velocity, slope, old velocity and time elapsed
+  double max_vel1 = 0.d; 
+  double max_vel2 = 10.d;
+  double min_vel1 = 0.d;
+  double min_vel2 = 2.d;
+  double slope = 1.d; // always one
+  double v_old1 = 0.d;
+  double v_old2 = 10.d;
+  double elapsed = 2.d;
+
+
+  // WHEN: we get distance between the same points
+  double speed1 = velocityLinear(max_vel2, slope, v_old1, elapsed);
+  double speed2 = velocityLinear(max_vel1, slope, v_old2, elapsed);
+  double speed3 = velocityLinear(max_vel2, slope, v_old2, elapsed);
+
+  // THEN: the distance should be...
+  EXPECT_FLOAT_EQ(2.f, speed1);
+  EXPECT_FLOAT_EQ(0.f, speed2);
+  EXPECT_FLOAT_EQ(10.f, speed3);
 }
