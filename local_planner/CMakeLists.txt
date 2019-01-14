@@ -136,7 +136,7 @@ add_library(local_planner
   src/nodes/common.cpp
   src/nodes/rviz_world_loader.cpp
 )
-	
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -214,7 +214,7 @@ if(CATKIN_ENABLE_TESTING)
 	                                             ${catkin_LIBRARIES}
 	                                             ${YAML_CPP_LIBRARIES})
 	endif()
-	
+
 	## Add folders to be run by python nosetests
 	# catkin_add_nosetests(test)
 endif()
