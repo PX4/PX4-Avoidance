@@ -67,8 +67,7 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          double yaw);
 void normalize(geometry_msgs::Point& p);
 
-double velocitySigmoid(double max_vel, double min_vel, double slope,
-                       double v_old, double elapsed);
+
 double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed);
 void wrapAngleToPlusMinusPI(double& angle);

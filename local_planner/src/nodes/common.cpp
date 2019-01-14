@@ -137,16 +137,6 @@ void normalize(geometry_msgs::Point& p) {
   }
 }
 
-double velocitySigmoid(double max_vel, double min_vel, double slope,
-                       double v_old, double elapsed) {
-  max_vel += 0.05;
-  min_vel -= 0.05;
-  v_old -= min_vel;
-  double t_old = -1.0 / slope * log((max_vel - min_vel) / v_old - 1.0);
-  double t_new = t_old + elapsed;
-  double speed = min_vel + (max_vel - min_vel) / (1.0 + exp(-slope * t_new));
-  return speed;
-}
 
 double velocityLinear(double max_vel, double min_vel, double slope,
                       double v_old, double elapsed) {
