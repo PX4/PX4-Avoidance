@@ -19,9 +19,7 @@ geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
-bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
-                           const geometry_msgs::Vector3Stamped& new_wp,
-                           double new_yaw, double old_yaw);
+
 double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
 

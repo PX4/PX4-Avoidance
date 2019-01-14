@@ -44,16 +44,6 @@ double indexAngleDifference(float a, float b) {
 
 
 
-// check if two points have the same altitude and yaw
-bool hasSameYawAndAltitude(const geometry_msgs::PoseStamped& old_wp,
-                           const geometry_msgs::Vector3Stamped& new_wp,
-                           double new_yaw, double old_yaw) {
-  return abs(new_yaw) >= abs(0.9 * old_yaw) &&
-         abs(new_yaw) <= abs(1.1 * old_yaw) &&
-         abs(new_wp.vector.z) >= abs(0.9 * old_wp.pose.position.z) &&
-         abs(new_wp.vector.z) <= abs(1.1 * old_wp.pose.position.z);
-}
-
 double elevationIndexToAngle(int e, double res) {
   return e * res + res / 2 - 90;
 }
