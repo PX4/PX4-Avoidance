@@ -162,21 +162,12 @@ double getAngularVelocity(double desired_yaw, double curr_yaw) {
   wrapAngleToPlusMinusPI(desired_yaw);
   double yaw_vel1 = desired_yaw - curr_yaw;
   double yaw_vel2;
-  //finds the yaw vel for the other rotation direction
-  if (yaw_vel1 > 0) {
-    yaw_vel2 = -(2 * M_PI - yaw_vel1);
-  } else {
-    yaw_vel2 = 2 * M_PI + yaw_vel1;
-  }
+  //finds the yaw vel for the other yaw direction
+  yaw_vel1>0 ? yaw_vel2 = -(2 * M_PI - yaw_vel1) : yaw_vel2 = 2 * M_PI + yaw_vel1;
 
   double vel;
-  // check which rotation direction is shorter
-  if (std::abs(yaw_vel1) < std::abs(yaw_vel2)) {
-    vel = yaw_vel1;
-  } else {
-    vel = yaw_vel2;
-  }
-
+  // check which yaw direction is shorter
+  std::abs(yaw_vel1) <= std::abs(yaw_vel2)? vel = yaw_vel1: vel = yaw_vel2;
   return 0.5 * vel;
 }
 

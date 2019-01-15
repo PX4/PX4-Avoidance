@@ -90,7 +90,19 @@ void normalize(geometry_msgs::Point& p);
 **/
 double velocityLinear(double max_vel, double slope,
                       double v_old, double elapsed);
+/**
+* @brief     wrappes the input angle in to plus minus PI space
+* @param[in] angle to be wrapped  [rad]
+* @returns   angle wrapped [rad]
+**/
 void wrapAngleToPlusMinusPI(double& angle);
+
+/**
+* @brief     computes an angular velocity to reach the desired_yaw
+* @param[in] adesired_yaw  [rad]
+* @param[in] curr_yaw  [rad]
+* @returns   a scaled angular velocity to reach the desired yaw[rad/s]
+**/
 double getAngularVelocity(double desired_yaw, double curr_yaw);
 
 Eigen::Vector3f convert(const geometry_msgs::Point& p);
