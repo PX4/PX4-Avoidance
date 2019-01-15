@@ -351,7 +351,52 @@ TEST(Common, speedCalc) {
   double speed3 = velocityLinear(max_vel2, slope, v_old2, elapsed);
 
   // THEN: the distance should be...
-  EXPECT_FLOAT_EQ(2.f, speed1);
-  EXPECT_FLOAT_EQ(0.f, speed2);
-  EXPECT_FLOAT_EQ(10.f, speed3);
+  EXPECT_FLOAT_EQ(2.f, speed1); // normal case
+  EXPECT_FLOAT_EQ(0.f, speed2); // max velocity is 0 and curr vel not
+  EXPECT_FLOAT_EQ(10.f, speed3); // calculated speed is higher than max vel, set to max vel
 }
+
+TEST(Common, wrapAngle){
+  // GIVEN: an angle in rad
+  double angle1 = 0.d;
+  double angle2 = 30.d*M_PI/180.d;
+  double angle3 = 270.d*M_PI/180.d;
+  double angle4 = -90.d*M_PI/180.d;
+  double angle5 = -225.d*M_PI/180.d;
+
+  // WHEN: it is wrapped to the space (-PI; PI] space
+  wrapAngleToPlusMinusPI(angle1) ;
+  wrapAngleToPlusMinusPI(angle2);
+  wrapAngleToPlusMinusPI(angle3);
+  wrapAngleToPlusMinusPI(angle4);
+  wrapAngleToPlusMinusPI(angle5);
+  //THEN: the output angles shoudl be ..
+  EXPECT_FLOAT_EQ(0.f, angle1);
+  EXPECT_FLOAT_EQ(0.523599f, angle2);
+  EXPECT_FLOAT_EQ(-1.570796f, angle3);
+  EXPECT_FLOAT_EQ(-1.570796f, angle4);
+  EXPECT_FLOAT_EQ(2.356194f, angle5);
+}
+
+TEST(Common, getAngularVel) {
+  // GIVEN: maximum and minimum velocity, slope, old velocity and time elapsed
+  double desired_yaw1 = 0.d; 
+  double desired_yaw2 = 540.d*M_PI/180.d;
+  double curr_yaw1 = 0.d*M_PI/180.d;
+  double curr_yaw2 = -45.d*M_PI/180.d;
+
+
+  // WHEN: we get distance between the same points
+  double angular_vel1 = getAngularVelocity(desired_yaw1, curr_yaw1);
+  double angular_vel2 = getAngularVelocity(desired_yaw2, curr_yaw1);
+  double angular_vel3 = getAngularVelocity(desired_yaw1, curr_yaw2);
+  double angular_vel4 = getAngularVelocity(desired_yaw2, curr_yaw2);
+
+  // THEN: the distance should be...
+
+  EXPECT_FLOAT_EQ(0.f, angular_vel1);
+  EXPECT_FLOAT_EQ(1.570796f, angular_vel2);
+  EXPECT_FLOAT_EQ(0.392699f, angular_vel3);
+  EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
+}
+
