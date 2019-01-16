@@ -400,7 +400,10 @@ void findFreeDirections(
           // Elevation index < 0
           if (i < 0 && j >= 0 && j < z_dim) {
             a = 0;
-            b = z_dim - j - 1;
+            b = j + (180 / resolution_alpha) - 1;
+            if (b >= z_dim) {
+              b = b % (z_dim - 1);
+            }
           }
           // Azimuth index < 0
           else if (j < 0 && i >= 0 && i < e_dim) {
@@ -410,7 +413,10 @@ void findFreeDirections(
           // Elevation index > GRID_LENGTH_E
           else if (i >= e_dim && j >= 0 && j < z_dim) {
             a = e_dim - (i % (e_dim - 1));
-            b = z_dim - j - 1;
+            b = j + (180 / resolution_alpha) - 1;
+            if (b >= z_dim) {
+              b = b % (z_dim - 1);
+            };
           }
           // Azimuth index > GRID_LENGTH_Z
           else if (j >= z_dim && i >= 0 && i < e_dim) {
