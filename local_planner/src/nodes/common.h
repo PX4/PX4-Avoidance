@@ -20,14 +20,13 @@ float distance3DCartesian(const geometry_msgs::Point& a,
 * @brief     Convertes the point from polar CS to cartesian CS
 * @param[in] e elevation angle (-90, 90]
 * @param[in] z azimuth angle (-180,180]
-* @param[in] radius  
+* @param[in] radius
 * @param[in] pos Position from which to convert the point
 * @returns   point in cartesian CS
 **/
 geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
-
 
 double elevationIndexToAngle(int e, double res);
 double azimuthIndexToAngle(int z, double res);
@@ -45,29 +44,32 @@ double azimuthIndexToAngle(int z, double res);
 * @warning   If the origin and the position coincide, the output is 0 degrees
 **/
 float azimuthAnglefromCartesian(const geometry_msgs::Point& position,
-                              const geometry_msgs::Point& origin);
+                                const geometry_msgs::Point& origin);
 float azimuthAnglefromCartesian(double x, double y,
-                              const geometry_msgs::Point& pos);
+                                const geometry_msgs::Point& pos);
 
 /**
-* @brief   Compute the elevation angle for a point given in cartesian coordinates
+* @brief   Compute the elevation angle for a point given in cartesian
+*coordinates
 * @note    Output is in degrees (-90, 90)
 * @warning For the poles on the sphere, the Output is 0 degrees.
 *          (As opposed to the expected +/- 90)
 **/
 float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
-                                const geometry_msgs::Point& origin);
+                                  const geometry_msgs::Point& origin);
 float elevationAnglefromCartesian(double x, double y, double z,
-                                const geometry_msgs::Point& pos);
+                                  const geometry_msgs::Point& pos);
 /**
-* @brief     Compute the histogram index given an elevation angle and resolution
+* @brief     Checks if the computed histogram index given an elevation angle and
+*resolution is valid
 * @param[in] e Elevation angle in degrees
 * @param[in] res resolution of the histogram in degrees
-* @returns   Index of the histogram cell for the given elevation
+* @param[in] index Index of the histogram cell for the given elevation
+* @returns   true or
 * @note      If there is an invalid input, the output index will be 0
 **/
-int elevationAngletoIndex(float e, int res);
-int azimuthAngletoIndex(float z, int res);
+bool elevationAngletoIndex(float e, int res, int& index);
+bool azimuthAngletoIndex(float z, int res, int& index);
 
 /**
 * @brief     Compute the yaw angle between current position and point
@@ -80,20 +82,21 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
 void normalize(geometry_msgs::Point& p);
 
 /**
-* @brief     Compute the histogram index given an elevation angle and resolution
+* @brief     computes a speed using the upper and lower speed limit, as well as
+*current acceleration and velocity
 * @param[in] max_vel upper limit for speed
-* @param[in] min_vel lower limit for speed, currently always set as 0.0 hence not used
+* @param[in] min_vel lower limit for speed, currently always set as 0.0 hence
+*not used
 * @param[in] slope hard coded as 1.0
-* @param[in] v_old 
+* @param[in] v_old
 * @param[in] elapsed time [s]
 * @returns   speed within the given limits
 **/
-double velocityLinear(double max_vel, double slope,
-                      double v_old, double elapsed);
+double velocityLinear(double max_vel, double slope, double v_old,
+                      double elapsed);
 /**
 * @brief     wrappes the input angle in to plus minus PI space
-* @param[in] angle to be wrapped  [rad]
-* @returns   angle wrapped [rad]
+* @param[in, out] angle to be wrapped  [rad]
 **/
 void wrapAngleToPlusMinusPI(double& angle);
 

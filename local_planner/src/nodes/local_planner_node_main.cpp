@@ -11,7 +11,8 @@ int main(int argc, char** argv) {
   bool hover = false;
   bool landing = false;
   avoidanceOutput planner_output;
-  Node.local_planner_.disable_rise_to_goal_altitude_ = Node.disable_rise_to_goal_altitude_;
+  Node.local_planner_.disable_rise_to_goal_altitude_ =
+      Node.disable_rise_to_goal_altitude_;
   bool startup = true;
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
@@ -115,7 +116,7 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_ && !landing) {
       Node.publishWaypoints(hover);
-      if(!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
+      if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
@@ -125,10 +126,10 @@ int main(int argc, char** argv) {
 
     Node.position_received_ = false;
 
-    //publish system status
-    if(now - Node.t_status_sent_ > ros::Duration(1)){
+    // publish system status
+    if (now - Node.t_status_sent_ > ros::Duration(1)) {
       Node.status_msg_.header.stamp = ros::Time::now();
-      Node.status_msg_.component = 196;  		     //MAV_COMPONENT_ID_AVOIDANCE
+      Node.status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
       Node.mavros_system_status_pub_.publish(Node.status_msg_);
       Node.t_status_sent_ = now;
     }

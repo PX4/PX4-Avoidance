@@ -15,8 +15,9 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
 
 float computeL2Dist(const geometry_msgs::Point& position,
                     const pcl::PointXYZ& xyz) {
-  return sqrt(pow(position.x - xyz.x, 2) + pow(position.y - xyz.y, 2) +
-              pow(position.z - xyz.z, 2));
+  return sqrt((position.x - xyz.x) * (position.x - xyz.x) +
+              (position.y - xyz.y) * (position.y - xyz.y) +
+              (position.z - xyz.z) * (position.z - xyz.z));
 }
 
 float distance3DCartesian(const geometry_msgs::Point& a,
@@ -29,7 +30,7 @@ float distance3DCartesian(const geometry_msgs::Point& a,
 geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
                                           const geometry_msgs::Point& pos) {
   geometry_msgs::Point p;
-  p.x = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f)); 
+  p.x = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));
   p.y = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
   p.z = pos.z + radius * sin(e * (M_PI / 180.f));
 
@@ -41,8 +42,6 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-
-
 double elevationIndexToAngle(int e, double res) {
   return e * res + res / 2 - 90;
 }
@@ -52,17 +51,17 @@ double azimuthIndexToAngle(int z, double res) {
 }
 
 float azimuthAnglefromCartesian(const geometry_msgs::Point& position,
-                              const geometry_msgs::Point& origin) {
+                                const geometry_msgs::Point& origin) {
   return azimuthAnglefromCartesian(position.x, position.y, origin);
 }
 
 float azimuthAnglefromCartesian(double x, double y,
-                              const geometry_msgs::Point& pos) {
+                                const geometry_msgs::Point& pos) {
   return atan2(x - pos.x, y - pos.y) * 180.0 / M_PI;  //(-180. +180]
 }
 
 float elevationAnglefromCartesian(double x, double y, double z,
-                                const geometry_msgs::Point& pos) {
+                                  const geometry_msgs::Point& pos) {
   double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
   if (den == 0) {
     return 0;
@@ -136,14 +135,13 @@ void normalize(geometry_msgs::Point& p) {
   }
 }
 
-
-double velocityLinear(double max_vel,  double slope,
-                      double v_old, double elapsed) {
-  double t_old = v_old / slope; // slope hard-coded as 1.f
-  double t_new = t_old + elapsed; //v_old + elapsed
-  double speed = t_new * slope; //v_old+elapsed
-  if(speed>max_vel){
-    speed=max_vel;
+double velocityLinear(double max_vel, double slope, double v_old,
+                      double elapsed) {
+  double t_old = v_old / slope;
+  double t_new = t_old + elapsed;
+  double speed = t_new * slope;
+  if (speed > max_vel) {
+    speed = max_vel;
   }
   return speed;
 }
@@ -161,10 +159,15 @@ double getAngularVelocity(double desired_yaw, double curr_yaw) {
   wrapAngleToPlusMinusPI(desired_yaw);
   double yaw_vel1 = desired_yaw - curr_yaw;
   double yaw_vel2;
-  //finds the yaw vel for the other yaw direction
-  yaw_vel1>0 ? yaw_vel2 = -(2 * M_PI - yaw_vel1) : yaw_vel2 = 2 * M_PI + yaw_vel1;
- // check which yaw direction is shorter
-  double vel = (std::abs(yaw_vel1) <= std::abs(yaw_vel2))? vel = yaw_vel1: vel = yaw_vel2;
+  // finds the yaw vel for the other yaw direction
+  if (yaw_vel1 > 0) {
+    yaw_vel2 = -(2 * M_PI - yaw_vel1);
+  } else {
+    yaw_vel2 = 2 * M_PI + yaw_vel1;
+  }
+
+  // check which yaw direction is shorter
+  double vel = (std::abs(yaw_vel1) <= std::abs(yaw_vel2)) ? yaw_vel1 : yaw_vel2;
   return 0.5 * vel;
 }
 
