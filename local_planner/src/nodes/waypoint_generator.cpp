@@ -269,12 +269,12 @@ void WaypointGenerator::adaptSpeed() {
 
   if (!planner_info_.obstacle_ahead) {
     speed_ = std::min(speed_, planner_info_.max_speed);
-    speed_ = velocityLinear(planner_info_.max_speed, 
+    speed_ = velocityLinear(planner_info_.max_speed,
                             planner_info_.velocity_sigmoid_slope, speed_,
                             since_last_velocity_sec);
   } else {
     speed_ = std::min(speed_, planner_info_.min_speed);
-    speed_ = velocityLinear(planner_info_.min_speed, 
+    speed_ = velocityLinear(planner_info_.min_speed,
                             planner_info_.velocity_sigmoid_slope, speed_,
                             since_last_velocity_sec);
   }

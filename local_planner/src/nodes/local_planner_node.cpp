@@ -42,7 +42,7 @@ LocalPlannerNode::LocalPlannerNode() {
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1,
                                  &LocalPlannerNode::fcuInputGoalCallback, this);
   goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1,
-		  &LocalPlannerNode::updateGoalCallback, this);
+                                  &LocalPlannerNode::updateGoalCallback, this);
   distance_sensor_sub_ = nh_.subscribe(
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
 
@@ -103,7 +103,7 @@ LocalPlannerNode::LocalPlannerNode() {
   initial_height_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
   histogram_image_pub_ =
-	  nh_.advertise<sensor_msgs::Image>("/histogram_image", 1);
+      nh_.advertise<sensor_msgs::Image>("/histogram_image", 1);
 
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
@@ -119,7 +119,8 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
-  nh_.param<bool>("disable_rise_to_goal_altitude", disable_rise_to_goal_altitude_, false);
+  nh_.param<bool>("disable_rise_to_goal_altitude",
+                  disable_rise_to_goal_altitude_, false);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
@@ -651,8 +652,8 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
-void LocalPlannerNode::publishHistogramImage(){
-	histogram_image_pub_.publish(local_planner_.histogram_image_);
+void LocalPlannerNode::publishHistogramImage() {
+  histogram_image_pub_.publish(local_planner_.histogram_image_);
 }
 
 void LocalPlannerNode::publishTree() {
@@ -719,11 +720,12 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_.pose.position.z = local_planner_.getGoal().z;
 }
 
-void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg){
-	if(accept_goal_input_topic_ && msg.markers.size()>0){
-		goal_msg_.pose = msg.markers[0].pose;
-		new_goal_ = true;
-	}
+void LocalPlannerNode::updateGoalCallback(
+    const visualization_msgs::MarkerArray& msg) {
+  if (accept_goal_input_topic_ && msg.markers.size() > 0) {
+    goal_msg_.pose = msg.markers[0].pose;
+    new_goal_ = true;
+  }
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(

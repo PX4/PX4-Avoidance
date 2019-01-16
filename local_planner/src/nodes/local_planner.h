@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
 #include <math.h>
+#include <sensor_msgs/image_encodings.h>
 #include <Eigen/Dense>
 #include <chrono>
 #include <deque>
@@ -12,8 +13,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-#include <sensor_msgs/image_encodings.h>
-
 
 #include <ros/ros.h>
 
@@ -184,7 +183,7 @@ class LocalPlanner {
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
   void create2DObstacleRepresentation(const bool send_to_fcu);
-  sensor_msgs::Image generateHistogramImage(Histogram& histogram);
+  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
 
  public:
   double h_FOV_ = 59.0;
