@@ -68,8 +68,8 @@ float elevationAnglefromCartesian(double x, double y, double z,
 * @returns   true or
 * @note      If there is an invalid input, the output index will be 0
 **/
-bool elevationAngletoIndex(float e, int res, int& index);
-bool azimuthAngletoIndex(float z, int res, int& index);
+int elevationAngletoIndex(float e, int res);
+int azimuthAngletoIndex(float z, int res);
 
 /**
 * @brief     Compute the yaw angle between current position and point
