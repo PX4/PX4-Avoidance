@@ -147,9 +147,9 @@ TEST(Common, elevationAnglefromCartesian){
 
   //THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
-  EXPECT_FLOAT_EQ(0.f, angle_up);
+  EXPECT_FLOAT_EQ(90.f, angle_up);
   EXPECT_FLOAT_EQ(0.f, angle_behind);
-  EXPECT_FLOAT_EQ(0.f, angle_down);
+  EXPECT_FLOAT_EQ(-90.f, angle_down);
   EXPECT_FLOAT_EQ(0.f, angle_undetermined);
   EXPECT_FLOAT_EQ(60.f, angle_q1);
   EXPECT_FLOAT_EQ(30.f, angle_30);
@@ -301,6 +301,67 @@ EXPECT_NEAR(0.f, pos_out[8].z, 0.00001);
 EXPECT_NEAR(1.f, pos_out[9].x, 0.00001);
 EXPECT_NEAR(1.f, pos_out[9].y, 0.00001);
 EXPECT_NEAR(1.414213562, pos_out[9].z, 0.00001);
+}
+
+TEST(Common, PolarToCatesianToPolar){
+
+//GIVEN: a current position and a radius
+double radius = 2.168;
+geometry_msgs::Point pos;
+pos.x = 4.21;
+pos.y = 2.34;
+pos.z = 0.19;
+
+//WHEN: going through all valid polar coordinates and transform it to cartesian and back again
+for(float e = -90; e <= 90; e = e + 3){
+	for(float z = -180; z <= 180; z = z + 6){
+		geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, z, radius, pos);
+		float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
+		float e_new = elevationAnglefromCartesian(p_cartesian, pos);
+
+		//THEN: the resulting polar positions are expected to be the same as before the conversion
+		ASSERT_GE(z_new, -180);
+		ASSERT_LE(z_new, 180);
+		ASSERT_GE(e_new, -90);
+		ASSERT_LE(e_new, 90);
+
+		if(std::abs(std::abs(e_new) - 90) > 1e-5){
+			if(std::abs(std::abs(z_new) - 180) < 1e-5){
+				EXPECT_NEAR(std::abs(z), std::abs(z_new), 0.001);
+			}else{
+				EXPECT_NEAR(z, z_new, 0.001);
+			}
+		}
+		EXPECT_NEAR(e, e_new, 0.001);
+
+	}
+}
+}
+
+TEST(Common, CatesianToPolarToCartesian){
+
+//GIVEN: a current position
+geometry_msgs::Point pos;
+pos.x = 0.81;
+pos.y = 5.17;
+pos.z = 3.84;
+
+//WHEN: going through some valid cartesian coordinates and transform it to polar and back to cartesian
+for(float x = -5; x <= 5; x = x + 0.5){
+	for(float y = -5; y <= 5; y = y + 0.6){
+		for(float y = -5; y <= 5; y = y + 0.4){
+			float z = azimuthAnglefromCartesian(x, y, pos);
+			float e = elevationAnglefromCartesian(x, y, z, pos);
+			double radius = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y) + (z - pos.z) * (z - pos.z));
+			geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, z, radius, pos);
+
+			//THEN: the resulting catesian positions are expected to be the same as before the conversion
+			EXPECT_NEAR(x, p_cartesian.x, 0.001);
+			EXPECT_NEAR(y, p_cartesian.y, 0.001);
+			EXPECT_NEAR(z, p_cartesian.z, 0.001);
+		}
+	}
+}
 }
 
 
