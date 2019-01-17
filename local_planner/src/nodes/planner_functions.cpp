@@ -371,7 +371,7 @@ void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
 // approach
 void findFreeDirections(
     const Histogram &histogram, double safety_radius,
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
+    nav_msgs::GridCells &path_candidates,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells path_waypoints,
     std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,
@@ -391,7 +391,6 @@ void findFreeDirections(
   initGridCells(&path_candidates);
   initGridCells(&path_rejected);
   initGridCells(&path_blocked);
-  initGridCells(&path_selected);
 
   // determine which bins are candidates
   for (int e = 0; e < e_dim; e++) {

@@ -172,7 +172,6 @@ class LocalPlannerNode {
   ros::Publisher marker_rejected_pub_;
   ros::Publisher marker_blocked_pub_;
   ros::Publisher marker_candidates_pub_;
-  ros::Publisher marker_selected_pub_;
   ros::Publisher marker_FOV_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher avoid_sphere_pub_;
@@ -213,7 +212,6 @@ class LocalPlannerNode {
   void publishMarkerBlocked(nav_msgs::GridCells& path_blocked);
   void publishMarkerRejected(nav_msgs::GridCells& path_rejected);
   void publishMarkerCandidates(nav_msgs::GridCells& path_candidates);
-  void publishMarkerSelected(nav_msgs::GridCells& path_selected);
   void publishMarkerFOV(nav_msgs::GridCells& FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped& msg);

@@ -131,7 +131,6 @@ double StarPlanner::treeHeuristicFunction(int node_number) {
 
 void StarPlanner::buildLookAheadTree() {
   nav_msgs::GridCells path_candidates;
-  nav_msgs::GridCells path_selected;
   nav_msgs::GridCells path_rejected;
   nav_msgs::GridCells path_blocked;
   std::vector<float> cost_path_candidates;
@@ -201,7 +200,7 @@ void StarPlanner::buildLookAheadTree() {
 
       // calculate candidates
       histogram.downsample();
-      findFreeDirections(histogram, 25, path_candidates, path_selected,
+      findFreeDirections(histogram, 25, path_candidates,
                          path_rejected, path_blocked, path_waypoints_,
                          cost_path_candidates, goal_, pose_,
                          origin_origin_position, goal_cost_param_,

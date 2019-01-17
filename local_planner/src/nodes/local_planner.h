@@ -166,7 +166,6 @@ class LocalPlanner {
 
   nav_msgs::GridCells FOV_cells_;
   nav_msgs::GridCells path_candidates_;
-  nav_msgs::GridCells path_selected_;
   nav_msgs::GridCells path_rejected_;
   nav_msgs::GridCells path_blocked_;
   nav_msgs::GridCells path_waypoints_;
@@ -228,7 +227,6 @@ class LocalPlanner {
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
   void getCandidateDataForVisualization(nav_msgs::GridCells &path_candidates,
-                                        nav_msgs::GridCells &path_selected,
                                         nav_msgs::GridCells &path_rejected,
                                         nav_msgs::GridCells &path_blocked,
                                         nav_msgs::GridCells &FOV_cells);

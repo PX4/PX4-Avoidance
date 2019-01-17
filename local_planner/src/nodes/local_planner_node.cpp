@@ -75,8 +75,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
   marker_FOV_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/FOV_marker", 1);
-  marker_selected_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   path_actual_pub_ =
@@ -379,13 +377,6 @@ void LocalPlannerNode::publishMarkerCandidates(
   visualization_msgs::MarkerArray marker_candidates;
   initMarker(&marker_candidates, path_candidates, 0.0, 1.0, 0.0);
   marker_candidates_pub_.publish(marker_candidates);
-}
-
-void LocalPlannerNode::publishMarkerSelected(
-    nav_msgs::GridCells& path_selected) {
-  visualization_msgs::MarkerArray marker_selected;
-  initMarker(&marker_selected, path_selected, 0.8, 0.16, 0.8);
-  marker_selected_pub_.publish(marker_selected);
 }
 
 void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells& FOV_cells) {
@@ -958,10 +949,10 @@ void LocalPlannerNode::publishPlannerData() {
 
   last_wp_time_ = ros::Time::now();
 
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, FOV_cells;
   local_planner_.getCandidateDataForVisualization(
-      path_candidates, path_selected, path_rejected, path_blocked, FOV_cells);
+      path_candidates, path_rejected, path_blocked, FOV_cells);
 
   if (local_planner_.send_obstacles_fcu_) {
     sensor_msgs::LaserScan distance_data_to_fcu;
@@ -970,7 +961,6 @@ void LocalPlannerNode::publishPlannerData() {
   }
 
   publishMarkerCandidates(path_candidates);
-  publishMarkerSelected(path_selected);
   publishMarkerRejected(path_rejected);
   publishMarkerBlocked(path_blocked);
   publishMarkerFOV(FOV_cells);

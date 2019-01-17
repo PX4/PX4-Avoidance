@@ -81,7 +81,7 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
                     double height_change_cost_param, bool only_yawed);
 void findFreeDirections(
     const Histogram &histogram, double safety_radius,
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
+    nav_msgs::GridCells &path_candidates,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells path_waypoints,
     std::vector<float> &cost_path_candidates, const geometry_msgs::Point &goal,

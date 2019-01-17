@@ -99,7 +99,6 @@ void LocalPlanner::runPlanner() {
   initGridCells(&path_candidates_);
   initGridCells(&path_rejected_);
   initGridCells(&path_blocked_);
-  initGridCells(&path_selected_);
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -295,7 +294,7 @@ void LocalPlanner::determineStrategy() {
         obstacle_ = true;
 
         findFreeDirections(polar_histogram_, safety_radius_, path_candidates_,
-                           path_selected_, path_rejected_, path_blocked_,
+                           path_rejected_, path_blocked_,
                            path_waypoints_, cost_path_candidates_, goal_, pose_,
                            position_old_, goal_cost_param_, smooth_cost_param_,
                            height_change_cost_param_adapted_,
@@ -322,7 +321,7 @@ void LocalPlanner::determineStrategy() {
         } else {
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
-              path_selected_, path_rejected_, path_blocked_, path_waypoints_,
+              path_rejected_, path_blocked_, path_waypoints_,
               cost_path_candidates_, goal_, pose_, position_old_,
               goal_cost_param_, smooth_cost_param_,
               height_change_cost_param_adapted_, height_change_cost_param_,
@@ -543,11 +542,10 @@ void LocalPlanner::getCloudsForVisualization(
 }
 
 void LocalPlanner::getCandidateDataForVisualization(
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
+    nav_msgs::GridCells &path_candidates,
     nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
     nav_msgs::GridCells &FOV_cells) {
   path_candidates = path_candidates_;
-  path_selected = path_selected_;
   path_rejected = path_rejected_;
   path_blocked = path_blocked_;
   FOV_cells = FOV_cells_;

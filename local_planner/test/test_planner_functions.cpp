@@ -166,12 +166,12 @@ TEST(PlannerFunctionsTests, findAllFreeDirections) {
   bool only_yawed = false;
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
   findFreeDirections(empty_histogram, safety_radius, path_candidates,
-                     path_selected, path_rejected, path_blocked, path_waypoints,
+                     path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,
                      height_change_cost_param_adapted, height_change_cost_param,
@@ -229,11 +229,11 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
   }
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
+  findFreeDirections(histogram, safety_radius, path_candidates,
                      path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,
@@ -318,11 +318,11 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
   }
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
+  findFreeDirections(histogram, safety_radius, path_candidates,
                      path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,
@@ -407,11 +407,11 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   }
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
+  findFreeDirections(histogram, safety_radius, path_candidates,
                      path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,
@@ -498,11 +498,11 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   }
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
+  findFreeDirections(histogram, safety_radius, path_candidates,
                      path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,
@@ -588,11 +588,11 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   }
 
   // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
+  nav_msgs::GridCells path_candidates, path_rejected,
       path_blocked, path_waypoints;
   std::vector<float> cost_path_candidates;  // not needed
 
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
+  findFreeDirections(histogram, safety_radius, path_candidates,
                      path_rejected, path_blocked, path_waypoints,
                      cost_path_candidates, goal, position, position_old,
                      goal_cost_param, smooth_cost_param,

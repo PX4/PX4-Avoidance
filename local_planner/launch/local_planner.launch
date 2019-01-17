@@ -1,0 +1,35 @@
+<launch>
+
+  <arg name="ns" default="/"/>s
+  <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
+  <arg name="tgt_system" default="1" />
+  <arg name="tgt_component" default="1" />
+  <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+  <arg name="world_file_name" default="simple_obstacle" />
+  <arg name="pointcloud_topics" default="[/camera/depth/points]"/>
+
+  <!-- Launch MAVROS -->
+  <group ns="$(arg ns)">
+      <include file="$(find mavros)/launch/node.launch">
+          <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+          <arg name="config_yaml" value="$(find local_planner)/resource/px4_config.yaml" />
+          <arg name="fcu_url" value="$(arg fcu_url)" />
+          <arg name="gcs_url" value="$(arg gcs_url)" />
+          <arg name="tgt_system" value="$(arg tgt_system)" />
+          <arg name="tgt_component" value="$(arg tgt_component)" />
+      </include>
+  </group>
+
+  <!-- Load waypoint generator paramters -->
+  <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
+
+  <!-- Launch local planner -->
+  <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
+      <param name="goal_x_param" value="17" />
+      <param name="goal_y_param" value="15"/>
+      <param name="goal_z_param" value="3" />
+      <param name="world_name" value="$(find local_planner)/../sim/worlds/$(arg world_file_name).yaml" />
+      <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
+  </node>
+
+</launch>

@@ -103,14 +103,6 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: true
-      Marker Topic: /selected_marker
-      Name: Selected direction
-      Namespaces:
-        {}
-      Queue Size: 100
-      Value: true
-    - Class: rviz/MarkerArray
-      Enabled: true
       Marker Topic: /extended_marker
       Name: ExtendedMarker
       Namespaces:
