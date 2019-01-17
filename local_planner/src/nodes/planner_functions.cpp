@@ -246,7 +246,11 @@ double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
                     double height_change_cost_param_adapted,
                     double height_change_cost_param, bool only_yawed) {
   double cost;
-  int waypoint_index = path_waypoints.cells.size();
+  int waypoint_index = path_waypoints.cells.size() - 1;
+  if (waypoint_index < 0) {
+    waypoint_index = 0;
+    path_waypoints.cells.push_back(position_old);
+  }
 
   double dist = (position - goal).norm();
   double dist_old = (position_old - goal).norm();
