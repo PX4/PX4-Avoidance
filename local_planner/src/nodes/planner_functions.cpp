@@ -358,7 +358,7 @@ void findFreeDirections(
             b = j + z_dim;
             a = i;
           }
-          // Elevation index > GRID_LENGTH_E
+          // Elevation index > e_dim
           else if (i >= e_dim && j >= 0 && j < z_dim) {
             a = e_dim - (i % (e_dim - 1));
             b = j + (180 / resolution_alpha) - 1;
@@ -366,7 +366,7 @@ void findFreeDirections(
               b = b % (z_dim - 1);
             };
           }
-          // Azimuth index > GRID_LENGTH_Z
+          // Azimuth index > z_dim
           else if (j >= z_dim && i >= 0 && i < e_dim) {
             b = j - z_dim;
           }
@@ -376,10 +376,9 @@ void findFreeDirections(
             b = j;
           }
           // Elevation and azimuth index both < 0 OR elevation index >
-          // GRID_LENGTH_E and azimuth index <> GRID_LENGTH_Z
-          // OR elevation index < 0 and azimuth index > GRID_LENGTH_Z OR
-          // elevation index > GRID_LENGTH_E and azimuth index < 0.
-          // These cells are not part of the polar histogram.
+          // e_dim and azimuth index <> z_dim OR elevation index < 0 and
+          // azimuth index > z_dim OR elevation index > e_dim and azimuth index
+          // < 0. These cells are not part of the polar histogram.
           else {
             corner = true;
           }
