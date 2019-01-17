@@ -7,6 +7,24 @@
 
 using namespace avoidance;
 
+void check_indexes(nav_msgs::GridCells &test,
+                   std::vector<std::pair<int, int>> &truth, int resolution) {
+  for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
+    std::pair<int, int> cell_idx(
+        elevationAngletoIndex(test.cells[i].x, resolution),
+        azimuthAngletoIndex(test.cells[i].y, resolution));
+    EXPECT_EQ(truth[j], cell_idx);
+  }
+}
+
+void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
+                   int resolution) {
+  for (int i = 0; i < test.cells.size(); i++) {
+    EXPECT_EQ(truth_idx_e, elevationAngletoIndex(test.cells[i].x, resolution));
+    EXPECT_EQ(truth_idx_z, azimuthAngletoIndex(test.cells[i].y, resolution));
+  }
+}
+
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
   pcl::PointCloud<pcl::PointXYZ> empty_cloud;
@@ -112,7 +130,7 @@ TEST(PlannerFunctions, calculateFOV) {
   calculateFOV(h_fov, v_fov, z_FOV_idx_z_smaller_zero, e_FOV_min, e_FOV_max,
                yaw_z_smaller_zero, pitch);
 
-  // THEN:
+  // THEN: we expect polar histogram indexes that are in the Field of View
   std::vector<int> output_z_greater_grid_length = {
       7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
   std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6, 7,
@@ -245,28 +263,10 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
 
   // THEN: we should have one rejected cell and the 8 neightbooring cells
   // blocked
-  for (int i = 0, j = 0; i < path_blocked.cells.size(), j < blocked.size();
-       i++, j++) {
-    std::pair<int, int> cell_blocked_idx(
-        elevationAngletoIndex(path_blocked.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_blocked.cells[i].y, resolution_alpha));
-    EXPECT_EQ(blocked[j], cell_blocked_idx);
-  }
-
-  for (int i = 0; i < path_rejected.cells.size(); i++) {
-    EXPECT_EQ(obstacle_idx_e, elevationAngletoIndex(path_rejected.cells[i].x,
-                                                    resolution_alpha));
-    EXPECT_EQ(obstacle_idx_z,
-              azimuthAngletoIndex(path_rejected.cells[i].y, resolution_alpha));
-  }
-
-  for (int i = 0, j = 0; i < path_candidates.cells.size(), j < free.size();
-       i++, j++) {
-    std::pair<int, int> cell_candidate_idx(
-        elevationAngletoIndex(path_candidates.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_candidates.cells[i].y, resolution_alpha));
-    EXPECT_EQ(cell_candidate_idx, free[j]);
-  }
+  check_indexes(path_blocked, blocked, resolution_alpha);
+  check_indexes(path_candidates, free, resolution_alpha);
+  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
+                resolution_alpha);
 
   EXPECT_EQ(1, path_rejected.cells.size());
   EXPECT_EQ(blocked.size(), path_blocked.cells.size());
@@ -335,28 +335,10 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
   // THEN: we should get one rejected cell, the five neighboring cells blocked
   // plus three other blocked cells at the same elevation index and the last
   // azimuth index
-  for (int i = 0, j = 0; i < path_blocked.cells.size(), j < blocked.size();
-       i++, j++) {
-    std::pair<int, int> cell_blocked_idx(
-        elevationAngletoIndex(path_blocked.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_blocked.cells[i].y, resolution_alpha));
-    EXPECT_EQ(blocked[j], cell_blocked_idx);
-  }
-
-  for (int i = 0; i < path_rejected.cells.size(); i++) {
-    EXPECT_EQ(obstacle_idx_e, elevationAngletoIndex(path_rejected.cells[i].x,
-                                                    resolution_alpha));
-    EXPECT_EQ(obstacle_idx_z,
-              azimuthAngletoIndex(path_rejected.cells[i].y, resolution_alpha));
-  }
-
-  for (int i = 0, j = 0; i < path_candidates.cells.size(), j < free.size();
-       i++, j++) {
-    std::pair<int, int> cell_candidate_idx(
-        elevationAngletoIndex(path_candidates.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_candidates.cells[i].y, resolution_alpha));
-    EXPECT_EQ(free[j], cell_candidate_idx);
-  }
+  check_indexes(path_blocked, blocked, resolution_alpha);
+  check_indexes(path_candidates, free, resolution_alpha);
+  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
+                resolution_alpha);
 
   EXPECT_EQ(1, path_rejected.cells.size());
   EXPECT_EQ(blocked.size(), path_blocked.cells.size());
@@ -424,28 +406,10 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   // THEN: we should get one rejected cell, the five neighboring cells blocked
   // plus three other blocked cells at the same elevation index and the first
   // azimuth index
-  for (int i = 0, j = 0; i < path_blocked.cells.size(), j < blocked.size();
-       i++, j++) {
-    std::pair<int, int> cell_blocked_idx(
-        elevationAngletoIndex(path_blocked.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_blocked.cells[i].y, resolution_alpha));
-    EXPECT_EQ(blocked[j], cell_blocked_idx);
-  }
-
-  for (int i = 0; i < path_rejected.cells.size(); i++) {
-    EXPECT_EQ(obstacle_idx_e, elevationAngletoIndex(path_rejected.cells[i].x,
-                                                    resolution_alpha));
-    EXPECT_EQ(obstacle_idx_z,
-              azimuthAngletoIndex(path_rejected.cells[i].y, resolution_alpha));
-  }
-
-  for (int i = 0, j = 0; i < path_candidates.cells.size(), j < free.size();
-       i++, j++) {
-    std::pair<int, int> cell_candidate_idx(
-        elevationAngletoIndex(path_candidates.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_candidates.cells[i].y, resolution_alpha));
-    EXPECT_EQ(free[j], cell_candidate_idx);
-  }
+  check_indexes(path_blocked, blocked, resolution_alpha);
+  check_indexes(path_candidates, free, resolution_alpha);
+  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
+                resolution_alpha);
 
   EXPECT_EQ(1, path_rejected.cells.size());
   EXPECT_EQ(blocked.size(), path_blocked.cells.size());
@@ -515,28 +479,10 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   // THEN: we should get one rejected cell, the 14 neighboring cells blocked
   // plus 10 other blocked cells at the same elevation index and azimuth index
   // shifted by 180 degrees
-  for (int i = 0, j = 0; i < path_blocked.cells.size(), j < blocked.size();
-       i++, j++) {
-    std::pair<int, int> cell_blocked_idx(
-        elevationAngletoIndex(path_blocked.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_blocked.cells[i].y, resolution_alpha));
-    EXPECT_EQ(blocked[j], cell_blocked_idx);
-  }
-
-  for (int i = 0; i < path_rejected.cells.size(); i++) {
-    EXPECT_EQ(obstacle_idx_e, elevationAngletoIndex(path_rejected.cells[i].x,
-                                                    resolution_alpha));
-    EXPECT_EQ(obstacle_idx_z,
-              azimuthAngletoIndex(path_rejected.cells[i].y, resolution_alpha));
-  }
-
-  for (int i = 0, j = 0; i < path_candidates.cells.size(), j < free.size();
-       i++, j++) {
-    std::pair<int, int> cell_candidate_idx(
-        elevationAngletoIndex(path_candidates.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_candidates.cells[i].y, resolution_alpha));
-    EXPECT_EQ(free[j], cell_candidate_idx);
-  }
+  check_indexes(path_blocked, blocked, resolution_alpha);
+  check_indexes(path_candidates, free, resolution_alpha);
+  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
+                resolution_alpha);
 
   EXPECT_EQ(1, path_rejected.cells.size());
   EXPECT_EQ(blocked.size(), path_blocked.cells.size());
@@ -605,28 +551,10 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   // THEN: we should get one rejected cell, the 5 neighboring cells blocked
   // plus 3 other blocked cells at the same elevation index and azimuth index
   // shifted by 180 degrees
-  for (int i = 0, j = 0; i < path_blocked.cells.size(), j < blocked.size();
-       i++, j++) {
-    std::pair<int, int> cell_blocked_idx(
-        elevationAngletoIndex(path_blocked.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_blocked.cells[i].y, resolution_alpha));
-    EXPECT_EQ(blocked[j], cell_blocked_idx);
-  }
-
-  for (int i = 0; i < path_rejected.cells.size(); i++) {
-    EXPECT_EQ(obstacle_idx_e, elevationAngletoIndex(path_rejected.cells[i].x,
-                                                    resolution_alpha));
-    EXPECT_EQ(obstacle_idx_z,
-              azimuthAngletoIndex(path_rejected.cells[i].y, resolution_alpha));
-  }
-
-  for (int i = 0, j = 0; i < path_candidates.cells.size(), j < free.size();
-       i++, j++) {
-    std::pair<int, int> cell_candidate_idx(
-        elevationAngletoIndex(path_candidates.cells[i].x, resolution_alpha),
-        azimuthAngletoIndex(path_candidates.cells[i].y, resolution_alpha));
-    EXPECT_EQ(free[j], cell_candidate_idx);
-  }
+  check_indexes(path_blocked, blocked, resolution_alpha);
+  check_indexes(path_candidates, free, resolution_alpha);
+  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
+                resolution_alpha);
 
   EXPECT_EQ(1, path_rejected.cells.size());
   EXPECT_EQ(blocked.size(), path_blocked.cells.size());
