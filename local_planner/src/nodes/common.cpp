@@ -63,11 +63,7 @@ float azimuthAnglefromCartesian(double x, double y,
 float elevationAnglefromCartesian(double x, double y, double z,
                                   const geometry_msgs::Point& pos) {
   double den = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y));
-  if (den == 0) {
-    return 0;
-  } else {
-    return atan((z - pos.z) / den) * 180.0 / M_PI;  //(-90.+90)
-  }
+  return atan2(z - pos.z, den) * 180.0 / M_PI;  //(-90.+90)
 }
 
 float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
