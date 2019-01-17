@@ -58,10 +58,10 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
     geometry_msgs::Point &closest_point,
-    geometry_msgs::Point &temp_sphere_center, double &distance_to_closest_point,
-    int &counter_backoff, int &counter_sphere,
+    double &distance_to_closest_point,
+    int &counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
-    double min_cloud_size, double min_dist_backoff, double sphere_radius,
+    double min_cloud_size, double min_dist_backoff,
     Box histogram_box, const geometry_msgs::Point &position,
     double min_realsense_dist) {
   cropped_cloud.points.clear();
@@ -69,10 +69,6 @@ void filterPointCloud(
   distance_to_closest_point = HUGE_VAL;
   float distance;
   counter_backoff = 0;
-  counter_sphere = 0;
-  temp_sphere_center.x = 0.0;
-  temp_sphere_center.y = 0.0;
-  temp_sphere_center.z = 0.0;
 
   for (size_t i = 0; i < complete_cloud.size(); ++i) {
     for (const pcl::PointXYZ &xyz : complete_cloud[i]) {
@@ -92,26 +88,10 @@ void filterPointCloud(
             if (distance < min_dist_backoff) {
               counter_backoff++;
             }
-            if (distance < sphere_radius + 1.5) {
-              counter_sphere++;
-              temp_sphere_center.x += xyz.x;
-              temp_sphere_center.y += xyz.y;
-              temp_sphere_center.z += xyz.z;
-            }
           }
         }
       }
     }
-  }
-
-  if (counter_sphere > 0) {
-    temp_sphere_center.x = temp_sphere_center.x / counter_sphere;
-    temp_sphere_center.y = temp_sphere_center.y / counter_sphere;
-    temp_sphere_center.z = temp_sphere_center.z / counter_sphere;
-  } else {
-    temp_sphere_center.x = position.x + 1000;
-    temp_sphere_center.y = position.y + 1000;
-    temp_sphere_center.z = position.z + 1000;
   }
 
   cropped_cloud.header.stamp = complete_cloud[0].header.stamp;

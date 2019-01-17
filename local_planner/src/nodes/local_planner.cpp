@@ -47,7 +47,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   no_progress_slope_ = config.no_progress_slope_;
   min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = config.min_realsense_dist_;
-  avoid_radius_ = config.avoid_radius_;
   min_dist_backoff_ = config.min_dist_backoff_;
   pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
   pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
@@ -63,7 +62,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   stop_in_front_ = config.stop_in_front_;
-  use_avoid_sphere_ = config.use_avoid_sphere_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
@@ -128,21 +126,14 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
-  geometry_msgs::Point temp_sphere_center;
-  int sphere_points_counter = 0;
-  filterPointCloud(final_cloud_, closest_point_, temp_sphere_center,
+  filterPointCloud(final_cloud_, closest_point_,
                    distance_to_closest_point_, counter_close_points_backoff_,
-                   sphere_points_counter, complete_cloud_, min_cloud_size_,
-                   min_dist_backoff_, avoid_radius_, histogram_box_,
+                   complete_cloud_, min_cloud_size_,
+                   min_dist_backoff_, histogram_box_,
                    pose_.pose.position, min_realsense_dist_);
 
   safety_radius_ = adaptSafetyMarginHistogram(
       distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
-
-  if (use_avoid_sphere_ && reach_altitude_) {
-    calculateSphere(avoid_centerpoint_, avoid_sphere_age_, temp_sphere_center,
-                    sphere_points_counter, speed_);
-  }
 
   determineStrategy();
 }
@@ -527,14 +518,6 @@ void LocalPlanner::stopInFrontObstacles() {
 
 geometry_msgs::PoseStamped LocalPlanner::getPosition() { return pose_; }
 
-void LocalPlanner::getAvoidSphere(geometry_msgs::Point &center, double &radius,
-                                  int &sphere_age, bool &use_avoid_sphere) {
-  center = avoid_centerpoint_;
-  radius = avoid_radius_;
-  sphere_age = avoid_sphere_age_;
-  use_avoid_sphere = use_avoid_sphere_;
-}
-
 void LocalPlanner::getCloudsForVisualization(
     pcl::PointCloud<pcl::PointXYZ> &final_cloud,
     pcl::PointCloud<pcl::PointXYZ> &reprojected_points) {
@@ -581,11 +564,6 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.max_speed = max_speed_;
   out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
   out.last_path_time = last_path_time_;
-
-  out.use_avoid_sphere = use_avoid_sphere_;
-  out.avoid_sphere_age = avoid_sphere_age_;
-  out.avoid_centerpoint = avoid_centerpoint_;
-  out.avoid_radius = avoid_radius_;
 
   out.back_off_point = back_off_point_;
   out.back_off_start_point = back_off_start_point_;

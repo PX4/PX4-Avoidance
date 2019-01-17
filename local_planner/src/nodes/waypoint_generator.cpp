@@ -370,17 +370,6 @@ void WaypointGenerator::getPathMsg() {
   ros::Duration time_diff = current_time_ - last_time_;
   double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
-  // If avoid sphere is used, project waypoint on sphere
-  if (planner_info_.use_avoid_sphere && planner_info_.avoid_sphere_age < 100 &&
-      planner_info_.reach_altitude && !reached_goal_) {
-    output_.adapted_goto_position = getSphereAdaptedWaypoint(
-        pose_.pose.position, output_.goto_position,
-        planner_info_.avoid_centerpoint, planner_info_.avoid_radius);
-    ROS_DEBUG("[WG] Sphere adapted WP: [%f %f %f].",
-              output_.adapted_goto_position.x, output_.adapted_goto_position.y,
-              output_.adapted_goto_position.z);
-  }
-
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   new_yaw_ = nextYaw(pose_, output_.adapted_goto_position);
   adaptSpeed();
