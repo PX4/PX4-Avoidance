@@ -247,8 +247,8 @@ std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f}; //[-180, 180]
 
 //Check that the input is valid
 int n = 0;
-if(e.size == z.size){
-	n = e.size;
+if(e.size() == z.size()){
+	n = e.size();
 }
 ASSERT_GT(n, 0);
 
