@@ -188,7 +188,7 @@ class LocalPlanner {
   bool smooth_waypoints_ = true;
   bool send_obstacles_fcu_ = false;
   bool stop_in_front_active_ = false;
-  bool disable_rise_to_goal_altitude_;
+  bool disable_rise_to_goal_altitude_ = false;
 
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
