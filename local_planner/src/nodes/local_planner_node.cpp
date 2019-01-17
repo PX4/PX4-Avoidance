@@ -54,8 +54,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   bounding_box_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
-  avoid_sphere_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/avoid_sphere", 1);
   ground_measurement_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
   original_wp_pub_ =
@@ -528,38 +526,6 @@ void LocalPlannerNode::publishBox() {
   bounding_box_pub_.publish(marker_array);
 }
 
-void LocalPlannerNode::publishAvoidSphere() {
-  int age;
-  local_planner_.getAvoidSphere(avoid_centerpoint_, avoid_radius_, age,
-                                use_sphere_);
-  visualization_msgs::Marker sphere;
-  sphere.header.frame_id = "local_origin";
-  sphere.header.stamp = ros::Time::now();
-  sphere.id = 0;
-  sphere.type = visualization_msgs::Marker::SPHERE;
-  sphere.action = visualization_msgs::Marker::ADD;
-  sphere.pose.position.x = avoid_centerpoint_.x;
-  sphere.pose.position.y = avoid_centerpoint_.y;
-  sphere.pose.position.z = avoid_centerpoint_.z;
-  sphere.pose.orientation.x = 0.0;
-  sphere.pose.orientation.y = 0.0;
-  sphere.pose.orientation.z = 0.0;
-  sphere.pose.orientation.w = 1.0;
-  sphere.scale.x = 2.0 * avoid_radius_;
-  sphere.scale.y = 2.0 * avoid_radius_;
-  sphere.scale.z = 2.0 * avoid_radius_;
-  sphere.color.a = 0.5;
-  sphere.color.r = 0.0;
-  sphere.color.g = 1.0;
-  sphere.color.b = 1.0;
-  if (use_sphere_ && age < 100) {
-    avoid_sphere_pub_.publish(sphere);
-  } else {
-    sphere.color.a = 0;
-    avoid_sphere_pub_.publish(sphere);
-  }
-}
-
 void LocalPlannerNode::publishWaypoints(bool hover) {
   const ros::Time now = ros::Time::now();
 
@@ -976,7 +942,6 @@ void LocalPlannerNode::publishPlannerData() {
   publishMarkerFOV(FOV_cells);
   publishGoal();
   publishBox();
-  publishAvoidSphere();
   publishReachHeight();
   publishHistogramImage();
 }

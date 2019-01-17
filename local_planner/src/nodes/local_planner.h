@@ -70,11 +70,6 @@ struct avoidanceOutput {
   double velocity_sigmoid_slope;
   ros::Time last_path_time;
 
-  bool use_avoid_sphere;
-  int avoid_sphere_age;
-  geometry_msgs::Point avoid_centerpoint;
-  double avoid_radius;
-
   geometry_msgs::Point back_off_point;
   geometry_msgs::Point back_off_start_point;
   double min_dist_backoff;
@@ -93,7 +88,6 @@ class LocalPlanner {
   bool use_VFH_star_;
   bool adapt_cost_params_;
   bool stop_in_front_;
-  bool use_avoid_sphere_;
 
   bool reach_altitude_ = false;
   bool obstacle_ = false;
@@ -110,7 +104,6 @@ class LocalPlanner {
   int n_expanded_nodes_;
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
-  int avoid_sphere_age_ = 1000;
 
   double velocity_mod_;
   double curr_yaw_, last_yaw_;
@@ -129,7 +122,6 @@ class LocalPlanner {
   double safety_radius_ = 25.0;
   double min_cloud_size_ = 160.0;
   double min_dist_backoff_;
-  double avoid_radius_;
   double relevance_margin_z_degree_ = 40;
   double relevance_margin_e_degree_ = 25;
   double velocity_sigmoid_slope_ = 1;
@@ -161,7 +153,6 @@ class LocalPlanner {
   geometry_msgs::Point back_off_start_point_;
   geometry_msgs::Point position_old_;
   geometry_msgs::Point closest_point_;
-  geometry_msgs::Point avoid_centerpoint_;
   geometry_msgs::TwistStamped curr_vel_;
 
   nav_msgs::GridCells FOV_cells_;
@@ -222,8 +213,6 @@ class LocalPlanner {
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
   geometry_msgs::PoseStamped getPosition();
-  void getAvoidSphere(geometry_msgs::Point &center, double &radius,
-                      int &avoid_sphere_age, bool &use_avoid_sphere);
   void getCloudsForVisualization(
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
