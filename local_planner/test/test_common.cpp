@@ -245,6 +245,14 @@ TEST(Common, fromPolarToCartesian){
 std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};  //[-90, 90]
 std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f}; //[-180, 180]
 
+//Check that the input is valid
+int n = 0;
+if(e.size == z.size){
+	n = e.size;
+}
+ASSERT_GT(n, 0);
+
+
 std::vector<double> radius = {0.f, 2.f};
 
 geometry_msgs::Point pos;
@@ -256,18 +264,18 @@ std::vector<geometry_msgs::Point> pos_out;
 
 //WHEN: converting the point in polar CS to cartesian CS
 
-for(int i = 0; i<e.size(); i++){
+for(int i = 0; i<n; i++){
      pos_out.push_back(fromPolarToCartesian(e[i], z[3], radius[0], pos));
 }
 
-for(int i = 0; i<e.size(); i++){  
+for(int i = 0; i<n; i++){
        pos_out.push_back(fromPolarToCartesian(e[i], z[i], radius[1], pos));
 }
 
 
 //THEN: the cartesian coordinates are
 
-for(int i = 0; i<e.size(); i++){
+for(int i = 0; i<n; i++){
     EXPECT_FLOAT_EQ(0.f, pos_out[i].x);
     EXPECT_FLOAT_EQ(0.f, pos_out[i].y);
     EXPECT_FLOAT_EQ(0.f, pos_out[i].z);  
