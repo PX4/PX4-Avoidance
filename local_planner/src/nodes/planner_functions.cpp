@@ -299,15 +299,19 @@ double costFunction(int e, int z, nav_msgs::GridCells path_waypoints,
                     double height_change_cost_param_adapted,
                     double height_change_cost_param, bool only_yawed) {
   double cost;
-  int waypoint_index = path_waypoints.cells.size();
+  int waypoint_index = path_waypoints.cells.size() - 1;
+  if (waypoint_index < 0) {
+    waypoint_index = 0;
+    path_waypoints.cells.push_back(position_old);
+  }
 
   double dist = distance3DCartesian(position.pose.position, goal);
   double dist_old = distance3DCartesian(position_old, goal);
   geometry_msgs::Point candidate_goal =
       fromPolarToCartesian(e, z, dist, position.pose.position);
   geometry_msgs::Point old_candidate_goal = fromPolarToCartesian(
-      path_waypoints.cells[waypoint_index - 1].x,
-      path_waypoints.cells[waypoint_index - 1].y, dist_old, position_old);
+      path_waypoints.cells[waypoint_index].x,
+      path_waypoints.cells[waypoint_index].y, dist_old, position_old);
   double yaw_cost =
       goal_cost_param *
       sqrt((goal.x - candidate_goal.x) * (goal.x - candidate_goal.x) +
