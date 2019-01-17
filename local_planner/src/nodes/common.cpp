@@ -17,8 +17,7 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
 Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
                                      const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
-  p.x() = pos.x +
-          radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));  // round
+  p.x() = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));
   p.y() = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
   p.z() = pos.z + radius * sin(e * (M_PI / 180.f));
 
@@ -50,8 +49,7 @@ float azimuthAnglefromCartesian(double x, double y,
 
 float elevationAnglefromCartesian(double x, double y, double z,
                                   const Eigen::Vector3f& pos) {
-  double den =
-      sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()));
+  double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   return atan2(z - pos.z() , den) * 180.0 / M_PI;  //(-90.+90)
 }
 
@@ -110,19 +108,6 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
   return pose_msg;
 }
 
-void normalize(geometry_msgs::Point& p) {
-  double length = sqrt(p.x * p.x + p.y * p.y + p.z * p.z);
-  if (length != 0) {
-    p.x = p.x / length;
-    p.y = p.y / length;
-    p.z = p.z / length;
-  } else {
-    p.x = 0;
-    p.y = 0;
-    p.z = 0;
-  }
-}
-
 double velocityLinear(double max_vel, double slope, double v_old,
                       double elapsed) {
   double t_old = v_old / slope;
@@ -167,10 +152,6 @@ Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
   Eigen::Vector3f ev3(p.x, p.y, p.z);
   return ev3;
 }
-Eigen::Vector3f toEigen(const geometry_msgs::Vector3& p) {
-  Eigen::Vector3f ev3(p.x, p.y, p.z);
-  return ev3;
-}
 
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   geometry_msgs::Point gmp;
@@ -185,12 +166,5 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   xyz.y = ev3.y();
   xyz.z = ev3.z();
   return xyz;
-}
-geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
-  geometry_msgs::Vector3 gv3;
-  gv3.x = ev3.x();
-  gv3.y = ev3.y();
-  gv3.z = ev3.z();
-  return gv3;
 }
 }
