@@ -76,7 +76,7 @@ float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
 }
 
 int elevationAngletoIndex(float e, int res) {  //[-90,90]
-  // Do some input-checks
+  //TODO: wrap e to [-90, 90] to be sure input is valid such that this check is not necessary anymore
   if(res <= 0.f || e < -90.f || e > 90.f){
     return 0.f;
   }
@@ -90,6 +90,7 @@ int elevationAngletoIndex(float e, int res) {  //[-90,90]
 }
 
 int azimuthAngletoIndex(float z, int res) {  //[-180,180]
+  //TODO: wrap z to [-180, 180] to be sure input is valid such that this check is not necessary anymore
   if(res <= 0.f || z < -180.f || z > 180.f){
     return 0.f;
   }
