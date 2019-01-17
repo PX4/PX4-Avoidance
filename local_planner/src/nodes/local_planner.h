@@ -185,8 +185,8 @@ class LocalPlanner {
   sensor_msgs::Image generateHistogramImage(Histogram &histogram);
 
  public:
-  double h_FOV_ = 59.0;
-  double v_FOV_ = 46.0;
+  float h_FOV_ = 59.0f;
+  float v_FOV_ = 46.0f;
   Box histogram_box_;
   sensor_msgs::Image histogram_image_;
   bool use_vel_setpoints_;

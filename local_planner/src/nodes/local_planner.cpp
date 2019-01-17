@@ -111,7 +111,7 @@ void LocalPlanner::runPlanner() {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, static_cast<float>(yaw), static_cast<float>(pitch));
 
   // visualization of FOV in RViz
   initGridCells(&FOV_cells_);
