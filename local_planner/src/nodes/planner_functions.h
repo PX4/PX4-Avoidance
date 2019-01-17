@@ -62,7 +62,7 @@ void propagateHistogram(Histogram &polar_histogram_est,
                         std::vector<double> reprojected_points_dist,
                         geometry_msgs::PoseStamped position);
 void generateNewHistogram(Histogram &polar_histogram,
-                          const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
+                          const pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                           geometry_msgs::PoseStamped position);
 void combinedHistogram(bool &hist_empty, Histogram &new_hist,
                        Histogram propagated_hist, bool waypoint_outside_FOV,

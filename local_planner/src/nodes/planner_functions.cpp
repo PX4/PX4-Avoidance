@@ -168,13 +168,11 @@ void propagateHistogram(Histogram &polar_histogram_est,
 
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram &polar_histogram,
-                          const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
+                          const pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
                           geometry_msgs::PoseStamped position) {
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-
-    float e_angle = elevationAnglefromCartesian(toPoint(p), position.pose.position);
-    float z_angle = azimuthAnglefromCartesian(toPoint(p), position.pose.position);
+    float dist = (p - toEigen(position.pose.position)).norm();
     int e_angle =
         elevationAnglefromCartesian(p, toEigen(position.pose.position));
     int z_angle = azimuthAnglefromCartesian(p, toEigen(position.pose.position));
@@ -288,10 +286,10 @@ double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
 
 void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
   int vertical_FOV_range_sensor = 20;
-  int lower_index =
-      elevationAngletoIndex(-(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
-  int upper_index =
-      elevationAngletoIndex((float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  int lower_index = elevationAngletoIndex(
+      -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  int upper_index = elevationAngletoIndex(
+      (float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
 
   for (int e = lower_index; e <= upper_index; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {

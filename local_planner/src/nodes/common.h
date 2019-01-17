@@ -4,6 +4,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <Eigen/Core>
 
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -20,7 +21,7 @@ float distance2DPolar(int e1, int z1, int e2, int z2);
 * @param[in] pos Position from which to convert the point
 * @returns   point in cartesian CS
 **/
-geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
+Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
                                      const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
@@ -48,7 +49,7 @@ float azimuthAnglefromCartesian(double x, double y, const Eigen::Vector3f& pos);
 * @note    Output is in degrees (-90, 90)
 **/
 float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
-                                const Eigen::Vector3f& origin);
+                                  const Eigen::Vector3f& origin);
 float elevationAnglefromCartesian(double x, double y, double z,
                                   const Eigen::Vector3f& pos);
 /**

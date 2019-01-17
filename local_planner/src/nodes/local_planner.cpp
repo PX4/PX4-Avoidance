@@ -255,10 +255,10 @@ void LocalPlanner::determineStrategy() {
             std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
         int n_occupied_cells = 0;
 
-        int goal_e_angle =
-            floor(elevationAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
-        int goal_z_angle =
-            floor(azimuthAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
+        int goal_e_angle = floor(
+            elevationAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
+        int goal_z_angle = floor(
+            azimuthAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
 
         int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
         int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);

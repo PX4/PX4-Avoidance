@@ -39,8 +39,7 @@ void StarPlanner::setCloud(
   complete_cloud_ = complete_cloud;
 }
 
-void StarPlanner::setBoxSize(const Box& histogram_box,
-                             double ground_distance) {
+void StarPlanner::setBoxSize(const Box& histogram_box, double ground_distance) {
   histogram_box_.radius_ = histogram_box.radius_;
   ground_distance_ = ground_distance;
 }

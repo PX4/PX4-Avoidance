@@ -13,13 +13,12 @@ float distance2DPolar(int e1, int z1, int e2, int z2) {
   return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
 }
 
-              (position.z - xyz.z) * (position.z - xyz.z));
 // transform polar coordinates into Cartesian coordinates
 Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
                                      const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
-  p.x() =
-      pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));  // round
+  p.x() = pos.x +
+          radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));  // round
   p.y() = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
   p.z() = pos.z + radius * sin(e * (M_PI / 180.f));
 
@@ -31,8 +30,6 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-
-
 double elevationIndexToAngle(int e, double res) {
   return e * res + res / 2 - 90;
 }
@@ -42,11 +39,12 @@ double azimuthIndexToAngle(int z, double res) {
 }
 
 float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
-                                Wconst Eigen::Vector3f& origin) {
+                                const Eigen::Vector3f& origin) {
   return azimuthAnglefromCartesian(position.x(), position.y(), origin);
 }
 
-float azimuthAnglefromCartesian(double x, double y, const Eigen::Vector3f& pos) {
+float azimuthAnglefromCartesian(double x, double y,
+                                const Eigen::Vector3f& pos) {
   return atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
 }
 
@@ -63,22 +61,24 @@ float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
 }
 
 int elevationAngletoIndex(float e, int res) {  //[-90,90]
-  //TODO: wrap e to [-90, 90] to be sure input is valid such that this check is not necessary anymore
-  if(res <= 0.f || e < -90.f || e > 90.f){
+  // TODO: wrap e to [-90, 90] to be sure input is valid such that this check is
+  // not necessary anymore
+  if (res <= 0.f || e < -90.f || e > 90.f) {
     return 0.f;
   }
-  
+
   if (e == 90.f) {
     e = 89;
   }
   e += 90;
   e = e + (res - ((int)e % res));  //[-80,+90]
-  return floor(e / res )- 1;         //[0,17]
+  return floor(e / res) - 1;       //[0,17]
 }
 
 int azimuthAngletoIndex(float z, int res) {  //[-180,180]
-  //TODO: wrap z to [-180, 180] to be sure input is valid such that this check is not necessary anymore
-  if(res <= 0.f || z < -180.f || z > 180.f){
+  // TODO: wrap z to [-180, 180] to be sure input is valid such that this check
+  // is not necessary anymore
+  if (res <= 0.f || z < -180.f || z > 180.f) {
     return 0.f;
   }
   if (z == 180.f) {
@@ -86,7 +86,7 @@ int azimuthAngletoIndex(float z, int res) {  //[-180,180]
   }
   z += 180;
   z = z + (res - ((int)z % res));  //[-80,+90]
-  return z / res - 1;         //[0,17]
+  return z / res - 1;              //[0,17]
 }
 
 // calculate the yaw for the next waypoint
@@ -193,5 +193,4 @@ geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
   gv3.z = ev3.z();
   return gv3;
 }
-
 }
