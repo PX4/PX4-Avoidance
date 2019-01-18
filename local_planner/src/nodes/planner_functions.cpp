@@ -14,33 +14,6 @@ void initGridCells(nav_msgs::GridCells *cell) {
   cell->cells = {};
 }
 
-// calculate sphere center from close points
-void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age,
-                     geometry_msgs::Point temp_centerpoint,
-                     int counter_sphere_points, double sphere_speed) {
-  if (counter_sphere_points > 200) {
-    if (sphere_age < 10) {
-      tf::Vector3 vec;
-      vec.setX(temp_centerpoint.x - sphere_center.x);
-      vec.setY(temp_centerpoint.y - sphere_center.y);
-      vec.setZ(temp_centerpoint.z - sphere_center.z);
-      vec.normalize();
-      double new_len = sphere_speed;
-      vec *= new_len;
-      sphere_center.x = sphere_center.x + vec.getX();
-      sphere_center.y = sphere_center.y + vec.getY();
-      sphere_center.z = sphere_center.z + vec.getZ();
-    } else {
-      sphere_center.x = temp_centerpoint.x;
-      sphere_center.y = temp_centerpoint.y;
-      sphere_center.z = temp_centerpoint.z;
-    }
-    sphere_age = 0;
-  } else {
-    sphere_age++;
-  }
-}
-
 // adapt histogram safety margin around blocked cells to distance of pointcloud
 double adaptSafetyMarginHistogram(double dist_to_closest_point,
                                   double cloud_size, double min_cloud_size) {
@@ -546,85 +519,5 @@ bool getDirectionFromTree(geometry_msgs::Point &p,
     tree_available = false;
   }
   return tree_available;
-}
-
-geometry_msgs::Point getSphereAdaptedWaypoint(
-    geometry_msgs::Point position, geometry_msgs::Point wp,
-    geometry_msgs::Point avoid_centerpoint, double avoid_radius) {
-  geometry_msgs::Point wp_adapted = wp;
-  double sphere_hysteresis_radius = 1.3 * avoid_radius;
-  double dist =
-      sqrt((wp.x - avoid_centerpoint.x) * (wp.x - avoid_centerpoint.x) +
-           (wp.y - avoid_centerpoint.y) * (wp.y - avoid_centerpoint.y) +
-           (wp.z - avoid_centerpoint.z) * (wp.z - avoid_centerpoint.z));
-
-  if (dist < sphere_hysteresis_radius) {
-    // put waypoint closer to equator
-    if (wp.z < avoid_centerpoint.z) {
-      wp_adapted.z = wp.z + 0.25 * std::abs(wp.z - avoid_centerpoint.z);
-    } else {
-      wp_adapted.z = wp.z - 0.25 * std::abs(wp.z - avoid_centerpoint.z);
-    }
-    // increase angle from pole
-    Eigen::Vector3f center_to_wp(wp_adapted.x - avoid_centerpoint.x,
-                                 wp_adapted.y - avoid_centerpoint.y,
-                                 wp_adapted.z - avoid_centerpoint.z);
-    Eigen::Vector2f center_to_wp_2D(wp_adapted.x - avoid_centerpoint.x,
-                                    wp_adapted.y - avoid_centerpoint.y);
-    Eigen::Vector2f pose_to_center_2D(position.x - avoid_centerpoint.x,
-                                      position.y - avoid_centerpoint.y);
-    center_to_wp_2D = center_to_wp_2D.normalized();
-    pose_to_center_2D = pose_to_center_2D.normalized();
-    double cos_theta = center_to_wp_2D[0] * pose_to_center_2D[0] +
-                       center_to_wp_2D[1] * pose_to_center_2D[1];
-    Eigen::Vector2f n(center_to_wp_2D[0] - cos_theta * pose_to_center_2D[0],
-                      center_to_wp_2D[1] - cos_theta * pose_to_center_2D[1]);
-
-    double mag_n = sqrt(n[0] * n[0] + n[1] * n[1]);
-    if (mag_n > 0) {
-      n[0] = n[0] / mag_n;
-      n[1] = n[1] / mag_n;
-    } else {
-      n[0] = 0;
-      n[1] = 0;
-    }
-    double cos_new_theta = 0.9 * cos_theta;
-    double sin_new_theta = sin(acos(cos_new_theta));
-    Eigen::Vector2f center_to_wp_2D_new(
-        cos_new_theta * pose_to_center_2D[0] + sin_new_theta * n[0],
-        cos_new_theta * pose_to_center_2D[1] + sin_new_theta * n[1]);
-    center_to_wp = center_to_wp.normalized();
-    Eigen::Vector3f center_to_wp_new(center_to_wp_2D_new[0],
-                                     center_to_wp_2D_new[1], center_to_wp[2]);
-
-    // project on sphere
-    center_to_wp_new = center_to_wp_new.normalized();
-
-    // hysteresis
-    if (dist < avoid_radius) {
-      center_to_wp_new *= avoid_radius;
-      wp_adapted.x = avoid_centerpoint.x + center_to_wp_new[0];
-      wp_adapted.y = avoid_centerpoint.y + center_to_wp_new[1];
-      wp_adapted.z = avoid_centerpoint.z + center_to_wp_new[2];
-      ROS_INFO("\033[1;36m Inside sphere \n \033[0m");
-    } else {
-      center_to_wp_new *= dist;
-      double radius_percentage =
-          (dist - avoid_radius) /
-          (sphere_hysteresis_radius -
-           avoid_radius);  // 1 at hysteresis rad, 0 at avoid rad
-      wp_adapted.x = (1.0 - radius_percentage) *
-                         (avoid_centerpoint.x + center_to_wp_new[0]) +
-                     radius_percentage * wp_adapted.x;
-      wp_adapted.y = (1.0 - radius_percentage) *
-                         (avoid_centerpoint.y + center_to_wp_new[1]) +
-                     radius_percentage * wp_adapted.y;
-      wp_adapted.z = (1.0 - radius_percentage) *
-                         (avoid_centerpoint.z + center_to_wp_new[2]) +
-                     radius_percentage * wp_adapted.z;
-      ROS_INFO("\033[1;36m Inside sphere hysteresis \n \033[0m");
-    }
-  }
-  return wp_adapted;
 }
 }
