@@ -52,8 +52,6 @@ float azimuthAnglefromCartesian(double x, double y,
 * @brief   Compute the elevation angle for a point given in cartesian
 *coordinates
 * @note    Output is in degrees (-90, 90)
-* @warning For the poles on the sphere, the Output is 0 degrees.
-*          (As opposed to the expected +/- 90)
 **/
 float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
                                   const geometry_msgs::Point& origin);
