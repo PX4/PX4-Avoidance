@@ -168,18 +168,9 @@ TEST(PlannerFunctionsTests, findAllFreeDirections) {
   double safety_radius = 15.0;
   int resolution_alpha = ALPHA_RES;
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -216,18 +207,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -287,18 +269,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
 
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -358,18 +331,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -429,18 +393,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -502,18 +457,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-  geometry_msgs::Point goal;
-  goal.x = 2.0f;
-  goal.y = 0.0f;
-  goal.z = 2.0f;
-  geometry_msgs::PoseStamped position;
-  position.pose.position.x = 0.0f;
-  position.pose.position.y = 0.0f;
-  position.pose.position.z = 2.0f;
-  geometry_msgs::Point position_old;
-  position_old.x = -1.0f;
-  position_old.y = 0.0;
-  position_old.z = 2.0f;
+	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+	const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+	const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
