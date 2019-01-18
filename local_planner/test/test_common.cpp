@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 #include <limits>
+#include <Eigen/Core>
 #include "../src/nodes/common.h"
 
 using namespace avoidance;
+using namespace Eigen;
 
 geometry_msgs::Point createPoint(const double& x, const double& y, const double& z){
   geometry_msgs::Point retval;
@@ -236,71 +238,58 @@ TEST(Common, azimuthAngletoIndex){
   EXPECT_EQ(0, index_invalid_2);
   EXPECT_EQ(0, index_invalid_3);
   EXPECT_EQ(0, index_invalid_4);
-
 }
 
 TEST(Common, fromPolarToCartesian){
 
 //GIVEN: the elevation angle, azimuth angle, a radius and the position
-std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};  //[-90, 90]
-std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f}; //[-180, 180]
 
-//Check that the input is valid
-int n = 0;
-if(e.size() == z.size()){
-	n = e.size();
-}
-ASSERT_GT(n, 0);
+std::vector<Vector2f> angle_pairs = {Vector2f(-90.f, -180.f), Vector2f(-90.f,
+-90.f), Vector2f(90.f, 179.f), Vector2f(0.f,0.f), Vector2f(45.f, 45.f)};
 
+double rad_1 = 0.0d;
+double rad_2 = 2.0d;
 
-std::vector<double> radius = {0.f, 2.f};
+geometry_msgs::Point pos = createPoint(0.0d, 0.0d, 0.0d);
 
-geometry_msgs::Point pos;
-pos.x = 0.f;
-pos.y = 0.f;
-pos.z = 0.f;
-
-std::vector<geometry_msgs::Point> pos_out;
+std::vector<geometry_msgs::Point> pos_out_0;
+std::vector<geometry_msgs::Point> pos_out_points;
 
 //WHEN: converting the point in polar CS to cartesian CS
 
-for(int i = 0; i<n; i++){
-     pos_out.push_back(fromPolarToCartesian(e[i], z[3], radius[0], pos));
+for(auto  p : angle_pairs){
+  pos_out_0.push_back(fromPolarToCartesian(p(0), p(1), rad_1, pos));
+  pos_out_points.push_back(fromPolarToCartesian(p(0), p(1), rad_2, pos));
 }
-
-for(int i = 0; i<n; i++){
-       pos_out.push_back(fromPolarToCartesian(e[i], z[i], radius[1], pos));
-}
-
 
 //THEN: the cartesian coordinates are
 
-for(int i = 0; i<n; i++){
-    EXPECT_FLOAT_EQ(0.f, pos_out[i].x);
-    EXPECT_FLOAT_EQ(0.f, pos_out[i].y);
-    EXPECT_FLOAT_EQ(0.f, pos_out[i].z);  
+for(auto p : pos_out_0){
+    EXPECT_FLOAT_EQ(0.f, p.x);
+    EXPECT_FLOAT_EQ(0.f, p.y);
+    EXPECT_FLOAT_EQ(0.f, p.z);  
 }
 
 
-EXPECT_NEAR(-0.f, pos_out[5].x, 0.00001);
-EXPECT_NEAR(-0.f, pos_out[5].y, 0.00001);
-EXPECT_FLOAT_EQ(-2.f, pos_out[5].z);  
+EXPECT_NEAR(-0.f, pos_out_points[0].x, 0.00001);
+EXPECT_NEAR(-0.f, pos_out_points[0].y, 0.00001);
+EXPECT_FLOAT_EQ(-2.f, pos_out_points[0].z);  
 
-EXPECT_NEAR(-0.f, pos_out[6].x, 0.00001);
-EXPECT_NEAR(0.f, pos_out[6].y, 0.00001);
-EXPECT_FLOAT_EQ(-2.f, pos_out[6].z);  
+EXPECT_NEAR(-0.f, pos_out_points[1].x, 0.00001);
+EXPECT_NEAR(0.f, pos_out_points[1].y, 0.00001);
+EXPECT_FLOAT_EQ(-2.f, pos_out_points[1].z);  
 
-EXPECT_NEAR(0.f, pos_out[7].x, 0.00001);
-EXPECT_NEAR(-0.f, pos_out[7].y, 0.00001);
-EXPECT_FLOAT_EQ(2.f, pos_out[7].z);  
+EXPECT_NEAR(0.f, pos_out_points[2].x, 0.00001);
+EXPECT_NEAR(-0.f, pos_out_points[2].y, 0.00001);
+EXPECT_FLOAT_EQ(2.f, pos_out_points[2].z);  
 
-EXPECT_NEAR(0.f, pos_out[8].x, 0.00001);
-EXPECT_NEAR(2.f, pos_out[8].y, 0.00001);
-EXPECT_NEAR(0.f, pos_out[8].z, 0.00001);
+EXPECT_NEAR(0.f, pos_out_points[3].x, 0.00001);
+EXPECT_NEAR(2.f, pos_out_points[3].y, 0.00001);
+EXPECT_NEAR(0.f, pos_out_points[3].z, 0.00001);
 
-EXPECT_NEAR(1.f, pos_out[9].x, 0.00001);
-EXPECT_NEAR(1.f, pos_out[9].y, 0.00001);
-EXPECT_NEAR(1.414213562, pos_out[9].z, 0.00001);
+EXPECT_NEAR(1.f, pos_out_points[4].x, 0.00001);
+EXPECT_NEAR(1.f, pos_out_points[4].y, 0.00001);
+EXPECT_NEAR(1.414213562, pos_out_points[4].z, 0.00001);
 }
 
 TEST(Common, PolarToCatesianToPolar){
@@ -349,11 +338,11 @@ pos.z = 3.84;
 //WHEN: going through some valid cartesian coordinates and transform it to polar and back to cartesian
 for(float x = -5.f; x <= 5.f; x = x + 0.5f){
 	for(float y = -5.f; y <= 5.f; y = y + 0.6f){
-		for(float y = -5.f; y <= 5.f; y = y + 0.4f){
-			float z = azimuthAnglefromCartesian(x, y, pos);
+		for(float z = -5.f; z <= 5.f; z = z + 0.4f){
+			float az = azimuthAnglefromCartesian(x, y, pos);
 			float e = elevationAnglefromCartesian(x, y, z, pos);
 			double radius = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y) + (z - pos.z) * (z - pos.z));
-			geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, z, radius, pos);
+			geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, az, radius, pos);
 
 			//THEN: the resulting catesian positions are expected to be the same as before the conversion
 			EXPECT_NEAR(x, p_cartesian.x, 0.001);
@@ -469,3 +458,24 @@ TEST(Common, getAngularVel) {
   EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
 }
 
+TEST(Common, IndexPolarIndex ){
+
+  // GIVEN:  some valid histogram indices and resolution
+  int res = 6;
+
+  for(int e_ind = 0; e_ind == 30; e_ind + 5 ){
+    for(int z_ind = 0; z_ind == 60; z_ind + 5){
+      //WHEN: transform it to polar and back to the indices
+      float e_angle = elevationIndexToAngle(e_ind, res);
+      float z_angle = azimuthIndexToAngle(z_ind, res);
+
+      int e_ind_new = elevationAngletoIndex(e_angle, res);
+      int z_ind_new = azimuthAngletoIndex(z_angle, res);
+
+      //THEN: new histogram index should be the same as before the conversion
+      EXPECT_EQ(e_ind, e_ind_new);
+      EXPECT_EQ(z_ind, z_ind_new);
+
+    }
+  }
+}

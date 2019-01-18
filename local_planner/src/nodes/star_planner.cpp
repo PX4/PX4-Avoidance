@@ -39,8 +39,7 @@ void StarPlanner::setCloud(
   complete_cloud_ = complete_cloud;
 }
 
-void StarPlanner::setBoxSize(const Box& histogram_box,
-                             double ground_distance) {
+void StarPlanner::setBoxSize(const Box& histogram_box, double ground_distance) {
   histogram_box_.radius_ = histogram_box.radius_;
   ground_distance_ = ground_distance;
 }
@@ -111,8 +110,8 @@ double StarPlanner::treeCostFunction(int node_number) {
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
   geometry_msgs::Point node_position = tree_[node_number].getPosition();
-  int goal_z = floor(azimuthAnglefromCartesian(goal_, node_position));
-  int goal_e = floor(elevationAnglefromCartesian(goal_, node_position));
+  float goal_z = azimuthAnglefromCartesian(goal_, node_position);
+  float goal_e = elevationAnglefromCartesian(goal_, node_position);
 
   int origin = tree_[node_number].origin_;
   geometry_msgs::Point origin_position = tree_[origin].getPosition();

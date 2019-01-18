@@ -81,8 +81,8 @@ int elevationAngletoIndex(float e, int res) {  //[-90,90]
     e = 89;
   }
   e += 90;
-  e = e + (res - ((int)e % res));  //[-80,+90]
-  return floor(e / res )- 1;         //[0,17]
+  e = e + (res - (static_cast<int>(e) % res));  //[-80,+90]
+  return e / res - 1;         //[0,17]
 }
 
 int azimuthAngletoIndex(float z, int res) {  //[-180,180]
@@ -94,7 +94,7 @@ int azimuthAngletoIndex(float z, int res) {  //[-180,180]
     z = -180;
   }
   z += 180;
-  z = z + (res - ((int)z % res));  //[-80,+90]
+  z = z + (res - (static_cast<int>(z)% res));  //[-80,+90]
   return z / res - 1;         //[0,17]
 }
 

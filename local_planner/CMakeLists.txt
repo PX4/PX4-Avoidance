@@ -201,8 +201,8 @@ if(CATKIN_ENABLE_TESTING)
 	                                      test/test_common.cpp
 	                                      test/test_local_planner.cpp
 	                                      test/test_planner_functions.cpp
-                                              test/test_star_planner.cpp
-                                              test/test_waypoint_generator.cpp)
+                                        test/test_star_planner.cpp
+                                        test/test_waypoint_generator.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
 	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
 	                                             ${catkin_LIBRARIES}

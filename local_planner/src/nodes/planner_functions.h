@@ -42,6 +42,11 @@
 
 namespace avoidance {
 
+/**
+* @brief     initializes the grid cell dimensions with resolution angle
+* @param[in] cell
+* @returns   cell with cell width and cell height
+**/
 void initGridCells(nav_msgs::GridCells *cell);
 double adaptSafetyMarginHistogram(double dist_to_closest_point,
                                   double cloud_size, double min_cloud_size);
