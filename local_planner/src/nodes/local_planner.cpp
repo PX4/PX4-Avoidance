@@ -78,17 +78,18 @@ void LocalPlanner::setVelocity() {
 }
 
 void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
-  goal_ = goal;
-  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x, goal_.y, goal_.z);
+  goal_ = toEigen(goal);
+  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(),
+           goal_.z());
   applyGoal();
 }
 
-geometry_msgs::Point LocalPlanner::getGoal() { return goal_; }
+geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
 
 void LocalPlanner::applyGoal() {
   initGridCells(&path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
-  star_planner_.setGoal(goal_);
+  star_planner_.setGoal(toPoint(goal_));
   goal_dist_incline_.clear();
 }
 
@@ -126,11 +127,10 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
-  filterPointCloud(final_cloud_, closest_point_,
-                   distance_to_closest_point_, counter_close_points_backoff_,
-                   complete_cloud_, min_cloud_size_,
-                   min_dist_backoff_, histogram_box_,
-                   pose_.pose.position, min_realsense_dist_);
+  filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
+                   counter_close_points_backoff_, complete_cloud_,
+                   min_cloud_size_, min_dist_backoff_, histogram_box_,
+                   toEigen(pose_.pose.position), min_realsense_dist_);
 
   safety_radius_ = adaptSafetyMarginHistogram(
       distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
@@ -195,7 +195,7 @@ void LocalPlanner::determineStrategy() {
 
   if (!reach_altitude_) {
     starting_height_ =
-        std::max(goal_.z - 0.5, take_off_pose_.pose.position.z + 1.0);
+        std::max(goal_.z() - 0.5, take_off_pose_.pose.position.z + 1.0);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m",
              starting_height_);
     waypoint_type_ = reachHeight;
@@ -226,10 +226,10 @@ void LocalPlanner::determineStrategy() {
         reach_altitude_ && use_back_off_) {
       if (!back_off_) {
         back_off_point_ = closest_point_;
-        back_off_start_point_ = pose_.pose.position;
+        back_off_start_point_ = toEigen(pose_.pose.position);
         back_off_ = true;
       } else {
-        double dist = distance3DCartesian(pose_.pose.position, back_off_point_);
+        double dist = (toEigen(pose_.pose.position) - back_off_point_).norm();
         if (dist > min_dist_backoff_ + 1.0) {
           back_off_ = false;
         }
@@ -254,10 +254,10 @@ void LocalPlanner::determineStrategy() {
             std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
         int n_occupied_cells = 0;
 
-        int goal_e_angle =
-            floor(elevationAnglefromCartesian(goal_, pose_.pose.position));
-        int goal_z_angle =
-            floor(azimuthAnglefromCartesian(goal_, pose_.pose.position));
+        int goal_e_angle = floor(
+            elevationAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
+        int goal_z_angle = floor(
+            azimuthAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
 
         int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
         int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
@@ -285,13 +285,13 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
 
-        findFreeDirections(polar_histogram_, safety_radius_, path_candidates_,
-                           path_selected_, path_rejected_, path_blocked_,
-                           path_waypoints_, cost_path_candidates_, goal_, pose_,
-                           position_old_, goal_cost_param_, smooth_cost_param_,
-                           height_change_cost_param_adapted_,
-                           height_change_cost_param_, velocity_mod_ < 0.1,
-                           ALPHA_RES);
+        findFreeDirections(
+            polar_histogram_, safety_radius_, path_candidates_, path_selected_,
+            path_rejected_, path_blocked_, path_waypoints_,
+            cost_path_candidates_, goal_, toEigen(pose_.pose.position),
+            position_old_, goal_cost_param_, smooth_cost_param_,
+            height_change_cost_param_adapted_, height_change_cost_param_,
+            velocity_mod_ < 0.1, ALPHA_RES);
 
         if (use_VFH_star_) {
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
@@ -314,8 +314,8 @@ void LocalPlanner::determineStrategy() {
           findFreeDirections(
               polar_histogram_, safety_radius_, path_candidates_,
               path_selected_, path_rejected_, path_blocked_, path_waypoints_,
-              cost_path_candidates_, goal_, pose_, position_old_,
-              goal_cost_param_, smooth_cost_param_,
+              cost_path_candidates_, goal_, toEigen(pose_.pose.position),
+              position_old_, goal_cost_param_, smooth_cost_param_,
               height_change_cost_param_adapted_, height_change_cost_param_,
               velocity_mod_ < 0.1, ALPHA_RES);
           if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
@@ -335,7 +335,7 @@ void LocalPlanner::determineStrategy() {
       first_brake_ = true;
     }
   }
-  position_old_ = pose_.pose.position;
+  position_old_ = toEigen(pose_.pose.position);
 }
 
 void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
@@ -397,7 +397,7 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 void LocalPlanner::reprojectPoints(Histogram histogram) {
   double n_points = 0;
   double dist, age;
-  geometry_msgs::Point temp_array[4];
+  Eigen::Vector3f temp_array[4];
   reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
 
@@ -414,27 +414,26 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
         double beta_z = azimuthIndexToAngle(z, ALPHA_RES);
 
         // transform from Polar to Cartesian
-        temp_array[0] =
-            fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
-                                 histogram.get_dist(e, z), position_old_);
-        temp_array[1] =
-            fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
-                                 histogram.get_dist(e, z), position_old_);
-        temp_array[2] =
-            fromPolarToCartesian(beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
-                                 histogram.get_dist(e, z), position_old_);
-        temp_array[3] =
-            fromPolarToCartesian(beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
-                                 histogram.get_dist(e, z), position_old_);
+        temp_array[0] = fromPolarToCartesian(
+            beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
+            histogram.get_dist(e, z), toPoint(position_old_));
+        temp_array[1] = fromPolarToCartesian(
+            beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
+            histogram.get_dist(e, z), toPoint(position_old_));
+        temp_array[2] = fromPolarToCartesian(
+            beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
+            histogram.get_dist(e, z), toPoint(position_old_));
+        temp_array[3] = fromPolarToCartesian(
+            beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
+            histogram.get_dist(e, z), toPoint(position_old_));
 
         for (int i = 0; i < 4; i++) {
-          dist = distance3DCartesian(pose_.pose.position, temp_array[i]);
+          dist = (toEigen(pose_.pose.position) - temp_array[i]).norm();
           age = histogram.get_age(e, z);
 
           if (dist < 2.0 * histogram_box_.radius_ && dist > 0.3 &&
               age < reproj_age_) {
-            reprojected_points_.points.push_back(pcl::PointXYZ(
-                temp_array[i].x, temp_array[i].y, temp_array[i].z));
+            reprojected_points_.points.push_back(toXYZ(temp_array[i]));
             reprojected_points_age_.push_back(age);
             reprojected_points_dist_.push_back(dist);
           }
@@ -447,8 +446,8 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 // calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_) {
-    double goal_dist = distance3DCartesian(pose_.pose.position, goal_);
-    double goal_dist_old = distance3DCartesian(position_old_, goal_);
+    double goal_dist = (toEigen(pose_.pose.position) - goal_).norm();
+    double goal_dist_old = (position_old_ - goal_).norm();
 
     ros::Time time = ros::Time::now();
     ros::Duration time_diff = time - integral_time_old_;
@@ -500,20 +499,18 @@ void LocalPlanner::getDirectionFromCostMap() {
 void LocalPlanner::stopInFrontObstacles() {
   if (first_brake_) {
     double braking_distance =
-        fabsf(distance_to_closest_point_ - keep_distance_);
-    Eigen::Vector2f pose_to_goal(goal_.x - pose_.pose.position.x,
-                                 goal_.y - pose_.pose.position.y);
-    goal_.x = pose_.pose.position.x +
-              (braking_distance * pose_to_goal(0) / pose_to_goal.norm());
-    goal_.y = pose_.pose.position.y +
-              (braking_distance * pose_to_goal(1) / pose_to_goal.norm());
+        std::abs(distance_to_closest_point_ - keep_distance_);
+    Eigen::Vector2f xyPos(pose_.pose.position.x, pose_.pose.position.y);
+    Eigen::Vector2f pose_to_goal = goal_.topRows<2>() - xyPos;
+    goal_.topRows<2>() =
+        xyPos + braking_distance * pose_to_goal / pose_to_goal.norm();
     first_brake_ = false;
     stop_in_front_active_ = true;
   }
   ROS_INFO(
       "\033[0;35m [OA] New Stop Goal: [%.2f %.2f %.2f], obstacle distance "
       "%.2f. \033[0m",
-      goal_.x, goal_.y, goal_.z, distance_to_closest_point_);
+      goal_.x(), goal_.y(), goal_.z(), distance_to_closest_point_);
 }
 
 geometry_msgs::PoseStamped LocalPlanner::getPosition() { return pose_; }
@@ -565,8 +562,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
   out.last_path_time = last_path_time_;
 
-  out.back_off_point = back_off_point_;
-  out.back_off_start_point = back_off_start_point_;
+  out.back_off_point = toPoint(back_off_point_);
+  out.back_off_start_point = toPoint(back_off_start_point_);
   out.min_dist_backoff = min_dist_backoff_;
 
   out.take_off_pose = take_off_pose_;

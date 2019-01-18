@@ -79,7 +79,7 @@ class StarPlanner {
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
-  geometry_msgs::Point goal_;
+  Eigen::Vector3f goal_;
   geometry_msgs::PoseStamped pose_;
 
   nav_msgs::GridCells path_waypoints_;

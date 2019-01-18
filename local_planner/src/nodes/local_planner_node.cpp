@@ -347,8 +347,8 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
     m.id = i + 1;
     m.action = visualization_msgs::Marker::ADD;
     geometry_msgs::Point p =
-        fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y, 1.0,
-                             drone_pos.pose.position);
+        toPoint(fromPolarToCartesian((int)path.cells[i].x, (int)path.cells[i].y,
+                                     1.0, drone_pos.pose.position));
     m.pose.position = p;
 
     m.color.r = red;
@@ -656,9 +656,9 @@ void LocalPlannerNode::publishTree() {
 
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
-    geometry_msgs::Point p1 = tree[node_nr].getPosition();
+    geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
     int origin = tree[node_nr].origin_;
-    geometry_msgs::Point p2 = tree[origin].getPosition();
+    geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
     tree_marker.points.push_back(p1);
     tree_marker.points.push_back(p2);
   }

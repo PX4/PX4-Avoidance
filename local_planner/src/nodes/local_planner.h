@@ -147,12 +147,12 @@ class LocalPlanner {
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
   geometry_msgs::PoseStamped pose_;
-  geometry_msgs::Point min_box_, max_box_, pose_stop_;
-  geometry_msgs::Point goal_;
-  geometry_msgs::Point back_off_point_;
-  geometry_msgs::Point back_off_start_point_;
-  geometry_msgs::Point position_old_;
-  geometry_msgs::Point closest_point_;
+  Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f avoid_centerpoint_ = Eigen::Vector3f::Zero();
   geometry_msgs::TwistStamped curr_vel_;
 
   nav_msgs::GridCells FOV_cells_;

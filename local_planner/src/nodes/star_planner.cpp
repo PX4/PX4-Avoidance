@@ -39,14 +39,13 @@ void StarPlanner::setCloud(
   complete_cloud_ = complete_cloud;
 }
 
-void StarPlanner::setBoxSize(const Box& histogram_box,
-                             double ground_distance) {
+void StarPlanner::setBoxSize(const Box& histogram_box, double ground_distance) {
   histogram_box_.radius_ = histogram_box.radius_;
   ground_distance_ = ground_distance;
 }
 
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
-  goal_ = goal;
+  goal_ = toEigen(goal);
   tree_age_ = 1000;
 }
 
@@ -73,7 +72,7 @@ double StarPlanner::treeCostFunction(int node_number) {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
-  geometry_msgs::Point origin_position = tree_[origin].getPosition();
+  Eigen::Vector3f origin_position = tree_[origin].getPosition();
   float goal_z = azimuthAnglefromCartesian(goal_, origin_position);
   float goal_e = elevationAnglefromCartesian(goal_, origin_position);
 
@@ -100,8 +99,8 @@ double StarPlanner::treeCostFunction(int node_number) {
     if (partner_node_idx >= 0) {
       geometry_msgs::Point partner_node_position =
           path_node_positions_[partner_node_idx];
-      geometry_msgs::Point node_position = tree_[node_number].getPosition();
-      double dist = distance3DCartesian(partner_node_position, node_position);
+      Eigen::Vector3f node_position = tree_[node_number].getPosition();
+      double dist = (toEigen(partner_node_position) - node_position).norm();
       smooth_cost_to_old_tree = 200 * dist / (0.5 * tree_[node_number].depth_);
     }
   }
@@ -110,14 +109,14 @@ double StarPlanner::treeCostFunction(int node_number) {
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
 double StarPlanner::treeHeuristicFunction(int node_number) {
-  geometry_msgs::Point node_position = tree_[node_number].getPosition();
-  int goal_z = floor(azimuthAnglefromCartesian(goal_, node_position));
-  int goal_e = floor(elevationAnglefromCartesian(goal_, node_position));
+  Eigen::Vector3f node_position = tree_[node_number].getPosition();
+  int goal_z = float(azimuthAnglefromCartesian(goal_, node_position));
+  int goal_e = float(elevationAnglefromCartesian(goal_, node_position));
 
   int origin = tree_[node_number].origin_;
-  geometry_msgs::Point origin_position = tree_[origin].getPosition();
-  double origin_goal_dist = distance3DCartesian(goal_, origin_position);
-  double goal_dist = distance3DCartesian(goal_, node_position);
+  Eigen::Vector3f origin_position = tree_[origin].getPosition();
+  double origin_goal_dist = (goal_ - origin_position).norm();
+  double goal_dist = (goal_ - node_position).norm();
   double goal_cost = (goal_dist / origin_goal_dist - 0.9) * 5000;
 
   //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);
@@ -141,7 +140,7 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, pose_.pose.position));
+  tree_.push_back(TreeNode(0, 0, toEigen(pose_.pose.position)));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = std::round((-curr_yaw_ * 180.0 / M_PI)) +
                       90;  // from radian to angle and shift reference to y-axis
@@ -151,26 +150,24 @@ void StarPlanner::buildLookAheadTree() {
   int n = 0;
 
   while (n < n_expanded_nodes_) {
-    geometry_msgs::Point origin_position = tree_[origin].getPosition();
+    Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
-    geometry_msgs::Point origin_origin_position =
-        tree_[old_origin].getPosition();
+    Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
 
     bool node_valid = true;
 
     // crop pointcloud
     pcl::PointCloud<pcl::PointXYZ> cropped_cloud;
-    geometry_msgs::Point closest_point;       // unused
-    bool hist_is_empty = false;               // unused
+    Eigen::Vector3f closest_point;  // unused
+    bool hist_is_empty = false;     // unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;
-    histogram_box_.setBoxLimits(origin_position, ground_distance_);
+    histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance_);
 
-    filterPointCloud(cropped_cloud, closest_point,
-                     distance_to_closest_point, backoff_points_counter,
-                     complete_cloud_, min_cloud_size_,
-                     min_dist_backoff_, histogram_box_,
-                     origin_position, min_realsense_dist_);
+    filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
+                     backoff_points_counter, complete_cloud_, min_cloud_size_,
+                     min_dist_backoff_, histogram_box_, origin_position,
+                     min_realsense_dist_);
 
     if (origin != 0 && backoff_points_counter > 20 &&
         cropped_cloud.points.size() > 160) {
@@ -200,9 +197,10 @@ void StarPlanner::buildLookAheadTree() {
       histogram.downsample();
       findFreeDirections(histogram, 25, path_candidates, path_selected,
                          path_rejected, path_blocked, path_waypoints_,
-                         cost_path_candidates, goal_, pose_,
-                         origin_origin_position, goal_cost_param_,
-                         smooth_cost_param_, height_change_cost_param_adapted_,
+                         cost_path_candidates, goal_,
+                         toEigen(pose_.pose.position), origin_origin_position,
+                         goal_cost_param_, smooth_cost_param_,
+                         height_change_cost_param_adapted_,
                          height_change_cost_param_, false, 2 * ALPHA_RES);
 
       if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
@@ -216,12 +214,11 @@ void StarPlanner::buildLookAheadTree() {
           int z = path_candidates.cells[cost_idx_sorted[i]].y;
 
           // check if another close node has been added
-          geometry_msgs::Point node_location =
-              fromPolarToCartesian(e, z, tree_node_distance_, origin_position);
+          Eigen::Vector3f node_location = fromPolarToCartesian(
+              e, z, tree_node_distance_, toPoint(origin_position));
           int close_nodes = 0;
           for (size_t i = 0; i < tree_.size(); i++) {
-            double dist =
-                distance3DCartesian(tree_[i].getPosition(), node_location);
+            double dist = (tree_[i].getPosition() - node_location).norm();
             if (dist < 0.2) {
               close_nodes++;
             }
@@ -236,9 +233,8 @@ void StarPlanner::buildLookAheadTree() {
             tree_.back().heuristic_ = h;
             tree_.back().total_cost_ =
                 tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-            double dx = node_location.x - origin_position.x;
-            double dy = node_location.y - origin_position.y;
-            tree_.back().yaw_ = atan2(dy, dx);
+            Eigen::Vector3f diff = node_location - origin_position;
+            tree_.back().yaw_ = atan2(diff.y(), diff.x());
             childs++;
           }
         }
@@ -269,10 +265,10 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.clear();
   while (tree_end > 0) {
     path_node_origins_.push_back(tree_end);
-    path_node_positions_.push_back(tree_[tree_end].getPosition());
+    path_node_positions_.push_back(toPoint(tree_[tree_end].getPosition()));
     tree_end = tree_[tree_end].origin_;
   }
-  path_node_positions_.push_back(tree_[0].getPosition());
+  path_node_positions_.push_back(toPoint(tree_[0].getPosition()));
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 

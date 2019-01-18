@@ -4,6 +4,7 @@
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Vector3Stamped.h>
+#include <Eigen/Core>
 
 #include <pcl/point_cloud.h>
 #include <pcl_conversions/pcl_conversions.h>
@@ -11,10 +12,6 @@
 namespace avoidance {
 
 float distance2DPolar(int e1, int z1, int e2, int z2);
-float computeL2Dist(const geometry_msgs::Point& position,
-                    const pcl::PointXYZ& xyz);
-float distance3DCartesian(const geometry_msgs::Point& a,
-                          const geometry_msgs::Point& b);
 
 /**
 * @brief     Convertes the point from polar CS to cartesian CS
@@ -24,8 +21,8 @@ float distance3DCartesian(const geometry_msgs::Point& a,
 * @param[in] pos Position from which to convert the point
 * @returns   point in cartesian CS
 **/
-geometry_msgs::Point fromPolarToCartesian(float e, float z, double radius,
-                                          const geometry_msgs::Point& pos);
+Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
+                                     const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
 double elevationIndexToAngle(int e, double res);
@@ -43,20 +40,18 @@ double azimuthIndexToAngle(int z, double res);
 * @returns   Angle in integer degrees from the positive y-axis (-180, 180]
 * @warning   If the origin and the position coincide, the output is 0 degrees
 **/
-float azimuthAnglefromCartesian(const geometry_msgs::Point& position,
-                                const geometry_msgs::Point& origin);
-float azimuthAnglefromCartesian(double x, double y,
-                                const geometry_msgs::Point& pos);
-
+float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
+                                const Eigen::Vector3f& origin);
+float azimuthAnglefromCartesian(double x, double y, const Eigen::Vector3f& pos);
 /**
 * @brief   Compute the elevation angle for a point given in cartesian
 *coordinates
 * @note    Output is in degrees (-90, 90)
 **/
-float elevationAnglefromCartesian(const geometry_msgs::Point& pos,
-                                  const geometry_msgs::Point& origin);
+float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
+                                  const Eigen::Vector3f& origin);
 float elevationAnglefromCartesian(double x, double y, double z,
-                                  const geometry_msgs::Point& pos);
+                                  const Eigen::Vector3f& pos);
 /**
 * @brief     Checks if the computed histogram index given an elevation angle and
 *resolution is valid
@@ -75,9 +70,9 @@ int azimuthAngletoIndex(float z, int res);
 **/
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v);
+
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          double yaw);
-void normalize(geometry_msgs::Point& p);
 
 /**
 * @brief     computes a speed using the upper and lower speed limit, as well as
@@ -106,8 +101,11 @@ void wrapAngleToPlusMinusPI(double& angle);
 **/
 double getAngularVelocity(double desired_yaw, double curr_yaw);
 
-Eigen::Vector3f convert(const geometry_msgs::Point& p);
-geometry_msgs::Point convert(const Eigen::Vector3f& p);
+Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
+Eigen::Vector3f toEigen(const pcl::PointXYZ& xyz);
+
+geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
+pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
 }
 
 #endif  // COMMON_H
