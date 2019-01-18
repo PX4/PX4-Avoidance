@@ -270,65 +270,61 @@ TEST(Common, fromPolarToCartesian) {
   EXPECT_NEAR(1.414213562, pos_out[9].z(), 0.00001);
 }
 
-TEST(Common, PolarToCatesianToPolar){
+TEST(Common, PolarToCatesianToPolar) {
+  // GIVEN: a current position and a radius
+  double radius = 2.168;
+  Eigen::Vector3f pos(4.21, 2.34, 0.19);
 
-//GIVEN: a current position and a radius
-double radius = 2.168;
-geometry_msgs::Point pos;
-pos.x = 4.21;
-pos.y = 2.34;
-pos.z = 0.19;
+  // WHEN: going through all valid polar coordinates and transform it to
+  // cartesian and back again
+  for (float e = -90.f; e <= 90.f; e = e + 3.f) {
+    for (float z = -180.f; z <= 180.f; z = z + 6.f) {
+      Eigen::Vector3f p_cartesian =
+          fromPolarToCartesian(e, z, radius, toPoint(pos));
+      float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
+      float e_new = elevationAnglefromCartesian(p_cartesian, pos);
 
-//WHEN: going through all valid polar coordinates and transform it to cartesian and back again
-for(float e = -90.f; e <= 90.f; e = e + 3.f){
-	for(float z = -180.f; z <= 180.f; z = z + 6.f){
-		geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, z, radius, pos);
-		float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
-		float e_new = elevationAnglefromCartesian(p_cartesian, pos);
+      // THEN: the resulting polar positions are expected to be the same as
+      // before the conversion
+      ASSERT_GE(z_new, -180);
+      ASSERT_LE(z_new, 180);
+      ASSERT_GE(e_new, -90);
+      ASSERT_LE(e_new, 90);
 
-		//THEN: the resulting polar positions are expected to be the same as before the conversion
-		ASSERT_GE(z_new, -180);
-		ASSERT_LE(z_new, 180);
-		ASSERT_GE(e_new, -90);
-		ASSERT_LE(e_new, 90);
-
-		if(std::abs(std::abs(e_new) - 90.f) > 1e-5){
-			if(std::abs(std::abs(z_new) - 180.f) < 1e-5){
-				EXPECT_NEAR(std::abs(z), std::abs(z_new), 0.001);
-			}else{
-				EXPECT_NEAR(z, z_new, 0.001);
-			}
-		}
-		EXPECT_NEAR(e, e_new, 0.001);
-
-	}
-}
+      if (std::abs(std::abs(e_new) - 90.f) > 1e-5) {
+        if (std::abs(std::abs(z_new) - 180.f) < 1e-5) {
+          EXPECT_NEAR(std::abs(z), std::abs(z_new), 0.001);
+        } else {
+          EXPECT_NEAR(z, z_new, 0.001);
+        }
+      }
+      EXPECT_NEAR(e, e_new, 0.001);
+    }
+  }
 }
 
-TEST(Common, CatesianToPolarToCartesian){
+TEST(Common, CartesianToPolarToCartesian) {
+  // GIVEN: a current position
+  Eigen::Vector3f pos(0.81, 5.17, 3.84);
 
-//GIVEN: a current position
-geometry_msgs::Point pos;
-pos.x = 0.81;
-pos.y = 5.17;
-pos.z = 3.84;
+  // WHEN: going through some valid cartesian coordinates and transform it to
+  // polar and back to cartesian
+  for (float x = -5.f; x <= 5.f; x = x + 0.5f) {
+    for (float y = -5.f; y <= 5.f; y = y + 0.6f) {
+      for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
+        Eigen::Vector3f origin(x, y, z);
+        float az = azimuthAnglefromCartesian(origin, pos);
+        float e = elevationAnglefromCartesian(origin, pos);
+        double radius = (origin - pos).norm();
+        Eigen::Vector3f p_cartesian =
+            fromPolarToCartesian(e, az, radius, toPoint(pos));
 
-//WHEN: going through some valid cartesian coordinates and transform it to polar and back to cartesian
-for(float x = -5.f; x <= 5.f; x = x + 0.5f){
-	for(float y = -5.f; y <= 5.f; y = y + 0.6f){
-		for(float y = -5.f; y <= 5.f; y = y + 0.4f){
-			float z = azimuthAnglefromCartesian(x, y, pos);
-			float e = elevationAnglefromCartesian(x, y, z, pos);
-			double radius = sqrt((x - pos.x) * (x - pos.x) + (y - pos.y) * (y - pos.y) + (z - pos.z) * (z - pos.z));
-			geometry_msgs::Point p_cartesian = fromPolarToCartesian(e, z, radius, pos);
-
-			//THEN: the resulting catesian positions are expected to be the same as before the conversion
-			EXPECT_NEAR(x, p_cartesian.x, 0.001);
-			EXPECT_NEAR(y, p_cartesian.y, 0.001);
-			EXPECT_NEAR(z, p_cartesian.z, 0.001);
-		}
-	}
-}
+        // THEN: the resulting cartesian positions are expected to be the same as
+        // before the conversion
+        EXPECT_LT((origin - p_cartesian).norm(), 0.001);
+      }
+    }
+  }
 }
 
 TEST(Common, nextYawAngle) {
