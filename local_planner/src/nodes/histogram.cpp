@@ -30,6 +30,7 @@ void Histogram::upsample() {
     temp_age[i].resize(z_dim);
     temp_dist[i].resize(z_dim);
   }
+
   for (int i = 0; i < e_dim; ++i) {
     for (int j = 0; j < z_dim; ++j) {
       int i_lowres = floor(i / 2);

@@ -136,7 +136,7 @@ add_library(local_planner
   src/nodes/common.cpp
   src/nodes/rviz_world_loader.cpp
 )
-	
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
@@ -205,16 +205,17 @@ if(CATKIN_ENABLE_TESTING)
 	catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
 	                                      test/test_example.cpp
 	                                      test/test_common.cpp
-	                                      test/test_local_planner.cpp
-	                                      test/test_planner_functions.cpp
-                                              test/test_star_planner.cpp
-                                              test/test_waypoint_generator.cpp)
+                                        test/test_histogram.cpp
+                                        test/test_local_planner.cpp
+                                        test/test_planner_functions.cpp
+                                        test/test_star_planner.cpp
+                                        test/test_waypoint_generator.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
 	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
 	                                             ${catkin_LIBRARIES}
 	                                             ${YAML_CPP_LIBRARIES})
 	endif()
-	
+
 	## Add folders to be run by python nosetests
 	# catkin_add_nosetests(test)
 endif()
