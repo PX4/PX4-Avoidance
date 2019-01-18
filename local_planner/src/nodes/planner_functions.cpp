@@ -42,7 +42,6 @@ void filterPointCloud(
   distance_to_closest_point = HUGE_VAL;
   float distance;
   counter_backoff = 0;
-  temp_sphere_center.x = 0.0;
 
   for (size_t i = 0; i < complete_cloud.size(); ++i) {
     for (const pcl::PointXYZ &xyz : complete_cloud[i]) {
