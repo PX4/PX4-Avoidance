@@ -80,6 +80,21 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    source /opt/ros/kinetic/setup.bash
    ```
 
+  Full installation of ROS Kinetic comes with Gazebo 7.
+  
+  If you are using different version of Gazebo, 
+  
+  please make sure install ros-gazebo related packages
+  
+  For Gazebo 8,
+  ```
+  apt install ros-kinetic-gazebo8-*
+  ```
+  For Gazebo 9,
+  ```
+  apt install ros-kinetic-gazebo9-*
+  ```
+  
 1. Initialize rosdep.
 
    ```bash
@@ -222,7 +237,7 @@ This section shows how to start the *local_planner* and use it for avoidance in 
 
 The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
 
-* simulate a forward looking stereo camera running OpenCV's block matching algorithm
+* simulate a forward looking stereo camera running OpenCV's block matching algorithm (SGBM by default)
 
    ```bash
    # if stereo-image-proc not yet installed
@@ -234,6 +249,9 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the    message, either run:
 
    ```bash
+   # if image_view is not yet installed
+   sudo apt-get install ros-kinetic-image-view
+   
    rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
    ```
 
