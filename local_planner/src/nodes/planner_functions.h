@@ -43,9 +43,6 @@
 namespace avoidance {
 
 void initGridCells(nav_msgs::GridCells *cell);
-void calculateSphere(geometry_msgs::Point &sphere_center, int &sphere_age,
-                     geometry_msgs::Point temp_centerpoint,
-                     int counter_sphere_points, double sphere_speed);
 double adaptSafetyMarginHistogram(double dist_to_closest_point,
                                   double cloud_size, double min_cloud_size);
 void filterPointCloud(
@@ -97,8 +94,5 @@ bool calculateCostMap(std::vector<float> cost_path_candidates,
 bool getDirectionFromTree(geometry_msgs::Point &p,
                           std::vector<geometry_msgs::Point> path_node_positions,
                           geometry_msgs::Point position);
-geometry_msgs::Point getSphereAdaptedWaypoint(
-    geometry_msgs::Point position, geometry_msgs::Point wp,
-    geometry_msgs::Point avoid_centerpoint, double avoid_radius);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
