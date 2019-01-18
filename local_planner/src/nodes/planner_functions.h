@@ -47,13 +47,11 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
                                   double cloud_size, double min_cloud_size);
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
-    Eigen::Vector3f &closest_point,
-    double &distance_to_closest_point,
+    Eigen::Vector3f &closest_point, double &distance_to_closest_point,
     int &counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
-    double min_cloud_size, double min_dist_backoff,
-    Box histogram_box, const Eigen::Vector3f &position,
-    double min_realsense_dist);
+    double min_cloud_size, double min_dist_backoff, Box histogram_box,
+    const Eigen::Vector3f &position, double min_realsense_dist);
 void calculateFOV(double h_FOV, double v_FOV, std::vector<int> &z_FOV_idx,
                   int &e_FOV_min, int &e_FOV_max, double yaw, double pitch);
 void propagateHistogram(Histogram &polar_histogram_est,

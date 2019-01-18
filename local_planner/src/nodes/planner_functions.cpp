@@ -30,13 +30,11 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
 // considered
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
-    Eigen::Vector3f &closest_point,
-    double &distance_to_closest_point,
+    Eigen::Vector3f &closest_point, double &distance_to_closest_point,
     int &counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
-    double min_cloud_size, double min_dist_backoff,
-    Box histogram_box, const Eigen::Vector3f &position,
-    double min_realsense_dist) {
+    double min_cloud_size, double min_dist_backoff, Box histogram_box,
+    const Eigen::Vector3f &position, double min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
   distance_to_closest_point = HUGE_VAL;

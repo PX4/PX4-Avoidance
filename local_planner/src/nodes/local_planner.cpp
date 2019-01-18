@@ -127,10 +127,9 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
-  filterPointCloud(final_cloud_, closest_point_,
-                   distance_to_closest_point_, counter_close_points_backoff_,
-                   complete_cloud_, min_cloud_size_,
-                   min_dist_backoff_, histogram_box_,
+  filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
+                   counter_close_points_backoff_, complete_cloud_,
+                   min_cloud_size_, min_dist_backoff_, histogram_box_,
                    toEigen(pose_.pose.position), min_realsense_dist_);
 
   safety_radius_ = adaptSafetyMarginHistogram(

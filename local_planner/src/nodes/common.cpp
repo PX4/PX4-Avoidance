@@ -50,7 +50,7 @@ float azimuthAnglefromCartesian(double x, double y,
 float elevationAnglefromCartesian(double x, double y, double z,
                                   const Eigen::Vector3f& pos) {
   double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
-  return atan2(z - pos.z() , den) * 180.0 / M_PI;  //(-90.+90)
+  return atan2(z - pos.z(), den) * 180.0 / M_PI;  //(-90.+90)
 }
 
 float elevationAnglefromCartesian(const Eigen::Vector3f& pos,

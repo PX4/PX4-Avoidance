@@ -158,17 +158,16 @@ void StarPlanner::buildLookAheadTree() {
 
     // crop pointcloud
     pcl::PointCloud<pcl::PointXYZ> cropped_cloud;
-    Eigen::Vector3f closest_point;       // unused
-    bool hist_is_empty = false;          // unused
+    Eigen::Vector3f closest_point;  // unused
+    bool hist_is_empty = false;     // unused
     int backoff_points_counter = 0;
     double distance_to_closest_point;
     histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance_);
 
-    filterPointCloud(cropped_cloud, closest_point,
-                     distance_to_closest_point, backoff_points_counter,
-                     complete_cloud_, min_cloud_size_,
-                     min_dist_backoff_, histogram_box_,
-                     origin_position, min_realsense_dist_);
+    filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
+                     backoff_points_counter, complete_cloud_, min_cloud_size_,
+                     min_dist_backoff_, histogram_box_, origin_position,
+                     min_realsense_dist_);
 
     if (origin != 0 && backoff_points_counter > 20 &&
         cropped_cloud.points.size() > 160) {
