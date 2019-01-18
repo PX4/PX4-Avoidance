@@ -238,10 +238,10 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
-                    const Eigen::Vector3f& goal,
-                    const Eigen::Vector3f& position,
-                    const Eigen::Vector3f& position_old, double goal_cost_param,
+double costFunction(int e, int z, nav_msgs::GridCells &path_waypoints,
+                    const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position,
+                    const Eigen::Vector3f &position_old, double goal_cost_param,
                     double smooth_cost_param,
                     double height_change_cost_param_adapted,
                     double height_change_cost_param, bool only_yawed) {
@@ -249,7 +249,7 @@ double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
   int waypoint_index = path_waypoints.cells.size() - 1;
   if (waypoint_index < 0) {
     waypoint_index = 0;
-    path_waypoints.cells.push_back(position_old);
+    path_waypoints.cells.push_back(toPoint(position_old));
   }
 
   double dist = (position - goal).norm();
