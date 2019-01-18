@@ -72,7 +72,7 @@ TEST_F(LocalPlannerTests, no_obstacles) {
 }
 
 
-TEST_F(LocalPlannerTests, DISABLED_all_obstacles) {
+TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   float shift = 0.f;
   float distance = 2.f;
@@ -111,14 +111,17 @@ TEST_F(LocalPlannerTests, DISABLED_all_obstacles) {
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
+  float node_min_y = 0.f;
   for (auto it = output.path_node_positions.rbegin();
        it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x > distance) break;
     if (node.y > node_max_y) node_max_y = node.y;
+    if (node.y < node_min_y) node_min_y = node.y;
   }
-  EXPECT_GT(node_max_y, max_y)
-      << "this might fail if the algorithm decides to go right instead";
+
+  bool steer_clear = node_max_y > max_y || node_min_y < min_y;
+  EXPECT_TRUE(steer_clear);
 }
 
 TEST_F(LocalPlannerTests, obstacles_right) {
