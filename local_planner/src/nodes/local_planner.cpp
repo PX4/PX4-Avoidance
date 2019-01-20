@@ -170,7 +170,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
 
 sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
   sensor_msgs::Image image;
-  double sensor_max_dist = 20.0;
+  float sensor_max_dist = 20.0f;
   image.header.stamp = ros::Time::now();
   image.height = GRID_LENGTH_E;
   image.width = GRID_LENGTH_Z;
@@ -184,10 +184,9 @@ sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      double depth_val =
-          image.step * histogram.get_dist(e, z) / sensor_max_dist;
-      image.data.push_back(
-          (int)std::max(0.0, std::min((double)image.step, depth_val)));
+      float depth_val = image.step * histogram.get_dist(e, z) / sensor_max_dist;
+      image.data.push_back(static_cast<int>(
+          std::max(0.0f, std::min(static_cast<float>(image.step), depth_val))));
     }
   }
   return image;
@@ -273,7 +272,7 @@ void LocalPlanner::determineStrategy() {
              e < goal_e_index + relevance_margin_e_cells; e++) {
           for (int z = goal_z_index - relevance_margin_z_cells;
                z < goal_z_index + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_bin(e, z) > 0) {
+            if (polar_histogram_.get_bin(e, z) > 0.0f) {
               n_occupied_cells++;
             }
           }
@@ -402,8 +401,8 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 
 // get 3D points from old histogram
 void LocalPlanner::reprojectPoints(Histogram histogram) {
-  double n_points = 0;
-  double dist, age;
+
+  float dist, age;
   Eigen::Vector3f temp_array[4];
   reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
@@ -414,8 +413,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_bin(e, z) != 0) {
-        n_points++;
+      if (histogram.get_bin(e, z) > 0.0f) {
         // transform from array index to angle
         double beta_e = elevationIndexToAngle(e, ALPHA_RES);
         double beta_z = azimuthIndexToAngle(z, ALPHA_RES);

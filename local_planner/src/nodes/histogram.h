@@ -9,16 +9,14 @@ namespace avoidance {
 const int ALPHA_RES = 6;
 const int GRID_LENGTH_Z = 360 / ALPHA_RES;
 const int GRID_LENGTH_E = 180 / ALPHA_RES;
-const double H_FOV = 59.0;
-const double V_FOV = 46.0;
 
 class Histogram {
   int resolution;
   int z_dim;
   int e_dim;
-  std::vector<std::vector<double> > bin;
-  std::vector<std::vector<double> > age;
-  std::vector<std::vector<double> > dist;
+  std::vector<std::vector<float> > bin;
+  std::vector<std::vector<float> > age;
+  std::vector<std::vector<float> > dist;
 
   inline void wrapIndex(int &x, int &y) const {
     while (x < 0) x += e_dim;
@@ -31,24 +29,24 @@ class Histogram {
   Histogram(const int res);
   ~Histogram();
 
-  inline double get_bin(int x, int y) const {
+  inline float get_bin(int x, int y) const {
     wrapIndex(x, y);
     return bin[x][y];
   }
 
-  inline double get_age(int x, int y) const {
+  inline float get_age(int x, int y) const {
     wrapIndex(x, y);
     return age[x][y];
   }
 
-  inline double get_dist(int x, int y) const {
+  inline float get_dist(int x, int y) const {
     wrapIndex(x, y);
     return dist[x][y];
   }
 
-  inline void set_bin(int x, int y, double value) { bin[x][y] = value; }
-  inline void set_age(int x, int y, double value) { age[x][y] = value; }
-  inline void set_dist(int x, int y, double value) { dist[x][y] = value; }
+  inline void set_bin(int x, int y, float value) { bin[x][y] = value; }
+  inline void set_age(int x, int y, float value) { age[x][y] = value; }
+  inline void set_dist(int x, int y, float value) { dist[x][y] = value; }
 
   void upsample();
   void downsample();

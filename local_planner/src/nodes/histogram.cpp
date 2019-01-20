@@ -19,9 +19,9 @@ void Histogram::upsample() {
   resolution = resolution / 2;
   z_dim = 2 * z_dim;
   e_dim = 2 * e_dim;
-  std::vector<std::vector<double> > temp_bin;
-  std::vector<std::vector<double> > temp_age;
-  std::vector<std::vector<double> > temp_dist;
+  std::vector<std::vector<float> > temp_bin;
+  std::vector<std::vector<float> > temp_age;
+  std::vector<std::vector<float> > temp_dist;
   temp_bin.resize(e_dim);
   temp_age.resize(e_dim);
   temp_dist.resize(e_dim);
@@ -49,9 +49,9 @@ void Histogram::downsample() {
   resolution = 2 * resolution;
   z_dim = z_dim / 2;
   e_dim = e_dim / 2;
-  std::vector<std::vector<double> > temp_bin;
-  std::vector<std::vector<double> > temp_age;
-  std::vector<std::vector<double> > temp_dist;
+  std::vector<std::vector<float> > temp_bin;
+  std::vector<std::vector<float> > temp_age;
+  std::vector<std::vector<float> > temp_dist;
   temp_bin.resize(e_dim);
   temp_age.resize(e_dim);
   temp_dist.resize(e_dim);
@@ -69,22 +69,22 @@ void Histogram::downsample() {
           (bin[i_high_res][j_high_res] + bin[i_high_res + 1][j_high_res] +
            bin[i_high_res][j_high_res + 1] +
            bin[i_high_res + 1][j_high_res + 1]) /
-          4.0;
+          4.0f;
       double mean_age =
           (age[i_high_res][j_high_res] + age[i_high_res + 1][j_high_res] +
            age[i_high_res][j_high_res + 1] +
            age[i_high_res + 1][j_high_res + 1]) /
-          4.0;
+          4.0f;
       double mean_dist =
           (dist[i_high_res][j_high_res] + dist[i_high_res + 1][j_high_res] +
            dist[i_high_res][j_high_res + 1] +
            dist[i_high_res + 1][j_high_res + 1]) /
-          4.0;
+          4.0f;
 
-      if (mean_bin >= 0.5) {
-        temp_bin[i][j] = 1.0;
+      if (mean_bin >= 0.5f) {
+        temp_bin[i][j] = 1.0f;
       } else {
-        temp_bin[i][j] = 0.0;
+        temp_bin[i][j] = 0.0f;
       }
       temp_age[i][j] = mean_age;
       temp_dist[i][j] = mean_dist;
@@ -98,9 +98,9 @@ void Histogram::downsample() {
 void Histogram::setZero() {
   for (int i = 0; i < e_dim; ++i) {
     for (int j = 0; j < z_dim; ++j) {
-      bin[i][j] = 0.0;
-      age[i][j] = 0.0;
-      dist[i][j] = 0.0;
+      bin[i][j] = 0.0f;
+      age[i][j] = 0.0f;
+      dist[i][j] = 0.0f;
     }
   }
 }

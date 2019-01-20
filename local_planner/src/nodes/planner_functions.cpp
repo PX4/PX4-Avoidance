@@ -137,29 +137,29 @@ void propagateHistogram(
     int z_ind = azimuthAngletoIndex(z_angle, 2 * ALPHA_RES);
 
     polar_histogram_est.set_bin(
-        e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
+        e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25f);
     polar_histogram_est.set_age(e_ind, z_ind,
                                 polar_histogram_est.get_age(e_ind, z_ind) +
-                                    0.25 * reprojected_points_age[i]);
+                                    0.25f * reprojected_points_age[i]);
     polar_histogram_est.set_dist(e_ind, z_ind,
                                  polar_histogram_est.get_dist(e_ind, z_ind) +
-                                     0.25 * reprojected_points_dist[i]);
+                                     0.25f * reprojected_points_dist[i]);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
     for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
-      if (polar_histogram_est.get_bin(e, z) >= 1.5) {
+      if (polar_histogram_est.get_bin(e, z) >= 1.5f) {
         polar_histogram_est.set_dist(e, z,
                                      polar_histogram_est.get_dist(e, z) /
                                          polar_histogram_est.get_bin(e, z));
         polar_histogram_est.set_age(e, z,
                                     polar_histogram_est.get_age(e, z) /
                                         polar_histogram_est.get_bin(e, z));
-        polar_histogram_est.set_bin(e, z, 1);
+        polar_histogram_est.set_bin(e, z, 1.0f);
       } else {
-        polar_histogram_est.set_dist(e, z, 0);
-        polar_histogram_est.set_age(e, z, 0);
-        polar_histogram_est.set_bin(e, z, 0);
+        polar_histogram_est.set_dist(e, z, 0.0f);
+        polar_histogram_est.set_age(e, z, 0.0f);
+        polar_histogram_est.set_bin(e, z, 0.0f);
       }
     }
   }
@@ -183,7 +183,7 @@ void generateNewHistogram(Histogram& polar_histogram,
     int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
 
     polar_histogram.set_bin(e_ind, z_ind,
-                            polar_histogram.get_bin(e_ind, z_ind) + 1);
+                            polar_histogram.get_bin(e_ind, z_ind) + 1.0f);
     polar_histogram.set_dist(e_ind, z_ind,
                              polar_histogram.get_dist(e_ind, z_ind) + dist);
   }
@@ -191,10 +191,10 @@ void generateNewHistogram(Histogram& polar_histogram,
   // Normalize and get mean in distance bins
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (polar_histogram.get_bin(e, z) > 0) {
+      if (polar_histogram.get_bin(e, z) > 0.0f) {
         polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) /
                                            polar_histogram.get_bin(e, z));
-        polar_histogram.set_bin(e, z, 1);
+        polar_histogram.set_bin(e, z, 1.0f);
       }
     }
   }
@@ -291,16 +291,16 @@ void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
   int vertical_FOV_range_sensor = 20;
   int lower_index = elevationAngletoIndex(
-      -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+      -static_cast<float>(vertical_FOV_range_sensor / 2), ALPHA_RES);
   int upper_index = elevationAngletoIndex(
-      (float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+      static_cast<float>(vertical_FOV_range_sensor / 2), ALPHA_RES);
 
   for (int e = lower_index; e <= upper_index; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (input_hist.get_bin(e, z) > 0) {
-        new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);
+      if (input_hist.get_bin(e, z) > 0.0f) {
+        new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1.0f);
         if (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) ||
-            (new_hist.get_dist(0, z) == 0.0))
+            (new_hist.get_dist(0, z) < FLT_EPSILON))
           new_hist.set_dist(0, z, input_hist.get_dist(e, z));
       }
     }
@@ -374,7 +374,7 @@ void findFreeDirections(
           }
 
           if (!corner) {
-            if (histogram.get_bin(a, b) != 0) {
+            if (histogram.get_bin(a, b) > 0.0f) {
               free = false;
               break;
             }
@@ -387,7 +387,7 @@ void findFreeDirections(
       if (free) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p.z = 0.0f;
         path_candidates.cells.push_back(p);
         double cost =
             costFunction((int)p.x, (int)p.y, path_waypoints, goal, position,
@@ -395,15 +395,15 @@ void findFreeDirections(
                          height_change_cost_param_adapted,
                          height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
-      } else if (!free && histogram.get_bin(e, z) != 0) {
+      } else if (!free && histogram.get_bin(e, z) > 0.0f) {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p.z = 0.0f;
         path_rejected.cells.push_back(p);
       } else {
         p.x = elevationIndexToAngle(e, resolution_alpha);
         p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p.z = 0.0f;
         path_blocked.cells.push_back(p);
       }
     }
