@@ -40,7 +40,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z));
+      EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
     }
   }
 }
@@ -93,9 +93,9 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       bool z_found =
           std::find(z_index.begin(), z_index.end(), z) != z_index.end();
       if (e_found && z_found) {
-        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+        EXPECT_GE(histogram_output.get_dist(e, z), 0.0);
       } else {
-        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+    	EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
       }
     }
   }

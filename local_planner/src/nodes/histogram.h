@@ -17,7 +17,6 @@ class Histogram {
   int resolution;
   int z_dim;
   int e_dim;
-  Eigen::MatrixXd bin;
   Eigen::MatrixXd age;
   Eigen::MatrixXd dist;
 
@@ -32,11 +31,6 @@ class Histogram {
   Histogram(const int res);
   ~Histogram();
 
-  inline double get_bin(int x, int y) const {
-    wrapIndex(x, y);
-    return bin(x,y);
-  }
-
   inline double get_age(int x, int y) const {
     wrapIndex(x, y);
     return age(x,y);
@@ -47,7 +41,6 @@ class Histogram {
     return dist(x,y);
   }
 
-  inline void set_bin(int x, int y, double value) { bin(x,y) = value; }
   inline void set_age(int x, int y, double value) { age(x,y) = value; }
   inline void set_dist(int x, int y, double value) { dist(x,y) = value; }
 

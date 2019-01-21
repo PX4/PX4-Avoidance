@@ -273,7 +273,7 @@ void LocalPlanner::determineStrategy() {
              e < goal_e_index + relevance_margin_e_cells; e++) {
           for (int z = goal_z_index - relevance_margin_z_cells;
                z < goal_z_index + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_bin(e, z) > 0) {
+            if (polar_histogram_.get_dist(e, z) > 0.001) {
               n_occupied_cells++;
             }
           }
@@ -292,6 +292,7 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
 
+        //run findFreeDirections for visualization of free and blocked cells
         findFreeDirections(
             polar_histogram_, safety_radius_, path_candidates_, path_selected_,
             path_rejected_, path_blocked_, path_waypoints_,
@@ -414,7 +415,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_bin(e, z) != 0) {
+      if (histogram.get_dist(e, z) > 0.001) {
         n_points++;
         // transform from array index to angle
         double beta_e = elevationIndexToAngle(e, ALPHA_RES);

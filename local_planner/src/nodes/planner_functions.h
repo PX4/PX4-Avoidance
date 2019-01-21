@@ -64,9 +64,6 @@ void findFreeDirections(
     double goal_cost_param, double smooth_cost_param,
     double height_change_cost_param_adapted, double height_change_cost_param,
     bool only_yawed, int resolution_alpha);
-void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
-                    int e_FOV_max, int e_chosen, int z_chosen,
-                    double resolution);
 bool calculateCostMap(const std::vector<float>& cost_path_candidates,
                       std::vector<int>& cost_idx_sorted);
 bool getDirectionFromTree(
