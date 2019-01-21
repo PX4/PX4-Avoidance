@@ -41,8 +41,8 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
   histogram_box_.radius_ = config.box_radius_;
-  goal_cost_param_ = config.goal_cost_param_;
-  smooth_cost_param_ = config.smooth_cost_param_;
+  cost_params_.goal_cost_param = config.goal_cost_param_;
+  cost_params_.smooth_cost_param = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   keep_distance_ = config.keep_distance_;
@@ -94,18 +94,11 @@ void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
 geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
 
 void LocalPlanner::applyGoal() {
-  initGridCells(path_waypoints_);
-  path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_->setGoal(toPoint(goal_));
   goal_dist_incline_.clear();
 }
 
 void LocalPlanner::runPlanner() {
-  // reset candidates for visualization
-  initGridCells(path_candidates_);
-  initGridCells(path_rejected_);
-  initGridCells(path_blocked_);
-  initGridCells(path_selected_);
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -120,29 +113,12 @@ void LocalPlanner::runPlanner() {
   z_FOV_idx_.clear();
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
-  // visualization of FOV in RViz
-  initGridCells(FOV_cells_);
-  geometry_msgs::Point p;
-  for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
-    for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
-      PolarPoint p_pol =
-          histogramIndexToPolar(j, z_FOV_idx_[i], ALPHA_RES, 0.0);
-      p.x = p_pol.e;
-      p.y = p_pol.z;
-      p.z = p_pol.r;
-      FOV_cells_.cells.push_back(p);
-    }
-  }
-
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
   filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
                    counter_close_points_backoff_, complete_cloud_,
                    min_cloud_size_, min_dist_backoff_, histogram_box_,
                    toEigen(pose_.pose.position), min_realsense_dist_);
-
-  safety_radius_ = adaptSafetyMarginHistogram(
-      distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
 
   determineStrategy();
 }
@@ -156,8 +132,9 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   to_fcu_histogram_.setZero();
 
   propagateHistogram(propagated_histogram, reprojected_points_,
-                     reprojected_points_age_, reprojected_points_dist_, pose_);
-  generateNewHistogram(new_histogram, final_cloud_, pose_);
+                     reprojected_points_age_, pose_);
+  generateNewHistogram(new_histogram, final_cloud_,
+                       toEigen(pose_.pose.position));
   combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
                     waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
   if (send_to_fcu) {
@@ -262,6 +239,7 @@ void LocalPlanner::determineStrategy() {
         int relevance_margin_e_cells =
             std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
         int n_occupied_cells = 0;
+
         PolarPoint goal_pol =
             cartesianToPolar(goal_, toEigen(pose_.pose.position));
         Eigen::Vector2i goal_index = polarToHistogramIndex(goal_pol, ALPHA_RES);
@@ -270,8 +248,8 @@ void LocalPlanner::determineStrategy() {
              e < goal_index.y() + relevance_margin_e_cells; e++) {
           for (int z = goal_index.x() - relevance_margin_z_cells;
                z < goal_index.x() + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_bin(e, z) > 0) {
-              n_occupied_cells++;
+            if (polar_histogram_.get_dist(e, z) > 0.001) {
+            	n_occupied_cells++;
             }
           }
         }
@@ -289,40 +267,25 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
 
-        findFreeDirections(
-            polar_histogram_, safety_radius_, path_candidates_, path_selected_,
-            path_rejected_, path_blocked_, path_waypoints_,
-            cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-            position_old_, goal_cost_param_, smooth_cost_param_,
-            height_change_cost_param_adapted_, height_change_cost_param_,
-            velocity_mod_ < 0.1, ALPHA_RES);
-
         if (use_VFH_star_) {
           star_planner_->setParams(min_cloud_size_, min_dist_backoff_,
-                                   path_waypoints_, curr_yaw_,
-                                   min_realsense_dist_);
+                                   curr_yaw_, min_realsense_dist_,
+                                   cost_params_);
           star_planner_->setFOV(h_FOV_, v_FOV_);
           star_planner_->setReprojectedPoints(reprojected_points_,
-                                              reprojected_points_age_,
-                                              reprojected_points_dist_);
-          star_planner_->setCostParams(goal_cost_param_, smooth_cost_param_,
-                                       height_change_cost_param_adapted_,
-                                       height_change_cost_param_);
-          star_planner_->setBoxSize(histogram_box_, ground_distance_);
-          star_planner_->setCloud(complete_cloud_);
+                                              reprojected_points_age_);
+          star_planner_->setCloud(final_cloud_);
           star_planner_->buildLookAheadTree();
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          findFreeDirections(
-              polar_histogram_, safety_radius_, path_candidates_,
-              path_selected_, path_rejected_, path_blocked_, path_waypoints_,
-              cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-              position_old_, goal_cost_param_, smooth_cost_param_,
-              height_change_cost_param_adapted_, height_change_cost_param_,
-              velocity_mod_ < 0.1, ALPHA_RES);
-          if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
+          getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
+                        toEigen(last_sent_waypoint_), cost_params_,
+                        velocity_mod_ < 0.1, cost_matrix_);
+          getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
+
+          if (candidate_vector_.empty()) {
             stopInFrontObstacles();
             waypoint_type_ = direct;
             stop_in_front_ = true;
@@ -330,7 +293,8 @@ void LocalPlanner::determineStrategy() {
                 "\033[1;35m[OA] All directions blocked: Stopping in front "
                 "obstacle. \n \033[0m");
           } else {
-            getDirectionFromCostMap();
+            costmap_direction_e_ = candidate_vector_[0].elevation_angle;
+            costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
             waypoint_type_ = costmap;
           }
         }
@@ -399,16 +363,15 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 
 // get 3D points from old histogram
 void LocalPlanner::reprojectPoints(Histogram histogram) {
-  double n_points = 0;
-  double dist, age;
+  int n_points = 0;
+  float dist;
+  int age;
   // ALPHA_RES%2=0 as per definition, see histogram.h
   int half_res = ALPHA_RES / 2;
-
   Eigen::Vector3f temp_array[4];
 
   std::array<PolarPoint, 4> p_pol;
   reprojected_points_age_.clear();
-  reprojected_points_dist_.clear();
 
   reprojected_points_.points.clear();
   reprojected_points_.header.stamp = final_cloud_.header.stamp;
@@ -416,7 +379,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_bin(e, z) != 0) {
+      if (histogram.get_dist(e, z) > 0.001f) {
         n_points++;
         for (auto &i : p_pol) {
           i.r = histogram.get_dist(e, z);
@@ -446,7 +409,6 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
               age < reproj_age_) {
             reprojected_points_.points.push_back(toXYZ(temp_array[i]));
             reprojected_points_age_.push_back(age);
-            reprojected_points_dist_.push_back(dist);
           }
         }
       }
@@ -480,29 +442,24 @@ void LocalPlanner::evaluateProgressRate() {
 
     if (avg_incline > no_progress_slope_ &&
         goal_dist_incline_.size() == dist_incline_window_size_) {
-      if (height_change_cost_param_adapted_ > 0.75) {
-        height_change_cost_param_adapted_ -= 0.02;
+      if (cost_params_.height_change_cost_param_adapted > 0.75f) {
+        cost_params_.height_change_cost_param_adapted -= 0.02f;
       }
     }
     if (avg_incline < no_progress_slope_) {
-      if (height_change_cost_param_adapted_ <
-          height_change_cost_param_ - 0.03) {
-        height_change_cost_param_adapted_ += 0.03;
+      if (cost_params_.height_change_cost_param_adapted <
+          cost_params_.height_change_cost_param - 0.03f) {
+        cost_params_.height_change_cost_param_adapted += 0.03f;
       }
     }
     ROS_DEBUG(
         "\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: "
         "%f .\033[0m",
-        avg_incline, height_change_cost_param_adapted_);
+        avg_incline, cost_params_.height_change_cost_param_adapted);
   } else {
-    height_change_cost_param_adapted_ = height_change_cost_param_;
+    cost_params_.height_change_cost_param_adapted =
+        cost_params_.height_change_cost_param;
   }
-}
-
-// get waypoint from sorted cost list
-void LocalPlanner::getDirectionFromCostMap() {
-  costmap_direction_e_ = path_candidates_.cells[cost_idx_sorted_[0]].x;
-  costmap_direction_z_ = path_candidates_.cells[cost_idx_sorted_[0]].y;
 }
 
 // stop in front of an obstacle at a distance defined by the variable
@@ -531,17 +488,6 @@ void LocalPlanner::getCloudsForVisualization(
     pcl::PointCloud<pcl::PointXYZ> &reprojected_points) {
   final_cloud = final_cloud_;
   reprojected_points = reprojected_points_;
-}
-
-void LocalPlanner::getCandidateDataForVisualization(
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells &FOV_cells) {
-  path_candidates = path_candidates_;
-  path_selected = path_selected_;
-  path_rejected = path_rejected_;
-  path_blocked = path_blocked_;
-  FOV_cells = FOV_cells_;
 }
 
 void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {

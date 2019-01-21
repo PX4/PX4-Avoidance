@@ -168,11 +168,6 @@ class LocalPlannerNode {
   ros::Publisher marker_pub_;
   ros::Publisher path_actual_pub_;
   ros::Publisher path_waypoint_pub_;
-  ros::Publisher marker_rejected_pub_;
-  ros::Publisher marker_blocked_pub_;
-  ros::Publisher marker_candidates_pub_;
-  ros::Publisher marker_selected_pub_;
-  ros::Publisher marker_FOV_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher takeoff_pose_pub_;
   ros::Publisher offboard_pose_pub_;
@@ -205,14 +200,6 @@ class LocalPlannerNode {
   void readParams();
   void publishPlannerData();
   void publishPaths();
-  void initMarker(visualization_msgs::MarkerArray* marker,
-                  nav_msgs::GridCells& path, const float red, const float green,
-                  const float blue);
-  void publishMarkerBlocked(nav_msgs::GridCells& path_blocked);
-  void publishMarkerRejected(nav_msgs::GridCells& path_rejected);
-  void publishMarkerCandidates(nav_msgs::GridCells& path_candidates);
-  void publishMarkerSelected(nav_msgs::GridCells& path_selected);
-  void publishMarkerFOV(nav_msgs::GridCells& FOV_cells);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void clickedGoalCallback(const geometry_msgs::PoseStamped& msg);
   void updateGoalCallback(const visualization_msgs::MarkerArray& msg);

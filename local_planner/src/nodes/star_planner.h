@@ -2,6 +2,7 @@
 #define STAR_PLANNER_H
 
 #include "box.h"
+#include "cost_parameters.h"
 #include "histogram.h"
 
 #include <Eigen/Dense>
@@ -27,32 +28,23 @@ class StarPlanner {
   double v_FOV_ = 46.0;
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
+  double min_node_dist_to_obstacle_ = 2.0;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
-  double goal_cost_param_;
-  double smooth_cost_param_;
-  double height_change_cost_param_adapted_;
-  double height_change_cost_param_;
   double curr_yaw_;
-  double min_flight_height_;
-  double ground_margin_;
   double min_cloud_size_;
   double min_dist_backoff_;
   double min_realsense_dist_;
-  double ground_distance_ = 2.0;
 
-  std::vector<double> reprojected_points_age_;
-  std::vector<double> reprojected_points_dist_;
+  std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;
 
-  std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
+  pcl::PointCloud<pcl::PointXYZ> pointcloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   Eigen::Vector3f goal_;
   geometry_msgs::PoseStamped pose_;
-
-  nav_msgs::GridCells path_waypoints_;
-  Box histogram_box_;
+  costParameters cost_params_;
 
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
@@ -65,21 +57,15 @@ class StarPlanner {
   ~StarPlanner();
 
   void setParams(double min_cloud_size, double min_dist_backoff,
-                 const nav_msgs::GridCells& path_waypoints, double curr_yaw,
-                 double min_realsense_dist);
+                 double curr_yaw, double min_realsense_dist,
+                 costParameters cost_params);
   void setFOV(double h_FOV, double v_FOV);
   void setReprojectedPoints(
       const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-      const std::vector<double>& reprojected_points_age,
-      const std::vector<double>& reprojected_points_dist);
-  void setCostParams(double goal_cost_param, double smooth_cost_param,
-                     double height_change_cost_param_adapted,
-                     double height_change_cost_param);
+      const std::vector<int>& reprojected_points_age);
   void setPose(const geometry_msgs::PoseStamped& pose);
-  void setBoxSize(const Box& histogram_box, double ground_distance);
   void setGoal(const geometry_msgs::Point& pose);
-  void setCloud(
-      const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud);
+  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();

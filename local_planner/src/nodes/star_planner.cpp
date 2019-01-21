@@ -15,6 +15,7 @@ StarPlanner::~StarPlanner() {}
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+  min_node_dist_to_obstacle_ = config.min_node_dist_to_obstacle_;
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
@@ -22,13 +23,13 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 }
 
 void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
-                            const nav_msgs::GridCells& path_waypoints,
-                            double curr_yaw, double min_realsense_dist) {
-  path_waypoints_ = path_waypoints;
+                            double curr_yaw, double min_realsense_dist,
+                            costParameters cost_params) {
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
   min_realsense_dist_ = min_realsense_dist;
+  cost_params_ = cost_params;
 }
 
 void StarPlanner::setFOV(double h_FOV, double v_FOV) {
@@ -41,13 +42,8 @@ void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) {
 }
 
 void StarPlanner::setCloud(
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud) {
-  complete_cloud_ = complete_cloud;
-}
-
-void StarPlanner::setBoxSize(const Box& histogram_box, double ground_distance) {
-  histogram_box_.radius_ = histogram_box.radius_;
-  ground_distance_ = ground_distance;
+    const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud) {
+  pointcloud_ = cropped_cloud;
 }
 
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
@@ -55,23 +51,11 @@ void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
   tree_age_ = 1000;
 }
 
-void StarPlanner::setCostParams(double goal_cost_param,
-                                double smooth_cost_param,
-                                double height_change_cost_param_adapted,
-                                double height_change_cost_param) {
-  goal_cost_param_ = goal_cost_param;
-  smooth_cost_param_ = smooth_cost_param;
-  height_change_cost_param_adapted_ = height_change_cost_param_adapted;
-  height_change_cost_param_ = height_change_cost_param;
-}
-
 void StarPlanner::setReprojectedPoints(
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-    const std::vector<double>& reprojected_points_age,
-    const std::vector<double>& reprojected_points_dist) {
+    const std::vector<int>& reprojected_points_age) {
   reprojected_points_ = reprojected_points;
   reprojected_points_age_ = reprojected_points_age;
-  reprojected_points_dist_ = reprojected_points_dist;
 }
 
 double StarPlanner::treeCostFunction(int node_number) {
@@ -157,78 +141,54 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
+    bool hist_is_empty = false;  // unused
 
-    bool node_valid = true;
+    // build new histogram
+    std::vector<int> z_FOV_idx;
+    int e_FOV_min, e_FOV_max;
+    calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
+                 tree_[origin].yaw_,
+                 0.0);  // assume pitch is zero at every node
 
-    // crop pointcloud
-    pcl::PointCloud<pcl::PointXYZ> cropped_cloud;
-    Eigen::Vector3f closest_point;  // unused
-    bool hist_is_empty = false;     // unused
-    int backoff_points_counter = 0;
-    double distance_to_closest_point;
-    histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance_);
+    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
+    Histogram histogram = Histogram(ALPHA_RES);
 
-    filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
-                     backoff_points_counter, complete_cloud_, min_cloud_size_,
-                     min_dist_backoff_, histogram_box_, origin_position,
-                     min_realsense_dist_);
+    propagateHistogram(propagated_histogram, reprojected_points_,
+                       reprojected_points_age_, pose_);
+    generateNewHistogram(histogram, pointcloud_, toEigen(pose_.pose.position));
+    combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
+                      z_FOV_idx, e_FOV_min, e_FOV_max);
 
-    if (origin != 0 && backoff_points_counter > 20 &&
-        cropped_cloud.points.size() > 160) {
+    // calculate candidates
+    Eigen::MatrixXd cost_matrix;
+    std::vector<candidateDirection> candidate_vector;
+    getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
+                  origin_origin_position, cost_params_, false, cost_matrix);
+    getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_,
+                                    candidate_vector);
+
+    // add candidates as nodes
+    if (candidate_vector.empty()) {
       tree_[origin].total_cost_ = HUGE_VAL;
-      node_valid = false;
-    }
+    } else {
+      // insert new nodes
+      int depth = tree_[origin].depth_ + 1;
+      int childs = 0;
+      for (candidateDirection candidate : candidate_vector) {
+    	PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle, tree_node_distance_);
 
-    if (node_valid) {
-      // build new histogram
-      std::vector<int> z_FOV_idx;
-      int e_FOV_min, e_FOV_max;
-      calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
-                   tree_[origin].yaw_,
-                   0.0);  // assume pitch is zero at every node
-
-      Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
-      Histogram histogram = Histogram(ALPHA_RES);
-
-      propagateHistogram(propagated_histogram, reprojected_points_,
-                         reprojected_points_age_, reprojected_points_dist_,
-                         pose_);
-      generateNewHistogram(histogram, cropped_cloud, pose_);
-      combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
-                        z_FOV_idx, e_FOV_min, e_FOV_max);
-
-      // calculate candidates
-      histogram.downsample();
-      findFreeDirections(histogram, 25, path_candidates, path_selected,
-                         path_rejected, path_blocked, path_waypoints_,
-                         cost_path_candidates, goal_,
-                         toEigen(pose_.pose.position), origin_origin_position,
-                         goal_cost_param_, smooth_cost_param_,
-                         height_change_cost_param_adapted_,
-                         height_change_cost_param_, false, 2 * ALPHA_RES);
-
-      if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
-        tree_[origin].total_cost_ = HUGE_VAL;
-      } else {
-        // insert new nodes
-        int depth = tree_[origin].depth_ + 1;
-        int childs = 0;
-        for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
-          PolarPoint p_pol(path_candidates.cells[cost_idx_sorted[i]].x,
-                           path_candidates.cells[cost_idx_sorted[i]].y,
-                           tree_node_distance_);
-          // check if another close node has been added
-          Eigen::Vector3f node_location =
-              polarToCartesian(p_pol, toPoint(origin_position));
-          int close_nodes = 0;
-          for (size_t i = 0; i < tree_.size(); i++) {
-            double dist = (tree_[i].getPosition() - node_location).norm();
-            if (dist < 0.2) {
-              close_nodes++;
-            }
+        // check if another close node has been added
+    	Eigen::Vector3f node_location =
+    	              polarToCartesian(p_pol, toPoint(origin_position));
+        int close_nodes = 0;
+        for (size_t i = 0; i < tree_.size(); i++) {
+          double dist = (tree_[i].getPosition() - node_location).norm();
+          if (dist < 0.2) {
+            close_nodes++;
           }
+        }
 
-          if (childs < childs_per_node_ && close_nodes == 0) {
+        if (childs < childs_per_node_ && close_nodes == 0) {
             tree_.push_back(TreeNode(origin, depth, node_location));
             tree_.back().last_e_ = p_pol.e;
             tree_.back().last_z_ = p_pol.z;
@@ -240,7 +200,6 @@ void StarPlanner::buildLookAheadTree() {
             Eigen::Vector3f diff = node_location - origin_position;
             tree_.back().yaw_ = atan2(diff.y(), diff.x());
             childs++;
-          }
         }
       }
     }
