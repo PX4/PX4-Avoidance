@@ -58,6 +58,7 @@ LocalPlannerNode::LocalPlannerNode() {
                                   &LocalPlannerNode::updateGoalCallback, this);
   distance_sensor_sub_ = nh_.subscribe(
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
+  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &LocalPlannerNode::px4ParamsCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
@@ -651,6 +652,13 @@ void LocalPlannerNode::distanceSensorCallback(
     publishGround();
   }
 }
+
+void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
+
+  std::cout << msg.param_id << " value " << msg.value.integer << " o " << msg.value.real << std::endl;
+
+}
+
 void LocalPlannerNode::publishGround() {
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
   visualization_msgs::Marker plane;
