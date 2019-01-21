@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include "../src/nodes/planner_functions.h"
+#include "../src/nodes/common.h"
 
 using namespace avoidance;
 

@@ -256,9 +256,9 @@ void LocalPlannerNode::updatePlannerInfo() {
   // update ground distance
   if (ros::Time::now() - ground_distance_msg_.header.stamp <
       ros::Duration(0.5)) {
-    local_planner_.ground_distance_ = ground_distance_msg_.bottom_clearance;
+    local_planner_->ground_distance_ = ground_distance_msg_.bottom_clearance;
   } else {
-    local_planner_.ground_distance_ = 2.0;  // in case where no range data is
+    local_planner_->ground_distance_ = 2.0;  // in case where no range data is
                                             // available assume vehicle is close
                                             // to ground
   }
@@ -502,16 +502,13 @@ void LocalPlannerNode::publishBox() {
   box.pose.position.x = drone_pos.pose.position.x;
   box.pose.position.y = drone_pos.pose.position.y;
   box.pose.position.z = drone_pos.pose.position.z;
-                        0.5 * (local_planner_->histogram_box_.zsize_up_ -
-                               local_planner_->histogram_box_.zsize_down_);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
   box.pose.orientation.w = 1.0;
   box.scale.x = 2.0 * local_planner_->histogram_box_.radius_;
   box.scale.y = 2.0 * local_planner_->histogram_box_.radius_;
-  box.scale.z = local_planner_->histogram_box_.zsize_up_ +
-                local_planner_->histogram_box_.zsize_down_;
+  box.scale.z = 2.0 * local_planner_->histogram_box_.radius_;
   box.color.a = 0.5;
   box.color.r = 0.0;
   box.color.g = 1.0;
@@ -526,13 +523,13 @@ void LocalPlannerNode::publishBox() {
   plane.action = visualization_msgs::Marker::ADD;
   plane.pose.position.x = drone_pos.pose.position.x;
   plane.pose.position.y = drone_pos.pose.position.y;
-  plane.pose.position.z = local_planner_.histogram_box_.zmin_;
+  plane.pose.position.z = local_planner_->histogram_box_.zmin_;
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
   plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
-  plane.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.x = 2.0 * local_planner_->histogram_box_.radius_;
+  plane.scale.y = 2.0 * local_planner_->histogram_box_.radius_;
   plane.scale.z = 0.001;
   plane.color.a = 0.5;
   plane.color.r = 0.0;
@@ -735,7 +732,7 @@ void LocalPlannerNode::distanceSensorCallback(
   }
 }
 void LocalPlannerNode::publishGround() {
-  geometry_msgs::PoseStamped drone_pos = local_planner_.getPosition();
+  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
   visualization_msgs::Marker plane;
   plane.header.frame_id = "local_origin";
   plane.header.stamp = ros::Time::now();
@@ -745,13 +742,13 @@ void LocalPlannerNode::publishGround() {
   plane.pose.position.x = drone_pos.pose.position.x;
   plane.pose.position.y = drone_pos.pose.position.y;
   plane.pose.position.z =
-      drone_pos.pose.position.z - local_planner_.ground_distance_;
+      drone_pos.pose.position.z - local_planner_->ground_distance_;
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
   plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * local_planner_.histogram_box_.radius_;
-  plane.scale.y = 2.0 * local_planner_.histogram_box_.radius_;
+  plane.scale.x = 2.0 * local_planner_->histogram_box_.radius_;
+  plane.scale.y = 2.0 * local_planner_->histogram_box_.radius_;
   plane.scale.z = 0.001;
   ;
   plane.color.a = 0.5;

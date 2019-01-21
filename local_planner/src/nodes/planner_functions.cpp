@@ -121,11 +121,12 @@ void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
 }
 
 // Build histogram estimate from reprojected points
-void propagateHistogram(Histogram& polar_histogram_est,
-                        const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-                        const std::vector<double>& reprojected_points_age,
-                        const std::vector<double>& reprojected_points_dist,
-                        geometry_msgs::PoseStamped position) {
+void propagateHistogram(
+    Histogram& polar_histogram_est,
+    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+    const std::vector<double>& reprojected_points_age,
+    const std::vector<double>& reprojected_points_dist,
+    geometry_msgs::PoseStamped position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     float e_angle = elevationAnglefromCartesian(
         toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
