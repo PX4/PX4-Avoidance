@@ -14,6 +14,7 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/Altitude.h>
 #include <mavros_msgs/CompanionProcessStatus.h>
+#include <mavros_msgs/Param.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
@@ -157,6 +158,7 @@ class LocalPlannerNode {
   ros::Subscriber fcu_input_sub_;
   ros::Subscriber goal_topic_sub_;
   ros::Subscriber distance_sensor_sub_;
+  ros::Subscriber px4_param_sub_;
 
   // Publishers
   ros::Publisher local_pointcloud_pub_;
@@ -220,6 +222,7 @@ class LocalPlannerNode {
   void updateGoalCallback(const visualization_msgs::MarkerArray& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
   void distanceSensorCallback(const mavros_msgs::Altitude& msg);
+  void px4ParamsCallback(const mavros_msgs::Param& msg);
 
   void printPointInfo(double x, double y, double z);
   void publishGoal();
