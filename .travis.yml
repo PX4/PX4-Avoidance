@@ -65,7 +65,7 @@ before_script:
 script:
   - cd ~/catkin_ws
   - catkin build
-  - source /devel/setup.bash
+  - source ~/catkin_ws/devel/setup.bash
   # Check for clang format
   - cd src/avoidance
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
