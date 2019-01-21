@@ -1,8 +1,15 @@
 #include <gtest/gtest.h>
 #include <limits>
 #include "../src/nodes/common.h"
+#include "../src/nodes/histogram.h"
 
 using namespace avoidance;
+
+TEST(PlannerFunctions, HistogramResolution) {
+  // Test that the hardcoded histogram resolution ALPHA_RES is valid
+  ASSERT_GT(ALPHA_RES, 0);
+  ASSERT_EQ(180 % (2 * ALPHA_RES), 0);
+}
 
 TEST(Common, polar2DdistanceSameIsZero) {
   // GIVEN: two identical points

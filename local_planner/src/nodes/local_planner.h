@@ -4,6 +4,8 @@
 #include <sensor_msgs/image_encodings.h>
 #include "avoidance_output.h"
 #include "box.h"
+#include "candidate_direction.h"
+#include "cost_parameters.h"
 #include "histogram.h"
 
 #include <dynamic_reconfigure/server.h>
@@ -64,10 +66,6 @@ class LocalPlanner {
   double curr_yaw_, last_yaw_;
   double min_speed_;
   double max_speed_;
-  double goal_cost_param_;
-  double smooth_cost_param_;
-  double height_change_cost_param_ = 4;
-  double height_change_cost_param_adapted_ = 4;
   double keep_distance_;
   ros::Time integral_time_old_;
   double no_progress_slope_;
@@ -93,11 +91,11 @@ class LocalPlanner {
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
   std::vector<int> closed_set_;
-  std::vector<double> reprojected_points_age_;
-  std::vector<double> reprojected_points_dist_;
+  std::vector<int> reprojected_points_age_;
 
   std::vector<TreeNode> tree_;
   std::unique_ptr<StarPlanner> star_planner_;
+  costParameters cost_params_;
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
@@ -109,26 +107,20 @@ class LocalPlanner {
   Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
   geometry_msgs::TwistStamped curr_vel_;
 
-  nav_msgs::GridCells FOV_cells_;
-  nav_msgs::GridCells path_candidates_;
-  nav_msgs::GridCells path_selected_;
-  nav_msgs::GridCells path_rejected_;
-  nav_msgs::GridCells path_blocked_;
-  nav_msgs::GridCells path_waypoints_;
-
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
+  Eigen::MatrixXd cost_matrix_;
+  std::vector<candidateDirection> candidate_vector_;
 
   void fitPlane();
   void reprojectPoints(Histogram histogram);
   void setVelocity();
   void evaluateProgressRate();
-  void getDirectionFromCostMap();
   void stopInFrontObstacles();
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
   void create2DObstacleRepresentation(const bool send_to_fcu);
-  sensor_msgs::Image generateHistogramImage(Histogram& histogram);
+  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
 
  public:
   double h_FOV_ = 59.0;
@@ -153,6 +145,7 @@ class LocalPlanner {
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
+  geometry_msgs::Point last_sent_waypoint_;
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
@@ -161,24 +154,19 @@ class LocalPlanner {
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  void setGoal(const geometry_msgs::Point& goal);
+  void setGoal(const geometry_msgs::Point &goal);
   geometry_msgs::Point getGoal();
   void applyGoal();
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
   geometry_msgs::PoseStamped getPosition();
   void getCloudsForVisualization(
-      pcl::PointCloud<pcl::PointXYZ>& final_cloud,
-      pcl::PointCloud<pcl::PointXYZ>& reprojected_points);
-  void getCandidateDataForVisualization(nav_msgs::GridCells& path_candidates,
-                                        nav_msgs::GridCells& path_selected,
-                                        nav_msgs::GridCells& path_rejected,
-                                        nav_msgs::GridCells& path_blocked,
-                                        nav_msgs::GridCells& FOV_cells);
-  void setCurrentVelocity(const geometry_msgs::TwistStamped& vel);
-  void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-               std::vector<geometry_msgs::Point>& path_node_positions);
-  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan& obstacle_distance);
+      pcl::PointCloud<pcl::PointXYZ> &final_cloud,
+      pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
+  void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
+  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
+               std::vector<geometry_msgs::Point> &path_node_positions);
+  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
   avoidanceOutput getAvoidanceOutput();
 
   void determineStrategy();

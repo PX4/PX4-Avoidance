@@ -8,28 +8,6 @@
 
 namespace avoidance {
 
-// initialize GridCell message
-void initGridCells(nav_msgs::GridCells& cell) {
-  cell.cells.clear();
-  cell.header.stamp = ros::Time::now();
-  cell.header.frame_id = "/local_origin";
-  cell.cell_width = ALPHA_RES;
-  cell.cell_height = ALPHA_RES;
-  cell.cells = {};
-}
-
-// adapt histogram safety margin around blocked cells to distance of pointcloud
-double adaptSafetyMarginHistogram(double dist_to_closest_point,
-                                  double cloud_size, double min_cloud_size) {
-  double safety_margin = 25;
-
-  // increase safety radius if too close to the wall
-  if (dist_to_closest_point < 1.7 && cloud_size > min_cloud_size) {
-    safety_margin = 25 + 2 * ALPHA_RES;
-  }
-  return safety_margin;
-}
-
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void filterPointCloud(
@@ -124,41 +102,30 @@ void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
 void propagateHistogram(
     Histogram& polar_histogram_est,
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-    const std::vector<double>& reprojected_points_age,
-    const std::vector<double>& reprojected_points_dist,
+    const std::vector<int>& reprojected_points_age,
     const geometry_msgs::PoseStamped& position) {
+  Eigen::MatrixXi counter(GRID_LENGTH_E / 2, GRID_LENGTH_Z / 2);
+  counter.fill(0);
+
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
                                         toEigen(position.pose.position));
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
+    float point_distance = (toEigen(position.pose.position) - toEigen(reprojected_points.points[i])).norm();
 
-    polar_histogram_est.set_bin(
-        p_ind.y(), p_ind.x(),
-        polar_histogram_est.get_bin(p_ind.y(), p_ind.x()) + 0.25);
-    polar_histogram_est.set_age(
-        p_ind.y(), p_ind.x(),
-        polar_histogram_est.get_age(p_ind.y(), p_ind.x()) +
-            0.25 * reprojected_points_age[i]);
-    polar_histogram_est.set_dist(
-        p_ind.y(), p_ind.x(),
-        polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) +
-            0.25 * reprojected_points_dist[i]);
+    counter(p_ind.y(), p_ind.x()) += 1;
+    polar_histogram_est.set_age(p_ind.y(), p_ind.x(), polar_histogram_est.get_age(p_ind.y(), p_ind.x()) + reprojected_points_age[i]);
+    polar_histogram_est.set_dist(p_ind.y(), p_ind.x(), polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) + point_distance);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
     for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
-      if (polar_histogram_est.get_bin(e, z) >= 1.5) {
-        polar_histogram_est.set_dist(e, z,
-                                     polar_histogram_est.get_dist(e, z) /
-                                         polar_histogram_est.get_bin(e, z));
-        polar_histogram_est.set_age(e, z,
-                                    polar_histogram_est.get_age(e, z) /
-                                        polar_histogram_est.get_bin(e, z));
-        polar_histogram_est.set_bin(e, z, 1);
-      } else {
-        polar_histogram_est.set_dist(e, z, 0);
+      if (counter(e, z) >= 6) {
+        polar_histogram_est.set_dist(e, z, polar_histogram_est.get_dist(e, z)/ counter(e, z));
+        polar_histogram_est.set_age(e, z, static_cast<int>(polar_histogram_est.get_age(e, z)/ counter(e,z)));
+      } else {  // not enough points to confidently block cell
+        polar_histogram_est.set_dist(e, z, 0.f);
         polar_histogram_est.set_age(e, z, 0);
-        polar_histogram_est.set_bin(e, z, 0);
       }
     }
   }
@@ -170,27 +137,26 @@ void propagateHistogram(
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          geometry_msgs::PoseStamped position) {
+                          const Eigen::Vector3f& position) {
+  Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
+  counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-    float dist = (p - toEigen(position.pose.position)).norm();
+    float dist = (p - position).norm();
     PolarPoint p_pol = cartesianToPolar(p, toEigen(position.pose.position));
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
-    polar_histogram.set_bin(p_ind.y(), p_ind.x(),
-                            polar_histogram.get_bin(p_ind.y(), p_ind.x()) + 1);
-    polar_histogram.set_dist(
-        p_ind.y(), p_ind.x(),
-        polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
+    counter(p_ind.y(), p_ind.x()) += 1;
+    polar_histogram.set_dist(p_ind.y(), p_ind.x(),
+                             polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
   }
 
   // Normalize and get mean in distance bins
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (polar_histogram.get_bin(e, z) > 0) {
-        polar_histogram.set_dist(e, z, polar_histogram.get_dist(e, z) /
-                                           polar_histogram.get_bin(e, z));
-        polar_histogram.set_bin(e, z, 1);
+      if (counter(e, z) > 0) {
+        polar_histogram.set_dist(
+            e, z, polar_histogram.get_dist(e, z) / counter(e, z));
       }
     }
   }
@@ -207,12 +173,12 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end() &&
           e > e_FOV_min && e < e_FOV_max) {  // inside FOV
-        if (new_hist.get_bin(e, z) > 0) {
+        if (new_hist.get_dist(e, z) > 0) {
           new_hist.set_age(e, z, 1);
           hist_empty = false;
         }
       } else {
-        if (propagated_hist.get_bin(e, z) > 0) {
+        if (propagated_hist.get_dist(e, z) > 0) {
           if (waypoint_outside_FOV) {
             new_hist.set_age(e, z, propagated_hist.get_age(e, z));
           } else {
@@ -220,72 +186,17 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
           }
           hist_empty = false;
         }
-        if (new_hist.get_bin(e, z) > 0) {
+        if (new_hist.get_dist(e, z) > 0) {
           new_hist.set_age(e, z, 1);
           hist_empty = false;
         }
-        if (propagated_hist.get_bin(e, z) > 0 && new_hist.get_bin(e, z) == 0) {
-          new_hist.set_bin(e, z, propagated_hist.get_bin(e, z));
+        if (propagated_hist.get_dist(e, z) > 0 &&
+            new_hist.get_dist(e, z) < 0.001) {
           new_hist.set_dist(e, z, propagated_hist.get_dist(e, z));
         }
       }
     }
   }
-}
-
-// costfunction for every free histogram cell
-double costFunction(PolarPoint p_pol, nav_msgs::GridCells& path_waypoints,
-                    const Eigen::Vector3f& goal,
-                    const Eigen::Vector3f& position,
-                    const Eigen::Vector3f& position_old, double goal_cost_param,
-                    double smooth_cost_param,
-                    double height_change_cost_param_adapted,
-                    double height_change_cost_param, bool only_yawed) {
-  double cost;
-  int waypoint_index = path_waypoints.cells.size() - 1;
-  if (waypoint_index < 0) {
-    waypoint_index = 0;
-    path_waypoints.cells.push_back(toPoint(position_old));
-  }
-
-  float dist = (position - goal).norm();
-  float dist_old = (position_old - goal).norm();
-  p_pol.r = dist;
-  Eigen::Vector3f candidate_goal = polarToCartesian(p_pol, toPoint(position));
-  PolarPoint p_pol_old(path_waypoints.cells[waypoint_index].x,
-                       path_waypoints.cells[waypoint_index].y, dist_old);
-
-  Eigen::Vector3f old_candidate_goal =
-      polarToCartesian(p_pol_old, toPoint(position_old));
-  double yaw_cost = goal_cost_param *
-                    (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
-
-  double pitch_cost_up = 0.0;
-  double pitch_cost_down = 0.0;
-  if (candidate_goal.z() > goal.z()) {
-    pitch_cost_up = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
-  } else {
-    pitch_cost_down = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
-  }
-
-  double yaw_cost_smooth =
-      smooth_cost_param *
-      (old_candidate_goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
-
-  double pitch_cost_smooth =
-      smooth_cost_param * std::abs(old_candidate_goal.z() - candidate_goal.z());
-
-  if (!only_yawed) {
-    cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
-           height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
-           pitch_cost_smooth;
-  } else {
-    cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
-           height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
-           0.5 * pitch_cost_smooth;
-  }
-
-  return cost;
 }
 
 void compressHistogramElevation(Histogram& new_hist,
@@ -298,168 +209,212 @@ void compressHistogramElevation(Histogram& new_hist,
 
   for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (input_hist.get_bin(e, z) > 0) {
-        new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);
+      if (input_hist.get_dist(e, z) > 0) {
         if (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) ||
-            (new_hist.get_dist(0, z) == 0.0))
+            (new_hist.get_dist(0, z) == 0.f))
           new_hist.set_dist(0, z, input_hist.get_dist(e, z));
       }
     }
   }
 }
 
-// search for free directions in the 2D polar histogram with a moving window
-// approach
-void findFreeDirections(
-    const Histogram& histogram, double safety_radius,
-    nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
-    nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells& path_waypoints,
-    std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
-    const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
-    double goal_cost_param, double smooth_cost_param,
-    double height_change_cost_param_adapted, double height_change_cost_param,
-    bool only_yawed, int resolution_alpha) {
-  int n = floor(safety_radius / resolution_alpha);  // safety radius
-  int z_dim = 360 / resolution_alpha;
-  int e_dim = 180 / resolution_alpha;
-  int a = 0, b = 0;
-  bool free = true;
-  bool corner = false;
-  geometry_msgs::Point p;
-  cost_path_candidates.clear();
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed,
+                   Eigen::MatrixXd& cost_matrix) {
+  // reset cost matrix to zero
+  cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  cost_matrix.fill(0.0);
 
-  initGridCells(path_candidates);
-  initGridCells(path_rejected);
-  initGridCells(path_blocked);
-  initGridCells(path_selected);
+  // fill in cost matrix
+  for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
+    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
+      float e_angle = elevationIndexToAngle(e_index, ALPHA_RES);
+      float z_angle = azimuthIndexToAngle(z_index, ALPHA_RES);
+      float obstacle_distance = histogram.get_dist(e_index, z_index);
+      cost_matrix(e_index, z_index) =
+          costFunction(e_angle, z_angle, obstacle_distance, goal, position,
+                       last_sent_waypoint, cost_params, only_yawed);
+    }
+  }
 
-  // determine which bins are candidates
-  for (int e = 0; e < e_dim; e++) {
-    for (int z = 0; z < z_dim; z++) {
-      for (int i = (e - n); i <= (e + n); i++) {
-        for (int j = (z - n); j <= (z + n); j++) {
-          free = true;
-          corner = false;
+  unsigned int smooth_radius = 3;
+  smoothPolarMatrix(cost_matrix, smooth_radius);
+  smooth_radius = 2;
+  smoothPolarMatrix(cost_matrix, smooth_radius);
+  smooth_radius = 1;
+  smoothPolarMatrix(cost_matrix, smooth_radius);
+}
 
-          // Elevation index < 0
-          if (i < 0 && j >= 0 && j < z_dim) {
-            a = 0;
-            b = j + (180 / resolution_alpha) - 1;
-            if (b >= z_dim) {
-              b = b % (z_dim - 1);
-            }
-          }
-          // Azimuth index < 0
-          else if (j < 0 && i >= 0 && i < e_dim) {
-            b = j + z_dim;
-            a = i;
-          }
-          // Elevation index > e_dim
-          else if (i >= e_dim && j >= 0 && j < z_dim) {
-            a = e_dim - (i % (e_dim - 1));
-            b = j + (180 / resolution_alpha) - 1;
-            if (b >= z_dim) {
-              b = b % (z_dim - 1);
-            };
-          }
-          // Azimuth index > z_dim
-          else if (j >= z_dim && i >= 0 && i < e_dim) {
-            b = j - z_dim;
-          }
-          // Elevation and Azimuth index both within histogram
-          else if (i >= 0 && i < e_dim && j >= 0 && j < z_dim) {
-            a = i;
-            b = j;
-          }
-          // Elevation and azimuth index both < 0 OR elevation index >
-          // e_dim and azimuth index <> z_dim OR elevation index < 0 and
-          // azimuth index > z_dim OR elevation index > e_dim and azimuth index
-          // < 0. These cells are not part of the polar histogram.
-          else {
-            corner = true;
-          }
+void getBestCandidatesFromCostMatrix(
+    const Eigen::MatrixXd& matrix, unsigned int number_of_candidates,
+    std::vector<candidateDirection>& candidate_vector) {
+  std::priority_queue<candidateDirection, std::vector<candidateDirection>,
+                      std::less<candidateDirection>>
+      queue;
 
-          if (!corner) {
-            if (histogram.get_bin(a, b) != 0) {
-              free = false;
-              break;
-            }
-          }
-        }
+  for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+    for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+      double elevation_angle = elevationIndexToAngle(row_index, ALPHA_RES);
+      double azimuth_angle = azimuthIndexToAngle(col_index, ALPHA_RES);
+      double cost = matrix(row_index, col_index);
+      candidateDirection candidate(cost, elevation_angle, azimuth_angle);
 
-        if (!free) break;
+      if (queue.size() < number_of_candidates) {
+        queue.push(candidate);
+      } else if (candidate < queue.top()) {
+        queue.push(candidate);
+        queue.pop();
       }
+    }
+  }
+  // copy queue to vector and change order such that lowest cost is at the front
+  candidate_vector.clear();
+  while (!queue.empty()) {
+    candidate_vector.push_back(queue.top());
+    queue.pop();
+  }
+  std::reverse(candidate_vector.begin(), candidate_vector.end());
+}
 
-      if (free) {
-        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
-        p.x = p_pol.e;
-        p.y = p_pol.z;
-        p.z = p_pol.r;
-        path_candidates.cells.push_back(p);
-        double cost =
-            costFunction(p_pol, path_waypoints, goal, position, position_old,
-                         goal_cost_param, smooth_cost_param,
-                         height_change_cost_param_adapted,
-                         height_change_cost_param, only_yawed);
-        cost_path_candidates.push_back(cost);
-      } else if (!free && histogram.get_bin(e, z) != 0) {
-        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
-        p.x = p_pol.e;
-        p.y = p_pol.z;
-        p.z = p_pol.r;
-        path_rejected.cells.push_back(p);
-      } else {
-        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
-        p.x = p_pol.e;
-        p.y = p_pol.z;
-        p.z = p_pol.r;
-        path_blocked.cells.push_back(p);
-      }
+void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius) {
+  // pad matrix by smoothing radius respecting all wrapping rules
+  Eigen::MatrixXd matrix_padded;
+  padPolarMatrix(matrix, smoothing_radius, matrix_padded);
+
+  // filter matrix (max-mean)
+  for (int row_index = smoothing_radius;
+       row_index < matrix_padded.rows() - smoothing_radius; row_index++) {
+    for (int col_index = smoothing_radius;
+         col_index < matrix_padded.cols() - smoothing_radius; col_index++) {
+      double original_val = matrix_padded(row_index, col_index);
+      double mean_val =
+          matrix_padded
+              .block(row_index - smoothing_radius, col_index - smoothing_radius,
+                     2 * smoothing_radius + 1, 2 * smoothing_radius + 1)
+              .mean();
+      matrix(row_index - smoothing_radius, col_index - smoothing_radius) =
+          std::max(original_val, mean_val);
     }
   }
 }
 
-// calculate the free direction which has the smallest cost for the UAV to
-// travel to
-bool calculateCostMap(const std::vector<float>& cost_path_candidates,
-                      std::vector<int>& cost_idx_sorted) {
-  if (cost_path_candidates.empty()) {
-    ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
-    return 1;
+void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXd& matrix_padded) {
+  matrix_padded.resize(matrix.rows() + 2 * n_lines_padding,
+                       matrix.cols() + 2 * n_lines_padding);
+
+  matrix_padded.fill(0.0);
+  // middle part
+  matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),
+                      matrix.cols()) = matrix;
+
+  if (matrix.cols() % 2 > 0) {
+    ROS_ERROR("invalid resolution: 180 % (2* resolution) must be zero");
+  }
+  int middle_index = floor(matrix.cols() / 2);
+
+  // top border
+  matrix_padded.block(0, n_lines_padding, n_lines_padding, middle_index) =
+      matrix.block(0, middle_index, n_lines_padding, middle_index)
+          .colwise()
+          .reverse();
+  matrix_padded.block(0, n_lines_padding + middle_index, n_lines_padding,
+                      middle_index) =
+      matrix.block(0, 0, n_lines_padding, middle_index).colwise().reverse();
+
+  // bottom border
+  matrix_padded.block(matrix.rows() + n_lines_padding, n_lines_padding,
+                      n_lines_padding, middle_index) =
+      matrix
+          .block(matrix.rows() - n_lines_padding, middle_index, n_lines_padding,
+                 middle_index)
+          .colwise()
+          .reverse();
+  matrix_padded.block(matrix.rows() + n_lines_padding,
+                      n_lines_padding + middle_index, n_lines_padding,
+                      middle_index) =
+      matrix
+          .block(matrix.rows() - n_lines_padding, 0, n_lines_padding,
+                 middle_index)
+          .colwise()
+          .reverse();
+
+  // left border
+  matrix_padded.block(0, 0, matrix_padded.rows(), n_lines_padding) =
+      matrix_padded.block(0, matrix_padded.cols() - 2 * n_lines_padding,
+                          matrix_padded.rows(), n_lines_padding);
+  // right border
+  matrix_padded.block(0, n_lines_padding + matrix.cols(), matrix_padded.rows(),
+                      n_lines_padding) =
+      matrix_padded.block(0, n_lines_padding, matrix_padded.rows(),
+                          n_lines_padding);
+}
+
+// costfunction for every free histogram cell
+double costFunction(double e_angle, double z_angle, float obstacle_distance,
+                    const Eigen::Vector3f& goal,
+                    const Eigen::Vector3f& position,
+                    const Eigen::Vector3f& last_sent_waypoint,
+                    costParameters cost_params, bool only_yawed) {
+  Eigen::Vector3f projected_candidate =
+      fromPolarToCartesian(e_angle, z_angle, 1.0, toPoint(position));
+  Eigen::Vector3f projected_goal = goal;
+  Eigen::Vector3f projected_last_wp = last_sent_waypoint;
+
+  if ((goal - position).norm() > 0.0001) {
+    Eigen::Vector3f projected_goal = (goal - position).normalized();
+  }
+  if ((last_sent_waypoint - position).norm() > 0.0001) {
+    Eigen::Vector3f projected_last_wp =
+        (last_sent_waypoint - position).normalized();
+  }
+
+  // goal costs
+  double yaw_cost =
+      cost_params.goal_cost_param *
+      (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
+  double pitch_cost_up = 0.0;
+  double pitch_cost_down = 0.0;
+  if (projected_candidate.z() > projected_goal.z()) {
+    pitch_cost_up = cost_params.goal_cost_param *
+                    std::abs(projected_goal.z() - projected_candidate.z());
   } else {
-    cost_idx_sorted.resize(cost_path_candidates.size());
-    std::iota(cost_idx_sorted.begin(), cost_idx_sorted.end(), 0);
-
-    std::sort(cost_idx_sorted.begin(), cost_idx_sorted.end(),
-              [&cost_path_candidates](size_t i1, size_t i2) {
-                return cost_path_candidates[i1] < cost_path_candidates[i2];
-              });
-    return 0;
+    pitch_cost_down = cost_params.goal_cost_param *
+                      std::abs(projected_goal.z() - projected_candidate.z());
   }
-}
 
-void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
-                    int e_FOV_max, int e_chosen, int z_chosen,
-                    double resolution) {
-  int z_dim = 360 / resolution;
-  int e_dim = 180 / resolution;
+  // smooth costs
+  double yaw_cost_smooth =
+      cost_params.smooth_cost_param *
+      (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>())
+          .norm();
+  double pitch_cost_smooth =
+      cost_params.smooth_cost_param *
+      std::abs(projected_last_wp.z() - projected_candidate.z());
 
-  for (int e_ind = 0; e_ind < e_dim; e_ind++) {
-    for (int z_ind = 0; z_ind < z_dim; z_ind++) {
-      if (e_chosen == e_ind && z_chosen == z_ind) {
-        std::cout << "\033[1;31m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
-      } else if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z_ind) !=
-                     z_FOV_idx.end() &&
-                 e_ind > e_FOV_min && e_ind < e_FOV_max) {
-        std::cout << "\033[1;32m" << hist.get_bin(e_ind, z_ind) << " \033[0m";
-      } else {
-        std::cout << hist.get_bin(e_ind, z_ind) << " ";
-      }
-    }
-    std::cout << "\n";
+  // distance cost
+  double distance_cost = 0.0;
+  if (obstacle_distance > 0) {
+    distance_cost = 500 * 1.0 / obstacle_distance;
   }
-  std::cout << "--------------------------------------\n";
+
+  // combine costs
+  double cost = 0.0;
+  if (!only_yawed) {
+    cost = yaw_cost +
+           cost_params.height_change_cost_param_adapted * pitch_cost_up +
+           cost_params.height_change_cost_param * pitch_cost_down +
+           yaw_cost_smooth + pitch_cost_smooth + distance_cost;
+  } else {
+    cost = yaw_cost +
+           cost_params.height_change_cost_param_adapted * pitch_cost_up +
+           cost_params.height_change_cost_param * pitch_cost_down +
+           0.5 * yaw_cost_smooth + 0.5 * pitch_cost_smooth + distance_cost;
+  }
+
+  return cost;
 }
 
 bool getDirectionFromTree(
@@ -492,8 +447,18 @@ bool getDirectionFromTree(
       }
     }
     int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-    if (min_dist > 3.0 || wp_idx == 0) {
+    if (min_dist > 3.0) {
       tree_available = false;
+    } else if (wp_idx == 0) {
+      if (size == 2) {
+        int wp_e = floor(elevationAnglefromCartesian(
+            toEigen(path_node_positions[0]), position));
+        int wp_z = floor(azimuthAnglefromCartesian(
+            toEigen(path_node_positions[0]), position));
+        p = Eigen::Vector3f(wp_e, wp_z, 0.f);
+      } else {
+        tree_available = false;
+      }
     } else {
       double cos_alpha = (node_distance * node_distance +
                           distances[wp_idx] * distances[wp_idx] -
@@ -513,5 +478,25 @@ bool getDirectionFromTree(
     tree_available = false;
   }
   return tree_available;
+}
+
+void printHistogram(Histogram& histogram) {
+  std::cout << "------------------------------------------Histogram------------"
+               "------------------------------------\n";
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      int val = floor(histogram.get_dist(e, z));
+      if (val > 99) {
+        std::cout << val << " ";
+      } else if (val > 9) {
+        std::cout << val << "  ";
+      } else {
+        std::cout << val << "   ";
+      }
+    }
+    std::cout << "\n";
+  }
+  std::cout << "_______________________________________________________________"
+               "____________________________________\n";
 }
 }

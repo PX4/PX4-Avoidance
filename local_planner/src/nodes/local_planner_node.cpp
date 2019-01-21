@@ -79,16 +79,6 @@ LocalPlannerNode::LocalPlannerNode() {
   complete_tree_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
   tree_path_pub_ = nh_.advertise<visualization_msgs::Marker>("/tree_path", 1);
-  marker_blocked_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/blocked_marker", 1);
-  marker_rejected_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/rejected_marker", 1);
-  marker_candidates_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/candidates_marker", 1);
-  marker_FOV_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/FOV_marker", 1);
-  marker_selected_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/selected_marker", 1);
   marker_goal_pub_ =
       nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
   path_actual_pub_ =
@@ -261,6 +251,9 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_->ground_distance_ = 2.0;  // in case where no range data is
     // available assume vehicle is close to ground
   }
+
+  // update last sent waypoint
+  local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -336,71 +329,6 @@ void LocalPlannerNode::publishPaths() {
   path_waypoint_pub_.publish(path_waypoint_marker);
 
   path_length_++;
-}
-
-void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
-                                  nav_msgs::GridCells& path, const float red,
-                                  const float green, const float blue) {
-  visualization_msgs::Marker m;
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.action = 3;
-  m.scale.x = 0.1;
-  m.scale.y = 0.1;
-  m.scale.z = 0.1;
-  m.color.a = 1.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  marker->markers.push_back(m);
-
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
-
-  for (size_t i = 0; i < path.cells.size(); i++) {
-    m.id = i + 1;
-    m.action = visualization_msgs::Marker::ADD;
-    PolarPoint p_pol(path.cells[i].x, path.cells[i].y, 1.0f);
-    m.pose.position = toPoint(polarToCartesian(p_pol, drone_pos.pose.position));
-
-    m.color.r = red;
-    m.color.g = green;
-    m.color.b = blue;
-
-    marker->markers.push_back(m);
-  }
-}
-
-void LocalPlannerNode::publishMarkerBlocked(nav_msgs::GridCells& path_blocked) {
-  visualization_msgs::MarkerArray marker_blocked;
-  initMarker(&marker_blocked, path_blocked, 0.0, 0.0, 1.0);
-  marker_blocked_pub_.publish(marker_blocked);
-}
-
-void LocalPlannerNode::publishMarkerRejected(
-    nav_msgs::GridCells& path_rejected) {
-  visualization_msgs::MarkerArray marker_rejected;
-  initMarker(&marker_rejected, path_rejected, 1.0, 0.0, 0.0);
-  marker_rejected_pub_.publish(marker_rejected);
-}
-
-void LocalPlannerNode::publishMarkerCandidates(
-    nav_msgs::GridCells& path_candidates) {
-  visualization_msgs::MarkerArray marker_candidates;
-  initMarker(&marker_candidates, path_candidates, 0.0, 1.0, 0.0);
-  marker_candidates_pub_.publish(marker_candidates);
-}
-
-void LocalPlannerNode::publishMarkerSelected(
-    nav_msgs::GridCells& path_selected) {
-  visualization_msgs::MarkerArray marker_selected;
-  initMarker(&marker_selected, path_selected, 0.8, 0.16, 0.8);
-  marker_selected_pub_.publish(marker_selected);
-}
-
-void LocalPlannerNode::publishMarkerFOV(nav_msgs::GridCells& FOV_cells) {
-  visualization_msgs::MarkerArray FOV_marker;
-  initMarker(&FOV_marker, FOV_cells, 0.16, 0.8, 0.8);
-  marker_FOV_pub_.publish(FOV_marker);
 }
 
 void LocalPlannerNode::publishGoal() {
@@ -935,22 +863,12 @@ void LocalPlannerNode::publishPlannerData() {
 
   last_wp_time_ = ros::Time::now();
 
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, FOV_cells;
-  local_planner_->getCandidateDataForVisualization(
-      path_candidates, path_selected, path_rejected, path_blocked, FOV_cells);
-
   if (local_planner_->send_obstacles_fcu_) {
     sensor_msgs::LaserScan distance_data_to_fcu;
     local_planner_->sendObstacleDistanceDataToFcu(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
   }
 
-  publishMarkerCandidates(path_candidates);
-  publishMarkerSelected(path_selected);
-  publishMarkerRejected(path_rejected);
-  publishMarkerBlocked(path_blocked);
-  publishMarkerFOV(FOV_cells);
   publishGoal();
   publishBox();
   publishReachHeight();

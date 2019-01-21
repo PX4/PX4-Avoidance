@@ -37,12 +37,12 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   location.pose.position.z = 0;
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, empty_cloud, location);
+  generateNewHistogram(histogram_output, empty_cloud, toEigen(location.pose.position));
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z));
+      EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
     }
   }
 }
@@ -75,7 +75,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud, location);
+  generateNewHistogram(histogram_output, cloud, toEigen(location.pose.position));
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros
@@ -95,9 +95,9 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       bool z_found =
           std::find(z_index.begin(), z_index.end(), z) != z_index.end();
       if (e_found && z_found) {
-        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << e << ", " << z;
+        EXPECT_GE(histogram_output.get_dist(e, z), 0.0);
       } else {
-        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << e << ", " << z;
+        EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
       }
     }
   }
@@ -162,364 +162,6 @@ TEST(PlannerFunctions, calculateFOV) {
   for (size_t i = 0; i < z_FOV_idx_z_smaller_zero.size(); i++) {
     EXPECT_EQ(output_z_smaller_zero.at(i), z_FOV_idx_z_smaller_zero.at(i));
   }
-}
-
-TEST(PlannerFunctionsTests, findAllFreeDirections) {
-  // GIVEN: empty histogram
-  Histogram empty_histogram = Histogram(ALPHA_RES);
-  double safety_radius = 15.0;
-  int resolution_alpha = ALPHA_RES;
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(empty_histogram, safety_radius, path_candidates,
-                     path_selected, path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: all directions should be classified as path_candidates
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha),
-      path_candidates.cells.size());
-  EXPECT_EQ(0, path_rejected.cells.size());
-  EXPECT_EQ(0, path_blocked.cells.size());
-}
-
-TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
-  // GIVEN: an histogram with a rejected cell, no wrapping of blocked cells
-  int resolution_alpha = 5;
-  double safety_radius = 5.0;
-  Histogram histogram = Histogram(resolution_alpha);
-  int obstacle_idx_e = 5;
-  int obstacle_idx_z = 10;
-  histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
-                    histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // expected output
-  std::vector<Eigen::Vector2i> blocked;
-  std::vector<Eigen::Vector2i> free;
-  for (int e = 0; e < (180 / resolution_alpha); e++) {
-    for (int z = 0; z < (360 / resolution_alpha); z++) {
-      if (!(z <= 11 && z >= 9 && e >= 4 && e <= 6)) {
-        Eigen::Vector2i v(z, e);
-        free.push_back(v);
-      } else {
-        if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          Eigen::Vector2i v(z, e);
-          blocked.push_back(v);
-        }
-      }
-    }
-  }
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
-                     path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: we should have one rejected cell and the 8 neightbooring cells
-  // blocked
-  check_indexes(path_blocked, blocked, resolution_alpha);
-  check_indexes(path_candidates, free, resolution_alpha);
-  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
-                resolution_alpha);
-
-  EXPECT_EQ(1, path_rejected.cells.size());
-  EXPECT_EQ(blocked.size(), path_blocked.cells.size());
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha) -
-          1 - blocked.size(),
-      path_candidates.cells.size());
-}
-
-TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
-  // GIVEN: a histogram with an obstacle at the first azimuth index
-  int resolution_alpha = 5;
-  double safety_radius = 5.0;
-  Histogram histogram = Histogram(resolution_alpha);
-  int obstacle_idx_e = 5;
-  int obstacle_idx_z = 0;
-  histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
-                    histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
-
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // expected output
-  std::vector<Eigen::Vector2i> blocked;
-  std::vector<Eigen::Vector2i> free;
-  for (int e = 0; e < (180 / resolution_alpha); e++) {
-    for (int z = 0; z < (360 / resolution_alpha); z++) {
-      if (!((z == 1 || z == 0 || z == 71) && e >= 4 && e <= 6)) {
-        Eigen::Vector2i v(z, e);
-        free.push_back(v);
-      } else {
-        if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          Eigen::Vector2i v(z, e);
-          blocked.push_back(v);
-        }
-      }
-    }
-  }
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
-                     path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: we should get one rejected cell, the five neighboring cells blocked
-  // plus three other blocked cells at the same elevation index and the last
-  // azimuth index
-  check_indexes(path_blocked, blocked, resolution_alpha);
-  check_indexes(path_candidates, free, resolution_alpha);
-  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
-                resolution_alpha);
-
-  EXPECT_EQ(1, path_rejected.cells.size());
-  EXPECT_EQ(blocked.size(), path_blocked.cells.size());
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha) -
-          1 - blocked.size(),
-      path_candidates.cells.size());
-}
-
-TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
-  // GIVEN: a histogram with a obstacle at the last azimuth index
-  int resolution_alpha = 5;
-  double safety_radius = 5.0;
-  Histogram histogram = Histogram(resolution_alpha);
-  int obstacle_idx_e = 5;
-  int obstacle_idx_z = 71;
-  histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
-                    histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // expected output
-  std::vector<Eigen::Vector2i> blocked;
-  std::vector<Eigen::Vector2i> free;
-  for (int e = 0; e < (180 / resolution_alpha); e++) {
-    for (int z = 0; z < (360 / resolution_alpha); z++) {
-      if (!((z == 70 || z == 71 || z == 0) && e >= 4 && e <= 6)) {
-        Eigen::Vector2i v(z, e);
-        free.push_back(v);
-      } else {
-        if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          Eigen::Vector2i v(z, e);
-          blocked.push_back(v);
-        }
-      }
-    }
-  }
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
-                     path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: we should get one rejected cell, the five neighboring cells blocked
-  // plus three other blocked cells at the same elevation index and the first
-  // azimuth index
-  check_indexes(path_blocked, blocked, resolution_alpha);
-  check_indexes(path_candidates, free, resolution_alpha);
-  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
-                resolution_alpha);
-
-  EXPECT_EQ(1, path_rejected.cells.size());
-  EXPECT_EQ(blocked.size(), path_blocked.cells.size());
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha) -
-          1 - blocked.size(),
-      path_candidates.cells.size());
-}
-
-TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
-  // GIVEN:a histogram with a obstacle at the first elevation index
-  int resolution_alpha = 8;
-  double safety_radius = 16.0;
-  Histogram histogram = Histogram(resolution_alpha);
-  int obstacle_idx_e = 0;
-  int obstacle_idx_z = 19;
-  histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
-                    histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // expected output
-  std::vector<Eigen::Vector2i> blocked;
-  std::vector<Eigen::Vector2i> free;
-
-  for (int e = 0; e < (180 / resolution_alpha); e++) {
-    for (int z = 0; z < (360 / resolution_alpha); z++) {
-      if (!(e >= 0 && e <= 2 && z >= 17 && z <= 21) &&
-          !(e >= 0 && e <= 1 && z >= 40 && z <= 44)) {
-        Eigen::Vector2i v(z, e);
-        free.push_back(v);
-      } else {
-        if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          Eigen::Vector2i v(z, e);
-          blocked.push_back(v);
-        }
-      }
-    }
-  }
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
-                     path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: we should get one rejected cell, the 14 neighboring cells blocked
-  // plus 10 other blocked cells at the same elevation index and azimuth index
-  // shifted by 180 degrees
-  check_indexes(path_blocked, blocked, resolution_alpha);
-  check_indexes(path_candidates, free, resolution_alpha);
-  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
-                resolution_alpha);
-
-  EXPECT_EQ(1, path_rejected.cells.size());
-  EXPECT_EQ(blocked.size(), path_blocked.cells.size());
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha) -
-          1 - blocked.size(),
-      path_candidates.cells.size());
-}
-
-TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
-  // GIVEN: a histogram with a obstacle at the last elevation index
-  int resolution_alpha = 10;
-  double safety_radius = 10.0;
-  Histogram histogram = Histogram(resolution_alpha);
-  int obstacle_idx_e = 17;
-  int obstacle_idx_z = 4;
-  histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
-                    histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
-  // all the variables below aren't used by the test
-  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
-  double goal_cost_param = 2.0;
-  double smooth_cost_param = 1.5;
-  double height_change_cost_param_adapted = 4.0;
-  double height_change_cost_param = 4.0;
-  bool only_yawed = false;
-
-  // expected output
-  std::vector<Eigen::Vector2i> blocked;
-  std::vector<Eigen::Vector2i> free;
-  for (int e = 0; e < (180 / resolution_alpha); e++) {
-    for (int z = 0; z < (360 / resolution_alpha); z++) {
-      if (!((e == 16 || e == 17) && (z >= 3 && z <= 5)) &&
-          !(e == 17 && (z >= 21 && z <= 23))) {
-        Eigen::Vector2i v(z, e);
-        free.push_back(v);
-      } else {
-        if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          Eigen::Vector2i v(z, e);
-          blocked.push_back(v);
-        }
-      }
-    }
-  }
-
-  // WHEN: we look for free directions
-  nav_msgs::GridCells path_candidates, path_selected, path_rejected,
-      path_blocked, path_waypoints;
-  std::vector<float> cost_path_candidates;  // not needed
-
-  findFreeDirections(histogram, safety_radius, path_candidates, path_selected,
-                     path_rejected, path_blocked, path_waypoints,
-                     cost_path_candidates, goal, position, position_old,
-                     goal_cost_param, smooth_cost_param,
-                     height_change_cost_param_adapted, height_change_cost_param,
-                     only_yawed, resolution_alpha);
-
-  // THEN: we should get one rejected cell, the 5 neighboring cells blocked
-  // plus 3 other blocked cells at the same elevation index and azimuth index
-  // shifted by 180 degrees
-  check_indexes(path_blocked, blocked, resolution_alpha);
-  check_indexes(path_candidates, free, resolution_alpha);
-  check_indexes(path_rejected, obstacle_idx_e, obstacle_idx_z,
-                resolution_alpha);
-
-  EXPECT_EQ(1, path_rejected.cells.size());
-  EXPECT_EQ(blocked.size(), path_blocked.cells.size());
-  EXPECT_EQ(
-      std::floor(360 / resolution_alpha) * std::floor(180 / resolution_alpha) -
-          1 - blocked.size(),
-      path_candidates.cells.size());
 }
 
 TEST(PlannerFunctionsTests, filterPointCloud) {
@@ -630,4 +272,284 @@ TEST(PlannerFunctions, testDirectionTree) {
   EXPECT_NEAR(72.0f, p1.z, 1.f);
 
   ASSERT_FALSE(res2);
+}
+
+TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
+  // GIVEN: a matrix with known data. Where every cell has the value of its column index.
+  // And by how many lines should be padded
+  int n_lines_padding = 3;
+  Eigen::MatrixXd matrix;
+  matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  matrix.fill(1.0);
+  for(int c = 0; c < matrix.cols(); c++){
+	  matrix.col(c) = c * matrix.col(c);
+  }
+
+  // WHEN: we pad the matrix
+  Eigen::MatrixXd matrix_padded;
+  padPolarMatrix(matrix, n_lines_padding, matrix_padded);
+
+  // THEN: the output matrix should have the right size,
+  // the middle part should be equal to the original matrix,
+  // and the wrapping around the azimuth angle should be correct.
+
+  ASSERT_EQ(GRID_LENGTH_E + 2 * n_lines_padding, matrix_padded.rows());
+  ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
+
+  bool middle_part_correct = matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
+  bool col_0_correct = matrix_padded.col(0) == matrix_padded.col(GRID_LENGTH_Z);
+  bool col_1_correct = matrix_padded.col(1) == matrix_padded.col(GRID_LENGTH_Z + 1);
+  bool col_2_correct = matrix_padded.col(2) == matrix_padded.col(GRID_LENGTH_Z + 2);
+  bool col_63_correct = matrix_padded.col(GRID_LENGTH_Z + 3) == matrix_padded.col(3);
+  bool col_64_correct = matrix_padded.col(GRID_LENGTH_Z + 4) == matrix_padded.col(4);
+  bool col_65_correct = matrix_padded.col(GRID_LENGTH_Z + 5) == matrix_padded.col(5);
+
+  EXPECT_TRUE(middle_part_correct);
+  EXPECT_TRUE(col_0_correct);
+  EXPECT_TRUE(col_1_correct);
+  EXPECT_TRUE(col_2_correct);
+  EXPECT_TRUE(col_63_correct);
+  EXPECT_TRUE(col_64_correct);
+  EXPECT_TRUE(col_65_correct);
+}
+
+TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
+  // GIVEN: a matrix with known data. Where every cell has the value of its column index.
+  // And by how many lines should be padded
+  int n_lines_padding = 2;
+  Eigen::MatrixXd matrix;
+  matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  matrix.fill(0.0);
+  int half_z = GRID_LENGTH_Z/2;
+  int last_z = GRID_LENGTH_Z - 1;
+  int last_e = GRID_LENGTH_E - 1;
+
+  matrix(0, 0) = 1;
+  matrix(0, 1) = 2;
+  matrix(1, 0) = 3;
+  matrix(0, half_z) = 4;
+  matrix(1, half_z + 1) = 5;
+  matrix(0, last_z) = 6;
+  matrix(last_e, 0) = 7;
+  matrix(last_e - 1, half_z - 1) = 8;
+  matrix(last_e, last_z) = 9;
+
+  // WHEN: we pad the matrix
+  Eigen::MatrixXd matrix_padded;
+  padPolarMatrix(matrix, n_lines_padding, matrix_padded);
+
+  // THEN: the output matrix should have the right size,
+  // the middle part should be equal to the original matrix,
+  // and the wrapping around the elevation angle should be correct.
+
+  ASSERT_EQ(GRID_LENGTH_E + 2 * n_lines_padding, matrix_padded.rows());
+  ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
+
+
+  bool middle_part_correct = matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
+  bool val_1 = matrix_padded(1, half_z + n_lines_padding) == 1;
+  bool val_2 = matrix_padded(1, half_z + n_lines_padding + 1) == 2;
+  bool val_3 = matrix_padded(0, half_z + n_lines_padding) == 3;
+  bool val_4 = matrix_padded(1, 2) == 4;
+  bool val_5 = matrix_padded(0, 3) == 5;
+  bool val_6 = matrix_padded(1, half_z - 1 + n_lines_padding) == 6;
+  bool val_7 = matrix_padded(last_e + 1 + n_lines_padding, half_z + n_lines_padding) == 7;
+  bool val_8 = matrix_padded(last_e + 2 + n_lines_padding, GRID_LENGTH_Z + n_lines_padding - 1) == 8;
+  bool val_9 = matrix_padded(last_e + 1 + n_lines_padding, half_z - 1 + n_lines_padding) == 9;
+
+  EXPECT_TRUE(middle_part_correct);
+  EXPECT_TRUE(val_1);
+  EXPECT_TRUE(val_2);
+  EXPECT_TRUE(val_3);
+  EXPECT_TRUE(val_4);
+  EXPECT_TRUE(val_5);
+  EXPECT_TRUE(val_6);
+  EXPECT_TRUE(val_7);
+  EXPECT_TRUE(val_8);
+  EXPECT_TRUE(val_9);
+}
+
+TEST(PlannerFunctions, getBestCandidatesFromCostMatrix) {
+  // GIVEN: a known cost matrix and the number of needed candidates
+  int n_candidates = 4;
+  std::vector<candidateDirection> candidate_vector;
+  Eigen::MatrixXd matrix;
+  matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  matrix.fill(10);
+
+  matrix(0, 2) = 1.1;
+  matrix(0, 1) = 2.5;
+  matrix(1, 2) = 3.8;
+  matrix(1, 0) = 4.7;
+  matrix(2, 2) = 4.9;
+
+  // WHEN: calculate the candidates from the matrix
+  getBestCandidatesFromCostMatrix(matrix, n_candidates, candidate_vector);
+
+  // THEN: the output vector should have the right candidates in the right order
+
+  ASSERT_EQ(n_candidates, candidate_vector.size());
+
+  EXPECT_FLOAT_EQ(1.1, candidate_vector[0].cost);
+  EXPECT_FLOAT_EQ(2.5, candidate_vector[1].cost);
+  EXPECT_FLOAT_EQ(3.8, candidate_vector[2].cost);
+  EXPECT_FLOAT_EQ(4.7, candidate_vector[3].cost);
+}
+
+TEST(PlannerFunctions, smoothPolarMatrix) {
+  // GIVEN: a smoothing radius and a known cost matrix with one costly cell, otherwise all zeros.
+  unsigned int smooth_radius = 2;
+  Eigen::MatrixXd matrix;
+  Eigen::MatrixXd matrix_old;
+  matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  matrix.fill(0);
+
+  int r_object = GRID_LENGTH_E/2;
+  int c_object = GRID_LENGTH_Z/2;
+  matrix(r_object, c_object) = 100;
+
+  // WHEN: we calculate the smoothed matrix
+  matrix_old = matrix;
+  smoothPolarMatrix(matrix, smooth_radius);
+
+  // THEN: The smoothed matrix should be element-wise greater-equal than the input matrix
+  // and the elements inside the smoothing radius around the costly cell should be greater than before
+  for(int r = r_object - smooth_radius; r < r_object + smooth_radius; r ++){
+	  for(int c = c_object - smooth_radius; c < c_object + smooth_radius; c ++){
+		  if(!(r == r_object && c == c_object)){
+			  EXPECT_GT(matrix(r, c), matrix_old(r, c));
+		  }
+	  }
+  }
+  bool greater_equal = (matrix.array() >= matrix_old.array()).all();
+  EXPECT_TRUE(greater_equal);
+}
+
+TEST(PlannerFunctions, getCostMatrixNoObstacles) {
+  // GIVEN: a position, goal and an empty histogram
+  Eigen::Vector3f position(0, 0, 0);
+  Eigen::Vector3f goal(0, 5, 0);
+  Eigen::Vector3f last_sent_waypoint(0, 1, 0);
+  costParameters cost_params;
+  cost_params.goal_cost_param = 2.f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
+  Eigen::MatrixXd cost_matrix;
+  Histogram histogram = Histogram(ALPHA_RES);
+
+  // WHEN: we calculate the cost matrix from the input data
+  getCostMatrix(histogram, goal, position, last_sent_waypoint, cost_params,
+                          false, cost_matrix);
+
+  // THEN: The minimum cost should be in the direction of the goal
+  float best_angle_e = elevationAnglefromCartesian(goal, position);
+  float best_angle_z = azimuthAnglefromCartesian(goal, position);
+  int best_index_e = elevationAngletoIndex(best_angle_e, ALPHA_RES);
+  int best_index_z = azimuthAngletoIndex(best_angle_z, ALPHA_RES);
+
+  Eigen::MatrixXd::Index minRow, minCol;
+  float min = cost_matrix.minCoeff(&minRow, &minCol);
+
+  EXPECT_NEAR((int)minRow, best_index_e, 1);
+  EXPECT_NEAR((int)minCol, best_index_z, 1);
+
+  // And the cost should grow as we go away from the goal index
+  int check_radius = 3;
+  Eigen::MatrixXd matrix_padded;
+  //extend the matrix, as the goal direction might be at the border
+  padPolarMatrix(cost_matrix, check_radius, matrix_padded);
+
+  int best_index_padded_e = (int)minRow + check_radius;
+  int best_index_padded_z = (int)minCol + check_radius;
+
+  //check that rows farther away have bigger cost. Leave out direct neighbor rows as the center might be split over cells
+  bool row1 = (matrix_padded.row(best_index_padded_e + 2).array() > matrix_padded.row(best_index_padded_e + 1).array()).all();
+  bool row2 = (matrix_padded.row(best_index_padded_e + 3).array() > matrix_padded.row(best_index_padded_e + 2).array()).all();
+  bool row3 = (matrix_padded.row(best_index_padded_e - 2).array() > matrix_padded.row(best_index_padded_e).array() - 1).all();
+  bool row4 = (matrix_padded.row(best_index_padded_e - 3).array() > matrix_padded.row(best_index_padded_e).array() - 2).all();
+
+  //check that columns farther away have bigger cost. Leave out direct neighbor rows as the center might be split over cells
+  Eigen::MatrixXd matrix_padded2 = matrix_padded.block(3 , 0, cost_matrix.rows(), matrix_padded.cols());  //cut off padded top part
+  bool col1 = (matrix_padded2.col(best_index_padded_z + 2).array() > matrix_padded2.col(best_index_padded_z + 1).array()).all();
+  bool col2 = (matrix_padded2.col(best_index_padded_z + 3).array() > matrix_padded2.col(best_index_padded_z + 2).array()).all();
+  bool col3 = (matrix_padded2.col(best_index_padded_z - 2).array() > matrix_padded2.col(best_index_padded_z).array() - 1).all();
+  bool col4 = (matrix_padded2.col(best_index_padded_z - 3).array() > matrix_padded2.col(best_index_padded_z).array() - 2).all();
+
+  EXPECT_TRUE(col1);
+  EXPECT_TRUE(col2);
+  EXPECT_TRUE(col3);
+  EXPECT_TRUE(col4);
+  EXPECT_TRUE(row1);
+  EXPECT_TRUE(row2);
+  EXPECT_TRUE(row3);
+  EXPECT_TRUE(row4);
+}
+
+TEST(Histogram, HistogramDownsampleCorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram histogram = Histogram(ALPHA_RES);
+  histogram.set_dist(0, 0, 1.3);
+  histogram.set_dist(1, 0, 1.3);
+  histogram.set_dist(0, 1, 1.3);
+  histogram.set_dist(1, 1, 1.3);
+  histogram.set_age(2, 2, 3);
+  histogram.set_age(3, 2, 3);
+  histogram.set_age(2, 3, 3);
+  histogram.set_age(3, 3, 3);
+
+  // WHEN: we downsample the histogram to have a larger bin size
+  histogram.downsample();
+
+  // THEN: The downsampled histogram should fuse four cells of the regular resolution histogram into one
+  for (int i = 0; i < GRID_LENGTH_E/2; ++i) {
+      for (int j = 0; j < GRID_LENGTH_Z/2; ++j) {
+    	  if(i == 0 && j == 0){
+    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }else if(i == 1 && j == 1){
+    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    	  }else{
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }
+      }
+  }
+}
+
+TEST(Histogram, HistogramUpsampleCorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram histogram = Histogram(ALPHA_RES*2);
+  histogram.set_dist(0, 0, 1.3);
+  histogram.set_age(1, 1, 3);
+
+  // WHEN: we upsample the histogram to have regular bin size
+  histogram.upsample();
+
+  // THEN: The upsampled histogram should split every cell of the lower resolution histogram into four cells
+  for (int i = 0; i < GRID_LENGTH_E; ++i) {
+      for (int j = 0; j < GRID_LENGTH_Z; ++j) {
+    	  if((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) || (i == 1 && j == 1)){
+    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }else if((i == 2 && j == 2) || (i == 2 && j == 3) || (i == 3 && j == 2) || (i == 3 && j == 3)){
+    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    	  }else{
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }
+      }
+  }
+}
+
+TEST(Histogram, HistogramUpDownpsampleInorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram low_res_histogram = Histogram(ALPHA_RES*2);
+  Histogram high_res_histogram = Histogram(ALPHA_RES);
+
+  // THEN: We expect the functions to throw if the input histogram has the wrong resolution
+  EXPECT_THROW(low_res_histogram.downsample(), std::logic_error);
+  EXPECT_THROW(high_res_histogram.upsample(), std::logic_error);
 }
