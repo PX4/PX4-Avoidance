@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <vector>
+#include <Eigen/Dense>
 
 namespace avoidance {
 
@@ -16,9 +17,9 @@ class Histogram {
   int resolution;
   int z_dim;
   int e_dim;
-  std::vector<std::vector<double> > bin;
-  std::vector<std::vector<double> > age;
-  std::vector<std::vector<double> > dist;
+  Eigen::MatrixXd bin;
+  Eigen::MatrixXd age;
+  Eigen::MatrixXd dist;
 
   inline void wrapIndex(int &x, int &y) const {
     while (x < 0) x += e_dim;
@@ -33,22 +34,22 @@ class Histogram {
 
   inline double get_bin(int x, int y) const {
     wrapIndex(x, y);
-    return bin[x][y];
+    return bin(x,y);
   }
 
   inline double get_age(int x, int y) const {
     wrapIndex(x, y);
-    return age[x][y];
+    return age(x,y);
   }
 
   inline double get_dist(int x, int y) const {
     wrapIndex(x, y);
-    return dist[x][y];
+    return dist(x,y);
   }
 
-  inline void set_bin(int x, int y, double value) { bin[x][y] = value; }
-  inline void set_age(int x, int y, double value) { age[x][y] = value; }
-  inline void set_dist(int x, int y, double value) { dist[x][y] = value; }
+  inline void set_bin(int x, int y, double value) { bin(x,y) = value; }
+  inline void set_age(int x, int y, double value) { age(x,y) = value; }
+  inline void set_dist(int x, int y, double value) { dist(x,y) = value; }
 
   void upsample();
   void downsample();
