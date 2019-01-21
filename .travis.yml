@@ -70,3 +70,4 @@ script:
   - cd src/avoidance
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   - ./check_code_format.sh
+  - catkin build local_planner --no-deps -v -i --catkin-make-args run_tests
