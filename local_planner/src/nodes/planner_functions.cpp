@@ -264,13 +264,11 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
-                    const Eigen::Vector3f& goal,
-                    const Eigen::Vector3f& position,
-                    const Eigen::Vector3f& position_old, double goal_cost_param,
-                    double smooth_cost_param,
-                    double height_change_cost_param_adapted,
-                    double height_change_cost_param, bool only_yawed) {
+double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
+                    const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position,
+                    const Eigen::Vector3f &position_old,
+					costParameters cost_params, bool only_yawed) {
   double cost;
   int waypoint_index = path_waypoints.cells.size() - 1;
   if (waypoint_index < 0) {
@@ -286,31 +284,31 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
       fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
                            path_waypoints.cells[waypoint_index - 1].y, dist_old,
                            toPoint(position_old));
-  double yaw_cost = goal_cost_param *
+  double yaw_cost = cost_params.goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
   double pitch_cost_up = 0.0;
   double pitch_cost_down = 0.0;
   if (candidate_goal.z() > goal.z()) {
-    pitch_cost_up = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
+    pitch_cost_up = cost_params.goal_cost_param * std::abs(goal.z() - candidate_goal.z());
   } else {
-    pitch_cost_down = goal_cost_param * std::abs(goal.z() - candidate_goal.z());
+    pitch_cost_down = cost_params.goal_cost_param * std::abs(goal.z() - candidate_goal.z());
   }
 
   double yaw_cost_smooth =
-      smooth_cost_param *
+		  cost_params.smooth_cost_param *
       (old_candidate_goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
   double pitch_cost_smooth =
-      smooth_cost_param * std::abs(old_candidate_goal.z() - candidate_goal.z());
+		  cost_params.smooth_cost_param * std::abs(old_candidate_goal.z() - candidate_goal.z());
 
   if (!only_yawed) {
-    cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
-           height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
+    cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
+    		cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
            pitch_cost_smooth;
   } else {
-    cost = yaw_cost + height_change_cost_param_adapted * pitch_cost_up +
-           height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
+    cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
+    		cost_params.height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
            0.5 * pitch_cost_smooth;
   }
 
@@ -339,15 +337,14 @@ void compressHistogramElevation(Histogram& new_hist,
 // search for free directions in the 2D polar histogram with a moving window
 // approach
 void findFreeDirections(
-    const Histogram& histogram, double safety_radius,
-    nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
-    nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    nav_msgs::GridCells& path_waypoints,
-    std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
-    const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
-    double goal_cost_param, double smooth_cost_param,
-    double height_change_cost_param_adapted, double height_change_cost_param,
-    bool only_yawed, int resolution_alpha) {
+    const Histogram &histogram, double safety_radius,
+    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
+    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
+    nav_msgs::GridCells path_waypoints,
+    std::vector<float> &cost_path_candidates, const Eigen::Vector3f &goal,
+    const Eigen::Vector3f &position, const Eigen::Vector3f &position_old,
+	costParameters cost_params, bool only_yawed, int resolution_alpha) {
+
   int n = floor(safety_radius / resolution_alpha);  // safety radius
   int z_dim = 360 / resolution_alpha;
   int e_dim = 180 / resolution_alpha;
@@ -426,9 +423,7 @@ void findFreeDirections(
         path_candidates.cells.push_back(p);
         double cost =
             costFunction((int)p.x, (int)p.y, path_waypoints, goal, position,
-                         position_old, goal_cost_param, smooth_cost_param,
-                         height_change_cost_param_adapted,
-                         height_change_cost_param, only_yawed);
+                         position_old, cost_params, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_dist(e, z) > 0.001) {
         p.x = elevationIndexToAngle(e, resolution_alpha);

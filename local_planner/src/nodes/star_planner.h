@@ -3,6 +3,7 @@
 
 #include "box.h"
 #include "histogram.h"
+#include "cost_parameters.h"
 
 #include <Eigen/Dense>
 
@@ -30,10 +31,6 @@ class StarPlanner {
   double min_node_dist_to_obstacle_ = 2.0;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
-  double goal_cost_param_;
-  double smooth_cost_param_;
-  double height_change_cost_param_adapted_;
-  double height_change_cost_param_;
   double curr_yaw_;
   double min_cloud_size_;
   double min_dist_backoff_;
@@ -48,7 +45,7 @@ class StarPlanner {
 
   Eigen::Vector3f goal_;
   geometry_msgs::PoseStamped pose_;
-
+  costParameters cost_params_;
   nav_msgs::GridCells path_waypoints_;
 
  public:
@@ -63,15 +60,12 @@ class StarPlanner {
 
   void setParams(double min_cloud_size, double min_dist_backoff,
                  const nav_msgs::GridCells& path_waypoints, double curr_yaw,
-                 double min_realsense_dist);
+                 double min_realsense_dist, costParameters cost_params);
   void setFOV(double h_FOV, double v_FOV);
   void setReprojectedPoints(
       const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
       const std::vector<double>& reprojected_points_age,
       const std::vector<double>& reprojected_points_dist);
-  void setCostParams(double goal_cost_param, double smooth_cost_param,
-                     double height_change_cost_param_adapted,
-                     double height_change_cost_param);
   void setPose(const geometry_msgs::PoseStamped& pose);
   void setGoal(const geometry_msgs::Point& pose);
   void setCloud(

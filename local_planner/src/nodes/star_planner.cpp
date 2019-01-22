@@ -24,12 +24,14 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 
 void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
                             const nav_msgs::GridCells& path_waypoints,
-                            double curr_yaw, double min_realsense_dist) {
+                            double curr_yaw, double min_realsense_dist,
+							costParameters cost_params) {
   path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
   min_realsense_dist_ = min_realsense_dist;
+  cost_params_ = cost_params;
 }
 
 void StarPlanner::setFOV(double h_FOV, double v_FOV) {
@@ -49,16 +51,6 @@ void StarPlanner::setCloud(
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
   goal_ = toEigen(goal);
   tree_age_ = 1000;
-}
-
-void StarPlanner::setCostParams(double goal_cost_param,
-                                double smooth_cost_param,
-                                double height_change_cost_param_adapted,
-                                double height_change_cost_param) {
-  goal_cost_param_ = goal_cost_param;
-  smooth_cost_param_ = smooth_cost_param;
-  height_change_cost_param_adapted_ = height_change_cost_param_adapted;
-  height_change_cost_param_ = height_change_cost_param;
 }
 
 void StarPlanner::setReprojectedPoints(
@@ -191,9 +183,7 @@ void StarPlanner::buildLookAheadTree() {
                          path_rejected, path_blocked, path_waypoints_,
                          cost_path_candidates, goal_,
                          toEigen(pose_.pose.position), origin_origin_position,
-                         goal_cost_param_, smooth_cost_param_,
-                         height_change_cost_param_adapted_,
-                         height_change_cost_param_, false, 2 * ALPHA_RES);
+						 cost_params_, false, 2 * ALPHA_RES);
 
       if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
         tree_[origin].total_cost_ = HUGE_VAL;

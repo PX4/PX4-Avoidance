@@ -5,6 +5,7 @@
 #include "avoidance_output.h"
 #include "box.h"
 #include "histogram.h"
+#include "cost_parameters.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
@@ -64,10 +65,6 @@ class LocalPlanner {
   double curr_yaw_, last_yaw_;
   double min_speed_;
   double max_speed_;
-  double goal_cost_param_;
-  double smooth_cost_param_;
-  double height_change_cost_param_ = 4;
-  double height_change_cost_param_adapted_ = 4;
   double keep_distance_;
   ros::Time integral_time_old_;
   double no_progress_slope_;
@@ -98,6 +95,7 @@ class LocalPlanner {
 
   std::vector<TreeNode> tree_;
   std::unique_ptr<StarPlanner> star_planner_;
+  costParameters cost_params_;
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 

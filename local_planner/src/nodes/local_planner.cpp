@@ -41,8 +41,8 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
 void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
   histogram_box_.radius_ = config.box_radius_;
-  goal_cost_param_ = config.goal_cost_param_;
-  smooth_cost_param_ = config.smooth_cost_param_;
+  cost_params_.goal_cost_param = config.goal_cost_param_;
+  cost_params_.smooth_cost_param = config.smooth_cost_param_;
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   keep_distance_ = config.keep_distance_;
@@ -297,21 +297,16 @@ void LocalPlanner::determineStrategy() {
             polar_histogram_, safety_radius_, path_candidates_, path_selected_,
             path_rejected_, path_blocked_, path_waypoints_,
             cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-            position_old_, goal_cost_param_, smooth_cost_param_,
-            height_change_cost_param_adapted_, height_change_cost_param_,
-            velocity_mod_ < 0.1, ALPHA_RES);
+            position_old_, cost_params_, velocity_mod_ < 0.1, ALPHA_RES);
 
         if (use_VFH_star_) {
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
                                   path_waypoints_, curr_yaw_,
-                                  min_realsense_dist_);
+                                  min_realsense_dist_, cost_params_);
           star_planner_.setFOV(h_FOV_, v_FOV_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
                                              reprojected_points_dist_);
-          star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_,
-                                      height_change_cost_param_adapted_,
-                                      height_change_cost_param_);
           star_planner_.setCloud(final_cloud_);
           star_planner_.buildLookAheadTree();
 
@@ -322,9 +317,7 @@ void LocalPlanner::determineStrategy() {
               polar_histogram_, safety_radius_, path_candidates_,
               path_selected_, path_rejected_, path_blocked_, path_waypoints_,
               cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-              position_old_, goal_cost_param_, smooth_cost_param_,
-              height_change_cost_param_adapted_, height_change_cost_param_,
-              velocity_mod_ < 0.1, ALPHA_RES);
+              position_old_, cost_params_, velocity_mod_ < 0.1, ALPHA_RES);
           if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
             stopInFrontObstacles();
             waypoint_type_ = direct;
@@ -476,22 +469,22 @@ void LocalPlanner::evaluateProgressRate() {
 
     if (avg_incline > no_progress_slope_ &&
         goal_dist_incline_.size() == dist_incline_window_size_) {
-      if (height_change_cost_param_adapted_ > 0.75) {
-        height_change_cost_param_adapted_ -= 0.02;
+      if (cost_params_.height_change_cost_param_adapted > 0.75) {
+    	  cost_params_.height_change_cost_param_adapted -= 0.02;
       }
     }
     if (avg_incline < no_progress_slope_) {
-      if (height_change_cost_param_adapted_ <
-          height_change_cost_param_ - 0.03) {
-        height_change_cost_param_adapted_ += 0.03;
+      if (cost_params_.height_change_cost_param_adapted <
+    		  cost_params_.height_change_cost_param - 0.03) {
+    	  cost_params_.height_change_cost_param_adapted += 0.03;
       }
     }
     ROS_DEBUG(
         "\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: "
         "%f .\033[0m",
-        avg_incline, height_change_cost_param_adapted_);
+        avg_incline, cost_params_.height_change_cost_param_adapted);
   } else {
-    height_change_cost_param_adapted_ = height_change_cost_param_;
+	  cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
   }
 }
 
