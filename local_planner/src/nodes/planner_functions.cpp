@@ -317,7 +317,7 @@ void findFreeDirections(
     const Histogram& histogram, double safety_radius,
     nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
     nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
-    const nav_msgs::GridCells& path_waypoints,
+    nav_msgs::GridCells& path_waypoints,
     std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
     const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
     double goal_cost_param, double smooth_cost_param,
