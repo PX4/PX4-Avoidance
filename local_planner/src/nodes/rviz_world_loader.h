@@ -9,7 +9,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include <geometry_msgs/PoseStamped.h>
-#include <ros/ros.h>
+
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 

@@ -1,17 +1,21 @@
 #include "planner_functions.h"
 
+#include "common.h"
+
+#include <ros/console.h>
+
 #include <numeric>
 
 namespace avoidance {
 
 // initialize GridCell message
-void initGridCells(nav_msgs::GridCells *cell) {
-  cell->cells.clear();
-  cell->header.stamp = ros::Time::now();
-  cell->header.frame_id = "/local_origin";
-  cell->cell_width = ALPHA_RES;
-  cell->cell_height = ALPHA_RES;
-  cell->cells = {};
+void initGridCells(nav_msgs::GridCells& cell) {
+  cell.cells.clear();
+  cell.header.stamp = ros::Time::now();
+  cell.header.frame_id = "/local_origin";
+  cell.cell_width = ALPHA_RES;
+  cell.cell_height = ALPHA_RES;
+  cell.cells = {};
 }
 
 // adapt histogram safety margin around blocked cells to distance of pointcloud
@@ -29,20 +33,20 @@ double adaptSafetyMarginHistogram(double dist_to_closest_point,
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void filterPointCloud(
-    pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
-    Eigen::Vector3f &closest_point, double &distance_to_closest_point,
-    int &counter_backoff,
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>> &complete_cloud,
+    pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
+    Eigen::Vector3f& closest_point, double& distance_to_closest_point,
+    int& counter_backoff,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     double min_cloud_size, double min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f &position, double min_realsense_dist) {
+    const Eigen::Vector3f& position, double min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
   distance_to_closest_point = HUGE_VAL;
   float distance;
   counter_backoff = 0;
 
-  for (size_t i = 0; i < complete_cloud.size(); ++i) {
-    for (const pcl::PointXYZ &xyz : complete_cloud[i]) {
+  for (const auto& cloud : complete_cloud) {
+    for (const pcl::PointXYZ& xyz : cloud) {
       // Check if the point is invalid
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
@@ -74,8 +78,8 @@ void filterPointCloud(
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void calculateFOV(double h_fov, double v_fov, std::vector<int> &z_FOV_idx,
-                  int &e_FOV_min, int &e_FOV_max, double yaw, double pitch) {
+void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
+                  int& e_FOV_min, int& e_FOV_max, double yaw, double pitch) {
   double z_FOV_max =
       std::round((-yaw * 180.0 / M_PI + h_fov / 2.0 + 270.0) / ALPHA_RES) - 1;
   double z_FOV_min =
@@ -117,11 +121,12 @@ void calculateFOV(double h_fov, double v_fov, std::vector<int> &z_FOV_idx,
 }
 
 // Build histogram estimate from reprojected points
-void propagateHistogram(Histogram &polar_histogram_est,
-                        pcl::PointCloud<pcl::PointXYZ> reprojected_points,
-                        std::vector<double> reprojected_points_age,
-                        std::vector<double> reprojected_points_dist,
-                        geometry_msgs::PoseStamped position) {
+void propagateHistogram(
+    Histogram& polar_histogram_est,
+    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
+    const std::vector<double>& reprojected_points_age,
+    const std::vector<double>& reprojected_points_dist,
+    const geometry_msgs::PoseStamped& position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     float e_angle = elevationAnglefromCartesian(
         toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
@@ -164,8 +169,8 @@ void propagateHistogram(Histogram &polar_histogram_est,
 }
 
 // Generate new histogram from pointcloud
-void generateNewHistogram(Histogram &polar_histogram,
-                          const pcl::PointCloud<pcl::PointXYZ> &cropped_cloud,
+void generateNewHistogram(Histogram& polar_histogram,
+                          const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           geometry_msgs::PoseStamped position) {
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
@@ -196,9 +201,10 @@ void generateNewHistogram(Histogram &polar_histogram,
 }
 
 // Combine propagated histogram and new histogram to the final binary histogram
-void combinedHistogram(bool &hist_empty, Histogram &new_hist,
-                       Histogram propagated_hist, bool waypoint_outside_FOV,
-                       std::vector<int> z_FOV_idx, int e_FOV_min,
+void combinedHistogram(bool& hist_empty, Histogram& new_hist,
+                       const Histogram& propagated_hist,
+                       bool waypoint_outside_FOV,
+                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max) {
   hist_empty = true;
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -232,10 +238,10 @@ void combinedHistogram(bool &hist_empty, Histogram &new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
-                    const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position,
-                    const Eigen::Vector3f &position_old, double goal_cost_param,
+double costFunction(int e, int z, const nav_msgs::GridCells& path_waypoints,
+                    const Eigen::Vector3f& goal,
+                    const Eigen::Vector3f& position,
+                    const Eigen::Vector3f& position_old, double goal_cost_param,
                     double smooth_cost_param,
                     double height_change_cost_param_adapted,
                     double height_change_cost_param, bool only_yawed) {
@@ -281,7 +287,8 @@ double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
   return cost;
 }
 
-void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
+void compressHistogramElevation(Histogram& new_hist,
+                                const Histogram& input_hist) {
   int vertical_FOV_range_sensor = 20;
   int lower_index = elevationAngletoIndex(
       -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
@@ -303,12 +310,12 @@ void compressHistogramElevation(Histogram &new_hist, Histogram input_hist) {
 // search for free directions in the 2D polar histogram with a moving window
 // approach
 void findFreeDirections(
-    const Histogram &histogram, double safety_radius,
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells path_waypoints,
-    std::vector<float> &cost_path_candidates, const Eigen::Vector3f &goal,
-    const Eigen::Vector3f &position, const Eigen::Vector3f &position_old,
+    const Histogram& histogram, double safety_radius,
+    nav_msgs::GridCells& path_candidates, nav_msgs::GridCells& path_selected,
+    nav_msgs::GridCells& path_rejected, nav_msgs::GridCells& path_blocked,
+    const nav_msgs::GridCells& path_waypoints,
+    std::vector<float>& cost_path_candidates, const Eigen::Vector3f& goal,
+    const Eigen::Vector3f& position, const Eigen::Vector3f& position_old,
     double goal_cost_param, double smooth_cost_param,
     double height_change_cost_param_adapted, double height_change_cost_param,
     bool only_yawed, int resolution_alpha) {
@@ -321,10 +328,10 @@ void findFreeDirections(
   geometry_msgs::Point p;
   cost_path_candidates.clear();
 
-  initGridCells(&path_candidates);
-  initGridCells(&path_rejected);
-  initGridCells(&path_blocked);
-  initGridCells(&path_selected);
+  initGridCells(path_candidates);
+  initGridCells(path_rejected);
+  initGridCells(path_blocked);
+  initGridCells(path_selected);
 
   // determine which bins are candidates
   for (int e = 0; e < e_dim; e++) {
@@ -405,8 +412,8 @@ void findFreeDirections(
 
 // calculate the free direction which has the smallest cost for the UAV to
 // travel to
-bool calculateCostMap(std::vector<float> cost_path_candidates,
-                      std::vector<int> &cost_idx_sorted) {
+bool calculateCostMap(const std::vector<float>& cost_path_candidates,
+                      std::vector<int>& cost_idx_sorted) {
   if (cost_path_candidates.empty()) {
     ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
     return 1;
@@ -446,9 +453,9 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 }
 
 bool getDirectionFromTree(
-    Eigen::Vector3f &p,
-    const std::vector<geometry_msgs::Point> &path_node_positions,
-    const Eigen::Vector3f &position) {
+    Eigen::Vector3f& p,
+    const std::vector<geometry_msgs::Point>& path_node_positions,
+    const Eigen::Vector3f& position) {
   int size = path_node_positions.size();
   bool tree_available = true;
 

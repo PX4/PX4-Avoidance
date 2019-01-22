@@ -1,8 +1,15 @@
 #include "local_planner.h"
 
+#include "common.h"
+#include "planner_functions.h"
+#include "star_planner.h"
+#include "tree_node.h"
+
+#include <sensor_msgs/image_encodings.h>
+
 namespace avoidance {
 
-LocalPlanner::LocalPlanner() {}
+LocalPlanner::LocalPlanner() : star_planner_(new StarPlanner()) {}
 
 LocalPlanner::~LocalPlanner() {}
 
@@ -12,7 +19,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.pose.position = msg.pose.position;
   pose_.pose.orientation = msg.pose.orientation;
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
-  star_planner_.setPose(pose_);
+  star_planner_->setPose(pose_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_.header = msg.header;
@@ -67,7 +74,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   adapt_cost_params_ = config.adapt_cost_params_;
   send_obstacles_fcu_ = config.send_obstacles_fcu_;
 
-  star_planner_.dynamicReconfigureSetStarParams(config, level);
+  star_planner_->dynamicReconfigureSetStarParams(config, level);
 
   ROS_DEBUG("\033[0;35m[OA] Dynamic reconfigure call \033[0m");
 }
@@ -87,18 +94,18 @@ void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
 geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
 
 void LocalPlanner::applyGoal() {
-  initGridCells(&path_waypoints_);
+  initGridCells(path_waypoints_);
   path_waypoints_.cells.push_back(pose_.pose.position);
-  star_planner_.setGoal(toPoint(goal_));
+  star_planner_->setGoal(toPoint(goal_));
   goal_dist_incline_.clear();
 }
 
 void LocalPlanner::runPlanner() {
   // reset candidates for visualization
-  initGridCells(&path_candidates_);
-  initGridCells(&path_rejected_);
-  initGridCells(&path_blocked_);
-  initGridCells(&path_selected_);
+  initGridCells(path_candidates_);
+  initGridCells(path_rejected_);
+  initGridCells(path_blocked_);
+  initGridCells(path_selected_);
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -114,7 +121,7 @@ void LocalPlanner::runPlanner() {
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
   // visualization of FOV in RViz
-  initGridCells(&FOV_cells_);
+  initGridCells(FOV_cells_);
   geometry_msgs::Point p;
   for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
     for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
@@ -187,7 +194,7 @@ sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
 }
 
 void LocalPlanner::determineStrategy() {
-  star_planner_.tree_age_++;
+  star_planner_->tree_age_++;
 
   if (disable_rise_to_goal_altitude_) {
     reach_altitude_ = true;
@@ -294,19 +301,19 @@ void LocalPlanner::determineStrategy() {
             velocity_mod_ < 0.1, ALPHA_RES);
 
         if (use_VFH_star_) {
-          star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
-                                  path_waypoints_, curr_yaw_,
-                                  min_realsense_dist_);
-          star_planner_.setFOV(h_FOV_, v_FOV_);
-          star_planner_.setReprojectedPoints(reprojected_points_,
-                                             reprojected_points_age_,
-                                             reprojected_points_dist_);
-          star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_,
-                                      height_change_cost_param_adapted_,
-                                      height_change_cost_param_);
-          star_planner_.setBoxSize(histogram_box_, ground_distance_);
-          star_planner_.setCloud(complete_cloud_);
-          star_planner_.buildLookAheadTree();
+          star_planner_->setParams(min_cloud_size_, min_dist_backoff_,
+                                   path_waypoints_, curr_yaw_,
+                                   min_realsense_dist_);
+          star_planner_->setFOV(h_FOV_, v_FOV_);
+          star_planner_->setReprojectedPoints(reprojected_points_,
+                                              reprojected_points_age_,
+                                              reprojected_points_dist_);
+          star_planner_->setCostParams(goal_cost_param_, smooth_cost_param_,
+                                       height_change_cost_param_adapted_,
+                                       height_change_cost_param_);
+          star_planner_->setBoxSize(histogram_box_, ground_distance_);
+          star_planner_->setCloud(complete_cloud_);
+          star_planner_->buildLookAheadTree();
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
@@ -540,9 +547,9 @@ void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {
 void LocalPlanner::getTree(
     std::vector<TreeNode> &tree, std::vector<int> &closed_set,
     std::vector<geometry_msgs::Point> &path_node_positions) {
-  tree = star_planner_.tree_;
-  closed_set = star_planner_.closed_set_;
-  path_node_positions = star_planner_.path_node_positions_;
+  tree = star_planner_->tree_;
+  closed_set = star_planner_->closed_set_;
+  path_node_positions = star_planner_->path_node_positions_;
 }
 
 void LocalPlanner::sendObstacleDistanceDataToFcu(
@@ -571,7 +578,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
 
   out.costmap_direction_e = costmap_direction_e_;
   out.costmap_direction_z = costmap_direction_z_;
-  out.path_node_positions = star_planner_.path_node_positions_;
+  out.path_node_positions = star_planner_->path_node_positions_;
   return out;
 }
 }

@@ -1,13 +1,9 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
-#include <math.h>
-#include <atomic>
-#include <condition_variable>
-#include <iostream>
-#include <mutex>
-#include <string>
-#include <thread>
+#include "avoidance/common_ros.h"
+#include "avoidance_output.h"
+#include "rviz_world_loader.h"
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
@@ -28,20 +24,26 @@
 #include <sensor_msgs/Range.h>
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
+#include <std_msgs/String.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Core>
 #include <boost/bind.hpp>
-#include "std_msgs/String.h"
 
-#include "avoidance/common_ros.h"
-#include "local_planner.h"
-#include "planner_functions.h"
-#include "rviz_world_loader.h"
-#include "waypoint_generator.h"
+#include <dynamic_reconfigure/server.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
+
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <string>
+#include <thread>
 
 namespace avoidance {
+
+class LocalPlanner;
+class WaypointGenerator;
 
 struct cameraData {
   std::string topic_;
@@ -99,8 +101,8 @@ class LocalPlannerNode {
   ros::Time last_wp_time_;
   ros::Time t_status_sent_;
 
-  LocalPlanner local_planner_;
-  WaypointGenerator wp_generator_;
+  std::unique_ptr<LocalPlanner> local_planner_;
+  std::unique_ptr<WaypointGenerator> wp_generator_;
 
   ros::Publisher world_pub_;
   ros::Publisher drone_pub_;

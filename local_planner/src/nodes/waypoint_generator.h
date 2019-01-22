@@ -1,25 +1,18 @@
 #ifndef WAYPOINT_GENERATOR_H
 #define WAYPOINT_GENERATOR_H
 
-#include <math.h>
+#include "avoidance_output.h"
+
 #include <Eigen/Dense>
-#include <chrono>
-#include <fstream>
-#include <iostream>
-#include <limits>
-#include <string>
-#include <vector>
-
-#include <ros/ros.h>
-
-#include "common.h"
-#include "local_planner.h"
-#include "planner_functions.h"
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-#include <geometry_msgs/Vector3Stamped.h>
+#include <geometry_msgs/TwistStamped.h>
+
+#include <ros/time.h>
+
+#include <string>
+#include <vector>
 
 namespace avoidance {
 

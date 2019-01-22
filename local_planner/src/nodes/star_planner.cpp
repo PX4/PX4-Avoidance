@@ -1,5 +1,11 @@
 #include "star_planner.h"
 
+#include "common.h"
+#include "planner_functions.h"
+#include "tree_node.h"
+
+#include <ros/console.h>
+
 namespace avoidance {
 
 StarPlanner::StarPlanner() : tree_age_(0) {}

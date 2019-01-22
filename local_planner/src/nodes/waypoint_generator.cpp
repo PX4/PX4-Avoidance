@@ -1,5 +1,10 @@
 #include "waypoint_generator.h"
 
+#include "common.h"
+#include "planner_functions.h"
+
+#include <tf/transform_listener.h>
+
 namespace avoidance {
 
 WaypointGenerator::WaypointGenerator() {}

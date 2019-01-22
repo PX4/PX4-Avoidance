@@ -6,8 +6,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <Eigen/Core>
 
-#include <pcl/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/point_types.h>
 
 namespace avoidance {
 
