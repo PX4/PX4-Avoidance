@@ -120,6 +120,13 @@ catkin_package(
 ## Build ##
 ###########
 
+## CMake Setup
+# Build in Release mode if nothing is specified
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif(NOT CMAKE_BUILD_TYPE)
+
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
