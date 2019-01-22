@@ -45,8 +45,8 @@ void filterPointCloud(
   float distance;
   counter_backoff = 0;
 
-  for (size_t i = 0; i < complete_cloud.size(); ++i) {
-    for (const pcl::PointXYZ& xyz : complete_cloud[i]) {
+  for (const auto& cloud : complete_cloud) {
+    for (const pcl::PointXYZ& xyz : cloud) {
       // Check if the point is invalid
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
@@ -126,7 +126,7 @@ void propagateHistogram(
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
     const std::vector<double>& reprojected_points_age,
     const std::vector<double>& reprojected_points_dist,
-    geometry_msgs::PoseStamped position) {
+    const geometry_msgs::PoseStamped& position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     float e_angle = elevationAnglefromCartesian(
         toEigen(reprojected_points.points[i]), toEigen(position.pose.position));

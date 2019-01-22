@@ -36,7 +36,7 @@ void propagateHistogram(
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
     const std::vector<double>& reprojected_points_age,
     const std::vector<double>& reprojected_points_dist,
-    geometry_msgs::PoseStamped position);
+    const geometry_msgs::PoseStamped& position);
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           geometry_msgs::PoseStamped position);
