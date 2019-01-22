@@ -207,7 +207,7 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
@@ -269,7 +269,7 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
 
   // all the variables below aren't used by the test
-	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
@@ -331,7 +331,7 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
@@ -393,7 +393,7 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
   const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
@@ -457,9 +457,9 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   histogram.set_bin(obstacle_idx_e, obstacle_idx_z,
                     histogram.get_bin(obstacle_idx_e, obstacle_idx_z) + 1);
   // all the variables below aren't used by the test
-	const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
-	const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
-	const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f goal(2.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position(0.0f, 0.0f, 2.0f);
+  const Eigen::Vector3f position_old(-1.0f, 0.0f, 2.0f);
   double goal_cost_param = 2.0;
   double smooth_cost_param = 1.5;
   double height_change_cost_param_adapted = 4.0;
@@ -511,7 +511,6 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
 }
 
 TEST(PlannerFunctionsTests, filterPointCloud) {
-
   // GIVEN: two point clouds
   const Eigen::Vector3f position(1.5f, 1.0f, 4.5f);
   Eigen::Vector3f closest(0.7f, 0.3f, -0.5f);
@@ -519,36 +518,41 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.1f, 0.8f, 0.1f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(2.2f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.0f, -3.0f, 1.0f)));
-  p1.push_back(toXYZ(position + Eigen::Vector3f(0.7f, 0.3f, -0.5f))); // < min_dist_backoff
+  p1.push_back(toXYZ(
+      position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));  // < min_dist_backoff
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
   pcl::PointCloud<pcl::PointXYZ> p2;
-  p2.push_back(toXYZ(position + Eigen::Vector3f(1.0f, 5.0f, 1.0f))); // > histogram_box.radius
-  p2.push_back(toXYZ(position + Eigen::Vector3f(100.0f, 5.0f, 1.0f))); // > histogram_box.radius
-  p2.push_back(toXYZ(position + Eigen::Vector3f(0.1f, 0.05f, 0.05f))); // < min_realsense_dist
+  p2.push_back(toXYZ(
+      position + Eigen::Vector3f(1.0f, 5.0f, 1.0f)));  // > histogram_box.radius
+  p2.push_back(
+      toXYZ(position +
+            Eigen::Vector3f(100.0f, 5.0f, 1.0f)));  // > histogram_box.radius
+  p2.push_back(toXYZ(
+      position + Eigen::Vector3f(0.1f, 0.05f, 0.05f)));  // < min_realsense_dist
 
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
-  complete_cloud.push_back(p1); complete_cloud.push_back(p2);
-  double min_cloud_size = 5.0;
+  complete_cloud.push_back(p1);
+  complete_cloud.push_back(p2);
   double min_dist_backoff = 1.0;
   Box histogram_box(5.0);
   histogram_box.setBoxLimits(toPoint(position), 4.5);
   double min_realsense_dist = 0.2;
 
   pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
-  Eigen::Vector3f closest_point,closest_point2;
+  Eigen::Vector3f closest_point, closest_point2;
   double distance_to_closest_point, distance_to_closest_point2;
   int counter_backoff, counter_backoff2;
 
   // WHEN: we filter the PointCloud with different values of min_cloud_size
   filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
-      counter_backoff, complete_cloud, min_cloud_size, min_dist_backoff, histogram_box,
-      position, min_realsense_dist);
+                   counter_backoff, complete_cloud, 5.0, min_dist_backoff,
+                   histogram_box, position, min_realsense_dist);
 
   filterPointCloud(cropped_cloud2, closest_point2, distance_to_closest_point2,
-      counter_backoff2, complete_cloud, 20.0, min_dist_backoff, histogram_box,
-      position, min_realsense_dist);
+                   counter_backoff2, complete_cloud, 20.0, min_dist_backoff,
+                   histogram_box, position, min_realsense_dist);
 
   // THEN: we expect cropped_cloud to have 6 points and a backoff point, while
   // cropped_cloud2 to be empty
@@ -558,12 +562,11 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   EXPECT_FLOAT_EQ(closest.norm(), distance_to_closest_point);
   EXPECT_EQ(1, counter_backoff);
   for (int i = 0; i < p1.points.size(); i++) {
-    bool same_point = (p1.points[i].x == cropped_cloud.points[i].x) && (p1.points[i].y == cropped_cloud.points[i].y) &&
-         (p1.points[i].z == cropped_cloud.points[i].z);
-    EXPECT_EQ(1, same_point);
+    bool same_point = (p1.points[i].x == cropped_cloud.points[i].x) &&
+                      (p1.points[i].y == cropped_cloud.points[i].y) &&
+                      (p1.points[i].z == cropped_cloud.points[i].z);
+    ASSERT_TRUE(same_point);
   }
 
   EXPECT_EQ(0, cropped_cloud2.points.size());
-
-
 }
