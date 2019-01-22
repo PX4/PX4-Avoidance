@@ -319,7 +319,8 @@ TEST(Common, CartesianToPolarToCartesian) {
         Eigen::Vector3f p_cartesian =
             fromPolarToCartesian(e, az, radius, toPoint(pos));
 
-        // THEN: the resulting cartesian positions are expected to be the same as
+        // THEN: the resulting cartesian positions are expected to be the same
+        // as
         // before the conversion
         EXPECT_LT((origin - p_cartesian).norm(), 0.001);
       }

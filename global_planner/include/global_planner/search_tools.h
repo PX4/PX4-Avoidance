@@ -273,9 +273,9 @@ bool reverseSearch(GlobalPlanner* global_planner, const Cell& t) {
         std::max(global_planner->bubble_radius_, u.distance3D(t));
 
     for (const Cell& v : u.getNeighbors()) {
-      double new_cost = cost[u] + u.distance3D(v) *
-                                      global_planner->risk_factor_ *
-                                      global_planner->getRisk(v);
+      double new_cost = cost[u] +
+                        u.distance3D(v) * global_planner->risk_factor_ *
+                            global_planner->getRisk(v);
       double old_cost = getWithDefault(cost, v, INFINITY);
       if (new_cost < old_cost) {
         cost[v] = new_cost;
