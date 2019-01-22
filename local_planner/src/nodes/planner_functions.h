@@ -39,7 +39,10 @@ void propagateHistogram(
     const geometry_msgs::PoseStamped& position);
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          geometry_msgs::PoseStamped position);
+						  const Eigen::Vector3f &position);
+bool tooCloseToObstacle(
+	const pcl::PointCloud<pcl::PointXYZ> &pointcloud,
+    double min_dist, const Eigen::Vector3f position, double min_realsense_dist);
 void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        const Histogram& propagated_hist,
                        bool waypoint_outside_FOV,

@@ -15,6 +15,7 @@ StarPlanner::~StarPlanner() {}
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+  min_node_dist_to_obstacle_ = config.min_node_dist_to_obstacle_;
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
@@ -41,13 +42,8 @@ void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) {
 }
 
 void StarPlanner::setCloud(
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud) {
-  complete_cloud_ = complete_cloud;
-}
-
-void StarPlanner::setBoxSize(const Box& histogram_box, double ground_distance) {
-  histogram_box_.radius_ = histogram_box.radius_;
-  ground_distance_ = ground_distance;
+    const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud) {
+  pointcloud_ = cropped_cloud;
 }
 
 void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
@@ -161,22 +157,12 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
 
     bool node_valid = true;
-
-    // crop pointcloud
-    pcl::PointCloud<pcl::PointXYZ> cropped_cloud;
-    Eigen::Vector3f closest_point;  // unused
     bool hist_is_empty = false;     // unused
-    int backoff_points_counter = 0;
-    double distance_to_closest_point;
-    histogram_box_.setBoxLimits(toPoint(origin_position), ground_distance_);
+    double min_dist = 2.0;
+    bool too_close = tooCloseToObstacle(pointcloud_, min_dist, origin_position, min_realsense_dist_);
 
-    filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
-                     backoff_points_counter, complete_cloud_, min_cloud_size_,
-                     min_dist_backoff_, histogram_box_, origin_position,
-                     min_realsense_dist_);
-
-    if (origin != 0 && backoff_points_counter > 20 &&
-        cropped_cloud.points.size() > 160) {
+    if (origin != 0 && too_close &&
+    		pointcloud_.points.size() > 160) {
       tree_[origin].total_cost_ = HUGE_VAL;
       node_valid = false;
     }
@@ -195,7 +181,7 @@ void StarPlanner::buildLookAheadTree() {
       propagateHistogram(propagated_histogram, reprojected_points_,
                          reprojected_points_age_, reprojected_points_dist_,
                          pose_);
-      generateNewHistogram(histogram, cropped_cloud, pose_);
+      generateNewHistogram(histogram, pointcloud_, pose_);
       combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
                         z_FOV_idx, e_FOV_min, e_FOV_max);
 

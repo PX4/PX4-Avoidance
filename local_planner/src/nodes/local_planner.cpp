@@ -302,19 +302,18 @@ void LocalPlanner::determineStrategy() {
             velocity_mod_ < 0.1, ALPHA_RES);
 
         if (use_VFH_star_) {
-          star_planner_->setParams(min_cloud_size_, min_dist_backoff_,
-                                   path_waypoints_, curr_yaw_,
-                                   min_realsense_dist_);
-          star_planner_->setFOV(h_FOV_, v_FOV_);
-          star_planner_->setReprojectedPoints(reprojected_points_,
-                                              reprojected_points_age_,
-                                              reprojected_points_dist_);
-          star_planner_->setCostParams(goal_cost_param_, smooth_cost_param_,
-                                       height_change_cost_param_adapted_,
-                                       height_change_cost_param_);
-          star_planner_->setBoxSize(histogram_box_, ground_distance_);
-          star_planner_->setCloud(complete_cloud_);
-          star_planner_->buildLookAheadTree();
+          star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
+                                  path_waypoints_, curr_yaw_,
+                                  min_realsense_dist_);
+          star_planner_.setFOV(h_FOV_, v_FOV_);
+          star_planner_.setReprojectedPoints(reprojected_points_,
+                                             reprojected_points_age_,
+                                             reprojected_points_dist_);
+          star_planner_.setCostParams(goal_cost_param_, smooth_cost_param_,
+                                      height_change_cost_param_adapted_,
+                                      height_change_cost_param_);
+          star_planner_.setCloud(final_cloud_);
+          star_planner_.buildLookAheadTree();
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();

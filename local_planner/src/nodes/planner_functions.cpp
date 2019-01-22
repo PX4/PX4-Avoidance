@@ -77,6 +77,32 @@ void filterPointCloud(
   }
 }
 
+// check if the position lies too close to an obstacle
+bool tooCloseToObstacle(
+	const pcl::PointCloud<pcl::PointXYZ> &pointcloud,
+    double min_dist, const Eigen::Vector3f position, double min_realsense_dist) {
+
+  float distance;
+  int counter_too_close = 0;
+  bool too_close = false;
+  int min_number_close_points = 20;
+
+  for (const pcl::PointXYZ &xyz : pointcloud) {
+    // Check if the point is invalid
+    if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
+      distance = (position - toEigen(xyz)).norm();
+      if (distance > min_realsense_dist &&
+        distance < min_dist) {
+        counter_too_close ++;
+      }
+    }
+  }
+  if (counter_too_close > min_number_close_points){
+	  too_close = true;
+  }
+  return too_close;
+}
+
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
                   int& e_FOV_min, int& e_FOV_max, double yaw, double pitch) {
@@ -468,8 +494,16 @@ bool getDirectionFromTree(
       }
     }
     int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-    if (min_dist > 3.0 || wp_idx == 0) {
+    if (min_dist > 3.0) {
       tree_available = false;
+    } else if(wp_idx == 0){
+    	if(size == 2){
+    		  int wp_e = floor(elevationAnglefromCartesian(toEigen(path_node_positions[0]), position));
+    	      int wp_z = floor(azimuthAnglefromCartesian(toEigen(path_node_positions[0]), position));
+    	      p = Eigen::Vector3f(wp_e, wp_z, 0.f);
+    	}else{
+    		tree_available = false;
+    	}
     } else {
       double cos_alpha = (node_distance * node_distance +
                           distances[wp_idx] * distances[wp_idx] -
