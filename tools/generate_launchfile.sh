@@ -43,26 +43,31 @@ IFS=";"
 for camera in $CAMERA_CONFIGS; do
 	IFS="," #Inside each camera configuration, the parameters are comma-separated
 	set $camera
-	if [[ $camera_topics == "" ]]; then
-		camera_topics="/$1/depth/points"
+	if [[ $# != 8 ]]; then
+		echo "Invalid camera configuration $camera"
 	else
-		camera_topics="$camera_topics,/$1/depth/points"
+		echo "Adding camera $1 with serial number $2"
+		if [[ $camera_topics == "" ]]; then
+			camera_topics="/$1/depth/points"
+		else
+			camera_topics="$camera_topics,/$1/depth/points"
+		fi
+		cat >> local_planner/launch/avoidance.launch <<- EOM
+			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
+			 args="$3 $4 $5 $6 $7 $8 fcu_$1_link 10"/>
+			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
+				<arg name="namespace"             value="$1" />
+				<arg name="tf_prefix"             value="$1" />
+				<arg name="serial_no"             value="$2"/>
+				<arg name="depth_fps"             value="\$(arg depth_fps)"/>
+				<arg name="infra1_fps"            value="\$(arg infra1_fps)"/>
+				<arg name="infra2_fps"            value="\$(arg infra2_fps)"/>
+				<arg name="enable_pointcloud"     value="false"/>      
+				<arg name="enable_imu"            value="false"/>
+				<arg name="enable_fisheye"        value="false"/>
+			</include>
+		EOM
 	fi
-	cat >> local_planner/launch/avoidance.launch <<- EOM
-		<node pkg="tf" type="static_transform_publisher" name="tf_$1"
-		 args="$3 $4 $5 $6 $7 $8 fcu_$1_link 10"/>
-		<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
-			<arg name="namespace"             value="$1" />
-			<arg name="tf_prefix"             value="$1" />
-			<arg name="serial_no"             value="$2"/>
-			<arg name="depth_fps"             value="\$(arg depth_fps)"/>
-			<arg name="infra1_fps"            value="\$(arg infra1_fps)"/>
-			<arg name="infra2_fps"            value="\$(arg infra2_fps)"/>
-			<arg name="enable_pointcloud"     value="false"/>      
-			<arg name="enable_imu"            value="false"/>
-			<arg name="enable_fisheye"        value="false"/>
-		</include>
-	EOM
 done
 
 cat >> local_planner/launch/avoidance.launch <<- EOM
