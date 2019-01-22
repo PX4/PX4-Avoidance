@@ -259,8 +259,7 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_->ground_distance_ = ground_distance_msg_.bottom_clearance;
   } else {
     local_planner_->ground_distance_ = 2.0;  // in case where no range data is
-                                            // available assume vehicle is close
-                                            // to ground
+    // available assume vehicle is close to ground
   }
 }
 
