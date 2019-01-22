@@ -5,3 +5,4 @@
 *.tags_sorted_by_file
 .clang_complete
 *.kdev4
+/local_planner/launch/avoidance.launch
