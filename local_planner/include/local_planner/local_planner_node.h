@@ -53,6 +53,63 @@ struct cameraData {
   bool received_;
 };
 
+
+
+struct ModelParameters {
+  float ekf2_rng_a_hmax = NAN;
+  float ekf2_rng_a_vmax = NAN;
+  float mc_pitchrate_max = NAN; // altitude control
+  float mc_rollrate_max = NAN;
+  float mc_yawrate_max = NAN;
+  float mc_yawauto_max = NAN;
+  float mpc_acc_down_max = NAN; // Maximum vertical acceleration in velocity controlled modes down
+  float mpc_acc_hor = NAN; // Maximum horizontal acceleration for auto mode and maximum deceleration for manual mode
+  float mpc_acc_up_max = NAN;  // Maximum vertical acceleration in velocity controlled modes upward
+  float mpc_col_prev_d = NAN; // Minimum distance the vehicle should keep to all obstacles
+  float mpc_hold_max_xy = NAN; // Maximum horizontal velocity for which position hold is enabled (use 0 to disable check)
+  float mpc_hold_max_z = NAN; // Maximum vertical velocity for which position hold is enabled
+  float mpc_jerk_max = NAN;
+  float mpc_jerk_min = NAN;
+  int mpc_pos_mode = NAN; //smooth position velocity  mpc_pos_mode = 3
+  float mpc_thr_max = NAN;
+  float mpc_thr_min = NAN;
+  float mpc_tiltmax_air = NAN;
+  float mpc_tko_speed = NAN; // Takeoff climb rate
+  float mpc_xy_cruise = NAN; // Maximum horizontal velocity in mission, capped by mpc_xy_vel_max
+  float mpx_xy_vel_max = NAN; // Maximum horizontal velocity in AUTO mode. 
+  float mpc_z_vel_max_dn = NAN;
+  float mpc_z_vel_max_up = NAN;
+
+
+};
+
+
+// list of MODEL_PARAMETERS{
+//       EKF2_RNG_A_HMAX, 
+//       EKF2_RNG_A_VMAX,
+//       MC_PITCHRATE_MAX,
+//       MC_ROLLRATE_MAX,
+//       MC_YAWRATE_MAX,
+//       MC_YAWAUTO_MAX,
+//       MPC_ACC_DOWN_MAX,
+//       MPC_ACC_HOR,
+//       MPC_ACC_UP_MAX,
+//       MPC_COL_PREV_D,
+//       MPC_HOLD_MAX_XY,
+//       MPD_HOLD_MAX_Z,
+//       MPC_JERK_MAX,
+//       MPC_JERK_MIN,
+//       MPC_THR_MAX,
+//       MPC_THR_MIN,
+//       MPC_TILTMAX_AIR,
+//       MPC_TKO_SPEED,
+//       MPC_XY_CRUISE,
+//       MPC_XY_VEL_MAX,
+//       MPC_Z_VEL_MAX_DN,
+//       MPC_Z_VEL_MAX_UP,
+//       MPC_POS_MODE,
+// };
+
 enum class MAV_STATE {
   MAV_STATE_UNINIT,
   MAV_STATE_BOOT,
@@ -64,6 +121,8 @@ enum class MAV_STATE {
   MAV_STATE_POWEROFF,
   MAV_STATE_FLIGHT_TERMINATION,
 };
+
+
 
 class LocalPlannerNode {
  public:
@@ -83,6 +142,8 @@ class LocalPlannerNode {
   double curr_yaw_;
 
   std::vector<cameraData> cameras_;
+
+  ModelParameters model_params_;
 
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
