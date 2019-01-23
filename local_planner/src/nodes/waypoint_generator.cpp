@@ -211,6 +211,9 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   pose_to_wp *= planner_info_.min_speed;
 
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + pose_to_wp);
+  output_.adapted_goto_position = output_.goto_position;
+  output_.smoothed_goto_position = output_.goto_position;
+  smoothed_goto_location_ = toEigen(output_.smoothed_goto_position);
 }
 
 void WaypointGenerator::smoothWaypoint(double dt) {
@@ -346,8 +349,7 @@ void WaypointGenerator::getPathMsg() {
   // go to flight height first or smooth wp
   if (!planner_info_.reach_altitude) {
     reachGoalAltitudeFirst();
-    output_.adapted_goto_position = output_.goto_position;
-    output_.smoothed_goto_position = output_.goto_position;
+
     ROS_DEBUG("[WG] after altitude func: [%f %f %f].",
               output_.smoothed_goto_position.x,
               output_.smoothed_goto_position.y,
