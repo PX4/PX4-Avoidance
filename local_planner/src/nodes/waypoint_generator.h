@@ -40,6 +40,9 @@ class WaypointGenerator {
   waypointResult output_;
   waypoint_choice last_wp_type_;
 
+  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f smoothed_goto_velocity_ = Eigen::Vector3f::Zero();
+
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_;
   double curr_yaw_;
@@ -49,8 +52,7 @@ class WaypointGenerator {
   ros::Time last_time_{0.};
   ros::Time current_time_{0.};
 
-  double max_jerk_limit_param_{500.};
-  double min_jerk_limit_param_{200.};
+  double smoothing_speed_{10.};
 
   bool reached_goal_;
   bool limit_speed_close_to_goal_ = false;
@@ -93,19 +95,10 @@ class WaypointGenerator {
                    ros::Time t);
 
   /**
-   * Set maximum jerk limitation. Set to 0 to disable.
+   * Set the responsiveness of the smoothing. Set to 0 to disable.
    */
-  void setMaxJerkLimit(double max_jerk_limit) {
-    max_jerk_limit_param_ = max_jerk_limit;
-  }
-
-  /**
-   * Set minimum jerk limitation for velocity-depdendent jerk limit.
-   * Set to 0 to disable velocity-dependent jerk limit, and use a fixed
-   * limit instead.
-   */
-  void setMinJerkLimit(double min_jerk_limit) {
-    min_jerk_limit_param_ = min_jerk_limit;
+  void setSmoothingSpeed(double smoothing_speed) {
+    smoothing_speed_ = smoothing_speed;
   }
 
   WaypointGenerator();

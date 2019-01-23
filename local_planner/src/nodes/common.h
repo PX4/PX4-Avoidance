@@ -123,6 +123,7 @@ void wrapAngleToPlusMinus180(float& angle);
 double getAngularVelocity(double desired_yaw, double curr_yaw);
 
 Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
+Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3);
 Eigen::Vector3f toEigen(const pcl::PointXYZ& xyz);
 
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
