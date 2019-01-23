@@ -65,17 +65,17 @@ void Histogram::downsample() {
       int i_high_res = 2 * i;
       int j_high_res = 2 * j;
 
-      double mean_bin =
+      float mean_bin =
           (bin[i_high_res][j_high_res] + bin[i_high_res + 1][j_high_res] +
            bin[i_high_res][j_high_res + 1] +
            bin[i_high_res + 1][j_high_res + 1]) /
           4.0f;
-      double mean_age =
+      float mean_age =
           (age[i_high_res][j_high_res] + age[i_high_res + 1][j_high_res] +
            age[i_high_res][j_high_res + 1] +
            age[i_high_res + 1][j_high_res + 1]) /
           4.0f;
-      double mean_dist =
+      float mean_dist =
           (dist[i_high_res][j_high_res] + dist[i_high_res + 1][j_high_res] +
            dist[i_high_res][j_high_res + 1] +
            dist[i_high_res + 1][j_high_res + 1]) /
