@@ -156,7 +156,7 @@ Eigen::Vector3f toEigen(const geometry_msgs::Point& p) {
   return ev3;
 }
 
-Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3){
+Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3) {
   Eigen::Vector3f ev3(v3.x, v3.y, v3.z);
   return ev3;
 }
