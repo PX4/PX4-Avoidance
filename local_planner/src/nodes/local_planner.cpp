@@ -94,18 +94,12 @@ void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
 geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
 
 void LocalPlanner::applyGoal() {
-  initGridCells(path_waypoints_);
-  path_waypoints_.cells.push_back(pose_.pose.position);
   star_planner_->setGoal(toPoint(goal_));
   goal_dist_incline_.clear();
 }
 
 void LocalPlanner::runPlanner() {
-  // reset candidates for visualization
-  initGridCells(path_candidates_);
-  initGridCells(path_rejected_);
-  initGridCells(path_blocked_);
-  initGridCells(path_selected_);
+
   stop_in_front_active_ = false;
 
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -120,27 +114,12 @@ void LocalPlanner::runPlanner() {
   z_FOV_idx_.clear();
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
 
-  // visualization of FOV in RViz
-  initGridCells(FOV_cells_);
-  geometry_msgs::Point p;
-  for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
-    for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
-      p.x = elevationIndexToAngle(j, ALPHA_RES);
-      p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
-      p.z = 0;
-      FOV_cells_.cells.push_back(p);
-    }
-  }
-
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 
   filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
                    counter_close_points_backoff_, complete_cloud_,
                    min_cloud_size_, min_dist_backoff_, histogram_box_,
                    toEigen(pose_.pose.position), min_realsense_dist_);
-
-  safety_radius_ = adaptSafetyMarginHistogram(
-      distance_to_closest_point_, final_cloud_.points.size(), min_cloud_size_);
 
   determineStrategy();
 }
@@ -292,17 +271,9 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
         obstacle_ = true;
 
-        //run findFreeDirections for visualization of free and blocked cells
-        findFreeDirections(
-            polar_histogram_, safety_radius_, path_candidates_, path_selected_,
-            path_rejected_, path_blocked_, path_waypoints_,
-            cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-            position_old_, cost_params_, velocity_mod_ < 0.1, ALPHA_RES);
-
         if (use_VFH_star_) {
           star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
-                                  path_waypoints_, curr_yaw_,
-                                  min_realsense_dist_, cost_params_);
+                                  curr_yaw_, min_realsense_dist_, cost_params_);
           star_planner_.setFOV(h_FOV_, v_FOV_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
@@ -313,12 +284,12 @@ void LocalPlanner::determineStrategy() {
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          findFreeDirections(
-              polar_histogram_, safety_radius_, path_candidates_,
-              path_selected_, path_rejected_, path_blocked_, path_waypoints_,
-              cost_path_candidates_, goal_, toEigen(pose_.pose.position),
-              position_old_, cost_params_, velocity_mod_ < 0.1, ALPHA_RES);
-          if (calculateCostMap(cost_path_candidates_, cost_idx_sorted_)) {
+          getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
+            		toEigen(last_sent_waypoint_), cost_params_, velocity_mod_ < 0.1, cost_matrix_);
+          getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
+
+
+          if (candidate_vector_.empty()) {
             stopInFrontObstacles();
             waypoint_type_ = direct;
             stop_in_front_ = true;
@@ -326,7 +297,8 @@ void LocalPlanner::determineStrategy() {
                 "\033[1;35m[OA] All directions blocked: Stopping in front "
                 "obstacle. \n \033[0m");
           } else {
-            getDirectionFromCostMap();
+        	costmap_direction_e_ = candidate_vector_[0].elevation_angle;
+        	costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
             waypoint_type_ = costmap;
           }
         }
@@ -488,12 +460,6 @@ void LocalPlanner::evaluateProgressRate() {
   }
 }
 
-// get waypoint from sorted cost list
-void LocalPlanner::getDirectionFromCostMap() {
-  costmap_direction_e_ = path_candidates_.cells[cost_idx_sorted_[0]].x;
-  costmap_direction_z_ = path_candidates_.cells[cost_idx_sorted_[0]].y;
-}
-
 // stop in front of an obstacle at a distance defined by the variable
 // keep_distance_
 void LocalPlanner::stopInFrontObstacles() {
@@ -520,17 +486,6 @@ void LocalPlanner::getCloudsForVisualization(
     pcl::PointCloud<pcl::PointXYZ> &reprojected_points) {
   final_cloud = final_cloud_;
   reprojected_points = reprojected_points_;
-}
-
-void LocalPlanner::getCandidateDataForVisualization(
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells &FOV_cells) {
-  path_candidates = path_candidates_;
-  path_selected = path_selected_;
-  path_rejected = path_rejected_;
-  path_blocked = path_blocked_;
-  FOV_cells = FOV_cells_;
 }
 
 void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {

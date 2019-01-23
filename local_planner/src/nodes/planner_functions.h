@@ -4,6 +4,7 @@
 #include "box.h"
 #include "histogram.h"
 #include "cost_parameters.h"
+#include "candidate_direction.h"
 
 #include <Eigen/Dense>
 
@@ -20,9 +21,7 @@
 
 namespace avoidance {
 
-void initGridCells(nav_msgs::GridCells& cell);
-double adaptSafetyMarginHistogram(double dist_to_closest_point,
-                                  double cloud_size, double min_cloud_size);
+void initGridCells(nav_msgs::GridCells *cell);
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
     Eigen::Vector3f& closest_point, double& distance_to_closest_point,
@@ -51,21 +50,17 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
-double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
-                    const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position,
-                    const Eigen::Vector3f &position_old,
+void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
+    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
+	costParameters cost_params, bool only_yawed, Eigen::MatrixXd& cost_matrix);
+void getBestCandidatesFromCostMatrix(const Eigen::MatrixXd& matrix, unsigned int number_of_candidates, std::vector<candidateDirection>& candidate_vector);
+double costFunction(double e_angle, double z_angle, double obstacle_distance, const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
 					costParameters cost_params, bool only_yawed);
-void findFreeDirections(
-    const Histogram &histogram, double safety_radius,
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells path_waypoints,
-    std::vector<float> &cost_path_candidates, const Eigen::Vector3f &goal,
-    const Eigen::Vector3f &position, const Eigen::Vector3f &position_old,
-	costParameters cost_params, bool only_yawed, int resolution_alpha);
-bool calculateCostMap(const std::vector<float>& cost_path_candidates,
-                      std::vector<int>& cost_idx_sorted);
+void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius);
+void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding, Eigen::MatrixXd& matrix_padded);
+void printHistogram(Histogram histogram);
+void printMatrix(Eigen::MatrixXd& matrix);
 bool getDirectionFromTree(
     Eigen::Vector3f& p,
     const std::vector<geometry_msgs::Point>& path_node_positions,

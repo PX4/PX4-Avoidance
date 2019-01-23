@@ -18,18 +18,6 @@ void initGridCells(nav_msgs::GridCells& cell) {
   cell.cells = {};
 }
 
-// adapt histogram safety margin around blocked cells to distance of pointcloud
-double adaptSafetyMarginHistogram(double dist_to_closest_point,
-                                  double cloud_size, double min_cloud_size) {
-  double safety_margin = 25;
-
-  // increase safety radius if too close to the wall
-  if (dist_to_closest_point < 1.7 && cloud_size > min_cloud_size) {
-    safety_margin = 25 + 2 * ALPHA_RES;
-  }
-  return safety_margin;
-}
-
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void filterPointCloud(
@@ -263,58 +251,6 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
   }
 }
 
-// costfunction for every free histogram cell
-double costFunction(int e, int z, const nav_msgs::GridCells &path_waypoints,
-                    const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position,
-                    const Eigen::Vector3f &position_old,
-					costParameters cost_params, bool only_yawed) {
-  double cost;
-  int waypoint_index = path_waypoints.cells.size() - 1;
-  if (waypoint_index < 0) {
-    waypoint_index = 0;
-    path_waypoints.cells.push_back(toPoint(position_old));
-  }
-
-  double dist = (position - goal).norm();
-  double dist_old = (position_old - goal).norm();
-  Eigen::Vector3f candidate_goal =
-      fromPolarToCartesian(e, z, dist, toPoint(position));
-  Eigen::Vector3f old_candidate_goal =
-      fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
-                           path_waypoints.cells[waypoint_index - 1].y, dist_old,
-                           toPoint(position_old));
-  double yaw_cost = cost_params.goal_cost_param *
-                    (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
-
-  double pitch_cost_up = 0.0;
-  double pitch_cost_down = 0.0;
-  if (candidate_goal.z() > goal.z()) {
-    pitch_cost_up = cost_params.goal_cost_param * std::abs(goal.z() - candidate_goal.z());
-  } else {
-    pitch_cost_down = cost_params.goal_cost_param * std::abs(goal.z() - candidate_goal.z());
-  }
-
-  double yaw_cost_smooth =
-		  cost_params.smooth_cost_param *
-      (old_candidate_goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
-
-  double pitch_cost_smooth =
-		  cost_params.smooth_cost_param * std::abs(old_candidate_goal.z() - candidate_goal.z());
-
-  if (!only_yawed) {
-    cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-    		cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
-           pitch_cost_smooth;
-  } else {
-    cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-    		cost_params.height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
-           0.5 * pitch_cost_smooth;
-  }
-
-  return cost;
-}
-
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
   int vertical_FOV_range_sensor = 20;
@@ -334,129 +270,154 @@ void compressHistogramElevation(Histogram& new_hist,
   }
 }
 
-// search for free directions in the 2D polar histogram with a moving window
-// approach
-void findFreeDirections(
-    const Histogram &histogram, double safety_radius,
-    nav_msgs::GridCells &path_candidates, nav_msgs::GridCells &path_selected,
-    nav_msgs::GridCells &path_rejected, nav_msgs::GridCells &path_blocked,
-    nav_msgs::GridCells path_waypoints,
-    std::vector<float> &cost_path_candidates, const Eigen::Vector3f &goal,
-    const Eigen::Vector3f &position, const Eigen::Vector3f &position_old,
-	costParameters cost_params, bool only_yawed, int resolution_alpha) {
+void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
+    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
+	costParameters cost_params, bool only_yawed, Eigen::MatrixXd& cost_matrix){
 
-  int n = floor(safety_radius / resolution_alpha);  // safety radius
-  int z_dim = 360 / resolution_alpha;
-  int e_dim = 180 / resolution_alpha;
-  int a = 0, b = 0;
-  bool free = true;
-  bool corner = false;
-  geometry_msgs::Point p;
-  cost_path_candidates.clear();
+	//reset cost matrix to zero
+	cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+	cost_matrix.fill(0.0);
 
-  initGridCells(path_candidates);
-  initGridCells(path_rejected);
-  initGridCells(path_blocked);
-  initGridCells(path_selected);
+	//fill in cost matrix
+	for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
+	    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
+	    	double e_angle = elevationIndexToAngle(e_index, ALPHA_RES);
+	    	double z_angle= azimuthIndexToAngle(z_index, ALPHA_RES);
+	    	double obstacle_distance = histogram.get_dist(e_index, z_index);
+	    	cost_matrix(e_index, z_index) = costFunction(e_angle, z_angle, obstacle_distance, goal, position, last_sent_waypoint, cost_params, only_yawed);
+	    }
+	}
 
-  // determine which bins are candidates
-  for (int e = 0; e < e_dim; e++) {
-    for (int z = 0; z < z_dim; z++) {
-      for (int i = (e - n); i <= (e + n); i++) {
-        for (int j = (z - n); j <= (z + n); j++) {
-          free = true;
-          corner = false;
-
-          // Elevation index < 0
-          if (i < 0 && j >= 0 && j < z_dim) {
-            a = 0;
-            b = j + (180 / resolution_alpha) - 1;
-            if (b >= z_dim) {
-              b = b % (z_dim - 1);
-            }
-          }
-          // Azimuth index < 0
-          else if (j < 0 && i >= 0 && i < e_dim) {
-            b = j + z_dim;
-            a = i;
-          }
-          // Elevation index > e_dim
-          else if (i >= e_dim && j >= 0 && j < z_dim) {
-            a = e_dim - (i % (e_dim - 1));
-            b = j + (180 / resolution_alpha) - 1;
-            if (b >= z_dim) {
-              b = b % (z_dim - 1);
-            };
-          }
-          // Azimuth index > z_dim
-          else if (j >= z_dim && i >= 0 && i < e_dim) {
-            b = j - z_dim;
-          }
-          // Elevation and Azimuth index both within histogram
-          else if (i >= 0 && i < e_dim && j >= 0 && j < z_dim) {
-            a = i;
-            b = j;
-          }
-          // Elevation and azimuth index both < 0 OR elevation index >
-          // e_dim and azimuth index <> z_dim OR elevation index < 0 and
-          // azimuth index > z_dim OR elevation index > e_dim and azimuth index
-          // < 0. These cells are not part of the polar histogram.
-          else {
-            corner = true;
-          }
-
-          if (!corner) {
-            if (histogram.get_dist(a, b) > 0.001) {
-              free = false;
-              break;
-            }
-          }
-        }
-
-        if (!free) break;
-      }
-
-      if (free) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
-        path_candidates.cells.push_back(p);
-        double cost =
-            costFunction((int)p.x, (int)p.y, path_waypoints, goal, position,
-                         position_old, cost_params, only_yawed);
-        cost_path_candidates.push_back(cost);
-      } else if (!free && histogram.get_dist(e, z) > 0.001) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
-        path_rejected.cells.push_back(p);
-      } else {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
-        path_blocked.cells.push_back(p);
-      }
-    }
-  }
+	unsigned int smooth_radius = 2;
+	smoothPolarMatrix(cost_matrix, smooth_radius);
+	smoothPolarMatrix(cost_matrix, smooth_radius);
 }
 
-// calculate the free direction which has the smallest cost for the UAV to
-// travel to
-bool calculateCostMap(const std::vector<float>& cost_path_candidates,
-                      std::vector<int>& cost_idx_sorted) {
-  if (cost_path_candidates.empty()) {
-    ROS_WARN("\033[1;31mbold Empty candidates vector!\033[0m\n");
-    return 1;
-  } else {
-    cost_idx_sorted.resize(cost_path_candidates.size());
-    std::iota(cost_idx_sorted.begin(), cost_idx_sorted.end(), 0);
+void getBestCandidatesFromCostMatrix(const Eigen::MatrixXd& matrix, unsigned int number_of_candidates, std::vector<candidateDirection>& candidate_vector){
 
-    std::sort(cost_idx_sorted.begin(), cost_idx_sorted.end(),
-              [&cost_path_candidates](size_t i1, size_t i2) {
-                return cost_path_candidates[i1] < cost_path_candidates[i2];
-              });
-    return 0;
-  }
+
+   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection> > queue;
+
+   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+      for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+    	  double elevation_angle = elevationIndexToAngle(row_index, ALPHA_RES);
+    	  double azimuth_angle = azimuthIndexToAngle(col_index, ALPHA_RES);
+    	  double cost = matrix(row_index, col_index);
+    	  candidateDirection candidate(cost, elevation_angle, azimuth_angle);
+
+    	  if(queue.size() < number_of_candidates){
+    		  queue.push(candidate);
+    	  }else if(candidate < queue.top()){
+    		  queue.push(candidate);
+    		  queue.pop();
+    	  }
+      }
+   }
+
+   //copy queue to vector and change order such that lowest cost is at the front
+   candidate_vector.clear();
+   while(!queue.empty()) {
+          candidate_vector.push_back(queue.top());
+          queue.pop();
+   }
+   std::reverse(candidate_vector.begin(), candidate_vector.end());
+}
+void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius){
+
+	//pad matrix by smoothing radius respecting all wrapping rules
+	Eigen::MatrixXd matrix_padded;
+	padPolarMatrix(matrix, smoothing_radius, matrix_padded);
+
+	//filter matrix (max-mean)
+	for (int row_index = smoothing_radius; row_index < matrix_padded.rows() - smoothing_radius; row_index++) {
+	   for (int col_index = smoothing_radius; col_index < matrix_padded.cols() - smoothing_radius; col_index++) {
+		    double original_val = matrix_padded(row_index, col_index);
+		    double mean_val = matrix_padded.block(row_index - smoothing_radius, col_index - smoothing_radius, 2 * smoothing_radius + 1, 2 * smoothing_radius + 1).mean();
+		    matrix(row_index - smoothing_radius, col_index - smoothing_radius) = std::max(original_val, mean_val);
+	   }
+	}
+}
+
+void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding, Eigen::MatrixXd& matrix_padded){
+
+	matrix_padded.resize(matrix.rows() + 2 * n_lines_padding, matrix.cols() + 2 * n_lines_padding);
+
+	matrix_padded.fill(0.0);
+	//middle part
+	matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),matrix.cols()) = matrix;
+
+	if(matrix.cols() % 2 > 0){
+		ROS_ERROR("invalid resolution: 180 % (2* resolution) must be zero");
+	}
+	int middle_index = floor(matrix.cols()/2);
+
+	//top border
+	matrix_padded.block(0 ,n_lines_padding, n_lines_padding, middle_index) = matrix.block(0, middle_index, n_lines_padding, middle_index).colwise().reverse();
+	matrix_padded.block(0 ,n_lines_padding + middle_index, n_lines_padding, middle_index) = matrix.block(0, 0, n_lines_padding, middle_index).colwise().reverse();
+
+	//bottom border
+	matrix_padded.block(matrix.rows() +  n_lines_padding, n_lines_padding, n_lines_padding, middle_index) = matrix.block(matrix.rows() - n_lines_padding, middle_index, n_lines_padding, middle_index).colwise().reverse();
+	matrix_padded.block(matrix.rows() +  n_lines_padding, n_lines_padding + middle_index, n_lines_padding, middle_index) = matrix.block(matrix.rows() - n_lines_padding, 0, n_lines_padding, middle_index).colwise().reverse();
+
+	//left border
+	matrix_padded.block(0, 0, matrix_padded.rows(), n_lines_padding) = matrix_padded.block(0, matrix_padded.cols() - 2 * n_lines_padding, matrix_padded.rows(), n_lines_padding);
+	//right border
+	matrix_padded.block(0, n_lines_padding + matrix.cols(), matrix_padded.rows(), n_lines_padding) = matrix_padded.block(0, n_lines_padding, matrix_padded.rows(), n_lines_padding);
+}
+
+// costfunction for every free histogram cell
+double costFunction(double e_angle, double z_angle, double obstacle_distance, const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
+					costParameters cost_params, bool only_yawed) {
+
+	Eigen::Vector3f projected_candidate = fromPolarToCartesian(e_angle, z_angle, 1.0, toPoint(position));
+	Eigen::Vector3f projected_goal = goal;
+	Eigen::Vector3f projected_last_wp = last_sent_waypoint;
+
+	if((goal - position).norm() > 0.0001){
+	   Eigen::Vector3f projected_goal = (goal - position).normalized();
+	}
+	if((last_sent_waypoint - position).norm() > 0.0001){
+	   Eigen::Vector3f projected_last_wp = (last_sent_waypoint - position).normalized();
+	}
+
+	//std::cout<<"position: ["<<position.x()<<", "<<position.y()<<", "<<position.z()<<" ] ";
+	//std::cout<<"last wp: ["<<last_sent_waypoint.x()<<", "<<last_sent_waypoint.y()<<", "<<last_sent_waypoint.z()<<" ] ";
+	//std::cout<<"proj last: ["<<projected_last_wp.x()<<", "<<projected_last_wp.y()<<", "<<projected_last_wp.z()<<" ] \n";
+
+	//goal costs
+	double yaw_cost = cost_params.goal_cost_param * (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
+	double pitch_cost_up = 0.0;
+	double pitch_cost_down = 0.0;
+	if (projected_candidate.z() > projected_goal.z()) {
+	  pitch_cost_up = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
+	} else {
+	  pitch_cost_down = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
+	}
+
+	//smooth costs
+	double yaw_cost_smooth = cost_params.smooth_cost_param * (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>()).norm();
+	double pitch_cost_smooth = cost_params.smooth_cost_param * std::abs(projected_last_wp.z() - projected_candidate.z());
+
+	//std::cout<<"goal cost [ up: "<<pitch_cost_up<<" down: "<<pitch_cost_down<<" yaw: "<<yaw_cost<<"] smooth cost [ yaw:"<<yaw_cost_smooth<<", pitch:"<<pitch_cost_smooth<<"]\n";
+	//combine costs
+	double cost = 0.0;
+	if (!only_yawed) {
+	  cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
+	  		cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
+	         pitch_cost_smooth;
+	} else {
+	  cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
+	  		cost_params.height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
+	         0.5 * pitch_cost_smooth;
+	}
+
+	//distance
+	if(obstacle_distance > 0 && obstacle_distance < 7){
+		cost = 900;
+	}
+
+	return cost;
 }
 
 bool getDirectionFromTree(
@@ -520,5 +481,41 @@ bool getDirectionFromTree(
     tree_available = false;
   }
   return tree_available;
+}
+
+void printHistogram(Histogram histogram){
+	std::cout<<"------------------------------------------Histogram------------------------------------------------\n";
+	for (int e = 0; e < GRID_LENGTH_E; e++) {
+	    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+	    	int val = floor(histogram.get_dist(e, z));
+	    	if(val>99){
+	    		std::cout<<val<<" ";
+	    	}else if(val>9){
+	    		std::cout<<val<<"  ";
+	    	}else{
+	    		std::cout<<val<<"   ";
+	    	}
+	    }
+	    std::cout<<"\n";
+	}
+	std::cout<<"___________________________________________________________________________________________________\n";
+}
+
+void printMatrix(Eigen::MatrixXd& matrix){
+	std::cout<<"------------------------------------------Matrix---------------------------------------------------\n";
+	for (int e = 0; e < matrix.rows(); e++) {
+	    for (int z = 0; z < matrix.cols(); z++) {
+	    	int val = floor(matrix(e, z));
+	    	if(val>99){
+	    		std::cout<<val<<" ";
+	    	}else if(val>9){
+	    		std::cout<<val<<"  ";
+	    	}else{
+	    		std::cout<<val<<"   ";
+	    	}
+	    }
+	    std::cout<<"\n";
+	}
+	std::cout<<"___________________________________________________________________________________________________\n";
 }
 }

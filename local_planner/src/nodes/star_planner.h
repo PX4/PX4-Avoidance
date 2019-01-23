@@ -46,7 +46,6 @@ class StarPlanner {
   Eigen::Vector3f goal_;
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
-  nav_msgs::GridCells path_waypoints_;
 
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
@@ -59,7 +58,7 @@ class StarPlanner {
   ~StarPlanner();
 
   void setParams(double min_cloud_size, double min_dist_backoff,
-                 const nav_msgs::GridCells& path_waypoints, double curr_yaw,
+                 double curr_yaw,
                  double min_realsense_dist, costParameters cost_params);
   void setFOV(double h_FOV, double v_FOV);
   void setReprojectedPoints(

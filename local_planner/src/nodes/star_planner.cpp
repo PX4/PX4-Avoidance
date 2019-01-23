@@ -23,10 +23,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 }
 
 void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
-                            const nav_msgs::GridCells& path_waypoints,
                             double curr_yaw, double min_realsense_dist,
 							costParameters cost_params) {
-  path_waypoints_ = path_waypoints;
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
@@ -178,22 +176,23 @@ void StarPlanner::buildLookAheadTree() {
                         z_FOV_idx, e_FOV_min, e_FOV_max);
 
       // calculate candidates
-      histogram.downsample();
-      findFreeDirections(histogram, 25, path_candidates, path_selected,
-                         path_rejected, path_blocked, path_waypoints_,
-                         cost_path_candidates, goal_,
-                         toEigen(pose_.pose.position), origin_origin_position,
-						 cost_params_, false, 2 * ALPHA_RES);
+      Eigen::MatrixXd cost_matrix;
+      std::vector<candidateDirection> candidate_vector;
+      getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
+    		  origin_origin_position, cost_params_, false, cost_matrix);
+      getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_, candidate_vector);
 
-      if (calculateCostMap(cost_path_candidates, cost_idx_sorted)) {
+
+      //add candidates as nodes
+      if (candidate_vector.empty()) {
         tree_[origin].total_cost_ = HUGE_VAL;
       } else {
         // insert new nodes
         int depth = tree_[origin].depth_ + 1;
         int childs = 0;
-        for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
-          int e = path_candidates.cells[cost_idx_sorted[i]].x;
-          int z = path_candidates.cells[cost_idx_sorted[i]].y;
+        for(candidateDirection candidate : candidate_vector) {
+          int e = candidate.elevation_angle;
+          int z = candidate.azimuth_angle;
 
           // check if another close node has been added
           Eigen::Vector3f node_location = fromPolarToCartesian(
