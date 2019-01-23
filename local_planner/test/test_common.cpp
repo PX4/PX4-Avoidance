@@ -6,10 +6,12 @@ using namespace avoidance;
 
 TEST(Common, polar2DdistanceSameIsZero) {
   // GIVEN: two identical points
-  const int e = 5, z = 9;
+  PolarPoint p={};
+  p.e= 5.0;
+  p.z = 9.0;
 
   // WHEN: we get the distance between the same points
-  float dist = distance2DPolar(e, z, e, z);
+  float dist = distance2DPolar(p,p);
 
   // THEN: the distance should be zero
   EXPECT_FLOAT_EQ(0.f, dist);
@@ -17,11 +19,16 @@ TEST(Common, polar2DdistanceSameIsZero) {
 
 TEST(Common, polar2DdistanceOnKnownPoints) {
   // GIVEN: two points
-  const int e1 = 5, z1 = 9;
-  const int e2 = 50, z2 = 39;
+  PolarPoint p1={};
+  PolarPoint p2={};
+
+  p1.e = 5.0;
+  p1.z = 9.0;
+  p2.e = 50.0;
+  p2.z = 39.0;
 
   // WHEN: we get the distance between the same points
-  float dist = distance2DPolar(e1, z1, e2, z2);
+  float dist = distance2DPolar(p1,p2);
 
   // THEN: the distance should be...
   EXPECT_FLOAT_EQ(54.083271f, dist);
@@ -223,7 +230,7 @@ TEST(Common, fromPolarToCartesian) {
   }
   ASSERT_GT(n, 0);
 
-  std::vector<double> radius = {0.f, 2.f};
+  std::vector<float> radius = {0.f, 2.f};
 
   Eigen::Vector3f pos(0.f, 0.f, 0.f);
 
@@ -232,13 +239,21 @@ TEST(Common, fromPolarToCartesian) {
   // WHEN: converting the point in polar CS to cartesian CS
 
   for (int i = 0; i < n; i++) {
+    PolarPoint p_pol= {};
+    p_pol.e = e[i];
+    p_pol.z = z[3];
+    p_pol.r = radius[0];
     pos_out.push_back(
-        fromPolarToCartesian(e[i], z[3], radius[0], toPoint(pos)));
+        fromPolarToCartesian(p_pol, toPoint(pos)));
   }
 
   for (int i = 0; i < n; i++) {
+      PolarPoint p_pol= {};
+    p_pol.e = e[i];
+    p_pol.z = z[i];
+    p_pol.r = radius[1];
     pos_out.push_back(
-        fromPolarToCartesian(e[i], z[i], radius[1], toPoint(pos)));
+        fromPolarToCartesian(p_pol, toPoint(pos)));
   }
 
   // THEN: the cartesian coordinates are
@@ -279,8 +294,13 @@ TEST(Common, PolarToCatesianToPolar) {
   // cartesian and back again
   for (float e = -90.f; e <= 90.f; e = e + 3.f) {
     for (float z = -180.f; z <= 180.f; z = z + 6.f) {
+      PolarPoint p_pol = {};
+      p_pol.e = e;
+      p_pol.z = z;
+      p_pol.r = radius;
       Eigen::Vector3f p_cartesian =
-          fromPolarToCartesian(e, z, radius, toPoint(pos));
+          fromPolarToCartesian(p_pol, toPoint(pos));
+
       float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
       float e_new = elevationAnglefromCartesian(p_cartesian, pos);
 
@@ -313,11 +333,12 @@ TEST(Common, CartesianToPolarToCartesian) {
     for (float y = -5.f; y <= 5.f; y = y + 0.6f) {
       for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
         Eigen::Vector3f origin(x, y, z);
-        float az = azimuthAnglefromCartesian(origin, pos);
-        float e = elevationAnglefromCartesian(origin, pos);
-        double radius = (origin - pos).norm();
+        PolarPoint p_pol = {};
+        p_pol.z = azimuthAnglefromCartesian(origin, pos);
+        p_pol.e = elevationAnglefromCartesian(origin, pos);
+        p_pol.r = (origin - pos).norm();
         Eigen::Vector3f p_cartesian =
-            fromPolarToCartesian(e, az, radius, toPoint(pos));
+            fromPolarToCartesian(p_pol, toPoint(pos));
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as

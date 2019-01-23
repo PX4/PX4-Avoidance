@@ -216,12 +216,13 @@ void StarPlanner::buildLookAheadTree() {
         int depth = tree_[origin].depth_ + 1;
         int childs = 0;
         for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
-          int e = path_candidates.cells[cost_idx_sorted[i]].x;
-          int z = path_candidates.cells[cost_idx_sorted[i]].y;
-
+          PolarPoint p_pol = {};
+          p_pol.e = path_candidates.cells[cost_idx_sorted[i]].x;
+          p_pol.z = path_candidates.cells[cost_idx_sorted[i]].y;
+          p_pol.r = tree_node_distance_;
           // check if another close node has been added
           Eigen::Vector3f node_location = fromPolarToCartesian(
-              e, z, tree_node_distance_, toPoint(origin_position));
+              p_pol, toPoint(origin_position));
           int close_nodes = 0;
           for (size_t i = 0; i < tree_.size(); i++) {
             double dist = (tree_[i].getPosition() - node_location).norm();
@@ -232,8 +233,8 @@ void StarPlanner::buildLookAheadTree() {
 
           if (childs < childs_per_node_ && close_nodes == 0) {
             tree_.push_back(TreeNode(origin, depth, node_location));
-            tree_.back().last_e_ = e;
-            tree_.back().last_z_ = z;
+            tree_.back().last_e_ = p_pol.e;
+            tree_.back().last_z_ = p_pol.z;
             double h = treeHeuristicFunction(tree_.size() - 1);
             double c = treeCostFunction(tree_.size() - 1);
             tree_.back().heuristic_ = h;

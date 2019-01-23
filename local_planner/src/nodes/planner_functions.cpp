@@ -252,13 +252,20 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
     path_waypoints.cells.push_back(toPoint(position_old));
   }
 
-  double dist = (position - goal).norm();
-  double dist_old = (position_old - goal).norm();
-  Eigen::Vector3f candidate_goal =
-      fromPolarToCartesian(e, z, dist, toPoint(position));
+  float dist = (position - goal).norm();
+  float dist_old = (position_old - goal).norm();
+  PolarPoint p_pol = {};
+  p_pol.e = static_cast<float>(e);
+  p_pol.z = static_cast<float>(z);
+  p_pol.r = dist;
+  Eigen::Vector3f candidate_goal = fromPolarToCartesian(p_pol, toPoint(position));
+  PolarPoint p_pol_old = {};
+  p_pol.e = path_waypoints.cells[waypoint_index - 1].x;
+  p_pol.z = path_waypoints.cells[waypoint_index - 1].y;
+  p_pol.r = dist_old;
+
   Eigen::Vector3f old_candidate_goal =
-      fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
-                           path_waypoints.cells[waypoint_index - 1].y, dist_old,
+      fromPolarToCartesian(p_pol_old,
                            toPoint(position_old));
   double yaw_cost = goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();

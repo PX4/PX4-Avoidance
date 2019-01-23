@@ -9,21 +9,23 @@
 #include <tf/transform_listener.h>
 namespace avoidance {
 
-float distance2DPolar(int e1, int z1, int e2, int z2) {
-  return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
+
+float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
+  return sqrt((p1.e-p2.e)*(p1.e-p2.e) + (p1.z-p2.z)*(p1.z-p2.z));
 }
 
+
 // transform polar coordinates into Cartesian coordinates
-Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
+
+Eigen::Vector3f fromPolarToCartesian(const PolarPoint& p_pol,
                                      const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
-  p.x() = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));
-  p.y() = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
-  p.z() = pos.z + radius * sin(e * (M_PI / 180.f));
+  p.x() = pos.x + p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * sin(p_pol.z * (M_PI / 180.f));
+  p.y() = pos.y + p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * cos(p_pol.z * (M_PI / 180.f));
+  p.z() = pos.z + p_pol.r * sin(p_pol.e * (M_PI / 180.f));
 
   return p;
 }
-
 double indexAngleDifference(float a, float b) {
   return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
                   std::abs(a - b + 360.f));

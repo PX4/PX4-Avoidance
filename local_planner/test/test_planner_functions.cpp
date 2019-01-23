@@ -52,16 +52,19 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   location.pose.position.x = 0;
   location.pose.position.y = 0;
   location.pose.position.z = 0;
-  double distance = 1.0;
+  float distance = 1.0;
 
-  std::vector<double> e_angle_filled = {-90, -30, 0, 20, 40, 90};
-  std::vector<double> z_angle_filled = {-180, -50, 0, 59, 100, 175};
+  std::vector<float> e_angle_filled = {-90, -30, 0, 20, 40, 90};
+  std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
   std::vector<Eigen::Vector3f> middle_of_cell;
 
   for (int i = 0; i < e_angle_filled.size(); i++) {
     for (int j = 0; j < z_angle_filled.size(); j++) {
-      middle_of_cell.push_back(fromPolarToCartesian(e_angle_filled[i],
-                                                    z_angle_filled[j], distance,
+      PolarPoint p_pol = {};
+      p_pol.e = e_angle_filled[i];
+      p_pol.z = z_angle_filled[j];
+      p_pol.r = distance; 
+      middle_of_cell.push_back(fromPolarToCartesian(p_pol,
                                                     location.pose.position));
     }
   }

@@ -10,17 +10,21 @@
 
 namespace avoidance {
 
-float distance2DPolar(int e1, int z1, int e2, int z2);
+struct PolarPoint{
+  float e;
+  float z;
+  float r;
+};
+
+float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 
 /**
 * @brief     Convertes the point from polar CS to cartesian CS
-* @param[in] e elevation angle (-90, 90]
-* @param[in] z azimuth angle (-180,180]
-* @param[in] radius
+* @param[in] p_pol polar point
 * @param[in] pos Position from which to convert the point
 * @returns   point in cartesian CS
 **/
-Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
+Eigen::Vector3f fromPolarToCartesian(const PolarPoint& p_pol,
                                      const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
