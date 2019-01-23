@@ -4,12 +4,12 @@ cat > local_planner/launch/avoidance.launch <<- EOM
 
 
     <arg name="mavros_transformation" default="0" />
-    
+
     <param name="use_sim_time" value="false" />
 
     <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
           args="0 0 0 \$(arg mavros_transformation) 0 0 world local_origin 10"/>
-                  
+
     <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>
     <arg name="build" default="px4_sitl_default"/>
@@ -54,7 +54,7 @@ for camera in $CAMERA_CONFIGS; do
 		fi
 		cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
-			 args="$3 $4 $5 $6 $7 $8 fcu_$1_link 10"/>
+			 args="$3 $4 $5 $6 $7 $8 fcu $1_link 10"/>
 			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
@@ -62,7 +62,7 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="depth_fps"             value="\$(arg depth_fps)"/>
 				<arg name="infra1_fps"            value="\$(arg infra1_fps)"/>
 				<arg name="infra2_fps"            value="\$(arg infra2_fps)"/>
-				<arg name="enable_pointcloud"     value="false"/>      
+				<arg name="enable_pointcloud"     value="false"/>
 				<arg name="enable_imu"            value="false"/>
 				<arg name="enable_fisheye"        value="false"/>
 			</include>
@@ -80,9 +80,9 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <param name="goal_x_param" value="15" />
       <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="4" />
-      <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam> 
+      <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
-    
+
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
     <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
 
