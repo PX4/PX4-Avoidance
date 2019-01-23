@@ -84,31 +84,6 @@ struct ModelParameters {
 };
 
 
-// list of MODEL_PARAMETERS{
-//       EKF2_RNG_A_HMAX, 
-//       EKF2_RNG_A_VMAX,
-//       MC_PITCHRATE_MAX,
-//       MC_ROLLRATE_MAX,
-//       MC_YAWRATE_MAX,
-//       MC_YAWAUTO_MAX,
-//       MPC_ACC_DOWN_MAX,
-//       MPC_ACC_HOR,
-//       MPC_ACC_UP_MAX,
-//       MPC_COL_PREV_D,
-//       MPC_HOLD_MAX_XY,
-//       MPD_HOLD_MAX_Z,
-//       MPC_JERK_MAX,
-//       MPC_JERK_MIN,
-//       MPC_THR_MAX,
-//       MPC_THR_MIN,
-//       MPC_TILTMAX_AIR,
-//       MPC_TKO_SPEED,
-//       MPC_XY_CRUISE,
-//       MPC_XY_VEL_MAX,
-//       MPC_Z_VEL_MAX_DN,
-//       MPC_Z_VEL_MAX_UP,
-//       MPC_POS_MODE,
-// };
 
 enum class MAV_STATE {
   MAV_STATE_UNINIT,
