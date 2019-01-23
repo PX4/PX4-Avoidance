@@ -42,26 +42,7 @@ PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
   return p_pol;
 }
 
-float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
-                                const Eigen::Vector3f& origin) {
-  return azimuthAnglefromCartesian(position.x(), position.y(), origin);
-}
 
-float azimuthAnglefromCartesian(double x, double y,
-                                const Eigen::Vector3f& pos) {
-  return atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
-}
-
-float elevationAnglefromCartesian(double x, double y, double z,
-                                  const Eigen::Vector3f& pos) {
-  double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
-  return atan2(z - pos.z(), den) * 180.0 / M_PI;  //(-90.+90)
-}
-
-float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
-                                  const Eigen::Vector3f& origin) {
-  return elevationAnglefromCartesian(pos.x(), pos.y(), pos.z(), origin);
-}
 
 PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin) {
@@ -79,6 +60,10 @@ PolarPoint CartesianToPolar(double x, double y, double z,
   return p_pol;
 }
 
+
+Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, const int& res){
+  
+}
 int elevationAngletoIndex(float e, int res) {  //[-90,90]
   // TODO: wrap e to [-90, 90] to be sure input is valid such that this check is
   // not necessary anymore

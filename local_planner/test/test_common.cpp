@@ -67,16 +67,16 @@ TEST(Common, azimuthAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
 
   // WHEN: calculating the azimuth angle between the two points
-  float angle_right = azimuthAnglefromCartesian(point_right, origin);
-  float angle_up = azimuthAnglefromCartesian(point_up, origin);
-  float angle_left = azimuthAnglefromCartesian(point_left, origin);
-  float angle_down = azimuthAnglefromCartesian(point_down, origin);
-  float angle_undetermined = azimuthAnglefromCartesian(origin, origin);
-  float angle_q1 = azimuthAnglefromCartesian(point_q1, origin);
-  float angle_q2 = azimuthAnglefromCartesian(point_q2, origin);
-  float angle_q3 = azimuthAnglefromCartesian(point_q3, origin);
-  float angle_q4 = azimuthAnglefromCartesian(point_q4, origin);
-  float angle_non_zero_origin = azimuthAnglefromCartesian(point_q1, point_q2);
+  float angle_right = CartesianToPolar(point_right, origin).z;
+  float angle_up = CartesianToPolar(point_up, origin).z;
+  float angle_left = CartesianToPolar(point_left, origin).z;
+  float angle_down = CartesianToPolar(point_down, origin).z;
+  float angle_undetermined = CartesianToPolar(origin, origin).z;
+  float angle_q1 = CartesianToPolar(point_q1, origin).z;
+  float angle_q2 = CartesianToPolar(point_q2, origin).z;
+  float angle_q3 = CartesianToPolar(point_q3, origin).z;
+  float angle_q4 = CartesianToPolar(point_q4, origin).z;
+  float angle_non_zero_origin = CartesianToPolar(point_q1, point_q2).z;
 
   // THEN:  angle should be ..
   EXPECT_FLOAT_EQ(90, angle_right);
@@ -301,24 +301,23 @@ TEST(Common, PolarToCatesianToPolar) {
       Eigen::Vector3f p_cartesian =
           PolarToCartesian(p_pol, toPoint(pos));
 
-      float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
-      float e_new = elevationAnglefromCartesian(p_cartesian, pos);
+      PolarPoint p_pol_new = CartesianToPolar(p_cartesian, pos);
 
       // THEN: the resulting polar positions are expected to be the same as
       // before the conversion
-      ASSERT_GE(z_new, -180);
-      ASSERT_LE(z_new, 180);
-      ASSERT_GE(e_new, -90);
-      ASSERT_LE(e_new, 90);
+      ASSERT_GE(p_pol_new.z, -180);
+      ASSERT_LE(p_pol_new.z, 180);
+      ASSERT_GE(p_pol_new.e, -90);
+      ASSERT_LE(p_pol_new.e, 90);
 
-      if (std::abs(std::abs(e_new) - 90.f) > 1e-5) {
-        if (std::abs(std::abs(z_new) - 180.f) < 1e-5) {
-          EXPECT_NEAR(std::abs(z), std::abs(z_new), 0.001);
+      if (std::abs(std::abs(p_pol_new.e) - 90.f) > 1e-5) {
+        if (std::abs(std::abs(p_pol_new.z) - 180.f) < 1e-5) {
+          EXPECT_NEAR(std::abs(z), std::abs(p_pol_new.z), 0.001);
         } else {
-          EXPECT_NEAR(z, z_new, 0.001);
+          EXPECT_NEAR(z, p_pol_new.z, 0.001);
         }
       }
-      EXPECT_NEAR(e, e_new, 0.001);
+      EXPECT_NEAR(e, p_pol_new.e, 0.001);
     }
   }
 }
@@ -333,10 +332,8 @@ TEST(Common, CartesianToPolarToCartesian) {
     for (float y = -5.f; y <= 5.f; y = y + 0.6f) {
       for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
         Eigen::Vector3f origin(x, y, z);
-        PolarPoint p_pol = {};
-        p_pol.z = azimuthAnglefromCartesian(origin, pos);
-        p_pol.e = elevationAnglefromCartesian(origin, pos);
-        p_pol.r = (origin - pos).norm();
+        PolarPoint p_pol = CartesianToPolar(origin, pos);
+        //p_pol.r = (origin - pos).norm();
         Eigen::Vector3f p_cartesian =
             PolarToCartesian(p_pol, toPoint(pos));
 
@@ -431,4 +428,25 @@ TEST(Common, getAngularVel) {
   EXPECT_FLOAT_EQ(1.570796f, angular_vel2);
   EXPECT_FLOAT_EQ(0.392699f, angular_vel3);
   EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
+}
+
+TEST(Common, IndexPolarIndex ){
+
+  // GIVEN:  some valid histogram indices and resolution
+  int res = 6;
+
+  for(int e_ind = 0; e_ind == 30; e_ind + 5 ){
+    for(int z_ind = 0; z_ind == 60; z_ind + 5){
+      //WHEN: transform it to polar and back to the indices
+      PolarPoint p_pol = HistogramIndexToPolar(e_ind,z_ind, res, 0.0);
+
+      int e_ind_new = elevationAngletoIndex(p_pol.e, res);
+      int z_ind_new = azimuthAngletoIndex(p_pol.z, res);
+
+      //THEN: new histogram index should be the same as before the conversion
+      EXPECT_EQ(e_ind, e_ind_new);
+      EXPECT_EQ(z_ind, z_ind_new);
+
+    }
+  }
 }

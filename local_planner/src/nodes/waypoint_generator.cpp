@@ -271,10 +271,10 @@ void WaypointGenerator::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  int z_angle = azimuthAnglefromCartesian(
-      toEigen(output_.adapted_goto_position), toEigen(pose_.pose.position));
+  PolarPoint p_pol = CartesianToPolar(toEigen(output_.adapted_goto_position), toEigen(pose_.pose.position));
 
-  int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
+
+  int z_index = azimuthAngletoIndex(p_pol.z, ALPHA_RES);
 
   if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) !=
       z_FOV_idx_.end()) {

@@ -32,7 +32,7 @@ PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
                                  const float& radius);
 
 /**
-* @brief     Compute the bearing angle of a given vector relative to an
+* @brief     Compute the polar point to an
 *            origin.
 * @param[in] position Position of the location to which to compute the bearing
 *            angle to.
@@ -40,21 +40,11 @@ PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
 * @details   For a point given in cartesian x/y coordinates this is the
 *            angle in degrees from the positive y-axis in (-180, 180].
 *
-* @returns   Angle in integer degrees from the positive y-axis (-180, 180]
+* @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180] and elevation angle degrees (-90, 90]
 * @warning   If the origin and the position coincide, the output is 0 degrees
 **/
-float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
-                                const Eigen::Vector3f& origin);
-float azimuthAnglefromCartesian(double x, double y, const Eigen::Vector3f& pos);
-/**
-* @brief   Compute the elevation angle for a point given in cartesian
-*coordinates
-* @note    Output is in degrees (-90, 90)
-**/
-float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
-                                  const Eigen::Vector3f& origin);
-float elevationAnglefromCartesian(double x, double y, double z,
-                                  const Eigen::Vector3f& pos);
+
+
 
 PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin);
@@ -71,6 +61,7 @@ PolarPoint CartesianToPolar(double x, double y, double z,
 **/
 int elevationAngletoIndex(float e, int res);
 int azimuthAngletoIndex(float z, int res);
+Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, const int& res);
 
 /**
 * @brief     Compute the yaw angle between current position and point
