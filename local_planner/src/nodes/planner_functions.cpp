@@ -128,13 +128,11 @@ void propagateHistogram(
     const std::vector<double>& reprojected_points_dist,
     const geometry_msgs::PoseStamped& position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    float e_angle = elevationAnglefromCartesian(
-        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
-    float z_angle = azimuthAnglefromCartesian(
-        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
+    PolarPoint p_pol = CartesianToPolar(toEigen(reprojected_points.points[i]),
+                                        toEigen(position.pose.position));
 
-    int e_ind = elevationAngletoIndex(e_angle, 2 * ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(z_angle, 2 * ALPHA_RES);
+    int e_ind = elevationAngletoIndex(p_pol.e, 2 * ALPHA_RES);
+    int z_ind = azimuthAngletoIndex(p_pol.z, 2 * ALPHA_RES);
 
     polar_histogram_est.set_bin(
         e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
@@ -175,12 +173,10 @@ void generateNewHistogram(Histogram& polar_histogram,
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - toEigen(position.pose.position)).norm();
-    int e_angle =
-        elevationAnglefromCartesian(p, toEigen(position.pose.position));
-    int z_angle = azimuthAnglefromCartesian(p, toEigen(position.pose.position));
+    PolarPoint p_pol = CartesianToPolar(p, toEigen(position.pose.position));
 
-    int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
+    int e_ind = elevationAngletoIndex(p_pol.e, ALPHA_RES);
+    int z_ind = azimuthAngletoIndex(p_pol.z, ALPHA_RES);
 
     polar_histogram.set_bin(e_ind, z_ind,
                             polar_histogram.get_bin(e_ind, z_ind) + 1);
@@ -258,15 +254,14 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
   p_pol.e = static_cast<float>(e);
   p_pol.z = static_cast<float>(z);
   p_pol.r = dist;
-  Eigen::Vector3f candidate_goal = fromPolarToCartesian(p_pol, toPoint(position));
+  Eigen::Vector3f candidate_goal = PolarToCartesian(p_pol, toPoint(position));
   PolarPoint p_pol_old = {};
   p_pol.e = path_waypoints.cells[waypoint_index - 1].x;
   p_pol.z = path_waypoints.cells[waypoint_index - 1].y;
   p_pol.r = dist_old;
 
   Eigen::Vector3f old_candidate_goal =
-      fromPolarToCartesian(p_pol_old,
-                           toPoint(position_old));
+      PolarToCartesian(p_pol_old, toPoint(position_old));
   double yaw_cost = goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
@@ -336,6 +331,7 @@ void findFreeDirections(
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
+  PolarPoint p_pol = {};
   geometry_msgs::Point p;
   cost_path_candidates.clear();
 
@@ -402,25 +398,28 @@ void findFreeDirections(
       }
 
       if (free) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_candidates.cells.push_back(p);
         double cost =
-            costFunction((int)p.x, (int)p.y, path_waypoints, goal, position,
+            costFunction(p_pol.e, p_pol.z, path_waypoints, goal, position,
                          position_old, goal_cost_param, smooth_cost_param,
                          height_change_cost_param_adapted,
                          height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_rejected.cells.push_back(p);
       } else {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_blocked.cells.push_back(p);
       }
     }
@@ -513,10 +512,9 @@ bool getDirectionFromTree(
           (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
           l_frac * toEigen(path_node_positions[wp_idx]);
 
-      int wp_e = floor(elevationAnglefromCartesian(mean_point, position));
-      int wp_z = floor(azimuthAnglefromCartesian(mean_point, position));
+      PolarPoint wp_pol = CartesianToPolar(mean_point, position);
 
-      p = Eigen::Vector3f(wp_e, wp_z, 0.f);
+      p = Eigen::Vector3f(wp_pol.e, wp_pol.z, 0.f);
     }
   } else {
     tree_available = false;

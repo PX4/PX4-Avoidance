@@ -10,7 +10,7 @@
 
 namespace avoidance {
 
-struct PolarPoint{
+struct PolarPoint {
   float e;
   float z;
   float r;
@@ -24,12 +24,12 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 * @param[in] pos Position from which to convert the point
 * @returns   point in cartesian CS
 **/
-Eigen::Vector3f fromPolarToCartesian(const PolarPoint& p_pol,
-                                     const geometry_msgs::Point& pos);
+Eigen::Vector3f PolarToCartesian(const PolarPoint& p_pol,
+                                 const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
-double elevationIndexToAngle(int e, double res);
-double azimuthIndexToAngle(int z, double res);
+PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
+                                 const float& radius);
 
 /**
 * @brief     Compute the bearing angle of a given vector relative to an
@@ -55,6 +55,11 @@ float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
                                   const Eigen::Vector3f& origin);
 float elevationAnglefromCartesian(double x, double y, double z,
                                   const Eigen::Vector3f& pos);
+
+PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
+                            const Eigen::Vector3f& origin);
+PolarPoint CartesianToPolar(double x, double y, double z,
+                            const Eigen::Vector3f& pos);
 /**
 * @brief     Checks if the computed histogram index given an elevation angle and
 *resolution is valid

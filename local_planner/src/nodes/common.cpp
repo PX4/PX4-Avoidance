@@ -9,19 +9,21 @@
 #include <tf/transform_listener.h>
 namespace avoidance {
 
-
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
-  return sqrt((p1.e-p2.e)*(p1.e-p2.e) + (p1.z-p2.z)*(p1.z-p2.z));
+  return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
-
 
 // transform polar coordinates into Cartesian coordinates
 
-Eigen::Vector3f fromPolarToCartesian(const PolarPoint& p_pol,
-                                     const geometry_msgs::Point& pos) {
+Eigen::Vector3f PolarToCartesian(const PolarPoint& p_pol,
+                                 const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
-  p.x() = pos.x + p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * sin(p_pol.z * (M_PI / 180.f));
-  p.y() = pos.y + p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * cos(p_pol.z * (M_PI / 180.f));
+  p.x() =
+      pos.x +
+      p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * sin(p_pol.z * (M_PI / 180.f));
+  p.y() =
+      pos.y +
+      p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * cos(p_pol.z * (M_PI / 180.f));
   p.z() = pos.z + p_pol.r * sin(p_pol.e * (M_PI / 180.f));
 
   return p;
@@ -31,12 +33,13 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-double elevationIndexToAngle(int e, double res) {
-  return e * res + res / 2 - 90;
-}
-
-double azimuthIndexToAngle(int z, double res) {
-  return z * res + res / 2 - 180;
+PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
+                                 const float& radius) {
+  PolarPoint p_pol = {};
+  p_pol.e = e * res + res / 2 - 90;
+  p_pol.z = z * res + res / 2 - 180;
+  p_pol.r = radius;
+  return p_pol;
 }
 
 float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
@@ -58,6 +61,22 @@ float elevationAnglefromCartesian(double x, double y, double z,
 float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
                                   const Eigen::Vector3f& origin) {
   return elevationAnglefromCartesian(pos.x(), pos.y(), pos.z(), origin);
+}
+
+PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
+                            const Eigen::Vector3f& origin) {
+  return CartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
+}
+PolarPoint CartesianToPolar(double x, double y, double z,
+                            const Eigen::Vector3f& pos) {
+  PolarPoint p_pol = {};
+  p_pol.z = atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
+
+  double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
+  p_pol.e = atan2(z - pos.z(), den) * 180.0 / M_PI;  //(-90.+90)
+  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
+                 (z - pos.z()) * (z - pos.z()));
+  return p_pol;
 }
 
 int elevationAngletoIndex(float e, int res) {  //[-90,90]

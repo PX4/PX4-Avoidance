@@ -64,7 +64,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       p_pol.e = e_angle_filled[i];
       p_pol.z = z_angle_filled[j];
       p_pol.r = distance; 
-      middle_of_cell.push_back(fromPolarToCartesian(p_pol,
+      middle_of_cell.push_back(PolarToCartesian(p_pol,
                                                     location.pose.position));
     }
   }

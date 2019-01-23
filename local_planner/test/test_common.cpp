@@ -105,18 +105,18 @@ TEST(Common, elevationAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
 
   // WHEN: we get the elevation angle between the two points
-  const float angle_front = elevationAnglefromCartesian(point_front, origin);
-  const float angle_up = elevationAnglefromCartesian(point_up, origin);
-  const float angle_behind = elevationAnglefromCartesian(point_behind, origin);
-  const float angle_down = elevationAnglefromCartesian(point_down, origin);
-  const float angle_undetermined = elevationAnglefromCartesian(origin, origin);
-  const float angle_q1 = elevationAnglefromCartesian(point_q1, origin);
-  const float angle_30 = elevationAnglefromCartesian(point_30, origin);
-  const float angle_q2 = elevationAnglefromCartesian(point_q2, origin);
-  const float angle_q3 = elevationAnglefromCartesian(point_q3, origin);
-  const float angle_q4 = elevationAnglefromCartesian(point_q4, origin);
+  const float angle_front = CartesianToPolar(point_front, origin).e;
+  const float angle_up = CartesianToPolar(point_up, origin).e;
+  const float angle_behind = CartesianToPolar(point_behind, origin).e;
+  const float angle_down = CartesianToPolar(point_down, origin).e;
+  const float angle_undetermined = CartesianToPolar(origin, origin).e;
+  const float angle_q1 = CartesianToPolar(point_q1, origin).e;
+  const float angle_30 = CartesianToPolar(point_30, origin).e;
+  const float angle_q2 = CartesianToPolar(point_q2, origin).e;
+  const float angle_q3 = CartesianToPolar(point_q3, origin).e;
+  const float angle_q4 = CartesianToPolar(point_q4, origin).e;
   const float angle_non_zero_origin =
-      elevationAnglefromCartesian(point_q4, point_q2);
+      CartesianToPolar(point_q4, point_q2).e;
 
   // THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
@@ -218,7 +218,7 @@ TEST(Common, azimuthAngletoIndex) {
   EXPECT_EQ(0, index_invalid_4);
 }
 
-TEST(Common, fromPolarToCartesian) {
+TEST(Common, PolarToCartesian) {
   // GIVEN: the elevation angle, azimuth angle, a radius and the position
   std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};    //[-90, 90]
   std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f};  //[-180, 180]
@@ -244,7 +244,7 @@ TEST(Common, fromPolarToCartesian) {
     p_pol.z = z[3];
     p_pol.r = radius[0];
     pos_out.push_back(
-        fromPolarToCartesian(p_pol, toPoint(pos)));
+        PolarToCartesian(p_pol, toPoint(pos)));
   }
 
   for (int i = 0; i < n; i++) {
@@ -253,7 +253,7 @@ TEST(Common, fromPolarToCartesian) {
     p_pol.z = z[i];
     p_pol.r = radius[1];
     pos_out.push_back(
-        fromPolarToCartesian(p_pol, toPoint(pos)));
+        PolarToCartesian(p_pol, toPoint(pos)));
   }
 
   // THEN: the cartesian coordinates are
@@ -299,7 +299,7 @@ TEST(Common, PolarToCatesianToPolar) {
       p_pol.z = z;
       p_pol.r = radius;
       Eigen::Vector3f p_cartesian =
-          fromPolarToCartesian(p_pol, toPoint(pos));
+          PolarToCartesian(p_pol, toPoint(pos));
 
       float z_new = azimuthAnglefromCartesian(p_cartesian, pos);
       float e_new = elevationAnglefromCartesian(p_cartesian, pos);
@@ -338,7 +338,7 @@ TEST(Common, CartesianToPolarToCartesian) {
         p_pol.e = elevationAnglefromCartesian(origin, pos);
         p_pol.r = (origin - pos).norm();
         Eigen::Vector3f p_cartesian =
-            fromPolarToCartesian(p_pol, toPoint(pos));
+            PolarToCartesian(p_pol, toPoint(pos));
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as

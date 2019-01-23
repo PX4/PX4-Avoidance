@@ -353,7 +353,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
   m.lifetime = ros::Duration();
   m.id = 0;
   marker->markers.push_back(m);
-  
+
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
 
   for (size_t i = 0; i < path.cells.size(); i++) {
@@ -364,7 +364,7 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
     p_pol.z = path.cells[i].y;
     p_pol.r = 1.0;
     geometry_msgs::Point p =
-        toPoint(fromPolarToCartesian(p_pol, drone_pos.pose.position));
+        toPoint(PolarToCartesian(p_pol, drone_pos.pose.position));
     m.pose.position = p;
 
     m.color.r = red;
