@@ -1,26 +1,16 @@
 #!/bin/bash
 cat > local_planner/launch/avoidance.launch <<- EOM
 <launch>
-
-
     <arg name="mavros_transformation" default="0" />
-
-    <param name="use_sim_time" value="false" />
-
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
-          args="0 0 0 \$(arg mavros_transformation) 0 0 world local_origin 10"/>
-
-    <arg name="headless" default="false"/>
     <arg name="ns" default="/"/>
-    <arg name="build" default="px4_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
-    <arg name="est" default="ekf2"/>
-    <arg name="depth_fps"            default="30"/>
-    <arg name="infra1_fps"           default="30"/>
-    <arg name="infra2_fps"           default="30"/>
+
+    <!-- Launch static tf publisher -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
+          args="0 0 0 \$(arg mavros_transformation) 0 0 world local_origin 10"/>
 
     <!-- Launch MavROS -->
     <group ns="\$(arg ns)">
@@ -37,6 +27,11 @@ cat > local_planner/launch/avoidance.launch <<- EOM
 
     <!-- Launch cameras -->
 EOM
+
+# Set the frame rate to 15 if it is undefined
+if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
+  DEPTH_CAMERA_FRAME_RATE=15
+fi
 
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
@@ -59,9 +54,9 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
 				<arg name="serial_no"             value="$2"/>
-				<arg name="depth_fps"             value="\$(arg depth_fps)"/>
-				<arg name="infra1_fps"            value="\$(arg infra1_fps)"/>
-				<arg name="infra2_fps"            value="\$(arg infra2_fps)"/>
+				<arg name="depth_fps"             value="$DEPTH_CAMERA_FRAME_RATE"/>
+				<arg name="infra1_fps"            value="$DEPTH_CAMERA_FRAME_RATE"/>
+				<arg name="infra2_fps"            value="$DEPTH_CAMERA_FRAME_RATE"/>
 				<arg name="enable_pointcloud"     value="false"/>
 				<arg name="enable_imu"            value="false"/>
 				<arg name="enable_fisheye"        value="false"/>
@@ -77,8 +72,8 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
     <arg name="pointcloud_topics" default="[$camera_topics]"/>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
-      <param name="goal_x_param" value="15" />
-      <param name="goal_y_param" value="15"/>
+      <param name="goal_x_param" value="0" />
+      <param name="goal_y_param" value="0"/>
       <param name="goal_z_param" value="4" />
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
