@@ -401,7 +401,6 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 
 // get 3D points from old histogram
 void LocalPlanner::reprojectPoints(Histogram histogram) {
-
   float dist, age;
   Eigen::Vector3f temp_array[4];
   reprojected_points_age_.clear();
