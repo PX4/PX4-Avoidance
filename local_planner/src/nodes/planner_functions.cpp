@@ -130,17 +130,15 @@ void propagateHistogram(
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     PolarPoint p_pol = CartesianToPolar(toEigen(reprojected_points.points[i]),
                                         toEigen(position.pose.position));
-
-    int e_ind = elevationAngletoIndex(p_pol.e, 2 * ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(p_pol.z, 2 * ALPHA_RES);
+    Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, 2* ALPHA_RES);
 
     polar_histogram_est.set_bin(
-        e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
-    polar_histogram_est.set_age(e_ind, z_ind,
-                                polar_histogram_est.get_age(e_ind, z_ind) +
+        p_ind.y(), p_ind.x(), polar_histogram_est.get_bin(p_ind.y(), p_ind.x()) + 0.25);
+    polar_histogram_est.set_age(p_ind.y(), p_ind.x(),
+                                polar_histogram_est.get_age(p_ind.y(), p_ind.x()) +
                                     0.25 * reprojected_points_age[i]);
-    polar_histogram_est.set_dist(e_ind, z_ind,
-                                 polar_histogram_est.get_dist(e_ind, z_ind) +
+    polar_histogram_est.set_dist(p_ind.y(), p_ind.x(),
+                                 polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) +
                                      0.25 * reprojected_points_dist[i]);
   }
 
@@ -174,14 +172,14 @@ void generateNewHistogram(Histogram& polar_histogram,
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - toEigen(position.pose.position)).norm();
     PolarPoint p_pol = CartesianToPolar(p, toEigen(position.pose.position));
-
+    Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, ALPHA_RES);
     int e_ind = elevationAngletoIndex(p_pol.e, ALPHA_RES);
     int z_ind = azimuthAngletoIndex(p_pol.z, ALPHA_RES);
 
-    polar_histogram.set_bin(e_ind, z_ind,
-                            polar_histogram.get_bin(e_ind, z_ind) + 1);
-    polar_histogram.set_dist(e_ind, z_ind,
-                             polar_histogram.get_dist(e_ind, z_ind) + dist);
+    polar_histogram.set_bin(p_ind.y(), p_ind.x(),
+                            polar_histogram.get_bin(p_ind.y(), p_ind.x()) + 1);
+    polar_histogram.set_dist(p_ind.y(), p_ind.x(),
+                             polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
   }
 
   // Normalize and get mean in distance bins
@@ -295,13 +293,15 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
 
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
-  int vertical_FOV_range_sensor = 20;
-  int lower_index = elevationAngletoIndex(
-      -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
-  int upper_index = elevationAngletoIndex(
-      (float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  float vertical_FOV_range_sensor = 20.0;
+  PolarPoint p_pol_lower = {};
+  PolarPoint p_pol_upper = {};
+  p_pol_lower.e = -1*vertical_FOV_range_sensor / 2.0;
+  p_pol_upper.e = vertical_FOV_range_sensor / 2.0;
+  Eigen::Vector2i p_ind_lower = PolarToHistogramIndex(p_pol_lower, ALPHA_RES);
+  Eigen::Vector2i p_ind_upper = PolarToHistogramIndex(p_pol_upper, ALPHA_RES);
 
-  for (int e = lower_index; e <= upper_index; e++) {
+  for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (input_hist.get_bin(e, z) > 0) {
         new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);

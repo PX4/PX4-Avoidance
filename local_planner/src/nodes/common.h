@@ -28,7 +28,7 @@ Eigen::Vector3f PolarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
-PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
+PolarPoint HistogramIndexToPolar(int e, int z, int res,
                                  const float& radius);
 
 /**
@@ -51,17 +51,14 @@ PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
 PolarPoint CartesianToPolar(double x, double y, double z,
                             const Eigen::Vector3f& pos);
 /**
-* @brief     Checks if the computed histogram index given an elevation angle and
-*resolution is valid
-* @param[in] e Elevation angle in degrees
+* @brief     compute polar point to histogram index
+* @param[in] p_pol with elevation, azimuth angle and radius
 * @param[in] res resolution of the histogram in degrees
-* @param[in] index Index of the histogram cell for the given elevation
-* @returns   true or
+* @param[out] eigenvector with x()=azimuth and y()=elevation
 * @note      If there is an invalid input, the output index will be 0
 **/
-int elevationAngletoIndex(float e, int res);
-int azimuthAngletoIndex(float z, int res);
-Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, const int& res);
+
+Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, int res);
 
 /**
 * @brief     Compute the yaw angle between current position and point

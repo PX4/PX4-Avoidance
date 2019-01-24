@@ -33,7 +33,7 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-PolarPoint HistogramIndexToPolar(const int& e, const int& z, const int& res,
+PolarPoint HistogramIndexToPolar(int e, int z, int res,
                                  const float& radius) {
   PolarPoint p_pol = {};
   p_pol.e = e * res + res / 2 - 90;
@@ -61,36 +61,28 @@ PolarPoint CartesianToPolar(double x, double y, double z,
 }
 
 
-Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, const int& res){
-  
-}
-int elevationAngletoIndex(float e, int res) {  //[-90,90]
-  // TODO: wrap e to [-90, 90] to be sure input is valid such that this check is
-  // not necessary anymore
-  if (res <= 0.f || e < -90.f || e > 90.f) {
-    return 0.f;
+Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, int res){
+  //TODO change logic here, as 0,0 are valid index 
+  Eigen::Vector2i ev2(0, 0);
+  float e = p_pol.e;
+  float z = p_pol.z;
+  if (res <= 0.f || e < -90.f ||e > 90.f|| z < -180.f || z > 180.f) {
+    return ev2;
   }
+  if (e  == 90.f) {
+    e  = 89;
+  }
+  e  += 90.0;
+  e  = e + (res - (static_cast<int>(e)  % res));  //[-80,+90]
+  ev2.y() = e / res - 1; 
 
-  if (e == 90.f) {
-    e = 89;
+  if ( z  == 180.f) {
+     z  = -180;
   }
-  e += 90;
-  e = e + (res - ((int)e % res));  //[-80,+90]
-  return floor(e / res) - 1;       //[0,17]
-}
-
-int azimuthAngletoIndex(float z, int res) {  //[-180,180]
-  // TODO: wrap z to [-180, 180] to be sure input is valid such that this check
-  // is not necessary anymore
-  if (res <= 0.f || z < -180.f || z > 180.f) {
-    return 0.f;
-  }
-  if (z == 180.f) {
-    z = -180;
-  }
-  z += 180;
-  z = z + (res - ((int)z % res));  //[-80,+90]
-  return z / res - 1;              //[0,17]
+  z  += 180.0;
+  z =  z  + (res - (static_cast<int>(z) % res));  //[-80,+90]
+  ev2.x() = z / res - 1;  
+  return ev2;
 }
 
 // calculate the yaw for the next waypoint

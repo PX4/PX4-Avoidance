@@ -58,11 +58,11 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
   std::vector<Eigen::Vector3f> middle_of_cell;
 
-  for (int i = 0; i < e_angle_filled.size(); i++) {
-    for (int j = 0; j < z_angle_filled.size(); j++) {
+  for (auto i : e_angle_filled) {
+    for (auto j : z_angle_filled) {
       PolarPoint p_pol = {};
-      p_pol.e = e_angle_filled[i];
-      p_pol.z = z_angle_filled[j];
+      p_pol.e = i;
+      p_pol.z = j;
       p_pol.r = distance; 
       middle_of_cell.push_back(PolarToCartesian(p_pol,
                                                     location.pose.position));
@@ -85,8 +85,11 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index;
   std::vector<int> z_index;
   for (int i = 0; i < e_angle_filled.size(); i++) {
-    e_index.push_back(elevationAngletoIndex((int)e_angle_filled[i], ALPHA_RES));
-    z_index.push_back(azimuthAngletoIndex((int)z_angle_filled[i], ALPHA_RES));
+    PolarPoint p_pol = {};
+    p_pol.e = e_angle_filled[i];
+    p_pol.z = z_angle_filled[i]; 
+    e_index.push_back(PolarToHistogramIndex(p_pol, ALPHA_RES).y());
+    z_index.push_back(PolarToHistogramIndex(p_pol, ALPHA_RES).x());
   }
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {

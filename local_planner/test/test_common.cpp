@@ -134,32 +134,38 @@ TEST(Common, elevationAnglefromCartesian) {
 
 TEST(Common, elevationAngletoIndex) {
   // GIVEN: the elevation angle of a point and the histogram resolution
-  const float elevation_1 = 0.f;
-  const float elevation_2 = 34.f;
-  const float elevation_3 = 90.f;
-  const float elevation_4 = -90.f;
+  PolarPoint p_pol_1 ={};
+  p_pol_1.e = 0.f;
+  PolarPoint p_pol_2 ={};
+  p_pol_2.e = 34.f;
+  PolarPoint p_pol_3 = {};
+  p_pol_3.e = 90.f;
+  PolarPoint p_pol_4 = {};
+  p_pol_4.e = -90.f;
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
-  const float elevation_invalid_1 = 94.f;
-  const float elevation_invalid_2 = -999.f;
+  PolarPoint p_pol_invalid_1 = {};
+  p_pol_invalid_1.e = 94.f;
+  PolarPoint p_pol_invalid_2 ={};
+  p_pol_invalid_2.e = -999.f;
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
 
   // WHEN: we convert the elevation angle to a histogram index
-  const int index_1 = elevationAngletoIndex(elevation_1, resolution_1);
-  const int index_2 = elevationAngletoIndex(elevation_2, resolution_1);
-  const int index_3 = elevationAngletoIndex(elevation_1, resolution_2);
-  const int index_4 = elevationAngletoIndex(elevation_2, resolution_2);
-  const int index_5 = elevationAngletoIndex(elevation_3, resolution_2);
-  const int index_6 = elevationAngletoIndex(elevation_4, resolution_2);
+  const int index_1 = PolarToHistogramIndex(p_pol_1, resolution_1).y();
+  const int index_2 = PolarToHistogramIndex(p_pol_2, resolution_1).y();
+  const int index_3 = PolarToHistogramIndex(p_pol_1, resolution_2).y();
+  const int index_4 = PolarToHistogramIndex(p_pol_2, resolution_2).y();
+  const int index_5 = PolarToHistogramIndex(p_pol_3, resolution_2).y();
+  const int index_6 = PolarToHistogramIndex(p_pol_4, resolution_2).y();
   const int index_invalid_1 =
-      elevationAngletoIndex(elevation_invalid_1, resolution_1);
+      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).y();
   const int index_invalid_2 =
-      elevationAngletoIndex(elevation_invalid_2, resolution_1);
+      PolarToHistogramIndex(p_pol_invalid_2, resolution_1).y();
   const int index_invalid_3 =
-      elevationAngletoIndex(elevation_1, resolution_invalid_1);
+      PolarToHistogramIndex(p_pol_1, resolution_invalid_1).y();
   const int index_invalid_4 =
-      elevationAngletoIndex(elevation_1, resolution_invalid_2);
+      PolarToHistogramIndex(p_pol_1, resolution_invalid_2).y();
 
   // THEN: the vertical histogram index should be ..
   EXPECT_EQ(30, index_1);
@@ -175,34 +181,41 @@ TEST(Common, elevationAngletoIndex) {
 }
 TEST(Common, azimuthAngletoIndex) {
   // GIVEN: the azimuth angle of a point and the histogram resolution
-  const float elevation_1 = 0.f;
-  const float elevation_2 = 34.f;
-  const float elevation_3 = 180.f;
-  const float elevation_4 = 179.f;
-  const float elevation_5 = -180.f;
+  PolarPoint p_pol_1 ={};
+  PolarPoint p_pol_2 ={};
+  PolarPoint p_pol_3 ={};
+  PolarPoint p_pol_4 ={};
+  PolarPoint p_pol_5 ={};
+  PolarPoint p_pol_invalid_1 = {};
+  PolarPoint p_pol_invalid_2 = {};
+  p_pol_1.z = 0.f;
+  p_pol_2.z = 34.f;
+  p_pol_3.z = 180.f;
+  p_pol_4.z = 179.f;
+  p_pol_5.z = -180.f;
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
-  const float elevation_invalid_1 = 194.f;
-  const float elevation_invalid_2 = -999.f;
+  p_pol_invalid_1.z = 194.f;
+  p_pol_invalid_2.z = -999.f;
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
 
   // WHEN: we convert the azimuth angle to a histogram index
-  const int index_1 = azimuthAngletoIndex(elevation_1, resolution_1);
-  const int index_2 = azimuthAngletoIndex(elevation_2, resolution_1);
-  const int index_3 = azimuthAngletoIndex(elevation_1, resolution_2);
-  const int index_4 = azimuthAngletoIndex(elevation_2, resolution_2);
-  const int index_5 = azimuthAngletoIndex(elevation_3, resolution_2);
-  const int index_6 = azimuthAngletoIndex(elevation_4, resolution_2);
-  const int index_7 = azimuthAngletoIndex(elevation_5, resolution_2);
+  const int index_1 = PolarToHistogramIndex(p_pol_1, resolution_1).x();
+  const int index_2 = PolarToHistogramIndex(p_pol_2, resolution_1).x();
+  const int index_3 = PolarToHistogramIndex(p_pol_1, resolution_2).x();
+  const int index_4 = PolarToHistogramIndex(p_pol_2, resolution_2).x();
+  const int index_5 = PolarToHistogramIndex(p_pol_3, resolution_2).x();
+  const int index_6 = PolarToHistogramIndex(p_pol_4, resolution_2).x();
+  const int index_7 = PolarToHistogramIndex(p_pol_5, resolution_2).x();
   const int index_invalid_1 =
-      azimuthAngletoIndex(elevation_invalid_1, resolution_1);
+      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
   const int index_invalid_2 =
-      azimuthAngletoIndex(elevation_invalid_2, resolution_1);
+      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
   const int index_invalid_3 =
-      azimuthAngletoIndex(elevation_1, resolution_invalid_1);
+      PolarToHistogramIndex(p_pol_1, resolution_invalid_1).x();
   const int index_invalid_4 =
-      azimuthAngletoIndex(elevation_1, resolution_invalid_2);
+      PolarToHistogramIndex(p_pol_1, resolution_invalid_2).x();
 
   // THEN: the horizontal histogram index should be ..
   EXPECT_EQ(60, index_1);
@@ -439,13 +452,11 @@ TEST(Common, IndexPolarIndex ){
     for(int z_ind = 0; z_ind == 60; z_ind + 5){
       //WHEN: transform it to polar and back to the indices
       PolarPoint p_pol = HistogramIndexToPolar(e_ind,z_ind, res, 0.0);
-
-      int e_ind_new = elevationAngletoIndex(p_pol.e, res);
-      int z_ind_new = azimuthAngletoIndex(p_pol.z, res);
+      Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, res); 
 
       //THEN: new histogram index should be the same as before the conversion
-      EXPECT_EQ(e_ind, e_ind_new);
-      EXPECT_EQ(z_ind, z_ind_new);
+      EXPECT_EQ(e_ind, p_ind.y());
+      EXPECT_EQ(z_ind, p_ind.x());
 
     }
   }

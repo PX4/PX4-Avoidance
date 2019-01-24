@@ -264,14 +264,12 @@ void LocalPlanner::determineStrategy() {
         int n_occupied_cells = 0;
         PolarPoint goal_pol =
             CartesianToPolar(goal_, toEigen(pose_.pose.position));
+        Eigen::Vector2i goal_index = PolarToHistogramIndex(goal_pol, ALPHA_RES);
 
-        int goal_e_index = elevationAngletoIndex(goal_pol.e, ALPHA_RES);
-        int goal_z_index = azimuthAngletoIndex(goal_pol.z, ALPHA_RES);
-
-        for (int e = goal_e_index - relevance_margin_e_cells;
-             e < goal_e_index + relevance_margin_e_cells; e++) {
-          for (int z = goal_z_index - relevance_margin_z_cells;
-               z < goal_z_index + relevance_margin_z_cells; z++) {
+        for (int e = goal_index.y() - relevance_margin_e_cells;
+             e < goal_index.y() + relevance_margin_e_cells; e++) {
+          for (int z = goal_index.x() - relevance_margin_z_cells;
+               z < goal_index.x() + relevance_margin_z_cells; z++) {
             if (polar_histogram_.get_bin(e, z) > 0) {
               n_occupied_cells++;
             }
