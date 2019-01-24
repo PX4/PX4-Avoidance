@@ -145,79 +145,67 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
-
-    bool node_valid = true;
     bool hist_is_empty = false;     // unused
-    double min_dist = 2.0;
-    bool too_close = tooCloseToObstacle(pointcloud_, min_dist, origin_position, min_realsense_dist_);
 
-    if (origin != 0 && too_close &&
-    		pointcloud_.points.size() > 160) {
+    // build new histogram
+    std::vector<int> z_FOV_idx;
+    int e_FOV_min, e_FOV_max;
+    calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
+                 tree_[origin].yaw_,
+                 0.0);  // assume pitch is zero at every node
+
+    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
+    Histogram histogram = Histogram(ALPHA_RES);
+
+    propagateHistogram(propagated_histogram, reprojected_points_,
+                       reprojected_points_age_, reprojected_points_dist_,
+                       pose_);
+    generateNewHistogram(histogram, pointcloud_, pose_);
+    combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
+                      z_FOV_idx, e_FOV_min, e_FOV_max);
+
+    // calculate candidates
+    Eigen::MatrixXd cost_matrix;
+    std::vector<candidateDirection> candidate_vector;
+    getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
+   		  origin_origin_position, cost_params_, false, cost_matrix);
+    getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_, candidate_vector);
+
+
+    //add candidates as nodes
+    if (candidate_vector.empty()) {
       tree_[origin].total_cost_ = HUGE_VAL;
-      node_valid = false;
-    }
+    } else {
+      // insert new nodes
+      int depth = tree_[origin].depth_ + 1;
+      int childs = 0;
+      for(candidateDirection candidate : candidate_vector) {
+        int e = candidate.elevation_angle;
+        int z = candidate.azimuth_angle;
 
-    if (node_valid) {
-      // build new histogram
-      std::vector<int> z_FOV_idx;
-      int e_FOV_min, e_FOV_max;
-      calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
-                   tree_[origin].yaw_,
-                   0.0);  // assume pitch is zero at every node
-
-      Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
-      Histogram histogram = Histogram(ALPHA_RES);
-
-      propagateHistogram(propagated_histogram, reprojected_points_,
-                         reprojected_points_age_, reprojected_points_dist_,
-                         pose_);
-      generateNewHistogram(histogram, pointcloud_, pose_);
-      combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
-                        z_FOV_idx, e_FOV_min, e_FOV_max);
-
-      // calculate candidates
-      Eigen::MatrixXd cost_matrix;
-      std::vector<candidateDirection> candidate_vector;
-      getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
-    		  origin_origin_position, cost_params_, false, cost_matrix);
-      getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_, candidate_vector);
-
-
-      //add candidates as nodes
-      if (candidate_vector.empty()) {
-        tree_[origin].total_cost_ = HUGE_VAL;
-      } else {
-        // insert new nodes
-        int depth = tree_[origin].depth_ + 1;
-        int childs = 0;
-        for(candidateDirection candidate : candidate_vector) {
-          int e = candidate.elevation_angle;
-          int z = candidate.azimuth_angle;
-
-          // check if another close node has been added
-          Eigen::Vector3f node_location = fromPolarToCartesian(
-              e, z, tree_node_distance_, toPoint(origin_position));
-          int close_nodes = 0;
-          for (size_t i = 0; i < tree_.size(); i++) {
-            double dist = (tree_[i].getPosition() - node_location).norm();
-            if (dist < 0.2) {
-              close_nodes++;
-            }
+        // check if another close node has been added
+        Eigen::Vector3f node_location = fromPolarToCartesian(
+            e, z, tree_node_distance_, toPoint(origin_position));
+        int close_nodes = 0;
+        for (size_t i = 0; i < tree_.size(); i++) {
+          double dist = (tree_[i].getPosition() - node_location).norm();
+          if (dist < 0.2) {
+            close_nodes++;
           }
+        }
 
-          if (childs < childs_per_node_ && close_nodes == 0) {
-            tree_.push_back(TreeNode(origin, depth, node_location));
-            tree_.back().last_e_ = e;
-            tree_.back().last_z_ = z;
-            double h = treeHeuristicFunction(tree_.size() - 1);
-            double c = treeCostFunction(tree_.size() - 1);
-            tree_.back().heuristic_ = h;
-            tree_.back().total_cost_ =
-                tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-            Eigen::Vector3f diff = node_location - origin_position;
-            tree_.back().yaw_ = atan2(diff.y(), diff.x());
-            childs++;
-          }
+        if (childs < childs_per_node_ && close_nodes == 0) {
+          tree_.push_back(TreeNode(origin, depth, node_location));
+          tree_.back().last_e_ = e;
+          tree_.back().last_z_ = z;
+          double h = treeHeuristicFunction(tree_.size() - 1);
+          double c = treeCostFunction(tree_.size() - 1);
+          tree_.back().heuristic_ = h;
+          tree_.back().total_cost_ =
+              tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
+          Eigen::Vector3f diff = node_location - origin_position;
+          tree_.back().yaw_ = atan2(diff.y(), diff.x());
+          childs++;
         }
       }
     }

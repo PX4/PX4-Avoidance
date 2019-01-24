@@ -65,32 +65,6 @@ void filterPointCloud(
   }
 }
 
-// check if the position lies too close to an obstacle
-bool tooCloseToObstacle(
-	const pcl::PointCloud<pcl::PointXYZ> &pointcloud,
-    double min_dist, const Eigen::Vector3f position, double min_realsense_dist) {
-
-  float distance;
-  int counter_too_close = 0;
-  bool too_close = false;
-  int min_number_close_points = 20;
-
-  for (const pcl::PointXYZ &xyz : pointcloud) {
-    // Check if the point is invalid
-    if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
-      distance = (position - toEigen(xyz)).norm();
-      if (distance > min_realsense_dist &&
-        distance < min_dist) {
-        counter_too_close ++;
-      }
-    }
-  }
-  if (counter_too_close > min_number_close_points){
-	  too_close = true;
-  }
-  return too_close;
-}
-
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
                   int& e_FOV_min, int& e_FOV_max, double yaw, double pitch) {

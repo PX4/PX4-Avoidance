@@ -39,13 +39,9 @@ void propagateHistogram(
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
 						  const Eigen::Vector3f &position);
-bool tooCloseToObstacle(
-	const pcl::PointCloud<pcl::PointXYZ> &pointcloud,
-    double min_dist, const Eigen::Vector3f position, double min_realsense_dist);
-void combinedHistogram(bool& hist_empty, Histogram& new_hist,
-                       const Histogram& propagated_hist,
-                       bool waypoint_outside_FOV,
-                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
+void combinedHistogram(bool &hist_empty, Histogram &new_hist,
+                       Histogram propagated_hist, bool waypoint_outside_FOV,
+                       std::vector<int> z_FOV_idx, int e_FOV_min,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
