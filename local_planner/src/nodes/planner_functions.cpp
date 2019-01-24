@@ -8,16 +8,6 @@
 
 namespace avoidance {
 
-// initialize GridCell message
-void initGridCells(nav_msgs::GridCells& cell) {
-  cell.cells.clear();
-  cell.header.stamp = ros::Time::now();
-  cell.header.frame_id = "/local_origin";
-  cell.cell_width = ALPHA_RES;
-  cell.cell_height = ALPHA_RES;
-  cell.cells = {};
-}
-
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void filterPointCloud(
