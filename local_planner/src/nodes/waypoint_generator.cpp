@@ -227,10 +227,10 @@ void WaypointGenerator::smoothWaypoint(double dt) {
     const Eigen::Vector3f p =
         (desired_location - smoothed_goto_location_) * P_constant;
     const Eigen::Vector3f d =
-        (desired_velocity - smoothed_goto_velocity_) * D_constant;
+        (desired_velocity - smoothed_goto_location_velocity_) * D_constant;
 
-    smoothed_goto_velocity_ += (p + d) * dt;
-    smoothed_goto_location_ += smoothed_goto_velocity_ * dt;
+    smoothed_goto_location_velocity_ += (p + d) * dt;
+    smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
 
     output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
   } else {

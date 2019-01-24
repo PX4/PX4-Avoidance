@@ -20,9 +20,9 @@ struct waypointResult {
   waypoint_choice waypoint_type;
   geometry_msgs::PoseStamped position_waypoint;
   geometry_msgs::Twist velocity_waypoint;
-  geometry_msgs::Point goto_position;
-  geometry_msgs::Point adapted_goto_position;
-  geometry_msgs::Point smoothed_goto_position;
+  geometry_msgs::Point goto_position;           // correction direction, dist=1
+  geometry_msgs::Point adapted_goto_position;   // correction direction & dist
+  geometry_msgs::Point smoothed_goto_position;  // what is sent to the drone
 };
 
 struct waypointGenerator_params {
@@ -41,7 +41,7 @@ class WaypointGenerator {
   waypoint_choice last_wp_type_;
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f smoothed_goto_velocity_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
 
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_;
