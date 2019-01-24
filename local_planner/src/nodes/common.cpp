@@ -33,16 +33,13 @@ double indexAngleDifference(float a, float b) {
                   std::abs(a - b + 360.f));
 }
 
-PolarPoint HistogramIndexToPolar(int e, int z, int res,
-                                 const float& radius) {
+PolarPoint HistogramIndexToPolar(int e, int z, int res, const float& radius) {
   PolarPoint p_pol = {};
   p_pol.e = e * res + res / 2 - 90;
   p_pol.z = z * res + res / 2 - 180;
   p_pol.r = radius;
   return p_pol;
 }
-
-
 
 PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin) {
@@ -60,28 +57,27 @@ PolarPoint CartesianToPolar(double x, double y, double z,
   return p_pol;
 }
 
-
-Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, int res){
-  //TODO change logic here, as 0,0 are valid index 
+Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, int res) {
+  // TODO change logic here, as 0,0 are valid index
   Eigen::Vector2i ev2(0, 0);
   float e = p_pol.e;
   float z = p_pol.z;
-  if (res <= 0.f || e < -90.f ||e > 90.f|| z < -180.f || z > 180.f) {
+  if (res <= 0.f || e < -90.f || e > 90.f || z < -180.f || z > 180.f) {
     return ev2;
   }
-  if (e  == 90.f) {
-    e  = 89;
+  if (e == 90.f) {
+    e = 89;
   }
-  e  += 90.0;
-  e  = e + (res - (static_cast<int>(e)  % res));  //[-80,+90]
-  ev2.y() = e / res - 1; 
+  e += 90.0;
+  e = e + (res - (static_cast<int>(e) % res));  //[-80,+90]
+  ev2.y() = e / res - 1;
 
-  if ( z  == 180.f) {
-     z  = -180;
+  if (z == 180.f) {
+    z = -180;
   }
-  z  += 180.0;
-  z =  z  + (res - (static_cast<int>(z) % res));  //[-80,+90]
-  ev2.x() = z / res - 1;  
+  z += 180.0;
+  z = z + (res - (static_cast<int>(z) % res));  //[-80,+90]
+  ev2.x() = z / res - 1;
   return ev2;
 }
 

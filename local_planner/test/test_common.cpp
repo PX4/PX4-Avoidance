@@ -6,12 +6,12 @@ using namespace avoidance;
 
 TEST(Common, polar2DdistanceSameIsZero) {
   // GIVEN: two identical points
-  PolarPoint p={};
-  p.e= 5.0;
+  PolarPoint p = {};
+  p.e = 5.0;
   p.z = 9.0;
 
   // WHEN: we get the distance between the same points
-  float dist = distance2DPolar(p,p);
+  float dist = distance2DPolar(p, p);
 
   // THEN: the distance should be zero
   EXPECT_FLOAT_EQ(0.f, dist);
@@ -19,8 +19,8 @@ TEST(Common, polar2DdistanceSameIsZero) {
 
 TEST(Common, polar2DdistanceOnKnownPoints) {
   // GIVEN: two points
-  PolarPoint p1={};
-  PolarPoint p2={};
+  PolarPoint p1 = {};
+  PolarPoint p2 = {};
 
   p1.e = 5.0;
   p1.z = 9.0;
@@ -28,7 +28,7 @@ TEST(Common, polar2DdistanceOnKnownPoints) {
   p2.z = 39.0;
 
   // WHEN: we get the distance between the same points
-  float dist = distance2DPolar(p1,p2);
+  float dist = distance2DPolar(p1, p2);
 
   // THEN: the distance should be...
   EXPECT_FLOAT_EQ(54.083271f, dist);
@@ -115,8 +115,7 @@ TEST(Common, elevationAnglefromCartesian) {
   const float angle_q2 = CartesianToPolar(point_q2, origin).e;
   const float angle_q3 = CartesianToPolar(point_q3, origin).e;
   const float angle_q4 = CartesianToPolar(point_q4, origin).e;
-  const float angle_non_zero_origin =
-      CartesianToPolar(point_q4, point_q2).e;
+  const float angle_non_zero_origin = CartesianToPolar(point_q4, point_q2).e;
 
   // THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
@@ -134,9 +133,9 @@ TEST(Common, elevationAnglefromCartesian) {
 
 TEST(Common, elevationAngletoIndex) {
   // GIVEN: the elevation angle of a point and the histogram resolution
-  PolarPoint p_pol_1 ={};
+  PolarPoint p_pol_1 = {};
   p_pol_1.e = 0.f;
-  PolarPoint p_pol_2 ={};
+  PolarPoint p_pol_2 = {};
   p_pol_2.e = 34.f;
   PolarPoint p_pol_3 = {};
   p_pol_3.e = 90.f;
@@ -146,7 +145,7 @@ TEST(Common, elevationAngletoIndex) {
   const float resolution_2 = 12.f;
   PolarPoint p_pol_invalid_1 = {};
   p_pol_invalid_1.e = 94.f;
-  PolarPoint p_pol_invalid_2 ={};
+  PolarPoint p_pol_invalid_2 = {};
   p_pol_invalid_2.e = -999.f;
   const float resolution_invalid_1 = 0.f;
   const float resolution_invalid_2 = -1.f;
@@ -181,11 +180,11 @@ TEST(Common, elevationAngletoIndex) {
 }
 TEST(Common, azimuthAngletoIndex) {
   // GIVEN: the azimuth angle of a point and the histogram resolution
-  PolarPoint p_pol_1 ={};
-  PolarPoint p_pol_2 ={};
-  PolarPoint p_pol_3 ={};
-  PolarPoint p_pol_4 ={};
-  PolarPoint p_pol_5 ={};
+  PolarPoint p_pol_1 = {};
+  PolarPoint p_pol_2 = {};
+  PolarPoint p_pol_3 = {};
+  PolarPoint p_pol_4 = {};
+  PolarPoint p_pol_5 = {};
   PolarPoint p_pol_invalid_1 = {};
   PolarPoint p_pol_invalid_2 = {};
   p_pol_1.z = 0.f;
@@ -252,21 +251,19 @@ TEST(Common, PolarToCartesian) {
   // WHEN: converting the point in polar CS to cartesian CS
 
   for (int i = 0; i < n; i++) {
-    PolarPoint p_pol= {};
+    PolarPoint p_pol = {};
     p_pol.e = e[i];
     p_pol.z = z[3];
     p_pol.r = radius[0];
-    pos_out.push_back(
-        PolarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(PolarToCartesian(p_pol, toPoint(pos)));
   }
 
   for (int i = 0; i < n; i++) {
-      PolarPoint p_pol= {};
+    PolarPoint p_pol = {};
     p_pol.e = e[i];
     p_pol.z = z[i];
     p_pol.r = radius[1];
-    pos_out.push_back(
-        PolarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(PolarToCartesian(p_pol, toPoint(pos)));
   }
 
   // THEN: the cartesian coordinates are
@@ -311,8 +308,7 @@ TEST(Common, PolarToCatesianToPolar) {
       p_pol.e = e;
       p_pol.z = z;
       p_pol.r = radius;
-      Eigen::Vector3f p_cartesian =
-          PolarToCartesian(p_pol, toPoint(pos));
+      Eigen::Vector3f p_cartesian = PolarToCartesian(p_pol, toPoint(pos));
 
       PolarPoint p_pol_new = CartesianToPolar(p_cartesian, pos);
 
@@ -346,9 +342,8 @@ TEST(Common, CartesianToPolarToCartesian) {
       for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
         Eigen::Vector3f origin(x, y, z);
         PolarPoint p_pol = CartesianToPolar(origin, pos);
-        //p_pol.r = (origin - pos).norm();
-        Eigen::Vector3f p_cartesian =
-            PolarToCartesian(p_pol, toPoint(pos));
+        // p_pol.r = (origin - pos).norm();
+        Eigen::Vector3f p_cartesian = PolarToCartesian(p_pol, toPoint(pos));
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as
@@ -443,21 +438,19 @@ TEST(Common, getAngularVel) {
   EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
 }
 
-TEST(Common, IndexPolarIndex ){
-
+TEST(Common, IndexPolarIndex) {
   // GIVEN:  some valid histogram indices and resolution
   int res = 6;
 
-  for(int e_ind = 0; e_ind == 30; e_ind + 5 ){
-    for(int z_ind = 0; z_ind == 60; z_ind + 5){
-      //WHEN: transform it to polar and back to the indices
-      PolarPoint p_pol = HistogramIndexToPolar(e_ind,z_ind, res, 0.0);
-      Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, res); 
+  for (int e_ind = 0; e_ind == 30; e_ind + 5) {
+    for (int z_ind = 0; z_ind == 60; z_ind + 5) {
+      // WHEN: transform it to polar and back to the indices
+      PolarPoint p_pol = HistogramIndexToPolar(e_ind, z_ind, res, 0.0);
+      Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, res);
 
-      //THEN: new histogram index should be the same as before the conversion
+      // THEN: new histogram index should be the same as before the conversion
       EXPECT_EQ(e_ind, p_ind.y());
       EXPECT_EQ(z_ind, p_ind.x());
-
     }
   }
 }

@@ -271,12 +271,11 @@ void WaypointGenerator::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  PolarPoint p_pol = CartesianToPolar(toEigen(output_.adapted_goto_position), toEigen(pose_.pose.position));
+  PolarPoint p_pol = CartesianToPolar(toEigen(output_.adapted_goto_position),
+                                      toEigen(pose_.pose.position));
+  Eigen::Vector2i p_index = PolarToHistogramIndex(p_pol, ALPHA_RES);
 
-
-  int z_index = azimuthAngletoIndex(p_pol.z, ALPHA_RES);
-
-  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) !=
+  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), p_index.x()) !=
       z_FOV_idx_.end()) {
     waypoint_outside_FOV_ = false;
   } else {
@@ -286,8 +285,8 @@ void WaypointGenerator::adaptSpeed() {
       int i = 0;
       for (std::vector<int>::iterator it = z_FOV_idx_.begin();
            it != z_FOV_idx_.end(); ++it) {
-        if (std::abs(z_FOV_idx_[i] - z_index) < ind_dist) {
-          ind_dist = std::abs(z_FOV_idx_[i] - z_index);
+        if (std::abs(z_FOV_idx_[i] - p_index.x()) < ind_dist) {
+          ind_dist = std::abs(z_FOV_idx_[i] - p_index.x());
         }
         i++;
       }

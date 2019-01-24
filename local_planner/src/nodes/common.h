@@ -28,8 +28,7 @@ Eigen::Vector3f PolarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
 
-PolarPoint HistogramIndexToPolar(int e, int z, int res,
-                                 const float& radius);
+PolarPoint HistogramIndexToPolar(int e, int z, int res, const float& radius);
 
 /**
 * @brief     Compute the polar point to an
@@ -40,11 +39,10 @@ PolarPoint HistogramIndexToPolar(int e, int z, int res,
 * @details   For a point given in cartesian x/y coordinates this is the
 *            angle in degrees from the positive y-axis in (-180, 180].
 *
-* @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180] and elevation angle degrees (-90, 90]
+* @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180]
+*and elevation angle degrees (-90, 90]
 * @warning   If the origin and the position coincide, the output is 0 degrees
 **/
-
-
 
 PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin);
