@@ -18,9 +18,6 @@ cat > local_planner/launch/avoidance.launch <<- EOM
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="est" default="ekf2"/>
-    <arg name="depth_fps"            default="15"/>
-    <arg name="infra1_fps"           default="15"/>
-    <arg name="infra2_fps"           default="15"/>
 
     <!-- Launch MavROS -->
     <group ns="\$(arg ns)">
@@ -59,9 +56,9 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
 				<arg name="serial_no"             value="$2"/>
-				<arg name="depth_fps"             value="\$(arg depth_fps)"/>
-				<arg name="infra1_fps"            value="\$(arg infra1_fps)"/>
-				<arg name="infra2_fps"            value="\$(arg infra2_fps)"/>
+				<arg name="depth_fps"             value="$CAMERA_FRAME_RATE"/>
+				<arg name="infra1_fps"            value="$CAMERA_FRAME_RATE"/>
+				<arg name="infra2_fps"            value="$CAMERA_FRAME_RATE"/>
 				<arg name="enable_pointcloud"     value="false"/>
 				<arg name="enable_imu"            value="false"/>
 				<arg name="enable_fisheye"        value="false"/>
