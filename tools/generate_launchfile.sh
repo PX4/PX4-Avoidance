@@ -28,6 +28,11 @@ cat > local_planner/launch/avoidance.launch <<- EOM
     <!-- Launch cameras -->
 EOM
 
+# Set the frame rate to 15 if it is undefined
+if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
+  DEPTH_CAMERA_FRAME_RATE=15
+fi
+
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
 for camera in $CAMERA_CONFIGS; do
