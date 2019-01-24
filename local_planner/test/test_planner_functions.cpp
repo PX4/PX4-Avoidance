@@ -64,7 +64,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       p_pol.e = i;
       p_pol.z = j;
       p_pol.r = distance;
-      middle_of_cell.push_back(PolarToCartesian(p_pol, location.pose.position));
+      middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
     }
   }
 
@@ -87,8 +87,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
     PolarPoint p_pol = {};
     p_pol.e = e_angle_filled[i];
     p_pol.z = z_angle_filled[i];
-    e_index.push_back(PolarToHistogramIndex(p_pol, ALPHA_RES).y());
-    z_index.push_back(PolarToHistogramIndex(p_pol, ALPHA_RES).x());
+    e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
+    z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
   }
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {

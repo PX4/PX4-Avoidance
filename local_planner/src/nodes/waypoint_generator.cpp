@@ -39,7 +39,7 @@ void WaypointGenerator::calculateWaypoint() {
       p_pol.z = planner_info_.costmap_direction_z;
       p_pol.r = 1.0;
       output_.goto_position =
-          toPoint(PolarToCartesian(p_pol, planner_info_.pose.pose.position));
+          toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
       getPathMsg();
@@ -47,21 +47,19 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      Eigen::Vector3f p;
-      bool tree_available = getDirectionFromTree(
-          p, planner_info_.path_node_positions, toEigen(pose_.pose.position));
+      PolarPoint p_pol = {};
+      bool tree_available =
+          getDirectionFromTree(p_pol, planner_info_.path_node_positions,
+                               toEigen(pose_.pose.position));
       double dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
           ros::Time::now() - planner_info_.last_path_time;
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
-        PolarPoint p_pol = {};
-        p_pol.e = p.x();
-        p_pol.z = p.y();
         p_pol.r = 1.0;
         output_.goto_position =
-            toPoint(PolarToCartesian(p_pol, planner_info_.pose.pose.position));
+            toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
         getPathMsg();
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");
@@ -271,9 +269,9 @@ void WaypointGenerator::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  PolarPoint p_pol = CartesianToPolar(toEigen(output_.adapted_goto_position),
+  PolarPoint p_pol = cartesianToPolar(toEigen(output_.adapted_goto_position),
                                       toEigen(pose_.pose.position));
-  Eigen::Vector2i p_index = PolarToHistogramIndex(p_pol, ALPHA_RES);
+  Eigen::Vector2i p_index = polarToHistogramIndex(p_pol, ALPHA_RES);
 
   if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), p_index.x()) !=
       z_FOV_idx_.end()) {

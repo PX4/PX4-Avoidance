@@ -128,9 +128,9 @@ void propagateHistogram(
     const std::vector<double>& reprojected_points_dist,
     const geometry_msgs::PoseStamped& position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    PolarPoint p_pol = CartesianToPolar(toEigen(reprojected_points.points[i]),
+    PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
                                         toEigen(position.pose.position));
-    Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, 2 * ALPHA_RES);
+    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
 
     polar_histogram_est.set_bin(
         p_ind.y(), p_ind.x(),
@@ -174,8 +174,8 @@ void generateNewHistogram(Histogram& polar_histogram,
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - toEigen(position.pose.position)).norm();
-    PolarPoint p_pol = CartesianToPolar(p, toEigen(position.pose.position));
-    Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, ALPHA_RES);
+    PolarPoint p_pol = cartesianToPolar(p, toEigen(position.pose.position));
+    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
     polar_histogram.set_bin(p_ind.y(), p_ind.x(),
                             polar_histogram.get_bin(p_ind.y(), p_ind.x()) + 1);
@@ -234,7 +234,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
+double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& position_old, double goal_cost_param,
@@ -250,18 +250,15 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
 
   float dist = (position - goal).norm();
   float dist_old = (position_old - goal).norm();
-  PolarPoint p_pol = {};
-  p_pol.e = static_cast<float>(e);
-  p_pol.z = static_cast<float>(z);
   p_pol.r = dist;
-  Eigen::Vector3f candidate_goal = PolarToCartesian(p_pol, toPoint(position));
+  Eigen::Vector3f candidate_goal = polarToCartesian(p_pol, toPoint(position));
   PolarPoint p_pol_old = {};
   p_pol.e = path_waypoints.cells[waypoint_index - 1].x;
   p_pol.z = path_waypoints.cells[waypoint_index - 1].y;
   p_pol.r = dist_old;
 
   Eigen::Vector3f old_candidate_goal =
-      PolarToCartesian(p_pol_old, toPoint(position_old));
+      polarToCartesian(p_pol_old, toPoint(position_old));
   double yaw_cost = goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
@@ -300,8 +297,8 @@ void compressHistogramElevation(Histogram& new_hist,
   PolarPoint p_pol_upper = {};
   p_pol_lower.e = -1 * vertical_FOV_range_sensor / 2.0;
   p_pol_upper.e = vertical_FOV_range_sensor / 2.0;
-  Eigen::Vector2i p_ind_lower = PolarToHistogramIndex(p_pol_lower, ALPHA_RES);
-  Eigen::Vector2i p_ind_upper = PolarToHistogramIndex(p_pol_upper, ALPHA_RES);
+  Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
+  Eigen::Vector2i p_ind_upper = polarToHistogramIndex(p_pol_upper, ALPHA_RES);
 
   for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
@@ -333,7 +330,6 @@ void findFreeDirections(
   int a = 0, b = 0;
   bool free = true;
   bool corner = false;
-  PolarPoint p_pol = {};
   geometry_msgs::Point p;
   cost_path_candidates.clear();
 
@@ -400,25 +396,25 @@ void findFreeDirections(
       }
 
       if (free) {
-        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
         p.x = p_pol.e;
         p.y = p_pol.z;
         p.z = p_pol.r;
         path_candidates.cells.push_back(p);
         double cost =
-            costFunction(p_pol.e, p_pol.z, path_waypoints, goal, position,
-                         position_old, goal_cost_param, smooth_cost_param,
+            costFunction(p_pol, path_waypoints, goal, position, position_old,
+                         goal_cost_param, smooth_cost_param,
                          height_change_cost_param_adapted,
                          height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0) {
-        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
         p.x = p_pol.e;
         p.y = p_pol.z;
         p.z = p_pol.r;
         path_rejected.cells.push_back(p);
       } else {
-        p_pol = HistogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
         p.x = p_pol.e;
         p.y = p_pol.z;
         p.z = p_pol.r;
@@ -471,7 +467,7 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 }
 
 bool getDirectionFromTree(
-    Eigen::Vector3f& p,
+    PolarPoint& p_pol,
     const std::vector<geometry_msgs::Point>& path_node_positions,
     const Eigen::Vector3f& position) {
   int size = path_node_positions.size();
@@ -514,9 +510,8 @@ bool getDirectionFromTree(
           (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
           l_frac * toEigen(path_node_positions[wp_idx]);
 
-      PolarPoint wp_pol = CartesianToPolar(mean_point, position);
-
-      p = Eigen::Vector3f(wp_pol.e, wp_pol.z, 0.f);
+      p_pol = cartesianToPolar(mean_point, position);
+      p_pol.r = 0.0;
     }
   } else {
     tree_available = false;

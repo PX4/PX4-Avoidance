@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_FUNCTIONS_H
 
 #include "box.h"
+#include "common.h"
 #include "histogram.h"
 
 #include <Eigen/Dense>
@@ -47,7 +48,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
-double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
+double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& position_old, double goal_cost_param,
@@ -70,7 +71,7 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 bool calculateCostMap(const std::vector<float>& cost_path_candidates,
                       std::vector<int>& cost_idx_sorted);
 bool getDirectionFromTree(
-    Eigen::Vector3f& p,
+    PolarPoint& p_pol,
     const std::vector<geometry_msgs::Point>& path_node_positions,
     const Eigen::Vector3f& position);
 }

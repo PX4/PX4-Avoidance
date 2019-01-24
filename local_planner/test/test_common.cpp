@@ -67,16 +67,16 @@ TEST(Common, azimuthAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
 
   // WHEN: calculating the azimuth angle between the two points
-  float angle_right = CartesianToPolar(point_right, origin).z;
-  float angle_up = CartesianToPolar(point_up, origin).z;
-  float angle_left = CartesianToPolar(point_left, origin).z;
-  float angle_down = CartesianToPolar(point_down, origin).z;
-  float angle_undetermined = CartesianToPolar(origin, origin).z;
-  float angle_q1 = CartesianToPolar(point_q1, origin).z;
-  float angle_q2 = CartesianToPolar(point_q2, origin).z;
-  float angle_q3 = CartesianToPolar(point_q3, origin).z;
-  float angle_q4 = CartesianToPolar(point_q4, origin).z;
-  float angle_non_zero_origin = CartesianToPolar(point_q1, point_q2).z;
+  float angle_right = cartesianToPolar(point_right, origin).z;
+  float angle_up = cartesianToPolar(point_up, origin).z;
+  float angle_left = cartesianToPolar(point_left, origin).z;
+  float angle_down = cartesianToPolar(point_down, origin).z;
+  float angle_undetermined = cartesianToPolar(origin, origin).z;
+  float angle_q1 = cartesianToPolar(point_q1, origin).z;
+  float angle_q2 = cartesianToPolar(point_q2, origin).z;
+  float angle_q3 = cartesianToPolar(point_q3, origin).z;
+  float angle_q4 = cartesianToPolar(point_q4, origin).z;
+  float angle_non_zero_origin = cartesianToPolar(point_q1, point_q2).z;
 
   // THEN:  angle should be ..
   EXPECT_FLOAT_EQ(90, angle_right);
@@ -105,17 +105,17 @@ TEST(Common, elevationAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
 
   // WHEN: we get the elevation angle between the two points
-  const float angle_front = CartesianToPolar(point_front, origin).e;
-  const float angle_up = CartesianToPolar(point_up, origin).e;
-  const float angle_behind = CartesianToPolar(point_behind, origin).e;
-  const float angle_down = CartesianToPolar(point_down, origin).e;
-  const float angle_undetermined = CartesianToPolar(origin, origin).e;
-  const float angle_q1 = CartesianToPolar(point_q1, origin).e;
-  const float angle_30 = CartesianToPolar(point_30, origin).e;
-  const float angle_q2 = CartesianToPolar(point_q2, origin).e;
-  const float angle_q3 = CartesianToPolar(point_q3, origin).e;
-  const float angle_q4 = CartesianToPolar(point_q4, origin).e;
-  const float angle_non_zero_origin = CartesianToPolar(point_q4, point_q2).e;
+  const float angle_front = cartesianToPolar(point_front, origin).e;
+  const float angle_up = cartesianToPolar(point_up, origin).e;
+  const float angle_behind = cartesianToPolar(point_behind, origin).e;
+  const float angle_down = cartesianToPolar(point_down, origin).e;
+  const float angle_undetermined = cartesianToPolar(origin, origin).e;
+  const float angle_q1 = cartesianToPolar(point_q1, origin).e;
+  const float angle_30 = cartesianToPolar(point_30, origin).e;
+  const float angle_q2 = cartesianToPolar(point_q2, origin).e;
+  const float angle_q3 = cartesianToPolar(point_q3, origin).e;
+  const float angle_q4 = cartesianToPolar(point_q4, origin).e;
+  const float angle_non_zero_origin = cartesianToPolar(point_q4, point_q2).e;
 
   // THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
@@ -151,20 +151,20 @@ TEST(Common, elevationAngletoIndex) {
   const float resolution_invalid_2 = -1.f;
 
   // WHEN: we convert the elevation angle to a histogram index
-  const int index_1 = PolarToHistogramIndex(p_pol_1, resolution_1).y();
-  const int index_2 = PolarToHistogramIndex(p_pol_2, resolution_1).y();
-  const int index_3 = PolarToHistogramIndex(p_pol_1, resolution_2).y();
-  const int index_4 = PolarToHistogramIndex(p_pol_2, resolution_2).y();
-  const int index_5 = PolarToHistogramIndex(p_pol_3, resolution_2).y();
-  const int index_6 = PolarToHistogramIndex(p_pol_4, resolution_2).y();
+  const int index_1 = polarToHistogramIndex(p_pol_1, resolution_1).y();
+  const int index_2 = polarToHistogramIndex(p_pol_2, resolution_1).y();
+  const int index_3 = polarToHistogramIndex(p_pol_1, resolution_2).y();
+  const int index_4 = polarToHistogramIndex(p_pol_2, resolution_2).y();
+  const int index_5 = polarToHistogramIndex(p_pol_3, resolution_2).y();
+  const int index_6 = polarToHistogramIndex(p_pol_4, resolution_2).y();
   const int index_invalid_1 =
-      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).y();
+      polarToHistogramIndex(p_pol_invalid_1, resolution_1).y();
   const int index_invalid_2 =
-      PolarToHistogramIndex(p_pol_invalid_2, resolution_1).y();
+      polarToHistogramIndex(p_pol_invalid_2, resolution_1).y();
   const int index_invalid_3 =
-      PolarToHistogramIndex(p_pol_1, resolution_invalid_1).y();
+      polarToHistogramIndex(p_pol_1, resolution_invalid_1).y();
   const int index_invalid_4 =
-      PolarToHistogramIndex(p_pol_1, resolution_invalid_2).y();
+      polarToHistogramIndex(p_pol_1, resolution_invalid_2).y();
 
   // THEN: the vertical histogram index should be ..
   EXPECT_EQ(30, index_1);
@@ -200,21 +200,21 @@ TEST(Common, azimuthAngletoIndex) {
   const float resolution_invalid_2 = -1.f;
 
   // WHEN: we convert the azimuth angle to a histogram index
-  const int index_1 = PolarToHistogramIndex(p_pol_1, resolution_1).x();
-  const int index_2 = PolarToHistogramIndex(p_pol_2, resolution_1).x();
-  const int index_3 = PolarToHistogramIndex(p_pol_1, resolution_2).x();
-  const int index_4 = PolarToHistogramIndex(p_pol_2, resolution_2).x();
-  const int index_5 = PolarToHistogramIndex(p_pol_3, resolution_2).x();
-  const int index_6 = PolarToHistogramIndex(p_pol_4, resolution_2).x();
-  const int index_7 = PolarToHistogramIndex(p_pol_5, resolution_2).x();
+  const int index_1 = polarToHistogramIndex(p_pol_1, resolution_1).x();
+  const int index_2 = polarToHistogramIndex(p_pol_2, resolution_1).x();
+  const int index_3 = polarToHistogramIndex(p_pol_1, resolution_2).x();
+  const int index_4 = polarToHistogramIndex(p_pol_2, resolution_2).x();
+  const int index_5 = polarToHistogramIndex(p_pol_3, resolution_2).x();
+  const int index_6 = polarToHistogramIndex(p_pol_4, resolution_2).x();
+  const int index_7 = polarToHistogramIndex(p_pol_5, resolution_2).x();
   const int index_invalid_1 =
-      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
+      polarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
   const int index_invalid_2 =
-      PolarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
+      polarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
   const int index_invalid_3 =
-      PolarToHistogramIndex(p_pol_1, resolution_invalid_1).x();
+      polarToHistogramIndex(p_pol_1, resolution_invalid_1).x();
   const int index_invalid_4 =
-      PolarToHistogramIndex(p_pol_1, resolution_invalid_2).x();
+      polarToHistogramIndex(p_pol_1, resolution_invalid_2).x();
 
   // THEN: the horizontal histogram index should be ..
   EXPECT_EQ(60, index_1);
@@ -230,7 +230,7 @@ TEST(Common, azimuthAngletoIndex) {
   EXPECT_EQ(0, index_invalid_4);
 }
 
-TEST(Common, PolarToCartesian) {
+TEST(Common, polarToCartesian) {
   // GIVEN: the elevation angle, azimuth angle, a radius and the position
   std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};    //[-90, 90]
   std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f};  //[-180, 180]
@@ -255,7 +255,7 @@ TEST(Common, PolarToCartesian) {
     p_pol.e = e[i];
     p_pol.z = z[3];
     p_pol.r = radius[0];
-    pos_out.push_back(PolarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
   }
 
   for (int i = 0; i < n; i++) {
@@ -263,7 +263,7 @@ TEST(Common, PolarToCartesian) {
     p_pol.e = e[i];
     p_pol.z = z[i];
     p_pol.r = radius[1];
-    pos_out.push_back(PolarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
   }
 
   // THEN: the cartesian coordinates are
@@ -308,9 +308,9 @@ TEST(Common, PolarToCatesianToPolar) {
       p_pol.e = e;
       p_pol.z = z;
       p_pol.r = radius;
-      Eigen::Vector3f p_cartesian = PolarToCartesian(p_pol, toPoint(pos));
+      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
 
-      PolarPoint p_pol_new = CartesianToPolar(p_cartesian, pos);
+      PolarPoint p_pol_new = cartesianToPolar(p_cartesian, pos);
 
       // THEN: the resulting polar positions are expected to be the same as
       // before the conversion
@@ -331,7 +331,7 @@ TEST(Common, PolarToCatesianToPolar) {
   }
 }
 
-TEST(Common, CartesianToPolarToCartesian) {
+TEST(Common, cartesianTopolarToCartesian) {
   // GIVEN: a current position
   Eigen::Vector3f pos(0.81, 5.17, 3.84);
 
@@ -341,9 +341,9 @@ TEST(Common, CartesianToPolarToCartesian) {
     for (float y = -5.f; y <= 5.f; y = y + 0.6f) {
       for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
         Eigen::Vector3f origin(x, y, z);
-        PolarPoint p_pol = CartesianToPolar(origin, pos);
+        PolarPoint p_pol = cartesianToPolar(origin, pos);
         // p_pol.r = (origin - pos).norm();
-        Eigen::Vector3f p_cartesian = PolarToCartesian(p_pol, toPoint(pos));
+        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as
@@ -445,8 +445,8 @@ TEST(Common, IndexPolarIndex) {
   for (int e_ind = 0; e_ind == 30; e_ind + 5) {
     for (int z_ind = 0; z_ind == 60; z_ind + 5) {
       // WHEN: transform it to polar and back to the indices
-      PolarPoint p_pol = HistogramIndexToPolar(e_ind, z_ind, res, 0.0);
-      Eigen::Vector2i p_ind = PolarToHistogramIndex(p_pol, res);
+      PolarPoint p_pol = histogramIndexToPolar(e_ind, z_ind, res, 0.0);
+      Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, res);
 
       // THEN: new histogram index should be the same as before the conversion
       EXPECT_EQ(e_ind, p_ind.y());

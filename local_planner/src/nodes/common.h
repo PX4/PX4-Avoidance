@@ -15,48 +15,60 @@ struct PolarPoint {
   float z;
   float r;
 };
+/**
+* @brief     calculates the distance between two polar points
+* @param[in] p1 polar point
+* @param[in] p2 polar point
+* @returns   distance between the two points
+**/
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 
 /**
-* @brief     Convertes the point from polar CS to cartesian CS
-* @param[in] p_pol polar point
-* @param[in] pos Position from which to convert the point
+* @brief     Convertes a polar point to a cartesian point and add it to a
+*cartesian position
+* @param[in] p_pol polar point to be converted to cartesian point
+* @param[in] pos given cartesian position, from which to convert the polar point
 * @returns   point in cartesian CS
 **/
-Eigen::Vector3f PolarToCartesian(const PolarPoint& p_pol,
+Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos);
 double indexAngleDifference(float a, float b);
-
-PolarPoint HistogramIndexToPolar(int e, int z, int res, const float& radius);
+/**
+* @brief     compute point in the histogram to a polar point
+* @param[in] e evelation index in the histogram
+* @param[in] z azimuth index in the histogram
+* @param[in] res resolution of the histogram
+* @param[in] radius of the polar point
+* @param[out]polar point with elevation angle, azimuth angle and radius
+**/
+PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 
 /**
-* @brief     Compute the polar point to an
-*            origin.
+* @brief     Compute a cartesian point to polar CS
 * @param[in] position Position of the location to which to compute the bearing
-*            angle to.
-* @param[in] origin Origin from which to compute the bearing vector.
+*            angles to.
+* @param[in] origin Origin from which to compute the bearing vectors.
 * @details   For a point given in cartesian x/y coordinates this is the
 *            angle in degrees from the positive y-axis in (-180, 180].
 *
 * @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180]
-*and elevation angle degrees (-90, 90]
-* @warning   If the origin and the position coincide, the output is 0 degrees
+*            and elevation angle degrees (-90, 90]
 **/
 
-PolarPoint CartesianToPolar(const Eigen::Vector3f& pos,
+PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin);
-PolarPoint CartesianToPolar(double x, double y, double z,
+PolarPoint cartesianToPolar(double x, double y, double z,
                             const Eigen::Vector3f& pos);
 /**
 * @brief     compute polar point to histogram index
 * @param[in] p_pol with elevation, azimuth angle and radius
 * @param[in] res resolution of the histogram in degrees
-* @param[out] eigenvector with x()=azimuth and y()=elevation
+* @param[out]vector with x()=azimuth and y()=elevation
 * @note      If there is an invalid input, the output index will be 0
 **/
 
-Eigen::Vector2i PolarToHistogramIndex(const PolarPoint& p_pol, int res);
+Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res);
 
 /**
 * @brief     Compute the yaw angle between current position and point
@@ -70,10 +82,10 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
 
 /**
 * @brief     computes a speed using the upper and lower speed limit, as well as
-*current acceleration and velocity
+*            current acceleration and velocity
 * @param[in] max_vel upper limit for speed
 * @param[in] min_vel lower limit for speed, currently always set as 0.0 hence
-*not used
+*            not used
 * @param[in] slope hard coded as 1.0
 * @param[in] v_old
 * @param[in] elapsed time [s]
