@@ -18,9 +18,9 @@ cat > local_planner/launch/avoidance.launch <<- EOM
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
     <arg name="est" default="ekf2"/>
-    <arg name="depth_fps"            default="30"/>
-    <arg name="infra1_fps"           default="30"/>
-    <arg name="infra2_fps"           default="30"/>
+    <arg name="depth_fps"            default="15"/>
+    <arg name="infra1_fps"           default="15"/>
+    <arg name="infra2_fps"           default="15"/>
 
     <!-- Launch MavROS -->
     <group ns="\$(arg ns)">
