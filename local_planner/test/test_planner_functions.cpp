@@ -95,7 +95,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       if (e_found && z_found) {
         EXPECT_GE(histogram_output.get_dist(e, z), 0.0);
       } else {
-    	EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
+        EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
       }
     }
   }

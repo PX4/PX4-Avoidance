@@ -24,7 +24,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(
 
 void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
                             double curr_yaw, double min_realsense_dist,
-							costParameters cost_params) {
+                            costParameters cost_params) {
   curr_yaw_ = curr_yaw;
   min_cloud_size_ = min_cloud_size;
   min_dist_backoff_ = min_dist_backoff;
@@ -145,7 +145,7 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
-    bool hist_is_empty = false;     // unused
+    bool hist_is_empty = false;  // unused
 
     // build new histogram
     std::vector<int> z_FOV_idx;
@@ -168,18 +168,18 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::MatrixXd cost_matrix;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
-   		  origin_origin_position, cost_params_, false, cost_matrix);
-    getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_, candidate_vector);
+                  origin_origin_position, cost_params_, false, cost_matrix);
+    getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_,
+                                    candidate_vector);
 
-
-    //add candidates as nodes
+    // add candidates as nodes
     if (candidate_vector.empty()) {
       tree_[origin].total_cost_ = HUGE_VAL;
     } else {
       // insert new nodes
       int depth = tree_[origin].depth_ + 1;
       int childs = 0;
-      for(candidateDirection candidate : candidate_vector) {
+      for (candidateDirection candidate : candidate_vector) {
         int e = candidate.elevation_angle;
         int z = candidate.azimuth_angle;
 

@@ -272,8 +272,8 @@ void LocalPlanner::determineStrategy() {
         obstacle_ = true;
 
         if (use_VFH_star_) {
-          star_planner_.setParams(min_cloud_size_, min_dist_backoff_,
-                                  curr_yaw_, min_realsense_dist_, cost_params_);
+          star_planner_.setParams(min_cloud_size_, min_dist_backoff_, curr_yaw_,
+                                  min_realsense_dist_, cost_params_);
           star_planner_.setFOV(h_FOV_, v_FOV_);
           star_planner_.setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
@@ -285,9 +285,9 @@ void LocalPlanner::determineStrategy() {
           last_path_time_ = ros::Time::now();
         } else {
           getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
-            		toEigen(last_sent_waypoint_), cost_params_, velocity_mod_ < 0.1, cost_matrix_);
+                        toEigen(last_sent_waypoint_), cost_params_,
+                        velocity_mod_ < 0.1, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
-
 
           if (candidate_vector_.empty()) {
             stopInFrontObstacles();
@@ -297,8 +297,8 @@ void LocalPlanner::determineStrategy() {
                 "\033[1;35m[OA] All directions blocked: Stopping in front "
                 "obstacle. \n \033[0m");
           } else {
-        	costmap_direction_e_ = candidate_vector_[0].elevation_angle;
-        	costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
+            costmap_direction_e_ = candidate_vector_[0].elevation_angle;
+            costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
             waypoint_type_ = costmap;
           }
         }
@@ -442,13 +442,13 @@ void LocalPlanner::evaluateProgressRate() {
     if (avg_incline > no_progress_slope_ &&
         goal_dist_incline_.size() == dist_incline_window_size_) {
       if (cost_params_.height_change_cost_param_adapted > 0.75) {
-    	  cost_params_.height_change_cost_param_adapted -= 0.02;
+        cost_params_.height_change_cost_param_adapted -= 0.02;
       }
     }
     if (avg_incline < no_progress_slope_) {
       if (cost_params_.height_change_cost_param_adapted <
-    		  cost_params_.height_change_cost_param - 0.03) {
-    	  cost_params_.height_change_cost_param_adapted += 0.03;
+          cost_params_.height_change_cost_param - 0.03) {
+        cost_params_.height_change_cost_param_adapted += 0.03;
       }
     }
     ROS_DEBUG(
@@ -456,7 +456,8 @@ void LocalPlanner::evaluateProgressRate() {
         "%f .\033[0m",
         avg_incline, cost_params_.height_change_cost_param_adapted);
   } else {
-	  cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
+    cost_params_.height_change_cost_param_adapted =
+        cost_params_.height_change_cost_param;
   }
 }
 

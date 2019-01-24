@@ -64,7 +64,7 @@ void Histogram::downsample() {
 }
 
 void Histogram::setZero() {
-	  age.fill(0.0);
-	  dist.fill(0.0);
+  age.fill(0.0);
+  dist.fill(0.0);
 }
 }

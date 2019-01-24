@@ -58,8 +58,8 @@ class StarPlanner {
   ~StarPlanner();
 
   void setParams(double min_cloud_size, double min_dist_backoff,
-                 double curr_yaw,
-                 double min_realsense_dist, costParameters cost_params);
+                 double curr_yaw, double min_realsense_dist,
+                 costParameters cost_params);
   void setFOV(double h_FOV, double v_FOV);
   void setReprojectedPoints(
       const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
@@ -67,8 +67,7 @@ class StarPlanner {
       const std::vector<double>& reprojected_points_dist);
   void setPose(const geometry_msgs::PoseStamped& pose);
   void setGoal(const geometry_msgs::Point& pose);
-  void setCloud(
-      const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
+  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
   double treeCostFunction(int node_number);
   double treeHeuristicFunction(int node_number);
   void buildLookAheadTree();

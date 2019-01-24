@@ -252,7 +252,7 @@ void LocalPlannerNode::updatePlannerInfo() {
     // available assume vehicle is close to ground
   }
 
-  //update last sent waypoint
+  // update last sent waypoint
   local_planner_.last_sent_waypoint_ = newest_waypoint_position_;
 }
 

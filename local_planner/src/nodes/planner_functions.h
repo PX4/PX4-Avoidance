@@ -2,9 +2,10 @@
 #define LOCAL_PLANNER_FUNCTIONS_H
 
 #include "box.h"
-#include "histogram.h"
-#include "cost_parameters.h"
 #include "candidate_direction.h"
+#include "common.h"
+#include "cost_parameters.h"
+#include "histogram.h"
 
 #include <Eigen/Dense>
 
@@ -46,16 +47,23 @@ void combinedHistogram(bool &hist_empty, Histogram &new_hist,
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
 void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
-    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
-	costParameters cost_params, bool only_yawed, Eigen::MatrixXd& cost_matrix);
-void getBestCandidatesFromCostMatrix(const Eigen::MatrixXd& matrix, unsigned int number_of_candidates, std::vector<candidateDirection>& candidate_vector);
-double costFunction(double e_angle, double z_angle, double obstacle_distance, const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position, const Eigen::Vector3f &last_sent_waypoint,
-					costParameters cost_params, bool only_yawed);
-void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius);
-void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding, Eigen::MatrixXd& matrix_padded);
-void printHistogram(Histogram histogram);
-void printMatrix(Eigen::MatrixXd& matrix);
+                   const Eigen::Vector3f &position,
+                   const Eigen::Vector3f &last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed,
+                   Eigen::MatrixXd &cost_matrix);
+void getBestCandidatesFromCostMatrix(
+    const Eigen::MatrixXd &matrix, unsigned int number_of_candidates,
+    std::vector<candidateDirection> &candidate_vector);
+double costFunction(double e_angle, double z_angle, double obstacle_distance,
+                    const Eigen::Vector3f &goal,
+                    const Eigen::Vector3f &position,
+                    const Eigen::Vector3f &last_sent_waypoint,
+                    costParameters cost_params, bool only_yawed);
+void smoothPolarMatrix(Eigen::MatrixXd &matrix, unsigned int smoothing_radius);
+void padPolarMatrix(const Eigen::MatrixXd &matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXd &matrix_padded);
+void printHistogram(Histogram &histogram);
+void printMatrix(Eigen::MatrixXd &matrix);
 bool getDirectionFromTree(
     Eigen::Vector3f& p,
     const std::vector<geometry_msgs::Point>& path_node_positions,

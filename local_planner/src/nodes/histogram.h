@@ -2,8 +2,8 @@
 #define HISTOGRAM_H
 
 #include <math.h>
-#include <vector>
 #include <Eigen/Dense>
+#include <vector>
 
 namespace avoidance {
 
@@ -33,16 +33,16 @@ class Histogram {
 
   inline double get_age(int x, int y) const {
     wrapIndex(x, y);
-    return age(x,y);
+    return age(x, y);
   }
 
   inline double get_dist(int x, int y) const {
     wrapIndex(x, y);
-    return dist(x,y);
+    return dist(x, y);
   }
 
-  inline void set_age(int x, int y, double value) { age(x,y) = value; }
-  inline void set_dist(int x, int y, double value) { dist(x,y) = value; }
+  inline void set_age(int x, int y, double value) { age(x, y) = value; }
+  inline void set_dist(int x, int y, double value) { dist(x, y) = value; }
 
   void upsample();
   void downsample();
