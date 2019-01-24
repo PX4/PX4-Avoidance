@@ -58,7 +58,8 @@ LocalPlannerNode::LocalPlannerNode() {
                                   &LocalPlannerNode::updateGoalCallback, this);
   distance_sensor_sub_ = nh_.subscribe(
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
-  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &LocalPlannerNode::px4ParamsCallback, this);
+  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1,
+                                 &LocalPlannerNode::px4ParamsCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
@@ -654,62 +655,61 @@ void LocalPlannerNode::distanceSensorCallback(
 }
 
 void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
-  //collect all px4 parameters needed for model based trajectory planning
+  // collect all px4 parameters needed for model based trajectory planning
   // when adding new parameter,
   // add parameter to struct ModelParameters
   // add new else if case with correct value type
 
-
-  if( msg.param_id == "EKF2_RNG_A_HMAX"){ 
-    model_params_.ekf2_rng_a_hmax = msg.value.real; // float
-  } else if( msg.param_id == "EKF2_RNG_A_VMAX"){
-      model_params_.ekf2_rng_a_vmax = msg.value.real;
-  }else if( msg.param_id == "MC_PITCHRATE_MAX"){
-      model_params_.mc_pitchrate_max =msg.value.real;
-  }else if( msg.param_id == "MC_ROLLRATE_MAX"){
-      model_params_.mc_rollrate_max = msg.value.real;
-  }else if( msg.param_id == "MC_YAWRATE_MAX"){
-      model_params_.mc_yawrate_max = msg.value.real;
-  }else if( msg.param_id == "MC_YAWAUTO_MAX"){
-      model_params_.mc_yawauto_max = msg.value.real;
-  }else if( msg.param_id == "MPC_ACC_DOWN_MAX"){
-      model_params_.mpc_acc_down_max = msg.value.real;
-  }else if( msg.param_id == "MPC_ACC_HOR"){
-      model_params_.mpc_acc_hor = msg.value.real;
-  }else if( msg.param_id == "MPC_ACC_UP_MAX"){
-      model_params_.mc_pitchrate_max = msg.value.real;
-  }else if( msg.param_id == "MPC_COL_PREV_D"){
-      model_params_.mpc_col_prev_d = msg.value.real;
-  }else if( msg.param_id == "MPC_HOLD_MAX_XY"){
-      model_params_.mpc_hold_max_xy = msg.value.real;
-  }else if( msg.param_id == "MPD_HOLD_MAX_Z"){
-      model_params_.mpc_hold_max_z = msg.value.real;
-  }else if( msg.param_id == "MPC_JERK_MAX"){
-      model_params_.mpc_jerk_max = msg.value.real;
-  }else if( msg.param_id == "MPC_JERK_MIN"){
-      model_params_.mpc_jerk_min = msg.value.real;
-  }else if( msg.param_id == "MPC_THR_MAX"){
-      model_params_.mpc_thr_max = msg.value.real;
-  }else if( msg.param_id == "MPC_THR_MIN"){
-      model_params_.mpc_thr_min = msg.value.real;
-  }else if( msg.param_id == "MPC_TILTMAX_AIR"){
-      model_params_.mpc_tiltmax_air = msg.value.real;
-  }else if( msg.param_id == "MPC_TKO_SPEED"){
-      model_params_.mpc_tko_speed = msg.value.real;
-  }else if( msg.param_id == "MPC_XY_CRUISE"){
-      model_params_.mpc_xy_cruise = msg.value.real;
-  }else if( msg.param_id == "MPC_XY_VEL_MAX"){
-      model_params_.mpx_xy_vel_max = msg.value.real;
-  }else if( msg.param_id == "MPC_Z_VEL_MAX_DN"){
-      model_params_.mpc_z_vel_max_dn = msg.value.real;
-  }else if( msg.param_id == "MPC_Z_VEL_MAX_UP"){
-      model_params_.mpc_z_vel_max_up = msg.value.real;
-  }else if ( msg.param_id == "MPC_POS_MODE"){
-      model_params_.mpc_pos_mode = msg.value.integer; //int
+  if (msg.param_id == "EKF2_RNG_A_HMAX") {
+    model_params_.ekf2_rng_a_hmax = msg.value.real;  // float
+  } else if (msg.param_id == "EKF2_RNG_A_VMAX") {
+    model_params_.ekf2_rng_a_vmax = msg.value.real;
+  } else if (msg.param_id == "MC_PITCHRATE_MAX") {
+    model_params_.mc_pitchrate_max = msg.value.real;
+  } else if (msg.param_id == "MC_ROLLRATE_MAX") {
+    model_params_.mc_rollrate_max = msg.value.real;
+  } else if (msg.param_id == "MC_YAWRATE_MAX") {
+    model_params_.mc_yawrate_max = msg.value.real;
+  } else if (msg.param_id == "MC_YAWAUTO_MAX") {
+    model_params_.mc_yawauto_max = msg.value.real;
+  } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
+    model_params_.mpc_acc_down_max = msg.value.real;
+  } else if (msg.param_id == "MPC_ACC_HOR") {
+    model_params_.mpc_acc_hor = msg.value.real;
+  } else if (msg.param_id == "MPC_ACC_UP_MAX") {
+    model_params_.mpc_acc_up_max = msg.value.real;
+  } else if (msg.param_id == "MPC_AUTO_MODE") {
+    model_params_.mpc_auto_mode = msg.value.integer;  // int
+  } else if (msg.param_id == "MPC_COL_PREV_D") {
+    model_params_.mpc_col_prev_d = msg.value.real;
+  } else if (msg.param_id == "MPC_HOLD_MAX_XY") {
+    model_params_.mpc_hold_max_xy = msg.value.real;
+  } else if (msg.param_id == "MPD_HOLD_MAX_Z") {
+    model_params_.mpc_hold_max_z = msg.value.real;
+  } else if (msg.param_id == "MPC_JERK_MAX") {
+    model_params_.mpc_jerk_max = msg.value.real;
+  } else if (msg.param_id == "MPC_JERK_MIN") {
+    model_params_.mpc_jerk_min = msg.value.real;
+  } else if (msg.param_id == "MPC_THR_MAX") {
+    model_params_.mpc_thr_max = msg.value.real;
+  } else if (msg.param_id == "MPC_THR_MIN") {
+    model_params_.mpc_thr_min = msg.value.real;
+  } else if (msg.param_id == "MPC_TILTMAX_AIR") {
+    model_params_.mpc_tiltmax_air = msg.value.real;
+  } else if (msg.param_id == "MPC_TKO_SPEED") {
+    model_params_.mpc_tko_speed = msg.value.real;
+  } else if (msg.param_id == "MPC_XY_CRUISE") {
+    model_params_.mpc_xy_cruise = msg.value.real;
+  } else if (msg.param_id == "MPC_XY_VEL_MAX") {
+    model_params_.mpx_xy_vel_max = msg.value.real;
+  } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
+    model_params_.mpc_z_vel_max_dn = msg.value.real;
+  } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
+    model_params_.mpc_z_vel_max_up = msg.value.real;
+  } else if (msg.param_id == "MPC_POS_MODE") {
+    model_params_.mpc_pos_mode = msg.value.integer;
   }
 }
-
-
 
 void LocalPlannerNode::publishGround() {
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
