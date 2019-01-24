@@ -288,9 +288,13 @@ void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
 	    }
 	}
 
-	unsigned int smooth_radius = 2;
+	unsigned int smooth_radius = 3;
 	smoothPolarMatrix(cost_matrix, smooth_radius);
+	smooth_radius = 2;
 	smoothPolarMatrix(cost_matrix, smooth_radius);
+	smooth_radius = 1;
+	smoothPolarMatrix(cost_matrix, smooth_radius);
+
 }
 
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXd& matrix, unsigned int number_of_candidates, std::vector<candidateDirection>& candidate_vector){
@@ -381,10 +385,6 @@ double costFunction(double e_angle, double z_angle, double obstacle_distance, co
 	   Eigen::Vector3f projected_last_wp = (last_sent_waypoint - position).normalized();
 	}
 
-	//std::cout<<"position: ["<<position.x()<<", "<<position.y()<<", "<<position.z()<<" ] ";
-	//std::cout<<"last wp: ["<<last_sent_waypoint.x()<<", "<<last_sent_waypoint.y()<<", "<<last_sent_waypoint.z()<<" ] ";
-	//std::cout<<"proj last: ["<<projected_last_wp.x()<<", "<<projected_last_wp.y()<<", "<<projected_last_wp.z()<<" ] \n";
-
 	//goal costs
 	double yaw_cost = cost_params.goal_cost_param * (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
 	double pitch_cost_up = 0.0;
@@ -399,22 +399,22 @@ double costFunction(double e_angle, double z_angle, double obstacle_distance, co
 	double yaw_cost_smooth = cost_params.smooth_cost_param * (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>()).norm();
 	double pitch_cost_smooth = cost_params.smooth_cost_param * std::abs(projected_last_wp.z() - projected_candidate.z());
 
-	//std::cout<<"goal cost [ up: "<<pitch_cost_up<<" down: "<<pitch_cost_down<<" yaw: "<<yaw_cost<<"] smooth cost [ yaw:"<<yaw_cost_smooth<<", pitch:"<<pitch_cost_smooth<<"]\n";
+	//distance cost
+	double distance_cost = 0.0;
+	if(obstacle_distance > 0){
+		distance_cost = 500 * 1.0/obstacle_distance;
+	}
+
 	//combine costs
 	double cost = 0.0;
 	if (!only_yawed) {
 	  cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
 	  		cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
-	         pitch_cost_smooth;
+	         pitch_cost_smooth + distance_cost;
 	} else {
 	  cost = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
 	  		cost_params.height_change_cost_param * pitch_cost_down + 0.5 * yaw_cost_smooth +
-	         0.5 * pitch_cost_smooth;
-	}
-
-	//distance
-	if(obstacle_distance > 0 && obstacle_distance < 7){
-		cost = 900;
+	         0.5 * pitch_cost_smooth + distance_cost;
 	}
 
 	return cost;

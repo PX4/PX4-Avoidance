@@ -21,7 +21,6 @@
 
 namespace avoidance {
 
-void initGridCells(nav_msgs::GridCells *cell);
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
     Eigen::Vector3f& closest_point, double& distance_to_closest_point,
