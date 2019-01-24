@@ -91,8 +91,8 @@ struct ModelParameters {
   float mpc_xy_cruise = NAN;    // Maximum horizontal velocity in mission
   float mpx_xy_vel_max = NAN;   // Maximum horizontal velocity -Maximum
                                 // horizontal velocity in AUTO mode. If higher
-                               // speeds are commanded in a mission they will be
-                               // capped to this velocity.
+  // speeds are commanded in a mission they will be
+  // capped to this velocity.
   float mpc_z_vel_max_dn = NAN;  // Maximum vertical descent velocity
   float mpc_z_vel_max_up = NAN;  // Maximum vertical ascent velocity
 };
