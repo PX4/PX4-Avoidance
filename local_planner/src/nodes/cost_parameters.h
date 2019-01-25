@@ -3,9 +3,9 @@
 namespace avoidance {
 
 struct costParameters {
-  double goal_cost_param;
-  double smooth_cost_param;
-  double height_change_cost_param = 4;
-  double height_change_cost_param_adapted = 4;
+  float goal_cost_param = 2.f;
+  float smooth_cost_param = 1.5f;
+  float height_change_cost_param = 4.f;
+  float height_change_cost_param_adapted = 4.f;
 };
 }

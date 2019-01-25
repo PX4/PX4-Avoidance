@@ -380,10 +380,10 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   Eigen::Vector3f goal(0, 5, 0);
   Eigen::Vector3f last_sent_waypoint(0, 1, 0);
   costParameters cost_params;
-  cost_params.goal_cost_param = 2.0;
-  cost_params.smooth_cost_param = 1.5;
-  cost_params.height_change_cost_param = 4.0;
-  cost_params.height_change_cost_param_adapted = 4.0;
+  cost_params.goal_cost_param = 2.f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
   Eigen::MatrixXd cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
 

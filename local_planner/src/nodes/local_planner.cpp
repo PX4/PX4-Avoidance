@@ -441,14 +441,14 @@ void LocalPlanner::evaluateProgressRate() {
 
     if (avg_incline > no_progress_slope_ &&
         goal_dist_incline_.size() == dist_incline_window_size_) {
-      if (cost_params_.height_change_cost_param_adapted > 0.75) {
-        cost_params_.height_change_cost_param_adapted -= 0.02;
+      if (cost_params_.height_change_cost_param_adapted > 0.75f) {
+        cost_params_.height_change_cost_param_adapted -= 0.02f;
       }
     }
     if (avg_incline < no_progress_slope_) {
       if (cost_params_.height_change_cost_param_adapted <
-          cost_params_.height_change_cost_param - 0.03) {
-        cost_params_.height_change_cost_param_adapted += 0.03;
+          cost_params_.height_change_cost_param - 0.03f) {
+        cost_params_.height_change_cost_param_adapted += 0.03f;
       }
     }
     ROS_DEBUG(
