@@ -19,13 +19,8 @@ TEST(Common, polar2DdistanceSameIsZero) {
 
 TEST(Common, polar2DdistanceOnKnownPoints) {
   // GIVEN: two points
-  PolarPoint p1 = {};
-  PolarPoint p2 = {};
-
-  p1.e = 5.0;
-  p1.z = 9.0;
-  p2.e = 50.0;
-  p2.z = 39.0;
+  PolarPoint p1(5.0f, 9.0f, 0.0f);
+  PolarPoint p2(50.0f, 39.0f, 0.0f);
 
   // WHEN: we get the distance between the same points
   float dist = distance2DPolar(p1, p2);
@@ -251,18 +246,12 @@ TEST(Common, polarToCartesian) {
   // WHEN: converting the point in polar CS to cartesian CS
 
   for (int i = 0; i < n; i++) {
-    PolarPoint p_pol = {};
-    p_pol.e = e[i];
-    p_pol.z = z[3];
-    p_pol.r = radius[0];
+    PolarPoint p_pol(e[i], z[3], radius[0]);
     pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
   }
 
   for (int i = 0; i < n; i++) {
-    PolarPoint p_pol = {};
-    p_pol.e = e[i];
-    p_pol.z = z[i];
-    p_pol.r = radius[1];
+    PolarPoint p_pol(e[i], z[i], radius[1]);
     pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
   }
 
@@ -304,10 +293,7 @@ TEST(Common, PolarToCatesianToPolar) {
   // cartesian and back again
   for (float e = -90.f; e <= 90.f; e = e + 3.f) {
     for (float z = -180.f; z <= 180.f; z = z + 6.f) {
-      PolarPoint p_pol = {};
-      p_pol.e = e;
-      p_pol.z = z;
-      p_pol.r = radius;
+      PolarPoint p_pol(e, z, radius);
       Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
 
       PolarPoint p_pol_new = cartesianToPolar(p_cartesian, pos);

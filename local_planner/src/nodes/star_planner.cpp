@@ -214,10 +214,9 @@ void StarPlanner::buildLookAheadTree() {
         int depth = tree_[origin].depth_ + 1;
         int childs = 0;
         for (int i = 0; i < (int)path_candidates.cells.size(); i++) {
-          PolarPoint p_pol = {};
-          p_pol.e = path_candidates.cells[cost_idx_sorted[i]].x;
-          p_pol.z = path_candidates.cells[cost_idx_sorted[i]].y;
-          p_pol.r = tree_node_distance_;
+          PolarPoint p_pol(path_candidates.cells[cost_idx_sorted[i]].x,
+                           path_candidates.cells[cost_idx_sorted[i]].y,
+                           tree_node_distance_);
           // check if another close node has been added
           Eigen::Vector3f node_location =
               polarToCartesian(p_pol, toPoint(origin_position));

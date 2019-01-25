@@ -359,13 +359,8 @@ void LocalPlannerNode::initMarker(visualization_msgs::MarkerArray* marker,
   for (size_t i = 0; i < path.cells.size(); i++) {
     m.id = i + 1;
     m.action = visualization_msgs::Marker::ADD;
-    PolarPoint p_pol = {};
-    p_pol.e = path.cells[i].x;
-    p_pol.z = path.cells[i].y;
-    p_pol.r = 1.0;
-    geometry_msgs::Point p =
-        toPoint(polarToCartesian(p_pol, drone_pos.pose.position));
-    m.pose.position = p;
+    PolarPoint p_pol(path.cells[i].x, path.cells[i].y, 1.0f);
+    m.pose.position = toPoint(polarToCartesian(p_pol, drone_pos.pose.position));
 
     m.color.r = red;
     m.color.g = green;

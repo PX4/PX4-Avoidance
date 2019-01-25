@@ -18,11 +18,11 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
   Eigen::Vector3f p;
   p.x() =
       pos.x +
-      p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * sin(p_pol.z * (M_PI / 180.f));
+      p_pol.r * cos(p_pol.e * DEG_TO_RAD) * sin(p_pol.z * DEG_TO_RAD);
   p.y() =
       pos.y +
-      p_pol.r * cos(p_pol.e * (M_PI / 180.f)) * cos(p_pol.z * (M_PI / 180.f));
-  p.z() = pos.z + p_pol.r * sin(p_pol.e * (M_PI / 180.f));
+      p_pol.r * cos(p_pol.e * DEG_TO_RAD) * cos(p_pol.z * DEG_TO_RAD);
+  p.z() = pos.z + p_pol.r * sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
@@ -32,11 +32,9 @@ double indexAngleDifference(float a, float b) {
 }
 
 PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
-  PolarPoint p_pol;
   // ALPHA_RES%2=0 as per definition, see histogram.h
-  p_pol.e = static_cast<float>(e * res + res / 2 - 90);
-  p_pol.z = static_cast<float>(z * res + res / 2 - 180);
-  p_pol.r = radius;
+  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90),
+                   static_cast<float>(z * res + res / 2 - 180), radius);
   return p_pol;
 }
 
@@ -46,7 +44,7 @@ PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
 }
 PolarPoint cartesianToPolar(double x, double y, double z,
                             const Eigen::Vector3f& pos) {
-  PolarPoint p_pol;
+  PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   p_pol.e = atan2(z - pos.z(), den) * 180.0 / M_PI;            //(-90.+90)
   p_pol.z = atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]

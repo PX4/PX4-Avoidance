@@ -123,7 +123,6 @@ void LocalPlanner::runPlanner() {
   // visualization of FOV in RViz
   initGridCells(FOV_cells_);
   geometry_msgs::Point p;
-  // PolarPoint p_pol = {};
   for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
     for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
       PolarPoint p_pol =
@@ -403,12 +402,12 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
   double n_points = 0;
   double dist, age;
   // ALPHA_RES%2=0 as per definition, see histogram.h
-  int half_res = ALPHA_RES / 2; 
+  int half_res = ALPHA_RES / 2;
 
   Eigen::Vector3f temp_array[4];
 
-  std::vector<PolarPoint> p_pol(4);
-  reprojected_points_age_.clear();
+  std::array<PolarPoint, 4> p_pol;
+   reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
 
   reprojected_points_.points.clear();

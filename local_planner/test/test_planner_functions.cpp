@@ -52,7 +52,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   location.pose.position.x = 0;
   location.pose.position.y = 0;
   location.pose.position.z = 0;
-  float distance = 1.0;
+  float distance = 1.0f;
 
   std::vector<float> e_angle_filled = {-90, -30, 0, 20, 40, 90};
   std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
@@ -60,10 +60,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 
   for (auto i : e_angle_filled) {
     for (auto j : z_angle_filled) {
-      PolarPoint p_pol = {};
-      p_pol.e = i;
-      p_pol.z = j;
-      p_pol.r = distance;
+      PolarPoint p_pol(i,j,distance);
       middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
     }
   }
@@ -84,9 +81,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index;
   std::vector<int> z_index;
   for (int i = 0; i < e_angle_filled.size(); i++) {
-    PolarPoint p_pol = {};
-    p_pol.e = e_angle_filled[i];
-    p_pol.z = z_angle_filled[i];
+    PolarPoint p_pol (e_angle_filled[i], z_angle_filled[i], 0.0f);
     e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
     z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
   }
@@ -98,9 +93,9 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       bool z_found =
           std::find(z_index.begin(), z_index.end(), z) != z_index.end();
       if (e_found && z_found) {
-        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << e << ", " << z;
       } else {
-        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << e << ", " << z;
       }
     }
   }

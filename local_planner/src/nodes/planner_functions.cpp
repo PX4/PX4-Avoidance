@@ -252,10 +252,8 @@ double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
   float dist_old = (position_old - goal).norm();
   p_pol.r = dist;
   Eigen::Vector3f candidate_goal = polarToCartesian(p_pol, toPoint(position));
-  PolarPoint p_pol_old = {};
-  p_pol.e = path_waypoints.cells[waypoint_index - 1].x;
-  p_pol.z = path_waypoints.cells[waypoint_index - 1].y;
-  p_pol.r = dist_old;
+  PolarPoint p_pol_old(path_waypoints.cells[waypoint_index - 1].x,
+                       path_waypoints.cells[waypoint_index - 1].y, dist_old);
 
   Eigen::Vector3f old_candidate_goal =
       polarToCartesian(p_pol_old, toPoint(position_old));
@@ -293,10 +291,8 @@ double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
   float vertical_FOV_range_sensor = 20.0;
-  PolarPoint p_pol_lower = {};
-  PolarPoint p_pol_upper = {};
-  p_pol_lower.e = -1 * vertical_FOV_range_sensor / 2.0;
-  p_pol_upper.e = vertical_FOV_range_sensor / 2.0;
+  PolarPoint p_pol_lower(-1 * vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
+  PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
   Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
   Eigen::Vector2i p_ind_upper = polarToHistogramIndex(p_pol_upper, ALPHA_RES);
 

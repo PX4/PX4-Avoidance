@@ -11,10 +11,14 @@
 namespace avoidance {
 
 struct PolarPoint {
+  PolarPoint(float e_, float z_, float r_) : e(e_), z(z_), r(r_){};
+  PolarPoint():e(0.0f), z(0.0f),r(0.0f){};
   float e;
   float z;
   float r;
 };
+
+const double DEG_TO_RAD = M_PI / 180.f;
 /**
 * @brief     calculates the distance between two polar points
 * @param[in] p1 polar point

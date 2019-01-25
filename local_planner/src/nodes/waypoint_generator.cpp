@@ -34,10 +34,8 @@ void WaypointGenerator::calculateWaypoint() {
       break;
     }
     case costmap: {
-      PolarPoint p_pol = {};
-      p_pol.e = planner_info_.costmap_direction_e;
-      p_pol.z = planner_info_.costmap_direction_z;
-      p_pol.r = 1.0;
+      PolarPoint p_pol(planner_info_.costmap_direction_e,
+                       planner_info_.costmap_direction_z, 1.0);
       output_.goto_position =
           toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
@@ -47,7 +45,7 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      PolarPoint p_pol = {};
+      PolarPoint p_pol(0.0f, 0.0f, 0.0f);
       bool tree_available =
           getDirectionFromTree(p_pol, planner_info_.path_node_positions,
                                toEigen(pose_.pose.position));
