@@ -33,6 +33,7 @@ double indexAngleDifference(float a, float b) {
 
 PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
   PolarPoint p_pol;
+  // ALPHA_RES%2=0 as per definition, see histogram.h
   p_pol.e = static_cast<float>(e * res + res / 2 - 90);
   p_pol.z = static_cast<float>(z * res + res / 2 - 180);
   p_pol.r = radius;

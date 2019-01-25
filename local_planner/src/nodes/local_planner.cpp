@@ -402,7 +402,9 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 void LocalPlanner::reprojectPoints(Histogram histogram) {
   double n_points = 0;
   double dist, age;
-  float half_res = ALPHA_RES / 2;
+  // ALPHA_RES%2=0 as per definition, see histogram.h
+  int half_res = ALPHA_RES / 2; 
+
   Eigen::Vector3f temp_array[4];
 
   std::vector<PolarPoint> p_pol(4);
