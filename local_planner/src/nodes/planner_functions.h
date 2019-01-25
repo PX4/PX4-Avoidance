@@ -63,7 +63,6 @@ void smoothPolarMatrix(Eigen::MatrixXd &matrix, unsigned int smoothing_radius);
 void padPolarMatrix(const Eigen::MatrixXd &matrix, unsigned int n_lines_padding,
                     Eigen::MatrixXd &matrix_padded);
 void printHistogram(Histogram &histogram);
-void printMatrix(Eigen::MatrixXd &matrix);
 bool getDirectionFromTree(
     Eigen::Vector3f& p,
     const std::vector<geometry_msgs::Point>& path_node_positions,

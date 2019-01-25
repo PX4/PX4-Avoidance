@@ -517,24 +517,4 @@ void printHistogram(Histogram &histogram) {
   std::cout << "_______________________________________________________________"
                "____________________________________\n";
 }
-
-void printMatrix(Eigen::MatrixXd &matrix) {
-  std::cout << "------------------------------------------Matrix---------------"
-               "------------------------------------\n";
-  for (int e = 0; e < matrix.rows(); e++) {
-    for (int z = 0; z < matrix.cols(); z++) {
-      int val = floor(matrix(e, z));
-      if (val > 99) {
-        std::cout << val << " ";
-      } else if (val > 9) {
-        std::cout << val << "  ";
-      } else {
-        std::cout << val << "   ";
-      }
-    }
-    std::cout << "\n";
-  }
-  std::cout << "_______________________________________________________________"
-               "____________________________________\n";
-}
 }
