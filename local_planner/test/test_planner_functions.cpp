@@ -344,3 +344,33 @@ TEST(PlannerFunctions, getBestCandidatesFromCostMatrix) {
   EXPECT_FLOAT_EQ(3.8, candidate_vector[2].cost);
   EXPECT_FLOAT_EQ(4.7, candidate_vector[3].cost);
 }
+
+TEST(PlannerFunctions, smoothPolarMatrix) {
+  // GIVEN: a smoothing radius and a known cost matrix with one costly cell, otherwise all zeros.
+  unsigned int smooth_radius = 2;
+  Eigen::MatrixXd matrix;
+  Eigen::MatrixXd matrix_old;
+  matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  matrix.fill(0);
+
+  int r_object = GRID_LENGTH_E/2;
+  int c_object = GRID_LENGTH_Z/2;
+  matrix(r_object, c_object) = 100;
+
+  // WHEN: we calculate the smoothed matrix
+  matrix_old = matrix;
+  smoothPolarMatrix(matrix, smooth_radius);
+
+  // THEN: The smoothed matrix should be element-wise greater-equal than the input matrix
+  // and the elements inside the smoothing radius around the costly cell should be greater than before
+  for(int r = r_object - smooth_radius; r < r_object + smooth_radius; r ++){
+	  for(int c = c_object - smooth_radius; c < c_object + smooth_radius; c ++){
+		  if(!(r == r_object && c == c_object)){
+			  EXPECT_GT(matrix(r, c), matrix_old(r, c));
+		  }
+	  }
+  }
+  bool greater_equal = (matrix.array() >= matrix_old.array()).all();
+  EXPECT_TRUE(greater_equal);
+
+}
