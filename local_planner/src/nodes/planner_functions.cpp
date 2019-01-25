@@ -252,8 +252,8 @@ double costFunction(PolarPoint p_pol, nav_msgs::GridCells& path_waypoints,
   float dist_old = (position_old - goal).norm();
   p_pol.r = dist;
   Eigen::Vector3f candidate_goal = polarToCartesian(p_pol, toPoint(position));
-  PolarPoint p_pol_old(path_waypoints.cells[waypoint_index - 1].x,
-                       path_waypoints.cells[waypoint_index - 1].y, dist_old);
+  PolarPoint p_pol_old(path_waypoints.cells[waypoint_index].x,
+                       path_waypoints.cells[waypoint_index].y, dist_old);
 
   Eigen::Vector3f old_candidate_goal =
       polarToCartesian(p_pol_old, toPoint(position_old));
