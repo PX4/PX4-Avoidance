@@ -60,7 +60,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 
   for (auto i : e_angle_filled) {
     for (auto j : z_angle_filled) {
-      PolarPoint p_pol(i,j,distance);
+      PolarPoint p_pol(i, j, distance);
       middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
     }
   }
@@ -81,7 +81,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index;
   std::vector<int> z_index;
   for (int i = 0; i < e_angle_filled.size(); i++) {
-    PolarPoint p_pol (e_angle_filled[i], z_angle_filled[i], 0.0f);
+    PolarPoint p_pol(e_angle_filled[i], z_angle_filled[i], 0.0f);
     e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
     z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
   }

@@ -17,11 +17,9 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
   p.x() =
-      pos.x +
-      p_pol.r * cos(p_pol.e * DEG_TO_RAD) * sin(p_pol.z * DEG_TO_RAD);
+      pos.x + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * sin(p_pol.z * DEG_TO_RAD);
   p.y() =
-      pos.y +
-      p_pol.r * cos(p_pol.e * DEG_TO_RAD) * cos(p_pol.z * DEG_TO_RAD);
+      pos.y + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * cos(p_pol.z * DEG_TO_RAD);
   p.z() = pos.z + p_pol.r * sin(p_pol.e * DEG_TO_RAD);
 
   return p;

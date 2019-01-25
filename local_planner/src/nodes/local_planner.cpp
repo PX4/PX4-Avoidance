@@ -407,7 +407,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
   Eigen::Vector3f temp_array[4];
 
   std::array<PolarPoint, 4> p_pol;
-   reprojected_points_age_.clear();
+  reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
 
   reprojected_points_.points.clear();
