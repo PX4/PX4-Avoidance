@@ -690,6 +690,8 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     model_params_.mpc_jerk_max = msg.value.real;
   } else if (msg.param_id == "MPC_JERK_MIN") {
     model_params_.mpc_jerk_min = msg.value.real;
+  } else if (msg.param_id == "MPC_LAND_SPEED") {
+    model_params_.mpc_land_speed = msg.value.real;
   } else if (msg.param_id == "MPC_THR_MAX") {
     model_params_.mpc_thr_max = msg.value.real;
   } else if (msg.param_id == "MPC_THR_MIN") {
@@ -701,7 +703,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   } else if (msg.param_id == "MPC_XY_CRUISE") {
     model_params_.mpc_xy_cruise = msg.value.real;
   } else if (msg.param_id == "MPC_XY_VEL_MAX") {
-    model_params_.mpx_xy_vel_max = msg.value.real;
+    model_params_.mpc_xy_vel_max = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
     model_params_.mpc_z_vel_max_dn = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {

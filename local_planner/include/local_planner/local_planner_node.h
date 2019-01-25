@@ -82,6 +82,7 @@ struct ModelParameters {
   float mpc_jerk_min = NAN;  // Velocity-based jerk limit - Note: this is only
                              // used when MPC_POS_MODE is set to a smoothing
                              // mode.
+  float mpc_land_speed = NAN; //Landing descend rate
   int mpc_pos_mode =
       NAN;  // Manual-Position control sub-mode - 3 smooth position velocity
   float mpc_thr_max = NAN;      // Maximum thrust in auto thrust control
@@ -89,7 +90,7 @@ struct ModelParameters {
   float mpc_tiltmax_air = NAN;  // Maximum tilt angle in air
   float mpc_tko_speed = NAN;    // Takeoff climb rate
   float mpc_xy_cruise = NAN;    // Maximum horizontal velocity in mission
-  float mpx_xy_vel_max = NAN;   // Maximum horizontal velocity -Maximum
+  float mpc_xy_vel_max = NAN;   // Maximum horizontal velocity -Maximum
                                 // horizontal velocity in AUTO mode. If higher
   // speeds are commanded in a mission they will be
   // capped to this velocity.
