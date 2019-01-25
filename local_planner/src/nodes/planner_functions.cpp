@@ -148,15 +148,15 @@ void propagateHistogram(
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          geometry_msgs::PoseStamped position) {
+						  const Eigen::Vector3f &position) {
   Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-    float dist = (p - toEigen(position.pose.position)).norm();
+    float dist = (p - position).norm();
     int e_angle =
-        elevationAnglefromCartesian(p, toEigen(position.pose.position));
-    int z_angle = azimuthAnglefromCartesian(p, toEigen(position.pose.position));
+        elevationAnglefromCartesian(p, position);
+    int z_angle = azimuthAnglefromCartesian(p, position);
 
     int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
     int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);

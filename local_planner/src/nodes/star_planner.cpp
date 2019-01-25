@@ -160,7 +160,7 @@ void StarPlanner::buildLookAheadTree() {
     propagateHistogram(propagated_histogram, reprojected_points_,
                        reprojected_points_age_, reprojected_points_dist_,
                        pose_);
-    generateNewHistogram(histogram, pointcloud_, pose_);
+    generateNewHistogram(histogram, pointcloud_, toEigen(pose_.pose.position));
     combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
                       z_FOV_idx, e_FOV_min, e_FOV_max);
 

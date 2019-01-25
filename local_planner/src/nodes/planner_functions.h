@@ -19,6 +19,7 @@
 #include <nav_msgs/Path.h>
 
 #include <vector>
+#include <queue>
 
 namespace avoidance {
 
@@ -41,8 +42,8 @@ void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
 						  const Eigen::Vector3f &position);
 void combinedHistogram(bool &hist_empty, Histogram &new_hist,
-                       Histogram propagated_hist, bool waypoint_outside_FOV,
-                       std::vector<int> z_FOV_idx, int e_FOV_min,
+                       const Histogram& propagated_hist, bool waypoint_outside_FOV,
+                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);

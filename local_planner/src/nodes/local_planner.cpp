@@ -134,7 +134,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
 
   propagateHistogram(propagated_histogram, reprojected_points_,
                      reprojected_points_age_, reprojected_points_dist_, pose_);
-  generateNewHistogram(new_histogram, final_cloud_, pose_);
+  generateNewHistogram(new_histogram, final_cloud_, toEigen(pose_.pose.position));
   combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
                     waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
   if (send_to_fcu) {
@@ -272,14 +272,14 @@ void LocalPlanner::determineStrategy() {
         obstacle_ = true;
 
         if (use_VFH_star_) {
-          star_planner_.setParams(min_cloud_size_, min_dist_backoff_, curr_yaw_,
+          star_planner_->setParams(min_cloud_size_, min_dist_backoff_, curr_yaw_,
                                   min_realsense_dist_, cost_params_);
-          star_planner_.setFOV(h_FOV_, v_FOV_);
-          star_planner_.setReprojectedPoints(reprojected_points_,
+          star_planner_->setFOV(h_FOV_, v_FOV_);
+          star_planner_->setReprojectedPoints(reprojected_points_,
                                              reprojected_points_age_,
                                              reprojected_points_dist_);
-          star_planner_.setCloud(final_cloud_);
-          star_planner_.buildLookAheadTree();
+          star_planner_->setCloud(final_cloud_);
+          star_planner_->buildLookAheadTree();
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
