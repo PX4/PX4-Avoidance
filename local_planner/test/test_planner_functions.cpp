@@ -8,11 +8,11 @@
 using namespace avoidance;
 
 void check_indexes(nav_msgs::GridCells &test,
-                   std::vector<std::pair<int, int>> &truth, int resolution) {
+                   std::vector<Eigen::Vector2i> &truth, int resolution) {
   for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
-    std::pair<int, int> cell_idx(
-        elevationAngletoIndex(test.cells[i].x, resolution),
-        azimuthAngletoIndex(test.cells[i].y, resolution));
+    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
+    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
+
     EXPECT_EQ(truth[j], cell_idx);
   }
 }
@@ -20,8 +20,10 @@ void check_indexes(nav_msgs::GridCells &test,
 void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
                    int resolution) {
   for (int i = 0; i < test.cells.size(); i++) {
-    EXPECT_EQ(truth_idx_e, elevationAngletoIndex(test.cells[i].x, resolution));
-    EXPECT_EQ(truth_idx_z, azimuthAngletoIndex(test.cells[i].y, resolution));
+    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
+    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
+    EXPECT_EQ(truth_idx_e, cell_idx.y());
+    EXPECT_EQ(truth_idx_z, cell_idx.x());
   }
 }
 
@@ -217,15 +219,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!(z <= 11 && z >= 9 && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -279,15 +283,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((z == 1 || z == 0 || z == 71) && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -341,15 +347,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((z == 70 || z == 71 || z == 0) && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -403,17 +411,19 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
 
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!(e >= 0 && e <= 2 && z >= 17 && z <= 21) &&
           !(e >= 0 && e <= 1 && z >= 40 && z <= 44)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -467,16 +477,18 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((e == 16 || e == 17) && (z >= 3 && z <= 5)) &&
           !(e == 17 && (z >= 21 && z <= 23))) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }

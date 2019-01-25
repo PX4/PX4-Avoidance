@@ -6,9 +6,7 @@ using namespace avoidance;
 
 TEST(Common, polar2DdistanceSameIsZero) {
   // GIVEN: two identical points
-  PolarPoint p = {};
-  p.e = 5.0;
-  p.z = 9.0;
+  PolarPoint p(5.0f, 9.0f, 0.0f);
 
   // WHEN: we get the distance between the same points
   float dist = distance2DPolar(p, p);
