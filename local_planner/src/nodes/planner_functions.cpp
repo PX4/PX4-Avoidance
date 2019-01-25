@@ -234,7 +234,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
+double costFunction(PolarPoint p_pol, nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& position_old, double goal_cost_param,

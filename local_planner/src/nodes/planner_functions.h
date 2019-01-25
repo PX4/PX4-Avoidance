@@ -48,7 +48,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
-double costFunction(PolarPoint p_pol, const nav_msgs::GridCells& path_waypoints,
+double costFunction(PolarPoint p_pol, nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& position_old, double goal_cost_param,
