@@ -105,7 +105,6 @@ void propagateHistogram(
     const std::vector<double>& reprojected_points_age,
     const std::vector<double>& reprojected_points_dist,
     const geometry_msgs::PoseStamped& position) {
-
   Eigen::MatrixXi counter(GRID_LENGTH_E / 2, GRID_LENGTH_Z / 2);
   counter.fill(0);
 
@@ -148,14 +147,13 @@ void propagateHistogram(
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-						  const Eigen::Vector3f &position) {
+                          const Eigen::Vector3f& position) {
   Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - position).norm();
-    int e_angle =
-        elevationAnglefromCartesian(p, position);
+    int e_angle = elevationAnglefromCartesian(p, position);
     int z_angle = azimuthAnglefromCartesian(p, position);
 
     int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
@@ -233,11 +231,11 @@ void compressHistogramElevation(Histogram& new_hist,
   }
 }
 
-void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
-                   const Eigen::Vector3f &position,
-                   const Eigen::Vector3f &last_sent_waypoint,
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXd &cost_matrix) {
+                   Eigen::MatrixXd& cost_matrix) {
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   cost_matrix.fill(0.0);
@@ -263,8 +261,8 @@ void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
 }
 
 void getBestCandidatesFromCostMatrix(
-    const Eigen::MatrixXd &matrix, unsigned int number_of_candidates,
-    std::vector<candidateDirection> &candidate_vector) {
+    const Eigen::MatrixXd& matrix, unsigned int number_of_candidates,
+    std::vector<candidateDirection>& candidate_vector) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>,
                       std::less<candidateDirection>>
       queue;
@@ -294,7 +292,7 @@ void getBestCandidatesFromCostMatrix(
   std::reverse(candidate_vector.begin(), candidate_vector.end());
 }
 
-void smoothPolarMatrix(Eigen::MatrixXd &matrix, unsigned int smoothing_radius) {
+void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius) {
   // pad matrix by smoothing radius respecting all wrapping rules
   Eigen::MatrixXd matrix_padded;
   padPolarMatrix(matrix, smoothing_radius, matrix_padded);
@@ -316,8 +314,8 @@ void smoothPolarMatrix(Eigen::MatrixXd &matrix, unsigned int smoothing_radius) {
   }
 }
 
-void padPolarMatrix(const Eigen::MatrixXd &matrix, unsigned int n_lines_padding,
-                    Eigen::MatrixXd &matrix_padded) {
+void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXd& matrix_padded) {
   matrix_padded.resize(matrix.rows() + 2 * n_lines_padding,
                        matrix.cols() + 2 * n_lines_padding);
 
@@ -370,9 +368,9 @@ void padPolarMatrix(const Eigen::MatrixXd &matrix, unsigned int n_lines_padding,
 
 // costfunction for every free histogram cell
 double costFunction(double e_angle, double z_angle, double obstacle_distance,
-                    const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position,
-                    const Eigen::Vector3f &last_sent_waypoint,
+                    const Eigen::Vector3f& goal,
+                    const Eigen::Vector3f& position,
+                    const Eigen::Vector3f& last_sent_waypoint,
                     costParameters cost_params, bool only_yawed) {
   Eigen::Vector3f projected_candidate =
       fromPolarToCartesian(e_angle, z_angle, 1.0, toPoint(position));
@@ -498,7 +496,7 @@ bool getDirectionFromTree(
   return tree_available;
 }
 
-void printHistogram(Histogram &histogram) {
+void printHistogram(Histogram& histogram) {
   std::cout << "------------------------------------------Histogram------------"
                "------------------------------------\n";
   for (int e = 0; e < GRID_LENGTH_E; e++) {

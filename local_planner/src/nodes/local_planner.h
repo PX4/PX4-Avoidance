@@ -4,9 +4,9 @@
 #include <sensor_msgs/image_encodings.h>
 #include "avoidance_output.h"
 #include "box.h"
-#include "histogram.h"
-#include "cost_parameters.h"
 #include "candidate_direction.h"
+#include "cost_parameters.h"
+#include "histogram.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
@@ -122,7 +122,7 @@ class LocalPlanner {
   void updateObstacleDistanceMsg(Histogram hist);
   void updateObstacleDistanceMsg();
   void create2DObstacleRepresentation(const bool send_to_fcu);
-  sensor_msgs::Image generateHistogramImage(Histogram& histogram);
+  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
 
  public:
   double h_FOV_ = 59.0;
@@ -156,15 +156,15 @@ class LocalPlanner {
   ~LocalPlanner();
 
   void setPose(const geometry_msgs::PoseStamped msg);
-  void setGoal(const geometry_msgs::Point& goal);
+  void setGoal(const geometry_msgs::Point &goal);
   geometry_msgs::Point getGoal();
   void applyGoal();
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
   geometry_msgs::PoseStamped getPosition();
   void getCloudsForVisualization(
-	  pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-	  pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
+      pcl::PointCloud<pcl::PointXYZ> &final_cloud,
+      pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
   void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);

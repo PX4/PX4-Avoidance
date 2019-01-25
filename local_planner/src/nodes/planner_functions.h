@@ -18,8 +18,8 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
-#include <vector>
 #include <queue>
+#include <vector>
 
 namespace avoidance {
 
@@ -40,30 +40,31 @@ void propagateHistogram(
     const geometry_msgs::PoseStamped& position);
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-						  const Eigen::Vector3f &position);
-void combinedHistogram(bool &hist_empty, Histogram &new_hist,
-                       const Histogram& propagated_hist, bool waypoint_outside_FOV,
+                          const Eigen::Vector3f& position);
+void combinedHistogram(bool& hist_empty, Histogram& new_hist,
+                       const Histogram& propagated_hist,
+                       bool waypoint_outside_FOV,
                        const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max);
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist);
-void getCostMatrix(const Histogram &histogram, const Eigen::Vector3f &goal,
-                   const Eigen::Vector3f &position,
-                   const Eigen::Vector3f &last_sent_waypoint,
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXd &cost_matrix);
+                   Eigen::MatrixXd& cost_matrix);
 void getBestCandidatesFromCostMatrix(
-    const Eigen::MatrixXd &matrix, unsigned int number_of_candidates,
-    std::vector<candidateDirection> &candidate_vector);
+    const Eigen::MatrixXd& matrix, unsigned int number_of_candidates,
+    std::vector<candidateDirection>& candidate_vector);
 double costFunction(double e_angle, double z_angle, double obstacle_distance,
-                    const Eigen::Vector3f &goal,
-                    const Eigen::Vector3f &position,
-                    const Eigen::Vector3f &last_sent_waypoint,
+                    const Eigen::Vector3f& goal,
+                    const Eigen::Vector3f& position,
+                    const Eigen::Vector3f& last_sent_waypoint,
                     costParameters cost_params, bool only_yawed);
-void smoothPolarMatrix(Eigen::MatrixXd &matrix, unsigned int smoothing_radius);
-void padPolarMatrix(const Eigen::MatrixXd &matrix, unsigned int n_lines_padding,
-                    Eigen::MatrixXd &matrix_padded);
-void printHistogram(Histogram &histogram);
+void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius);
+void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXd& matrix_padded);
+void printHistogram(Histogram& histogram);
 bool getDirectionFromTree(
     Eigen::Vector3f& p,
     const std::vector<geometry_msgs::Point>& path_node_positions,
