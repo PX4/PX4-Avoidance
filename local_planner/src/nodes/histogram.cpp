@@ -1,4 +1,6 @@
 #include "histogram.h"
+#include <stdexcept>
+
 namespace avoidance {
 Histogram::Histogram(const int res)
     : resolution{res}, z_dim{360 / resolution}, e_dim{180 / resolution} {
@@ -10,6 +12,10 @@ Histogram::Histogram(const int res)
 Histogram::~Histogram() {}
 
 void Histogram::upsample() {
+
+  if(resolution != ALPHA_RES * 2){
+	 throw std::logic_error("Invalid use of function upsample(). This function can only be used on a half resolution histogram.");
+  }
   resolution = resolution / 2;
   z_dim = 2 * z_dim;
   e_dim = 2 * e_dim;
@@ -31,6 +37,9 @@ void Histogram::upsample() {
 }
 
 void Histogram::downsample() {
+  if(resolution != ALPHA_RES){
+	 throw std::logic_error("Invalid use of function downsample(). This function can only be used on a full resolution histogram.");
+  }
   resolution = 2 * resolution;
   z_dim = z_dim / 2;
   e_dim = e_dim / 2;

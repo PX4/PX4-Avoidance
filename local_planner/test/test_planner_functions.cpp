@@ -35,7 +35,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   location.pose.position.z = 0;
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, empty_cloud, location);
+  generateNewHistogram(histogram_output, empty_cloud, toEigen(location.pose.position));
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -74,7 +74,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud, location);
+  generateNewHistogram(histogram_output, cloud, toEigen(location.pose.position));
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros
@@ -433,4 +433,72 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   EXPECT_TRUE(row2);
   EXPECT_TRUE(row3);
   EXPECT_TRUE(row4);
+}
+
+TEST(Histogram, HistogramDownsampleCorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram histogram = Histogram(ALPHA_RES);
+  histogram.set_dist(0, 0, 1.3);
+  histogram.set_dist(1, 0, 1.3);
+  histogram.set_dist(0, 1, 1.3);
+  histogram.set_dist(1, 1, 1.3);
+  histogram.set_age(2, 2, 3);
+  histogram.set_age(3, 2, 3);
+  histogram.set_age(2, 3, 3);
+  histogram.set_age(3, 3, 3);
+
+  // WHEN: we downsample the histogram to have a larger bin size
+  histogram.downsample();
+
+  // THEN: The downsampled histogram should fuse four cells of the regular resolution histogram into one
+  for (int i = 0; i < GRID_LENGTH_E/2; ++i) {
+      for (int j = 0; j < GRID_LENGTH_Z/2; ++j) {
+    	  if(i == 0 && j == 0){
+    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }else if(i == 1 && j == 1){
+    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    	  }else{
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }
+      }
+  }
+}
+
+TEST(Histogram, HistogramUpsampleCorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram histogram = Histogram(ALPHA_RES*2);
+  histogram.set_dist(0, 0, 1.3);
+  histogram.set_age(1, 1, 3);
+
+  // WHEN: we upsample the histogram to have regular bin size
+  histogram.upsample();
+
+  // THEN: The upsampled histogram should split every cell of the lower resolution histogram into four cells
+  for (int i = 0; i < GRID_LENGTH_E; ++i) {
+      for (int j = 0; j < GRID_LENGTH_Z; ++j) {
+    	  if((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) || (i == 1 && j == 1)){
+    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }else if((i == 2 && j == 2) || (i == 2 && j == 3) || (i == 3 && j == 2) || (i == 3 && j == 3)){
+    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    	  }else{
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+    	  }
+      }
+  }
+}
+
+TEST(Histogram, HistogramUpDownpsampleInorrectUsage) {
+  // GIVEN: a histogram of the correct resolution
+  Histogram low_res_histogram = Histogram(ALPHA_RES*2);
+  Histogram high_res_histogram = Histogram(ALPHA_RES);
+
+  // THEN: We expect the functions to throw if the input histogram has the wrong resolution
+  EXPECT_THROW(low_res_histogram.downsample(), std::logic_error);
+  EXPECT_THROW(high_res_histogram.upsample(), std::logic_error);
 }
