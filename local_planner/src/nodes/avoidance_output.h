@@ -20,11 +20,6 @@ struct avoidanceOutput {
   double velocity_sigmoid_slope;
   ros::Time last_path_time;
 
-  bool use_avoid_sphere;
-  int avoid_sphere_age;
-  geometry_msgs::Point avoid_centerpoint;
-  double avoid_radius;
-
   geometry_msgs::Point back_off_point;
   geometry_msgs::Point back_off_start_point;
   double min_dist_backoff;

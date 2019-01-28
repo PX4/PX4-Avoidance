@@ -107,7 +107,6 @@ class LocalPlanner {
   Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f avoid_centerpoint_ = Eigen::Vector3f::Zero();
   geometry_msgs::TwistStamped curr_vel_;
 
   nav_msgs::GridCells FOV_cells_;
