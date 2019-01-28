@@ -43,8 +43,8 @@ LocalPlannerNode::LocalPlannerNode() {
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
       this);
   velocity_sub_ = nh_.subscribe<const geometry_msgs::TwistStamped&>(
-      "/mavros/local_position/velocity", 1, &LocalPlannerNode::velocityCallback,
-      this);
+      "/mavros/local_position/velocity_local", 1,
+      &LocalPlannerNode::velocityCallback, this);
   state_sub_ =
       nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
   clicked_point_sub_ = nh_.subscribe(
