@@ -34,9 +34,10 @@ void WaypointGenerator::calculateWaypoint() {
       break;
     }
     case costmap: {
-      output_.goto_position = toPoint(fromPolarToCartesian(
-          planner_info_.costmap_direction_e, planner_info_.costmap_direction_z,
-          1.0, planner_info_.pose.pose.position));
+      PolarPoint p_pol(planner_info_.costmap_direction_e,
+                       planner_info_.costmap_direction_z, 1.0);
+      output_.goto_position =
+          toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
       getPathMsg();
@@ -44,17 +45,19 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      Eigen::Vector3f p;
-      bool tree_available = getDirectionFromTree(
-          p, planner_info_.path_node_positions, toEigen(pose_.pose.position));
+      PolarPoint p_pol(0.0f, 0.0f, 0.0f);
+      bool tree_available =
+          getDirectionFromTree(p_pol, planner_info_.path_node_positions,
+                               toEigen(pose_.pose.position));
       double dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
           ros::Time::now() - planner_info_.last_path_time;
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
-        output_.goto_position = toPoint(fromPolarToCartesian(
-            p.x(), p.y(), 1.0, planner_info_.pose.pose.position));
+        p_pol.r = 1.0;
+        output_.goto_position =
+            toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
         getPathMsg();
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");
@@ -264,12 +267,11 @@ void WaypointGenerator::adaptSpeed() {
   }
 
   // check if new point lies in FOV
-  int z_angle = azimuthAnglefromCartesian(
-      toEigen(output_.adapted_goto_position), toEigen(pose_.pose.position));
+  PolarPoint p_pol = cartesianToPolar(toEigen(output_.adapted_goto_position),
+                                      toEigen(pose_.pose.position));
+  Eigen::Vector2i p_index = polarToHistogramIndex(p_pol, ALPHA_RES);
 
-  int z_index = azimuthAngletoIndex(z_angle, ALPHA_RES);
-
-  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), z_index) !=
+  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), p_index.x()) !=
       z_FOV_idx_.end()) {
     waypoint_outside_FOV_ = false;
   } else {
@@ -279,8 +281,8 @@ void WaypointGenerator::adaptSpeed() {
       int i = 0;
       for (std::vector<int>::iterator it = z_FOV_idx_.begin();
            it != z_FOV_idx_.end(); ++it) {
-        if (std::abs(z_FOV_idx_[i] - z_index) < ind_dist) {
-          ind_dist = std::abs(z_FOV_idx_[i] - z_index);
+        if (std::abs(z_FOV_idx_[i] - p_index.x()) < ind_dist) {
+          ind_dist = std::abs(z_FOV_idx_[i] - p_index.x());
         }
         i++;
       }

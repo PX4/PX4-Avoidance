@@ -8,11 +8,11 @@
 using namespace avoidance;
 
 void check_indexes(nav_msgs::GridCells &test,
-                   std::vector<std::pair<int, int>> &truth, int resolution) {
+                   std::vector<Eigen::Vector2i> &truth, int resolution) {
   for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
-    std::pair<int, int> cell_idx(
-        elevationAngletoIndex(test.cells[i].x, resolution),
-        azimuthAngletoIndex(test.cells[i].y, resolution));
+    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
+    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
+
     EXPECT_EQ(truth[j], cell_idx);
   }
 }
@@ -20,8 +20,10 @@ void check_indexes(nav_msgs::GridCells &test,
 void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
                    int resolution) {
   for (int i = 0; i < test.cells.size(); i++) {
-    EXPECT_EQ(truth_idx_e, elevationAngletoIndex(test.cells[i].x, resolution));
-    EXPECT_EQ(truth_idx_z, azimuthAngletoIndex(test.cells[i].y, resolution));
+    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
+    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
+    EXPECT_EQ(truth_idx_e, cell_idx.y());
+    EXPECT_EQ(truth_idx_z, cell_idx.x());
   }
 }
 
@@ -52,17 +54,16 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   location.pose.position.x = 0;
   location.pose.position.y = 0;
   location.pose.position.z = 0;
-  double distance = 1.0;
+  float distance = 1.0f;
 
-  std::vector<double> e_angle_filled = {-90, -30, 0, 20, 40, 90};
-  std::vector<double> z_angle_filled = {-180, -50, 0, 59, 100, 175};
+  std::vector<float> e_angle_filled = {-90, -30, 0, 20, 40, 90};
+  std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
   std::vector<Eigen::Vector3f> middle_of_cell;
 
-  for (int i = 0; i < e_angle_filled.size(); i++) {
-    for (int j = 0; j < z_angle_filled.size(); j++) {
-      middle_of_cell.push_back(fromPolarToCartesian(e_angle_filled[i],
-                                                    z_angle_filled[j], distance,
-                                                    location.pose.position));
+  for (auto i : e_angle_filled) {
+    for (auto j : z_angle_filled) {
+      PolarPoint p_pol(i, j, distance);
+      middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
     }
   }
 
@@ -82,8 +83,9 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index;
   std::vector<int> z_index;
   for (int i = 0; i < e_angle_filled.size(); i++) {
-    e_index.push_back(elevationAngletoIndex((int)e_angle_filled[i], ALPHA_RES));
-    z_index.push_back(azimuthAngletoIndex((int)z_angle_filled[i], ALPHA_RES));
+    PolarPoint p_pol(e_angle_filled[i], z_angle_filled[i], 0.0f);
+    e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
+    z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
   }
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -93,9 +95,9 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       bool z_found =
           std::find(z_index.begin(), z_index.end(), z) != z_index.end();
       if (e_found && z_found) {
-        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+        EXPECT_DOUBLE_EQ(1.0, histogram_output.get_bin(e, z)) << e << ", " << z;
       } else {
-        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << z << ", " << e;
+        EXPECT_DOUBLE_EQ(0.0, histogram_output.get_bin(e, z)) << e << ", " << z;
       }
     }
   }
@@ -217,15 +219,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsNoWrap) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!(z <= 11 && z >= 9 && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -279,15 +283,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapLeft) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((z == 1 || z == 0 || z == 71) && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -341,15 +347,17 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapRight) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((z == 70 || z == 71 || z == 0) && e >= 4 && e <= 6)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -403,17 +411,19 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapUp) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
 
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!(e >= 0 && e <= 2 && z >= 17 && z <= 21) &&
           !(e >= 0 && e <= 1 && z >= 40 && z <= 44)) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }
@@ -467,16 +477,18 @@ TEST(PlannerFunctionsTests, findFreeDirectionsWrapDown) {
   bool only_yawed = false;
 
   // expected output
-  std::vector<std::pair<int, int>> blocked;
-  std::vector<std::pair<int, int>> free;
+  std::vector<Eigen::Vector2i> blocked;
+  std::vector<Eigen::Vector2i> free;
   for (int e = 0; e < (180 / resolution_alpha); e++) {
     for (int z = 0; z < (360 / resolution_alpha); z++) {
       if (!((e == 16 || e == 17) && (z >= 3 && z <= 5)) &&
           !(e == 17 && (z >= 21 && z <= 23))) {
-        free.push_back(std::make_pair(e, z));
+        Eigen::Vector2i v(z, e);
+        free.push_back(v);
       } else {
         if (!(e == obstacle_idx_e && z == obstacle_idx_z)) {
-          blocked.push_back(std::make_pair(e, z));
+          Eigen::Vector2i v(z, e);
+          blocked.push_back(v);
         }
       }
     }

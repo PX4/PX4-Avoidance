@@ -128,22 +128,21 @@ void propagateHistogram(
     const std::vector<double>& reprojected_points_dist,
     const geometry_msgs::PoseStamped& position) {
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    float e_angle = elevationAnglefromCartesian(
-        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
-    float z_angle = azimuthAnglefromCartesian(
-        toEigen(reprojected_points.points[i]), toEigen(position.pose.position));
-
-    int e_ind = elevationAngletoIndex(e_angle, 2 * ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(z_angle, 2 * ALPHA_RES);
+    PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
+                                        toEigen(position.pose.position));
+    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
 
     polar_histogram_est.set_bin(
-        e_ind, z_ind, polar_histogram_est.get_bin(e_ind, z_ind) + 0.25);
-    polar_histogram_est.set_age(e_ind, z_ind,
-                                polar_histogram_est.get_age(e_ind, z_ind) +
-                                    0.25 * reprojected_points_age[i]);
-    polar_histogram_est.set_dist(e_ind, z_ind,
-                                 polar_histogram_est.get_dist(e_ind, z_ind) +
-                                     0.25 * reprojected_points_dist[i]);
+        p_ind.y(), p_ind.x(),
+        polar_histogram_est.get_bin(p_ind.y(), p_ind.x()) + 0.25);
+    polar_histogram_est.set_age(
+        p_ind.y(), p_ind.x(),
+        polar_histogram_est.get_age(p_ind.y(), p_ind.x()) +
+            0.25 * reprojected_points_age[i]);
+    polar_histogram_est.set_dist(
+        p_ind.y(), p_ind.x(),
+        polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) +
+            0.25 * reprojected_points_dist[i]);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
@@ -175,17 +174,14 @@ void generateNewHistogram(Histogram& polar_histogram,
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - toEigen(position.pose.position)).norm();
-    int e_angle =
-        elevationAnglefromCartesian(p, toEigen(position.pose.position));
-    int z_angle = azimuthAnglefromCartesian(p, toEigen(position.pose.position));
+    PolarPoint p_pol = cartesianToPolar(p, toEigen(position.pose.position));
+    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
-    int e_ind = elevationAngletoIndex(e_angle, ALPHA_RES);
-    int z_ind = azimuthAngletoIndex(z_angle, ALPHA_RES);
-
-    polar_histogram.set_bin(e_ind, z_ind,
-                            polar_histogram.get_bin(e_ind, z_ind) + 1);
-    polar_histogram.set_dist(e_ind, z_ind,
-                             polar_histogram.get_dist(e_ind, z_ind) + dist);
+    polar_histogram.set_bin(p_ind.y(), p_ind.x(),
+                            polar_histogram.get_bin(p_ind.y(), p_ind.x()) + 1);
+    polar_histogram.set_dist(
+        p_ind.y(), p_ind.x(),
+        polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
   }
 
   // Normalize and get mean in distance bins
@@ -238,7 +234,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 }
 
 // costfunction for every free histogram cell
-double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
+double costFunction(PolarPoint p_pol, nav_msgs::GridCells& path_waypoints,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& position_old, double goal_cost_param,
@@ -252,14 +248,15 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
     path_waypoints.cells.push_back(toPoint(position_old));
   }
 
-  double dist = (position - goal).norm();
-  double dist_old = (position_old - goal).norm();
-  Eigen::Vector3f candidate_goal =
-      fromPolarToCartesian(e, z, dist, toPoint(position));
+  float dist = (position - goal).norm();
+  float dist_old = (position_old - goal).norm();
+  p_pol.r = dist;
+  Eigen::Vector3f candidate_goal = polarToCartesian(p_pol, toPoint(position));
+  PolarPoint p_pol_old(path_waypoints.cells[waypoint_index].x,
+                       path_waypoints.cells[waypoint_index].y, dist_old);
+
   Eigen::Vector3f old_candidate_goal =
-      fromPolarToCartesian(path_waypoints.cells[waypoint_index - 1].x,
-                           path_waypoints.cells[waypoint_index - 1].y, dist_old,
-                           toPoint(position_old));
+      polarToCartesian(p_pol_old, toPoint(position_old));
   double yaw_cost = goal_cost_param *
                     (goal.topRows<2>() - candidate_goal.topRows<2>()).norm();
 
@@ -293,13 +290,13 @@ double costFunction(int e, int z, nav_msgs::GridCells& path_waypoints,
 
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
-  int vertical_FOV_range_sensor = 20;
-  int lower_index = elevationAngletoIndex(
-      -(float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
-  int upper_index = elevationAngletoIndex(
-      (float)(vertical_FOV_range_sensor / 2.0), ALPHA_RES);
+  float vertical_FOV_range_sensor = 20.0;
+  PolarPoint p_pol_lower(-1 * vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
+  PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
+  Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
+  Eigen::Vector2i p_ind_upper = polarToHistogramIndex(p_pol_upper, ALPHA_RES);
 
-  for (int e = lower_index; e <= upper_index; e++) {
+  for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (input_hist.get_bin(e, z) > 0) {
         new_hist.set_bin(0, z, new_hist.get_bin(0, z) + 1);
@@ -395,25 +392,28 @@ void findFreeDirections(
       }
 
       if (free) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_candidates.cells.push_back(p);
         double cost =
-            costFunction((int)p.x, (int)p.y, path_waypoints, goal, position,
-                         position_old, goal_cost_param, smooth_cost_param,
+            costFunction(p_pol, path_waypoints, goal, position, position_old,
+                         goal_cost_param, smooth_cost_param,
                          height_change_cost_param_adapted,
                          height_change_cost_param, only_yawed);
         cost_path_candidates.push_back(cost);
       } else if (!free && histogram.get_bin(e, z) != 0) {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_rejected.cells.push_back(p);
       } else {
-        p.x = elevationIndexToAngle(e, resolution_alpha);
-        p.y = azimuthIndexToAngle(z, resolution_alpha);
-        p.z = 0.0;
+        PolarPoint p_pol = histogramIndexToPolar(e, z, resolution_alpha, 0.0);
+        p.x = p_pol.e;
+        p.y = p_pol.z;
+        p.z = p_pol.r;
         path_blocked.cells.push_back(p);
       }
     }
@@ -463,7 +463,7 @@ void printHistogram(Histogram hist, std::vector<int> z_FOV_idx, int e_FOV_min,
 }
 
 bool getDirectionFromTree(
-    Eigen::Vector3f& p,
+    PolarPoint& p_pol,
     const std::vector<geometry_msgs::Point>& path_node_positions,
     const Eigen::Vector3f& position) {
   int size = path_node_positions.size();
@@ -506,10 +506,8 @@ bool getDirectionFromTree(
           (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
           l_frac * toEigen(path_node_positions[wp_idx]);
 
-      int wp_e = floor(elevationAnglefromCartesian(mean_point, position));
-      int wp_z = floor(azimuthAnglefromCartesian(mean_point, position));
-
-      p = Eigen::Vector3f(wp_e, wp_z, 0.f);
+      p_pol = cartesianToPolar(mean_point, position);
+      p_pol.r = 0.0;
     }
   } else {
     tree_available = false;

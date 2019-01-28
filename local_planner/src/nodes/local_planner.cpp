@@ -125,9 +125,11 @@ void LocalPlanner::runPlanner() {
   geometry_msgs::Point p;
   for (int j = e_FOV_min_; j <= e_FOV_max_; j++) {
     for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
-      p.x = elevationIndexToAngle(j, ALPHA_RES);
-      p.y = azimuthIndexToAngle(z_FOV_idx_[i], ALPHA_RES);
-      p.z = 0;
+      PolarPoint p_pol =
+          histogramIndexToPolar(j, z_FOV_idx_[i], ALPHA_RES, 0.0);
+      p.x = p_pol.e;
+      p.y = p_pol.z;
+      p.z = p_pol.r;
       FOV_cells_.cells.push_back(p);
     }
   }
@@ -260,19 +262,14 @@ void LocalPlanner::determineStrategy() {
         int relevance_margin_e_cells =
             std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
         int n_occupied_cells = 0;
+        PolarPoint goal_pol =
+            cartesianToPolar(goal_, toEigen(pose_.pose.position));
+        Eigen::Vector2i goal_index = polarToHistogramIndex(goal_pol, ALPHA_RES);
 
-        int goal_e_angle = floor(
-            elevationAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
-        int goal_z_angle = floor(
-            azimuthAnglefromCartesian(goal_, toEigen(pose_.pose.position)));
-
-        int goal_e_index = elevationAngletoIndex(goal_e_angle, ALPHA_RES);
-        int goal_z_index = azimuthAngletoIndex(goal_z_angle, ALPHA_RES);
-
-        for (int e = goal_e_index - relevance_margin_e_cells;
-             e < goal_e_index + relevance_margin_e_cells; e++) {
-          for (int z = goal_z_index - relevance_margin_z_cells;
-               z < goal_z_index + relevance_margin_z_cells; z++) {
+        for (int e = goal_index.y() - relevance_margin_e_cells;
+             e < goal_index.y() + relevance_margin_e_cells; e++) {
+          for (int z = goal_index.x() - relevance_margin_z_cells;
+               z < goal_index.x() + relevance_margin_z_cells; z++) {
             if (polar_histogram_.get_bin(e, z) > 0) {
               n_occupied_cells++;
             }
@@ -404,7 +401,12 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 void LocalPlanner::reprojectPoints(Histogram histogram) {
   double n_points = 0;
   double dist, age;
+  // ALPHA_RES%2=0 as per definition, see histogram.h
+  int half_res = ALPHA_RES / 2;
+
   Eigen::Vector3f temp_array[4];
+
+  std::array<PolarPoint, 4> p_pol;
   reprojected_points_age_.clear();
   reprojected_points_dist_.clear();
 
@@ -416,23 +418,25 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (histogram.get_bin(e, z) != 0) {
         n_points++;
+        for (auto &i : p_pol) {
+          i.r = histogram.get_dist(e, z);
+          i = histogramIndexToPolar(e, z, ALPHA_RES, i.r);
+        }
         // transform from array index to angle
-        double beta_e = elevationIndexToAngle(e, ALPHA_RES);
-        double beta_z = azimuthIndexToAngle(z, ALPHA_RES);
+        p_pol[0].e += half_res;
+        p_pol[0].z += half_res;
+        p_pol[1].e -= half_res;
+        p_pol[1].z += half_res;
+        p_pol[2].e += half_res;
+        p_pol[2].z -= half_res;
+        p_pol[3].e -= half_res;
+        p_pol[3].z -= half_res;
 
         // transform from Polar to Cartesian
-        temp_array[0] = fromPolarToCartesian(
-            beta_e + ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
-            histogram.get_dist(e, z), toPoint(position_old_));
-        temp_array[1] = fromPolarToCartesian(
-            beta_e - ALPHA_RES / 2, beta_z + ALPHA_RES / 2,
-            histogram.get_dist(e, z), toPoint(position_old_));
-        temp_array[2] = fromPolarToCartesian(
-            beta_e + ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
-            histogram.get_dist(e, z), toPoint(position_old_));
-        temp_array[3] = fromPolarToCartesian(
-            beta_e - ALPHA_RES / 2, beta_z - ALPHA_RES / 2,
-            histogram.get_dist(e, z), toPoint(position_old_));
+        temp_array[0] = polarToCartesian(p_pol[0], toPoint(position_old_));
+        temp_array[1] = polarToCartesian(p_pol[1], toPoint(position_old_));
+        temp_array[2] = polarToCartesian(p_pol[2], toPoint(position_old_));
+        temp_array[3] = polarToCartesian(p_pol[3], toPoint(position_old_));
 
         for (int i = 0; i < 4; i++) {
           dist = (toEigen(pose_.pose.position) - temp_array[i]).norm();

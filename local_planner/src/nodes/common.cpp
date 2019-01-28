@@ -9,82 +9,70 @@
 #include <tf/transform_listener.h>
 namespace avoidance {
 
-float distance2DPolar(int e1, int z1, int e2, int z2) {
-  return sqrt(pow((e1 - e2), 2) + pow((z1 - z2), 2));
+float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
+  return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
 
-// transform polar coordinates into Cartesian coordinates
-Eigen::Vector3f fromPolarToCartesian(float e, float z, double radius,
-                                     const geometry_msgs::Point& pos) {
+Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
+                                 const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
-  p.x() = pos.x + radius * cos(e * (M_PI / 180.f)) * sin(z * (M_PI / 180.f));
-  p.y() = pos.y + radius * cos(e * (M_PI / 180.f)) * cos(z * (M_PI / 180.f));
-  p.z() = pos.z + radius * sin(e * (M_PI / 180.f));
+  p.x() =
+      pos.x + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * sin(p_pol.z * DEG_TO_RAD);
+  p.y() =
+      pos.y + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * cos(p_pol.z * DEG_TO_RAD);
+  p.z() = pos.z + p_pol.r * sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
-
 double indexAngleDifference(float a, float b) {
   return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
                   std::abs(a - b + 360.f));
 }
 
-double elevationIndexToAngle(int e, double res) {
-  return e * res + res / 2 - 90;
+PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
+  // ALPHA_RES%2=0 as per definition, see histogram.h
+  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90),
+                   static_cast<float>(z * res + res / 2 - 180), radius);
+  return p_pol;
 }
 
-double azimuthIndexToAngle(int z, double res) {
-  return z * res + res / 2 - 180;
+PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
+                            const Eigen::Vector3f& origin) {
+  return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
 }
-
-float azimuthAnglefromCartesian(const Eigen::Vector3f& position,
-                                const Eigen::Vector3f& origin) {
-  return azimuthAnglefromCartesian(position.x(), position.y(), origin);
-}
-
-float azimuthAnglefromCartesian(double x, double y,
-                                const Eigen::Vector3f& pos) {
-  return atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
-}
-
-float elevationAnglefromCartesian(double x, double y, double z,
-                                  const Eigen::Vector3f& pos) {
+PolarPoint cartesianToPolar(double x, double y, double z,
+                            const Eigen::Vector3f& pos) {
+  PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
-  return atan2(z - pos.z(), den) * 180.0 / M_PI;  //(-90.+90)
+  p_pol.e = atan2(z - pos.z(), den) * 180.0 / M_PI;            //(-90.+90)
+  p_pol.z = atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
+  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
+                 (z - pos.z()) * (z - pos.z()));
+  return p_pol;
 }
 
-float elevationAnglefromCartesian(const Eigen::Vector3f& pos,
-                                  const Eigen::Vector3f& origin) {
-  return elevationAnglefromCartesian(pos.x(), pos.y(), pos.z(), origin);
-}
-
-int elevationAngletoIndex(float e, int res) {  //[-90,90]
-  // TODO: wrap e to [-90, 90] to be sure input is valid such that this check is
-  // not necessary anymore
-  if (res <= 0.f || e < -90.f || e > 90.f) {
-    return 0.f;
+Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
+  // TODO change logic here, as 0,0 are valid index
+  Eigen::Vector2i ev2(0, 0);
+  float e = p_pol.e;
+  float z = p_pol.z;
+  if (res <= 0.f || e < -90.f || e > 90.f || z < -180.f || z > 180.f) {
+    return ev2;
   }
-
   if (e == 90.f) {
     e = 89;
   }
-  e += 90;
-  e = e + (res - ((int)e % res));  //[-80,+90]
-  return floor(e / res) - 1;       //[0,17]
-}
+  e += 90.0;
+  e = e + (res - (static_cast<int>(e) % res));  //[-80,+90]
+  ev2.y() = e / res - 1;
 
-int azimuthAngletoIndex(float z, int res) {  //[-180,180]
-  // TODO: wrap z to [-180, 180] to be sure input is valid such that this check
-  // is not necessary anymore
-  if (res <= 0.f || z < -180.f || z > 180.f) {
-    return 0.f;
-  }
   if (z == 180.f) {
     z = -180;
   }
-  z += 180;
-  z = z + (res - ((int)z % res));  //[-80,+90]
-  return z / res - 1;              //[0,17]
+  z += 180.0;
+  z = z + (res - (static_cast<int>(z) % res));  //[-80,+90]
+  ev2.x() = z / res - 1;
+  return ev2;
 }
 
 // calculate the yaw for the next waypoint
