@@ -83,3 +83,5 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
 
 </launch>
 EOM
+# Set the frame rate in the JSON file as well
+sed -i '/stream-fps/c\    \"stream-fps\": \"'$DEPTH_CAMERA_FRAME_RATE'\",' local_planner/resource/stereo_calib.json
