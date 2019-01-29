@@ -51,18 +51,18 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXd& cost_matrix);
+                   Eigen::MatrixXf& cost_matrix);
 void getBestCandidatesFromCostMatrix(
-    const Eigen::MatrixXd& matrix, unsigned int number_of_candidates,
+    const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
     std::vector<candidateDirection>& candidate_vector);
-double costFunction(double e_angle, double z_angle, float obstacle_distance,
+float costFunction(double e_angle, double z_angle, float obstacle_distance,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& last_sent_waypoint,
                     costParameters cost_params, bool only_yawed);
-void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius);
-void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
-                    Eigen::MatrixXd& matrix_padded);
+void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius);
+void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXf& matrix_padded);
 void printHistogram(Histogram& histogram);
 bool getDirectionFromTree(
     PolarPoint& p_pol,

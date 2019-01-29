@@ -278,7 +278,7 @@ TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
   // GIVEN: a matrix with known data. Where every cell has the value of its column index.
   // And by how many lines should be padded
   int n_lines_padding = 3;
-  Eigen::MatrixXd matrix;
+  Eigen::MatrixXf matrix;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(1.0);
   for(int c = 0; c < matrix.cols(); c++){
@@ -286,7 +286,7 @@ TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
   }
 
   // WHEN: we pad the matrix
-  Eigen::MatrixXd matrix_padded;
+  Eigen::MatrixXf matrix_padded;
   padPolarMatrix(matrix, n_lines_padding, matrix_padded);
 
   // THEN: the output matrix should have the right size,
@@ -317,7 +317,7 @@ TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
   // GIVEN: a matrix with known data. Where every cell has the value of its column index.
   // And by how many lines should be padded
   int n_lines_padding = 2;
-  Eigen::MatrixXd matrix;
+  Eigen::MatrixXf matrix;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(0.0);
   int half_z = GRID_LENGTH_Z/2;
@@ -335,7 +335,7 @@ TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
   matrix(last_e, last_z) = 9;
 
   // WHEN: we pad the matrix
-  Eigen::MatrixXd matrix_padded;
+  Eigen::MatrixXf matrix_padded;
   padPolarMatrix(matrix, n_lines_padding, matrix_padded);
 
   // THEN: the output matrix should have the right size,
@@ -373,7 +373,7 @@ TEST(PlannerFunctions, getBestCandidatesFromCostMatrix) {
   // GIVEN: a known cost matrix and the number of needed candidates
   int n_candidates = 4;
   std::vector<candidateDirection> candidate_vector;
-  Eigen::MatrixXd matrix;
+  Eigen::MatrixXf matrix;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(10);
 
@@ -399,8 +399,8 @@ TEST(PlannerFunctions, getBestCandidatesFromCostMatrix) {
 TEST(PlannerFunctions, smoothPolarMatrix) {
   // GIVEN: a smoothing radius and a known cost matrix with one costly cell, otherwise all zeros.
   unsigned int smooth_radius = 2;
-  Eigen::MatrixXd matrix;
-  Eigen::MatrixXd matrix_old;
+  Eigen::MatrixXf matrix;
+  Eigen::MatrixXf matrix_old;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(0);
 
@@ -435,7 +435,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   cost_params.smooth_cost_param = 1.5f;
   cost_params.height_change_cost_param = 4.f;
   cost_params.height_change_cost_param_adapted = 4.f;
-  Eigen::MatrixXd cost_matrix;
+  Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
 
   // WHEN: we calculate the cost matrix from the input data
@@ -443,20 +443,18 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
                           false, cost_matrix);
 
   // THEN: The minimum cost should be in the direction of the goal
-  float best_angle_e = elevationAnglefromCartesian(goal, position);
-  float best_angle_z = azimuthAnglefromCartesian(goal, position);
-  int best_index_e = elevationAngletoIndex(best_angle_e, ALPHA_RES);
-  int best_index_z = azimuthAngletoIndex(best_angle_z, ALPHA_RES);
+  PolarPoint best_pol = cartesianToPolar(goal, position);
+  Eigen::Vector2i best_index = polarToHistogramIndex(best_pol, ALPHA_RES);
 
-  Eigen::MatrixXd::Index minRow, minCol;
+  Eigen::MatrixXf::Index minRow, minCol;
   float min = cost_matrix.minCoeff(&minRow, &minCol);
 
-  EXPECT_NEAR((int)minRow, best_index_e, 1);
-  EXPECT_NEAR((int)minCol, best_index_z, 1);
+  EXPECT_NEAR((int)minRow, best_index.y(), 1);
+  EXPECT_NEAR((int)minCol, best_index.x(), 1);
 
   // And the cost should grow as we go away from the goal index
   int check_radius = 3;
-  Eigen::MatrixXd matrix_padded;
+  Eigen::MatrixXf matrix_padded;
   //extend the matrix, as the goal direction might be at the border
   padPolarMatrix(cost_matrix, check_radius, matrix_padded);
 
@@ -470,7 +468,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   bool row4 = (matrix_padded.row(best_index_padded_e - 3).array() > matrix_padded.row(best_index_padded_e).array() - 2).all();
 
   //check that columns farther away have bigger cost. Leave out direct neighbor rows as the center might be split over cells
-  Eigen::MatrixXd matrix_padded2 = matrix_padded.block(3 , 0, cost_matrix.rows(), matrix_padded.cols());  //cut off padded top part
+  Eigen::MatrixXf matrix_padded2 = matrix_padded.block(3 , 0, cost_matrix.rows(), matrix_padded.cols());  //cut off padded top part
   bool col1 = (matrix_padded2.col(best_index_padded_z + 2).array() > matrix_padded2.col(best_index_padded_z + 1).array()).all();
   bool col2 = (matrix_padded2.col(best_index_padded_z + 3).array() > matrix_padded2.col(best_index_padded_z + 2).array()).all();
   bool col3 = (matrix_padded2.col(best_index_padded_z - 2).array() > matrix_padded2.col(best_index_padded_z).array() - 1).all();
