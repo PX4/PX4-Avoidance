@@ -222,10 +222,10 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXd& cost_matrix) {
+                   Eigen::MatrixXf& cost_matrix) {
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
-  cost_matrix.fill(0.0);
+  cost_matrix.fill(0.f);
 
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
@@ -247,7 +247,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
 }
 
 void getBestCandidatesFromCostMatrix(
-    const Eigen::MatrixXd& matrix, unsigned int number_of_candidates,
+    const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
     std::vector<candidateDirection>& candidate_vector) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>,
                       std::less<candidateDirection>>
@@ -256,7 +256,7 @@ void getBestCandidatesFromCostMatrix(
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
       PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
-      double cost = matrix(row_index, col_index);
+      float cost = matrix(row_index, col_index);
       candidateDirection candidate(cost, p_pol.e, p_pol.z);
 
       if (queue.size() < number_of_candidates) {
@@ -276,9 +276,9 @@ void getBestCandidatesFromCostMatrix(
   std::reverse(candidate_vector.begin(), candidate_vector.end());
 }
 
-void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius) {
+void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   // pad matrix by smoothing radius respecting all wrapping rules
-  Eigen::MatrixXd matrix_padded;
+  Eigen::MatrixXf matrix_padded;
   padPolarMatrix(matrix, smoothing_radius, matrix_padded);
 
   // filter matrix (max-mean)
@@ -298,8 +298,8 @@ void smoothPolarMatrix(Eigen::MatrixXd& matrix, unsigned int smoothing_radius) {
   }
 }
 
-void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
-                    Eigen::MatrixXd& matrix_padded) {
+void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
+                    Eigen::MatrixXf& matrix_padded) {
   matrix_padded.resize(matrix.rows() + 2 * n_lines_padding,
                        matrix.cols() + 2 * n_lines_padding);
 
@@ -351,7 +351,7 @@ void padPolarMatrix(const Eigen::MatrixXd& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-double costFunction(double e_angle, double z_angle, float obstacle_distance,
+float costFunction(double e_angle, double z_angle, float obstacle_distance,
                     const Eigen::Vector3f& goal,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& last_sent_waypoint,

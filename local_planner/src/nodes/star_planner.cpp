@@ -160,7 +160,7 @@ void StarPlanner::buildLookAheadTree() {
                       z_FOV_idx, e_FOV_min, e_FOV_max);
 
     // calculate candidates
-    Eigen::MatrixXd cost_matrix;
+    Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
                   origin_origin_position, cost_params_, false, cost_matrix);

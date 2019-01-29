@@ -109,7 +109,7 @@ class LocalPlanner {
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
-  Eigen::MatrixXd cost_matrix_;
+  Eigen::MatrixXf cost_matrix_;
   std::vector<candidateDirection> candidate_vector_;
 
   void fitPlane();
