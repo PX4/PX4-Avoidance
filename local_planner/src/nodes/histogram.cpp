@@ -12,9 +12,10 @@ Histogram::Histogram(const int res)
 Histogram::~Histogram() {}
 
 void Histogram::upsample() {
-
-  if(resolution_ != ALPHA_RES * 2){
-	 throw std::logic_error("Invalid use of function upsample(). This function can only be used on a half resolution histogram.");
+  if (resolution_ != ALPHA_RES * 2) {
+    throw std::logic_error(
+        "Invalid use of function upsample(). This function can only be used on "
+        "a half resolution histogram.");
   }
   resolution_ = resolution_ / 2;
   z_dim_ = 2 * z_dim_;
@@ -35,8 +36,10 @@ void Histogram::upsample() {
 }
 
 void Histogram::downsample() {
-  if(resolution_ != ALPHA_RES){
-	 throw std::logic_error("Invalid use of function downsample(). This function can only be used on a full resolution histogram.");
+  if (resolution_ != ALPHA_RES) {
+    throw std::logic_error(
+        "Invalid use of function downsample(). This function can only be used "
+        "on a full resolution histogram.");
   }
   resolution_ = 2 * resolution_;
   z_dim_ = z_dim_ / 2;
