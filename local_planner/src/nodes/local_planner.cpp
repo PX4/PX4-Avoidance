@@ -249,7 +249,7 @@ void LocalPlanner::determineStrategy() {
           for (int z = goal_index.x() - relevance_margin_z_cells;
                z < goal_index.x() + relevance_margin_z_cells; z++) {
             if (polar_histogram_.get_dist(e, z) > FLT_MIN) {
-            	n_occupied_cells++;
+              n_occupied_cells++;
             }
           }
         }

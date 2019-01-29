@@ -37,7 +37,8 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   location.pose.position.z = 0;
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, empty_cloud, toEigen(location.pose.position));
+  generateNewHistogram(histogram_output, empty_cloud,
+                       toEigen(location.pose.position));
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -75,7 +76,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud, toEigen(location.pose.position));
+  generateNewHistogram(histogram_output, cloud,
+                       toEigen(location.pose.position));
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros
@@ -275,14 +277,15 @@ TEST(PlannerFunctions, testDirectionTree) {
 }
 
 TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
-  // GIVEN: a matrix with known data. Where every cell has the value of its column index.
+  // GIVEN: a matrix with known data. Where every cell has the value of its
+  // column index.
   // And by how many lines should be padded
   int n_lines_padding = 3;
   Eigen::MatrixXf matrix;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(1.0);
-  for(int c = 0; c < matrix.cols(); c++){
-	  matrix.col(c) = c * matrix.col(c);
+  for (int c = 0; c < matrix.cols(); c++) {
+    matrix.col(c) = c * matrix.col(c);
   }
 
   // WHEN: we pad the matrix
@@ -296,13 +299,20 @@ TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
   ASSERT_EQ(GRID_LENGTH_E + 2 * n_lines_padding, matrix_padded.rows());
   ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
 
-  bool middle_part_correct = matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
+  bool middle_part_correct =
+      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),
+                          matrix.cols()) == matrix;
   bool col_0_correct = matrix_padded.col(0) == matrix_padded.col(GRID_LENGTH_Z);
-  bool col_1_correct = matrix_padded.col(1) == matrix_padded.col(GRID_LENGTH_Z + 1);
-  bool col_2_correct = matrix_padded.col(2) == matrix_padded.col(GRID_LENGTH_Z + 2);
-  bool col_63_correct = matrix_padded.col(GRID_LENGTH_Z + 3) == matrix_padded.col(3);
-  bool col_64_correct = matrix_padded.col(GRID_LENGTH_Z + 4) == matrix_padded.col(4);
-  bool col_65_correct = matrix_padded.col(GRID_LENGTH_Z + 5) == matrix_padded.col(5);
+  bool col_1_correct =
+      matrix_padded.col(1) == matrix_padded.col(GRID_LENGTH_Z + 1);
+  bool col_2_correct =
+      matrix_padded.col(2) == matrix_padded.col(GRID_LENGTH_Z + 2);
+  bool col_63_correct =
+      matrix_padded.col(GRID_LENGTH_Z + 3) == matrix_padded.col(3);
+  bool col_64_correct =
+      matrix_padded.col(GRID_LENGTH_Z + 4) == matrix_padded.col(4);
+  bool col_65_correct =
+      matrix_padded.col(GRID_LENGTH_Z + 5) == matrix_padded.col(5);
 
   EXPECT_TRUE(middle_part_correct);
   EXPECT_TRUE(col_0_correct);
@@ -314,13 +324,14 @@ TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
 }
 
 TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
-  // GIVEN: a matrix with known data. Where every cell has the value of its column index.
+  // GIVEN: a matrix with known data. Where every cell has the value of its
+  // column index.
   // And by how many lines should be padded
   int n_lines_padding = 2;
   Eigen::MatrixXf matrix;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(0.0);
-  int half_z = GRID_LENGTH_Z/2;
+  int half_z = GRID_LENGTH_Z / 2;
   int last_z = GRID_LENGTH_Z - 1;
   int last_e = GRID_LENGTH_E - 1;
 
@@ -345,17 +356,21 @@ TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
   ASSERT_EQ(GRID_LENGTH_E + 2 * n_lines_padding, matrix_padded.rows());
   ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
 
-
-  bool middle_part_correct = matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
+  bool middle_part_correct =
+      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),
+                          matrix.cols()) == matrix;
   bool val_1 = matrix_padded(1, half_z + n_lines_padding) == 1;
   bool val_2 = matrix_padded(1, half_z + n_lines_padding + 1) == 2;
   bool val_3 = matrix_padded(0, half_z + n_lines_padding) == 3;
   bool val_4 = matrix_padded(1, 2) == 4;
   bool val_5 = matrix_padded(0, 3) == 5;
   bool val_6 = matrix_padded(1, half_z - 1 + n_lines_padding) == 6;
-  bool val_7 = matrix_padded(last_e + 1 + n_lines_padding, half_z + n_lines_padding) == 7;
-  bool val_8 = matrix_padded(last_e + 2 + n_lines_padding, GRID_LENGTH_Z + n_lines_padding - 1) == 8;
-  bool val_9 = matrix_padded(last_e + 1 + n_lines_padding, half_z - 1 + n_lines_padding) == 9;
+  bool val_7 = matrix_padded(last_e + 1 + n_lines_padding,
+                             half_z + n_lines_padding) == 7;
+  bool val_8 = matrix_padded(last_e + 2 + n_lines_padding,
+                             GRID_LENGTH_Z + n_lines_padding - 1) == 8;
+  bool val_9 = matrix_padded(last_e + 1 + n_lines_padding,
+                             half_z - 1 + n_lines_padding) == 9;
 
   EXPECT_TRUE(middle_part_correct);
   EXPECT_TRUE(val_1);
@@ -397,29 +412,32 @@ TEST(PlannerFunctions, getBestCandidatesFromCostMatrix) {
 }
 
 TEST(PlannerFunctions, smoothPolarMatrix) {
-  // GIVEN: a smoothing radius and a known cost matrix with one costly cell, otherwise all zeros.
+  // GIVEN: a smoothing radius and a known cost matrix with one costly cell,
+  // otherwise all zeros.
   unsigned int smooth_radius = 2;
   Eigen::MatrixXf matrix;
   Eigen::MatrixXf matrix_old;
   matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   matrix.fill(0);
 
-  int r_object = GRID_LENGTH_E/2;
-  int c_object = GRID_LENGTH_Z/2;
+  int r_object = GRID_LENGTH_E / 2;
+  int c_object = GRID_LENGTH_Z / 2;
   matrix(r_object, c_object) = 100;
 
   // WHEN: we calculate the smoothed matrix
   matrix_old = matrix;
   smoothPolarMatrix(matrix, smooth_radius);
 
-  // THEN: The smoothed matrix should be element-wise greater-equal than the input matrix
-  // and the elements inside the smoothing radius around the costly cell should be greater than before
-  for(int r = r_object - smooth_radius; r < r_object + smooth_radius; r ++){
-	  for(int c = c_object - smooth_radius; c < c_object + smooth_radius; c ++){
-		  if(!(r == r_object && c == c_object)){
-			  EXPECT_GT(matrix(r, c), matrix_old(r, c));
-		  }
-	  }
+  // THEN: The smoothed matrix should be element-wise greater-equal than the
+  // input matrix
+  // and the elements inside the smoothing radius around the costly cell should
+  // be greater than before
+  for (int r = r_object - smooth_radius; r < r_object + smooth_radius; r++) {
+    for (int c = c_object - smooth_radius; c < c_object + smooth_radius; c++) {
+      if (!(r == r_object && c == c_object)) {
+        EXPECT_GT(matrix(r, c), matrix_old(r, c));
+      }
+    }
   }
   bool greater_equal = (matrix.array() >= matrix_old.array()).all();
   EXPECT_TRUE(greater_equal);
@@ -440,7 +458,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
 
   // WHEN: we calculate the cost matrix from the input data
   getCostMatrix(histogram, goal, position, last_sent_waypoint, cost_params,
-                          false, cost_matrix);
+                false, cost_matrix);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);
@@ -455,24 +473,44 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // And the cost should grow as we go away from the goal index
   int check_radius = 3;
   Eigen::MatrixXf matrix_padded;
-  //extend the matrix, as the goal direction might be at the border
+  // extend the matrix, as the goal direction might be at the border
   padPolarMatrix(cost_matrix, check_radius, matrix_padded);
 
   int best_index_padded_e = (int)minRow + check_radius;
   int best_index_padded_z = (int)minCol + check_radius;
 
-  //check that rows farther away have bigger cost. Leave out direct neighbor rows as the center might be split over cells
-  bool row1 = (matrix_padded.row(best_index_padded_e + 2).array() > matrix_padded.row(best_index_padded_e + 1).array()).all();
-  bool row2 = (matrix_padded.row(best_index_padded_e + 3).array() > matrix_padded.row(best_index_padded_e + 2).array()).all();
-  bool row3 = (matrix_padded.row(best_index_padded_e - 2).array() > matrix_padded.row(best_index_padded_e).array() - 1).all();
-  bool row4 = (matrix_padded.row(best_index_padded_e - 3).array() > matrix_padded.row(best_index_padded_e).array() - 2).all();
+  // check that rows farther away have bigger cost. Leave out direct neighbor
+  // rows as the center might be split over cells
+  bool row1 = (matrix_padded.row(best_index_padded_e + 2).array() >
+               matrix_padded.row(best_index_padded_e + 1).array())
+                  .all();
+  bool row2 = (matrix_padded.row(best_index_padded_e + 3).array() >
+               matrix_padded.row(best_index_padded_e + 2).array())
+                  .all();
+  bool row3 = (matrix_padded.row(best_index_padded_e - 2).array() >
+               matrix_padded.row(best_index_padded_e).array() - 1)
+                  .all();
+  bool row4 = (matrix_padded.row(best_index_padded_e - 3).array() >
+               matrix_padded.row(best_index_padded_e).array() - 2)
+                  .all();
 
-  //check that columns farther away have bigger cost. Leave out direct neighbor rows as the center might be split over cells
-  Eigen::MatrixXf matrix_padded2 = matrix_padded.block(3 , 0, cost_matrix.rows(), matrix_padded.cols());  //cut off padded top part
-  bool col1 = (matrix_padded2.col(best_index_padded_z + 2).array() > matrix_padded2.col(best_index_padded_z + 1).array()).all();
-  bool col2 = (matrix_padded2.col(best_index_padded_z + 3).array() > matrix_padded2.col(best_index_padded_z + 2).array()).all();
-  bool col3 = (matrix_padded2.col(best_index_padded_z - 2).array() > matrix_padded2.col(best_index_padded_z).array() - 1).all();
-  bool col4 = (matrix_padded2.col(best_index_padded_z - 3).array() > matrix_padded2.col(best_index_padded_z).array() - 2).all();
+  // check that columns farther away have bigger cost. Leave out direct neighbor
+  // rows as the center might be split over cells
+  Eigen::MatrixXf matrix_padded2 =
+      matrix_padded.block(3, 0, cost_matrix.rows(),
+                          matrix_padded.cols());  // cut off padded top part
+  bool col1 = (matrix_padded2.col(best_index_padded_z + 2).array() >
+               matrix_padded2.col(best_index_padded_z + 1).array())
+                  .all();
+  bool col2 = (matrix_padded2.col(best_index_padded_z + 3).array() >
+               matrix_padded2.col(best_index_padded_z + 2).array())
+                  .all();
+  bool col3 = (matrix_padded2.col(best_index_padded_z - 2).array() >
+               matrix_padded2.col(best_index_padded_z).array() - 1)
+                  .all();
+  bool col4 = (matrix_padded2.col(best_index_padded_z - 3).array() >
+               matrix_padded2.col(best_index_padded_z).array() - 2)
+                  .all();
 
   EXPECT_TRUE(col1);
   EXPECT_TRUE(col2);
@@ -499,55 +537,60 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
   // WHEN: we downsample the histogram to have a larger bin size
   histogram.downsample();
 
-  // THEN: The downsampled histogram should fuse four cells of the regular resolution histogram into one
-  for (int i = 0; i < GRID_LENGTH_E/2; ++i) {
-      for (int j = 0; j < GRID_LENGTH_Z/2; ++j) {
-    	  if(i == 0 && j == 0){
-    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
-    	  }else if(i == 1 && j == 1){
-    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-    	  }else{
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
-    	  }
+  // THEN: The downsampled histogram should fuse four cells of the regular
+  // resolution histogram into one
+  for (int i = 0; i < GRID_LENGTH_E / 2; ++i) {
+    for (int j = 0; j < GRID_LENGTH_Z / 2; ++j) {
+      if (i == 0 && j == 0) {
+        EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+      } else if (i == 1 && j == 1) {
+        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+      } else {
+        EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
+    }
   }
 }
 
 TEST(Histogram, HistogramUpsampleCorrectUsage) {
   // GIVEN: a histogram of the correct resolution
-  Histogram histogram = Histogram(ALPHA_RES*2);
+  Histogram histogram = Histogram(ALPHA_RES * 2);
   histogram.set_dist(0, 0, 1.3);
   histogram.set_age(1, 1, 3);
 
   // WHEN: we upsample the histogram to have regular bin size
   histogram.upsample();
 
-  // THEN: The upsampled histogram should split every cell of the lower resolution histogram into four cells
+  // THEN: The upsampled histogram should split every cell of the lower
+  // resolution histogram into four cells
   for (int i = 0; i < GRID_LENGTH_E; ++i) {
-      for (int j = 0; j < GRID_LENGTH_Z; ++j) {
-    	  if((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) || (i == 1 && j == 1)){
-    		  EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
-    	  }else if((i == 2 && j == 2) || (i == 2 && j == 3) || (i == 3 && j == 2) || (i == 3 && j == 3)){
-    		  EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-    	  }else{
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-    		  EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
-    	  }
+    for (int j = 0; j < GRID_LENGTH_Z; ++j) {
+      if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) ||
+          (i == 1 && j == 1)) {
+        EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
+      } else if ((i == 2 && j == 2) || (i == 2 && j == 3) ||
+                 (i == 3 && j == 2) || (i == 3 && j == 3)) {
+        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+      } else {
+        EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
+        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
+    }
   }
 }
 
 TEST(Histogram, HistogramUpDownpsampleInorrectUsage) {
   // GIVEN: a histogram of the correct resolution
-  Histogram low_res_histogram = Histogram(ALPHA_RES*2);
+  Histogram low_res_histogram = Histogram(ALPHA_RES * 2);
   Histogram high_res_histogram = Histogram(ALPHA_RES);
 
-  // THEN: We expect the functions to throw if the input histogram has the wrong resolution
+  // THEN: We expect the functions to throw if the input histogram has the wrong
+  // resolution
   EXPECT_THROW(low_res_histogram.downsample(), std::logic_error);
   EXPECT_THROW(high_res_histogram.upsample(), std::logic_error);
 }

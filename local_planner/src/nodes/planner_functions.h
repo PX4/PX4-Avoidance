@@ -56,10 +56,9 @@ void getBestCandidatesFromCostMatrix(
     const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
     std::vector<candidateDirection>& candidate_vector);
 float costFunction(double e_angle, double z_angle, float obstacle_distance,
-                    const Eigen::Vector3f& goal,
-                    const Eigen::Vector3f& position,
-                    const Eigen::Vector3f& last_sent_waypoint,
-                    costParameters cost_params, bool only_yawed);
+                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed);
 void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius);
 void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
                     Eigen::MatrixXf& matrix_padded);

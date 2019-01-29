@@ -49,9 +49,12 @@ class Histogram {
 
   /**
   * @brief     Compute the upsampled version of the histogram
-  * @param[in] This object. Needs to be a histogram the larger bin size (ALPHA_RES * 2)
-  * @details   The histogram is upsampled to get the same histogram at regular bin size (ALPHA_RES).
-  *            This means the histogram matrix will be double the size in each dimension
+  * @param[in] This object. Needs to be a histogram the larger bin size
+  *(ALPHA_RES * 2)
+  * @details   The histogram is upsampled to get the same histogram at regular
+  *bin size (ALPHA_RES).
+  *            This means the histogram matrix will be double the size in each
+  *dimension
   * @returns   Modifies the object it is called from to have regular resolution
   * @warning   Can only be called from a large bin size histogram
   **/
@@ -59,9 +62,12 @@ class Histogram {
 
   /**
   * @brief     Compute the downsampled version of the histogram
-  * @param[in] this object. Needs to be a histogram with regular bin size (ALPHA_RES)
-  * @details   The histogram is downsampled to get the same histogram at larger bin size (ALPHA_RES/2).
-  *            This means the histogram matrix will be half the size in each dimension
+  * @param[in] this object. Needs to be a histogram with regular bin size
+  *(ALPHA_RES)
+  * @details   The histogram is downsampled to get the same histogram at larger
+  *bin size (ALPHA_RES/2).
+  *            This means the histogram matrix will be half the size in each
+  *dimension
   * @returns   Modifies the object it is called from to have larger bins
   * @warning   Can only be called from a regular bin size histogram
   **/

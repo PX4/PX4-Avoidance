@@ -111,18 +111,28 @@ void propagateHistogram(
     PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
                                         toEigen(position.pose.position));
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
-    float point_distance = (toEigen(position.pose.position) - toEigen(reprojected_points.points[i])).norm();
+    float point_distance = (toEigen(position.pose.position) -
+                            toEigen(reprojected_points.points[i]))
+                               .norm();
 
     counter(p_ind.y(), p_ind.x()) += 1;
-    polar_histogram_est.set_age(p_ind.y(), p_ind.x(), polar_histogram_est.get_age(p_ind.y(), p_ind.x()) + reprojected_points_age[i]);
-    polar_histogram_est.set_dist(p_ind.y(), p_ind.x(), polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) + point_distance);
+    polar_histogram_est.set_age(
+        p_ind.y(), p_ind.x(),
+        polar_histogram_est.get_age(p_ind.y(), p_ind.x()) +
+            reprojected_points_age[i]);
+    polar_histogram_est.set_dist(
+        p_ind.y(), p_ind.x(),
+        polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) + point_distance);
   }
 
   for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
     for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
       if (counter(e, z) >= 6) {
-        polar_histogram_est.set_dist(e, z, polar_histogram_est.get_dist(e, z)/ counter(e, z));
-        polar_histogram_est.set_age(e, z, static_cast<int>(polar_histogram_est.get_age(e, z)/ counter(e,z)));
+        polar_histogram_est.set_dist(
+            e, z, polar_histogram_est.get_dist(e, z) / counter(e, z));
+        polar_histogram_est.set_age(
+            e, z, static_cast<int>(polar_histogram_est.get_age(e, z) /
+                                   counter(e, z)));
       } else {  // not enough points to confidently block cell
         polar_histogram_est.set_dist(e, z, 0.f);
         polar_histogram_est.set_age(e, z, 0);
@@ -147,8 +157,9 @@ void generateNewHistogram(Histogram& polar_histogram,
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
     counter(p_ind.y(), p_ind.x()) += 1;
-    polar_histogram.set_dist(p_ind.y(), p_ind.x(),
-                             polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
+    polar_histogram.set_dist(
+        p_ind.y(), p_ind.x(),
+        polar_histogram.get_dist(p_ind.y(), p_ind.x()) + dist);
   }
 
   // Normalize and get mean in distance bins
@@ -231,7 +242,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
-      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
+      PolarPoint p_pol =
+          histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
       cost_matrix(e_index, z_index) =
           costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position,
                        last_sent_waypoint, cost_params, only_yawed);
@@ -255,7 +267,8 @@ void getBestCandidatesFromCostMatrix(
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
-      PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
+      PolarPoint p_pol =
+          histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
       float cost = matrix(row_index, col_index);
       candidateDirection candidate(cost, p_pol.e, p_pol.z);
 
@@ -352,12 +365,12 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 
 // costfunction for every free histogram cell
 float costFunction(double e_angle, double z_angle, float obstacle_distance,
-                    const Eigen::Vector3f& goal,
-                    const Eigen::Vector3f& position,
-                    const Eigen::Vector3f& last_sent_waypoint,
-                    costParameters cost_params, bool only_yawed) {
+                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed) {
   PolarPoint p_pol(e_angle, z_angle, 1.0);
-  Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, toPoint(position));
+  Eigen::Vector3f projected_candidate =
+      polarToCartesian(p_pol, toPoint(position));
   Eigen::Vector3f projected_goal = goal;
   Eigen::Vector3f projected_last_wp = last_sent_waypoint;
 
@@ -449,8 +462,8 @@ bool getDirectionFromTree(
       tree_available = false;
     } else if (wp_idx == 0) {
       if (size == 2) {
-    	p_pol = cartesianToPolar(toEigen(path_node_positions[0]), position);
-    	p_pol.r = 0.0;
+        p_pol = cartesianToPolar(toEigen(path_node_positions[0]), position);
+        p_pol.r = 0.0;
       } else {
         tree_available = false;
       }
