@@ -191,7 +191,7 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
           hist_empty = false;
         }
         if (propagated_hist.get_dist(e, z) > 0 &&
-            new_hist.get_dist(e, z) < 0.001) {
+            new_hist.get_dist(e, z) < FLT_MIN) {
           new_hist.set_dist(e, z, propagated_hist.get_dist(e, z));
         }
       }
@@ -286,8 +286,8 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
        row_index < matrix_padded.rows() - smoothing_radius; row_index++) {
     for (int col_index = smoothing_radius;
          col_index < matrix_padded.cols() - smoothing_radius; col_index++) {
-      double original_val = matrix_padded(row_index, col_index);
-      double mean_val =
+      float original_val = matrix_padded(row_index, col_index);
+      float mean_val =
           matrix_padded
               .block(row_index - smoothing_radius, col_index - smoothing_radius,
                      2 * smoothing_radius + 1, 2 * smoothing_radius + 1)

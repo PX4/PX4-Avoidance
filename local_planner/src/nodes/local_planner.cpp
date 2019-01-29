@@ -248,7 +248,7 @@ void LocalPlanner::determineStrategy() {
              e < goal_index.y() + relevance_margin_e_cells; e++) {
           for (int z = goal_index.x() - relevance_margin_z_cells;
                z < goal_index.x() + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_dist(e, z) > 0.001) {
+            if (polar_histogram_.get_dist(e, z) > FLT_MIN) {
             	n_occupied_cells++;
             }
           }
@@ -379,7 +379,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_dist(e, z) > 0.001f) {
+      if (histogram.get_dist(e, z) > FLT_MIN) {
         n_points++;
         for (auto &i : p_pol) {
           i.r = histogram.get_dist(e, z);

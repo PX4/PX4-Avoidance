@@ -42,7 +42,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
+      EXPECT_LE(histogram_output.get_dist(e, z), FLT_MIN);
     }
   }
 }
@@ -97,7 +97,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
       if (e_found && z_found) {
         EXPECT_GE(histogram_output.get_dist(e, z), 0.0);
       } else {
-        EXPECT_LE(histogram_output.get_dist(e, z), 0.001);
+        EXPECT_LE(histogram_output.get_dist(e, z), FLT_MIN);
       }
     }
   }
