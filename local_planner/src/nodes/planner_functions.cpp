@@ -143,7 +143,7 @@ void generateNewHistogram(Histogram& polar_histogram,
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
     float dist = (p - position).norm();
-    PolarPoint p_pol = cartesianToPolar(p, toEigen(position.pose.position));
+    PolarPoint p_pol = cartesianToPolar(p, position);
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
     counter(p_ind.y(), p_ind.x()) += 1;
@@ -230,11 +230,10 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
-      float e_angle = elevationIndexToAngle(e_index, ALPHA_RES);
-      float z_angle = azimuthIndexToAngle(z_index, ALPHA_RES);
       float obstacle_distance = histogram.get_dist(e_index, z_index);
+      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
       cost_matrix(e_index, z_index) =
-          costFunction(e_angle, z_angle, obstacle_distance, goal, position,
+          costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position,
                        last_sent_waypoint, cost_params, only_yawed);
     }
   }
@@ -256,10 +255,9 @@ void getBestCandidatesFromCostMatrix(
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
-      double elevation_angle = elevationIndexToAngle(row_index, ALPHA_RES);
-      double azimuth_angle = azimuthIndexToAngle(col_index, ALPHA_RES);
+      PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
       double cost = matrix(row_index, col_index);
-      candidateDirection candidate(cost, elevation_angle, azimuth_angle);
+      candidateDirection candidate(cost, p_pol.e, p_pol.z);
 
       if (queue.size() < number_of_candidates) {
         queue.push(candidate);
@@ -358,8 +356,8 @@ double costFunction(double e_angle, double z_angle, float obstacle_distance,
                     const Eigen::Vector3f& position,
                     const Eigen::Vector3f& last_sent_waypoint,
                     costParameters cost_params, bool only_yawed) {
-  Eigen::Vector3f projected_candidate =
-      fromPolarToCartesian(e_angle, z_angle, 1.0, toPoint(position));
+  PolarPoint p_pol(e_angle, z_angle, 1.0);
+  Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, toPoint(position));
   Eigen::Vector3f projected_goal = goal;
   Eigen::Vector3f projected_last_wp = last_sent_waypoint;
 
@@ -451,11 +449,8 @@ bool getDirectionFromTree(
       tree_available = false;
     } else if (wp_idx == 0) {
       if (size == 2) {
-        int wp_e = floor(elevationAnglefromCartesian(
-            toEigen(path_node_positions[0]), position));
-        int wp_z = floor(azimuthAnglefromCartesian(
-            toEigen(path_node_positions[0]), position));
-        p = Eigen::Vector3f(wp_e, wp_z, 0.f);
+    	p_pol = cartesianToPolar(toEigen(path_node_positions[0]), position);
+    	p_pol.r = 0.0;
       } else {
         tree_available = false;
       }
