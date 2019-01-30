@@ -72,33 +72,96 @@ class WaypointGenerator {
   ros::Time velocity_time_;
   std::vector<int> z_FOV_idx_;
 
+  /**
+  * @brief     computes position and velocity waypoints based on the input
+  *            waypoint_choice
+  **/
   void calculateWaypoint();
+  /**
+  * @brief     computes waypoints when there isn't any obstacle
+  **/
   void goFast();
+  /**
+  * @brief     computes waypoints to move away from an obstacle
+  **/
   void backOff();
+  /**
+  * @brief     transform a position waypoint into a velocity waypoint
+  **/
   void transformPositionToVelocityWaypoint();
+  /**
+  * @brief     checks if the goal has been reached
+  * @returns   true, if the goal has been reached
+  **/
   bool withinGoalRadius();
+  /**
+  * @brief     checks if the goal altitude has been reached. If not, it computes
+  *            waypoints to climb to the goal altitude
+  **/
   void reachGoalAltitudeFirst();
+  /**
+  * @brief     smooths waypoints with a critically damped PD controller
+  * @param[in] dt, time elapsed between two cycles
+  **/
   void smoothWaypoint(double dt);
+  /**
+  * @brief     change speed depending on the presence of obstacles, proximity to
+  *            the goal, and waypoint lying with the FOV
+  **/
   void adaptSpeed();
+  /**
+  * @brief     adjust waypoints based on new velocity calculation, proximity to
+  *            goal, smoothing, climing to goal height. Compute waypoint
+  *            orientation
+  **/
   void getPathMsg();
 
  public:
   waypointGenerator_params param_;
+  /**
+  * @brief     getter method for position and velocity waypoints to be sent to
+  *            the FCU
+  * @returns   struct with position and velocity waypoints and intermediate
+  *            results
+  **/
   waypointResult getWaypoints();
+  /**
+  * @brief     update WaypointGenerator with the latest results of the planning
+  *            algorithm
+  * @param[in] input, local_planner algorithm result
+  **/
   void setPlannerInfo(const avoidanceOutput& input);
+  /**
+  * @brief set horizontal and vertical Field of View based on camera matrix
+  * @param[in] h_FOV, horizontal Field of View [deg]
+  * @param[in] v_FOV, vertical Field of View [deg]
+  **/
   void setFOV(double h_FOV, double v_FOV);
+  /**
+  * @brief update with FCU vehice states
+  * @param[in] act_pose, current vehicle position and orientation
+  * @param[in] goal, current goal
+  * @param[in] vel, current vehicle velocity
+  * @param[in] stay, true if the vehicle is loitering
+  * @param[in] t, update system time
+  **/
   void updateState(const geometry_msgs::PoseStamped& act_pose,
                    const geometry_msgs::PoseStamped& goal,
                    const geometry_msgs::TwistStamped& vel, bool stay,
                    ros::Time t);
 
   /**
-   * Set the responsiveness of the smoothing. Set to 0 to disable.
-   */
+  * @brief set the responsiveness of the smoothing
+  * @param[in] smoothing_speed, set to 0 to disable
+  **/
   void setSmoothingSpeed(double smoothing_speed) {
     smoothing_speed_ = smoothing_speed;
   }
 
+  /**
+  * @brief     getter method for the system time
+  * @returns   current ROS time
+  **/
   virtual ros::Time getSystemTime();
 
   WaypointGenerator() = default;
