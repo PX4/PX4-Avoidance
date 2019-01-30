@@ -219,11 +219,19 @@ TEST_F(WaypointGeneratorTests, goBackTest) {
 
 TEST_F(WaypointGeneratorTests, hoverTest) {
   // GIVEN: a waypoint of type hover
+
+  // first run one the waypoint generator such that smoothed_goto_location_ gets
+  // initialize
+  avoidance_output.reach_altitude = false;
+  setPlannerInfo(avoidance_output);
+  waypointResult result = getWaypoints();
+
+  avoidance_output.reach_altitude = true;
   avoidance_output.waypoint_type = hover;
   setPlannerInfo(avoidance_output);
 
   // WHEN: we generate waypoints
-  waypointResult result = getWaypoints();
+  result = getWaypoints();
 
   // THEN: we expect the position waypoint to be the same as the current vehicle
   // position
@@ -231,18 +239,18 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   EXPECT_FLOAT_EQ(position.pose.position.y, result.goto_position.y);
   EXPECT_FLOAT_EQ(position.pose.position.z, result.goto_position.z);
 
-  EXPECT_FLOAT_EQ(1.9368949f, result.position_waypoint.pose.position.x);
-  EXPECT_FLOAT_EQ(2.3242741f, result.position_waypoint.pose.position.y);
-  EXPECT_FLOAT_EQ(2.45f, result.position_waypoint.pose.position.z);
+  EXPECT_FLOAT_EQ(0.00025298225f, result.position_waypoint.pose.position.x);
+  EXPECT_FLOAT_EQ(0.00030357868f, result.position_waypoint.pose.position.y);
+  EXPECT_FLOAT_EQ(2.99984f, result.position_waypoint.pose.position.z);
 
   EXPECT_FLOAT_EQ(0.0f, result.position_waypoint.pose.orientation.x);
   EXPECT_FLOAT_EQ(0.0f, result.position_waypoint.pose.orientation.y);
   EXPECT_FLOAT_EQ(0.42415538f, result.position_waypoint.pose.orientation.z);
   EXPECT_FLOAT_EQ(0.9055894f, result.position_waypoint.pose.orientation.w);
 
-  EXPECT_FLOAT_EQ(1.9368949f, result.velocity_waypoint.linear.x);
-  EXPECT_FLOAT_EQ(2.3242741f, result.velocity_waypoint.linear.y);
-  EXPECT_FLOAT_EQ(0.45000005f, result.velocity_waypoint.linear.z);
+  EXPECT_FLOAT_EQ(0.00025298225f, result.velocity_waypoint.linear.x);
+  EXPECT_FLOAT_EQ(0.00030357868f, result.velocity_waypoint.linear.y);
+  EXPECT_FLOAT_EQ(0.99984002f, result.velocity_waypoint.linear.z);
 
   EXPECT_FLOAT_EQ(0.0f, result.velocity_waypoint.angular.x);
   EXPECT_FLOAT_EQ(0.0f, result.velocity_waypoint.angular.y);
