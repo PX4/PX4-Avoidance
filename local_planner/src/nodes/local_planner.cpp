@@ -19,7 +19,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.pose.position = msg.pose.position;
   pose_.pose.orientation = msg.pose.orientation;
   curr_yaw_ = tf::getYaw(msg.pose.orientation);
-  star_planner_->setPose(pose_);
+  star_planner_->setPose(pose_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_.header = msg.header;
@@ -268,9 +268,7 @@ void LocalPlanner::determineStrategy() {
         obstacle_ = true;
 
         if (use_VFH_star_) {
-          star_planner_->setParams(min_cloud_size_, min_dist_backoff_,
-                                   curr_yaw_, min_realsense_dist_,
-                                   cost_params_);
+          star_planner_->setParams(cost_params_);
           star_planner_->setFOV(h_FOV_, v_FOV_);
           star_planner_->setReprojectedPoints(reprojected_points_,
                                               reprojected_points_age_);
