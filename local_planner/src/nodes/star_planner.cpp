@@ -10,25 +10,16 @@ namespace avoidance {
 
 StarPlanner::StarPlanner() : tree_age_(0) {}
 
-StarPlanner::~StarPlanner() {}
-
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  min_node_dist_to_obstacle_ = config.min_node_dist_to_obstacle_;
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
-                            double curr_yaw, double min_realsense_dist,
-                            costParameters cost_params) {
-  curr_yaw_ = curr_yaw;
-  min_cloud_size_ = min_cloud_size;
-  min_dist_backoff_ = min_dist_backoff;
-  min_realsense_dist_ = min_realsense_dist;
+void StarPlanner::setParams(costParameters cost_params) {
   cost_params_ = cost_params;
 }
 
@@ -37,8 +28,9 @@ void StarPlanner::setFOV(double h_FOV, double v_FOV) {
   v_FOV_ = v_FOV;
 }
 
-void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) {
+void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose, double curr_yaw) {
   pose_ = pose;
+  curr_yaw_ = curr_yaw;
 }
 
 void StarPlanner::setCloud(

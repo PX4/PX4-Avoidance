@@ -28,13 +28,9 @@ class StarPlanner {
   double v_FOV_ = 46.0;
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
-  double min_node_dist_to_obstacle_ = 2.0;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
   double curr_yaw_;
-  double min_cloud_size_;
-  double min_dist_backoff_;
-  double min_realsense_dist_;
 
   std::vector<double> reprojected_points_age_;
   std::vector<double> reprojected_points_dist_;
@@ -47,29 +43,34 @@ class StarPlanner {
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
 
+  /**
+  * @brief     computes the cost of a node
+  * @param[in] node_number, sequential number of entry in the tree
+  * @returns
+  **/
+  double treeCostFunction(int node_number);
 
+  /**
+  * @brief     computes the heuristic for a node
+  * @param[in] node_number, sequential number of entry in the tree
+  * @returns
+  **/
+  double treeHeuristicFunction(int node_number);
 
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
-  geometry_msgs::Point obstacle_position_;
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;
 
   StarPlanner();
-  ~StarPlanner();
+  ~StarPlanner() = default;
 
   /**
   * @brief     setter method for costMatrix paramters
-  * @param[in] min_cloud_size,
-  * @param[in] min_dist_backoff,
-  * @param[in] curr_yaw,
-  * @param[in] min_realsense_dist,
   * @param[in] cost_params, parameters for the histogram cost function
   **/
-  void setParams(double min_cloud_size, double min_dist_backoff,
-                 double curr_yaw, double min_realsense_dist,
-                 costParameters cost_params);
+  void setParams(costParameters cost_params);
 
   /**
   * @brief     setter method for Fielf of View
@@ -95,8 +96,9 @@ class StarPlanner {
   /**
   * @brief     setter method for vehicle position
   * @param[in] pose, vehicle current position and orientation
+  * @param[in] curr_yaw, vehicle current yaw
   **/
-  void setPose(const geometry_msgs::PoseStamped& pose);
+  void setPose(const geometry_msgs::PoseStamped& pose, double curr_yaw);
 
   /**
   * @brief     setter method for current goal
@@ -109,19 +111,6 @@ class StarPlanner {
   * @param[in] cropped_cloud, current point cloud cropped around the vehicle
   **/
   void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
-
-  /**
-  * @brief     computes the cost of a node
-  * @param[in] node_number, sequential number of entry in the tree
-  * @returns
-  **/
-  double treeCostFunction(int node_number);
-  /**
-  * @brief     computes the heuristic for a node
-  * @param[in] node_number, sequential number of entry in the tree
-  * @returns
-  **/
-  double treeHeuristicFunction(int node_number);
 
   /**
   * @brief     build tree of candidates directions towards the goal
