@@ -45,6 +45,8 @@ class StarPlanner {
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
 
+
+
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
   geometry_msgs::Point obstacle_position_;
@@ -55,19 +57,75 @@ class StarPlanner {
   StarPlanner();
   ~StarPlanner();
 
+  /**
+  * @brief     setter method for costMatrix paramters
+  * @param[in] min_cloud_size,
+  * @param[in] min_dist_backoff,
+  * @param[in] curr_yaw,
+  * @param[in] min_realsense_dist,
+  * @param[in] cost_params, parameters for the histogram cost function
+  **/
   void setParams(double min_cloud_size, double min_dist_backoff,
                  double curr_yaw, double min_realsense_dist,
                  costParameters cost_params);
+
+  /**
+  * @brief     setter method for Fielf of View
+  * @param[in] h_FOV, horizontal Field of View [deg]
+  * @param[in] v_FOV, vertical Field of View [deg]
+  **/
   void setFOV(double h_FOV, double v_FOV);
+
+  /**
+  * @brief     setter method for reprojected pointcloud
+  * @param[in] reprojected_points, pointcloud from previous frames reprojected
+  *            around the vehicle current position
+  * @param[in] reprojected_points_age, array containing the age of each
+  *            reprojected point
+  **/
   void setReprojectedPoints(
       const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
       const std::vector<int>& reprojected_points_age);
+
+  /**
+  * @brief     setter method for vehicle position
+  * @param[in] pose, vehicle current position and orientation
+  **/
   void setPose(const geometry_msgs::PoseStamped& pose);
+
+  /**
+  * @brief     setter method for current goal
+  * @param[in] goal, current goal position
+  **/
   void setGoal(const geometry_msgs::Point& pose);
+
+  /**
+  * @brief     setter method for pointcloud
+  * @param[in] cropped_cloud, current point cloud cropped around the vehicle
+  **/
   void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
+
+  /**
+  * @brief     computes the cost of a node
+  * @param[in] node_number, sequential number of entry in the tree
+  * @returns
+  **/
   double treeCostFunction(int node_number);
+  /**
+  * @brief     computes the heuristic for a node
+  * @param[in] node_number, sequential number of entry in the tree
+  * @returns
+  **/
   double treeHeuristicFunction(int node_number);
+
+  /**
+  * @brief     build tree of candidates directions towards the goal
+  **/
   void buildLookAheadTree();
+
+  /**
+  * @brief     setter method for server paramters
+  **/
   void dynamicReconfigureSetStarParams(
       const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 };
