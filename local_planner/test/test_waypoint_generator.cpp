@@ -99,12 +99,12 @@ class WaypointGeneratorTests : public ::testing::Test,
     setPlannerInfo(avoidance_output);
     setFOV(270.0, 45.0);
 
-    param_.goal_acceptance_radius_in = 0.5;
-    param_.goal_acceptance_radius_out = 1.5;
-    param_.factor_close_to_goal_start_speed_limitation = 3.0;
-    param_.factor_close_to_goal_stop_speed_limitation = 4.0;
-    param_.max_speed_close_to_goal_factor = 0.1;
-    param_.min_speed_close_to_goal = 0.5;
+    param_.goal_acceptance_radius_in = 0.5f;
+    param_.goal_acceptance_radius_out = 1.5f;
+    param_.factor_close_to_goal_start_speed_limitation = 3.0f;
+    param_.factor_close_to_goal_stop_speed_limitation = 4.0f;
+    param_.max_speed_close_to_goal_factor = 0.1f;
+    param_.min_speed_close_to_goal = 0.5f;
   }
   void TearDown() override {}
 };

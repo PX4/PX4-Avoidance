@@ -7,12 +7,7 @@
 
 namespace avoidance {
 
-ros::Time WaypointGenerator::getSystemTime() {
-  return ros::Time::now();
-}
-WaypointGenerator::WaypointGenerator() {}
-
-WaypointGenerator::~WaypointGenerator() {}
+ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG(
@@ -313,9 +308,11 @@ void WaypointGenerator::adaptSpeed() {
     limit_speed_close_to_goal_ = false;
   }
   if (limit_speed_close_to_goal_) {
-    speed_ = std::min(
-        speed_, param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
-    speed_ = std::max(speed_, param_.min_speed_close_to_goal);
+    speed_ =
+        std::min(static_cast<float>(speed_),
+                 param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
+    speed_ =
+        std::max(static_cast<float>(speed_), param_.min_speed_close_to_goal);
   }
 
   // set waypoint to correct speed

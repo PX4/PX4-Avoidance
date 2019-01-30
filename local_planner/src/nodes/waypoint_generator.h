@@ -26,12 +26,12 @@ struct waypointResult {
 };
 
 struct waypointGenerator_params {
-  double goal_acceptance_radius_in;
-  double goal_acceptance_radius_out;
-  double factor_close_to_goal_start_speed_limitation;
-  double factor_close_to_goal_stop_speed_limitation;
-  double min_speed_close_to_goal;
-  double max_speed_close_to_goal_factor;
+  float goal_acceptance_radius_in;
+  float goal_acceptance_radius_out;
+  float factor_close_to_goal_start_speed_limitation;
+  float factor_close_to_goal_stop_speed_limitation;
+  float min_speed_close_to_goal;
+  float max_speed_close_to_goal_factor;
 };
 
 class WaypointGenerator {
@@ -73,7 +73,6 @@ class WaypointGenerator {
   std::vector<int> z_FOV_idx_;
 
   void calculateWaypoint();
-  void updateState();
   void goFast();
   void backOff();
   void transformPositionToVelocityWaypoint();
@@ -102,8 +101,8 @@ class WaypointGenerator {
 
   virtual ros::Time getSystemTime();
 
-  WaypointGenerator();
-  ~WaypointGenerator();
+  WaypointGenerator() = default;
+  ~WaypointGenerator() = default;
 };
 }
 #endif  // WAYPOINT_GENERATOR_H

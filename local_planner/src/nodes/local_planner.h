@@ -81,8 +81,8 @@ class LocalPlanner {
   double relevance_margin_e_degree_ = 25;
   double velocity_sigmoid_slope_ = 1;
   double min_realsense_dist_ = 0.2;
-  double costmap_direction_e_;
-  double costmap_direction_z_;
+  float costmap_direction_e_;
+  float costmap_direction_z_;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
