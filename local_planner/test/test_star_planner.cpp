@@ -45,14 +45,13 @@ class StarPlannerTests : public ::testing::Test {
     }
     costParameters cost_params;
     const pcl::PointCloud<pcl::PointXYZ> reprojected_points;
-    const std::vector<double> reprojected_points_age;
-    const std::vector<double> reprojected_points_dist;
+    const std::vector<int> reprojected_points_age;
 
-    star_planner.setParams(100.0, 1.0, 0.0, 0.2, cost_params);
+    star_planner.setParams(cost_params);
     star_planner.setFOV(270.0, 45.0);
     star_planner.setReprojectedPoints(
-        reprojected_points, reprojected_points_age, reprojected_points_dist);
-    star_planner.setPose(position);
+        reprojected_points, reprojected_points_age);
+    star_planner.setPose(position, 0.0);
     star_planner.setGoal(goal);
     star_planner.setCloud(cloud);
   }
@@ -63,17 +62,17 @@ TEST_F(StarPlannerTests, buildTree) {
   star_planner.buildLookAheadTree();
   std::vector<TreeNode> tree_truth;
   TreeNode n0(0, 0, Eigen::Vector3f(1.2, 0.4, 4));
-  TreeNode n1(0, 1, Eigen::Vector3f(2.18633, 0.55622, 4.05234));
-  TreeNode n2(1, 2, Eigen::Vector3f(3.17267, 0.71244, 4.10467));
-  TreeNode n3(2, 3, Eigen::Vector3f(4.159, 0.86866, 4.15701));
+  TreeNode n1(0, 1, Eigen::Vector3f(2.18633, 0.55622, 3.94766));
+  TreeNode n2(1, 2, Eigen::Vector3f(3.17267, 0.71244, 3.89532));
+  TreeNode n3(2, 3, Eigen::Vector3f(4.159, 0.86866, 3.842992));
 
-  TreeNode n4(3, 4, Eigen::Vector3f(5.14534, 1.02488, 4.20934));
-  TreeNode n5(4, 5, Eigen::Vector3f(6.13167, 1.1811, 4.26168));
-  TreeNode n6(5, 6, Eigen::Vector3f(7.11801, 1.33732, 4.31401));
-  TreeNode n7(6, 7, Eigen::Vector3f(8.10434, 1.49354, 4.36635));
-  TreeNode n8(7, 8, Eigen::Vector3f(9.09068, 1.64976, 4.41869));
-  TreeNode n9(8, 9, Eigen::Vector3f(10.07701, 1.80598, 4.47102));
-  TreeNode n10(9, 10, Eigen::Vector3f(11.063347, 1.9622, 4.52336));
+  TreeNode n4(3, 4, Eigen::Vector3f(5.14534, 1.02488, 3.79065));
+  TreeNode n5(4, 5, Eigen::Vector3f(6.13167, 1.1811, 3.73832));
+  TreeNode n6(5, 6, Eigen::Vector3f(7.11801, 1.33732, 3.68598));
+  TreeNode n7(6, 7, Eigen::Vector3f(8.10434, 1.49354, 3.63364));
+  TreeNode n8(7, 8, Eigen::Vector3f(9.09068, 1.64976, 3.58131));
+  TreeNode n9(8, 9, Eigen::Vector3f(10.07701, 1.80598, 3.52897));
+  TreeNode n10(9, 10, Eigen::Vector3f(11.063347, 1.9622, 3.47664));
 
   tree_truth = {n0, n1, n2, n3, n4, n5, n6, n7, n8, n9, n10};
 
@@ -81,9 +80,9 @@ TEST_F(StarPlannerTests, buildTree) {
        i < star_planner.tree_.size(), j < tree_truth.size(); i++, j++) {
     Eigen::Vector3f n = star_planner.tree_[i].getPosition();
     Eigen::Vector3f t = tree_truth[j].getPosition();
-    ASSERT_NEAR(t.x(), n.x(), .00001);
-    ASSERT_NEAR(t.y(), n.y(), .00001);
-    ASSERT_NEAR(t.z(), n.z(), .00001);
+    ASSERT_NEAR(t.x(), n.x(), .00001) << "Node number: " << i;
+    ASSERT_NEAR(t.y(), n.y(), .00001) << "Node number: " << i;
+    ASSERT_NEAR(t.z(), n.z(), .00001) << "Node number: " << i;
     bool node_inside_obstacle =
         n.x() > obstacle_min_x && n.x() < obstacle_max_x &&
         n.y() > obstacle_y - 0.1f && n.y() < obstacle_y + 0.1 &&
