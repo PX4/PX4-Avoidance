@@ -10,6 +10,7 @@
 #include <mavros_msgs/Altitude.h>
 #include <mavros_msgs/CompanionProcessStatus.h>
 #include <mavros_msgs/Param.h>
+#include <mavros_msgs/ParamGet.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
@@ -53,7 +54,9 @@ struct cameraData {
   bool received_;
 };
 
-struct ModelParameters {
+struct Px4Parameters {
+  int ekf2_aid_mask =
+      NAN;  // Integer bitmask controlling data fusion and aiding methods
   float ekf2_rng_a_hmax = NAN;  // Maximum absolute altitude (height above
                                 // ground level) allowed for range aid mode
   float ekf2_rng_a_vmax =
@@ -77,25 +80,38 @@ struct ModelParameters {
                                 // check)
   float mpc_hold_max_z =
       NAN;  // Maximum vertical velocity for which position hold is enabled
-  float mpc_jerk_max = NAN;  // Maximum jerk limit - Note: this is only used
-                             // when MPC_POS_MODE is set to a smoothing mode.
-  float mpc_jerk_min = NAN;  // Velocity-based jerk limit - Note: this is only
-                             // used when MPC_POS_MODE is set to a smoothing
-                             // mode.
-  float mpc_land_speed = NAN; //Landing descend rate
+  float mpc_jerk_max = NAN;    // Maximum jerk limit - Note: this is only used
+                               // when MPC_POS_MODE is set to a smoothing mode.
+  float mpc_jerk_min = NAN;    // Velocity-based jerk limit - Note: this is only
+                               // used when MPC_POS_MODE is set to a smoothing
+                               // mode.
+  float mpc_land_speed = NAN;  // Landing descend rate
   int mpc_pos_mode =
       NAN;  // Manual-Position control sub-mode - 3 smooth position velocity
   float mpc_thr_max = NAN;      // Maximum thrust in auto thrust control
   float mpc_thr_min = NAN;      // Minimum thrust in auto thrust control
   float mpc_tiltmax_air = NAN;  // Maximum tilt angle in air
   float mpc_tko_speed = NAN;    // Takeoff climb rate
-  float mpc_xy_cruise = NAN;    // Maximum horizontal velocity in mission
+  float mpc_xy_cruise = NAN;    // Desired horizontal velocity in mission
   float mpc_xy_vel_max = NAN;   // Maximum horizontal velocity -Maximum
                                 // horizontal velocity in AUTO mode. If higher
   // speeds are commanded in a mission they will be
   // capped to this velocity.
   float mpc_z_vel_max_dn = NAN;  // Maximum vertical descent velocity
   float mpc_z_vel_max_up = NAN;  // Maximum vertical ascent velocity
+};
+
+struct ModelParameters {
+  float jerk_min = NAN;
+  float up_acc = NAN;
+  float up_vel = NAN;
+  float down_acc = NAN;
+  float down_vel = NAN;
+  float xy_acc = NAN;
+  float xy_vel = NAN;
+  float takeoff_speed = NAN;
+  float land_speed = NAN;
+  int smoothing = false;
 };
 
 enum class MAV_STATE {
@@ -129,6 +145,7 @@ class LocalPlannerNode {
 
   std::vector<cameraData> cameras_;
 
+  Px4Parameters px4_params_;
   ModelParameters model_params_;
 
   ros::CallbackQueue pointcloud_queue_;
@@ -160,6 +177,7 @@ class LocalPlannerNode {
   ros::Publisher mavros_obstacle_distance_pub_;
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
+  ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
   tf::TransformListener tf_listener_;
 
@@ -182,6 +200,8 @@ class LocalPlannerNode {
                                      geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
   void publishWaypoints(bool hover);
+
+  void getPx4Params();
 
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 

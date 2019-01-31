@@ -20,6 +20,9 @@ int main(int argc, char** argv) {
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
+  // first query call for parameter
+  Node.getPx4Params();
+
   // spin node, execute callbacks
   while (ros::ok()) {
     hover = false;
