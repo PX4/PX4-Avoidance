@@ -10,19 +10,19 @@ class TreeNode {
   Eigen::Vector3f position_;
 
  public:
-  double total_cost_;
-  double heuristic_;
+  float total_cost_;
+  float heuristic_;
   float last_e_;
   float last_z_;
   int origin_;
   int depth_;
-  double yaw_;
+  float yaw_;
 
   TreeNode();
   TreeNode(int from, int d, const Eigen::Vector3f& pos);
   ~TreeNode();
 
-  void setCosts(double h, double c);
+  void setCosts(float h, float c);
   Eigen::Vector3f getPosition();
 };
 }

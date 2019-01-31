@@ -28,9 +28,9 @@ class StarPlanner {
   double v_FOV_ = 46.0;
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
-  double tree_node_distance_ = 1.0;
-  double tree_discount_factor_ = 0.8;
-  double curr_yaw_;
+  float tree_node_distance_ = 1.0f;
+  float tree_discount_factor_ = 0.8f;
+  float curr_yaw_;
 
   std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;
@@ -47,14 +47,14 @@ class StarPlanner {
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  double treeCostFunction(int node_number);
+  float treeCostFunction(int node_number);
 
   /**
   * @brief     computes the heuristic for a node
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  double treeHeuristicFunction(int node_number);
+  float treeHeuristicFunction(int node_number);
 
  public:
   std::vector<geometry_msgs::Point> path_node_positions_;
@@ -94,7 +94,7 @@ class StarPlanner {
   * @param[in] pose, vehicle current position and orientation
   * @param[in] curr_yaw, vehicle current yaw
   **/
-  void setPose(const geometry_msgs::PoseStamped& pose, double curr_yaw);
+  void setPose(const geometry_msgs::PoseStamped& pose, float curr_yaw);
 
   /**
   * @brief     setter method for current goal

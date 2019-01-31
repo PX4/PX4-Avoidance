@@ -24,7 +24,7 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
 
   return p;
 }
-double indexAngleDifference(float a, float b) {
+float indexAngleDifference(float a, float b) {
   return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
                   std::abs(a - b + 360.f));
 }

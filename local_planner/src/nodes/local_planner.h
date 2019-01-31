@@ -63,13 +63,13 @@ class LocalPlanner {
   int counter_close_points_backoff_ = 0;
 
   double velocity_mod_;
-  double curr_yaw_, last_yaw_;
+  float curr_yaw_;
   double min_speed_;
   double max_speed_;
   double keep_distance_;
   ros::Time integral_time_old_;
   double no_progress_slope_;
-  double tree_node_distance_;
+  float tree_node_distance_;
   double new_yaw_;
   double distance_to_closest_point_;
   double safety_radius_ = 25.0;
