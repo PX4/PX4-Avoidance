@@ -24,8 +24,8 @@ namespace avoidance {
 class TreeNode;
 
 class StarPlanner {
-  double h_FOV_ = 59.0;
-  double v_FOV_ = 46.0;
+  float h_FOV_ = 59.0f;
+  float v_FOV_ = 46.0f;
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
@@ -76,7 +76,7 @@ class StarPlanner {
   * @param[in] h_FOV, horizontal Field of View [deg]
   * @param[in] v_FOV, vertical Field of View [deg]
   **/
-  void setFOV(double h_FOV, double v_FOV);
+  void setFOV(float h_FOV, float v_FOV);
 
   /**
   * @brief     setter method for reprojected pointcloud

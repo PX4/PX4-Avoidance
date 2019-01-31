@@ -62,8 +62,8 @@ class WaypointGenerator {
   double new_yaw_;
   double speed_ = 1.0;
   int e_FOV_max_, e_FOV_min_;
-  double h_FOV_ = 59.0;
-  double v_FOV_ = 46.0;
+  float h_FOV_ = 59.0f;
+  float v_FOV_ = 46.0f;
 
   Eigen::Vector3f hover_position_;
   geometry_msgs::PoseStamped last_position_waypoint_;
@@ -136,7 +136,7 @@ class WaypointGenerator {
   * @param[in] h_FOV, horizontal Field of View [deg]
   * @param[in] v_FOV, vertical Field of View [deg]
   **/
-  void setFOV(double h_FOV, double v_FOV);
+  void setFOV(float h_FOV, float v_FOV);
   /**
   * @brief update with FCU vehice states
   * @param[in] act_pose, current vehicle position and orientation

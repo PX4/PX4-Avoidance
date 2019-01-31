@@ -13,8 +13,6 @@ namespace avoidance {
 const int ALPHA_RES = 6;
 const int GRID_LENGTH_Z = 360 / ALPHA_RES;
 const int GRID_LENGTH_E = 180 / ALPHA_RES;
-const double H_FOV = 59.0;
-const double V_FOV = 46.0;
 
 class Histogram {
   int resolution_;

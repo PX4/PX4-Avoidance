@@ -23,7 +23,7 @@ void StarPlanner::setParams(costParameters cost_params) {
   cost_params_ = cost_params;
 }
 
-void StarPlanner::setFOV(double h_FOV, double v_FOV) {
+void StarPlanner::setFOV(float h_FOV, float v_FOV) {
   h_FOV_ = h_FOV;
   v_FOV_ = v_FOV;
 }
@@ -126,7 +126,7 @@ void StarPlanner::buildLookAheadTree() {
     std::vector<int> z_FOV_idx;
     int e_FOV_min, e_FOV_max;
     calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
-                 tree_[origin].yaw_, 0.0);  //assume pitch is zero at every node
+                 tree_[origin].yaw_, 0.0f);  //assume pitch is zero at every node
 
     Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
     Histogram histogram = Histogram(ALPHA_RES);
