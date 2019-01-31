@@ -111,7 +111,8 @@ void LocalPlanner::runPlanner() {
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, static_cast<float>(yaw), static_cast<float>(pitch));
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
+               static_cast<float>(yaw), static_cast<float>(pitch));
 
   histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
 

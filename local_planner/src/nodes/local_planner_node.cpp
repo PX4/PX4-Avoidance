@@ -717,10 +717,12 @@ void LocalPlannerNode::cameraInfoCallback(
   // v_fov = 2 * atan (image_height / (2 * focal_length_y))
   // Assumption: if there are n cameras the total horizonal field of view is n
   // times the horizontal field of view of a single camera
-  local_planner_->h_FOV_ = static_cast<float>(cameras_.size()) * 2.0f *
-                           atan(static_cast<float>(msg->width) / (2.0f * msg->K[0])) * 180.0f / M_PI;
+  local_planner_->h_FOV_ =
+      static_cast<float>(cameras_.size()) * 2.0f *
+      atan(static_cast<float>(msg->width) / (2.0f * msg->K[0])) * 180.0f / M_PI;
   local_planner_->v_FOV_ =
-      2.0f * atan(static_cast<float>(msg->height) / (2.0f * msg->K[4])) * 180.0f / M_PI;
+      2.0f * atan(static_cast<float>(msg->height) / (2.0f * msg->K[4])) *
+      180.0f / M_PI;
   wp_generator_->setFOV(local_planner_->h_FOV_, local_planner_->v_FOV_);
 }
 

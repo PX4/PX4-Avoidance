@@ -58,10 +58,22 @@ void filterPointCloud(
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
                   int& e_FOV_min, int& e_FOV_max, float yaw, float pitch) {
-  int z_FOV_max = static_cast<int>(std::round((-yaw * RAD_TO_DEG + h_fov / 2.0f + 270.0f) / static_cast<float>(ALPHA_RES))) - 1;
-  int z_FOV_min = static_cast<int>(std::round((-yaw * RAD_TO_DEG - h_fov / 2.0f + 270.0f) / static_cast<float>(ALPHA_RES)))- 1;
-  e_FOV_max = static_cast<int>(std::round((-pitch * RAD_TO_DEG + v_fov / 2.0f + 90.0f) / static_cast<float>(ALPHA_RES))) - 1;
-  e_FOV_min = static_cast<int>(std::round((-pitch * RAD_TO_DEG - v_fov / 2.0f + 90.0f) / static_cast<float>(ALPHA_RES))) - 1;
+  int z_FOV_max =
+      static_cast<int>(std::round((-yaw * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
+  int z_FOV_min =
+      static_cast<int>(std::round((-yaw * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
+  e_FOV_max =
+      static_cast<int>(std::round((-pitch * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
+  e_FOV_min =
+      static_cast<int>(std::round((-pitch * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
 
   if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
     z_FOV_max -= GRID_LENGTH_Z;

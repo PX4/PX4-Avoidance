@@ -49,8 +49,8 @@ class StarPlannerTests : public ::testing::Test {
 
     star_planner.setParams(cost_params);
     star_planner.setFOV(270.0, 45.0);
-    star_planner.setReprojectedPoints(
-        reprojected_points, reprojected_points_age);
+    star_planner.setReprojectedPoints(reprojected_points,
+                                      reprojected_points_age);
     star_planner.setPose(position, 0.0);
     star_planner.setGoal(goal);
     star_planner.setCloud(cloud);
