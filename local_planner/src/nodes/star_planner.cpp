@@ -83,7 +83,8 @@ float StarPlanner::treeCostFunction(int node_number) {
     }
   }
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth_) *
+  return std::pow(tree_discount_factor_,
+                  static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
 float StarPlanner::treeHeuristicFunction(int node_number) {
@@ -113,8 +114,9 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, toEigen(pose_.pose.position)));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ = std::round((-curr_yaw_ * 180.0 / M_PI)) +
-                      90;  // from radian to angle and shift reference to y-axis
+  tree_.back().yaw_ =
+      std::round((-curr_yaw_ * 180.0f / M_PI_F)) +
+      90.0f;  // from radian to angle and shift reference to y-axis
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;

@@ -59,7 +59,13 @@ class StarPlannerTests : public ::testing::Test {
 };
 
 TEST_F(StarPlannerTests, buildTree) {
+  // GIVEN: a vehicle position, a goal, and an obstacle in between the stright
+  // line position-goal
+
+  // WHEN: we build the tree
   star_planner.buildLookAheadTree();
+
+  // THEN: no cell position should be in the obstacle coordinates
   std::vector<TreeNode> tree_truth;
   TreeNode n0(0, 0, Eigen::Vector3f(1.2, 0.4, 4));
   TreeNode n1(0, 1, Eigen::Vector3f(2.18633, 0.55622, 3.94766));
