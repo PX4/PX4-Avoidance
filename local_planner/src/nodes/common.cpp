@@ -54,27 +54,43 @@ PolarPoint cartesianToPolar(double x, double y, double z,
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
   // TODO change logic here, as 0,0 are valid index
   Eigen::Vector2i ev2(0, 0);
-  float e = p_pol.e;
-  float z = p_pol.z;
-  if (res <= 0.f || e < -90.f || e > 90.f || z < -180.f || z > 180.f) {
-    return ev2;
+  PolarPoint p_wrapped = wrapPolar(p_pol);
+  // elevation angle to y-axis histogram index
+  if (p_wrapped.e == 90.0f) {
+    p_wrapped.e = 89.0f;
   }
-  if (e == 90.f) {
-    e = 89;
+  p_wrapped.e += 90.0f;
+  p_wrapped.e = p_wrapped.e + (res - (static_cast<int>(p_wrapped.e) % res));
+  ev2.y() = p_wrapped.e / res - 1;
+  // azimuth angle to x-axis histogram index
+  if (p_wrapped.z == 180.0f) {
+    p_wrapped.z = -180.0f;
   }
-  e += 90.0;
-  e = e + (res - (static_cast<int>(e) % res));  //[-80,+90]
-  ev2.y() = e / res - 1;
-
-  if (z == 180.f) {
-    z = -180;
-  }
-  z += 180.0;
-  z = z + (res - (static_cast<int>(z) % res));  //[-80,+90]
-  ev2.x() = z / res - 1;
+  p_wrapped.z += 180.0f;
+  p_wrapped.z = p_wrapped.z + (res - (static_cast<int>(p_wrapped.z) % res));
+  ev2.x() = p_wrapped.z / res - 1;
   return ev2;
 }
 
+
+PolarPoint wrapPolar(PolarPoint p_pol) {
+  // elevation valid [-90,90)
+  // when abs(elevation) > 90, wrap elevation angle
+  //  azimuth changes for 180 each time
+  while (abs(p_pol.e) > 90.0f) {
+    if (p_pol.e > 90.0f) {
+      p_pol.e = 180.0f - p_pol.e;
+      p_pol.z = p_pol.z - 180.0f;
+    } else if (p_pol.e < -90.0) {
+      p_pol.e = -(180 + p_pol.e);
+      p_pol.z = p_pol.z + 180.0f;
+    }
+  }
+  PolarPoint p_wrapped(p_pol.e, p_pol.z, 0.0f);
+  // azimuth valid [-180,180)
+  wrapAngleToPlusMinus180(p_wrapped.z);
+  return p_wrapped;
+}
 // calculate the yaw for the next waypoint
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v) {
@@ -115,6 +131,16 @@ void wrapAngleToPlusMinusPI(double& angle) {
     angle += 2 * M_PI;
   }
 }
+
+void wrapAngleToPlusMinus180(float& angle) {
+  while (angle > 180.0) {
+    angle -= 360.0;
+  }
+  while (angle < -180.0) {
+    angle += 360.0;
+  }
+}
+
 
 double getAngularVelocity(double desired_yaw, double curr_yaw) {
   wrapAngleToPlusMinusPI(desired_yaw);
