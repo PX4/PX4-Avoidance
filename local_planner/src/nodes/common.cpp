@@ -72,7 +72,6 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
   return ev2;
 }
 
-
 PolarPoint wrapPolar(PolarPoint p_pol) {
   // elevation valid [-90,90)
   // when abs(elevation) > 90, wrap elevation angle
@@ -140,7 +139,6 @@ void wrapAngleToPlusMinus180(float& angle) {
     angle += 360.0;
   }
 }
-
 
 double getAngularVelocity(double desired_yaw, double curr_yaw) {
   wrapAngleToPlusMinusPI(desired_yaw);

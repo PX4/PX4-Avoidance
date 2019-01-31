@@ -124,7 +124,6 @@ TEST(Common, elevationAnglefromCartesian) {
   EXPECT_FLOAT_EQ(-50.194428, angle_non_zero_origin);
 }
 
-
 TEST(Common, polarToHistogramIndex) {
   // GIVEN: the polar point and the histogram resolution
   PolarPoint p_pol_1 = {};
@@ -148,7 +147,6 @@ TEST(Common, polarToHistogramIndex) {
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
 
-
   // WHEN: we convert the polar point to a histogram index
   const Eigen::Vector2i index_1 = polarToHistogramIndex(p_pol_1, resolution_1);
   const Eigen::Vector2i index_2 = polarToHistogramIndex(p_pol_2, resolution_1);
@@ -162,7 +160,7 @@ TEST(Common, polarToHistogramIndex) {
       polarToHistogramIndex(p_pol_6, resolution_2);  // wrapped
 
   // THEN: the  histogram index should be ..
-  // elevation angle 
+  // elevation angle
   EXPECT_EQ(30, index_1.y());
   EXPECT_EQ(41, index_2.y());
   EXPECT_EQ(7, index_3.y());
