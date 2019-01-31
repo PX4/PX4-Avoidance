@@ -165,7 +165,7 @@ class WaypointGenerator {
   virtual ros::Time getSystemTime();
 
   WaypointGenerator() = default;
-  ~WaypointGenerator() = default;
+  virtual ~WaypointGenerator() = default;
 };
 }
 #endif  // WAYPOINT_GENERATOR_H
