@@ -11,7 +11,6 @@ enum waypoint_choice { hover, costmap, tryPath, direct, reachHeight, goBack };
 
 struct avoidanceOutput {
   waypoint_choice waypoint_type;
-  geometry_msgs::PoseStamped pose;  // current vehicle position
   bool obstacle_ahead;  // true is there is an obstacle ahead of the vehicle
   bool reach_altitude;  // true if the vehicle has reach the goal altitude
   double min_speed;     // minimum speed

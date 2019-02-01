@@ -76,7 +76,6 @@ class WaypointGeneratorTests : public ::testing::Test,
     position.pose.orientation.y = 0.0;
     position.pose.orientation.z = 0.0;
     position.pose.orientation.w = 1.0;
-    avoidance_output.pose = position;
 
     goal.pose.position.x = 10.0;
     goal.pose.position.y = 3.0;
@@ -349,8 +348,6 @@ TEST_F(WaypointGeneratorTests, costmapTest) {
     position.pose.position = toPoint(new_pos);
     time_sec += 0.01;
     time = ros::Time(time_sec);
-    avoidance_output.pose = position;
-    setPlannerInfo(avoidance_output);
     updateState(position, goal, velocity, stay, time);
   }
 }
@@ -401,8 +398,6 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
     position.pose.position = toPoint(new_pos);
     time_sec += 0.01;
     time = ros::Time(time_sec);
-    avoidance_output.pose = position;
-    setPlannerInfo(avoidance_output);
     updateState(position, goal, velocity, stay, time);
   }
 }
