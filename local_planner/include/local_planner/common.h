@@ -19,8 +19,8 @@ struct PolarPoint {
 };
 
 #define M_PI_F 3.14159265358979323846f
-const double DEG_TO_RAD = M_PI / 180.f;
-const float RAD_TO_DEG = 180.f / M_PI_F;
+const float DEG_TO_RAD = M_PI_F / 180.f;
+const float RAD_TO_DEG = 180.0f / M_PI_F;
 
 /**
 * @brief     calculates the distance between two polar points
@@ -64,7 +64,7 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 
 PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolar(double x, double y, double z,
+PolarPoint cartesianToPolar(float x, float y, float z,
                             const Eigen::Vector3f& pos);
 /**
 * @brief     compute polar point to histogram index
@@ -87,11 +87,11 @@ void wrapPolar(PolarPoint& p_pol);
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad
 **/
-double nextYaw(const geometry_msgs::PoseStamped& u,
+float nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v);
 
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
-                                         double yaw);
+                                         float yaw);
 
 /**
 * @brief     computes a speed using the upper and lower speed limit, as well as
@@ -104,13 +104,13 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
 * @param[in] elapsed time [s]
 * @returns   speed within the given limits
 **/
-double velocityLinear(double max_vel, double slope, double v_old,
-                      double elapsed);
+float velocityLinear(float max_vel, float slope, float v_old,
+                      float elapsed);
 /**
 * @brief     wrappes the input angle in to plus minus PI space
 * @param[in, out] angle to be wrapped  [rad]
 **/
-void wrapAngleToPlusMinusPI(double& angle);
+void wrapAngleToPlusMinusPI(float& angle);
 /**
 * @brief     wrappes the input angle in to plus minus 180 deg space
 * @param[in, out] angle to be wrapped  [deg]
@@ -122,7 +122,7 @@ void wrapAngleToPlusMinus180(float& angle);
 * @param[in] curr_yaw  [rad]
 * @returns   a scaled angular velocity to reach the desired yaw[rad/s]
 **/
-double getAngularVelocity(double desired_yaw, double curr_yaw);
+double getAngularVelocity(float desired_yaw, float curr_yaw);
 
 Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
 Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3);

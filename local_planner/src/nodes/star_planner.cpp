@@ -14,8 +14,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_ = config.tree_node_distance_;
-  tree_discount_factor_ = config.tree_discount_factor_;
+  tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
+  tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) {

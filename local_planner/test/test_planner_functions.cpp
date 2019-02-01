@@ -191,14 +191,14 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
   complete_cloud.push_back(p1);
   complete_cloud.push_back(p2);
-  double min_dist_backoff = 1.0;
-  Box histogram_box(5.0);
-  histogram_box.setBoxLimits(toPoint(position), 4.5);
-  double min_realsense_dist = 0.2;
+  float min_dist_backoff = 1.0f;
+  Box histogram_box(5.0f);
+  histogram_box.setBoxLimits(toPoint(position), 4.5f);
+  float min_realsense_dist = 0.2f;
 
   pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
   Eigen::Vector3f closest_point, closest_point2;
-  double distance_to_closest_point, distance_to_closest_point2;
+  float distance_to_closest_point, distance_to_closest_point2;
   int counter_backoff, counter_backoff2;
 
   // WHEN: we filter the PointCloud with different values of min_cloud_size

@@ -341,12 +341,11 @@ TEST(Common, speedCalc) {
 
 TEST(Common, wrapAngle) {
   // GIVEN: an angle in rad
-  double angle1 = 0.d;
-  double angle2 = 30.d * M_PI / 180.d;
-  double angle3 = 270.d * M_PI / 180.d;
-  double angle4 = -90.d * M_PI / 180.d;
-  double angle5 = -225.d * M_PI / 180.d;
-  double angle6 = std::numeric_limits<double>::infinity();
+  float angle1 = 0.d;
+  float angle2 = 30.d * M_PI / 180.d;
+  float angle3 = 270.d * M_PI / 180.d;
+  float angle4 = -90.d * M_PI / 180.d;
+  float angle5 = -225.d * M_PI / 180.d;
 
   // WHEN: it is wrapped to the space (-PI; PI] space
   wrapAngleToPlusMinusPI(angle1);

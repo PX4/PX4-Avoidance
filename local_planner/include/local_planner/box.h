@@ -7,23 +7,23 @@ namespace avoidance {
 class Box {
  public:
   Box();
-  Box(const double& radius);
+  Box(const float& radius);
   ~Box();
 
   void setBoxLimits(const geometry_msgs::Point& pos,
-                    const double ground_distance);
-  bool isPointWithinBox(const double& x, const double& y, const double& z);
+                    const float ground_distance);
+  bool isPointWithinBox(const float& x, const float& y, const float& z);
 
-  double radius_;
-  double box_dist_to_ground_ = 2.0;
-  double zmin_;
+  float radius_;
+  float box_dist_to_ground_ = 2.0;
+  float zmin_;
 
  private:
-  double xmin_;
-  double xmax_;
-  double ymin_;
-  double ymax_;
-  double zmax_;
+  float xmin_;
+  float xmax_;
+  float ymin_;
+  float ymax_;
+  float zmax_;
 };
 }
 #endif  // BOX_H

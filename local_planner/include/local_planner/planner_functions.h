@@ -25,13 +25,13 @@ namespace avoidance {
 
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-    Eigen::Vector3f& closest_point, double& distance_to_closest_point,
+    Eigen::Vector3f& closest_point, float& distance_to_closest_point,
     int& counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    double min_cloud_size, double min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f& position, double min_realsense_dist);
+    int min_cloud_size, float min_dist_backoff, Box histogram_box,
+    const Eigen::Vector3f& position, float min_realsense_dist);
 void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch);
+                      int& e_FOV_min, int& e_FOV_max, float yaw, float pitch);
 void propagateHistogram(
     Histogram& polar_histogram_est,
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
@@ -55,7 +55,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
 void getBestCandidatesFromCostMatrix(
     const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
     std::vector<candidateDirection>& candidate_vector);
-float costFunction(double e_angle, double z_angle, float obstacle_distance,
+float costFunction(float e_angle, float z_angle, float obstacle_distance,
                    const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed);

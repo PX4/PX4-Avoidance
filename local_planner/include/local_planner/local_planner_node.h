@@ -110,8 +110,6 @@ class LocalPlannerNode {
 
   std::atomic<bool> should_exit_{false};
 
-  double curr_yaw_;
-
   std::vector<cameraData> cameras_;
 
   ModelParameters model_params_;
@@ -126,9 +124,6 @@ class LocalPlannerNode {
   geometry_msgs::Point newest_waypoint_position_;
   geometry_msgs::Point last_waypoint_position_;
   geometry_msgs::PoseStamped goal_msg_;
-
-  const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
-  const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
 
   ros::Time last_wp_time_;
   ros::Time t_status_sent_;

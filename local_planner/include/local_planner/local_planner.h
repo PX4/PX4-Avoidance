@@ -62,23 +62,21 @@ class LocalPlanner {
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
 
-  double velocity_mod_;
+  float velocity_mod_;
   float curr_yaw_;
-  double min_speed_;
-  double max_speed_;
-  double keep_distance_;
+  float min_speed_;
+  float max_speed_;
+  float keep_distance_;
   ros::Time integral_time_old_;
-  double no_progress_slope_;
-  float tree_node_distance_;
-  double new_yaw_;
-  double distance_to_closest_point_;
-  double safety_radius_ = 25.0;
-  double min_cloud_size_ = 160.0;
-  double min_dist_backoff_;
-  double relevance_margin_z_degree_ = 40;
-  double relevance_margin_e_degree_ = 25;
-  double velocity_sigmoid_slope_ = 1;
-  double min_realsense_dist_ = 0.2;
+  float no_progress_slope_;
+  float new_yaw_;
+  float distance_to_closest_point_;
+  int min_cloud_size_ = 160;
+  float min_dist_backoff_;
+  float relevance_margin_z_degree_ = 40.0f;
+  float relevance_margin_e_degree_ = 25.0f;
+  float velocity_sigmoid_slope_ = 1.0;
+  float min_realsense_dist_ = 0.2f;
   float costmap_direction_e_;
   float costmap_direction_z_;
 
@@ -87,7 +85,7 @@ class LocalPlanner {
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
-  std::deque<double> goal_dist_incline_;
+  std::deque<float> goal_dist_incline_;
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
   std::vector<int> closed_set_;
@@ -139,8 +137,8 @@ class LocalPlanner {
   double pointcloud_timeout_hover_;
   double pointcloud_timeout_land_;
   double starting_height_ = 0.0;
-  double speed_ = 1.0;
-  double ground_distance_ = 2.0;
+  float speed_ = 1.0f;
+  float ground_distance_ = 2.0;
 
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;

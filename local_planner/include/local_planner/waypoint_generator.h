@@ -45,23 +45,23 @@ class WaypointGenerator {
 
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_;
-  double curr_yaw_;
-  double curr_vel_magnitude_;
+  float curr_yaw_;
+  float curr_vel_magnitude_;
   ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{0.};
   ros::Time current_time_{0.};
 
-  double smoothing_speed_{10.};
+  float smoothing_speed_{10.};
 
   bool reached_goal_;
   bool limit_speed_close_to_goal_ = false;
   bool waypoint_outside_FOV_;
-  double last_yaw_;
-  double yaw_reached_goal_;
-  double new_yaw_ = 0.0;
-  double new_yaw_velocity_ = 0.0;
-  double speed_ = 1.0;
+  float last_yaw_;
+  float yaw_reached_goal_;
+  float new_yaw_;
+  float new_yaw_velocity_ = 0.0f;
+  float speed_ = 1.0f;
   int e_FOV_max_, e_FOV_min_;
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
@@ -104,12 +104,12 @@ class WaypointGenerator {
   * @brief     smooths waypoints with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
   **/
-  void smoothWaypoint(double dt);
+  void smoothWaypoint(float dt);
   /**
   * @brief     set next yaw, smoothed with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
   **/
-  void nextSmoothYaw(double dt);
+  void nextSmoothYaw(float dt);
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
@@ -160,7 +160,7 @@ class WaypointGenerator {
   * @brief set the responsiveness of the smoothing
   * @param[in] smoothing_speed, set to 0 to disable
   **/
-  void setSmoothingSpeed(double smoothing_speed) {
+  void setSmoothingSpeed(float smoothing_speed) {
     smoothing_speed_ = smoothing_speed;
   }
 
