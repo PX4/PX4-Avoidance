@@ -126,24 +126,15 @@ TEST(Common, elevationAnglefromCartesian) {
 
 TEST(Common, polarToHistogramIndex) {
   // GIVEN: the polar point and the histogram resolution
-  PolarPoint p_pol_1 = {};
-  PolarPoint p_pol_2 = {};
-  PolarPoint p_pol_3 = {};
-  PolarPoint p_pol_4 = {};
-  PolarPoint p_pol_5 = {};
-  PolarPoint p_pol_6 = {};
-  p_pol_1.e = 0.f;
-  p_pol_2.e = 34.f;
-  p_pol_3.e = 90.f;
-  p_pol_4.e = -90.f;
-  p_pol_5.e = 454.f;  // wrapped around, influences the azimuth by 180 deg
-  p_pol_6.e = 400.f;  // wrapped around, no influence on azimuth
-  p_pol_1.z = 0.f;
-  p_pol_2.z = 34.f;
-  p_pol_3.z = 180.f;
-  p_pol_4.z = -180.f;
-  p_pol_5.z = -160.f;
-  p_pol_6.z = -270.f;  // wrwapped around
+  PolarPoint p_pol_1(0.f,0.f,0.f);
+  PolarPoint p_pol_2(34.0f, 34.0f, 0.0f);
+  PolarPoint p_pol_3(90.0f, 180.0f, 0.0f);
+  PolarPoint p_pol_4(-90.0f, -180.0f,0.0f);
+  // wrapped around, influences the azimuth by 180 deg
+  PolarPoint p_pol_5(454.f, -160.f, 0.0f);
+  // wrapped around, no influence on azimuth
+  PolarPoint p_pol_6(400.f, -270.f,0.0f);
+
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
 

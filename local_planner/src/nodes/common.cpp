@@ -52,23 +52,21 @@ PolarPoint cartesianToPolar(double x, double y, double z,
 }
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
-  // TODO change logic here, as 0,0 are valid index
+
   Eigen::Vector2i ev2(0, 0);
   PolarPoint p_wrapped = wrapPolar(p_pol);
-  // elevation angle to y-axis histogram index
+  //elevation angle to y-axis histogram index
   if (p_wrapped.e == 90.0f) {
-    p_wrapped.e = 89.0f;
+    p_wrapped.e = 89.9f; ///set to edge of last valid bin
   }
-  p_wrapped.e += 90.0f;
-  p_wrapped.e = p_wrapped.e + (res - (static_cast<int>(p_wrapped.e) % res));
-  ev2.y() = p_wrapped.e / res - 1;
+ // maps elevation -90° to bin 0 and +90° to the highest bin (N-1) 
+  ev2.y() = floor(p_wrapped.e / res + 90.f / res);
   // azimuth angle to x-axis histogram index
   if (p_wrapped.z == 180.0f) {
     p_wrapped.z = -180.0f;
   }
-  p_wrapped.z += 180.0f;
-  p_wrapped.z = p_wrapped.z + (res - (static_cast<int>(p_wrapped.z) % res));
-  ev2.x() = p_wrapped.z / res - 1;
+ // maps elevation -180° to bin 0 and +180° to the highest bin (N-1)
+  ev2.x() = floor(p_wrapped.z / res + 180.f / res);
   return ev2;
 }
 
@@ -76,8 +74,8 @@ PolarPoint wrapPolar(PolarPoint p_pol) {
   // elevation valid [-90,90)
   // when abs(elevation) > 90, wrap elevation angle
   //  azimuth changes for 180 each time
-  while (abs(p_pol.e) > 90.0f) {
-    if (p_pol.e > 90.0f) {
+  while (abs(p_pol.e) >90.0f) {
+    if (p_pol.e >90.0f) {
       p_pol.e = 180.0f - p_pol.e;
       p_pol.z = p_pol.z - 180.0f;
     } else if (p_pol.e < -90.0) {
