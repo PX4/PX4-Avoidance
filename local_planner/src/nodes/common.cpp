@@ -52,42 +52,39 @@ PolarPoint cartesianToPolar(double x, double y, double z,
 }
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
-
   Eigen::Vector2i ev2(0, 0);
-  PolarPoint p_wrapped = wrapPolar(p_pol);
-  //elevation angle to y-axis histogram index
-  if (p_wrapped.e == 90.0f) {
-    p_wrapped.e = 89.9f; ///set to edge of last valid bin
-  }
- // maps elevation -90° to bin 0 and +90° to the highest bin (N-1) 
-  ev2.y() = floor(p_wrapped.e / res + 90.f / res);
+  PolarPoint p_wrapped = p_pol;
+  wrapPolar(p_wrapped);
+  // elevation angle to y-axis histogram index
+  // maps elevation -90° to bin 0 and +90° to the highest bin (N-1)
+  ev2.y() = floor(p_wrapped.e / res + 90.0f / res);
   // azimuth angle to x-axis histogram index
-  if (p_wrapped.z == 180.0f) {
-    p_wrapped.z = -180.0f;
-  }
- // maps elevation -180° to bin 0 and +180° to the highest bin (N-1)
-  ev2.x() = floor(p_wrapped.z / res + 180.f / res);
+  // maps elevation -180° to bin 0 and +180° to the highest bin (N-1)
+  ev2.x() = floor(p_wrapped.z / res + 180.0f / res);
   return ev2;
 }
 
-PolarPoint wrapPolar(PolarPoint p_pol) {
+void wrapPolar(PolarPoint& p_pol) {
   // elevation valid [-90,90)
   // when abs(elevation) > 90, wrap elevation angle
-  //  azimuth changes for 180 each time
-  while (abs(p_pol.e) >90.0f) {
-    if (p_pol.e >90.0f) {
+  // azimuth changes for 180 each time
+  while (abs(p_pol.e) > 90.0f) {
+    if (p_pol.e > 90.0f) {
       p_pol.e = 180.0f - p_pol.e;
       p_pol.z = p_pol.z - 180.0f;
-    } else if (p_pol.e < -90.0) {
-      p_pol.e = -(180 + p_pol.e);
+    } else if (p_pol.e < -90.0f) {
+      p_pol.e = -(180.0f + p_pol.e);
       p_pol.z = p_pol.z + 180.0f;
     }
   }
-  PolarPoint p_wrapped(p_pol.e, p_pol.z, 0.0f);
+  // set elevation angle to edge of last valid bin
+  if (p_pol.e == 90.0f) {
+    p_pol.e = 89.9f;
+  }
   // azimuth valid [-180,180)
-  wrapAngleToPlusMinus180(p_wrapped.z);
-  return p_wrapped;
+  wrapAngleToPlusMinus180(p_pol.z);
 }
+
 // calculate the yaw for the next waypoint
 double nextYaw(const geometry_msgs::PoseStamped& u,
                const geometry_msgs::Point& v) {
@@ -130,7 +127,7 @@ void wrapAngleToPlusMinusPI(double& angle) {
 }
 
 void wrapAngleToPlusMinus180(float& angle) {
-  while (angle > 180.0) {
+  while (angle >= 180.0) {
     angle -= 360.0;
   }
   while (angle < -180.0) {

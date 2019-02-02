@@ -77,11 +77,10 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res);
 * @brief     support function for polarToHistogramIndex
 *            when abs(elevation) > 90, wrap elevation angle into valid
 *            region and azimuth angle changes for +/-180 deg each time
-* @param[in] p_pol Polar point
-* @param[out]polar point with elevation angle [-90,90)
-*            azimuth valid [-180,180)
+* @param[in/out]p_pol Polar point with elevation angle [-90,90) and
+*            azimuth angle [-180,180)
 **/
-PolarPoint wrapPolar(PolarPoint p_pol);
+void wrapPolar(PolarPoint& p_pol);
 /**
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad
