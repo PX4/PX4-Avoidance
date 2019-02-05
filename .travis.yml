@@ -32,6 +32,8 @@ before_install:
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
   # Install yaml-cpp ROS package
   - sudo apt-get install -y libyaml-cpp-dev
+  # Install MavLink and Mavros
+  - sudo apt-get install -y ros-$ROS_DISTRO-mavlink ros-$ROS_DISTRO-mavros-msgs ros-$ROS_DISTRO-mavros ros-$ROS_DISTRO-mavros-extras
   # Source environment
   - source /opt/ros/$ROS_DISTRO/setup.bash
   # Prepare rosdep
@@ -48,15 +50,14 @@ install:
   - wstool init
   # Link the repository we are testing to the new workspace
   - ln -s $CI_SOURCE_PATH .
-  # Install MavLink and Mavros
+  # Install dependency
   - cd ~/catkin_ws
-  - rosinstall_generator --rosdistro kinetic mavlink | tee /tmp/mavros.rosinstall
-  - rosinstall_generator --upstream mavros | tee -a /tmp/mavros.rosinstall
-  - wstool merge -t src /tmp/mavros.rosinstall
-  - wstool update -t src -j4
   - rosdep install --from-paths src --ignore-src --rosdistro $ROS_DISTRO -q -y
   # Install GeographicLib datasets
-  - sudo -H ./src/mavros/mavros/scripts/install_geographiclib_datasets.sh
+  - sudo -H mkdir -p /usr/share/geographiclib
+  - wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+  - chmod +x install_geographiclib_datasets.sh
+  - sudo -H ./install_geographiclib_datasets.sh
 
 before_script:
   # Source environment
