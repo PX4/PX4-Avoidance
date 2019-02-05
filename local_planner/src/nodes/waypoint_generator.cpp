@@ -281,10 +281,6 @@ void WaypointGenerator::adaptSpeed() {
       double hover_angle = 30;
       angle_diff = std::min(angle_diff, hover_angle);
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
-      only_yawed_ = false;
-      if (speed_ < 0.01) {
-        only_yawed_ = true;
-      }
     }
   }
   velocity_time_ = ros::Time::now();
@@ -341,6 +337,9 @@ void WaypointGenerator::getPathMsg() {
   ros::Duration time_diff = current_time_ - last_time_;
   double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
+  // set the yaw at the setpoint based on our smoothed location
+  new_yaw_ = nextYaw(pose_, output_.goto_position);
+
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   adaptSpeed();
   output_.smoothed_goto_position = output_.adapted_goto_position;
@@ -358,9 +357,6 @@ void WaypointGenerator::getPathMsg() {
   } else {
     smoothWaypoint(dt);
   }
-
-  // set the yaw at the setpoint based on our smoothed location
-  new_yaw_ = nextYaw(pose_, output_.smoothed_goto_position);
 
   // change waypoint if drone is at goal or above
   if (withinGoalRadius()) {

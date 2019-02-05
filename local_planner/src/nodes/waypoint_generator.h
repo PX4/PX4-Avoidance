@@ -57,7 +57,6 @@ class WaypointGenerator {
   bool reached_goal_;
   bool limit_speed_close_to_goal_ = false;
   bool waypoint_outside_FOV_;
-  bool only_yawed_;
   double last_yaw_;
   double yaw_reached_goal_;
   double new_yaw_;
