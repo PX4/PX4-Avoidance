@@ -73,7 +73,14 @@ PolarPoint cartesianToPolar(double x, double y, double z,
 **/
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res);
-
+/**
+* @brief     support function for polarToHistogramIndex
+*            when abs(elevation) > 90, wrap elevation angle into valid
+*            region and azimuth angle changes for +/-180 deg each time
+* @param[in/out]p_pol Polar point with elevation angle [-90,90) and
+*            azimuth angle [-180,180)
+**/
+void wrapPolar(PolarPoint& p_pol);
 /**
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad
@@ -102,7 +109,11 @@ double velocityLinear(double max_vel, double slope, double v_old,
 * @param[in, out] angle to be wrapped  [rad]
 **/
 void wrapAngleToPlusMinusPI(double& angle);
-
+/**
+* @brief     wrappes the input angle in to plus minus 180 deg space
+* @param[in, out] angle to be wrapped  [deg]
+**/
+void wrapAngleToPlusMinus180(float& angle);
 /**
 * @brief     computes an angular velocity to reach the desired_yaw
 * @param[in] adesired_yaw  [rad]

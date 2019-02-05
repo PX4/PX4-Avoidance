@@ -124,103 +124,51 @@ TEST(Common, elevationAnglefromCartesian) {
   EXPECT_FLOAT_EQ(-50.194428, angle_non_zero_origin);
 }
 
-TEST(Common, elevationAngletoIndex) {
-  // GIVEN: the elevation angle of a point and the histogram resolution
-  PolarPoint p_pol_1 = {};
-  p_pol_1.e = 0.f;
-  PolarPoint p_pol_2 = {};
-  p_pol_2.e = 34.f;
-  PolarPoint p_pol_3 = {};
-  p_pol_3.e = 90.f;
-  PolarPoint p_pol_4 = {};
-  p_pol_4.e = -90.f;
+TEST(Common, polarToHistogramIndex) {
+  // GIVEN: the polar point and the histogram resolution
+  PolarPoint p_pol_1(0.f, 0.f, 0.f);
+  PolarPoint p_pol_2(34.0f, 34.0f, 0.0f);
+  PolarPoint p_pol_3(90.0f, 180.0f, 0.0f);
+  PolarPoint p_pol_4(-90.0f, -180.0f, 0.0f);
+  // wrapped around, influences the azimuth by 180 deg
+  PolarPoint p_pol_5(454.f, -160.f, 0.0f);
+  // wrapped around, no influence on azimuth
+  PolarPoint p_pol_6(400.f, -270.f, 0.0f);
+
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
-  PolarPoint p_pol_invalid_1 = {};
-  p_pol_invalid_1.e = 94.f;
-  PolarPoint p_pol_invalid_2 = {};
-  p_pol_invalid_2.e = -999.f;
-  const float resolution_invalid_1 = 0.f;
-  const float resolution_invalid_2 = -1.f;
 
-  // WHEN: we convert the elevation angle to a histogram index
-  const int index_1 = polarToHistogramIndex(p_pol_1, resolution_1).y();
-  const int index_2 = polarToHistogramIndex(p_pol_2, resolution_1).y();
-  const int index_3 = polarToHistogramIndex(p_pol_1, resolution_2).y();
-  const int index_4 = polarToHistogramIndex(p_pol_2, resolution_2).y();
-  const int index_5 = polarToHistogramIndex(p_pol_3, resolution_2).y();
-  const int index_6 = polarToHistogramIndex(p_pol_4, resolution_2).y();
-  const int index_invalid_1 =
-      polarToHistogramIndex(p_pol_invalid_1, resolution_1).y();
-  const int index_invalid_2 =
-      polarToHistogramIndex(p_pol_invalid_2, resolution_1).y();
-  const int index_invalid_3 =
-      polarToHistogramIndex(p_pol_1, resolution_invalid_1).y();
-  const int index_invalid_4 =
-      polarToHistogramIndex(p_pol_1, resolution_invalid_2).y();
+  // WHEN: we convert the polar point to a histogram index
+  const Eigen::Vector2i index_1 = polarToHistogramIndex(p_pol_1, resolution_1);
+  const Eigen::Vector2i index_2 = polarToHistogramIndex(p_pol_2, resolution_1);
+  const Eigen::Vector2i index_3 = polarToHistogramIndex(p_pol_1, resolution_2);
+  const Eigen::Vector2i index_4 = polarToHistogramIndex(p_pol_2, resolution_2);
+  const Eigen::Vector2i index_5 = polarToHistogramIndex(p_pol_3, resolution_2);
+  const Eigen::Vector2i index_6 = polarToHistogramIndex(p_pol_4, resolution_2);
+  const Eigen::Vector2i index_7 =
+      polarToHistogramIndex(p_pol_5, resolution_1);  // wrapped
+  const Eigen::Vector2i index_8 =
+      polarToHistogramIndex(p_pol_6, resolution_2);  // wrapped
 
-  // THEN: the vertical histogram index should be ..
-  EXPECT_EQ(30, index_1);
-  EXPECT_EQ(41, index_2);
-  EXPECT_EQ(7, index_3);
-  EXPECT_EQ(10, index_4);
-  EXPECT_EQ(14, index_5);
-  EXPECT_EQ(0, index_6);
-  EXPECT_EQ(0, index_invalid_1);
-  EXPECT_EQ(0, index_invalid_2);
-  EXPECT_EQ(0, index_invalid_3);
-  EXPECT_EQ(0, index_invalid_4);
-}
-TEST(Common, azimuthAngletoIndex) {
-  // GIVEN: the azimuth angle of a point and the histogram resolution
-  PolarPoint p_pol_1 = {};
-  PolarPoint p_pol_2 = {};
-  PolarPoint p_pol_3 = {};
-  PolarPoint p_pol_4 = {};
-  PolarPoint p_pol_5 = {};
-  PolarPoint p_pol_invalid_1 = {};
-  PolarPoint p_pol_invalid_2 = {};
-  p_pol_1.z = 0.f;
-  p_pol_2.z = 34.f;
-  p_pol_3.z = 180.f;
-  p_pol_4.z = 179.f;
-  p_pol_5.z = -180.f;
-  const float resolution_1 = 3.f;
-  const float resolution_2 = 12.f;
-  p_pol_invalid_1.z = 194.f;
-  p_pol_invalid_2.z = -999.f;
-  const float resolution_invalid_1 = 0.f;
-  const float resolution_invalid_2 = -1.f;
-
-  // WHEN: we convert the azimuth angle to a histogram index
-  const int index_1 = polarToHistogramIndex(p_pol_1, resolution_1).x();
-  const int index_2 = polarToHistogramIndex(p_pol_2, resolution_1).x();
-  const int index_3 = polarToHistogramIndex(p_pol_1, resolution_2).x();
-  const int index_4 = polarToHistogramIndex(p_pol_2, resolution_2).x();
-  const int index_5 = polarToHistogramIndex(p_pol_3, resolution_2).x();
-  const int index_6 = polarToHistogramIndex(p_pol_4, resolution_2).x();
-  const int index_7 = polarToHistogramIndex(p_pol_5, resolution_2).x();
-  const int index_invalid_1 =
-      polarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
-  const int index_invalid_2 =
-      polarToHistogramIndex(p_pol_invalid_1, resolution_1).x();
-  const int index_invalid_3 =
-      polarToHistogramIndex(p_pol_1, resolution_invalid_1).x();
-  const int index_invalid_4 =
-      polarToHistogramIndex(p_pol_1, resolution_invalid_2).x();
-
-  // THEN: the horizontal histogram index should be ..
-  EXPECT_EQ(60, index_1);
-  EXPECT_EQ(71, index_2);
-  EXPECT_EQ(15, index_3);
-  EXPECT_EQ(17, index_4);
-  EXPECT_EQ(0, index_5);
-  EXPECT_EQ(29, index_6);
-  EXPECT_EQ(0, index_7);
-  EXPECT_EQ(0, index_invalid_1);
-  EXPECT_EQ(0, index_invalid_2);
-  EXPECT_EQ(0, index_invalid_3);
-  EXPECT_EQ(0, index_invalid_4);
+  // THEN: the  histogram index should be ..
+  // elevation angle
+  EXPECT_EQ(30, index_1.y());
+  EXPECT_EQ(41, index_2.y());
+  EXPECT_EQ(7, index_3.y());
+  EXPECT_EQ(10, index_4.y());
+  EXPECT_EQ(14, index_5.y());
+  EXPECT_EQ(0, index_6.y());
+  EXPECT_EQ(58, index_7.y());
+  EXPECT_EQ(10, index_8.y());
+  // azimuth angle
+  EXPECT_EQ(60, index_1.x());
+  EXPECT_EQ(71, index_2.x());
+  EXPECT_EQ(15, index_3.x());
+  EXPECT_EQ(17, index_4.x());
+  EXPECT_EQ(0, index_5.x());
+  EXPECT_EQ(0, index_6.x());
+  EXPECT_EQ(66, index_7.x());
+  EXPECT_EQ(22, index_8.x());
 }
 
 TEST(Common, polarToCartesian) {
@@ -437,4 +385,45 @@ TEST(Common, IndexPolarIndex) {
       EXPECT_EQ(z_ind, p_ind.x());
     }
   }
+}
+
+TEST(Common, wrapPolar) {
+  // GIVEN: some polar points with elevation and azimuth angles which need to be
+  // wrapped
+  float rad = 1.0f;
+  PolarPoint p_pol_1(110.f, 0.f, rad);   // wrap  elevation with jump in azimuth
+  PolarPoint p_pol_2(0.f, 200.f, rad);   // wrap azimuth
+  PolarPoint p_pol_3(-180.f, 0.f, rad);  // wrap elevation with jump in azimuth
+  PolarPoint p_pol_4(0.f, -1230.f, rad);  // wrap azimuth multiple times
+  // wrap elevation, no change in azimuth
+  PolarPoint p_pol_5(-330.f, 140.f, rad);
+  // wrap azimuth, no change in elevation
+  PolarPoint p_pol_6(40.f, 600.f, rad);
+
+  // WHEN: the angles are wrapped
+  wrapPolar(p_pol_1);
+  wrapPolar(p_pol_2);
+  wrapPolar(p_pol_3);
+  wrapPolar(p_pol_4);
+  wrapPolar(p_pol_5);
+  wrapPolar(p_pol_6);
+
+  // THEN: the polar points should have the angles
+  EXPECT_FLOAT_EQ(70.f, p_pol_1.e);
+  EXPECT_FLOAT_EQ(-180.f, p_pol_1.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_2.e);
+  EXPECT_FLOAT_EQ(-160.f, p_pol_2.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_3.e);
+  EXPECT_FLOAT_EQ(-180.f, p_pol_3.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_4.e);
+  EXPECT_FLOAT_EQ(-150.f, p_pol_4.z);
+
+  EXPECT_FLOAT_EQ(30.f, p_pol_5.e);
+  EXPECT_FLOAT_EQ(140.f, p_pol_5.z);
+
+  EXPECT_FLOAT_EQ(40.f, p_pol_6.e);
+  EXPECT_FLOAT_EQ(-120.f, p_pol_6.z);
 }

@@ -52,27 +52,37 @@ PolarPoint cartesianToPolar(double x, double y, double z,
 }
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
-  // TODO change logic here, as 0,0 are valid index
   Eigen::Vector2i ev2(0, 0);
-  float e = p_pol.e;
-  float z = p_pol.z;
-  if (res <= 0.f || e < -90.f || e > 90.f || z < -180.f || z > 180.f) {
-    return ev2;
-  }
-  if (e == 90.f) {
-    e = 89;
-  }
-  e += 90.0;
-  e = e + (res - (static_cast<int>(e) % res));  //[-80,+90]
-  ev2.y() = e / res - 1;
-
-  if (z == 180.f) {
-    z = -180;
-  }
-  z += 180.0;
-  z = z + (res - (static_cast<int>(z) % res));  //[-80,+90]
-  ev2.x() = z / res - 1;
+  PolarPoint p_wrapped = p_pol;
+  wrapPolar(p_wrapped);
+  // elevation angle to y-axis histogram index
+  // maps elevation -90° to bin 0 and +90° to the highest bin (N-1)
+  ev2.y() = floor(p_wrapped.e / res + 90.0f / res);
+  // azimuth angle to x-axis histogram index
+  // maps elevation -180° to bin 0 and +180° to the highest bin (N-1)
+  ev2.x() = floor(p_wrapped.z / res + 180.0f / res);
   return ev2;
+}
+
+void wrapPolar(PolarPoint& p_pol) {
+  // elevation valid [-90,90)
+  // when abs(elevation) > 90, wrap elevation angle
+  // azimuth changes for 180 each time
+  while (abs(p_pol.e) > 90.0f) {
+    if (p_pol.e > 90.0f) {
+      p_pol.e = 180.0f - p_pol.e;
+      p_pol.z = p_pol.z - 180.0f;
+    } else if (p_pol.e < -90.0f) {
+      p_pol.e = -(180.0f + p_pol.e);
+      p_pol.z = p_pol.z + 180.0f;
+    }
+  }
+  // set elevation angle to edge of last valid bin
+  if (p_pol.e == 90.0f) {
+    p_pol.e = 89.9f;
+  }
+  // azimuth valid [-180,180)
+  wrapAngleToPlusMinus180(p_pol.z);
 }
 
 // calculate the yaw for the next waypoint
@@ -113,6 +123,15 @@ void wrapAngleToPlusMinusPI(double& angle) {
   }
   while (angle < -M_PI) {
     angle += 2 * M_PI;
+  }
+}
+
+void wrapAngleToPlusMinus180(float& angle) {
+  while (angle >= 180.0) {
+    angle -= 360.0;
+  }
+  while (angle < -180.0) {
+    angle += 360.0;
   }
 }
 
