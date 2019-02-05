@@ -386,3 +386,44 @@ TEST(Common, IndexPolarIndex) {
     }
   }
 }
+
+TEST(Common, wrapPolar) {
+  // GIVEN: some polar points with elevation and azimuth angles which need to be
+  // wrapped
+  float rad = 1.0f;
+  PolarPoint p_pol_1(110.f, 0.f, rad);   // wrap  elevation with jump in azimuth
+  PolarPoint p_pol_2(0.f, 200.f, rad);   // wrap azimuth
+  PolarPoint p_pol_3(-180.f, 0.f, rad);  // wrap elevation with jump in azimuth
+  PolarPoint p_pol_4(0.f, -1230.f, rad);  // wrap azimuth multiple times
+  // wrap elevation, no change in azimuth
+  PolarPoint p_pol_5(-330.f, 140.f, rad);
+  // wrap azimuth, no change in elevation
+  PolarPoint p_pol_6(40.f, 600.f, rad);
+
+  // WHEN: the angles are wrapped
+  wrapPolar(p_pol_1);
+  wrapPolar(p_pol_2);
+  wrapPolar(p_pol_3);
+  wrapPolar(p_pol_4);
+  wrapPolar(p_pol_5);
+  wrapPolar(p_pol_6);
+
+  // THEN: the polar points should have the angles
+  EXPECT_FLOAT_EQ(70.f, p_pol_1.e);
+  EXPECT_FLOAT_EQ(-180.f, p_pol_1.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_2.e);
+  EXPECT_FLOAT_EQ(-160.f, p_pol_2.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_3.e);
+  EXPECT_FLOAT_EQ(-180.f, p_pol_3.z);
+
+  EXPECT_FLOAT_EQ(0.f, p_pol_4.e);
+  EXPECT_FLOAT_EQ(-150.f, p_pol_4.z);
+
+  EXPECT_FLOAT_EQ(30.f, p_pol_5.e);
+  EXPECT_FLOAT_EQ(140.f, p_pol_5.z);
+
+  EXPECT_FLOAT_EQ(40.f, p_pol_6.e);
+  EXPECT_FLOAT_EQ(-120.f, p_pol_6.z);
+}
