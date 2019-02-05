@@ -55,39 +55,34 @@ struct cameraData {
 };
 
 struct Px4Parameters {
+  // clang-format off
   int ekf2_aid_mask =
       NAN;  // Integer bitmask controlling data fusion and aiding methods
   float ekf2_rng_a_hmax = NAN;  // Maximum absolute altitude (height above
                                 // ground level) allowed for range aid mode
-  float ekf2_rng_a_vmax =
-      NAN;  // Maximum horizontal velocity allowed for range aid mode
+  float ekf2_rng_a_vmax = NAN;  // Maximum horizontal velocity allowed for range aid mode
   float mc_pitchrate_max = NAN;  // Max pitch rate
   float mc_rollrate_max = NAN;   // Max roll rate
   float mc_yawrate_max = NAN;    // Max  yaw rate
   float mc_yawauto_max = NAN;    // Max yaw rate in auto mode
-  float mpc_acc_down_max =
-      NAN;  // Maximum vertical acceleration in velocity controlled modes down
+  float mpc_acc_down_max = NAN;  // Maximum vertical acceleration in velocity controlled modes down
   float mpc_acc_hor = NAN;  // Maximum horizontal acceleration for auto mode and
                             // maximum deceleration for manual mode
-  float mpc_acc_up_max =
-      NAN;  // Maximum vertical acceleration in velocity controlled modes upward
+  float mpc_acc_up_max = NAN;  // Maximum vertical acceleration in velocity controlled modes upward
   int mpc_auto_mode = NAN;  // Auto sub-mode - 0: default line tracking, 1
                             // jerk-limited trajectory
-  float mpc_col_prev_d =
-      NAN;  // Minimum distance the vehicle should keep to all obstacles
+  float mpc_col_prev_d = NAN;  // Minimum distance the vehicle should keep to all obstacles
   float mpc_hold_max_xy = NAN;  // Maximum horizontal velocity for which
                                 // position hold is enabled (use 0 to disable
                                 // check)
-  float mpc_hold_max_z =
-      NAN;  // Maximum vertical velocity for which position hold is enabled
+  float mpc_hold_max_z = NAN;  // Maximum vertical velocity for which position hold is enabled
   float mpc_jerk_max = NAN;    // Maximum jerk limit - Note: this is only used
                                // when MPC_POS_MODE is set to a smoothing mode.
   float mpc_jerk_min = NAN;    // Velocity-based jerk limit - Note: this is only
                                // used when MPC_POS_MODE is set to a smoothing
                                // mode.
   float mpc_land_speed = NAN;  // Landing descend rate
-  int mpc_pos_mode =
-      NAN;  // Manual-Position control sub-mode - 3 smooth position velocity
+  int mpc_pos_mode = NAN;  // Manual-Position control sub-mode - 3 smooth position velocity
   float mpc_thr_max = NAN;      // Maximum thrust in auto thrust control
   float mpc_thr_min = NAN;      // Minimum thrust in auto thrust control
   float mpc_tiltmax_air = NAN;  // Maximum tilt angle in air
@@ -99,6 +94,7 @@ struct Px4Parameters {
   // capped to this velocity.
   float mpc_z_vel_max_dn = NAN;  // Maximum vertical descent velocity
   float mpc_z_vel_max_up = NAN;  // Maximum vertical ascent velocity
+  // clang-format on
 };
 
 struct ModelParameters {

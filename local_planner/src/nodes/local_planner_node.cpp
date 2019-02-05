@@ -110,9 +110,9 @@ LocalPlannerNode::LocalPlannerNode() {
 
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
-  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
+  get_px4_param_client_ =
+      nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
-  
   local_planner_->applyGoal();
 }
 
@@ -676,19 +676,23 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     px4_params_.mc_yawauto_max = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
     model_params_.down_acc = msg.value.real;
-    std::cout << "model parameter acceleration down: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter acceleration down: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_acc_down_max = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_HOR") {
     model_params_.xy_acc = msg.value.real;
-    std::cout << "model parameter acceleration xy: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter acceleration xy: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_acc_hor = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_UP_MAX") {
     model_params_.up_acc = msg.value.real;
-    std::cout << "model parameter acceleration up: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter acceleration up: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_acc_up_max = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
     model_params_.smoothing = msg.value.integer;
-    std::cout << "model parameter trajectory smoothing: " << model_params_.smoothing << std::endl;
+    std::cout << "model parameter trajectory smoothing: "
+              << model_params_.smoothing << std::endl;
     px4_params_.mpc_auto_mode = msg.value.integer;  // int
   } else if (msg.param_id == "MPC_COL_PREV_D") {
     px4_params_.mpc_col_prev_d = msg.value.real;
@@ -699,12 +703,14 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   } else if (msg.param_id == "MPC_JERK_MAX") {
     px4_params_.mpc_jerk_max = msg.value.real;
   } else if (msg.param_id == "MPC_JERK_MIN") {
-    model_params_.jerk_min  = msg.value.real;
-    std::cout << "model parameter minimum jerk: " << model_params_.down_acc << std::endl;
+    model_params_.jerk_min = msg.value.real;
+    std::cout << "model parameter minimum jerk: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_jerk_min = msg.value.real;
   } else if (msg.param_id == "MPC_LAND_SPEED") {
-    model_params_.land_speed  = msg.value.real;
-    std::cout << "model parameter landing speed: " << model_params_.land_speed << std::endl;
+    model_params_.land_speed = msg.value.real;
+    std::cout << "model parameter landing speed: " << model_params_.land_speed
+              << std::endl;
     px4_params_.mpc_land_speed = msg.value.real;
   } else if (msg.param_id == "MPC_THR_MAX") {
     px4_params_.mpc_thr_max = msg.value.real;
@@ -713,103 +719,102 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   } else if (msg.param_id == "MPC_TILTMAX_AIR") {
     px4_params_.mpc_tiltmax_air = msg.value.real;
   } else if (msg.param_id == "MPC_TKO_SPEED") {
-    model_params_.takeoff_speed  = msg.value.real;
-    std::cout << "model parameter takeoff speed: " << model_params_.down_acc << std::endl;
+    model_params_.takeoff_speed = msg.value.real;
+    std::cout << "model parameter takeoff speed: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_tko_speed = msg.value.real;
   } else if (msg.param_id == "MPC_XY_CRUISE") {
     model_params_.xy_vel = msg.value.real;
-    std::cout << "model parameter velocity xy: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter velocity xy: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_xy_cruise = msg.value.real;
   } else if (msg.param_id == "MPC_XY_VEL_MAX") {
     px4_params_.mpc_xy_vel_max = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
     model_params_.down_vel = msg.value.real;
-    std::cout << "model parameter velocity down: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter velocity down: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_z_vel_max_dn = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
     model_params_.up_vel = msg.value.real;
-    std::cout << "model parameter velocity up: " << model_params_.down_acc << std::endl;
+    std::cout << "model parameter velocity up: " << model_params_.down_acc
+              << std::endl;
     px4_params_.mpc_z_vel_max_up = msg.value.real;
   } else if (msg.param_id == "MPC_POS_MODE") {
     px4_params_.mpc_pos_mode = msg.value.integer;
   }
-  //std::cout << msg.param_id << " value " << msg.value.integer << " o " << msg.value.real << std::endl;
+  // std::cout << msg.param_id << " value " << msg.value.integer << " o " <<
+  // msg.value.real << std::endl;
 }
 
-
-void LocalPlannerNode::getPx4Params(){
+void LocalPlannerNode::getPx4Params() {
   mavros_msgs::ParamGet param_get;
   param_get.request.param_id = "MPC_AUTO_MODE";
   std::cout << "in getPx4Params" << std::endl;
 
-
-
-  if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+  if (get_px4_param_client_.call(param_get) && param_get.response.success) {
     std::cout << "got param " << std::endl;
-    if (param_get.response.value.integer==1)
-    {
-      model_params_.smoothing =true;
+    if (param_get.response.value.integer == 1) {
+      model_params_.smoothing = true;
       std::cout << "smoothing is on" << std::endl;
-    }else{
-      model_params_.smoothing =false;
+    } else {
+      model_params_.smoothing = false;
       std::cout << "smoothing is off" << std::endl;
     }
-    
   }
 
-  if(model_params_.smoothing){   
-    param_get.request.param_id ="MPC_JERK_MIN";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+  if (model_params_.smoothing) {
+    param_get.request.param_id = "MPC_JERK_MIN";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.jerk_min = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_ACC_UP_MAX";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_ACC_UP_MAX";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.up_acc = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_ACC_DOWN_MAX";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_ACC_DOWN_MAX";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.down_acc = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_ACC_HOR";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_ACC_HOR";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.xy_acc = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_Z_VEL_MAX_DN";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_Z_VEL_MAX_DN";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.down_vel = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_Z_VEL_MAX_UP";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_Z_VEL_MAX_UP";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.up_vel = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_XY_CRUISE";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_XY_CRUISE";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.xy_vel = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_TKO_SPEED";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_TKO_SPEED";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.takeoff_speed = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_LAND_SPEED";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_LAND_SPEED";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.land_speed = param_get.response.value.real;
     }
-   } else{
-    std::cout << "no smoothing"<< std::endl;
-    param_get.request.param_id ="MPC_ACC_UP_MAX";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+  } else {
+    std::cout << "no smoothing" << std::endl;
+    param_get.request.param_id = "MPC_ACC_UP_MAX";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.up_acc = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_ACC_DOWN_MAX";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_ACC_DOWN_MAX";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.down_acc = param_get.response.value.real;
     }
-    param_get.request.param_id ="MPC_ACC_HOR";
-    if(get_px4_param_client_.call(param_get)&& param_get.response.success){
+    param_get.request.param_id = "MPC_ACC_HOR";
+    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
       model_params_.xy_acc = param_get.response.value.real;
     }
-    }
-
+  }
 }
 
 void LocalPlannerNode::publishGround() {
