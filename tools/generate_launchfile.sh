@@ -88,8 +88,8 @@ sed -i '/stream-fps/c\    \"stream-fps\": \"'$DEPTH_CAMERA_FRAME_RATE'\",' local
 
 # Fix the on/of script for realsense auto-exposure
 cat > local_planner/resource/realsense_params.sh <<- EOM
-#!/bin/bash
-# Disable and enable auto-exposure for all cameras as it doesn not work at startup
+  #!/bin/bash
+  # Disable and enable auto-exposure for all cameras as it doesn not work at startup
 EOM
 
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
