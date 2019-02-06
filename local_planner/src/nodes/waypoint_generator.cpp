@@ -377,6 +377,25 @@ void WaypointGenerator::adaptSpeed() {
             output_.adapted_goto_position.z);
 }
 
+void WaypointGenerator::nextSmoothYaw(double dt) {
+  const float P_constant = smoothing_speed_;
+  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+
+  const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
+  const float desired_yaw_velocity = 0.0;
+
+  double yaw_diff =
+      std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
+
+  wrapAngleToPlusMinusPI(yaw_diff);
+  const float p = yaw_diff * P_constant;
+  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant;
+
+  new_yaw_velocity_ += (p + d) * dt;
+  new_yaw_ += new_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(new_yaw_);
+}
+
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
