@@ -961,8 +961,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_->dynamicReconfigureSetParams(config, level);
-  wp_generator_->setMinJerkLimit(config.min_jerk_limit_);
-  wp_generator_->setMaxJerkLimit(config.max_jerk_limit_);
+  wp_generator_->setSmoothingSpeed(config.smoothing_speed_);
   rqt_param_config_ = config;
 }
 

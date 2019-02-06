@@ -211,40 +211,31 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   pose_to_wp *= planner_info_.min_speed;
 
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + pose_to_wp);
+  output_.adapted_goto_position = output_.goto_position;
+  output_.smoothed_goto_position = output_.goto_position;
+  smoothed_goto_location_ = toEigen(output_.smoothed_goto_position);
 }
 
 void WaypointGenerator::smoothWaypoint(double dt) {
-  Eigen::Vector2f vel_cur_xy(curr_vel_.twist.linear.x,
-                             curr_vel_.twist.linear.y);
-  Eigen::Vector2f vel_sp_xy((output_.adapted_goto_position.x -
-                             last_position_waypoint_.pose.position.x) /
-                                dt,
-                            (output_.adapted_goto_position.y -
-                             last_position_waypoint_.pose.position.y) /
-                                dt);
+  if (smoothing_speed_ > 0.01) {
+    const float P_constant = smoothing_speed_;
+    const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+    const Eigen::Vector3f desired_location =
+        toEigen(output_.adapted_goto_position);
+    const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
 
-  Eigen::Vector2f accel_diff = (vel_sp_xy - vel_cur_xy) / dt;
-  Eigen::Vector2f accel_cur = (vel_cur_xy - last_velocity_) / dt;
-  Eigen::Vector2f jerk_diff = (accel_diff - accel_cur) / dt;
-  float max_jerk = max_jerk_limit_param_;
+    const Eigen::Vector3f p =
+        (desired_location - smoothed_goto_location_) * P_constant;
+    const Eigen::Vector3f d =
+        (desired_velocity - smoothed_goto_location_velocity_) * D_constant;
 
-  // velocity-dependent max jerk
-  if (min_jerk_limit_param_ > 0.001f) {
-    max_jerk *= vel_cur_xy.norm();
-    if (max_jerk < min_jerk_limit_param_) max_jerk = min_jerk_limit_param_;
+    smoothed_goto_location_velocity_ += (p + d) * dt;
+    smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
+
+    output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
+  } else {
+    output_.smoothed_goto_position = output_.adapted_goto_position;
   }
-
-  if (jerk_diff.squaredNorm() > max_jerk * max_jerk && max_jerk > 0.001f) {
-    jerk_diff = max_jerk * jerk_diff.normalized();
-    vel_sp_xy = (jerk_diff * dt + accel_cur) * dt + vel_cur_xy;
-  }
-
-  output_.smoothed_goto_position.x =
-      last_position_waypoint_.pose.position.x + vel_sp_xy(0) * dt;
-  output_.smoothed_goto_position.y =
-      last_position_waypoint_.pose.position.y + vel_sp_xy(1) * dt;
-  output_.smoothed_goto_position.z = output_.adapted_goto_position.z;
-
   ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
@@ -290,10 +281,6 @@ void WaypointGenerator::adaptSpeed() {
       double hover_angle = 30;
       angle_diff = std::min(angle_diff, hover_angle);
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
-      only_yawed_ = false;
-      if (speed_ < 0.01) {
-        only_yawed_ = true;
-      }
     }
   }
   velocity_time_ = ros::Time::now();
@@ -350,16 +337,17 @@ void WaypointGenerator::getPathMsg() {
   ros::Duration time_diff = current_time_ - last_time_;
   double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
+  // set the yaw at the setpoint based on our smoothed location
+  new_yaw_ = nextYaw(pose_, output_.goto_position);
+
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
-  new_yaw_ = nextYaw(pose_, output_.adapted_goto_position);
   adaptSpeed();
   output_.smoothed_goto_position = output_.adapted_goto_position;
 
   // go to flight height first or smooth wp
   if (!planner_info_.reach_altitude) {
     reachGoalAltitudeFirst();
-    output_.adapted_goto_position = output_.goto_position;
-    output_.smoothed_goto_position = output_.goto_position;
+
     ROS_DEBUG("[WG] after altitude func: [%f %f %f].",
               output_.smoothed_goto_position.x,
               output_.smoothed_goto_position.y,
