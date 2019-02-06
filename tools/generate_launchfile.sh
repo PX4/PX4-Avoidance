@@ -85,3 +85,20 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
 EOM
 # Set the frame rate in the JSON file as well
 sed -i '/stream-fps/c\    \"stream-fps\": \"'$DEPTH_CAMERA_FRAME_RATE'\",' local_planner/resource/stereo_calib.json
+
+# Fix the on/of script for realsense auto-exposure
+cat > local_planner/resource/realsense_params.sh <<- EOM
+#!/bin/bash
+# Disable and enable auto-exposure for all cameras as it doesn not work at startup
+EOM
+
+# The CAMERA_CONFIGS string has semi-colon separated camera configurations
+IFS=";"
+for camera in $CAMERA_CONFIGS; do
+  IFS="," #Inside each camera configuration, the parameters are comma-separated
+  set $camera
+  cat >> local_planner/resource/realsense_params.sh <<- EOM
+    rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 0
+    rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 1
+  EOM
+done
