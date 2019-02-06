@@ -59,7 +59,8 @@ class WaypointGenerator {
   bool waypoint_outside_FOV_;
   double last_yaw_;
   double yaw_reached_goal_;
-  double new_yaw_;
+  double new_yaw_ = 0.0;
+  double new_yaw_velocity_ = 0.0;
   double speed_ = 1.0;
   int e_FOV_max_, e_FOV_min_;
   float h_FOV_ = 59.0f;
@@ -104,6 +105,11 @@ class WaypointGenerator {
   * @param[in] dt, time elapsed between two cycles
   **/
   void smoothWaypoint(double dt);
+  /**
+  * @brief     set next yaw, smoothed with a critically damped PD controller
+  * @param[in] dt, time elapsed between two cycles
+  **/
+  void nextSmoothYaw(double dt);
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
