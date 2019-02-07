@@ -1,8 +1,8 @@
 
 #Waypoint Generator Params
-goal_acceptance_radius_in: 0.5
-goal_acceptance_radius_out: 1.5
-factor_close_to_goal_start_speed_limitation: 3.0
-factor_close_to_goal_stop_speed_limitation: 4.0
-max_speed_close_to_goal_factor: 0.1
-min_speed_close_to_goal: 0.5
+goal_acceptance_radius_in: 0.5f
+goal_acceptance_radius_out: 1.5f
+factor_close_to_goal_start_speed_limitation: 3.0f
+factor_close_to_goal_stop_speed_limitation: 4.0f
+max_speed_close_to_goal_factor: 0.1f
+min_speed_close_to_goal: 0.5f

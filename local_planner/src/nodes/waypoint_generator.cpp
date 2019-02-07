@@ -7,9 +7,7 @@
 
 namespace avoidance {
 
-WaypointGenerator::WaypointGenerator() {}
-
-WaypointGenerator::~WaypointGenerator() {}
+ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG(
@@ -20,7 +18,7 @@ void WaypointGenerator::calculateWaypoint() {
 
   // Timing
   last_time_ = current_time_;
-  current_time_ = ros::Time::now();
+  current_time_ = getSystemTime();
 
   switch (planner_info_.waypoint_type) {
     case hover: {
@@ -37,7 +35,7 @@ void WaypointGenerator::calculateWaypoint() {
       PolarPoint p_pol(planner_info_.costmap_direction_e,
                        planner_info_.costmap_direction_z, 1.0);
       output_.goto_position =
-          toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
+          toPoint(polarToCartesian(p_pol, pose_.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
       getPathMsg();
@@ -49,15 +47,16 @@ void WaypointGenerator::calculateWaypoint() {
       bool tree_available =
           getDirectionFromTree(p_pol, planner_info_.path_node_positions,
                                toEigen(pose_.pose.position));
+
       double dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
-          ros::Time::now() - planner_info_.last_path_time;
+          getSystemTime() - planner_info_.last_path_time;
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
         output_.goto_position =
-            toPoint(polarToCartesian(p_pol, planner_info_.pose.pose.position));
+            toPoint(polarToCartesian(p_pol, pose_.pose.position));
         getPathMsg();
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");
@@ -242,7 +241,7 @@ void WaypointGenerator::smoothWaypoint(double dt) {
 }
 
 void WaypointGenerator::adaptSpeed() {
-  ros::Duration since_last_velocity = ros::Time::now() - velocity_time_;
+  ros::Duration since_last_velocity = getSystemTime() - velocity_time_;
   double since_last_velocity_sec = since_last_velocity.toSec();
 
   if (!planner_info_.obstacle_ahead) {
@@ -283,10 +282,10 @@ void WaypointGenerator::adaptSpeed() {
       speed_ = speed_ * (1.0 - angle_diff / hover_angle);
     }
   }
-  velocity_time_ = ros::Time::now();
+  velocity_time_ = getSystemTime();
 
   // calculate correction for computation delay
-  ros::Duration since_update = ros::Time::now() - update_time_;
+  ros::Duration since_update = getSystemTime() - update_time_;
   double since_update_sec = since_update.toSec();
   double delta_dist = since_update_sec * curr_vel_magnitude_;
   speed_ += delta_dist;
@@ -310,9 +309,11 @@ void WaypointGenerator::adaptSpeed() {
     limit_speed_close_to_goal_ = false;
   }
   if (limit_speed_close_to_goal_) {
-    speed_ = std::min(
-        speed_, param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
-    speed_ = std::max(speed_, param_.min_speed_close_to_goal);
+    speed_ =
+        std::min(static_cast<float>(speed_),
+                 param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
+    speed_ =
+        std::max(static_cast<float>(speed_), param_.min_speed_close_to_goal);
   }
 
   // set waypoint to correct speed

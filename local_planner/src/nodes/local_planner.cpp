@@ -565,7 +565,6 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
 
-  out.pose = pose_;
   out.obstacle_ahead = obstacle_;
   out.reach_altitude = reach_altitude_;
   out.min_speed = min_speed_;
