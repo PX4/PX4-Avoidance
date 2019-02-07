@@ -71,4 +71,5 @@ script:
   - cd src/avoidance
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   - ./check_code_format.sh
-  - catkin build local_planner --no-deps -v -i --catkin-make-args run_tests
+  - catkin build local_planner global_planner --no-deps -v -i --catkin-make-args tests
+  - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do $f || status=1; done && exit $status
