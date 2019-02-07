@@ -582,3 +582,52 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
 
   EXPECT_EQ(0, cropped_cloud2.points.size());
 }
+
+TEST(PlannerFunctions, testDirectionTree) {
+  // GIVEN: the node positions in a tree and some possible vehicle positions
+  geometry_msgs::Point n0;
+  n0.x = 0.0f;
+  n0.y = 0.0f;
+  n0.z = 2.5;
+  geometry_msgs::Point n1;
+  n1.x = 0.8f;
+  n1.y = sqrtf(1 - (n1.x * n1.x));
+  n1.z = 2.5;
+  geometry_msgs::Point n2;
+  n2.x = 1.5f;
+  n2.y = n1.y + sqrtf(1 - powf(n2.x - n1.x, 2));
+  n2.z = 2.5;
+  geometry_msgs::Point n3;
+  n3.x = 2.1f;
+  n3.y = n2.y + sqrtf(1 - powf(n3.x - n2.x, 2));
+  n3.z = 2.5;
+  geometry_msgs::Point n4;
+  n4.x = 2.3f;
+  n4.y = n3.y + sqrtf(1 - powf(n4.x - n3.x, 2));
+  n4.z = 2.5;
+  const std::vector<geometry_msgs::Point> path_node_positions = {n4, n3, n2, n1,
+                                                                 n0};
+
+  Eigen::Vector3f p, p1, p2;
+  Eigen::Vector3f postion(0.2, 0.3, 1.5);
+  Eigen::Vector3f postion1(1.1, 2.3, 2.5);
+  Eigen::Vector3f postion2(5.4, 2.0, 2.5);
+
+  // WHEN: we look for the best direction to fly towards
+  bool res = getDirectionFromTree(p, path_node_positions, postion);
+  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1);
+  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2);
+
+  // THEN: we expect a direction in between node n1 and n2 for position, between
+  // node n3 and n4 for position1, and not to get an available tree for the
+  // position2
+  ASSERT_TRUE(res);
+  EXPECT_FLOAT_EQ(45.0f, p.x());
+  EXPECT_FLOAT_EQ(57.0f, p.y());
+
+  ASSERT_TRUE(res1);
+  EXPECT_FLOAT_EQ(0.0f, p1.x());
+  EXPECT_FLOAT_EQ(72.0f, p1.y());
+
+  ASSERT_FALSE(res2);
+}
