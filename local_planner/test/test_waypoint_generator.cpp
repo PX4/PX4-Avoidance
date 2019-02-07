@@ -289,8 +289,8 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
 
   EXPECT_NEAR(0.0, result.position_waypoint.pose.orientation.x, 0.001);
   EXPECT_NEAR(0.0, result.position_waypoint.pose.orientation.y, 0.001);
-  EXPECT_NEAR(0.424, result.position_waypoint.pose.orientation.z, 0.001);
-  EXPECT_NEAR(0.905, result.position_waypoint.pose.orientation.w, 0.001);
+  EXPECT_NEAR(0.0, result.position_waypoint.pose.orientation.z, 0.001);
+  EXPECT_NEAR(1.0, result.position_waypoint.pose.orientation.w, 0.001);
 
   EXPECT_NEAR(0.0002, result.velocity_waypoint.linear.x, 0.001);
   EXPECT_NEAR(0.0003, result.velocity_waypoint.linear.y, 0.001);
@@ -298,7 +298,7 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
 
   EXPECT_NEAR(0.0, result.velocity_waypoint.angular.x, 0.001);
   EXPECT_NEAR(0.0, result.velocity_waypoint.angular.y, 0.001);
-  EXPECT_NEAR(0.438, result.velocity_waypoint.angular.z, 0.001);
+  EXPECT_NEAR(0.0, result.velocity_waypoint.angular.z, 0.001);
 }
 
 TEST_F(WaypointGeneratorTests, costmapTest) {
