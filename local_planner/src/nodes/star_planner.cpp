@@ -154,15 +154,15 @@ void StarPlanner::buildLookAheadTree() {
     Histogram histogram = Histogram(ALPHA_RES);
 
     propagateHistogram(propagated_histogram, reprojected_points_,
-                       reprojected_points_age_, pose_);
-    generateNewHistogram(histogram, pointcloud_, toEigen(pose_.pose.position));
+                       reprojected_points_age_, origin_position);
+    generateNewHistogram(histogram, pointcloud_, origin_position);
     combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
                       z_FOV_idx, e_FOV_min, e_FOV_max);
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
-    getCostMatrix(histogram, goal_, toEigen(pose_.pose.position),
+    getCostMatrix(histogram, goal_, origin_position,
                   origin_origin_position, cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_,
                                     candidate_vector);
