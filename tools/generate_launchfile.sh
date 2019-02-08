@@ -71,7 +71,7 @@ for camera in $CAMERA_CONFIGS; do
 			</include>
 		EOM
 
-    # Append to the realsense auto exposure togglening
+    # Append to the realsense auto exposure toggling
     echo "rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 0
 rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 1
 " >> local_planner/resource/realsense_params.sh
