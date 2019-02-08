@@ -28,6 +28,12 @@ cat > local_planner/launch/avoidance.launch <<- EOM
     <!-- Launch cameras -->
 EOM
 
+# Fix the on/of script for realsense auto-exposure
+cat > local_planner/resource/realsense_params.sh <<- EOM
+#!/bin/bash
+# Disable and enable auto-exposure for all cameras as it does not work at startup
+EOM
+
 # Set the frame rate to 15 if it is undefined
 if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
@@ -47,7 +53,9 @@ for camera in $CAMERA_CONFIGS; do
 		else
 			camera_topics="$camera_topics,/$1/depth/points"
 		fi
-		cat >> local_planner/launch/avoidance.launch <<- EOM
+
+    # Append to the launch file
+    cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
 			 args="$3 $4 $5 $6 $7 $8 fcu $1_link 10"/>
 			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
@@ -62,6 +70,12 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="enable_fisheye"        value="false"/>
 			</include>
 		EOM
+
+    # Append to the realsense auto exposure toggling
+    echo "rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 0
+rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 1
+" >> local_planner/resource/realsense_params.sh
+
 	fi
 done
 
@@ -83,5 +97,6 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
 
 </launch>
 EOM
+
 # Set the frame rate in the JSON file as well
 sed -i '/stream-fps/c\    \"stream-fps\": \"'$DEPTH_CAMERA_FRAME_RATE'\",' local_planner/resource/stereo_calib.json
