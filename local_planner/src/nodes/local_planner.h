@@ -57,7 +57,7 @@ class LocalPlanner {
   size_t dist_incline_window_size_ = 50;
   int origin_;
   int tree_age_ = 0;
-  int childs_per_node_;
+  int children_per_node_;
   int n_expanded_nodes_;
   int reproj_age_;
   int counter_close_points_backoff_ = 0;

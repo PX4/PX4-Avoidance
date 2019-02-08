@@ -3,9 +3,8 @@
 
 namespace avoidance {
 Histogram::Histogram(const int res)
-    : resolution_{res}, z_dim_{360 / resolution_}, e_dim_{180 / resolution_} {
-  age_.resize(e_dim_, z_dim_);
-  dist_.resize(e_dim_, z_dim_);
+    : resolution_{res}, z_dim_{360 / resolution_}, e_dim_{180 / resolution_},
+      age_(e_dim_, z_dim_), dist_(e_dim_, z_dim_){
   setZero();
 }
 
@@ -44,10 +43,8 @@ void Histogram::downsample() {
   resolution_ = 2 * resolution_;
   z_dim_ = z_dim_ / 2;
   e_dim_ = e_dim_ / 2;
-  Eigen::MatrixXi temp_age;
-  Eigen::MatrixXf temp_dist;
-  temp_age.resize(e_dim_, z_dim_);
-  temp_dist.resize(e_dim_, z_dim_);
+  Eigen::MatrixXi temp_age(e_dim_, z_dim_);
+  Eigen::MatrixXf temp_dist(e_dim_, z_dim_);
 
   for (int i = 0; i < e_dim_; ++i) {
     for (int j = 0; j < z_dim_; ++j) {

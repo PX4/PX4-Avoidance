@@ -57,7 +57,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   min_dist_backoff_ = config.min_dist_backoff_;
   pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
   pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
-  childs_per_node_ = config.childs_per_node_;
+  children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
 
