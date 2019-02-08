@@ -28,7 +28,6 @@ class StarPlanner {
   double v_FOV_ = 46.0;
   int childs_per_node_ = 1;
   int n_expanded_nodes_ = 5;
-  double min_node_dist_to_obstacle_ = 2.0;
   double tree_node_distance_ = 1.0;
   double tree_discount_factor_ = 0.8;
   double curr_yaw_;

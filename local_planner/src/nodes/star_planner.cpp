@@ -15,7 +15,6 @@ StarPlanner::~StarPlanner() {}
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  min_node_dist_to_obstacle_ = config.min_node_dist_to_obstacle_;
   childs_per_node_ = config.childs_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
