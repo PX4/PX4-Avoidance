@@ -54,60 +54,31 @@ struct cameraData {
   bool received_;
 };
 
-struct Px4Parameters {
-  // clang-format off
-  int ekf2_aid_mask =
-      NAN;  // Integer bitmask controlling data fusion and aiding methods
-  float ekf2_rng_a_hmax = NAN;  // Maximum absolute altitude (height above
-                                // ground level) allowed for range aid mode
-  float ekf2_rng_a_vmax = NAN;  // Maximum horizontal velocity allowed for range aid mode
-  float mc_pitchrate_max = NAN;  // Max pitch rate
-  float mc_rollrate_max = NAN;   // Max roll rate
-  float mc_yawrate_max = NAN;    // Max  yaw rate
-  float mc_yawauto_max = NAN;    // Max yaw rate in auto mode
-  float mpc_acc_down_max = NAN;  // Maximum vertical acceleration in velocity controlled modes down
-  float mpc_acc_hor = NAN;  // Maximum horizontal acceleration for auto mode and
-                            // maximum deceleration for manual mode
-  float mpc_acc_up_max = NAN;  // Maximum vertical acceleration in velocity controlled modes upward
-  int mpc_auto_mode = NAN;  // Auto sub-mode - 0: default line tracking, 1
-                            // jerk-limited trajectory
-  float mpc_col_prev_d = NAN;  // Minimum distance the vehicle should keep to all obstacles
-  float mpc_hold_max_xy = NAN;  // Maximum horizontal velocity for which
-                                // position hold is enabled (use 0 to disable
-                                // check)
-  float mpc_hold_max_z = NAN;  // Maximum vertical velocity for which position hold is enabled
-  float mpc_jerk_max = NAN;    // Maximum jerk limit - Note: this is only used
-                               // when MPC_POS_MODE is set to a smoothing mode.
-  float mpc_jerk_min = NAN;    // Velocity-based jerk limit - Note: this is only
-                               // used when MPC_POS_MODE is set to a smoothing
-                               // mode.
-  float mpc_land_speed = NAN;  // Landing descend rate
-  int mpc_pos_mode = NAN;  // Manual-Position control sub-mode - 3 smooth position velocity
-  float mpc_thr_max = NAN;      // Maximum thrust in auto thrust control
-  float mpc_thr_min = NAN;      // Minimum thrust in auto thrust control
-  float mpc_tiltmax_air = NAN;  // Maximum tilt angle in air
-  float mpc_tko_speed = NAN;    // Takeoff climb rate
-  float mpc_xy_cruise = NAN;    // Desired horizontal velocity in mission
-  float mpc_xy_vel_max = NAN;   // Maximum horizontal velocity -Maximum
-                                // horizontal velocity in AUTO mode. If higher
-  // speeds are commanded in a mission they will be
-  // capped to this velocity.
-  float mpc_z_vel_max_dn = NAN;  // Maximum vertical descent velocity
-  float mpc_z_vel_max_up = NAN;  // Maximum vertical ascent velocity
-  // clang-format on
-};
 
+/**
+* @brief struct to contain the parameters needed for the model based trajectory planning
+* when MPC_AUTO_MODE is set to 1 (default) then all members are used for the jerk limited 
+* trajectory on the flight controller side
+* when MPC_AUTO_MODE is set to 0, only up_accl, down_accl, xy_acc are used on the 
+* flight controller side 
+**/
 struct ModelParameters {
-  float jerk_min = NAN;
-  float up_acc = NAN;
-  float up_vel = NAN;
-  float down_acc = NAN;
-  float down_vel = NAN;
-  float xy_acc = NAN;
-  float xy_vel = NAN;
-  float takeoff_speed = NAN;
-  float land_speed = NAN;
-  int smoothing = false;
+  // clang-format off
+  int mpc_auto_mode = 1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
+  float jerk_min = 8.0f; // Velocity-based jerk limit 
+  float up_acc = 10.0f;   // Maximum vertical acceleration in velocity controlled modes upward
+  float up_vel = 3.0f;   // Maximum vertical ascent velocity
+  float down_acc = 10.0f; // Maximum vertical acceleration in velocity controlled modes down
+  float down_vel = 1.0f; // Maximum vertical descent velocity
+  float xy_acc = 5.0f;  // Maximum horizontal acceleration for auto mode and
+                      // maximum deceleration for manual mode
+  float xy_vel = 1.0f;   // Desired horizontal velocity in mission
+  float takeoff_speed = 1.0f; // Takeoff climb rate
+  float land_speed = 0.7f;   // Landing descend rate
+  // limitations given by sensors
+  float distance_sensor_max_height = 5.0f;
+  float distance_sensor_max_vel = 5.0f;
+  // clang-format on
 };
 
 enum class MAV_STATE {
@@ -141,7 +112,6 @@ class LocalPlannerNode {
 
   std::vector<cameraData> cameras_;
 
-  Px4Parameters px4_params_;
   ModelParameters model_params_;
 
   ros::CallbackQueue pointcloud_queue_;
@@ -196,8 +166,6 @@ class LocalPlannerNode {
                                      geometry_msgs::Twist vel);
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
   void publishWaypoints(bool hover);
-
-  void getPx4Params();
 
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 

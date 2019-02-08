@@ -658,164 +658,46 @@ void LocalPlannerNode::distanceSensorCallback(
 
 void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   // collect all px4 parameters needed for model based trajectory planning
-  // when adding new parameter,
-  // add parameter to struct ModelParameters
+  // when adding new parameter to the struct ModelParameters,
   // add new else if case with correct value type
 
   if (msg.param_id == "EKF2_RNG_A_HMAX") {
-    px4_params_.ekf2_rng_a_hmax = msg.value.real;  // float
+    model_params_.distance_sensor_max_height = msg.value.real; 
   } else if (msg.param_id == "EKF2_RNG_A_VMAX") {
-    px4_params_.ekf2_rng_a_vmax = msg.value.real;
-  } else if (msg.param_id == "MC_PITCHRATE_MAX") {
-    px4_params_.mc_pitchrate_max = msg.value.real;
-  } else if (msg.param_id == "MC_ROLLRATE_MAX") {
-    px4_params_.mc_rollrate_max = msg.value.real;
-  } else if (msg.param_id == "MC_YAWRATE_MAX") {
-    px4_params_.mc_yawrate_max = msg.value.real;
-  } else if (msg.param_id == "MC_YAWAUTO_MAX") {
-    px4_params_.mc_yawauto_max = msg.value.real;
+    model_params_.distance_sensor_max_vel = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
+    printf("model parameter acceleration down is set from  %f to %f \n", model_params_.down_acc , msg.value.real);
     model_params_.down_acc = msg.value.real;
-    std::cout << "model parameter acceleration down: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_acc_down_max = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_HOR") {
+    printf("model parameter acceleration horizontal is set from  %f to %f \n", model_params_.xy_acc , msg.value.real);
     model_params_.xy_acc = msg.value.real;
-    std::cout << "model parameter acceleration xy: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_acc_hor = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_UP_MAX") {
+    printf("model parameter acceleration up is set from  %f to %f \n", model_params_.up_acc , msg.value.real);
     model_params_.up_acc = msg.value.real;
-    std::cout << "model parameter acceleration up: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_acc_up_max = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
-    model_params_.smoothing = msg.value.integer;
-    std::cout << "model parameter trajectory smoothing: "
-              << model_params_.smoothing << std::endl;
-    px4_params_.mpc_auto_mode = msg.value.integer;  // int
-  } else if (msg.param_id == "MPC_COL_PREV_D") {
-    px4_params_.mpc_col_prev_d = msg.value.real;
-  } else if (msg.param_id == "MPC_HOLD_MAX_XY") {
-    px4_params_.mpc_hold_max_xy = msg.value.real;
-  } else if (msg.param_id == "MPD_HOLD_MAX_Z") {
-    px4_params_.mpc_hold_max_z = msg.value.real;
-  } else if (msg.param_id == "MPC_JERK_MAX") {
-    px4_params_.mpc_jerk_max = msg.value.real;
+    printf("model parameter auto mode is set from  %i to %i \n", model_params_.mpc_auto_mode , msg.value.integer);
+    model_params_.mpc_auto_mode = msg.value.integer;
   } else if (msg.param_id == "MPC_JERK_MIN") {
+    printf("model parameter jerk minimum is set from  %f to %f \n", model_params_.jerk_min , msg.value.real);
     model_params_.jerk_min = msg.value.real;
-    std::cout << "model parameter minimum jerk: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_jerk_min = msg.value.real;
   } else if (msg.param_id == "MPC_LAND_SPEED") {
+    printf("model parameter landing speed is set from  %f to %f \n", model_params_.land_speed , msg.value.real);
     model_params_.land_speed = msg.value.real;
-    std::cout << "model parameter landing speed: " << model_params_.land_speed
-              << std::endl;
-    px4_params_.mpc_land_speed = msg.value.real;
-  } else if (msg.param_id == "MPC_THR_MAX") {
-    px4_params_.mpc_thr_max = msg.value.real;
-  } else if (msg.param_id == "MPC_THR_MIN") {
-    px4_params_.mpc_thr_min = msg.value.real;
-  } else if (msg.param_id == "MPC_TILTMAX_AIR") {
-    px4_params_.mpc_tiltmax_air = msg.value.real;
   } else if (msg.param_id == "MPC_TKO_SPEED") {
+    printf("model parameter takeoff speed is set from  %f to %f \n", model_params_.takeoff_speed , msg.value.real);
     model_params_.takeoff_speed = msg.value.real;
-    std::cout << "model parameter takeoff speed: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_tko_speed = msg.value.real;
   } else if (msg.param_id == "MPC_XY_CRUISE") {
+    printf("model parameter velocity horizontal is set from  %f to %f \n", model_params_.xy_vel , msg.value.real);
     model_params_.xy_vel = msg.value.real;
-    std::cout << "model parameter velocity xy: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_xy_cruise = msg.value.real;
-  } else if (msg.param_id == "MPC_XY_VEL_MAX") {
-    px4_params_.mpc_xy_vel_max = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
+    printf("model parameter velocity down is set from  %f to %f \n", model_params_.down_acc , msg.value.real);
     model_params_.down_vel = msg.value.real;
-    std::cout << "model parameter velocity down: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_z_vel_max_dn = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
+    printf("model parameter velocity up is set from  %f to %f \n", model_params_.up_vel , msg.value.real);
     model_params_.up_vel = msg.value.real;
-    std::cout << "model parameter velocity up: " << model_params_.down_acc
-              << std::endl;
-    px4_params_.mpc_z_vel_max_up = msg.value.real;
-  } else if (msg.param_id == "MPC_POS_MODE") {
-    px4_params_.mpc_pos_mode = msg.value.integer;
-  }
-  // std::cout << msg.param_id << " value " << msg.value.integer << " o " <<
-  // msg.value.real << std::endl;
+  } 
 }
 
-void LocalPlannerNode::getPx4Params() {
-  mavros_msgs::ParamGet param_get;
-  param_get.request.param_id = "MPC_AUTO_MODE";
-  std::cout << "in getPx4Params" << std::endl;
-
-  if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-    std::cout << "got param " << std::endl;
-    if (param_get.response.value.integer == 1) {
-      model_params_.smoothing = true;
-      std::cout << "smoothing is on" << std::endl;
-    } else {
-      model_params_.smoothing = false;
-      std::cout << "smoothing is off" << std::endl;
-    }
-  }
-
-  if (model_params_.smoothing) {
-    param_get.request.param_id = "MPC_JERK_MIN";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.jerk_min = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_ACC_UP_MAX";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.up_acc = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_ACC_DOWN_MAX";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.down_acc = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_ACC_HOR";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.xy_acc = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_Z_VEL_MAX_DN";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.down_vel = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_Z_VEL_MAX_UP";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.up_vel = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_XY_CRUISE";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.xy_vel = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_TKO_SPEED";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.takeoff_speed = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_LAND_SPEED";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.land_speed = param_get.response.value.real;
-    }
-  } else {
-    std::cout << "no smoothing" << std::endl;
-    param_get.request.param_id = "MPC_ACC_UP_MAX";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.up_acc = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_ACC_DOWN_MAX";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.down_acc = param_get.response.value.real;
-    }
-    param_get.request.param_id = "MPC_ACC_HOR";
-    if (get_px4_param_client_.call(param_get) && param_get.response.success) {
-      model_params_.xy_acc = param_get.response.value.real;
-    }
-  }
-}
 
 void LocalPlannerNode::publishGround() {
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
