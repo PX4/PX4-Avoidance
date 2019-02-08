@@ -707,7 +707,7 @@ void LocalPlannerNode::updateGoalCallback(
 
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory& msg) {
-  if (mission_ && (msg.point_valid[1] == true) &&
+  if ((msg.point_valid[1] == true) &&
       ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
         0.001) ||
        (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) >
