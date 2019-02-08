@@ -608,7 +608,7 @@ TEST(PlannerFunctions, testDirectionTree) {
   const std::vector<geometry_msgs::Point> path_node_positions = {n4, n3, n2, n1,
                                                                  n0};
 
-  Eigen::Vector3f p, p1, p2;
+  PolarPoint p, p1, p2;
   Eigen::Vector3f postion(0.2, 0.3, 1.5);
   Eigen::Vector3f postion1(1.1, 2.3, 2.5);
   Eigen::Vector3f postion2(5.4, 2.0, 2.5);
@@ -622,12 +622,12 @@ TEST(PlannerFunctions, testDirectionTree) {
   // node n3 and n4 for position1, and not to get an available tree for the
   // position2
   ASSERT_TRUE(res);
-  EXPECT_FLOAT_EQ(45.0f, p.x());
-  EXPECT_FLOAT_EQ(57.0f, p.y());
+  EXPECT_NEAR(45.0f, p.e, 1.f);
+  EXPECT_NEAR(57.0f, p.z, 1.f);
 
   ASSERT_TRUE(res1);
-  EXPECT_FLOAT_EQ(0.0f, p1.x());
-  EXPECT_FLOAT_EQ(72.0f, p1.y());
+  EXPECT_NEAR(0.0f, p1.e, 1.f);
+  EXPECT_NEAR(72.0f, p1.z, 1.f);
 
   ASSERT_FALSE(res2);
 }
