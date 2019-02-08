@@ -103,15 +103,15 @@ void propagateHistogram(
     Histogram& polar_histogram_est,
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
     const std::vector<int>& reprojected_points_age,
-    const geometry_msgs::PoseStamped& position) {
+    const Eigen::Vector3f& position) {
   Eigen::MatrixXi counter(GRID_LENGTH_E / 2, GRID_LENGTH_Z / 2);
   counter.fill(0);
 
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
     PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
-                                        toEigen(position.pose.position));
+                                        position);
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
-    float point_distance = (toEigen(position.pose.position) -
+    float point_distance = (position -
                             toEigen(reprojected_points.points[i]))
                                .norm();
 

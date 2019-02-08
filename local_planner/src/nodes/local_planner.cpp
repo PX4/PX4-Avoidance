@@ -132,7 +132,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   to_fcu_histogram_.setZero();
 
   propagateHistogram(propagated_histogram, reprojected_points_,
-                     reprojected_points_age_, pose_);
+                     reprojected_points_age_, toEigen(pose_.pose.position));
   generateNewHistogram(new_histogram, final_cloud_,
                        toEigen(pose_.pose.position));
   combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
