@@ -15,7 +15,7 @@ StarPlanner::~StarPlanner() {}
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  childs_per_node_ = config.childs_per_node_;
+  children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = config.tree_node_distance_;
   tree_discount_factor_ = config.tree_discount_factor_;
@@ -163,7 +163,7 @@ void StarPlanner::buildLookAheadTree() {
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position,
                   origin_origin_position, cost_params_, false, cost_matrix);
-    getBestCandidatesFromCostMatrix(cost_matrix, childs_per_node_,
+    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 
     // add candidates as nodes
@@ -172,7 +172,7 @@ void StarPlanner::buildLookAheadTree() {
     } else {
       // insert new nodes
       int depth = tree_[origin].depth_ + 1;
-      int childs = 0;
+      int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle,
                          tree_node_distance_);
@@ -188,7 +188,7 @@ void StarPlanner::buildLookAheadTree() {
           }
         }
 
-        if (childs < childs_per_node_ && close_nodes == 0) {
+        if (children < children_per_node_ && close_nodes == 0) {
           tree_.push_back(TreeNode(origin, depth, node_location));
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
@@ -199,7 +199,7 @@ void StarPlanner::buildLookAheadTree() {
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
           tree_.back().yaw_ = atan2(diff.y(), diff.x());
-          childs++;
+          children++;
         }
       }
     }

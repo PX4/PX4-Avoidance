@@ -7,8 +7,8 @@
 
 namespace avoidance {
 
-// Be very careful choosing the resolution! Valid resolutions must fullfill: 180
-// % (2 * ALPHA_RES) = 0
+// Be very careful choosing the resolution! Valid resolutions must fullfill:
+// 180 % (2 * ALPHA_RES) = 0
 // Examples of valid resolution values: 1, 3, 5, 6, 10, 15, 18, 30, 45, 60
 const int ALPHA_RES = 6;
 const int GRID_LENGTH_Z = 360 / ALPHA_RES;
