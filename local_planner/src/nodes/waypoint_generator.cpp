@@ -221,10 +221,19 @@ void WaypointGenerator::smoothWaypoint(double dt) {
         toEigen(output_.adapted_goto_position);
     const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
 
-    const Eigen::Vector3f p =
-        (desired_location - smoothed_goto_location_) * P_constant;
-    const Eigen::Vector3f d =
-        (desired_velocity - smoothed_goto_location_velocity_) * D_constant;
+    Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
+    if (!location_diff.allFinite()) {
+      location_diff = Eigen::Vector3f::Zero();
+    }
+
+    Eigen::Vector3f velocity_diff =
+        desired_velocity - smoothed_goto_location_velocity_;
+    if (!velocity_diff.allFinite()) {
+      velocity_diff = Eigen::Vector3f::Zero();
+    }
+
+    const Eigen::Vector3f p = location_diff * P_constant;
+    const Eigen::Vector3f d = velocity_diff * D_constant;
 
     smoothed_goto_location_velocity_ += (p + d) * dt;
     smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
@@ -236,6 +245,25 @@ void WaypointGenerator::smoothWaypoint(double dt) {
   ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
+}
+
+void WaypointGenerator::nextSmoothYaw(double dt) {
+  const float P_constant = smoothing_speed_;
+  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+
+  const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
+  const float desired_yaw_velocity = 0.0;
+
+  double yaw_diff =
+      std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
+
+  wrapAngleToPlusMinusPI(yaw_diff);
+  const float p = yaw_diff * P_constant;
+  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant;
+
+  new_yaw_velocity_ += (p + d) * dt;
+  new_yaw_ += new_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(new_yaw_);
 }
 
 void WaypointGenerator::adaptSpeed() {
@@ -327,25 +355,6 @@ void WaypointGenerator::adaptSpeed() {
   ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f].",
             output_.adapted_goto_position.x, output_.adapted_goto_position.y,
             output_.adapted_goto_position.z);
-}
-
-void WaypointGenerator::nextSmoothYaw(double dt) {
-  const float P_constant = smoothing_speed_;
-  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
-
-  const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
-  const float desired_yaw_velocity = 0.0;
-
-  double yaw_diff =
-      std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
-
-  wrapAngleToPlusMinusPI(yaw_diff);
-  const float p = yaw_diff * P_constant;
-  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant;
-
-  new_yaw_velocity_ += (p + d) * dt;
-  new_yaw_ += new_yaw_velocity_ * dt;
-  wrapAngleToPlusMinusPI(new_yaw_);
 }
 
 // create the message that is sent to the UAV
