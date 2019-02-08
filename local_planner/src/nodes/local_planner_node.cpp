@@ -634,16 +634,10 @@ void LocalPlannerNode::updateGoalCallback(
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory& msg) {
   if ((msg.point_valid[1] == true) &&
-      ((std::fabs(goal_msg_.pose.position.x - msg.point_2.position.x) >
-        0.001) ||
-       (std::fabs(goal_msg_.pose.position.y - msg.point_2.position.y) >
-        0.001) ||
-       (std::fabs(goal_msg_.pose.position.z - msg.point_2.position.z) >
-        0.001))) {
+      (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position))
+              .norm() > 0.01) {
     new_goal_ = true;
-    goal_msg_.pose.position.x = msg.point_2.position.x;
-    goal_msg_.pose.position.y = msg.point_2.position.y;
-    goal_msg_.pose.position.z = msg.point_2.position.z;
+    goal_msg_.pose.position = msg.point_2.position;
   }
 }
 

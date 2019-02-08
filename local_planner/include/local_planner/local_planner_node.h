@@ -125,8 +125,6 @@ class LocalPlannerNode {
   void publishSetpoint(const geometry_msgs::Twist& wp,
                        waypoint_choice& waypoint_type);
   void threadFunction();
-  void getInterimWaypoint(geometry_msgs::PoseStamped& wp,
-                          geometry_msgs::Twist& wp_vel);
   bool canUpdatePlannerInfo();
   void updatePlannerInfo();
   size_t numReceivedClouds();
