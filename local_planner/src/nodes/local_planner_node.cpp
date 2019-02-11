@@ -14,10 +14,13 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode() {
+LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
+                                   const ros::NodeHandle& nh_private)
+        : nh_(nh),
+          nh_private_(nh_private) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-  nh_ = ros::NodeHandle("~");
+
   readParams();
 
   // Set up Dynamic Reconfigure Server
