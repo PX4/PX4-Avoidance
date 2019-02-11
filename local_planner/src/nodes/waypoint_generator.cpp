@@ -11,7 +11,7 @@ ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG(
-      "\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, "
+      "\033[1;32m[WG] Generating waypoint, current position: [%f, %f, "
       "%f].\033[0m",
       pose_.pose.position.x, pose_.pose.position.y, pose_.pose.position.z);
   output_.waypoint_type = planner_info_.waypoint_type;
@@ -26,7 +26,7 @@ void WaypointGenerator::calculateWaypoint() {
         hover_position_ = toEigen(pose_.pose.position);
       }
       output_.goto_position = toPoint(hover_position_);
-      ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x,
+      ROS_DEBUG("[WG] Hovering at: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
       getPathMsg();
       break;
@@ -54,12 +54,12 @@ void WaypointGenerator::calculateWaypoint() {
       if (tree_available &&
           (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
           since_last_path < ros::Duration(5)) {
-        ROS_DEBUG("[WG] Use calculated tree\n");
+        ROS_DEBUG("[WG] Using calculated tree\n");
         p_pol.r = 1.0;
         output_.goto_position =
             toPoint(polarToCartesian(p_pol, pose_.pose.position));
       } else {
-        ROS_DEBUG("[WG] No valid tree, go fast");
+        ROS_DEBUG("[WG] No valid tree, going straight");
         goStraight();
         output_.waypoint_type = direct;
       }
@@ -68,20 +68,21 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case direct: {
-      ROS_DEBUG("[WG] No obstacle ahead, go fast");
+      ROS_DEBUG("[WG] No obstacle ahead, going straight");
       goStraight();
       getPathMsg();
       break;
     }
 
     case reachHeight: {
-      ROS_DEBUG("[WG] Reach height first, go fast");
+      ROS_DEBUG("[WG] Rising to altitude first");
       reachGoalAltitudeFirst();
       getPathMsg();
       break;
     }
+
     case goBack: {
-      ROS_DEBUG("[WG] Too close, back off");
+      ROS_DEBUG("[WG] Too close, backing off");
       backOff();
       break;
     }
@@ -132,7 +133,7 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   }
 }
 
-// if there isn't any obstacle in front of the UAV, increase cruising speed
+// if there isn't any obstacle in front of the UAV, go straight
 void WaypointGenerator::goStraight() {
   Eigen::Vector3f dir = (goal_ - toEigen(pose_.pose.position)).normalized();
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + dir);
