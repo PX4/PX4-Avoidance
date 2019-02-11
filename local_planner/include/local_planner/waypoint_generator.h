@@ -81,7 +81,7 @@ class WaypointGenerator {
   /**
   * @brief     computes waypoints when there isn't any obstacle
   **/
-  void goFast();
+  void goStraight();
   /**
   * @brief     computes waypoints to move away from an obstacle
   **/
