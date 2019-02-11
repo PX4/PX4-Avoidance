@@ -58,15 +58,19 @@ float StarPlanner::treeCostFunction(int node_number) {
   Eigen::Vector3f origin_position = tree_[origin].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, origin_position);
 
-  float target_cost = indexAngleDifference(z, goal_pol.z) +
-      10.0f * indexAngleDifference(e, goal_pol.e);  // include effective direction?
-  float turning_cost = 5.0f * indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
+  float target_cost =
+      indexAngleDifference(z, goal_pol.z) +
+      10.0f *
+          indexAngleDifference(e, goal_pol.e);  // include effective direction?
+  float turning_cost =
+      5.0f *
+      indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
 
   float last_e = tree_[origin].last_e_;
   float last_z = tree_[origin].last_z_;
 
   float smooth_cost = 5.0f * (2.0f * indexAngleDifference(z, last_z) +
-                            5.0f * indexAngleDifference(e, last_e));
+                              5.0f * indexAngleDifference(e, last_e));
 
   float smooth_cost_to_old_tree = 0.0f;
   if (tree_age_ < 10) {
@@ -147,8 +151,8 @@ void StarPlanner::buildLookAheadTree() {
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
-    getCostMatrix(histogram, goal_, origin_position,
-                  origin_origin_position, cost_params_, false, cost_matrix);
+    getCostMatrix(histogram, goal_, origin_position, origin_origin_position,
+                  cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 
@@ -221,19 +225,17 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 
-  ROS_INFO("\033[0;35m[SP]Tree (%.0f nodes, %.0f path nodes, %.0f expanded) calculated in %2.2fms.\033[0m",
-          (double)tree_.size(),
-          (double)path_node_positions_.size(),
-          (double)closed_set_.size(),
-          (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  for(int j = 0; j < path_node_positions_.size(); j++)
-  {
-        ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m",
-                 (double)j,
-                 (double)path_node_positions_[j].x,
-                 (double)path_node_positions_[j].y,
-                 (double)path_node_positions_[j].z);
+  ROS_INFO(
+      "\033[0;35m[SP]Tree (%.0f nodes, %.0f path nodes, %.0f expanded) "
+      "calculated in %2.2fms.\033[0m",
+      (double)tree_.size(), (double)path_node_positions_.size(),
+      (double)closed_set_.size(),
+      (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  for (int j = 0; j < path_node_positions_.size(); j++) {
+    ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m", (double)j,
+              (double)path_node_positions_[j].x,
+              (double)path_node_positions_[j].y,
+              (double)path_node_positions_[j].z);
   }
-
 }
 }

@@ -116,12 +116,11 @@ void propagateHistogram(
   counter.fill(0);
 
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
-                                        position);
+    PolarPoint p_pol =
+        cartesianToPolar(toEigen(reprojected_points.points[i]), position);
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
-    float point_distance = (position -
-                            toEigen(reprojected_points.points[i]))
-                               .norm();
+    float point_distance =
+        (position - toEigen(reprojected_points.points[i])).norm();
 
     counter(p_ind.y(), p_ind.x()) += 1;
     polar_histogram_est.set_age(
