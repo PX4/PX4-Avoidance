@@ -58,24 +58,26 @@ void WaypointGenerator::calculateWaypoint() {
         p_pol.r = 1.0;
         output_.goto_position =
             toPoint(polarToCartesian(p_pol, pose_.pose.position));
-        getPathMsg();
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");
         goFast();
         output_.waypoint_type = direct;
       }
+      getPathMsg();
       break;
     }
 
     case direct: {
       ROS_DEBUG("[WG] No obstacle ahead, go fast");
       goFast();
+      getPathMsg();
       break;
     }
 
     case reachHeight: {
       ROS_DEBUG("[WG] Reach height first, go fast");
       goFast();
+      getPathMsg();
       break;
     }
     case goBack: {
@@ -138,8 +140,6 @@ void WaypointGenerator::goFast() {
   ROS_DEBUG("[WG] Go fast selected waypoint: [%f, %f, %f].",
             output_.goto_position.x, output_.goto_position.y,
             output_.goto_position.z);
-
-  getPathMsg();
 }
 
 void WaypointGenerator::backOff() {
