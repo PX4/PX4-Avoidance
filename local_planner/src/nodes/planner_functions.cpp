@@ -250,11 +250,11 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
     }
   }
 
-  unsigned int smooth_radius = 3;
+  unsigned int smooth_radius = 1;
   smoothPolarMatrix(cost_matrix, smooth_radius);
-  smooth_radius = 2;
   smoothPolarMatrix(cost_matrix, smooth_radius);
-  smooth_radius = 1;
+  smoothPolarMatrix(cost_matrix, smooth_radius);
+  smoothPolarMatrix(cost_matrix, smooth_radius);
   smoothPolarMatrix(cost_matrix, smooth_radius);
 }
 

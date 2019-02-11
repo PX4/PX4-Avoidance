@@ -33,7 +33,7 @@ LocalPlannerNode::LocalPlannerNode() {
   // disable memory if using more than one camera
   if (cameras_.size() > 1) {
     config_mutex_.lock();
-    rqt_param_config_.reproj_age_ = 0;
+    rqt_param_config_.reproj_age_ = std::min(10, rqt_param_config_.reproj_age_);
     config_mutex_.unlock();
     server_->updateConfig(rqt_param_config_);
     dynamicReconfigureCallback(rqt_param_config_, 1);

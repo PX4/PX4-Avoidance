@@ -65,10 +65,10 @@ double StarPlanner::treeCostFunction(int node_number) {
   PolarPoint goal_pol = cartesianToPolar(goal_, origin_position);
 
   double target_cost =
-      2 * indexAngleDifference(z, goal_pol.z) +
-      20 * indexAngleDifference(e, goal_pol.e);  // include effective direction?
+      1 * indexAngleDifference(z, goal_pol.z) +
+      10 * indexAngleDifference(e, goal_pol.e);  // include effective direction?
   double turning_cost =
-      1 *
+      5 *
       indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
 
   float last_e = tree_[origin].last_e_;
@@ -76,10 +76,6 @@ double StarPlanner::treeCostFunction(int node_number) {
 
   double smooth_cost = 5 * (2 * indexAngleDifference(z, last_z) +
                             5 * indexAngleDifference(e, last_e));
-  if (indexAngleDifference(z, last_z) > 100) {
-    smooth_cost = HUGE_VAL;
-  }
-
   double smooth_cost_to_old_tree = 0.0;
   if (tree_age_ < 10) {
     int partner_node_idx =
@@ -235,7 +231,19 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 
-  ROS_INFO("\033[0;35m[SP]Tree calculated in %2.2fms.\033[0m",
-           (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  ROS_INFO("\033[0;35m[SP]Tree (%.0f nodes, %.0f path nodes, %.0f expanded) calculated in %2.2fms.\033[0m",
+          (double)tree_.size(),
+          (double)path_node_positions_.size(),
+          (double)closed_set_.size(),
+          (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  for(int j = 0; j < path_node_positions_.size(); j++)
+  {
+        ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m",
+                 (double)j,
+                 (double)path_node_positions_[j].x,
+                 (double)path_node_positions_[j].y,
+                 (double)path_node_positions_[j].z);
+  }
+
 }
 }
