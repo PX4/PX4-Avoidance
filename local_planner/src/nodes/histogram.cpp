@@ -50,20 +50,8 @@ void Histogram::downsample() {
     for (int j = 0; j < z_dim_; ++j) {
       int i_high_res = 2 * i;
       int j_high_res = 2 * j;
-
-      float mean_age =
-          (age_(i_high_res, j_high_res) + age_(i_high_res + 1, j_high_res) +
-           age_(i_high_res, j_high_res + 1) +
-           age_(i_high_res + 1, j_high_res + 1)) /
-          4.f;
-      double mean_dist =
-          (dist_(i_high_res, j_high_res) + dist_(i_high_res + 1, j_high_res) +
-           dist_(i_high_res, j_high_res + 1) +
-           dist_(i_high_res + 1, j_high_res + 1)) /
-          4.f;
-
-      temp_age(i, j) = static_cast<int>(mean_age);
-      temp_dist(i, j) = mean_dist;
+      temp_age(i, j) = static_cast<int>(age_.block(i_high_res, j_high_res, 2, 2).mean());
+      temp_dist(i, j) = dist_.block(i_high_res, j_high_res, 2, 2).mean();
     }
   }
   age_ = temp_age;
