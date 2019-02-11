@@ -21,7 +21,7 @@ class StarPlannerTests : public ::testing::Test {
 
     avoidance::LocalPlannerNodeConfig config =
         avoidance::LocalPlannerNodeConfig::__getDefault__();
-    config.childs_per_node_ = 2;
+    config.children_per_node_ = 2;
     config.n_expanded_nodes_ = 10;
     star_planner.dynamicReconfigureSetStarParams(config, 1);
 
