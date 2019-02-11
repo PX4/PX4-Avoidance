@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
-
+  
   // spin node, execute callbacks
   while (ros::ok()) {
     hover = false;

@@ -17,11 +17,22 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private)
         : nh_(nh),
-          nh_private_(nh_private) {
+          nh_private_(nh_private),
+          cmdloop_spinner_(1, &cmdloop_queue_),
+          spin_dt_(1.0) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
   readParams();
+
+  ros::TimerOptions timer_options(
+          ros::Duration(spin_dt_),
+          boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
+          &cmdloop_queue_);
+
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+
+  cmdloop_spinner_.start();
 
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
@@ -290,6 +301,10 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
     offboard_ = false;
     mission_ = false;
   }
+}
+
+void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  return;
 }
 
 void LocalPlannerNode::publishPaths() {
@@ -881,15 +896,15 @@ void LocalPlannerNode::dynamicReconfigureCallback(
 }
 
 void LocalPlannerNode::threadFunction() {
+  // wait for data
   while (!should_exit_) {
-    // wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
       data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
       data_ready_ = false;
     }
 
-    if (should_exit_) break;
+    if (should_exit_) return;
 
     {
       std::lock_guard<std::mutex> guard(running_mutex_);
