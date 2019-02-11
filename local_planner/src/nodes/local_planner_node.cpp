@@ -18,7 +18,10 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private) {
+        : nh_(nh),
+          nh_private_(nh_private),
+          cmdloop_spinner_(1, &cmdloop_queue_),
+          spin_dt_(1.0) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -26,6 +29,15 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   tf_listener_ = new tf::TransformListener(
       ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
+
+  ros::TimerOptions timer_options(
+          ros::Duration(spin_dt_),
+          boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
+          &cmdloop_queue_);
+
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+
+  cmdloop_spinner_.start();
 
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
@@ -280,6 +292,9 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   }
 }
 
+void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  return;
+}
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
