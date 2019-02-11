@@ -60,7 +60,7 @@ void WaypointGenerator::calculateWaypoint() {
             toPoint(polarToCartesian(p_pol, pose_.pose.position));
       } else {
         ROS_DEBUG("[WG] No valid tree, go fast");
-        goFast();
+        goStraight();
         output_.waypoint_type = direct;
       }
       getPathMsg();
@@ -69,7 +69,7 @@ void WaypointGenerator::calculateWaypoint() {
 
     case direct: {
       ROS_DEBUG("[WG] No obstacle ahead, go fast");
-      goFast();
+      goStraight();
       getPathMsg();
       break;
     }
@@ -133,7 +133,7 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
 }
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
-void WaypointGenerator::goFast() {
+void WaypointGenerator::goStraight() {
   Eigen::Vector3f dir = (goal_ - toEigen(pose_.pose.position)).normalized();
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + dir);
 
