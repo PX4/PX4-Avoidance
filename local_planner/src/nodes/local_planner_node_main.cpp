@@ -7,7 +7,11 @@
 int main(int argc, char** argv) {
   using namespace avoidance;
   ros::init(argc, argv, "local_planner_node");
-  LocalPlannerNode Node;
+
+  ros::NodeHandle nh("");
+  ros::NodeHandle nh_private("~");
+
+  LocalPlannerNode Node(nh, nh_private);
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;

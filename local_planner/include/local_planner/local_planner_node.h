@@ -97,7 +97,7 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode();
+  LocalPlannerNode(const ros::NodeHandle& nh,  const ros::NodeHandle& nh_private);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
@@ -217,6 +217,8 @@ class LocalPlannerNode {
 
  private:
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   mavros_msgs::Altitude ground_distance_msg_;
