@@ -67,14 +67,14 @@ Note that in the following instructions, we assume your catkin workspace (in whi
 
    ```bash
    echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
-   apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
-   apt-get update
+   sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+   sudo apt update
    ```
 
 1. Install gazebo with ROS.
 
    ```bash
-   apt install ros-kinetic-desktop-full
+   sudo apt install ros-kinetic-desktop-full
    
    # Source ROS
    source /opt/ros/kinetic/setup.bash
@@ -88,11 +88,11 @@ Note that in the following instructions, we assume your catkin workspace (in whi
   
   For Gazebo 8,
   ```
-  apt install ros-kinetic-gazebo8-*
+  sudo apt install ros-kinetic-gazebo8-*
   ```
   For Gazebo 9,
   ```
-  apt install ros-kinetic-gazebo9-*
+  sudo apt install ros-kinetic-gazebo9-*
   ```
   
 1. Initialize rosdep.
@@ -105,27 +105,28 @@ Note that in the following instructions, we assume your catkin workspace (in whi
 1. Install catkin and create your catkin workspace directory.
 
    ```bash
-   apt install python-catkin-tools
+   sudo apt install python-catkin-tools
    mkdir -p ~/catkin_ws/src
    ```
 
 1. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
 
    ```bash
-   apt install ros-kinetic-mavros ros-kinetic-mavros-extras
+   sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
    ```
 
 1. Install the geographiclib dataset
 
    ```bash
    wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
+   chmod +x install_geographiclib_datasets.sh
    sudo ./install_geographiclib_datasets.sh
    ```
 
 1. Install avoidance module dependencies (pointcloud library and octomap).
 
    ```bash
-   apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
+   sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
    ```
 
 1. Clone this repository in your catkin workspace in order to build the avoidance node.
@@ -241,7 +242,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
 
    ```bash
    # if stereo-image-proc not yet installed
-   sudo apt-get install ros-kinetic-stereo-image-proc
+   sudo apt install ros-kinetic-stereo-image-proc
    
    roslaunch local_planner local_planner_stereo.launch
    ```
@@ -250,7 +251,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
 
    ```bash
    # if image_view is not yet installed
-   sudo apt-get install ros-kinetic-image-view
+   sudo apt install ros-kinetic-image-view
    
    rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
    ```
