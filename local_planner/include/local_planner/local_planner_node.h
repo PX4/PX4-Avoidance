@@ -34,6 +34,7 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
+#include <avoidance/CompanionStatus.h>
 
 #include <atomic>
 #include <condition_variable>
@@ -100,8 +101,6 @@ class LocalPlannerNode {
   LocalPlannerNode(const ros::NodeHandle& nh,  const ros::NodeHandle& nh_private);
   ~LocalPlannerNode();
 
-  mavros_msgs::CompanionProcessStatus status_msg_;
-
   std::string world_path_;
   bool never_run_ = true;
   bool position_received_ = false;
@@ -141,7 +140,6 @@ class LocalPlannerNode {
   ros::Publisher waypoint_pub_;
   ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
-  ros::Publisher mavros_system_status_pub_;
   tf::TransformListener tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
@@ -212,6 +210,7 @@ class LocalPlannerNode {
   * @param     hover, true if the vehicle is loitering
   **/
   void publishWaypoints(bool hover);
+  void setCompanionStatus(int status);
 
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 
@@ -270,6 +269,8 @@ class LocalPlannerNode {
   * @param     config, struct with all the parameters
   * @param     level, bitmsak to group together reconfigurable parameters
   **/
+  CompanionStatus companion_status_;
+
   void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config,
                                   uint32_t level);
 

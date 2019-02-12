@@ -20,8 +20,8 @@ int main(int argc, char** argv) {
   Node.local_planner_->disable_rise_to_goal_altitude_ =
       Node.disable_rise_to_goal_altitude_;
   bool startup = true;
+  Node.setCompanionStatus((int)MAV_STATE::MAV_STATE_BOOT);
   bool callPx4Params = true;
-  Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
         mavros_msgs::SetMode mode_msg;
         mode_msg.request.custom_mode = "AUTO.LOITER";
         landing = true;
-        Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+        Node.setCompanionStatus((int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
         if (Node.mavros_set_mode_client_.call(mode_msg) &&
             mode_msg.response.mode_sent) {
           ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
@@ -72,7 +72,7 @@ int main(int argc, char** argv) {
                               since_start > pointcloud_timeout_hover)) {
         if (Node.position_received_) {
           hover = true;
-          Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
+          Node.setCompanionStatus((int)MAV_STATE::MAV_STATE_CRITICAL);
           std::string not_received = "";
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             if (!Node.cameras_[i].received_) {
@@ -123,7 +123,7 @@ int main(int argc, char** argv) {
     // send waypoint
     if (!Node.never_run_ && !landing) {
       Node.publishWaypoints(hover);
-      if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
+      if (!hover) Node.setCompanionStatus((int)MAV_STATE::MAV_STATE_ACTIVE);
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
@@ -132,14 +132,6 @@ int main(int argc, char** argv) {
     }
 
     Node.position_received_ = false;
-
-    // publish system status
-    if (now - Node.t_status_sent_ > ros::Duration(0.2)) {
-      Node.status_msg_.header.stamp = ros::Time::now();
-      Node.status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-      Node.mavros_system_status_pub_.publish(Node.status_msg_);
-      Node.t_status_sent_ = now;
-    }
   }
 
   Node.should_exit_ = true;

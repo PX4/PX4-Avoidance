@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_extras
   mavros_msgs
   mavlink
+  avoidance
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(yaml-cpp REQUIRED)
