@@ -341,6 +341,7 @@ TEST(Common, wrapAngle) {
   double angle3 = 270.d * M_PI / 180.d;
   double angle4 = -90.d * M_PI / 180.d;
   double angle5 = -225.d * M_PI / 180.d;
+  double angle6 = std::numeric_limits<double>::infinity();
 
   // WHEN: it is wrapped to the space (-PI; PI] space
   wrapAngleToPlusMinusPI(angle1);
@@ -348,12 +349,15 @@ TEST(Common, wrapAngle) {
   wrapAngleToPlusMinusPI(angle3);
   wrapAngleToPlusMinusPI(angle4);
   wrapAngleToPlusMinusPI(angle5);
+  wrapAngleToPlusMinusPI(angle6);
+
   // THEN: the output angles shoudl be ..
   EXPECT_FLOAT_EQ(0.f, angle1);
   EXPECT_FLOAT_EQ(0.523599f, angle2);
   EXPECT_FLOAT_EQ(-1.570796f, angle3);
   EXPECT_FLOAT_EQ(-1.570796f, angle4);
   EXPECT_FLOAT_EQ(2.356194f, angle5);
+  EXPECT_TRUE(std::isnan(angle6));
 }
 
 TEST(Common, getAngularVel) {
@@ -372,7 +376,7 @@ TEST(Common, getAngularVel) {
   // THEN: the distance should be...
 
   EXPECT_FLOAT_EQ(0.f, angular_vel1);
-  EXPECT_FLOAT_EQ(1.570796f, angular_vel2);
+  EXPECT_FLOAT_EQ(-1.570796f, angular_vel2);
   EXPECT_FLOAT_EQ(0.392699f, angular_vel3);
   EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
 }

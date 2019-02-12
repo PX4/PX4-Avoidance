@@ -175,16 +175,14 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
 
 // check if the UAV has reached the goal set for the mission
 bool WaypointGenerator::withinGoalRadius() {
-  float sqrd_dist = (goal_ - toEigen(pose_.pose.position)).squaredNorm();
+  float dist = (goal_ - toEigen(pose_.pose.position)).norm();
 
-  if (sqrd_dist <
-      param_.goal_acceptance_radius_in * param_.goal_acceptance_radius_in) {
+  if (dist < param_.goal_acceptance_radius_in) {
     if (!reached_goal_) {
       yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
     }
     reached_goal_ = true;
-  } else if (sqrd_dist > param_.goal_acceptance_radius_out *
-                             param_.goal_acceptance_radius_out) {
+  } else if (dist > param_.goal_acceptance_radius_out) {
     reached_goal_ = false;
   }
   return reached_goal_;
@@ -196,9 +194,9 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   output_.goto_position.z = pose_.pose.position.z + 0.5;
 
   // if goal lies directly overhead, do not yaw
-  Eigen::Vector3f diff = (goal_ - toEigen(pose_.pose.position)).cwiseAbs();
   float goal_acceptance_radius = 1.0f;
-  if (diff.x() < goal_acceptance_radius && diff.y() < goal_acceptance_radius) {
+  if ((goal_ - toEigen(pose_.pose.position)).norm() < goal_acceptance_radius &&
+      std::isfinite(curr_yaw_)) {
     new_yaw_ = curr_yaw_;
   }
 
@@ -224,10 +222,19 @@ void WaypointGenerator::smoothWaypoint(double dt) {
         toEigen(output_.adapted_goto_position);
     const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
 
-    const Eigen::Vector3f p =
-        (desired_location - smoothed_goto_location_) * P_constant;
-    const Eigen::Vector3f d =
-        (desired_velocity - smoothed_goto_location_velocity_) * D_constant;
+    Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
+    if (!location_diff.allFinite()) {
+      location_diff = Eigen::Vector3f::Zero();
+    }
+
+    Eigen::Vector3f velocity_diff =
+        desired_velocity - smoothed_goto_location_velocity_;
+    if (!velocity_diff.allFinite()) {
+      velocity_diff = Eigen::Vector3f::Zero();
+    }
+
+    const Eigen::Vector3f p = location_diff * P_constant;
+    const Eigen::Vector3f d = velocity_diff * D_constant;
 
     smoothed_goto_location_velocity_ += (p + d) * dt;
     smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
@@ -239,6 +246,25 @@ void WaypointGenerator::smoothWaypoint(double dt) {
   ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
+}
+
+void WaypointGenerator::nextSmoothYaw(double dt) {
+  const float P_constant = smoothing_speed_;
+  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+
+  const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
+  const float desired_yaw_velocity = 0.0;
+
+  double yaw_diff =
+      std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
+
+  wrapAngleToPlusMinusPI(yaw_diff);
+  const float p = yaw_diff * P_constant;
+  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant;
+
+  new_yaw_velocity_ += (p + d) * dt;
+  new_yaw_ += new_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(new_yaw_);
 }
 
 void WaypointGenerator::adaptSpeed() {
@@ -340,7 +366,7 @@ void WaypointGenerator::getPathMsg() {
   double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
 
   // set the yaw at the setpoint based on our smoothed location
-  new_yaw_ = nextYaw(pose_, output_.goto_position);
+  nextSmoothYaw(dt);
 
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   adaptSpeed();
@@ -365,7 +391,7 @@ void WaypointGenerator::getPathMsg() {
     output_.smoothed_goto_position = toPoint(goal_);
   }
 
-  if (reached_goal_) {
+  if (reached_goal_ && std::isfinite(yaw_reached_goal_)) {
     new_yaw_ = yaw_reached_goal_;
   }
 
