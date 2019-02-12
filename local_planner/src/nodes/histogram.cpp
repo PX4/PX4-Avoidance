@@ -3,8 +3,11 @@
 
 namespace avoidance {
 Histogram::Histogram(const int res)
-    : resolution_{res}, z_dim_{360 / resolution_}, e_dim_{180 / resolution_},
-      age_(e_dim_, z_dim_), dist_(e_dim_, z_dim_){
+    : resolution_{res},
+      z_dim_{360 / resolution_},
+      e_dim_{180 / resolution_},
+      age_(e_dim_, z_dim_),
+      dist_(e_dim_, z_dim_) {
   setZero();
 }
 
@@ -50,7 +53,8 @@ void Histogram::downsample() {
     for (int j = 0; j < z_dim_; ++j) {
       int i_high_res = 2 * i;
       int j_high_res = 2 * j;
-      temp_age(i, j) = static_cast<int>(age_.block(i_high_res, j_high_res, 2, 2).mean());
+      temp_age(i, j) =
+          static_cast<int>(age_.block(i_high_res, j_high_res, 2, 2).mean());
       temp_dist(i, j) = dist_.block(i_high_res, j_high_res, 2, 2).mean();
     }
   }

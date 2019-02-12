@@ -30,13 +30,13 @@ void filterPointCloud(
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     double min_cloud_size, double min_dist_backoff, Box histogram_box,
     const Eigen::Vector3f& position, double min_realsense_dist);
-void calculateFOV(double h_FOV, double v_FOV, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, double yaw, double pitch);
+void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
+                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch);
 void propagateHistogram(
     Histogram& polar_histogram_est,
     const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
     const std::vector<int>& reprojected_points_age,
-	const Eigen::Vector3f& position);
+    const Eigen::Vector3f& position);
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           const Eigen::Vector3f& position);

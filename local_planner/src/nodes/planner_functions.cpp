@@ -56,16 +56,24 @@ void filterPointCloud(
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void calculateFOV(double h_fov, double v_fov, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, double yaw, double pitch) {
-  double z_FOV_max =
-      std::round((-yaw * 180.0 / M_PI + h_fov / 2.0 + 270.0) / ALPHA_RES) - 1;
-  double z_FOV_min =
-      std::round((-yaw * 180.0 / M_PI - h_fov / 2.0 + 270.0) / ALPHA_RES) - 1;
+void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
+                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch) {
+  int z_FOV_max =
+      static_cast<int>(std::round((-yaw * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
+  int z_FOV_min =
+      static_cast<int>(std::round((-yaw * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
   e_FOV_max =
-      std::round((-pitch * 180.0 / M_PI + v_fov / 2.0 + 90.0) / ALPHA_RES) - 1;
+      static_cast<int>(std::round((-pitch * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
   e_FOV_min =
-      std::round((-pitch * 180.0 / M_PI - v_fov / 2.0 + 90.0) / ALPHA_RES) - 1;
+      static_cast<int>(std::round((-pitch * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
+                                  static_cast<float>(ALPHA_RES))) -
+      1;
 
   if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
     z_FOV_max -= GRID_LENGTH_Z;
@@ -108,12 +116,11 @@ void propagateHistogram(
   counter.fill(0);
 
   for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    PolarPoint p_pol = cartesianToPolar(toEigen(reprojected_points.points[i]),
-                                        position);
+    PolarPoint p_pol =
+        cartesianToPolar(toEigen(reprojected_points.points[i]), position);
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
-    float point_distance = (position -
-                            toEigen(reprojected_points.points[i]))
-                               .norm();
+    float point_distance =
+        (position - toEigen(reprojected_points.points[i])).norm();
 
     counter(p_ind.y(), p_ind.x()) += 1;
     polar_histogram_est.set_age(
@@ -322,7 +329,7 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
                       matrix.cols()) = matrix;
 
   if (matrix.cols() % 2 > 0) {
-    ROS_ERROR("invalid resolution: 180 % (2* resolution) must be zero");
+    ROS_ERROR("invalid resolution: 180 mod (2* resolution) must be zero");
   }
   int middle_index = floor(matrix.cols() / 2);
 

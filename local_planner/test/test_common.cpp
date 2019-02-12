@@ -42,10 +42,10 @@ TEST(Common, indexAngleDifferenceCheck) {
   const float a4 = 8.45860f, b4 = 9.45859f;
 
   // WHEN: we get the minimal different angle between the two angles
-  double angle_diff1 = indexAngleDifference(a1, b1);
-  double angle_diff2 = indexAngleDifference(a2, b2);
-  double angle_diff3 = indexAngleDifference(a3, b3);
-  double angle_diff4 = indexAngleDifference(a4, b4);
+  float angle_diff1 = indexAngleDifference(a1, b1);
+  float angle_diff2 = indexAngleDifference(a2, b2);
+  float angle_diff3 = indexAngleDifference(a3, b3);
+  float angle_diff4 = indexAngleDifference(a4, b4);
 
   // THEN: the angle should be...
   EXPECT_FLOAT_EQ(0., angle_diff1);

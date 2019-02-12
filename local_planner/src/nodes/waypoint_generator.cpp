@@ -90,7 +90,7 @@ void WaypointGenerator::calculateWaypoint() {
       Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
 }
 
-void WaypointGenerator::setFOV(double h_FOV, double v_FOV) {
+void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
   h_FOV_ = h_FOV;
   v_FOV_ = v_FOV;
 }
@@ -116,7 +116,8 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   double roll, pitch, yaw;
   m.getRPY(roll, pitch, yaw);
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, yaw, pitch);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
+               static_cast<float>(yaw), static_cast<float>(pitch));
 
   curr_vel_magnitude_ =
       Eigen::Vector3f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y,

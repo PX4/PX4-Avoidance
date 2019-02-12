@@ -18,14 +18,16 @@ struct PolarPoint {
   float r;
 };
 
+#define M_PI_F 3.14159265358979323846f
 const double DEG_TO_RAD = M_PI / 180.f;
+const float RAD_TO_DEG = 180.f / M_PI_F;
+
 /**
 * @brief     calculates the distance between two polar points
 * @param[in] p1 polar point
 * @param[in] p2 polar point
 * @returns   distance between the two points
 **/
-
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 
 /**
@@ -37,7 +39,7 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 **/
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos);
-double indexAngleDifference(float a, float b);
+float indexAngleDifference(float a, float b);
 /**
 * @brief     compute point in the histogram to a polar point
 * @param[in] e evelation index in the histogram

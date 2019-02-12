@@ -10,8 +10,6 @@ namespace avoidance {
 
 StarPlanner::StarPlanner() : tree_age_(0) {}
 
-StarPlanner::~StarPlanner() {}
-
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
@@ -21,23 +19,19 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_discount_factor_ = config.tree_discount_factor_;
 }
 
-void StarPlanner::setParams(double min_cloud_size, double min_dist_backoff,
-                            double curr_yaw, double min_realsense_dist,
-                            costParameters cost_params) {
-  curr_yaw_ = curr_yaw;
-  min_cloud_size_ = min_cloud_size;
-  min_dist_backoff_ = min_dist_backoff;
-  min_realsense_dist_ = min_realsense_dist;
+void StarPlanner::setParams(costParameters cost_params) {
   cost_params_ = cost_params;
 }
 
-void StarPlanner::setFOV(double h_FOV, double v_FOV) {
+void StarPlanner::setFOV(float h_FOV, float v_FOV) {
   h_FOV_ = h_FOV;
   v_FOV_ = v_FOV;
 }
 
-void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose) {
+void StarPlanner::setPose(const geometry_msgs::PoseStamped& pose,
+                          float curr_yaw) {
   pose_ = pose;
+  curr_yaw_ = curr_yaw;
 }
 
 void StarPlanner::setCloud(
@@ -57,26 +51,28 @@ void StarPlanner::setReprojectedPoints(
   reprojected_points_age_ = reprojected_points_age;
 }
 
-double StarPlanner::treeCostFunction(int node_number) {
+float StarPlanner::treeCostFunction(int node_number) {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
   Eigen::Vector3f origin_position = tree_[origin].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, origin_position);
 
-  double target_cost =
-      1 * indexAngleDifference(z, goal_pol.z) +
-      10 * indexAngleDifference(e, goal_pol.e);  // include effective direction?
-  double turning_cost =
-      5 *
+  float target_cost =
+      indexAngleDifference(z, goal_pol.z) +
+      10.0f *
+          indexAngleDifference(e, goal_pol.e);  // include effective direction?
+  float turning_cost =
+      5.0f *
       indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
 
   float last_e = tree_[origin].last_e_;
   float last_z = tree_[origin].last_z_;
 
-  double smooth_cost = 5 * (2 * indexAngleDifference(z, last_z) +
-                            5 * indexAngleDifference(e, last_e));
-  double smooth_cost_to_old_tree = 0.0;
+  float smooth_cost = 5.0f * (2.0f * indexAngleDifference(z, last_z) +
+                              5.0f * indexAngleDifference(e, last_e));
+
+  float smooth_cost_to_old_tree = 0.0f;
   if (tree_age_ < 10) {
     int partner_node_idx =
         path_node_positions_.size() - 1 - tree_[node_number].depth_;
@@ -84,40 +80,37 @@ double StarPlanner::treeCostFunction(int node_number) {
       geometry_msgs::Point partner_node_position =
           path_node_positions_[partner_node_idx];
       Eigen::Vector3f node_position = tree_[node_number].getPosition();
-      double dist = (toEigen(partner_node_position) - node_position).norm();
-      smooth_cost_to_old_tree = 200 * dist / (0.5 * tree_[node_number].depth_);
+      float dist = (toEigen(partner_node_position) - node_position).norm();
+      smooth_cost_to_old_tree =
+          200.0f * dist /
+          (0.5f * static_cast<float>(tree_[node_number].depth_));
     }
   }
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth_) *
+  return std::pow(tree_discount_factor_,
+                  static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
-double StarPlanner::treeHeuristicFunction(int node_number) {
+float StarPlanner::treeHeuristicFunction(int node_number) {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, node_position);
 
   int origin = tree_[node_number].origin_;
   Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  double origin_goal_dist = (goal_ - origin_position).norm();
-  double goal_dist = (goal_ - node_position).norm();
-  double goal_cost = (goal_dist / origin_goal_dist - 0.9) * 5000;
+  float origin_goal_dist = (goal_ - origin_position).norm();
+  float goal_dist = (goal_ - node_position).norm();
+  float goal_cost = (goal_dist / origin_goal_dist - 0.9f) * 5000.0f;
 
-  //  double turning_cost = 2*indexAngleDifference(z, curr_yaw_z);
-  double smooth_cost =
-      10 * (1 * indexAngleDifference(goal_pol.z, tree_[node_number].last_z_) +
-            1 * indexAngleDifference(goal_pol.e, tree_[node_number].last_e_));
+  float smooth_cost =
+      10.0f * (indexAngleDifference(goal_pol.z, tree_[node_number].last_z_) +
+               indexAngleDifference(goal_pol.e, tree_[node_number].last_e_));
 
-  return std::pow(tree_discount_factor_, tree_[node_number].depth_) *
+  return std::pow(tree_discount_factor_,
+                  static_cast<float>(tree_[node_number].depth_)) *
          (smooth_cost + goal_cost);
 }
 
 void StarPlanner::buildLookAheadTree() {
-  nav_msgs::GridCells path_candidates;
-  nav_msgs::GridCells path_selected;
-  nav_msgs::GridCells path_rejected;
-  nav_msgs::GridCells path_blocked;
-  std::vector<float> cost_path_candidates;
-  std::vector<int> cost_idx_sorted;
   std::clock_t start_time = std::clock();
   tree_.clear();
   closed_set_.clear();
@@ -125,8 +118,9 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, toEigen(pose_.pose.position)));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ = std::round((-curr_yaw_ * 180.0 / M_PI)) +
-                      90;  // from radian to angle and shift reference to y-axis
+  tree_.back().yaw_ =
+      std::round((-curr_yaw_ * 180.0f / M_PI_F)) +
+      90.0f;  // from radian to angle and shift reference to y-axis
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
@@ -143,7 +137,7 @@ void StarPlanner::buildLookAheadTree() {
     int e_FOV_min, e_FOV_max;
     calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
                  tree_[origin].yaw_,
-                 0.0);  // assume pitch is zero at every node
+                 0.0f);  // assume pitch is zero at every node
 
     Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
     Histogram histogram = Histogram(ALPHA_RES);
@@ -157,8 +151,8 @@ void StarPlanner::buildLookAheadTree() {
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
-    getCostMatrix(histogram, goal_, origin_position,
-                  origin_origin_position, cost_params_, false, cost_matrix);
+    getCostMatrix(histogram, goal_, origin_position, origin_origin_position,
+                  cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 
@@ -178,8 +172,8 @@ void StarPlanner::buildLookAheadTree() {
             polarToCartesian(p_pol, toPoint(origin_position));
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
-          double dist = (tree_[i].getPosition() - node_location).norm();
-          if (dist < 0.2) {
+          float dist = (tree_[i].getPosition() - node_location).norm();
+          if (dist < 0.2f) {
             close_nodes++;
           }
         }
@@ -188,8 +182,8 @@ void StarPlanner::buildLookAheadTree() {
           tree_.push_back(TreeNode(origin, depth, node_location));
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
-          double h = treeHeuristicFunction(tree_.size() - 1);
-          double c = treeCostFunction(tree_.size() - 1);
+          float h = treeHeuristicFunction(tree_.size() - 1);
+          float c = treeCostFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ =
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
@@ -204,7 +198,7 @@ void StarPlanner::buildLookAheadTree() {
     n++;
 
     // find best node to continue
-    double minimal_cost = HUGE_VAL;
+    float minimal_cost = HUGE_VAL;
     for (size_t i = 0; i < tree_.size(); i++) {
       bool closed = false;
       for (size_t j = 0; j < closed_set_.size(); j++) {
@@ -231,19 +225,17 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 
-  ROS_INFO("\033[0;35m[SP]Tree (%.0f nodes, %.0f path nodes, %.0f expanded) calculated in %2.2fms.\033[0m",
-          (double)tree_.size(),
-          (double)path_node_positions_.size(),
-          (double)closed_set_.size(),
-          (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
-  for(int j = 0; j < path_node_positions_.size(); j++)
-  {
-        ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m",
-                 (double)j,
-                 (double)path_node_positions_[j].x,
-                 (double)path_node_positions_[j].y,
-                 (double)path_node_positions_[j].z);
+  ROS_INFO(
+      "\033[0;35m[SP]Tree (%.0f nodes, %.0f path nodes, %.0f expanded) "
+      "calculated in %2.2fms.\033[0m",
+      (double)tree_.size(), (double)path_node_positions_.size(),
+      (double)closed_set_.size(),
+      (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+  for (int j = 0; j < path_node_positions_.size(); j++) {
+    ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m", (double)j,
+              (double)path_node_positions_[j].x,
+              (double)path_node_positions_[j].y,
+              (double)path_node_positions_[j].z);
   }
-
 }
 }
