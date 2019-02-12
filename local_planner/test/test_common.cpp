@@ -141,6 +141,7 @@ TEST(Common, polarToHistogramIndex) {
   PolarPoint p_pol_5(454.f, -160.f, 0.0f);
   // wrapped around, no influence on azimuth
   PolarPoint p_pol_6(400.f, -270.f, 0.0f);
+  PolarPoint p_pol_7(-90.0f, -180.00001f, 0.0f);
 
   const float resolution_1 = 3.f;
   const float resolution_2 = 12.f;
@@ -156,6 +157,8 @@ TEST(Common, polarToHistogramIndex) {
       polarToHistogramIndex(p_pol_5, resolution_1);  // wrapped
   const Eigen::Vector2i index_8 =
       polarToHistogramIndex(p_pol_6, resolution_2);  // wrapped
+  const Eigen::Vector2i index_9 =
+      polarToHistogramIndex(p_pol_7, resolution_2);  // wrapped
 
   // THEN: the  histogram index should be ..
   // elevation angle
@@ -167,6 +170,7 @@ TEST(Common, polarToHistogramIndex) {
   EXPECT_EQ(0, index_6.y());
   EXPECT_EQ(58, index_7.y());
   EXPECT_EQ(10, index_8.y());
+  EXPECT_EQ(0, index_9.y());
   // azimuth angle
   EXPECT_EQ(60, index_1.x());
   EXPECT_EQ(71, index_2.x());
@@ -176,6 +180,7 @@ TEST(Common, polarToHistogramIndex) {
   EXPECT_EQ(0, index_6.x());
   EXPECT_EQ(66, index_7.x());
   EXPECT_EQ(22, index_8.x());
+  EXPECT_EQ(29, index_9.x());
 }
 
 TEST(Common, polarToCartesian) {
