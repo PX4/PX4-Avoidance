@@ -118,21 +118,11 @@ double velocityLinear(double max_vel, double slope, double v_old,
 }
 
 void wrapAngleToPlusMinusPI(double& angle) {
-  while (angle > M_PI) {
-    angle -= 2 * M_PI;
-  }
-  while (angle < -M_PI) {
-    angle += 2 * M_PI;
-  }
+  angle = angle - 2 * M_PI * floor(angle / (2 * M_PI) + 0.5);
 }
 
 void wrapAngleToPlusMinus180(float& angle) {
-  while (angle >= 180.0) {
-    angle -= 360.0;
-  }
-  while (angle < -180.0) {
-    angle += 360.0;
-  }
+  angle = angle - 360.f * floor(angle / 360.f + 0.5f);
 }
 
 double getAngularVelocity(double desired_yaw, double curr_yaw) {

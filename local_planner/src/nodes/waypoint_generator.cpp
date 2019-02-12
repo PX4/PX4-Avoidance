@@ -195,7 +195,8 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 
   // if goal lies directly overhead, do not yaw
   float goal_acceptance_radius = 1.0f;
-  if ((goal_ - toEigen(pose_.pose.position)).norm() < goal_acceptance_radius) {
+  if ((goal_ - toEigen(pose_.pose.position)).norm() < goal_acceptance_radius &&
+      std::isfinite(curr_yaw_)) {
     new_yaw_ = curr_yaw_;
   }
 
@@ -390,7 +391,7 @@ void WaypointGenerator::getPathMsg() {
     output_.smoothed_goto_position = toPoint(goal_);
   }
 
-  if (reached_goal_) {
+  if (reached_goal_ && std::isfinite(yaw_reached_goal_)) {
     new_yaw_ = yaw_reached_goal_;
   }
 
