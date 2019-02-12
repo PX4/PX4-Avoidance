@@ -57,10 +57,17 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
   wrapPolar(p_wrapped);
   // elevation angle to y-axis histogram index
   // maps elevation -90° to bin 0 and +90° to the highest bin (N-1)
-  ev2.y() = floor(p_wrapped.e / res + 90.0f / res);
+  ev2.y() = static_cast<int>(floor(p_wrapped.e / res + 90.0f / res));
   // azimuth angle to x-axis histogram index
   // maps elevation -180° to bin 0 and +180° to the highest bin (N-1)
-  ev2.x() = floor(p_wrapped.z / res + 180.0f / res);
+  ev2.x() = static_cast<int>(floor(p_wrapped.z / res + 180.0f / res));
+
+  //clamp due to floating point errros
+  if(ev2.x()>= 360/res) ev2.x() = 360/res - 1;
+  if(ev2.x()< 0) ev2.x() = 0;
+  if(ev2.y()>= 180/res) ev2.y() = 180/res - 1;
+  if(ev2.y()< 0) ev2.y() = 0;
+
   return ev2;
 }
 
