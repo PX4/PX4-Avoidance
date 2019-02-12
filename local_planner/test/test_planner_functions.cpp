@@ -1,9 +1,9 @@
 #include <gtest/gtest.h>
 #include <cmath>
 
-#include "../src/nodes/planner_functions.h"
+#include "../include/local_planner/planner_functions.h"
 
-#include "../src/nodes/common.h"
+#include "../include/local_planner/common.h"
 
 using namespace avoidance;
 

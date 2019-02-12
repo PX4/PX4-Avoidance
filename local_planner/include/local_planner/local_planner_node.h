@@ -1,9 +1,8 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
-#include "avoidance/common_ros.h"
-#include "avoidance_output.h"
-#include "rviz_world_loader.h"
+#include "local_planner/avoidance_output.h"
+#include "local_planner/rviz_world_loader.h"
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>

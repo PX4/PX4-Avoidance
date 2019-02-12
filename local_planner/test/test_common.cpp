@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <limits>
-#include "../src/nodes/common.h"
-#include "../src/nodes/histogram.h"
+#include "../include/local_planner/common.h"
+#include "../include/local_planner/histogram.h"
 
 using namespace avoidance;
 

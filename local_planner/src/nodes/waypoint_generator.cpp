@@ -1,7 +1,7 @@
-#include "waypoint_generator.h"
+#include "local_planner/waypoint_generator.h"
 
-#include "common.h"
-#include "planner_functions.h"
+#include "local_planner/common.h"
+#include "local_planner/planner_functions.h"
 
 #include <tf/transform_listener.h>
 

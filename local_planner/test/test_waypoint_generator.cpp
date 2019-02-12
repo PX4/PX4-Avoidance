@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../src/nodes/common.h"
-#include "../src/nodes/waypoint_generator.h"
+#include "../include/local_planner/common.h"
+#include "../include/local_planner/waypoint_generator.h"
 
 using namespace avoidance;
 

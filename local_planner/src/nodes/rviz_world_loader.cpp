@@ -1,4 +1,4 @@
-#include "rviz_world_loader.h"
+#include "local_planner/rviz_world_loader.h"
 
 #include <ros/console.h>
 

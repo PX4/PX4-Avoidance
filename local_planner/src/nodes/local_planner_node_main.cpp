@@ -1,6 +1,6 @@
-#include "local_planner.h"
-#include "local_planner_node.h"
-#include "waypoint_generator.h"
+#include "local_planner/local_planner.h"
+#include "local_planner/local_planner_node.h"
+#include "local_planner/waypoint_generator.h"
 
 #include <boost/algorithm/string.hpp>
 
