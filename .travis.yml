@@ -64,6 +64,7 @@ before_script:
   - source /opt/ros/$ROS_DISTRO/setup.bash
 
 script:
+  - set -e
   - cd ~/catkin_ws
   - catkin build
   - source ~/catkin_ws/devel/setup.bash

@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "../src/nodes/common.h"
-#include "../src/nodes/star_planner.h"
-#include "../src/nodes/tree_node.h"
+#include "../include/local_planner/common.h"
+#include "../include/local_planner/star_planner.h"
+#include "../include/local_planner/tree_node.h"
 
 using namespace avoidance;
 

@@ -1,4 +1,4 @@
-#include "tree_node.h"
+#include "local_planner/tree_node.h"
 
 namespace avoidance {
 

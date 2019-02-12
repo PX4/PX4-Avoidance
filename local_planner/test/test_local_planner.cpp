@@ -2,7 +2,7 @@
 
 #include <cmath>
 
-#include "../src/nodes/local_planner.h"
+#include "../include/local_planner/local_planner.h"
 
 // Stateless tests:
 // Create some hardcoded scan data of obstacles in different positions

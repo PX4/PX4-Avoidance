@@ -1,9 +1,8 @@
-#include "local_planner.h"
-
-#include "common.h"
-#include "planner_functions.h"
-#include "star_planner.h"
-#include "tree_node.h"
+#include "local_planner/local_planner.h"
+#include "local_planner/common.h"
+#include "local_planner/planner_functions.h"
+#include "local_planner/star_planner.h"
+#include "local_planner/tree_node.h"
 
 #include <sensor_msgs/image_encodings.h>
 
