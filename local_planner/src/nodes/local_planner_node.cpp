@@ -16,19 +16,19 @@ namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private)
-        : nh_(nh),
-          nh_private_(nh_private),
-          cmdloop_spinner_(1, &cmdloop_queue_),
-          spin_dt_(0.2) {
+    : nh_(nh),
+      nh_private_(nh_private),
+      cmdloop_spinner_(1, &cmdloop_queue_),
+      spin_dt_(0.2) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
   readParams();
 
   ros::TimerOptions timer_options(
-          ros::Duration(spin_dt_),
-          boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
-          &cmdloop_queue_);
+      ros::Duration(spin_dt_),
+      boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
 
   cmdloop_timer_ = nh_.createTimer(timer_options);
 
@@ -130,7 +130,7 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   start_time_ = ros::Time::now();
 
   local_planner_->disable_rise_to_goal_altitude_ =
-          disable_rise_to_goal_altitude_;
+      disable_rise_to_goal_altitude_;
   status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 }
 
@@ -325,17 +325,17 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
     startup_ = false;
   }
 
-//  // Process callbacks & wait for a position update
-//  while (!position_received_ && ros::ok()) {
-//    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
-//  }
+  //  // Process callbacks & wait for a position update
+  //  while (!position_received_ && ros::ok()) {
+  //    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
+  //  }
 
   // Check if all information was received
   ros::Time now = ros::Time::now();
   ros::Duration pointcloud_timeout_land =
-          ros::Duration(local_planner_->pointcloud_timeout_land_);
+      ros::Duration(local_planner_->pointcloud_timeout_land_);
   ros::Duration pointcloud_timeout_hover =
-          ros::Duration(local_planner_->pointcloud_timeout_hover_);
+      ros::Duration(local_planner_->pointcloud_timeout_hover_);
   ros::Duration since_last_cloud = now - last_wp_time_;
   ros::Duration since_start = now - start_time_;
 
@@ -350,13 +350,12 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
           mode_msg.response.mode_sent) {
         ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
       } else {
-        ROS_ERROR(
-                "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
+        ROS_ERROR("\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
       }
     }
   } else {
     if (never_run_ || (since_last_cloud > pointcloud_timeout_hover &&
-                            since_start > pointcloud_timeout_hover)) {
+                       since_start > pointcloud_timeout_hover)) {
       if (position_received_) {
         hover_ = true;
         status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
@@ -371,21 +370,20 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
           not_received.append(" , missing transforms ");
         }
         ROS_INFO(
-                "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
-                "\n "
-                "\033[0m",
-                not_received.c_str());
+            "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
+            "\n "
+            "\033[0m",
+            not_received.c_str());
       } else {
         ROS_WARN(
-                "\033[1;33m Pointcloud timeout: No position received, no WP to "
-                "output.... \n \033[0m");
+            "\033[1;33m Pointcloud timeout: No position received, no WP to "
+            "output.... \n \033[0m");
       }
     }
   }
 
   // If planner is not running, update planner info and get last results
-  if (cameras_.size() == numReceivedClouds() &&
-      cameras_.size() != 0) {
+  if (cameras_.size() == numReceivedClouds() && cameras_.size() != 0) {
     if (canUpdatePlannerInfo()) {
       if (running_mutex_.try_lock()) {
         updatePlannerInfo();
@@ -393,8 +391,7 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
         for (size_t i = 0; i < cameras_.size(); i++) {
           cameras_[i].received_ = false;
         }
-        wp_generator_->setPlannerInfo(
-                local_planner_->getAvoidanceOutput());
+        wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
         if (local_planner_->stop_in_front_active_) {
           goal_msg_.pose.position = local_planner_->getGoal();
         }
@@ -1040,4 +1037,4 @@ void LocalPlannerNode::threadFunction() {
     }
   }
 }
-}
+}  // namespace avoidance

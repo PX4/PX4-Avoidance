@@ -66,7 +66,8 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh,  const ros::NodeHandle& nh_private);
+  LocalPlannerNode(const ros::NodeHandle& nh,
+                   const ros::NodeHandle& nh_private);
   ~LocalPlannerNode();
 
   bool never_run_ = true;
@@ -79,7 +80,6 @@ class LocalPlannerNode {
 
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
-
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -111,7 +111,6 @@ class LocalPlannerNode {
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 
  private:
-
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   mavros_msgs::Altitude ground_distance_msg_;
@@ -229,5 +228,5 @@ class LocalPlannerNode {
   void publishHistogramImage();
   void publishGround();
 };
-}
+}  // namespace avoidance
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
