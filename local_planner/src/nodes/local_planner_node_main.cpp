@@ -10,6 +10,7 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("~");
 
   LocalPlannerNode Node(nh, nh_private);
+  ros::spin();
 
   ros::Duration(2).sleep();
   avoidanceOutput planner_output;
