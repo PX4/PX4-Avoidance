@@ -69,11 +69,7 @@ class LocalPlannerNode {
   LocalPlannerNode(const ros::NodeHandle& nh,  const ros::NodeHandle& nh_private);
   ~LocalPlannerNode();
 
-  mavros_msgs::CompanionProcessStatus status_msg_;
-
-  std::string world_path_;
   bool never_run_ = true;
-  bool position_received_ = false;
   bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
 
@@ -81,18 +77,9 @@ class LocalPlannerNode {
 
   double curr_yaw_;
 
-  std::vector<cameraData> cameras_;
-
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
 
-  std::vector<geometry_msgs::Point> path_node_positions_;
-  geometry_msgs::PoseStamped hover_point_;
-  geometry_msgs::PoseStamped newest_pose_;
-  geometry_msgs::PoseStamped last_pose_;
-  geometry_msgs::Point newest_waypoint_position_;
-  geometry_msgs::Point last_waypoint_position_;
-  geometry_msgs::PoseStamped goal_msg_;
 
   const ros::Duration pointcloud_timeout_hover_ = ros::Duration(0.4);
   const ros::Duration pointcloud_timeout_land_ = ros::Duration(10);
@@ -101,25 +88,11 @@ class LocalPlannerNode {
   ros::Time t_status_sent_;
 
   std::unique_ptr<LocalPlanner> local_planner_;
-  std::unique_ptr<WaypointGenerator> wp_generator_;
-
-  ros::Publisher world_pub_;
-  ros::Publisher drone_pub_;
-  ros::Publisher current_waypoint_pub_;
-  ros::Publisher mavros_pos_setpoint_pub_;
-  ros::Publisher mavros_vel_setpoint_pub_;
-  ros::Publisher mavros_obstacle_free_path_pub_;
-  ros::Publisher mavros_obstacle_distance_pub_;
-  ros::Publisher waypoint_pub_;
-  ros::ServiceClient mavros_set_mode_client_;
-  ros::Publisher mavros_system_status_pub_;
-  tf::TransformListener tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
 
   std::mutex data_ready_mutex_;
-  bool data_ready_ = false;
   std::condition_variable data_ready_cv_;
 
   void publishSetpoint(const geometry_msgs::Twist& wp,
@@ -142,6 +115,7 @@ class LocalPlannerNode {
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   mavros_msgs::Altitude ground_distance_msg_;
+
   int path_length_ = 0;
 
   ros::NodeHandle nh_;
@@ -182,17 +156,47 @@ class LocalPlannerNode {
   ros::Publisher adapted_wp_pub_;
   ros::Publisher smoothed_wp_pub_;
   ros::Publisher histogram_image_pub_;
+  ros::Publisher world_pub_;
+  ros::Publisher drone_pub_;
+  ros::Publisher current_waypoint_pub_;
+  ros::Publisher mavros_pos_setpoint_pub_;
+  ros::Publisher mavros_vel_setpoint_pub_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_obstacle_distance_pub_;
+  ros::Publisher waypoint_pub_;
+  ros::Publisher mavros_system_status_pub_;
+
+  ros::ServiceClient mavros_set_mode_client_;
+
+  tf::TransformListener tf_listener_;
 
   std::vector<float> algo_time;
+  std::vector<cameraData> cameras_;
+  std::vector<geometry_msgs::Point> path_node_positions_;
+
+  std::unique_ptr<WaypointGenerator> wp_generator_;
 
   geometry_msgs::TwistStamped vel_msg_;
+  geometry_msgs::PoseStamped hover_point_;
+  geometry_msgs::PoseStamped newest_pose_;
+  geometry_msgs::PoseStamped last_pose_;
+  geometry_msgs::Point newest_waypoint_position_;
+  geometry_msgs::Point last_waypoint_position_;
+  geometry_msgs::PoseStamped goal_msg_;
+
+  mavros_msgs::CompanionProcessStatus status_msg_;
+
   bool armed_, offboard_, mission_, new_goal_;
   bool startup_;
   bool hover_;
   bool landing_;
+  bool position_received_ = false;
+  bool data_ready_ = false;
+
   ros::Time start_time_;
 
   double spin_dt_;
+  std::string world_path_;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   boost::recursive_mutex config_mutex_;
