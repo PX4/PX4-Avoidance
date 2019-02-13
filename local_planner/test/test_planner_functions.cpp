@@ -61,18 +61,14 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
   std::vector<Eigen::Vector3f> middle_of_cell;
 
-  for (auto i : e_angle_filled) {
-    for (auto j : z_angle_filled) {
-      PolarPoint p_pol(i, j, distance);
+  for (int i = 0; i < e_angle_filled.size(); i++) {
+      PolarPoint p_pol(e_angle_filled[i], z_angle_filled[i], distance);
       middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
-    }
   }
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
   for (int i = 0; i < middle_of_cell.size(); i++) {
-    for (int j = 0; j < 1; j++) {
       cloud.push_back(toXYZ(middle_of_cell[i]));
-    }
   }
 
   // WHEN: we build a histogram
@@ -85,7 +81,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index;
   std::vector<int> z_index;
   for (int i = 0; i < e_angle_filled.size(); i++) {
-    PolarPoint p_pol(e_angle_filled[i], z_angle_filled[i], 0.0f);
+    PolarPoint p_pol(e_angle_filled[i], z_angle_filled[i], 1.0f);
     e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
     z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
   }
