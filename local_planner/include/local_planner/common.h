@@ -88,7 +88,7 @@ void wrapPolar(PolarPoint& p_pol);
 * @returns   angle between two points in rad
 **/
 float nextYaw(const geometry_msgs::PoseStamped& u,
-               const geometry_msgs::Point& v);
+              const geometry_msgs::Point& v);
 
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          float yaw);
@@ -104,8 +104,7 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
 * @param[in] elapsed time [s]
 * @returns   speed within the given limits
 **/
-float velocityLinear(float max_vel, float slope, float v_old,
-                      float elapsed);
+float velocityLinear(float max_vel, float slope, float v_old, float elapsed);
 /**
 * @brief     wrappes the input angle in to plus minus PI space
 * @param[in, out] angle to be wrapped  [rad]

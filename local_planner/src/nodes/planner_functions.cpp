@@ -478,9 +478,9 @@ bool getDirectionFromTree(
       }
     } else {
       float cos_alpha = (node_distance * node_distance +
-                          distances[wp_idx] * distances[wp_idx] -
-                          distances[wp_idx + 1] * distances[wp_idx + 1]) /
-                         (2.0f * node_distance * distances[wp_idx]);
+                         distances[wp_idx] * distances[wp_idx] -
+                         distances[wp_idx + 1] * distances[wp_idx + 1]) /
+                        (2.0f * node_distance * distances[wp_idx]);
       float l_front = distances[wp_idx] * cos_alpha;
       float l_frac = l_front / node_distance;
 

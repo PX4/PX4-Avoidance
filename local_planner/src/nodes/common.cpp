@@ -17,9 +17,11 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
   p.x() =
-      static_cast<float>(pos.x) + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+      static_cast<float>(pos.x) +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
   p.y() =
-      static_cast<float>(pos.y) + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+      static_cast<float>(pos.y) +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
   p.z() = static_cast<float>(pos.z) + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
@@ -44,7 +46,7 @@ PolarPoint cartesianToPolar(float x, float y, float z,
                             const Eigen::Vector3f& pos) {
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
-  p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;            //(-90.+90)
+  p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
   p_pol.z = std::atan2(x - pos.x(), y - pos.y()) * RAD_TO_DEG;  //(-180. +180]
   p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
                  (z - pos.z()) * (z - pos.z()));
@@ -98,7 +100,7 @@ void wrapPolar(PolarPoint& p_pol) {
 
 // calculate the yaw for the next waypoint
 float nextYaw(const geometry_msgs::PoseStamped& u,
-               const geometry_msgs::Point& v) {
+              const geometry_msgs::Point& v) {
   float dx = static_cast<float>(v.x - u.pose.position.x);
   float dy = static_cast<float>(v.y - u.pose.position.y);
 
@@ -117,8 +119,7 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
   return pose_msg;
 }
 
-float velocityLinear(float max_vel, float slope, float v_old,
-                      float elapsed) {
+float velocityLinear(float max_vel, float slope, float v_old, float elapsed) {
   float t_old = v_old / slope;
   float t_new = t_old + elapsed;
   float speed = t_new * slope;

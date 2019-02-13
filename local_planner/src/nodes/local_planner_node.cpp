@@ -419,7 +419,8 @@ void LocalPlannerNode::publishReachHeight() {
 void LocalPlannerNode::publishBox() {
   visualization_msgs::MarkerArray marker_array;
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
-  double histogram_box_radius = static_cast<double>(local_planner_->histogram_box_.radius_);
+  double histogram_box_radius =
+      static_cast<double>(local_planner_->histogram_box_.radius_);
 
   visualization_msgs::Marker box;
   box.header.frame_id = "local_origin";
@@ -711,7 +712,8 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
 void LocalPlannerNode::publishGround() {
   geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
   visualization_msgs::Marker plane;
-  double histogram_box_radius = static_cast<double>(local_planner_->histogram_box_.radius_);
+  double histogram_box_radius =
+      static_cast<double>(local_planner_->histogram_box_.radius_);
 
   plane.header.frame_id = "local_origin";
   plane.header.stamp = ros::Time::now();
@@ -720,7 +722,8 @@ void LocalPlannerNode::publishGround() {
   plane.action = visualization_msgs::Marker::ADD;
   plane.pose.position.x = drone_pos.pose.position.x;
   plane.pose.position.y = drone_pos.pose.position.y;
-  plane.pose.position.z = drone_pos.pose.position.z - static_cast<double>(local_planner_->ground_distance_);
+  plane.pose.position.z = drone_pos.pose.position.z -
+                          static_cast<double>(local_planner_->ground_distance_);
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;

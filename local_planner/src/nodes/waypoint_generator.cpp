@@ -51,7 +51,8 @@ void WaypointGenerator::calculateWaypoint() {
       float dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
           getSystemTime() - planner_info_.last_path_time;
-      if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
+      if (tree_available &&
+          (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
@@ -268,9 +269,9 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 }
 
 void WaypointGenerator::adaptSpeed() {
-
   ros::Duration since_last_velocity = getSystemTime() - velocity_time_;
-  float since_last_velocity_sec = static_cast<float>(since_last_velocity.toSec());
+  float since_last_velocity_sec =
+      static_cast<float>(since_last_velocity.toSec());
 
   if (!planner_info_.obstacle_ahead) {
     speed_ = std::min(speed_, planner_info_.max_speed);
@@ -313,7 +314,8 @@ void WaypointGenerator::adaptSpeed() {
   velocity_time_ = getSystemTime();
 
   // calculate correction for computation delay
-  float since_update_sec = static_cast<float>((getSystemTime() - update_time_).toSec());
+  float since_update_sec =
+      static_cast<float>((getSystemTime() - update_time_).toSec());
   speed_ += (since_update_sec * curr_vel_magnitude_);
 
   // break before goal: if the vehicle is closer to the goal than a velocity
@@ -335,11 +337,9 @@ void WaypointGenerator::adaptSpeed() {
     limit_speed_close_to_goal_ = false;
   }
   if (limit_speed_close_to_goal_) {
-    speed_ =
-        std::min(speed_,
-                 param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
-    speed_ =
-        std::max(speed_, param_.min_speed_close_to_goal);
+    speed_ = std::min(
+        speed_, param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
+    speed_ = std::max(speed_, param_.min_speed_close_to_goal);
   }
 
   // set waypoint to correct speed
@@ -361,7 +361,8 @@ void WaypointGenerator::adaptSpeed() {
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
 
-  float time_diff_sec = static_cast<float>((current_time_ - last_time_).toSec());
+  float time_diff_sec =
+      static_cast<float>((current_time_ - last_time_).toSec());
   float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.004f;
 
   // set the yaw at the setpoint based on our smoothed location

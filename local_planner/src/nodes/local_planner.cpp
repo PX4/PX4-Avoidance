@@ -47,8 +47,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
   max_speed_ = static_cast<float>(config.max_speed_);
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
-  relevance_margin_e_degree_ = static_cast<float>(config.relevance_margin_e_degree_);
-  relevance_margin_z_degree_ = static_cast<float>(config.relevance_margin_z_degree_);
+  relevance_margin_e_degree_ =
+      static_cast<float>(config.relevance_margin_e_degree_);
+  relevance_margin_z_degree_ =
+      static_cast<float>(config.relevance_margin_z_degree_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
 
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
@@ -163,8 +165,7 @@ sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      float depth_val =
-          image.step * histogram.get_dist(e, z) / sensor_max_dist;
+      float depth_val = image.step * histogram.get_dist(e, z) / sensor_max_dist;
       image.data.push_back(
           (int)std::max(0.0f, std::min((float)image.step, depth_val)));
     }
@@ -181,7 +182,8 @@ void LocalPlanner::determineStrategy() {
 
   if (!reach_altitude_) {
     starting_height_ =
-        std::max(goal_.z() - 0.5f, static_cast<float>(take_off_pose_.pose.position.z) + 1.0f);
+        std::max(goal_.z() - 0.5f,
+                 static_cast<float>(take_off_pose_.pose.position.z) + 1.0f);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m",
              starting_height_);
     waypoint_type_ = reachHeight;
@@ -366,7 +368,6 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 
 // get 3D points from old histogram
 void LocalPlanner::reprojectPoints(Histogram histogram) {
-
   float dist;
   int age;
   // ALPHA_RES%2=0 as per definition, see histogram.h
@@ -425,7 +426,8 @@ void LocalPlanner::evaluateProgressRate() {
     float goal_dist_old = (position_old_ - goal_).norm();
 
     ros::Time time = ros::Time::now();
-    float time_diff_sec = static_cast<float>((time - integral_time_old_).toSec());
+    float time_diff_sec =
+        static_cast<float>((time - integral_time_old_).toSec());
     float incline = (goal_dist - goal_dist_old) / time_diff_sec;
     integral_time_old_ = time;
 
