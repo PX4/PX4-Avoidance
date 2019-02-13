@@ -19,7 +19,7 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
         : nh_(nh),
           nh_private_(nh_private),
           cmdloop_spinner_(1, &cmdloop_queue_),
-          spin_dt_(1.0) {
+          spin_dt_(0.2) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
