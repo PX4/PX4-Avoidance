@@ -453,6 +453,7 @@ bool getDirectionFromTree(
             .norm();
 
     std::vector<double> distances;
+    distances.reserve(size);
     for (int i = 0; i < size; i++) {
       distances.push_back((position - toEigen(path_node_positions[i])).norm());
       if (distances[i] < min_dist) {

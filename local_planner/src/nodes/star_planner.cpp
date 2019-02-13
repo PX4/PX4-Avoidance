@@ -124,7 +124,7 @@ void StarPlanner::buildLookAheadTree() {
 
   int origin = 0;
 
-  for(int n = 0; n < n_expanded_nodes_; n++) {
+  for (int n = 0; n < n_expanded_nodes_; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
