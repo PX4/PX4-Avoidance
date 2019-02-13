@@ -6,6 +6,11 @@
 
 using namespace avoidance;
 
+class StarPlannerBasicTests : public ::testing::Test, public StarPlanner {
+  void SetUp() override{};
+  void TearDown() override{};
+};
+
 class StarPlannerTests : public ::testing::Test {
  public:
   StarPlanner star_planner;
@@ -91,4 +96,191 @@ TEST_F(StarPlannerTests, buildTree) {
     position.pose.position = toPoint(star_planner.tree_[1].getPosition());
     star_planner.setPose(position, 0.0);
   }
+}
+
+TEST_F(StarPlannerBasicTests, treeCostFunctionTargetCost) {
+  // GIVEN: a tree, the last path and two different goal locations
+  Eigen::Vector3f goal1(5.f, 1.f, 0.f);
+  Eigen::Vector3f goal2(5.f, 3.f, 0.f);
+
+  // insert tree root
+  Eigen::Vector3f tree_root(0.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 0, tree_root));
+  tree_.back().yaw_ = 90.0;  // drone looks straight ahead
+  tree_.back().last_z_ = tree_.back().yaw_;
+
+  // insert first Node
+  Eigen::Vector3f node1(1.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 1, node1));
+  tree_.back().last_e_ = 0.f;
+  tree_.back().last_z_ = 90.f;
+
+  // last path equal to the given nodes
+  std::vector<geometry_msgs::Point> path_node_positions_;
+  path_node_positions_.push_back(toPoint(node1));
+  path_node_positions_.push_back(toPoint(tree_root));
+
+  // WHEN: we calculate the cost of node 1 for two different goal locations
+  setGoal(toPoint(goal1));
+  tree_age_ = 1;
+  double cost1 = treeCostFunction(1);
+  setGoal(toPoint(goal2));
+  tree_age_ = 1;
+  double cost2 = treeCostFunction(1);
+
+  // THEN: The cost1 should be less than cost2, as in case 1 the node heads
+  // closer to the goal
+  EXPECT_GT(cost2, cost1);
+}
+
+TEST_F(StarPlannerBasicTests, treeCostFunctionOldPathCost) {
+  // GIVEN: a tree, a goal and the last path
+  StarPlanner star_planner;
+  Eigen::Vector3f goal(5.f, 0.f, 0.f);
+  setGoal(toPoint(goal));
+  tree_age_ = 1;
+
+  // insert tree root
+  Eigen::Vector3f tree_root(0.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 0, tree_root));
+  tree_.back().yaw_ = 90.0;  // drone looks straight ahead
+  tree_.back().last_z_ = tree_.back().yaw_;
+
+  // insert first Node
+  Eigen::Vector3f node1(1.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 1, node1));
+  tree_.back().last_e_ = 0.f;
+  tree_.back().last_z_ = 90.f;
+
+  // last path case 1: equal to the current nodes
+  std::vector<geometry_msgs::Point> path_node_positions1;
+  path_node_positions1.push_back(toPoint(node1));
+  path_node_positions1.push_back(toPoint(tree_root));
+
+  // last path case 2: different from current nodes
+  Eigen::Vector3f node1_old(0.5f, 0.5f, 0.f);
+  std::vector<geometry_msgs::Point> path_node_positions2;
+  path_node_positions2.push_back(toPoint(node1_old));
+  path_node_positions2.push_back(toPoint(tree_root));
+
+  // WHEN: we calculate the cost of node 1 for two different old paths
+  path_node_positions_ = path_node_positions1;
+  double cost1 = treeCostFunction(1);
+  path_node_positions_ = path_node_positions2;
+  double cost2 = treeCostFunction(1);
+
+  // THEN: The cost1 should be less than cost2, as in case 1 the node lies
+  // closer to the path of the last iteration
+  EXPECT_GT(cost2, cost1);
+}
+
+TEST_F(StarPlannerBasicTests, treeCostFunctionYawCost) {
+  // GIVEN: a tree, a goal and the last path
+  StarPlanner star_planner;
+  Eigen::Vector3f goal(5.f, 0.f, 0.f);
+  setGoal(toPoint(goal));
+  tree_age_ = 1;
+
+  // insert tree root
+  Eigen::Vector3f tree_root(0.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 0, tree_root));
+  tree_.back().yaw_ = 90;  // drone looks straight ahead
+  tree_.back().last_z_ = tree_.back().yaw_;
+
+  // insert two nodes to both sides
+  PolarPoint node1_pol(0, 110, 1);  // to the right
+  PolarPoint node2_pol(0, 70, 1);   // to the left
+  Eigen::Vector3f node1 = polarToCartesian(node1_pol, toPoint(tree_root));
+  Eigen::Vector3f node2 = polarToCartesian(node2_pol, toPoint(tree_root));
+
+  tree_.push_back(TreeNode(0, 1, node1));
+  tree_.back().last_e_ = node1_pol.e;
+  tree_.back().last_z_ = node1_pol.z;
+
+  tree_.push_back(TreeNode(0, 1, node2));
+  tree_.back().last_e_ = node2_pol.e;
+  tree_.back().last_z_ = node2_pol.z;
+
+  // last path straight ahead
+  Eigen::Vector3f node_old(1.f, 0.f, 0.f);
+  path_node_positions_.clear();
+  path_node_positions_.push_back(toPoint(node_old));
+  path_node_positions_.push_back(toPoint(tree_root));
+
+  // WHEN: we calculate the cost for both nodes as the drone looks straight
+  // ahead
+  double cost1_straight = treeCostFunction(1);
+  double cost2_straight = treeCostFunction(2);
+
+  // WHEN: we calculate the cost for both nodes as the drone looks to the right
+  tree_[0].yaw_ = 100;  // drone looks 10 degrees to the right
+  tree_[0].last_z_ = tree_[0].yaw_;
+  double cost1_right = treeCostFunction(1);
+  double cost2_right = treeCostFunction(2);
+
+  // WHEN: we calculate the cost for both nodes as the drone looks to the left
+  tree_[0].yaw_ = 80;  // drone looks 10 degrees to the right
+  tree_[0].last_z_ = tree_[0].yaw_;
+  double cost1_left = treeCostFunction(1);
+  double cost2_left = treeCostFunction(2);
+
+  // THEN: case 1: drone looks straight ahead, nodes symmetrical to the left and
+  // right should have same costs
+  //       case 2: drone looks to the right, node to the right should be cheaper
+  //       case 3: drone looks to the left, node to the left should be cheaper
+  //       and costs should be symmetrical as well
+  EXPECT_FLOAT_EQ(cost2_straight, cost1_straight);
+  EXPECT_GT(cost2_right, cost1_right);
+  EXPECT_GT(cost1_left, cost2_left);
+  EXPECT_FLOAT_EQ(cost2_left, cost1_right);
+  EXPECT_FLOAT_EQ(cost1_left, cost2_right);
+}
+
+TEST_F(StarPlannerBasicTests, treeCostFunctionSmoothingCost) {
+  // GIVEN: a tree, a goal
+  StarPlanner star_planner;
+  path_node_positions_.clear();
+
+  // insert tree root
+  Eigen::Vector3f tree_root(0.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 0, tree_root));
+  tree_.back().last_z_ = 90;
+
+  // insert first node (straight ahead)
+  Eigen::Vector3f node1(1.f, 0.f, 0.f);
+  tree_.push_back(TreeNode(0, 1, node1));
+  tree_.back().last_e_ = 0.f;
+  tree_.back().last_z_ = 90.f;
+
+  // insert two more nodes with node 1 as origin
+  PolarPoint node2_pol(0, 100, 1);
+  PolarPoint node3_pol(0, 110, 1);
+  Eigen::Vector3f node2 = polarToCartesian(node2_pol, toPoint(node1));
+  Eigen::Vector3f node3 = polarToCartesian(node3_pol, toPoint(node1));
+
+  tree_.push_back(TreeNode(1, 2, node2));
+  tree_.back().last_e_ = node2_pol.e;
+  tree_.back().last_z_ = node2_pol.z;
+
+  tree_.push_back(TreeNode(1, 2, node3));
+  tree_.back().last_e_ = node3_pol.e;
+  tree_.back().last_z_ = node3_pol.z;
+
+  // calculate two goal positions in direction of the nodes 2, 3
+  PolarPoint goal2_pol(0, 100, 5);
+  PolarPoint goal3_pol(0, 110, 5);
+  Eigen::Vector3f goal2 = polarToCartesian(goal2_pol, toPoint(node1));
+  Eigen::Vector3f goal3 = polarToCartesian(goal3_pol, toPoint(node1));
+
+  // WHEN: we calculate the cost for nodes 2, 3
+  setGoal(toPoint(goal2));
+  tree_[0].yaw_ = 100;
+  double cost2 = treeCostFunction(2);
+  setGoal(toPoint(goal3));
+  tree_[0].yaw_ = 110;
+  double cost3 = treeCostFunction(3);
+
+  // THEN: the path node with the more curved path (node 3) should be more
+  // expensive
+  EXPECT_GT(cost3, cost2);
 }

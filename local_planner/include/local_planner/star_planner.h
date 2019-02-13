@@ -42,6 +42,7 @@ class StarPlanner {
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
 
+ protected:
   /**
   * @brief     computes the cost of a node
   * @param[in] node_number, sequential number of entry in the tree
