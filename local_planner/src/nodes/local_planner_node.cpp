@@ -123,6 +123,15 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
 
   local_planner_->applyGoal();
+
+  hover_ = false;
+  landing_ = false;
+  startup_ = true;
+  start_time_ = ros::Time::now();
+
+  local_planner_->disable_rise_to_goal_altitude_ =
+          disable_rise_to_goal_altitude_;
+  status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 }
 
 LocalPlannerNode::~LocalPlannerNode() { delete server_; }
@@ -304,7 +313,120 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
 }
 
 void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
-  return;
+  // spin node, execute callbacks
+  hover_ = false;
+
+  // visualize world in RVIZ
+  if (!world_path_.empty() && startup_) {
+    visualization_msgs::MarkerArray marker_array;
+    if (!visualizeRVIZWorld(world_path_, marker_array)) {
+      world_pub_.publish(marker_array);
+    }
+    startup_ = false;
+  }
+
+//  // Process callbacks & wait for a position update
+//  while (!position_received_ && ros::ok()) {
+//    ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
+//  }
+
+  // Check if all information was received
+  ros::Time now = ros::Time::now();
+  ros::Duration pointcloud_timeout_land =
+          ros::Duration(local_planner_->pointcloud_timeout_land_);
+  ros::Duration pointcloud_timeout_hover =
+          ros::Duration(local_planner_->pointcloud_timeout_hover_);
+  ros::Duration since_last_cloud = now - last_wp_time_;
+  ros::Duration since_start = now - start_time_;
+
+  if (since_last_cloud > pointcloud_timeout_land &&
+      since_start > pointcloud_timeout_land) {
+    if (!landing_) {
+      mavros_msgs::SetMode mode_msg;
+      mode_msg.request.custom_mode = "AUTO.LOITER";
+      landing_ = true;
+      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      if (mavros_set_mode_client_.call(mode_msg) &&
+          mode_msg.response.mode_sent) {
+        ROS_WARN("\033[1;33m Pointcloud timeout: Landing \n \033[0m");
+      } else {
+        ROS_ERROR(
+                "\033[1;33m Pointcloud timeout: Landing failed! \n \033[0m");
+      }
+    }
+  } else {
+    if (never_run_ || (since_last_cloud > pointcloud_timeout_hover &&
+                            since_start > pointcloud_timeout_hover)) {
+      if (position_received_) {
+        hover_ = true;
+        status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
+        std::string not_received = "";
+        for (size_t i = 0; i < cameras_.size(); i++) {
+          if (!cameras_[i].received_) {
+            not_received.append(" , no cloud received on topic ");
+            not_received.append(cameras_[i].topic_);
+          }
+        }
+        if (!canUpdatePlannerInfo()) {
+          not_received.append(" , missing transforms ");
+        }
+        ROS_INFO(
+                "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
+                "\n "
+                "\033[0m",
+                not_received.c_str());
+      } else {
+        ROS_WARN(
+                "\033[1;33m Pointcloud timeout: No position received, no WP to "
+                "output.... \n \033[0m");
+      }
+    }
+  }
+
+  // If planner is not running, update planner info and get last results
+  if (cameras_.size() == numReceivedClouds() &&
+      cameras_.size() != 0) {
+    if (canUpdatePlannerInfo()) {
+      if (running_mutex_.try_lock()) {
+        updatePlannerInfo();
+        // reset all clouds to not yet received
+        for (size_t i = 0; i < cameras_.size(); i++) {
+          cameras_[i].received_ = false;
+        }
+        wp_generator_->setPlannerInfo(
+                local_planner_->getAvoidanceOutput());
+        if (local_planner_->stop_in_front_active_) {
+          goal_msg_.pose.position = local_planner_->getGoal();
+        }
+        running_mutex_.unlock();
+        // Wake up the planner
+        std::unique_lock<std::mutex> lck(data_ready_mutex_);
+        data_ready_ = true;
+        data_ready_cv_.notify_one();
+      }
+    }
+  }
+
+  // send waypoint
+  if (!never_run_ && !landing_) {
+    publishWaypoints(hover_);
+    if (!hover_) status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
+  } else {
+    for (size_t i = 0; i < cameras_.size(); ++i) {
+      // once the camera info have been set once, unsubscribe from topic
+      cameras_[i].camera_info_sub_.shutdown();
+    }
+  }
+
+  position_received_ = false;
+
+  // publish system status
+  if (now - t_status_sent_ > ros::Duration(0.2)) {
+    status_msg_.header.stamp = ros::Time::now();
+    status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
+    mavros_system_status_pub_.publish(status_msg_);
+    t_status_sent_ = now;
+  }
 }
 
 void LocalPlannerNode::publishPaths() {
