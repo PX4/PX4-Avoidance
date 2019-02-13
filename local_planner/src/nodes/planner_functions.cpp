@@ -289,6 +289,7 @@ void getBestCandidatesFromCostMatrix(
   }
   // copy queue to vector and change order such that lowest cost is at the front
   candidate_vector.clear();
+  candidate_vector.reserve(queue.size());
   while (!queue.empty()) {
     candidate_vector.push_back(queue.top());
     queue.pop();

@@ -22,10 +22,10 @@ class Histogram {
   Eigen::MatrixXf dist_;
 
   inline void wrapIndex(int &x, int &y) const {
-    while (x < 0) x += e_dim_;
-    while (x > e_dim_ - 1) x -= e_dim_;
-    while (y < 0) y += z_dim_;
-    while (y > z_dim_ - 1) y -= z_dim_;
+    x = x % e_dim_;
+    if (x < 0) x += e_dim_;
+    y = y % z_dim_;
+    if (y < 0) y += z_dim_;
   }
 
  public:
