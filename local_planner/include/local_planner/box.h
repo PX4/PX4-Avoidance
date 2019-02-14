@@ -11,7 +11,8 @@ class Box {
   ~Box();
 
   /**
-  * @brief     sets the bounding box coordinates limits around the vehicle position
+  * @brief     sets the bounding box coordinates limits around the vehicle
+  *position
   * @param[in] pos, vehicle current position
   * @param[in] ground_distance, distance to the ground [m]
   **/

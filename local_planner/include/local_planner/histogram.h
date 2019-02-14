@@ -71,7 +71,8 @@ class Histogram {
   * @brief     setter method for histogram cell distance
   * @param[in] x, elevation angle index
   * @param[in] y, azimuth angle index
-  * @param[in] value, distance to the vehicle of obstacle mapped to (x, y) cell [m]
+  * @param[in] value, distance to the vehicle of obstacle mapped to (x, y) cell
+  *[m]
   **/
   inline void set_dist(int x, int y, float value) { dist_(x, y) = value; }
 

@@ -111,7 +111,8 @@ class LocalPlanner {
   std::vector<candidateDirection> candidate_vector_;
 
   /**
-  * @brief     reprojectes the histogram from the previous algorithm iteration around the current vehicle position
+  * @brief     reprojectes the histogram from the previous algorithm iteration
+  *around the current vehicle position
   * @param     histogram, histogram from the previous algorith iteration
   **/
   void reprojectPoints(Histogram histogram);
@@ -120,7 +121,8 @@ class LocalPlanner {
   **/
   void setVelocity();
   /**
-  * @brief     calculates the cost function weights to fly around or over obstacles based on the progress towards the goal over time
+  * @brief     calculates the cost function weights to fly around or over
+  *obstacles based on the progress towards the goal over time
   **/
   void evaluateProgressRate();
   /**
@@ -204,10 +206,10 @@ class LocalPlanner {
   **/
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
-   /**
-   * @brief     getter method for current vehicle position and orientation
-   * @returns   vehicle positiona and orientation
-   **/
+  /**
+  * @brief     getter method for current vehicle position and orientation
+  * @returns   vehicle positiona and orientation
+  **/
   geometry_msgs::PoseStamped getPosition();
 
   /**
@@ -231,10 +233,10 @@ class LocalPlanner {
   **/
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
-   /**
-   * @brief     setter method to send obstacle distance information to FCU
-   * @param[in]     obstacle_distance, obstacle distance message
-   **/
+  /**
+  * @brief     setter method to send obstacle distance information to FCU
+  * @param[in]     obstacle_distance, obstacle distance message
+  **/
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
 
   /**
@@ -244,7 +246,8 @@ class LocalPlanner {
   avoidanceOutput getAvoidanceOutput();
 
   /**
-  * @brief     determines the way the obstacle is avoided and the algorithm to use
+  * @brief     determines the way the obstacle is avoided and the algorithm to
+  *use
   **/
   void determineStrategy();
   /**

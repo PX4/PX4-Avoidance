@@ -165,14 +165,16 @@ class LocalPlannerNode {
   void threadFunction();
 
   /**
-  * @brief     checks if the transformation from the camera frame to local_origin is available at the pointcloud timestamp
+  * @brief     checks if the transformation from the camera frame to
+  *local_origin is available at the pointcloud timestamp
   * @returns   true, if the transformation is available
   **/
   bool canUpdatePlannerInfo();
 
   /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
-  *            vehicle position, velocity, state, and distance to ground, goal, setpoint sent to the FCU
+  *            vehicle position, velocity, state, and distance to ground, goal,
+  *setpoint sent to the FCU
   **/
   void updatePlannerInfo();
 
@@ -190,7 +192,8 @@ class LocalPlannerNode {
   void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
                                  geometry_msgs::PoseStamped pose);
   /**
-  * @brief       transforms velocity setpoints from ROS message to MavROS message
+  * @brief       transforms velocity setpoints from ROS message to MavROS
+  *message
   * @params[out] obst_avoid, velocity setpoint in MavROS message form
   * @params[in]  vel, velocity setpoint computd by the planner
   **/
@@ -204,7 +207,8 @@ class LocalPlannerNode {
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 
   /**
-  * @brief     publishes position and velocity setpoints both to the FCU and to Rviz for visualization
+  * @brief     publishes position and velocity setpoints both to the FCU and to
+  *Rviz for visualization
   * @param     hover, true if the vehicle is loitering
   **/
   void publishWaypoints(bool hover);
@@ -315,7 +319,8 @@ class LocalPlannerNode {
   **/
   void publishPlannerData();
   /**
-  * @brief     publishes current and previous setpoints, current and previous vehicle position and flown path for Rviz visualization
+  * @brief     publishes current and previous setpoints, current and previous
+  *vehicle position and flown path for Rviz visualization
   **/
   void publishPaths();
   /**
@@ -324,7 +329,8 @@ class LocalPlannerNode {
   **/
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   /**
-  * @brief     callaback for selecting the goal by cliking on the position in the Rviz visualization of the world
+  * @brief     callaback for selecting the goal by cliking on the position in
+  *the Rviz visualization of the world
   * @param[in] msg, goal position
   **/
   void clickedGoalCallback(const geometry_msgs::PoseStamped& msg);
@@ -355,11 +361,13 @@ class LocalPlannerNode {
   **/
   void publishGoal();
   /**
-  * @brief     publishes bounding box that is used to filter the pointcloud for Rviz visualization
+  * @brief     publishes bounding box that is used to filter the pointcloud for
+  *Rviz visualization
   **/
   void publishBox();
   /**
-  * @brief     publishes takeoff position and goal altitude to be reached for Rviz visualization
+  * @brief     publishes takeoff position and goal altitude to be reached for
+  *Rviz visualization
   **/
   void publishReachHeight();
   /**
