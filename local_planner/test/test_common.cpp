@@ -341,12 +341,12 @@ TEST(Common, speedCalc) {
 
 TEST(Common, wrapAngle) {
   // GIVEN: an angle in rad
-  double angle1 = 0.d;
-  double angle2 = 30.d * M_PI / 180.d;
-  double angle3 = 270.d * M_PI / 180.d;
-  double angle4 = -90.d * M_PI / 180.d;
-  double angle5 = -225.d * M_PI / 180.d;
-  double angle6 = std::numeric_limits<double>::infinity();
+  float angle1 = 0.d;
+  float angle2 = 30.d * M_PI / 180.d;
+  float angle3 = 270.d * M_PI / 180.d;
+  float angle4 = -90.d * M_PI / 180.d;
+  float angle5 = -225.d * M_PI / 180.d;
+  float angle6 = std::numeric_limits<float>::infinity();
 
   // WHEN: it is wrapped to the space (-PI; PI] space
   wrapAngleToPlusMinusPI(angle1);
@@ -367,10 +367,10 @@ TEST(Common, wrapAngle) {
 
 TEST(Common, getAngularVel) {
   // GIVEN: maximum and minimum velocity, slope, old velocity and time elapsed
-  double desired_yaw1 = 0.d;
-  double desired_yaw2 = 540.d * M_PI / 180.d;
-  double curr_yaw1 = 0.d * M_PI / 180.d;
-  double curr_yaw2 = -45.d * M_PI / 180.d;
+  float desired_yaw1 = 0.f;
+  float desired_yaw2 = 540.f * M_PI_F / 180.f;
+  float curr_yaw1 = 0.f * M_PI_F / 180.f;
+  float curr_yaw2 = -45.f * M_PI_F / 180.f;
 
   // WHEN: we get distance between the same points
   double angular_vel1 = getAngularVelocity(desired_yaw1, curr_yaw1);
@@ -380,10 +380,10 @@ TEST(Common, getAngularVel) {
 
   // THEN: the distance should be...
 
-  EXPECT_FLOAT_EQ(0.f, angular_vel1);
-  EXPECT_FLOAT_EQ(-1.570796f, angular_vel2);
-  EXPECT_FLOAT_EQ(0.392699f, angular_vel3);
-  EXPECT_FLOAT_EQ(-1.178097f, angular_vel4);
+  EXPECT_FLOAT_EQ(0.0, angular_vel1);
+  EXPECT_FLOAT_EQ(1.5707963, angular_vel2);
+  EXPECT_FLOAT_EQ(0.392699, angular_vel3);
+  EXPECT_FLOAT_EQ(-1.178097, angular_vel4);
 }
 
 TEST(Common, IndexPolarIndex) {

@@ -48,10 +48,11 @@ void WaypointGenerator::calculateWaypoint() {
           getDirectionFromTree(p_pol, planner_info_.path_node_positions,
                                toEigen(pose_.pose.position));
 
-      double dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
+      float dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
           getSystemTime() - planner_info_.last_path_time;
-      if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0) &&
+      if (tree_available &&
+          (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
@@ -99,7 +100,7 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
                                     bool stay, ros::Time t) {
-  if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1) {
+  if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
     reached_goal_ = false;
     limit_speed_close_to_goal_ = false;
   }
@@ -107,7 +108,7 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   pose_ = act_pose;
   curr_vel_ = vel;
   goal_ = toEigen(goal.pose.position);
-  curr_yaw_ = tf::getYaw(pose_.pose.orientation);
+  curr_yaw_ = static_cast<float>(tf::getYaw(pose_.pose.orientation));
 
   tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
                    pose_.pose.orientation.z, pose_.pose.orientation.w);
@@ -204,7 +205,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   Eigen::Vector3f pose_to_wp =
       toEigen(output_.goto_position) - toEigen(pose_.pose.position);
 
-  if (pose_to_wp.norm() > 0.01) pose_to_wp.normalize();
+  if (pose_to_wp.norm() > 0.01f) pose_to_wp.normalize();
 
   pose_to_wp *= planner_info_.min_speed;
 
@@ -214,8 +215,8 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   smoothed_goto_location_ = toEigen(output_.smoothed_goto_position);
 }
 
-void WaypointGenerator::smoothWaypoint(double dt) {
-  if (smoothing_speed_ > 0.01) {
+void WaypointGenerator::smoothWaypoint(float dt) {
+  if (smoothing_speed_ > 0.01f) {
     const float P_constant = smoothing_speed_;
     const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
     const Eigen::Vector3f desired_location =
@@ -248,14 +249,14 @@ void WaypointGenerator::smoothWaypoint(double dt) {
             output_.smoothed_goto_position.z);
 }
 
-void WaypointGenerator::nextSmoothYaw(double dt) {
+void WaypointGenerator::nextSmoothYaw(float dt) {
   const float P_constant = smoothing_speed_;
   const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
 
   const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
   const float desired_yaw_velocity = 0.0;
 
-  double yaw_diff =
+  float yaw_diff =
       std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
 
   wrapAngleToPlusMinusPI(yaw_diff);
@@ -269,7 +270,8 @@ void WaypointGenerator::nextSmoothYaw(double dt) {
 
 void WaypointGenerator::adaptSpeed() {
   ros::Duration since_last_velocity = getSystemTime() - velocity_time_;
-  double since_last_velocity_sec = since_last_velocity.toSec();
+  float since_last_velocity_sec =
+      static_cast<float>(since_last_velocity.toSec());
 
   if (!planner_info_.obstacle_ahead) {
     speed_ = std::min(speed_, planner_info_.max_speed);
@@ -303,19 +305,18 @@ void WaypointGenerator::adaptSpeed() {
         }
         i++;
       }
-      double angle_diff = std::abs(ALPHA_RES * ind_dist);
-      double hover_angle = 30;
+      float angle_diff = static_cast<float>(std::abs(ALPHA_RES * ind_dist));
+      float hover_angle = 30.0f;
       angle_diff = std::min(angle_diff, hover_angle);
-      speed_ = speed_ * (1.0 - angle_diff / hover_angle);
+      speed_ = speed_ * (1.0f - angle_diff / hover_angle);
     }
   }
   velocity_time_ = getSystemTime();
 
   // calculate correction for computation delay
-  ros::Duration since_update = getSystemTime() - update_time_;
-  double since_update_sec = since_update.toSec();
-  double delta_dist = since_update_sec * curr_vel_magnitude_;
-  speed_ += delta_dist;
+  float since_update_sec =
+      static_cast<float>((getSystemTime() - update_time_).toSec());
+  speed_ += (since_update_sec * curr_vel_magnitude_);
 
   // break before goal: if the vehicle is closer to the goal than a velocity
   // dependent distance, the speed is limited
@@ -336,17 +337,15 @@ void WaypointGenerator::adaptSpeed() {
     limit_speed_close_to_goal_ = false;
   }
   if (limit_speed_close_to_goal_) {
-    speed_ =
-        std::min(static_cast<float>(speed_),
-                 param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
-    speed_ =
-        std::max(static_cast<float>(speed_), param_.min_speed_close_to_goal);
+    speed_ = std::min(
+        speed_, param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
+    speed_ = std::max(speed_, param_.min_speed_close_to_goal);
   }
 
   // set waypoint to correct speed
   Eigen::Vector3f pose_to_wp =
       toEigen(output_.adapted_goto_position) - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > 0.01) pose_to_wp.normalize();
+  if (pose_to_wp.norm() > 0.01f) pose_to_wp.normalize();
 
   pose_to_wp *= speed_;
 
@@ -362,8 +361,9 @@ void WaypointGenerator::adaptSpeed() {
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
 
-  ros::Duration time_diff = current_time_ - last_time_;
-  double dt = time_diff.toSec() > 0.0 ? time_diff.toSec() : 0.004;
+  float time_diff_sec =
+      static_cast<float>((current_time_ - last_time_).toSec());
+  float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.004f;
 
   // set the yaw at the setpoint based on our smoothed location
   nextSmoothYaw(dt);

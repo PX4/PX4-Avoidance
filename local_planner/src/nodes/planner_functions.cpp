@@ -12,11 +12,11 @@ namespace avoidance {
 // considered
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-    Eigen::Vector3f& closest_point, double& distance_to_closest_point,
+    Eigen::Vector3f& closest_point, float& distance_to_closest_point,
     int& counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    double min_cloud_size, double min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f& position, double min_realsense_dist) {
+    int min_cloud_size, float min_dist_backoff, Box histogram_box,
+    const Eigen::Vector3f& position, float min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
   distance_to_closest_point = HUGE_VAL;
@@ -220,8 +220,8 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
 void compressHistogramElevation(Histogram& new_hist,
                                 const Histogram& input_hist) {
   float vertical_FOV_range_sensor = 20.0;
-  PolarPoint p_pol_lower(-1 * vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
-  PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0, 0.0f, 0.0f);
+  PolarPoint p_pol_lower(-1.0f * vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
+  PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
   Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
   Eigen::Vector2i p_ind_upper = polarToHistogramIndex(p_pol_upper, ALPHA_RES);
 
@@ -372,30 +372,30 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-float costFunction(double e_angle, double z_angle, float obstacle_distance,
+float costFunction(float e_angle, float z_angle, float obstacle_distance,
                    const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed) {
-  PolarPoint p_pol(e_angle, z_angle, 1.0);
+  PolarPoint p_pol(e_angle, z_angle, 1.0f);
   Eigen::Vector3f projected_candidate =
       polarToCartesian(p_pol, toPoint(position));
   Eigen::Vector3f projected_goal = goal;
   Eigen::Vector3f projected_last_wp = last_sent_waypoint;
 
-  if ((goal - position).norm() > 0.0001) {
+  if ((goal - position).norm() > 0.0001f) {
     Eigen::Vector3f projected_goal = (goal - position).normalized();
   }
-  if ((last_sent_waypoint - position).norm() > 0.0001) {
+  if ((last_sent_waypoint - position).norm() > 0.0001f) {
     Eigen::Vector3f projected_last_wp =
         (last_sent_waypoint - position).normalized();
   }
 
   // goal costs
-  double yaw_cost =
+  float yaw_cost =
       cost_params.goal_cost_param *
       (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
-  double pitch_cost_up = 0.0;
-  double pitch_cost_down = 0.0;
+  float pitch_cost_up = 0.0f;
+  float pitch_cost_down = 0.0f;
   if (projected_candidate.z() > projected_goal.z()) {
     pitch_cost_up = cost_params.goal_cost_param *
                     std::abs(projected_goal.z() - projected_candidate.z());
@@ -405,22 +405,22 @@ float costFunction(double e_angle, double z_angle, float obstacle_distance,
   }
 
   // smooth costs
-  double yaw_cost_smooth =
+  float yaw_cost_smooth =
       cost_params.smooth_cost_param *
       (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>())
           .norm();
-  double pitch_cost_smooth =
+  float pitch_cost_smooth =
       cost_params.smooth_cost_param *
       std::abs(projected_last_wp.z() - projected_candidate.z());
 
   // distance cost
-  double distance_cost = 0.0;
-  if (obstacle_distance > 0) {
-    distance_cost = 500 * 1.0 / obstacle_distance;
+  float distance_cost = 0.0f;
+  if (obstacle_distance > 0.0f) {
+    distance_cost = 500.0f * 1.0f / obstacle_distance;
   }
 
   // combine costs
-  double cost = 0.0;
+  float cost = 0.0f;
   if (!only_yawed) {
     cost = yaw_cost +
            cost_params.height_change_cost_param_adapted * pitch_cost_up +
@@ -430,7 +430,7 @@ float costFunction(double e_angle, double z_angle, float obstacle_distance,
     cost = yaw_cost +
            cost_params.height_change_cost_param_adapted * pitch_cost_up +
            cost_params.height_change_cost_param * pitch_cost_down +
-           0.5 * yaw_cost_smooth + 0.5 * pitch_cost_smooth + distance_cost;
+           0.5f * yaw_cost_smooth + 0.5f * pitch_cost_smooth + distance_cost;
   }
 
   return cost;
@@ -446,13 +446,13 @@ bool getDirectionFromTree(
   if (size > 0) {
     int min_dist_idx = 0;
     int second_min_dist_idx = 0;
-    double min_dist = HUGE_VAL;
-    double second_min_dist = HUGE_VAL;
-    double node_distance =
+    float min_dist = HUGE_VAL;
+    float second_min_dist = HUGE_VAL;
+    float node_distance =
         (toEigen(path_node_positions[0]) - toEigen(path_node_positions[1]))
             .norm();
 
-    std::vector<double> distances;
+    std::vector<float> distances;
     distances.reserve(size);
     for (int i = 0; i < size; i++) {
       distances.push_back((position - toEigen(path_node_positions[i])).norm());
@@ -467,7 +467,7 @@ bool getDirectionFromTree(
       }
     }
     int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
-    if (min_dist > 3.0) {
+    if (min_dist > 3.0f) {
       tree_available = false;
     } else if (wp_idx == 0) {
       if (size == 2) {
@@ -477,19 +477,19 @@ bool getDirectionFromTree(
         tree_available = false;
       }
     } else {
-      double cos_alpha = (node_distance * node_distance +
-                          distances[wp_idx] * distances[wp_idx] -
-                          distances[wp_idx + 1] * distances[wp_idx + 1]) /
-                         (2 * node_distance * distances[wp_idx]);
-      double l_front = distances[wp_idx] * cos_alpha;
-      double l_frac = l_front / node_distance;
+      float cos_alpha = (node_distance * node_distance +
+                         distances[wp_idx] * distances[wp_idx] -
+                         distances[wp_idx + 1] * distances[wp_idx + 1]) /
+                        (2.0f * node_distance * distances[wp_idx]);
+      float l_front = distances[wp_idx] * cos_alpha;
+      float l_frac = l_front / node_distance;
 
       Eigen::Vector3f mean_point =
           (1.f - l_frac) * toEigen(path_node_positions[wp_idx - 1]) +
           l_frac * toEigen(path_node_positions[wp_idx]);
 
       p_pol = cartesianToPolar(mean_point, position);
-      p_pol.r = 0.0;
+      p_pol.r = 0.0f;
     }
   } else {
     tree_available = false;

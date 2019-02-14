@@ -17,10 +17,12 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const geometry_msgs::Point& pos) {
   Eigen::Vector3f p;
   p.x() =
-      pos.x + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * sin(p_pol.z * DEG_TO_RAD);
+      static_cast<float>(pos.x) +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
   p.y() =
-      pos.y + p_pol.r * cos(p_pol.e * DEG_TO_RAD) * cos(p_pol.z * DEG_TO_RAD);
-  p.z() = pos.z + p_pol.r * sin(p_pol.e * DEG_TO_RAD);
+      static_cast<float>(pos.y) +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.z() = static_cast<float>(pos.z) + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
@@ -40,12 +42,12 @@ PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
                             const Eigen::Vector3f& origin) {
   return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
 }
-PolarPoint cartesianToPolar(double x, double y, double z,
+PolarPoint cartesianToPolar(float x, float y, float z,
                             const Eigen::Vector3f& pos) {
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
-  double den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
-  p_pol.e = atan2(z - pos.z(), den) * 180.0 / M_PI;            //(-90.+90)
-  p_pol.z = atan2(x - pos.x(), y - pos.y()) * (180.0 / M_PI);  //(-180. +180]
+  float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
+  p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
+  p_pol.z = std::atan2(x - pos.x(), y - pos.y()) * RAD_TO_DEG;  //(-180. +180]
   p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
                  (z - pos.z()) * (z - pos.z()));
   return p_pol;
@@ -97,16 +99,16 @@ void wrapPolar(PolarPoint& p_pol) {
 }
 
 // calculate the yaw for the next waypoint
-double nextYaw(const geometry_msgs::PoseStamped& u,
-               const geometry_msgs::Point& v) {
-  double dx = v.x - u.pose.position.x;
-  double dy = v.y - u.pose.position.y;
+float nextYaw(const geometry_msgs::PoseStamped& u,
+              const geometry_msgs::Point& v) {
+  float dx = static_cast<float>(v.x - u.pose.position.x);
+  float dy = static_cast<float>(v.y - u.pose.position.y);
 
   return atan2(dy, dx);
 }
 
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
-                                         double yaw) {
+                                         float yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "/local_origin";
@@ -117,39 +119,38 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
   return pose_msg;
 }
 
-double velocityLinear(double max_vel, double slope, double v_old,
-                      double elapsed) {
-  double t_old = v_old / slope;
-  double t_new = t_old + elapsed;
-  double speed = t_new * slope;
+float velocityLinear(float max_vel, float slope, float v_old, float elapsed) {
+  float t_old = v_old / slope;
+  float t_new = t_old + elapsed;
+  float speed = t_new * slope;
   if (speed > max_vel) {
     speed = max_vel;
   }
   return speed;
 }
 
-void wrapAngleToPlusMinusPI(double& angle) {
-  angle = angle - 2 * M_PI * floor(angle / (2 * M_PI) + 0.5);
+void wrapAngleToPlusMinusPI(float& angle) {
+  angle = angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
 }
 
 void wrapAngleToPlusMinus180(float& angle) {
-  angle = angle - 360.f * floor(angle / 360.f + 0.5f);
+  angle = angle - 360.f * std::floor(angle / 360.f + 0.5f);
 }
 
-double getAngularVelocity(double desired_yaw, double curr_yaw) {
+double getAngularVelocity(float desired_yaw, float curr_yaw) {
   wrapAngleToPlusMinusPI(desired_yaw);
-  double yaw_vel1 = desired_yaw - curr_yaw;
-  double yaw_vel2;
+  float yaw_vel1 = desired_yaw - curr_yaw;
+  float yaw_vel2;
   // finds the yaw vel for the other yaw direction
-  if (yaw_vel1 > 0) {
-    yaw_vel2 = -(2 * M_PI - yaw_vel1);
+  if (yaw_vel1 > 0.0f) {
+    yaw_vel2 = -(2.0f * M_PI_F - yaw_vel1);
   } else {
-    yaw_vel2 = 2 * M_PI + yaw_vel1;
+    yaw_vel2 = 2.0f * M_PI_F + yaw_vel1;
   }
 
   // check which yaw direction is shorter
-  double vel = (std::abs(yaw_vel1) <= std::abs(yaw_vel2)) ? yaw_vel1 : yaw_vel2;
-  return 0.5 * vel;
+  float vel = (std::abs(yaw_vel1) <= std::abs(yaw_vel2)) ? yaw_vel1 : yaw_vel2;
+  return 0.5 * static_cast<double>(vel);
 }
 
 Eigen::Vector3f toEigen(const geometry_msgs::Point& p) {
