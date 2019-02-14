@@ -209,14 +209,19 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 
 void WaypointGenerator::smoothWaypoint(float dt) {
   // If smoothing is disable, just use the adapted_goto_position
-  if (smoothing_speed_ < 0.01) {
+  if (smoothing_speed_xy_ < 0.01) {
     output_.smoothed_goto_position = output_.adapted_goto_position;
     return;
   }
 
-  // Smooth in X/Y
-  const float P_constant = smoothing_speed_;
-  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+  // Smooth differently in xz than in z
+  const float P_constant_xy = smoothing_speed_xy_;
+  const float P_constant_z = smoothing_speed_z_;
+  const float D_constant_xy = 2.f * std::sqrt(P_constant_xy);  // critically damped
+  const float D_constant_z = 2.f * std::sqrt(P_constant_z);
+  const Eigen::Vector3f P_constant(P_constant_xy, P_constant_xy, P_constant_z);
+  const Eigen::Vector3f D_constant(D_constant_xy, D_constant_xy, D_constant_z);
+
   const Eigen::Vector3f desired_location =
       toEigen(output_.adapted_goto_position);
   const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
@@ -232,22 +237,20 @@ void WaypointGenerator::smoothWaypoint(float dt) {
     velocity_diff = Eigen::Vector3f::Zero();
   }
 
-  const Eigen::Vector3f p = location_diff * P_constant;
-  const Eigen::Vector3f d = velocity_diff * D_constant;
+  const Eigen::Vector3f p = location_diff.array() * P_constant.array();
+  const Eigen::Vector3f d = velocity_diff.array() * D_constant.array();
 
   smoothed_goto_location_velocity_ += (p + d) * dt;
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
 
   output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
-
-  ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].",
-            output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
-            output_.smoothed_goto_position.z);
 }
 
 void WaypointGenerator::nextSmoothYaw(float dt) {
-  const float P_constant = smoothing_speed_;
-  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+  // Use xy smoothing constant for yaw, since this makes more sense than z,
+  // and we dont want to introduce yet another parameter
+  const float P_constant_xy = smoothing_speed_xy_;
+  const float D_constant_xy = 2.f * std::sqrt(P_constant_xy);  // critically damped
 
   const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
   const float desired_yaw_velocity = 0.0;
@@ -256,8 +259,8 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
       std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
 
   wrapAngleToPlusMinusPI(yaw_diff);
-  const float p = yaw_diff * P_constant;
-  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant;
+  const float p = yaw_diff * P_constant_xy;
+  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant_xy;
 
   new_yaw_velocity_ += (p + d) * dt;
   new_yaw_ += new_yaw_velocity_ * dt;
@@ -359,7 +362,7 @@ void WaypointGenerator::getPathMsg() {
 
   float time_diff_sec =
       static_cast<float>((current_time_ - last_time_).toSec());
-  float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.004f;
+  float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.001f;
 
   // set the yaw at the setpoint based on our smoothed location
   nextSmoothYaw(dt);

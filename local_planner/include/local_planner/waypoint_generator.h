@@ -52,7 +52,8 @@ class WaypointGenerator {
   ros::Time last_time_{0.};
   ros::Time current_time_{0.};
 
-  float smoothing_speed_{10.};
+  float smoothing_speed_xy_{10.};
+  float smoothing_speed_z_{30.};
 
   bool reached_goal_;
   bool limit_speed_close_to_goal_ = false;
@@ -158,10 +159,12 @@ class WaypointGenerator {
 
   /**
   * @brief set the responsiveness of the smoothing
-  * @param[in] smoothing_speed, set to 0 to disable
+  * @param[in] smoothing_speed_xy, set to 0 to disable
+  * @param[in] smoothing_speed_z, set to 0 to disable
   **/
-  void setSmoothingSpeed(float smoothing_speed) {
-    smoothing_speed_ = smoothing_speed;
+  void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
+    smoothing_speed_xy_ = smoothing_speed_xy;
+    smoothing_speed_z_ = smoothing_speed_z;
   }
 
   /**
