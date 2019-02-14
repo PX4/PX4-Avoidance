@@ -208,8 +208,8 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {
-  // If smoothing is disable, just use the adapted_goto_position
-  if (smoothing_speed_xy_ < 0.01) {
+  // If smoothing is disabled or dt too small, just use the adapted_goto_position
+  if (smoothing_speed_xy_ < 0.01 || dt <= 0.02) {
     output_.smoothed_goto_position = output_.adapted_goto_position;
     return;
   }
