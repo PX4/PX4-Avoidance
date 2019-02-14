@@ -84,11 +84,12 @@ void propagateHistogram(
 * @param[out] polar_histogram, represents cropped_cloud
 * @param[in]  cropped_cloud, current frame filtered pointcloud
 * @param[in]  position, current vehicle position
+* @param[in]  minimum number of data points to react to the object
 **/
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
                           const Eigen::Vector3f& position,
-                          const Eigen::Vector3f& n_points_occupied);
+                          int n_points_occupied);
 
 /**
 * @brief      merges together the histogram calculated with the current frame
