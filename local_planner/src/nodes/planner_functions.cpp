@@ -154,7 +154,7 @@ void propagateHistogram(
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          const Eigen::Vector3f& position) {
+                          const Eigen::Vector3f& position, int n_points_occupied) {
   Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
@@ -172,9 +172,11 @@ void generateNewHistogram(Histogram& polar_histogram,
   // Normalize and get mean in distance bins
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (counter(e, z) > 0) {
+      if (counter(e, z) > n_points_occupied) {
         polar_histogram.set_dist(
             e, z, polar_histogram.get_dist(e, z) / counter(e, z));
+      }else{
+    	polar_histogram.set_dist(e, z, 0.f);
       }
     }
   }

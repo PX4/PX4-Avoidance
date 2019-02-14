@@ -61,6 +61,7 @@ class LocalPlanner {
   int n_expanded_nodes_;
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
+  int n_points_occupied_ = 10;
 
   float velocity_mod_;
   float curr_yaw_;

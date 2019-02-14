@@ -87,7 +87,8 @@ void propagateHistogram(
 **/
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          const Eigen::Vector3f& position);
+                          const Eigen::Vector3f& position,
+                          const Eigen::Vector3f& n_points_occupied);
 
 /**
 * @brief      merges together the histogram calculated with the current frame

@@ -28,6 +28,7 @@ class StarPlanner {
   float v_FOV_ = 46.0f;
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
+  int n_points_occupied_ = 10;
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
   float curr_yaw_;
