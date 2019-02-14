@@ -49,8 +49,8 @@ class WaypointGenerator {
   float curr_vel_magnitude_;
   ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
-  ros::Time last_time_{0.};
-  ros::Time current_time_{0.};
+  ros::Time last_time_{99999.};
+  ros::Time current_time_{99999.};
 
   float smoothing_speed_xy_{10.};
   float smoothing_speed_z_{30.};
