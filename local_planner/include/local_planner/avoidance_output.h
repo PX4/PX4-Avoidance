@@ -13,11 +13,11 @@ struct avoidanceOutput {
   waypoint_choice waypoint_type;
   bool obstacle_ahead;  // true is there is an obstacle ahead of the vehicle
   bool reach_altitude;  // true if the vehicle has reach the goal altitude
-  float min_speed;      // minimum speed
-  float max_speed;      // maximum speed
-  float velocity_sigmoid_slope;  // rate at which the speed is linearly
-                                 // increased between min_speed and max_speed
-  ros::Time last_path_time;      // finish built time for the VFH+* tree
+  float velocity_around_obstacles;    // minimum speed
+  float velocity_far_from_obstacles;  // maximum speed
+  float velocity_sigmoid_slope;       // rate at which the speed is linearly
+  // increased between velocity_around_obstacles and velocity_far_from_obstacles
+  ros::Time last_path_time;  // finish built time for the VFH+* tree
 
   geometry_msgs::Point
       back_off_point;  // closest point to the vehicle in the cloud
