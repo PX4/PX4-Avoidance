@@ -380,10 +380,10 @@ TEST(Common, getAngularVel) {
 
   // THEN: the distance should be...
 
-  EXPECT_DOUBLE_EQ(0.0, angular_vel1);
-  EXPECT_DOUBLE_EQ(-1.570796, angular_vel2);
-  EXPECT_DOUBLE_EQ(0.392699, angular_vel3);
-  EXPECT_DOUBLE_EQ(-1.178097, angular_vel4);
+  EXPECT_FLOAT_EQ(0.0, angular_vel1);
+  EXPECT_FLOAT_EQ(1.5707963, angular_vel2);
+  EXPECT_FLOAT_EQ(0.392699, angular_vel3);
+  EXPECT_FLOAT_EQ(-1.178097, angular_vel4);
 }
 
 TEST(Common, IndexPolarIndex) {
