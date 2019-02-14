@@ -43,8 +43,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
-  min_speed_ = static_cast<float>(config.min_speed_);
-  max_speed_ = static_cast<float>(config.max_speed_);
+  velocity_around_obstacles_ = static_cast<float>(config.velocity_around_obstacles_);
+  velocity_far_from_obstacles_ = static_cast<float>(config.velocity_far_from_obstacles_);
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
   relevance_margin_e_degree_ =
@@ -517,8 +517,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
 
   out.obstacle_ahead = obstacle_;
   out.reach_altitude = reach_altitude_;
-  out.min_speed = min_speed_;
-  out.max_speed = max_speed_;
+  out.velocity_around_obstacles = velocity_around_obstacles_;
+  out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
   out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
   out.last_path_time = last_path_time_;
 

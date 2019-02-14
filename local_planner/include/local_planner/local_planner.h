@@ -64,8 +64,8 @@ class LocalPlanner {
 
   float velocity_mod_;
   float curr_yaw_;
-  float min_speed_;
-  float max_speed_;
+  float velocity_around_obstacles_;
+  float velocity_far_from_obstacles_;
   float keep_distance_;
   ros::Time integral_time_old_;
   float no_progress_slope_;

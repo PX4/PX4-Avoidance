@@ -23,8 +23,8 @@ class WaypointGeneratorTests : public ::testing::Test,
     avoidance_output.waypoint_type = direct;
     avoidance_output.reach_altitude = false;
     avoidance_output.obstacle_ahead = false;
-    avoidance_output.min_speed = 1.0;
-    avoidance_output.max_speed = 3.0;
+    avoidance_output.velocity_around_obstacles = 1.0;
+    avoidance_output.velocity_far_from_obstacles = 3.0;
     avoidance_output.velocity_sigmoid_slope = 3.0;
     avoidance_output.last_path_time = ros::Time(0.28);
     avoidance_output.back_off_point.x = 0.4;
