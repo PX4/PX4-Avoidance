@@ -17,6 +17,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.max_path_length_);
+  n_points_occupied_ = config.n_points_occupied_;
 }
 
 void StarPlanner::setParams(costParameters cost_params) {
@@ -147,7 +148,8 @@ void StarPlanner::buildLookAheadTree() {
 
     propagateHistogram(propagated_histogram, reprojected_points_,
                        reprojected_points_age_, origin_position);
-    generateNewHistogram(histogram, pointcloud_, origin_position);
+    generateNewHistogram(histogram, pointcloud_, origin_position,
+                         n_points_occupied_);
     combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
                       z_FOV_idx, e_FOV_min, e_FOV_max);
 
