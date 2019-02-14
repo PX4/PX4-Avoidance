@@ -208,34 +208,38 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {
-  if (smoothing_speed_ > 0.01f) {
-    const float P_constant = smoothing_speed_;
-    const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
-    const Eigen::Vector3f desired_location =
-        toEigen(output_.adapted_goto_position);
-    const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
-
-    Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
-    if (!location_diff.allFinite()) {
-      location_diff = Eigen::Vector3f::Zero();
-    }
-
-    Eigen::Vector3f velocity_diff =
-        desired_velocity - smoothed_goto_location_velocity_;
-    if (!velocity_diff.allFinite()) {
-      velocity_diff = Eigen::Vector3f::Zero();
-    }
-
-    const Eigen::Vector3f p = location_diff * P_constant;
-    const Eigen::Vector3f d = velocity_diff * D_constant;
-
-    smoothed_goto_location_velocity_ += (p + d) * dt;
-    smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
-
-    output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
-  } else {
+  // If smoothing is disable, just use the adapted_goto_position
+  if (smoothing_speed_ < 0.01) {
     output_.smoothed_goto_position = output_.adapted_goto_position;
+    return;
   }
+
+  // Smooth in X/Y
+  const float P_constant = smoothing_speed_;
+  const float D_constant = 2.f * std::sqrt(P_constant);  // critically damped
+  const Eigen::Vector3f desired_location =
+      toEigen(output_.adapted_goto_position);
+  const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
+
+  Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
+  if (!location_diff.allFinite()) {
+    location_diff = Eigen::Vector3f::Zero();
+  }
+
+  Eigen::Vector3f velocity_diff =
+      desired_velocity - smoothed_goto_location_velocity_;
+  if (!velocity_diff.allFinite()) {
+    velocity_diff = Eigen::Vector3f::Zero();
+  }
+
+  const Eigen::Vector3f p = location_diff * P_constant;
+  const Eigen::Vector3f d = velocity_diff * D_constant;
+
+  smoothed_goto_location_velocity_ += (p + d) * dt;
+  smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
+
+  output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
+
   ROS_DEBUG("[WG] Smoothed waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
