@@ -8,7 +8,7 @@ class Box {
  public:
   Box();
   Box(const float& radius);
-  ~Box();
+  ~Box() = default;
 
   /**
   * @brief     sets the bounding box coordinates limits around the vehicle

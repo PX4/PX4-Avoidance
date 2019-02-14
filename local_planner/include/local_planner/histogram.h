@@ -35,7 +35,7 @@ class Histogram {
 
  public:
   Histogram(const int res);
-  ~Histogram();
+  ~Histogram() = default;
 
   /**
   * @brief     getter method for histogram cell age

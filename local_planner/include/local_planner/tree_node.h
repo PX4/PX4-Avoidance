@@ -20,7 +20,7 @@ class TreeNode {
 
   TreeNode();
   TreeNode(int from, int d, const Eigen::Vector3f& pos);
-  ~TreeNode();
+  ~TreeNode() = default;
 
   /**
   * @brief     setter method for heuristic and cost of a tree node

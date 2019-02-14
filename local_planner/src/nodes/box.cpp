@@ -22,8 +22,6 @@ Box::Box()
       radius_{0.0f},
       box_dist_to_ground_{1.0f} {}
 
-Box::~Box() {}
-
 // update bounding box limit coordinates around a new UAV pose
 void Box::setBoxLimits(const geometry_msgs::Point& pos,
                        const float ground_distance) {
