@@ -1,4 +1,5 @@
 #include "local_planner/local_planner.h"
+
 #include "local_planner/common.h"
 #include "local_planner/planner_functions.h"
 #include "local_planner/star_planner.h"
@@ -314,6 +315,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
 
   // turn idxs 180 degress to point to local north instead of south
   std::vector<int> z_FOV_idx_north;
+  z_FOV_idx_north.reserve(z_FOV_idx_.size());
 
   for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
     int new_idx = z_FOV_idx_[i] + GRID_LENGTH_Z / 2;
@@ -325,24 +327,28 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     z_FOV_idx_north.push_back(new_idx);
   }
 
+  msg.ranges.reserve(GRID_LENGTH_Z);
   for (int idx = 0; idx < GRID_LENGTH_Z; idx++) {
+    float range;
+
     if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) ==
         z_FOV_idx_north.end()) {
-      msg.ranges.push_back(UINT16_MAX);
-      continue;
-    }
-
-    int hist_idx = idx - GRID_LENGTH_Z / 2;
-
-    if (hist_idx < 0) {
-      hist_idx = hist_idx + GRID_LENGTH_Z;
-    }
-
-    if (hist.get_dist(0, hist_idx) == 0.0) {
-      msg.ranges.push_back(msg.range_max + 1.0f);
+      range = UINT16_MAX;
     } else {
-      msg.ranges.push_back(hist.get_dist(0, hist_idx));
+      int hist_idx = idx - GRID_LENGTH_Z / 2;
+
+      if (hist_idx < 0) {
+        hist_idx = hist_idx + GRID_LENGTH_Z;
+      }
+
+      if (hist.get_dist(0, hist_idx) == 0.0) {
+        range = msg.range_max + 1.0f;
+      } else {
+        range = hist.get_dist(0, hist_idx);
+      }
     }
+
+    msg.ranges.push_back(range);
   }
 
   distance_data_ = msg;

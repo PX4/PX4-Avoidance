@@ -289,6 +289,7 @@ void getBestCandidatesFromCostMatrix(
   }
   // copy queue to vector and change order such that lowest cost is at the front
   candidate_vector.clear();
+  candidate_vector.reserve(queue.size());
   while (!queue.empty()) {
     candidate_vector.push_back(queue.top());
     queue.pop();
@@ -452,6 +453,7 @@ bool getDirectionFromTree(
             .norm();
 
     std::vector<double> distances;
+    distances.reserve(size);
     for (int i = 0; i < size; i++) {
       distances.push_back((position - toEigen(path_node_positions[i])).norm());
       if (distances[i] < min_dist) {

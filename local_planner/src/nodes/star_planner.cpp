@@ -123,9 +123,8 @@ void StarPlanner::buildLookAheadTree() {
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
-  int n = 0;
 
-  while (n < n_expanded_nodes_) {
+  for (int n = 0; n < n_expanded_nodes_; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
     Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
@@ -194,7 +193,6 @@ void StarPlanner::buildLookAheadTree() {
     }
 
     closed_set_.push_back(origin);
-    n++;
 
     // find best node to continue
     float minimal_cost = HUGE_VAL;

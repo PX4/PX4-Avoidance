@@ -72,24 +72,28 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
 }
 
 void wrapPolar(PolarPoint& p_pol) {
+  // first wrap the angles to +-180 degrees
+  wrapAngleToPlusMinus180(p_pol.e);
+  wrapAngleToPlusMinus180(p_pol.z);
+
   // elevation valid [-90,90)
   // when abs(elevation) > 90, wrap elevation angle
-  // azimuth changes for 180 each time
-  while (abs(p_pol.e) > 90.0f) {
-    if (p_pol.e > 90.0f) {
-      p_pol.e = 180.0f - p_pol.e;
-      p_pol.z = p_pol.z - 180.0f;
-    } else if (p_pol.e < -90.0f) {
-      p_pol.e = -(180.0f + p_pol.e);
-      p_pol.z = p_pol.z + 180.0f;
-    }
+  // azimuth changes 180 if it wraps
+
+  bool wrapped = false;
+  if (p_pol.e > 90.0f) {
+    p_pol.e = 180.0f - p_pol.e;
+    wrapped = true;
+  } else if (p_pol.e < -90.0f) {
+    p_pol.e = -(180.0f + p_pol.e);
+    wrapped = true;
   }
-  // set elevation angle to edge of last valid bin
-  if (p_pol.e == 90.0f) {
-    p_pol.e = 89.9f;
+  if (wrapped) {
+    if (p_pol.z < 0.f)
+      p_pol.z += 180.f;
+    else
+      p_pol.z -= 180.f;
   }
-  // azimuth valid [-180,180)
-  wrapAngleToPlusMinus180(p_pol.z);
 }
 
 // calculate the yaw for the next waypoint

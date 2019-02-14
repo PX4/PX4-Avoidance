@@ -1,4 +1,5 @@
 #include "local_planner/local_planner_node.h"
+
 #include "local_planner/local_planner.h"
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
@@ -591,6 +592,7 @@ void LocalPlannerNode::publishTree() {
 
   local_planner_->getTree(tree, closed_set, path_node_positions_);
 
+  tree_marker.points.reserve(closed_set.size() * 2);
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
@@ -600,6 +602,7 @@ void LocalPlannerNode::publishTree() {
     tree_marker.points.push_back(p2);
   }
 
+  path_marker.points.reserve(path_node_positions_.size() * 2);
   for (size_t i = 1; i < path_node_positions_.size(); i++) {
     path_marker.points.push_back(path_node_positions_[i - 1]);
     path_marker.points.push_back(path_node_positions_[i]);
