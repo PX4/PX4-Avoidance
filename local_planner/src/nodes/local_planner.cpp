@@ -342,7 +342,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
         hist_idx = hist_idx + GRID_LENGTH_Z;
       }
 
-    if (hist.get_dist(0, hist_idx) == 0.0f) {
+      if (hist.get_dist(0, hist_idx) == 0.0f) {
         range = msg.range_max + 1.0f;
       } else {
         range = hist.get_dist(0, hist_idx);

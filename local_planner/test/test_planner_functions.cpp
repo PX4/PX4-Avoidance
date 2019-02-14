@@ -63,20 +63,20 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   std::vector<int> e_index, z_index;
 
   for (auto i : e_angle_filled) {
-	  for (auto j : z_angle_filled) {
-		  PolarPoint p_pol(i, j, distance);
-		  middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
-		  e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
-		  z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
-	  }
+    for (auto j : z_angle_filled) {
+      PolarPoint p_pol(i, j, distance);
+      middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
+      e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
+      z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
+    }
   }
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
   for (int i = 0; i < middle_of_cell.size(); i++) {
-	  // put 1000 point in every occupied cell
-	  for (int j = 0; j < 1000; j++){
-		  cloud.push_back(toXYZ(middle_of_cell[i]));
-	  }
+    // put 1000 point in every occupied cell
+    for (int j = 0; j < 1000; j++) {
+      cloud.push_back(toXYZ(middle_of_cell[i]));
+    }
   }
 
   // WHEN: we build a histogram
