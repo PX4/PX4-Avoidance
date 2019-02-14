@@ -16,6 +16,7 @@ int main(int argc, char** argv) {
   Node.local_planner_->disable_rise_to_goal_altitude_ =
       Node.disable_rise_to_goal_altitude_;
   bool startup = true;
+  bool callPx4Params = true;
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
