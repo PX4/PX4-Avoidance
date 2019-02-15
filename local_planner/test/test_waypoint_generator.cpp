@@ -21,11 +21,9 @@ class WaypointGeneratorTests : public ::testing::Test,
     ros::Time::init();
 
     avoidance_output.waypoint_type = direct;
-    avoidance_output.reach_altitude = false;
     avoidance_output.obstacle_ahead = false;
     avoidance_output.velocity_around_obstacles = 1.0;
     avoidance_output.velocity_far_from_obstacles = 3.0;
-    avoidance_output.velocity_sigmoid_slope = 3.0;
     avoidance_output.last_path_time = ros::Time(0.28);
     avoidance_output.back_off_point.x = 0.4;
     avoidance_output.back_off_point.y = 0.6;
@@ -107,7 +105,6 @@ class WaypointGeneratorTests : public ::testing::Test,
 TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   // GIVEN: a waypoint of type goFast and the vehicle has not yet reached the
   // goal altiude
-  avoidance_output.reach_altitude = false;
   avoidance_output.waypoint_type = reachHeight;
   goal.pose.position.z = 5.0;
   setPlannerInfo(avoidance_output);
@@ -225,7 +222,6 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
 
 TEST_F(WaypointGeneratorTests, goStraightTest) {
   // GIVEN: a waypoint of type goStraight
-  avoidance_output.reach_altitude = true;
   avoidance_output.waypoint_type = direct;
   setPlannerInfo(avoidance_output);
 
@@ -280,7 +276,6 @@ TEST_F(WaypointGeneratorTests, goBackTest) {
   // GIVEN: a waypoint of type goBack (adapted_goto_position not filled in this
   // case)
   avoidance_output.waypoint_type = goBack;
-  avoidance_output.reach_altitude = true;
   setPlannerInfo(avoidance_output);
 
   float goto_to_goal_prev = -1.0f;
@@ -329,14 +324,12 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
 
   // first run one the waypoint generator such that smoothed_goto_location_ gets
   // initialize
-  avoidance_output.reach_altitude = false;
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
   time = ros::Time(time_sec);
   updateState(position, goal, velocity, stay);
   waypointResult result = getWaypoints();
 
-  avoidance_output.reach_altitude = true;
   avoidance_output.waypoint_type = hover;
   setPlannerInfo(avoidance_output);
   time_sec += 0.033;
