@@ -260,7 +260,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   newest_pose_ = msg;
   position_received_ = true;
 
-#ifdef MAKE_SIMULATION
+#ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
   visualization_msgs::Marker marker;
   if (!world_path_.empty()) {

@@ -3,7 +3,8 @@
 
 #include "local_planner/avoidance_output.h"
 
-#ifdef MAKE_SIMULATION
+#ifndef DISABLE_SIMULATION
+// include simulation
 #include "local_planner/rviz_world_loader.h"
 #endif
 

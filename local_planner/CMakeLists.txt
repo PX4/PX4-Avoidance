@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(local_planner)
 
 add_definitions(-std=c++11)
-#add_definitions(-DMAKE_SIMULATION=1)
 
 
 ## Find catkin macros and libraries
@@ -27,14 +26,14 @@ find_package(PCL 1.7 REQUIRED)
 ################################################
 ## Gazebo Simulation
 ################################################
-
-if(MAKE_SIMULATION)
-  message(STATUS "Building local planner with Gazebo Simulation")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMAKE_SIMULATION=1")
-  find_package(yaml-cpp REQUIRED)
-else()
+# Disable yaml-cpp when no simulation is required
+if(DISABLE_SIMULATION)
   message(STATUS "Building local planner without Gazebo Simulation")
-endif(MAKE_SIMULATION)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+else()
+  message(STATUS "Building local planner with Gazebo Simulation")
+  find_package(yaml-cpp REQUIRED)
+endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -141,7 +140,18 @@ include_directories(
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
 
-if(MAKE_SIMULATION)
+if(DISABLE_SIMULATION)
+  add_library(local_planner
+    src/nodes/local_planner.cpp
+    src/nodes/waypoint_generator.cpp
+    src/nodes/histogram.cpp
+    src/nodes/tree_node.cpp
+    src/nodes/box.cpp
+    src/nodes/star_planner.cpp
+    src/nodes/planner_functions.cpp
+    src/nodes/common.cpp
+  )
+else()
   message(STATUS "Building local planner with Gazebo Simulation")
   add_library(local_planner
     src/nodes/local_planner.cpp
@@ -154,18 +164,8 @@ if(MAKE_SIMULATION)
     src/nodes/common.cpp
     src/nodes/rviz_world_loader.cpp
   )
-else()
-  add_library(local_planner
-    src/nodes/local_planner.cpp
-    src/nodes/waypoint_generator.cpp
-    src/nodes/histogram.cpp
-    src/nodes/tree_node.cpp
-    src/nodes/box.cpp
-    src/nodes/star_planner.cpp
-    src/nodes/planner_functions.cpp
-    src/nodes/common.cpp
-  )
-endif()  
+endif(DISABLE_SIMULATION)
+
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
