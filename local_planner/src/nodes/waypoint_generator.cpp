@@ -209,13 +209,15 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 void WaypointGenerator::smoothWaypoint(float dt) {
   // In first iteration (very small or invalid dt), initialize the smoothing
   // to start at the current drone location
-  if( dt <= 0.01 ){
+  if (dt <= 0.01) {
     smoothed_goto_location_ = toEigen(pose_.pose.position);
-    output_.smoothed_goto_position = pose_.pose.position;//needs to be local position!
+    output_.smoothed_goto_position =
+        pose_.pose.position;  // needs to be local position!
     return;
   }
 
-  // If the smoothing speed is set to zero, dont smooth, aka use adapted waypoint
+  // If the smoothing speed is set to zero, dont smooth, aka use adapted
+  // waypoint
   // directly
   if (smoothing_speed_xy_ < 0.01 || smoothing_speed_xy_ < 0.01) {
     output_.smoothed_goto_position = output_.adapted_goto_position;
@@ -225,7 +227,8 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   // Smooth differently in xz than in z
   const float P_constant_xy = smoothing_speed_xy_;
   const float P_constant_z = smoothing_speed_z_;
-  const float D_constant_xy = 2.f * std::sqrt(P_constant_xy);  // critically damped
+  const float D_constant_xy =
+      2.f * std::sqrt(P_constant_xy);  // critically damped
   const float D_constant_z = 2.f * std::sqrt(P_constant_z);
   const Eigen::Vector3f P_constant(P_constant_xy, P_constant_xy, P_constant_z);
   const Eigen::Vector3f D_constant(D_constant_xy, D_constant_xy, D_constant_z);
@@ -253,15 +256,16 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
 
   ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
-  output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
-  output_.smoothed_goto_position.z, dt);
+            output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
+            output_.smoothed_goto_position.z, dt);
 }
 
 void WaypointGenerator::nextSmoothYaw(float dt) {
   // Use xy smoothing constant for yaw, since this makes more sense than z,
   // and we dont want to introduce yet another parameter
   const float P_constant_xy = smoothing_speed_xy_;
-  const float D_constant_xy = 2.f * std::sqrt(P_constant_xy);  // critically damped
+  const float D_constant_xy =
+      2.f * std::sqrt(P_constant_xy);  // critically damped
 
   const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
   const float desired_yaw_velocity = 0.0;
@@ -280,33 +284,39 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 
 void WaypointGenerator::adaptSpeed() {
   if (!planner_info_.obstacle_ahead) {
-speed_ = planner_info_.velocity_far_from_obstacles;
+    speed_ = planner_info_.velocity_far_from_obstacles;
   } else {
     speed_ = planner_info_.velocity_around_obstacles;
   }
 
-    // check if new point lies in FOV
-    float angle_diff_deg = std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f / M_PI_F;
-    angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg); // Clamp at h_FOV/2
-    ROS_INFO("[WG] speed before scaling: %f", speed_);
-    speed_ = speed_ * (1.0f - 2 * angle_diff_deg / h_FOV_ ); // throttle if outside FOV
+  // check if new point lies in FOV
+  float angle_diff_deg =
+      std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f /
+      M_PI_F;
+  angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
+  speed_ =
+      speed_ * (1.0f - 2 * angle_diff_deg / h_FOV_);  // throttle if outside FOV
 
-  // Only use speed_ to scale the magnitude if this reduces it, so we don't overshoot
+  // Scale the pose_to_wp by the speed
   Eigen::Vector3f pose_to_wp =
       toEigen(output_.goto_position) - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > speed_ && speed_ > 0.1 ){
-    pose_to_wp = speed_ * pose_to_wp.normalized();
+  Eigen::Vector3f pose_to_goal = goal_ - toEigen(pose_.pose.position);
+  if (pose_to_wp.norm() > 0.1) pose_to_wp.normalize();
+  pose_to_wp *= speed_;
+
+  // If the waypoint is in the direction of the goal, but farther, clamp to goal
+  if (std::atan2(pose_to_wp.cross(pose_to_goal).norm(),
+                 pose_to_wp.dot(pose_to_goal)) < 0.01 &&
+      pose_to_wp.norm() > pose_to_goal.norm()) {
+    output_.adapted_goto_position = toPoint(goal_);
+  } else {
     output_.adapted_goto_position =
         toPoint(toEigen(pose_.pose.position) + pose_to_wp);
-  }else{
-      output_.adapted_goto_position = output_.goto_position;
   }
 
-
-
   ROS_INFO("[WG] Speed adapted WP: [%f %f %f].",
-            output_.adapted_goto_position.x, output_.adapted_goto_position.y,
-            output_.adapted_goto_position.z);
+           output_.adapted_goto_position.x, output_.adapted_goto_position.y,
+           output_.adapted_goto_position.z);
 }
 
 // create the message that is sent to the UAV

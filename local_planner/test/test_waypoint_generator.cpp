@@ -134,21 +134,27 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   EXPECT_GT(result.adapted_goto_position.z, position.pose.position.z);
   EXPECT_LT(result.adapted_goto_position.z, goal.pose.position.z);
 
-  // THEN: we expect the adapted goto position to be close to the drone location in xy
+  // THEN: we expect the adapted goto position to be close to the drone location
+  // in xy
   EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x, 0.1);
   EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y, 0.1);
 
-  // THEN: we expect the smoothed goto position to be the same as the drone location
+  // THEN: we expect the smoothed goto position to be the same as the drone
+  // location
   // (first iteration of smoothing)
   EXPECT_NEAR(position.pose.position.x, result.smoothed_goto_position.x, 0.1);
   EXPECT_NEAR(position.pose.position.y, result.smoothed_goto_position.y, 0.1);
   EXPECT_NEAR(position.pose.position.z, result.smoothed_goto_position.z, 0.1);
 
-  // THEN: we expect the smoothed goto position to be the position waypoint, since
+  // THEN: we expect the smoothed goto position to be the position waypoint,
+  // since
   // smoothing was enabled
-  EXPECT_EQ(result.smoothed_goto_position.x, result.position_waypoint.pose.position.x);
-  EXPECT_EQ(result.smoothed_goto_position.y, result.position_waypoint.pose.position.y);
-  EXPECT_EQ(result.smoothed_goto_position.z, result.position_waypoint.pose.position.z);
+  EXPECT_EQ(result.smoothed_goto_position.x,
+            result.position_waypoint.pose.position.x);
+  EXPECT_EQ(result.smoothed_goto_position.y,
+            result.position_waypoint.pose.position.y);
+  EXPECT_EQ(result.smoothed_goto_position.z,
+            result.position_waypoint.pose.position.z);
 
   // WHEN: we generate subsequent waypoints
   for (size_t i = 0; i < 10; i++) {
@@ -163,11 +169,13 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     EXPECT_NEAR(position.pose.position.y, result.goto_position.y, 0.1);
     EXPECT_LT(position.pose.position.z, result.goto_position.z);
 
-    // THEN: we expect the adapted goto position to be between goal and drone in z
+    // THEN: we expect the adapted goto position to be between goal and drone in
+    // z
     EXPECT_GT(result.adapted_goto_position.z, position.pose.position.z);
     EXPECT_LT(result.adapted_goto_position.z, goal.pose.position.z);
 
-    // THEN: we expect the adapted goto position to be close to the drone location in xy
+    // THEN: we expect the adapted goto position to be close to the drone
+    // location in xy
     EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x, 0.1);
     EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y, 0.1);
 
@@ -176,11 +184,15 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     EXPECT_LT(position.pose.position.z, result.smoothed_goto_position.z);
     EXPECT_GT(result.adapted_goto_position.z, result.smoothed_goto_position.z);
 
-    // THEN: we expect the smoothed goto position to be the position waypoint, since
+    // THEN: we expect the smoothed goto position to be the position waypoint,
+    // since
     // smoothing was enabled
-    EXPECT_EQ(result.smoothed_goto_position.x, result.position_waypoint.pose.position.x);
-    EXPECT_EQ(result.smoothed_goto_position.y, result.position_waypoint.pose.position.y);
-    EXPECT_EQ(result.smoothed_goto_position.z, result.position_waypoint.pose.position.z);
+    EXPECT_EQ(result.smoothed_goto_position.x,
+              result.position_waypoint.pose.position.x);
+    EXPECT_EQ(result.smoothed_goto_position.y,
+              result.position_waypoint.pose.position.y);
+    EXPECT_EQ(result.smoothed_goto_position.z,
+              result.position_waypoint.pose.position.z);
 
     // THEN: we expect the z component of the waypoint to move closer to goal.z
     float goto_to_goal =
@@ -212,8 +224,6 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     float angle_pos_vel_sp = std::atan2(pos_to_pos_sp.cross(vel_sp).norm(),
                                         pos_to_pos_sp.dot(vel_sp));
     EXPECT_NEAR(0.0, angle_pos_vel_sp, 1.0);
-
-
   }
 }
 
