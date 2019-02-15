@@ -191,6 +191,7 @@ void printHistogram(Histogram& histogram);
 bool getDirectionFromTree(
     PolarPoint& p_pol,
     const std::vector<geometry_msgs::Point>& path_node_positions,
-    const Eigen::Vector3f& position);
+    const Eigen::Vector3f& position,
+	const Eigen::Vector3f& goal);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
