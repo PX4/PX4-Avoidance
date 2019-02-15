@@ -191,19 +191,18 @@ bool WaypointGenerator::withinGoalRadius() {
 
 // when taking off, first publish waypoints to reach the goal altitude
 void WaypointGenerator::reachGoalAltitudeFirst() {
-  // Constant which defines the distance how far above the drone we set the
-  // setpoint
-  const float RISE_CARROT_STICK_LENGTH = 0.5;
-
+  // goto_position is a unit vector pointing straight up from current location
   output_.goto_position = pose_.pose.position;
-  if (pose_.pose.position.z <= goal_(2) - RISE_CARROT_STICK_LENGTH) {
-    output_.goto_position.z += RISE_CARROT_STICK_LENGTH;
+  if (pose_.pose.position.z <= goal_(2) - 1.0f) {
+    output_.goto_position.z += 1.0f;
   } else {
     output_.goto_position.z = goal_(2);
   }
 
-  // Will be overwritten by smoothing
+  // Will be overwritten by adaptSpeed()
   output_.adapted_goto_position = output_.goto_position;
+
+  // Will be overwritten by smoothWaypoint()
   output_.smoothed_goto_position = output_.goto_position;
 }
 
@@ -251,8 +250,8 @@ void WaypointGenerator::smoothWaypoint(float dt) {
 
   smoothed_goto_location_velocity_ += (p + d) * dt;
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
-
   output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
+
   ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
   output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
   output_.smoothed_goto_position.z, dt);
