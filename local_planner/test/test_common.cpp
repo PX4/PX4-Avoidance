@@ -316,29 +316,6 @@ TEST(Common, nextYawAngle) {
   EXPECT_NEAR(0.f, yaw2, 0.00001);
 }
 
-TEST(Common, speedCalc) {
-  // GIVEN: maximum and minimum velocity, slope, old velocity and time elapsed
-  double max_vel1 = 0.d;
-  double max_vel2 = 10.d;
-  double min_vel1 = 0.d;
-  double min_vel2 = 2.d;
-  double slope = 1.d;  // always one
-  double v_old1 = 0.d;
-  double v_old2 = 10.d;
-  double elapsed = 2.d;
-
-  // WHEN: we get distance between the same points
-  double speed1 = velocityLinear(max_vel2, slope, v_old1, elapsed);
-  double speed2 = velocityLinear(max_vel1, slope, v_old2, elapsed);
-  double speed3 = velocityLinear(max_vel2, slope, v_old2, elapsed);
-
-  // THEN: the distance should be...
-  EXPECT_FLOAT_EQ(2.f, speed1);  // normal case
-  EXPECT_FLOAT_EQ(0.f, speed2);  // max velocity is 0 and curr vel not
-  EXPECT_FLOAT_EQ(
-      10.f, speed3);  // calculated speed is higher than max vel, set to max vel
-}
-
 TEST(Common, wrapAngle) {
   // GIVEN: an angle in rad
   float angle1 = 0.d;
