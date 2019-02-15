@@ -110,14 +110,43 @@ class LocalPlanner {
   Eigen::MatrixXf cost_matrix_;
   std::vector<candidateDirection> candidate_vector_;
 
-  void fitPlane();
+  /**
+  * @brief     reprojectes the histogram from the previous algorithm iteration
+  *around the current vehicle position
+  * @param     histogram, histogram from the previous algorith iteration
+  **/
   void reprojectPoints(Histogram histogram);
+  /**
+  * @brief     setter method for current vehicle velocity
+  **/
   void setVelocity();
+  /**
+  * @brief     calculates the cost function weights to fly around or over
+  *obstacles based on the progress towards the goal over time
+  **/
   void evaluateProgressRate();
+  /**
+  * @brief     stops the vehicle in front of an obstacle
+  **/
   void stopInFrontObstacles();
+  /**
+  * @brief     fills message to send histogram to the FCU
+  **/
   void updateObstacleDistanceMsg(Histogram hist);
+  /**
+  * @brief      fills message to send empty histogram to the FCU
+  **/
   void updateObstacleDistanceMsg();
+  /**
+  * @brief      creates a polar histogram representation of the pointcloud
+  * @params[in] send_to_fcu, true if the histogram is sent to the FCU
+  **/
   void create2DObstacleRepresentation(const bool send_to_fcu);
+  /**
+  * @brief     generates an image represention of the polar histogram
+  * @param     histogram, polar histogram representing obstacles
+  * @returns   histogram image
+  **/
   sensor_msgs::Image generateHistogramImage(Histogram &histogram);
 
  public:
@@ -151,23 +180,79 @@ class LocalPlanner {
   LocalPlanner();
   ~LocalPlanner();
 
+  /**
+  * @brief     setter method for vehicle position
+  * @param[in] mgs, position message coming from the FCU
+  **/
   void setPose(const geometry_msgs::PoseStamped msg);
+  /**
+  * @brief     setter method for mission goal
+  * @param[in] mgs, goal message coming from the FCU
+  **/
   void setGoal(const geometry_msgs::Point &goal);
+  /**
+  * @brief     getter method for current goal
+  * @returns   position of the goal
+  **/
   geometry_msgs::Point getGoal();
+  /**
+  * @brief    setter method for mission goal
+  **/
   void applyGoal();
+  /**
+  * @brief     sets parameters from ROS parameter server
+  * @param     config, struct containing all the paramters
+  * @param     level, bitmsak to group together reconfigurable parameters
+  **/
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
                                    uint32_t level);
+  /**
+  * @brief     getter method for current vehicle position and orientation
+  * @returns   vehicle positiona and orientation
+  **/
   geometry_msgs::PoseStamped getPosition();
+
+  /**
+  * @brief     getter method to visualize pointcloud in rviz
+  * @param     final_cloud, filtered pointcloud from the current camera frame
+  * @param     reprojected_points, pointcloud saved from previous frames
+  **/
   void getCloudsForVisualization(
       pcl::PointCloud<pcl::PointXYZ> &final_cloud,
       pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
+  /**
+  * @brief     setter method for vehicle velocity
+  * @param[in]     vel, velocity message coming from the FCU
+  **/
   void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
+
+  /**
+  * @brief     getter method to visualize the tree in rviz
+  * @param[in]     closed_set, velocity message coming from the FCU
+  * @param[in]     path_node_positions, velocity message coming from the FCU
+  **/
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
                std::vector<geometry_msgs::Point> &path_node_positions);
+  /**
+  * @brief     setter method to send obstacle distance information to FCU
+  * @param[in]     obstacle_distance, obstacle distance message
+  **/
   void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
+
+  /**
+  * @brief     getter method of the local planner algorithm
+  * @param[in]     output of a local planner iteration
+  **/
   avoidanceOutput getAvoidanceOutput();
 
+  /**
+  * @brief     determines the way the obstacle is avoided and the algorithm to
+  *use
+  **/
   void determineStrategy();
+  /**
+  * @brief     starts a iteration of the local planner algorithm
+  **/
   void runPlanner();
 };
 }

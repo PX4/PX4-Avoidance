@@ -21,6 +21,11 @@ class Histogram {
   Eigen::MatrixXi age_;
   Eigen::MatrixXf dist_;
 
+  /**
+  * @brief     wraps elevation and azimuth indeces around the histogram
+  * @param     x, elevation angle index
+  * @param     y, azimuth angle index
+  **/
   inline void wrapIndex(int &x, int &y) const {
     x = x % e_dim_;
     if (x < 0) x += e_dim_;
@@ -30,19 +35,45 @@ class Histogram {
 
  public:
   Histogram(const int res);
-  ~Histogram();
+  ~Histogram() = default;
 
+  /**
+  * @brief     getter method for histogram cell age
+  * @param[in] x, elevation angle index
+  * @param[in] y, azimuth angle index
+  * @returns   cell age
+  **/
   inline int get_age(int x, int y) const {
     wrapIndex(x, y);
     return age_(x, y);
   }
 
+  /**
+  * @brief     getter method for histogram cell distance
+  * @param[in] x, elevation angle index
+  * @param[in] y, azimuth angle index
+  * @returns   distance to the vehicle of obstacle mapped to (x, y) cell [m]
+  **/
   inline float get_dist(int x, int y) const {
     wrapIndex(x, y);
     return dist_(x, y);
   }
 
+  /**
+  * @brief     setter method for histogram cell age
+  * @param[in] x, elevation angle index
+  * @param[in] y, azimuth angle index
+  * @param[in] value, cell age
+  **/
   inline void set_age(int x, int y, int value) { age_(x, y) = value; }
+
+  /**
+  * @brief     setter method for histogram cell distance
+  * @param[in] x, elevation angle index
+  * @param[in] y, azimuth angle index
+  * @param[in] value, distance to the vehicle of obstacle mapped to (x, y) cell
+  *[m]
+  **/
   inline void set_dist(int x, int y, float value) { dist_(x, y) = value; }
 
   /**
@@ -70,6 +101,10 @@ class Histogram {
   * @warning   Can only be called from a regular bin size histogram
   **/
   void downsample();
+
+  /**
+  * @brief     resets all histogram cells age and distance to zero
+  **/
   void setZero();
 };
 }

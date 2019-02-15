@@ -11,8 +11,6 @@ Histogram::Histogram(const int res)
   setZero();
 }
 
-Histogram::~Histogram() {}
-
 void Histogram::upsample() {
   if (resolution_ != ALPHA_RES * 2) {
     throw std::logic_error(

@@ -24,8 +24,6 @@ TreeNode::TreeNode(int from, int d, const Eigen::Vector3f& pos)
   position_ = pos;
 }
 
-TreeNode::~TreeNode() {}
-
 void TreeNode::setCosts(float h, float c) {
   heuristic_ = h;
   total_cost_ = c;
