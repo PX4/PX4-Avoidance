@@ -101,26 +101,14 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
 void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
-                                    bool stay, ros::Time t) {
+                                    bool stay) {
   if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
     reached_goal_ = false;
-    limit_speed_close_to_goal_ = false;
   }
-  update_time_ = t;
   pose_ = act_pose;
   curr_vel_ = vel;
   goal_ = toEigen(goal.pose.position);
   curr_yaw_ = static_cast<float>(tf::getYaw(pose_.pose.orientation));
-
-  tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
-                   pose_.pose.orientation.z, pose_.pose.orientation.w);
-  tf::Matrix3x3 m(q);
-
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
-  z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
-               static_cast<float>(yaw), static_cast<float>(pitch));
 
   curr_vel_magnitude_ =
       Eigen::Vector3f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y,

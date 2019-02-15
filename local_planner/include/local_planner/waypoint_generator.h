@@ -28,10 +28,6 @@ struct waypointResult {
 struct waypointGenerator_params {
   float goal_acceptance_radius_in;
   float goal_acceptance_radius_out;
-  float factor_close_to_goal_start_speed_limitation;
-  float factor_close_to_goal_stop_speed_limitation;
-  float min_speed_close_to_goal;
-  float max_speed_close_to_goal_factor;
 };
 
 class WaypointGenerator {
@@ -47,7 +43,6 @@ class WaypointGenerator {
   Eigen::Vector3f goal_;
   float curr_yaw_;
   float curr_vel_magnitude_;
-  ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
@@ -56,14 +51,11 @@ class WaypointGenerator {
   float smoothing_speed_z_{30.};
 
   bool reached_goal_;
-  bool limit_speed_close_to_goal_ = false;
-  bool waypoint_outside_FOV_;
   float last_yaw_;
   float yaw_reached_goal_;
   float new_yaw_;
   float new_yaw_velocity_ = 0.0f;
   float speed_ = 1.0f;
-  int e_FOV_max_, e_FOV_min_;
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
 
@@ -72,7 +64,6 @@ class WaypointGenerator {
   Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 
   ros::Time velocity_time_;
-  std::vector<int> z_FOV_idx_;
 
   /**
   * @brief     computes position and velocity waypoints based on the input
@@ -154,8 +145,7 @@ class WaypointGenerator {
   **/
   void updateState(const geometry_msgs::PoseStamped& act_pose,
                    const geometry_msgs::PoseStamped& goal,
-                   const geometry_msgs::TwistStamped& vel, bool stay,
-                   ros::Time t);
+                   const geometry_msgs::TwistStamped& vel, bool stay);
 
   /**
   * @brief set the responsiveness of the smoothing
