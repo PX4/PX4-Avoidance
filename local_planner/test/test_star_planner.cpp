@@ -19,7 +19,8 @@ class StarPlannerTests : public ::testing::Test {
   float obstacle_max_x = 2.5f;
   float obstacle_y = 2.0f;
   geometry_msgs::Point goal;
-  geometry_msgs::PoseStamped position;
+  Eigen::Vector3f position;
+
 
   void SetUp() override {
     ros::Time::init();
@@ -30,13 +31,9 @@ class StarPlannerTests : public ::testing::Test {
     config.n_expanded_nodes_ = 10;
     star_planner.dynamicReconfigureSetStarParams(config, 1);
 
-    position.pose.position.x = 1.2;
-    position.pose.position.y = 0.4;
-    position.pose.position.z = 4.0;
-    position.pose.orientation.x = 0.0;
-    position.pose.orientation.y = 0.0;
-    position.pose.orientation.z = 0.0;
-    position.pose.orientation.w = 0.0;
+    position.x() = 1.2f;
+    position.y() = 0.4f;
+    position.z() = 4.0f;
 
     goal.x = 2.0;
     goal.y = 14.0;
@@ -87,13 +84,13 @@ TEST_F(StarPlannerTests, buildTree) {
     // THEN: we expect the distance between the vehicle and the goal to shorten
     // at each iteration
     float tmp_dist_to_goal =
-        (toEigen(goal) - toEigen(position.pose.position)).norm();
+        (toEigen(goal) - position).norm();
     ASSERT_LT(tmp_dist_to_goal, dist_to_goal);
     dist_to_goal = tmp_dist_to_goal;
 
     // we set the vehicle position to be the first node position after the
     // origin for the next algorithm iterarion
-    position.pose.position = toPoint(star_planner.tree_[1].getPosition());
+    position = star_planner.tree_[1].getPosition();
     star_planner.setPose(position, 0.0);
   }
 }

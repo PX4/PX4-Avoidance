@@ -189,7 +189,7 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   complete_cloud.push_back(p2);
   float min_dist_backoff = 1.0f;
   Box histogram_box(5.0f);
-  histogram_box.setBoxLimits(toPoint(position), 4.5f);
+  histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
   pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
