@@ -295,32 +295,13 @@ void WaypointGenerator::adaptSpeed() {
                             since_last_velocity_sec);
   }
 
-  // check if new point lies in FOV
-  PolarPoint p_pol = cartesianToPolar(toEigen(output_.adapted_goto_position),
-                                      toEigen(pose_.pose.position));
-  Eigen::Vector2i p_index = polarToHistogramIndex(p_pol, ALPHA_RES);
+    // check if new point lies in FOV
+    float angle_diff_deg = std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f / M_PI_F;
+    angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg); // Clamp at h_FOV/2
+    speed_ = speed_ * (1.0f - 2 * angle_diff_deg / h_FOV_ ); // throttle if outside FOV
 
-  if (std::find(z_FOV_idx_.begin(), z_FOV_idx_.end(), p_index.x()) !=
-      z_FOV_idx_.end()) {
-    waypoint_outside_FOV_ = false;
-  } else {
-    waypoint_outside_FOV_ = true;
-    if (planner_info_.reach_altitude && !reached_goal_) {
-      int ind_dist = 100;
-      int i = 0;
-      for (std::vector<int>::iterator it = z_FOV_idx_.begin();
-           it != z_FOV_idx_.end(); ++it) {
-        if (std::abs(z_FOV_idx_[i] - p_index.x()) < ind_dist) {
-          ind_dist = std::abs(z_FOV_idx_[i] - p_index.x());
-        }
-        i++;
-      }
-      float angle_diff = static_cast<float>(std::abs(ALPHA_RES * ind_dist));
-      float hover_angle = 30.0f;
-      angle_diff = std::min(angle_diff, hover_angle);
-      speed_ = speed_ * (1.0f - angle_diff / hover_angle);
-    }
-  }
+        ROS_ERROR("prev: %f, now: %f", (1.0f - angle_diff / hover_angle), (1.0f - 2 * angle_diff_deg / h_FOV_ ));
+
   velocity_time_ = getSystemTime();
 
   // calculate correction for computation delay
