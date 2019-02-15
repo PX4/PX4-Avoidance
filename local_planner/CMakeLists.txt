@@ -3,6 +3,7 @@ project(local_planner)
 
 add_definitions(-std=c++11)
 
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
@@ -18,8 +19,21 @@ find_package(catkin REQUIRED COMPONENTS
   mavlink
 )
 find_package(PCL 1.7 REQUIRED)
-find_package(yaml-cpp REQUIRED)
 
+
+
+
+################################################
+## Gazebo Simulation
+################################################
+# Disable yaml-cpp when no simulation is required
+if(DISABLE_SIMULATION)
+  message(STATUS "Building local planner without Gazebo Simulation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+else()
+  message(STATUS "Building local planner with Gazebo Simulation")
+  find_package(yaml-cpp REQUIRED)
+endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -125,17 +139,32 @@ include_directories(
 # add_library(avoidance
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
-add_library(local_planner
-  src/nodes/local_planner.cpp
-  src/nodes/waypoint_generator.cpp
-  src/nodes/histogram.cpp
-  src/nodes/tree_node.cpp
-  src/nodes/box.cpp
-  src/nodes/star_planner.cpp
-  src/nodes/planner_functions.cpp
-  src/nodes/common.cpp
-  src/nodes/rviz_world_loader.cpp
-)
+
+if(DISABLE_SIMULATION)
+  add_library(local_planner
+    src/nodes/local_planner.cpp
+    src/nodes/waypoint_generator.cpp
+    src/nodes/histogram.cpp
+    src/nodes/tree_node.cpp
+    src/nodes/box.cpp
+    src/nodes/star_planner.cpp
+    src/nodes/planner_functions.cpp
+    src/nodes/common.cpp
+  )
+else()
+  message(STATUS "Building local planner with Gazebo Simulation")
+  add_library(local_planner
+    src/nodes/local_planner.cpp
+    src/nodes/waypoint_generator.cpp
+    src/nodes/histogram.cpp
+    src/nodes/tree_node.cpp
+    src/nodes/box.cpp
+    src/nodes/star_planner.cpp
+    src/nodes/planner_functions.cpp
+    src/nodes/common.cpp
+    src/nodes/rviz_world_loader.cpp
+  )
+endif(DISABLE_SIMULATION)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
