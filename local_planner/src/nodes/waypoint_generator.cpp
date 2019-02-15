@@ -193,11 +193,7 @@ bool WaypointGenerator::withinGoalRadius() {
 void WaypointGenerator::reachGoalAltitudeFirst() {
   // goto_position is a unit vector pointing straight up from current location
   output_.goto_position = pose_.pose.position;
-  if (pose_.pose.position.z <= goal_(2) - 1.0f) {
-    output_.goto_position.z += 1.0f;
-  } else {
-    output_.goto_position.z = goal_(2);
-  }
+  output_.goto_position.z += 1.0f;
 
   // Will be overwritten by adaptSpeed()
   output_.adapted_goto_position = output_.goto_position;
