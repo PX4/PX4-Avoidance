@@ -99,6 +99,7 @@ class LocalPlanner {
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
   geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
@@ -211,7 +212,7 @@ class LocalPlanner {
   * @brief     getter method for current vehicle position and orientation
   * @returns   vehicle positiona and orientation
   **/
-  geometry_msgs::PoseStamped getPosition();
+  Eigen::Vector3f getPosition();
 
   /**
   * @brief     getter method to visualize pointcloud in rviz

@@ -18,8 +18,9 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   pose_.header = msg.header;
   pose_.pose.position = msg.pose.position;
   pose_.pose.orientation = msg.pose.orientation;
+  position_ = toEigen(msg.pose.position);
   curr_yaw_ = static_cast<float>(tf::getYaw(msg.pose.orientation));
-  star_planner_->setPose(pose_, curr_yaw_);
+  star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_.header = msg.header;
@@ -118,12 +119,12 @@ void LocalPlanner::runPlanner() {
   calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
                static_cast<float>(yaw), static_cast<float>(pitch));
 
-  histogram_box_.setBoxLimits(pose_.pose.position, ground_distance_);
+  histogram_box_.setBoxLimits(position_, ground_distance_);
 
   filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
                    counter_close_points_backoff_, complete_cloud_,
                    min_cloud_size_, min_dist_backoff_, histogram_box_,
-                   toEigen(pose_.pose.position), min_realsense_dist_);
+                   position_, min_realsense_dist_);
 
   determineStrategy();
 }
@@ -137,9 +138,8 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   to_fcu_histogram_.setZero();
 
   propagateHistogram(propagated_histogram, reprojected_points_,
-                     reprojected_points_age_, toEigen(pose_.pose.position));
-  generateNewHistogram(new_histogram, final_cloud_,
-                       toEigen(pose_.pose.position), n_points_occupied_);
+                     reprojected_points_age_, position_);
+  generateNewHistogram(new_histogram, final_cloud_, position_, n_points_occupied_);
   combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
                     waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
   if (send_to_fcu) {
@@ -191,7 +191,7 @@ void LocalPlanner::determineStrategy() {
              starting_height_);
     waypoint_type_ = reachHeight;
 
-    if (pose_.pose.position.z > starting_height_) {
+    if (position_.z() > starting_height_) {
       reach_altitude_ = true;
       waypoint_type_ = direct;
     }
@@ -217,10 +217,10 @@ void LocalPlanner::determineStrategy() {
         reach_altitude_ && use_back_off_) {
       if (!back_off_) {
         back_off_point_ = closest_point_;
-        back_off_start_point_ = toEigen(pose_.pose.position);
+        back_off_start_point_ = position_;
         back_off_ = true;
       } else {
-        float dist = (toEigen(pose_.pose.position) - back_off_point_).norm();
+        float dist = (position_ - back_off_point_).norm();
         if (dist > min_dist_backoff_ + 1.0f) {
           back_off_ = false;
         }
@@ -245,8 +245,7 @@ void LocalPlanner::determineStrategy() {
             std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
         int n_occupied_cells = 0;
 
-        PolarPoint goal_pol =
-            cartesianToPolar(goal_, toEigen(pose_.pose.position));
+        PolarPoint goal_pol = cartesianToPolar(goal_, position_);
         Eigen::Vector2i goal_index = polarToHistogramIndex(goal_pol, ALPHA_RES);
 
         for (int e = goal_index.y() - relevance_margin_e_cells;
@@ -283,7 +282,7 @@ void LocalPlanner::determineStrategy() {
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
+          getCostMatrix(polar_histogram_, goal_, position_,
                         toEigen(last_sent_waypoint_), cost_params_,
                         velocity_mod_ < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
@@ -306,7 +305,7 @@ void LocalPlanner::determineStrategy() {
       first_brake_ = true;
     }
   }
-  position_old_ = toEigen(pose_.pose.position);
+  position_old_ = position_;
 }
 
 void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
@@ -408,7 +407,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
         temp_array[3] = polarToCartesian(p_pol[3], toPoint(position_old_));
 
         for (int i = 0; i < 4; i++) {
-          dist = (toEigen(pose_.pose.position) - temp_array[i]).norm();
+          dist = (position_ - temp_array[i]).norm();
           age = histogram.get_age(e, z);
 
           if (dist < 2.0f * histogram_box_.radius_ && dist > 0.3f &&
@@ -425,7 +424,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
 // calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_) {
-    float goal_dist = (toEigen(pose_.pose.position) - goal_).norm();
+    float goal_dist = (position_ - goal_).norm();
     float goal_dist_old = (position_old_ - goal_).norm();
 
     ros::Time time = ros::Time::now();
@@ -475,7 +474,7 @@ void LocalPlanner::stopInFrontObstacles() {
   if (first_brake_) {
     float braking_distance =
         std::abs(distance_to_closest_point_ - keep_distance_);
-    Eigen::Vector2f xyPos(pose_.pose.position.x, pose_.pose.position.y);
+    Eigen::Vector2f xyPos = position_.topRows<2>();
     Eigen::Vector2f pose_to_goal = goal_.topRows<2>() - xyPos;
     goal_.topRows<2>() =
         xyPos + braking_distance * pose_to_goal / pose_to_goal.norm();
@@ -488,7 +487,7 @@ void LocalPlanner::stopInFrontObstacles() {
       goal_.x(), goal_.y(), goal_.z(), distance_to_closest_point_);
 }
 
-geometry_msgs::PoseStamped LocalPlanner::getPosition() { return pose_; }
+Eigen::Vector3f LocalPlanner::getPosition() { return position_; }
 
 void LocalPlanner::getCloudsForVisualization(
     pcl::PointCloud<pcl::PointXYZ> &final_cloud,

@@ -41,6 +41,7 @@ class StarPlanner {
 
   Eigen::Vector3f goal_;
   geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_;
   costParameters cost_params_;
 
  protected:
@@ -93,10 +94,10 @@ class StarPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] pose, vehicle current position and orientation
+  * @param[in] pos, vehicle current position and orientation
   * @param[in] curr_yaw, vehicle current yaw
   **/
-  void setPose(const geometry_msgs::PoseStamped& pose, float curr_yaw);
+  void setPose(const Eigen::Vector3f& pos, float curr_yaw);
 
   /**
   * @brief     setter method for current goal
