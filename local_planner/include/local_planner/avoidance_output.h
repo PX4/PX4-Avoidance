@@ -12,9 +12,11 @@ enum waypoint_choice { hover, costmap, tryPath, direct, reachHeight, goBack };
 struct avoidanceOutput {
   waypoint_choice waypoint_type;
   bool obstacle_ahead;  // true is there is an obstacle ahead of the vehicle
-  float velocity_around_obstacles;    // maximal velocity in the proximity of obstacles
-  float velocity_far_from_obstacles;  // maximal velocity with no obstacles in sight
-  ros::Time last_path_time;  // finish built time for the VFH+* tree
+  float velocity_around_obstacles;    // maximal velocity in the proximity of
+                                      // obstacles
+  float velocity_far_from_obstacles;  // maximal velocity with no obstacles in
+                                      // sight
+  ros::Time last_path_time;           // finish built time for the VFH+* tree
 
   geometry_msgs::Point
       back_off_point;  // closest point to the vehicle in the cloud
