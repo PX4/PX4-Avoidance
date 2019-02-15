@@ -109,7 +109,7 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    mkdir -p ~/catkin_ws/src
    ```
 
-1. Install mavros. The package coming from the ROS repository should be fine. Just in case, instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
+1. Install mavros version 0.29.0 or above. Instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html. If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
 
    ```bash
    sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
