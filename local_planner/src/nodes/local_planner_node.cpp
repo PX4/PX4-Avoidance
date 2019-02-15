@@ -259,14 +259,16 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_pose_ = newest_pose_;
   newest_pose_ = msg;
   position_received_ = true;
-
-  // visualize drone in RVIZ
-  visualization_msgs::Marker marker;
-  if (!world_path_.empty()) {
-    if (!visualizeDrone(msg, marker)) {
-      drone_pub_.publish(marker);
+  
+  #ifdef MAKE_SIMULATION
+    // visualize drone in RVIZ
+    visualization_msgs::Marker marker;
+    if (!world_path_.empty()) {
+      if (!visualizeDrone(msg, marker)) {
+        drone_pub_.publish(marker);
+      }
     }
-  }
+  #endif
 }
 
 void LocalPlannerNode::velocityCallback(

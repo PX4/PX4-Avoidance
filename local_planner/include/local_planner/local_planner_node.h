@@ -2,7 +2,10 @@
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
 #include "local_planner/avoidance_output.h"
+
+#ifdef MAKE_SIMULATION
 #include "local_planner/rviz_world_loader.h"
+#endif
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
