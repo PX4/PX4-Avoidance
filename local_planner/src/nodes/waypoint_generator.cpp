@@ -59,8 +59,8 @@ void WaypointGenerator::calculateWaypoint() {
         output_.goto_position =
             toPoint(polarToCartesian(p_pol, pose_.pose.position));
       } else {
-        ROS_DEBUG("[WG] No valid tree, go fast");
-        goFast();
+        ROS_DEBUG("[WG] No valid tree, going straight");
+        goStraight();
         output_.waypoint_type = direct;
       }
       getPathMsg();
@@ -68,20 +68,20 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case direct: {
-      ROS_DEBUG("[WG] No obstacle ahead, go fast");
-      goFast();
+      ROS_DEBUG("[WG] No obstacle ahead, going straight");
+      goStraight();
       getPathMsg();
       break;
     }
 
     case reachHeight: {
-      ROS_DEBUG("[WG] Reach height first, go fast");
+      ROS_DEBUG("[WG] Reaching height first");
       reachGoalAltitudeFirst();
       getPathMsg();
       break;
     }
     case goBack: {
-      ROS_DEBUG("[WG] Too close, back off");
+      ROS_DEBUG("[WG] Too close, backing off");
       backOff();
       break;
     }
@@ -133,11 +133,11 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
 }
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
-void WaypointGenerator::goFast() {
+void WaypointGenerator::goStraight() {
   Eigen::Vector3f dir = (goal_ - toEigen(pose_.pose.position)).normalized();
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + dir);
 
-  ROS_DEBUG("[WG] Go fast selected waypoint: [%f, %f, %f].",
+  ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].",
             output_.goto_position.x, output_.goto_position.y,
             output_.goto_position.z);
 }
@@ -285,13 +285,13 @@ void WaypointGenerator::adaptSpeed() {
       static_cast<float>(since_last_velocity.toSec());
 
   if (!planner_info_.obstacle_ahead) {
-    speed_ = std::min(speed_, planner_info_.max_speed);
-    speed_ = velocityLinear(planner_info_.max_speed,
+    speed_ = std::min(speed_, planner_info_.velocity_far_from_obstacles);
+    speed_ = velocityLinear(planner_info_.velocity_far_from_obstacles,
                             planner_info_.velocity_sigmoid_slope, speed_,
                             since_last_velocity_sec);
   } else {
-    speed_ = std::min(speed_, planner_info_.min_speed);
-    speed_ = velocityLinear(planner_info_.min_speed,
+    speed_ = std::min(speed_, planner_info_.velocity_around_obstacles);
+    speed_ = velocityLinear(planner_info_.velocity_around_obstacles,
                             planner_info_.velocity_sigmoid_slope, speed_,
                             since_last_velocity_sec);
   }
