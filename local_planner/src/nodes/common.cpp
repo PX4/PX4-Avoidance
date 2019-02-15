@@ -119,16 +119,6 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
   return pose_msg;
 }
 
-float velocityLinear(float max_vel, float slope, float v_old, float elapsed) {
-  float t_old = v_old / slope;
-  float t_new = t_old + elapsed;
-  float speed = t_new * slope;
-  if (speed > max_vel) {
-    speed = max_vel;
-  }
-  return speed;
-}
-
 void wrapAngleToPlusMinusPI(float& angle) {
   angle = angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
 }
