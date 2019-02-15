@@ -23,19 +23,19 @@ int main(int argc, char** argv) {
   // spin node, execute callbacks
   while (ros::ok()) {
     hover = false;
-    
-    #ifdef MAKE_SIMULATION
-      // visualize world in RVIZ
-      if (!Node.world_path_.empty() && startup) {
-        visualization_msgs::MarkerArray marker_array;
-        if (!visualizeRVIZWorld(Node.world_path_, marker_array)) {
-          Node.world_pub_.publish(marker_array);
-        }
-        startup = false;
+
+#ifdef MAKE_SIMULATION
+    // visualize world in RVIZ
+    if (!Node.world_path_.empty() && startup) {
+      visualization_msgs::MarkerArray marker_array;
+      if (!visualizeRVIZWorld(Node.world_path_, marker_array)) {
+        Node.world_pub_.publish(marker_array);
       }
-    #else
       startup = false;
-    #endif
+    }
+#else
+    startup = false;
+#endif
 
     // Process callbacks & wait for a position update
     while (!Node.position_received_ && ros::ok()) {
