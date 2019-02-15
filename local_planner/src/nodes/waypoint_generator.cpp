@@ -279,71 +279,32 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 }
 
 void WaypointGenerator::adaptSpeed() {
-  ros::Duration since_last_velocity = getSystemTime() - velocity_time_;
-  float since_last_velocity_sec =
-      static_cast<float>(since_last_velocity.toSec());
-
   if (!planner_info_.obstacle_ahead) {
-    speed_ = std::min(speed_, planner_info_.velocity_far_from_obstacles);
-    speed_ = velocityLinear(planner_info_.velocity_far_from_obstacles,
-                            planner_info_.velocity_sigmoid_slope, speed_,
-                            since_last_velocity_sec);
+speed_ = planner_info_.velocity_far_from_obstacles;
   } else {
-    speed_ = std::min(speed_, planner_info_.velocity_around_obstacles);
-    speed_ = velocityLinear(planner_info_.velocity_around_obstacles,
-                            planner_info_.velocity_sigmoid_slope, speed_,
-                            since_last_velocity_sec);
+    speed_ = planner_info_.velocity_around_obstacles;
   }
 
     // check if new point lies in FOV
     float angle_diff_deg = std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f / M_PI_F;
     angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg); // Clamp at h_FOV/2
+    ROS_INFO("[WG] speed before scaling: %f", speed_);
     speed_ = speed_ * (1.0f - 2 * angle_diff_deg / h_FOV_ ); // throttle if outside FOV
 
-        ROS_ERROR("prev: %f, now: %f", (1.0f - angle_diff / hover_angle), (1.0f - 2 * angle_diff_deg / h_FOV_ ));
-
-  velocity_time_ = getSystemTime();
-
-  // calculate correction for computation delay
-  float since_update_sec =
-      static_cast<float>((getSystemTime() - update_time_).toSec());
-  speed_ += (since_update_sec * curr_vel_magnitude_);
-
-  // break before goal: if the vehicle is closer to the goal than a velocity
-  // dependent distance, the speed is limited
-  Eigen::Vector3f pos_to_goal =
-      (goal_ - toEigen(pose_.pose.position)).cwiseAbs();
-
-  if (pos_to_goal.x() < param_.factor_close_to_goal_start_speed_limitation *
-                            curr_vel_magnitude_ &&
-      pos_to_goal.y() < param_.factor_close_to_goal_start_speed_limitation *
-                            curr_vel_magnitude_) {
-    limit_speed_close_to_goal_ = true;
-  } else if (pos_to_goal.x() >
-                 param_.factor_close_to_goal_stop_speed_limitation *
-                     curr_vel_magnitude_ ||
-             pos_to_goal.y() >
-                 param_.factor_close_to_goal_stop_speed_limitation *
-                     curr_vel_magnitude_) {
-    limit_speed_close_to_goal_ = false;
-  }
-  if (limit_speed_close_to_goal_) {
-    speed_ = std::min(
-        speed_, param_.max_speed_close_to_goal_factor * pos_to_goal.norm());
-    speed_ = std::max(speed_, param_.min_speed_close_to_goal);
-  }
-
-  // set waypoint to correct speed
+  // Only use speed_ to scale the magnitude if this reduces it, so we don't overshoot
   Eigen::Vector3f pose_to_wp =
-      toEigen(output_.adapted_goto_position) - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > 0.01f) pose_to_wp.normalize();
+      toEigen(output_.goto_position) - toEigen(pose_.pose.position);
+  if (pose_to_wp.norm() > speed_ && speed_ > 0.1 ){
+    pose_to_wp = speed_ * pose_to_wp.normalized();
+    output_.adapted_goto_position =
+        toPoint(toEigen(pose_.pose.position) + pose_to_wp);
+  }else{
+      output_.adapted_goto_position = output_.goto_position;
+  }
 
-  pose_to_wp *= speed_;
 
-  output_.adapted_goto_position =
-      toPoint(toEigen(pose_.pose.position) + pose_to_wp);
 
-  ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f].",
+  ROS_INFO("[WG] Speed adapted WP: [%f %f %f].",
             output_.adapted_goto_position.x, output_.adapted_goto_position.y,
             output_.adapted_goto_position.z);
 }
