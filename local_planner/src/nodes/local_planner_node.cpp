@@ -480,14 +480,14 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
     return;
   }
 
-  const ros::Time now = ros::Time::now();
-
-  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
+  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
   visualization_msgs::Marker sphere3;
+
+  ros::Time now = ros::Time::now();
 
   sphere1.header.frame_id = "local_origin";
   sphere1.header.stamp = now;
