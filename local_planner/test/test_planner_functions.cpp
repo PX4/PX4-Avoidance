@@ -252,11 +252,12 @@ TEST(PlannerFunctions, testDirectionTree) {
   Eigen::Vector3f postion(0.2, 0.3, 1.5);
   Eigen::Vector3f postion1(1.1, 2.3, 2.5);
   Eigen::Vector3f postion2(5.4, 2.0, 2.5);
+  Eigen::Vector3f goal(10, 5, 2.5);
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getDirectionFromTree(p, path_node_positions, postion);
-  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1);
-  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2);
+  bool res = getDirectionFromTree(p, path_node_positions, postion, goal);
+  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1, goal);
+  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2, goal);
 
   // THEN: we expect a direction in between node n1 and n2 for position, between
   // node n3 and n4 for position1, and not to get an available tree for the
