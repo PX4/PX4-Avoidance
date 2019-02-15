@@ -346,8 +346,10 @@ void LocalPlannerNode::publishPaths() {
   path_adapted_waypoint_marker.color.g = 0.0;
   path_adapted_waypoint_marker.color.b = 1.0;
 
-  path_adapted_waypoint_marker.points.push_back(last_adapted_waypoint_position_);
-  path_adapted_waypoint_marker.points.push_back(newest_adapted_waypoint_position_);
+  path_adapted_waypoint_marker.points.push_back(
+      last_adapted_waypoint_position_);
+  path_adapted_waypoint_marker.points.push_back(
+      newest_adapted_waypoint_position_);
   path_adapted_waypoint_pub_.publish(path_adapted_waypoint_marker);
 
   path_length_++;
