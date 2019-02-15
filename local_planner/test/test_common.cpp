@@ -300,20 +300,17 @@ TEST(Common, cartesianTopolarToCartesian) {
 
 TEST(Common, nextYawAngle) {
   // GIVEN: two points
-  geometry_msgs::PoseStamped location;
-  location.pose.position.x = 0;
-  location.pose.position.y = 0;
-  location.pose.position.z = 0;
-  Eigen::Vector3f next_pos1(1.0d, 1.0d, 0.0d);
-  Eigen::Vector3f next_pos2(0.0d, 0.0d, 0.0d);
+  Eigen::Vector3f location(0.0f, 0.0f, 0.0f);
+  Eigen::Vector3f next_pos1(1.0f, 1.0f, 0.0f);
+  Eigen::Vector3f next_pos2(0.0f, 0.0f, 0.0f);
 
   // WHEN: we get the yaw between the two points
-  double yaw1 = nextYaw(location, toPoint(next_pos1));
-  double yaw2 = nextYaw(location, toPoint(next_pos2));
+  float yaw1 = nextYaw(location, toPoint(next_pos1));
+  float yaw2 = nextYaw(location, toPoint(next_pos2));
 
   // THEN: the angle in rad should be...
-  EXPECT_NEAR(0.785398163, yaw1, 0.00001);
-  EXPECT_NEAR(0.f, yaw2, 0.00001);
+  EXPECT_NEAR(0.785398163f, yaw1, 0.00001f);
+  EXPECT_NEAR(0.f, yaw2, 0.00001f);
 }
 
 TEST(Common, wrapAngle) {

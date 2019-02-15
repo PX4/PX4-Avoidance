@@ -87,7 +87,7 @@ void wrapPolar(PolarPoint& p_pol);
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad
 **/
-float nextYaw(const geometry_msgs::PoseStamped& u,
+float nextYaw(const Eigen::Vector3f& u,
               const geometry_msgs::Point& v);
 
 geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,

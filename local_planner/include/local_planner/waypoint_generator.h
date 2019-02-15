@@ -40,10 +40,11 @@ class WaypointGenerator {
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
 
   geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_;
+  Eigen::Vector3f velocity_;
   Eigen::Vector3f goal_;
   float curr_yaw_;
   float curr_vel_magnitude_;
-  geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
 
@@ -60,8 +61,6 @@ class WaypointGenerator {
   float v_FOV_ = 46.0f;
 
   Eigen::Vector3f hover_position_;
-  geometry_msgs::PoseStamped last_position_waypoint_;
-  Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 
   ros::Time velocity_time_;
 

@@ -99,10 +99,10 @@ void wrapPolar(PolarPoint& p_pol) {
 }
 
 // calculate the yaw for the next waypoint
-float nextYaw(const geometry_msgs::PoseStamped& u,
+float nextYaw(const Eigen::Vector3f& u,
               const geometry_msgs::Point& v) {
-  float dx = static_cast<float>(v.x - u.pose.position.x);
-  float dy = static_cast<float>(v.y - u.pose.position.y);
+  float dx = static_cast<float>(v.x) - u.x();
+  float dy = static_cast<float>(v.y) - u.y();
 
   return atan2(dy, dx);
 }
