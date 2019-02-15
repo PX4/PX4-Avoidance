@@ -424,7 +424,7 @@ void LocalPlannerNode::publishReachHeight() {
 
 void LocalPlannerNode::publishBox() {
   visualization_msgs::MarkerArray marker_array;
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
   double histogram_box_radius =
       static_cast<double>(local_planner_->histogram_box_.radius_);
 
@@ -434,9 +434,7 @@ void LocalPlannerNode::publishBox() {
   box.id = 0;
   box.type = visualization_msgs::Marker::SPHERE;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = drone_pos.pose.position.x;
-  box.pose.position.y = drone_pos.pose.position.y;
-  box.pose.position.z = drone_pos.pose.position.z;
+  box.pose.position = toPoint(drone_pos);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
@@ -456,8 +454,7 @@ void LocalPlannerNode::publishBox() {
   plane.id = 1;
   plane.type = visualization_msgs::Marker::CUBE;
   plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position.x = drone_pos.pose.position.x;
-  plane.pose.position.y = drone_pos.pose.position.y;
+  plane.pose.position = toPoint(drone_pos);
   plane.pose.position.z = local_planner_->histogram_box_.zmin_;
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
@@ -721,7 +718,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
 }
 
 void LocalPlannerNode::publishGround() {
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
   visualization_msgs::Marker plane;
   double histogram_box_radius =
       static_cast<double>(local_planner_->histogram_box_.radius_);
@@ -731,10 +728,8 @@ void LocalPlannerNode::publishGround() {
   plane.id = 1;
   plane.type = visualization_msgs::Marker::CUBE;
   plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position.x = drone_pos.pose.position.x;
-  plane.pose.position.y = drone_pos.pose.position.y;
-  plane.pose.position.z = drone_pos.pose.position.z -
-                          static_cast<double>(local_planner_->ground_distance_);
+  plane.pose.position = toPoint(drone_pos);
+  plane.pose.position.z = drone_pos.z() - static_cast<double>(local_planner_->ground_distance_);
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
@@ -751,15 +746,12 @@ void LocalPlannerNode::publishGround() {
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
   int beta_z = floor(
-      (atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y) *
+      (atan2(x - drone_pos.x(), y - drone_pos.y()) *
        180.0 / M_PI));  //(-180. +180]
-  int beta_e = floor((atan((z - drone_pos.pose.position.z) /
-                           sqrt((x - drone_pos.pose.position.x) *
-                                    (x - drone_pos.pose.position.x) +
-                                (y - drone_pos.pose.position.y) *
-                                    (y - drone_pos.pose.position.y))) *
+  int beta_e = floor((atan((z - drone_pos.z()) / sqrt((x - drone_pos.x()) *
+        (x - drone_pos.x()) + (y - drone_pos.y()) * (y - drone_pos.y()))) *
                       180.0 / M_PI));  //(-90.+90)
 
   beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[-170,+190]

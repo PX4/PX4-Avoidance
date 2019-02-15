@@ -2,7 +2,7 @@
 #ifndef BOX_H
 #define BOX_H
 
-#include <geometry_msgs/Point.h>
+#include <Eigen/Dense>
 namespace avoidance {
 class Box {
  public:
@@ -16,7 +16,7 @@ class Box {
   * @param[in] pos, vehicle current position
   * @param[in] ground_distance, distance to the ground [m]
   **/
-  void setBoxLimits(const geometry_msgs::Point& pos,
+  void setBoxLimits(const Eigen::Vector3f& pos,
                     const float ground_distance);
 
   /**
