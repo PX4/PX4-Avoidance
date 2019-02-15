@@ -518,10 +518,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.waypoint_type = waypoint_type_;
 
   out.obstacle_ahead = obstacle_;
-  out.reach_altitude = reach_altitude_;
   out.velocity_around_obstacles = velocity_around_obstacles_;
   out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
-  out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
   out.last_path_time = last_path_time_;
 
   out.back_off_point = toPoint(back_off_point_);
