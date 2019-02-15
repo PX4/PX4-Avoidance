@@ -476,7 +476,7 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   // Don't publish waypoints if the drone isn't armed or mission has been
   // enabled. Need second check to avoid race condition
-  if(!armed_ && !mission_){
+  if (!armed_ && !mission_) {
     return;
   }
 
@@ -949,7 +949,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_->dynamicReconfigureSetParams(config, level);
-  wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_, config.smoothing_speed_z_);
+  wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_,
+                                   config.smoothing_speed_z_);
   rqt_param_config_ = config;
 }
 
