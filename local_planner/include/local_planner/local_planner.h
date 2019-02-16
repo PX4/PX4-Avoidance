@@ -100,12 +100,12 @@ class LocalPlanner {
 
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
-  geometry_msgs::TwistStamped curr_vel_;
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
@@ -118,10 +118,6 @@ class LocalPlanner {
   * @param     histogram, histogram from the previous algorith iteration
   **/
   void reprojectPoints(Histogram histogram);
-  /**
-  * @brief     setter method for current vehicle velocity
-  **/
-  void setVelocity();
   /**
   * @brief     calculates the cost function weights to fly around or over
   *obstacles based on the progress towards the goal over time
@@ -174,7 +170,7 @@ class LocalPlanner {
   geometry_msgs::PoseStamped take_off_pose_;
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
-  geometry_msgs::Point last_sent_waypoint_;
+  Eigen::Vector3f last_sent_waypoint_;
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
