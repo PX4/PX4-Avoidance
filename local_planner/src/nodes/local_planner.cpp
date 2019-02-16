@@ -35,7 +35,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     offboard_pose_.pose.orientation = msg.pose.orientation;
   }
 
-  setVelocity();
 }
 
 // set parameters changed by dynamic rconfigure
@@ -84,11 +83,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
   ROS_DEBUG("\033[0;35m[OA] Dynamic reconfigure call \033[0m");
-}
-
-void LocalPlanner::setVelocity() {
-  const auto &p = curr_vel_.twist.linear;
-  velocity_mod_ = Eigen::Vector3f(p.x, p.y, p.z).norm();
 }
 
 void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
@@ -281,8 +275,7 @@ void LocalPlanner::determineStrategy() {
           star_planner_->setCloud(final_cloud_);
 
           // set last chosen direction for smoothing
-          PolarPoint last_wp_pol = cartesianToPolar(
-              toEigen(last_sent_waypoint_), position_);
+          PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
           last_wp_pol.r = (position_ - goal_).norm();
           Eigen::Vector3f projected_last_wp =
               polarToCartesian(last_wp_pol, toPoint(position_));
@@ -296,8 +289,8 @@ void LocalPlanner::determineStrategy() {
         } else {
           float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
           getCostMatrix(polar_histogram_, goal_, position_,
-                        yaw_angle, toEigen(last_sent_waypoint_), cost_params_,
-                        velocity_mod_ < 0.1f, cost_matrix_);
+                        yaw_angle, last_sent_waypoint_, cost_params_,
+                        velocity_.norm() < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
           if (candidate_vector_.empty()) {
@@ -510,7 +503,7 @@ void LocalPlanner::getCloudsForVisualization(
 }
 
 void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {
-  curr_vel_ = vel;
+  velocity_ = toEigen(vel.twist.linear);
 }
 
 void LocalPlanner::getTree(
