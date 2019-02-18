@@ -42,8 +42,8 @@ void StarPlanner::setCloud(
   pointcloud_ = cropped_cloud;
 }
 
-void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
-  goal_ = toEigen(goal);
+void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
+  goal_ = goal;
   tree_age_ = 1000;
 }
 
@@ -209,8 +209,7 @@ void StarPlanner::buildLookAheadTree() {
         }
       }
 
-      float node_distance =
-          (tree_[i].getPosition() - toEigen(pose_.pose.position)).norm();
+      float node_distance = (tree_[i].getPosition() - position_).norm();
       if (tree_[i].total_cost_ < minimal_cost && !closed &&
           node_distance < max_path_length_) {
         minimal_cost = tree_[i].total_cost_;

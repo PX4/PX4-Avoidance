@@ -41,7 +41,6 @@ class StarPlanner {
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
-  geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f position_;
   costParameters cost_params_;
 
@@ -110,7 +109,7 @@ class StarPlanner {
   * @brief     setter method for current goal
   * @param[in] goal, current goal position
   **/
-  void setGoal(const geometry_msgs::Point& pose);
+  void setGoal(const Eigen::Vector3f& pose);
 
   /**
   * @brief     setter method for pointcloud

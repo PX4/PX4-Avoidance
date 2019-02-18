@@ -86,7 +86,7 @@ void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
 geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
 
 void LocalPlanner::applyGoal() {
-  star_planner_->setGoal(toPoint(goal_));
+  star_planner_->setGoal(goal_);
   goal_dist_incline_.clear();
 }
 
