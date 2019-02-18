@@ -19,11 +19,9 @@ struct avoidanceOutput {
                                       // sight
   ros::Time last_path_time;           // finish built time for the VFH+* tree
 
-  geometry_msgs::Point
-      back_off_point;  // closest point to the vehicle in the cloud
-  geometry_msgs::Point back_off_start_point;  // vehicle position when a point
-                                              // in the cloud is closer than
-                                              // min_dist_backoff
+  Eigen::Vector3f back_off_point;  // closest point to the vehicle in the cloud
+  Eigen::Vector3f back_off_start_point;  // vehicle position when a point in the
+                                         // cloud is closer than  min_dist_backoff
   float min_dist_backoff;  // distance between the vehicle and the closest
                            // point in the cloud
 

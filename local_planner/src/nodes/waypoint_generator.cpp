@@ -131,19 +131,19 @@ void WaypointGenerator::goStraight() {
 }
 
 void WaypointGenerator::backOff() {
-  Eigen::Vector3f dir = position_ - toEigen(planner_info_.back_off_point);
+  Eigen::Vector3f dir = position_ - planner_info_.back_off_point;
   dir.z() = 0;
   dir.normalize();
   dir *= 0.5f;
 
   output_.goto_position = toPoint(position_ + dir);
-  output_.goto_position.z = planner_info_.back_off_start_point.z;
+  output_.goto_position.z = planner_info_.back_off_start_point.z();
 
   output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
 
-  ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].", planner_info_.back_off_point.x,
-            planner_info_.back_off_point.y, planner_info_.back_off_point.z);
+  ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].", planner_info_.back_off_point.x(),
+            planner_info_.back_off_point.y(), planner_info_.back_off_point.z());
   ROS_DEBUG("[WG] Back off selected direction: [%f, %f, %f].", dir.x(), dir.y(),
             dir.z());
 }

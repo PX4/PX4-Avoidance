@@ -516,8 +516,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
   out.last_path_time = last_path_time_;
 
-  out.back_off_point = toPoint(back_off_point_);
-  out.back_off_start_point = toPoint(back_off_start_point_);
+  out.back_off_point = back_off_point_;
+  out.back_off_start_point = back_off_start_point_;
   out.min_dist_backoff = min_dist_backoff_;
 
   out.take_off_pose = take_off_pose_;
