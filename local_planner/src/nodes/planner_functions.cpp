@@ -378,11 +378,15 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
                    const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed) {
-  PolarPoint p_pol(e_angle, z_angle, 1.0f);
+  float goal_dist = (position - goal).norm();
+  PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate =
       polarToCartesian(p_pol, toPoint(position));
   Eigen::Vector3f projected_goal = goal;
-  Eigen::Vector3f projected_last_wp = last_sent_waypoint;
+  PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
+  last_wp_pol.r = goal_dist;
+  Eigen::Vector3f projected_last_wp =
+      polarToCartesian(last_wp_pol, toPoint(position));
 
   if ((goal - position).norm() > 0.0001f) {
     Eigen::Vector3f projected_goal = (goal - position).normalized();
@@ -418,7 +422,7 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
   // distance cost
   float distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 500.0f * 1.0f / obstacle_distance;
+    distance_cost = 1000.0f * 1.0f / obstacle_distance;
   }
 
   // combine costs
