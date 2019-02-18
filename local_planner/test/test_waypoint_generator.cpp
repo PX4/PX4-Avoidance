@@ -37,10 +37,6 @@ class WaypointGeneratorTests : public ::testing::Test,
     avoidance_output.costmap_direction_e = p_pol.e;
     avoidance_output.costmap_direction_z = p_pol.z;
 
-    avoidance_output.offboard_pose.pose.position.x = 0.0;
-    avoidance_output.offboard_pose.pose.position.y = 0.0;
-    avoidance_output.offboard_pose.pose.position.z = 0.0;
-
     geometry_msgs::Point n0;
     n0.x = 0.0;
     n0.y = 0.0;

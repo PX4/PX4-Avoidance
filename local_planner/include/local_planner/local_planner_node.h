@@ -249,7 +249,6 @@ class LocalPlannerNode {
   ros::Publisher path_adapted_waypoint_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher takeoff_pose_pub_;
-  ros::Publisher offboard_pose_pub_;
   ros::Publisher initial_height_pub_;
   ros::Publisher complete_tree_pub_;
   ros::Publisher tree_path_pub_;

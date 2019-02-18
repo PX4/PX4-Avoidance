@@ -28,8 +28,6 @@ struct avoidanceOutput {
 
   geometry_msgs::PoseStamped
       take_off_pose;  // last vehicle position when not armed
-  geometry_msgs::PoseStamped offboard_pose;  // last vehicle position when not
-                                             // in offborad nor in mission mode
 
   float costmap_direction_e;  // elevation angle of the minimum cost histogram
                               // cell
