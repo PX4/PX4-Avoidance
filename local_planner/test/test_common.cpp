@@ -305,8 +305,8 @@ TEST(Common, nextYawAngle) {
   Eigen::Vector3f next_pos2(0.0f, 0.0f, 0.0f);
 
   // WHEN: we get the yaw between the two points
-  float yaw1 = nextYaw(location, toPoint(next_pos1));
-  float yaw2 = nextYaw(location, toPoint(next_pos2));
+  float yaw1 = nextYaw(location, next_pos1);
+  float yaw2 = nextYaw(location, next_pos2);
 
   // THEN: the angle in rad should be...
   EXPECT_NEAR(0.785398163f, yaw1, 0.00001f);

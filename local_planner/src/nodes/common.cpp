@@ -95,22 +95,21 @@ void wrapPolar(PolarPoint& p_pol) {
 }
 
 // calculate the yaw for the next waypoint
-float nextYaw(const Eigen::Vector3f& u,
-              const geometry_msgs::Point& v) {
-  float dx = static_cast<float>(v.x) - u.x();
-  float dy = static_cast<float>(v.y) - u.y();
+float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
+  float dx = v.x() - u.x();
+  float dy = v.y() - u.y();
 
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
+geometry_msgs::PoseStamped createPoseMsg(const Eigen::Vector3f& waypt,
                                          float yaw) {
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "/local_origin";
-  pose_msg.pose.position.x = waypt.x;
-  pose_msg.pose.position.y = waypt.y;
-  pose_msg.pose.position.z = waypt.z;
+  pose_msg.pose.position.x = waypt.x();
+  pose_msg.pose.position.y = waypt.y();
+  pose_msg.pose.position.z = waypt.z();
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
   return pose_msg;
 }

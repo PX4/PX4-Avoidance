@@ -481,9 +481,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere1.id = 0;
   sphere1.type = visualization_msgs::Marker::SPHERE;
   sphere1.action = visualization_msgs::Marker::ADD;
-  sphere1.pose.position.x = result.goto_position.x;
-  sphere1.pose.position.y = result.goto_position.y;
-  sphere1.pose.position.z = result.goto_position.z;
+  sphere1.pose.position = toPoint(result.goto_position);
   sphere1.pose.orientation.x = 0.0;
   sphere1.pose.orientation.y = 0.0;
   sphere1.pose.orientation.z = 0.0;
@@ -501,9 +499,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere2.id = 0;
   sphere2.type = visualization_msgs::Marker::SPHERE;
   sphere2.action = visualization_msgs::Marker::ADD;
-  sphere2.pose.position.x = result.adapted_goto_position.x;
-  sphere2.pose.position.y = result.adapted_goto_position.y;
-  sphere2.pose.position.z = result.adapted_goto_position.z;
+  sphere2.pose.position = toPoint(result.adapted_goto_position);
   sphere2.pose.orientation.x = 0.0;
   sphere2.pose.orientation.y = 0.0;
   sphere2.pose.orientation.z = 0.0;
@@ -521,9 +517,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere3.id = 0;
   sphere3.type = visualization_msgs::Marker::SPHERE;
   sphere3.action = visualization_msgs::Marker::ADD;
-  sphere3.pose.position.x = result.smoothed_goto_position.x;
-  sphere3.pose.position.y = result.smoothed_goto_position.y;
-  sphere3.pose.position.z = result.smoothed_goto_position.z;
+  sphere3.pose.position = toPoint(result.smoothed_goto_position);
   sphere3.pose.orientation.x = 0.0;
   sphere3.pose.orientation.y = 0.0;
   sphere3.pose.orientation.z = 0.0;
@@ -541,9 +535,9 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   smoothed_wp_pub_.publish(sphere3);
 
   last_waypoint_position_ = newest_waypoint_position_;
-  newest_waypoint_position_ = result.smoothed_goto_position;
+  newest_waypoint_position_ = toPoint(result.smoothed_goto_position);
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
-  newest_adapted_waypoint_position_ = result.adapted_goto_position;
+  newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
   publishPaths();
   publishSetpoint(result.velocity_waypoint, result.waypoint_type);
 
