@@ -11,7 +11,7 @@ int main(int argc, char** argv) {
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;
-  bool landing = false;
+  bool planner_is_healthy = true;
   avoidanceOutput planner_output;
   Node.local_planner_->disable_rise_to_goal_altitude_ =
       Node.disable_rise_to_goal_altitude_;
@@ -55,8 +55,8 @@ int main(int argc, char** argv) {
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
-      if (!landing) {
-        landing = true;
+      if (planner_is_healthy) {
+    	planner_is_healthy = false;
         Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
         ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
       }
@@ -114,7 +114,7 @@ int main(int argc, char** argv) {
     }
 
     // send waypoint
-    if (!Node.never_run_ && !landing) {
+    if (!Node.never_run_ && planner_is_healthy) {
       Node.publishWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
