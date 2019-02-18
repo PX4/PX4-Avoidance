@@ -10,9 +10,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-
 #include <nav_msgs/GridCells.h>
 
 #include <dynamic_reconfigure/server.h>

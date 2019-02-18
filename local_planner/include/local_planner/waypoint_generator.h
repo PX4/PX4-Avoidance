@@ -5,7 +5,6 @@
 
 #include <Eigen/Dense>
 
-#include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/TwistStamped.h>
 
@@ -38,8 +37,6 @@ class WaypointGenerator {
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
-
-  geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f position_;
   Eigen::Vector3f velocity_;
   Eigen::Vector3f goal_;

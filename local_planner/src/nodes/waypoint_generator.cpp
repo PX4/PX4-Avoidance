@@ -99,11 +99,10 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
     reached_goal_ = false;
   }
-  pose_ = act_pose;
   position_ = toEigen(act_pose.pose.position);
   velocity_ = toEigen(vel.twist.linear);
   goal_ = toEigen(goal.pose.position);
-  curr_yaw_ = static_cast<float>(tf::getYaw(pose_.pose.orientation));
+  curr_yaw_ = static_cast<float>(tf::getYaw(act_pose.pose.orientation));
   curr_vel_magnitude_ = velocity_.norm();
 
   if (stay) {
@@ -158,7 +157,7 @@ bool WaypointGenerator::withinGoalRadius() {
 
   if (dist < param_.goal_acceptance_radius_in) {
     if (!reached_goal_) {
-      yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
+      yaw_reached_goal_ = curr_yaw_;
     }
     reached_goal_ = true;
   } else if (dist > param_.goal_acceptance_radius_out) {
