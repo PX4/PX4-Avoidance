@@ -2,6 +2,7 @@
 #include <limits>
 #include "../include/local_planner/common.h"
 #include "../include/local_planner/histogram.h"
+#include <tf/transform_listener.h>
 
 using namespace avoidance;
 
@@ -416,4 +417,69 @@ TEST(Common, wrapPolar) {
 
   EXPECT_FLOAT_EQ(40.f, p_pol_6.e);
   EXPECT_FLOAT_EQ(-120.f, p_pol_6.z);
+}
+
+TEST(Common, testEulerQuatCOnv) {
+
+  geometry_msgs::PoseStamped pose_;
+  for (float w = -0.1f; w < 0.1f; w+=0.001f) {
+    /* code */
+
+    pose_.pose.orientation.x = 0.00883646; //0.0;
+    pose_.pose.orientation.y  = 0.0243673; //0.0;
+    pose_.pose.orientation.z = 0.999582;
+    pose_.pose.orientation.w = w; //1.0;
+    Eigen::Quaternionf orientation_q_;
+    orientation_q_.x() = pose_.pose.orientation.x;
+    orientation_q_.y() = pose_.pose.orientation.y;
+    orientation_q_.z() = pose_.pose.orientation.z;
+    orientation_q_.w() = pose_.pose.orientation.w;
+
+    printf("Q(w,x,y,z) %f %f %f %f \n", pose_.pose.orientation.w, pose_.pose.orientation.x, pose_.pose.orientation.y, pose_.pose.orientation.z);
+
+
+    Eigen::Vector3f euler = orientation_q_.toRotationMatrix().eulerAngles(0, 1, 2);
+
+    Eigen::Matrix3f R = orientation_q_.toRotationMatrix();
+    std::cout << "R=" << std::endl << R << std::endl;
+    // std::cout << "Eigen Transf roll " << euler[2] << " pitch  " << euler[1] << " yaw "<< euler[0] << std::endl;
+    std::cout << "Eigen Transf roll " << euler[0] << " pitch  " << euler[1] << " yaw "<< euler[2] << std::endl;
+
+    tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
+                     pose_.pose.orientation.z, pose_.pose.orientation.w);
+    tf::Matrix3x3 m(q);
+    printf("matrix \n" );
+    for (size_t i = 0; i < 3; i++) {
+      for (size_t j = 0; j < 3; j++) {
+        printf("%f ", m[i][j]);
+      }
+      printf("\n");
+    }
+    double roll, pitch, yaw;
+    m.getRPY(roll, pitch, yaw, 1);
+    std::cout << "getRPY sol1 " << roll << " " << pitch << " " << yaw << std::endl;
+    m.getRPY(roll, pitch, yaw, 2);
+    std::cout << "getRPY sol2 " << roll << " " << pitch << " " << yaw << std::endl;
+    printf("\n" );
+
+}
+
+
+  // float roll = 0.0f, pitch = 0.0f;
+  // float roll1 = -0.0260694f;
+  // float pitch1 = 0.0170415f;
+  // float yaw1 = 0.0489675f;
+  // Eigen::Quaternionf waypt_q_out;
+  // waypt_q_out = Eigen::AngleAxisf(roll1, Eigen::Vector3f::UnitX())
+  //     * Eigen::AngleAxisf(pitch1, Eigen::Vector3f::UnitY())
+  //     * Eigen::AngleAxisf(yaw1, Eigen::Vector3f::UnitZ());
+  // std::cout << waypt_q_out.coeffs() << std::endl;
+  //
+  // roll1 =   3.11851f;
+  // pitch1 = 3.12184f;
+  // yaw1 =3.08084f;
+  // waypt_q_out = Eigen::AngleAxisf(roll1, Eigen::Vector3f::UnitX())
+  //     * Eigen::AngleAxisf(pitch1, Eigen::Vector3f::UnitY())
+  //     * Eigen::AngleAxisf(yaw1, Eigen::Vector3f::UnitZ());
+  // std::cout << waypt_q_out.coeffs() << std::endl;
 }
