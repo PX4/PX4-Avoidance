@@ -662,7 +662,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
            model_params_.up_acc, msg.value.real);
     model_params_.up_acc = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
-    printf("model parameter auto mode is set from  %i to %i \n",
+    printf("model parameter auto mode is set from  %i to %li \n",
            model_params_.mpc_auto_mode, msg.value.integer);
     model_params_.mpc_auto_mode = msg.value.integer;
   } else if (msg.param_id == "MPC_JERK_MIN") {
