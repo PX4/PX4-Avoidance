@@ -205,12 +205,12 @@ TEST(Common, polarToCartesian) {
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[3], radius[0]);
-    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, pos));
   }
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[i], radius[1]);
-    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, pos));
   }
 
   // THEN: the cartesian coordinates are
@@ -252,7 +252,7 @@ TEST(Common, PolarToCatesianToPolar) {
   for (float e = -90.f; e <= 90.f; e = e + 3.f) {
     for (float z = -180.f; z <= 180.f; z = z + 6.f) {
       PolarPoint p_pol(e, z, radius);
-      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
+      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
 
       PolarPoint p_pol_new = cartesianToPolar(p_cartesian, pos);
 
@@ -287,7 +287,7 @@ TEST(Common, cartesianTopolarToCartesian) {
         Eigen::Vector3f origin(x, y, z);
         PolarPoint p_pol = cartesianToPolar(origin, pos);
         // p_pol.r = (origin - pos).norm();
-        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
+        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as

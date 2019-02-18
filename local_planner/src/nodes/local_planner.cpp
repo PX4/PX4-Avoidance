@@ -277,8 +277,7 @@ void LocalPlanner::determineStrategy() {
           // set last chosen direction for smoothing
           PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
           last_wp_pol.r = (position_ - goal_).norm();
-          Eigen::Vector3f projected_last_wp =
-              polarToCartesian(last_wp_pol, toPoint(position_));
+          Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position_);
           star_planner_->setLastDirection(projected_last_wp);
 
           // build search tree
@@ -407,10 +406,10 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
         p_pol[3].z -= half_res;
 
         // transform from Polar to Cartesian
-        temp_array[0] = polarToCartesian(p_pol[0], toPoint(position_old_));
-        temp_array[1] = polarToCartesian(p_pol[1], toPoint(position_old_));
-        temp_array[2] = polarToCartesian(p_pol[2], toPoint(position_old_));
-        temp_array[3] = polarToCartesian(p_pol[3], toPoint(position_old_));
+        temp_array[0] = polarToCartesian(p_pol[0], position_old_);
+        temp_array[1] = polarToCartesian(p_pol[1], position_old_);
+        temp_array[2] = polarToCartesian(p_pol[2], position_old_);
+        temp_array[3] = polarToCartesian(p_pol[3], position_old_);
 
         for (int i = 0; i < 4; i++) {
           dist = (position_ - temp_array[i]).norm();

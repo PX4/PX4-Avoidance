@@ -38,7 +38,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
 
   // WHEN: we build a histogram
   generateNewHistogram(histogram_output, empty_cloud,
-                       toEigen(location.pose.position));
+                       toEigen(location.pose.position), 10);
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -51,10 +51,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
 TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   // GIVEN: a pointcloud with an object of one cell size
   Histogram histogram_output = Histogram(ALPHA_RES);
-  geometry_msgs::PoseStamped location;
-  location.pose.position.x = 0;
-  location.pose.position.y = 0;
-  location.pose.position.z = 0;
+  Eigen::Vector3f location(0.0f, 0.0f, 0.0f);
   float distance = 1.0f;
 
   std::vector<float> e_angle_filled = {-89.9f, -30.0f, 0.0f,
@@ -67,7 +64,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   for (auto i : e_angle_filled) {
     for (auto j : z_angle_filled) {
       PolarPoint p_pol(i, j, distance);
-      middle_of_cell.push_back(polarToCartesian(p_pol, location.pose.position));
+      middle_of_cell.push_back(polarToCartesian(p_pol, location));
       e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
       z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
     }
@@ -82,8 +79,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud,
-                       toEigen(location.pose.position));
+  generateNewHistogram(histogram_output, cloud, location, 10);
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros

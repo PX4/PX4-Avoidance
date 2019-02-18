@@ -14,15 +14,11 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
 }
 
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const geometry_msgs::Point& pos) {
+                                 const Eigen::Vector3f& pos) {
   Eigen::Vector3f p;
-  p.x() =
-      static_cast<float>(pos.x) +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
-  p.y() =
-      static_cast<float>(pos.y) +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
-  p.z() = static_cast<float>(pos.z) + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
+  p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+  p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.z() = pos.z() + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }

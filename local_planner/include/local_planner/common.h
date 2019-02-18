@@ -38,7 +38,7 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 * @returns   point in cartesian CS
 **/
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const geometry_msgs::Point& pos);
+                                 const Eigen::Vector3f& pos);
 float indexAngleDifference(float a, float b);
 /**
 * @brief     compute point in the histogram to a polar point
