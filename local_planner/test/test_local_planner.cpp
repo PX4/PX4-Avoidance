@@ -114,9 +114,9 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   for (auto it = output.path_node_positions.rbegin();
        it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
-    if (node.x > distance) break;
-    if (node.y > node_max_y) node_max_y = node.y;
-    if (node.y < node_min_y) node_min_y = node.y;
+    if (node.x() > distance) break;
+    if (node.y() > node_max_y) node_max_y = node.y();
+    if (node.y() < node_min_y) node_min_y = node.y();
   }
 
   bool steer_clear = node_max_y > max_y || node_min_y < min_y;
@@ -164,8 +164,8 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   for (auto it = output.path_node_positions.rbegin();
        it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
-    if (node.x > distance) break;
-    if (node.y > node_max_y) node_max_y = node.y;
+    if (node.x() > distance) break;
+    if (node.y() > node_max_y) node_max_y = node.y();
   }
   EXPECT_GT(node_max_y, max_y);
 }
@@ -211,8 +211,8 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   for (auto it = output.path_node_positions.rbegin();
        it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
-    if (node.x > distance) break;
-    if (node.y < node_min_y) node_min_y = node.y;
+    if (node.x() > distance) break;
+    if (node.y() < node_min_y) node_min_y = node.y();
   }
   EXPECT_LT(node_min_y, min_y);
 }

@@ -76,10 +76,9 @@ float StarPlanner::treeCostFunction(int node_number) {
     int partner_node_idx =
         path_node_positions_.size() - 1 - tree_[node_number].depth_;
     if (partner_node_idx >= 0) {
-      geometry_msgs::Point partner_node_position =
-          path_node_positions_[partner_node_idx];
+      Eigen::Vector3f partner_node_position = path_node_positions_[partner_node_idx];
       Eigen::Vector3f node_position = tree_[node_number].getPosition();
-      float dist = (toEigen(partner_node_position) - node_position).norm();
+      float dist = (partner_node_position - node_position).norm();
       smooth_cost_to_old_tree =
           200.0f * dist /
           (0.5f * static_cast<float>(tree_[node_number].depth_));
@@ -216,10 +215,10 @@ void StarPlanner::buildLookAheadTree() {
   path_node_origins_.clear();
   while (tree_end > 0) {
     path_node_origins_.push_back(tree_end);
-    path_node_positions_.push_back(toPoint(tree_[tree_end].getPosition()));
+    path_node_positions_.push_back(tree_[tree_end].getPosition());
     tree_end = tree_[tree_end].origin_;
   }
-  path_node_positions_.push_back(toPoint(tree_[0].getPosition()));
+  path_node_positions_.push_back(tree_[0].getPosition());
   path_node_origins_.push_back(0);
   tree_age_ = 0;
 
@@ -231,9 +230,9 @@ void StarPlanner::buildLookAheadTree() {
       (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
   for (int j = 0; j < path_node_positions_.size(); j++) {
     ROS_DEBUG("\033[0;35m[SP] node %.0f : [ %f, %f, %f]\033[0m", (double)j,
-              (double)path_node_positions_[j].x,
-              (double)path_node_positions_[j].y,
-              (double)path_node_positions_[j].z);
+              (double)path_node_positions_[j].x(),
+              (double)path_node_positions_[j].y(),
+              (double)path_node_positions_[j].z());
   }
 }
 }

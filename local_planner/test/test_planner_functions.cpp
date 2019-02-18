@@ -221,34 +221,22 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
 
 TEST(PlannerFunctions, testDirectionTree) {
   // GIVEN: the node positions in a tree and some possible vehicle positions
-  geometry_msgs::Point n0;
-  n0.x = 0.0f;
-  n0.y = 0.0f;
-  n0.z = 2.5;
-  geometry_msgs::Point n1;
-  n1.x = 0.8f;
-  n1.y = sqrtf(1 - (n1.x * n1.x));
-  n1.z = 2.5;
-  geometry_msgs::Point n2;
-  n2.x = 1.5f;
-  n2.y = n1.y + sqrtf(1 - powf(n2.x - n1.x, 2));
-  n2.z = 2.5;
-  geometry_msgs::Point n3;
-  n3.x = 2.1f;
-  n3.y = n2.y + sqrtf(1 - powf(n3.x - n2.x, 2));
-  n3.z = 2.5;
-  geometry_msgs::Point n4;
-  n4.x = 2.3f;
-  n4.y = n3.y + sqrtf(1 - powf(n4.x - n3.x, 2));
-  n4.z = 2.5;
-  const std::vector<geometry_msgs::Point> path_node_positions = {n4, n3, n2, n1,
-                                                                 n0};
+  float n1_x = 0.8f;
+  float n2_x = 1.5f;
+  float n3_x = 2.1f;
+  float n4_x = 2.3f;
+  Eigen::Vector3f n0(0.0f, 0.0f, 2.5f);
+  Eigen::Vector3f n1(n1_x, sqrtf(1 - (n1_x * n1_x)), 2.5f);
+  Eigen::Vector3f n2(n2_x, n1.y() + sqrtf(1 - powf(n2_x - n1.x(), 2)), 2.5f);
+  Eigen::Vector3f n3(n3_x, n2.y() + sqrtf(1 - powf(n3_x - n2.x(), 2)), 2.5f);
+  Eigen::Vector3f n4(n4_x, n3.y() + sqrtf(1 - powf(n4_x - n3.x(), 2)), 2.5f);
+  const std::vector<Eigen::Vector3f> path_node_positions = {n4, n3, n2, n1, n0};
 
   PolarPoint p, p1, p2;
-  Eigen::Vector3f postion(0.2, 0.3, 1.5);
-  Eigen::Vector3f postion1(1.1, 2.3, 2.5);
-  Eigen::Vector3f postion2(5.4, 2.0, 2.5);
-  Eigen::Vector3f goal(10, 5, 2.5);
+  Eigen::Vector3f postion(0.2f, 0.3f, 1.5f);
+  Eigen::Vector3f postion1(1.1f, 2.3f, 2.5f);
+  Eigen::Vector3f postion2(5.4f, 2.0f, 2.5f);
+  Eigen::Vector3f goal(10.0f, 5.0f, 2.5f);
 
   // WHEN: we look for the best direction to fly towards
   bool res = getDirectionFromTree(p, path_node_positions, postion, goal);

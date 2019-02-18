@@ -60,7 +60,7 @@ class StarPlanner {
   float treeHeuristicFunction(int node_number);
 
  public:
-  std::vector<geometry_msgs::Point> path_node_positions_;
+  std::vector<Eigen::Vector3f> path_node_positions_;
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;

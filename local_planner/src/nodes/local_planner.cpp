@@ -485,7 +485,7 @@ void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {
 
 void LocalPlanner::getTree(
     std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-    std::vector<geometry_msgs::Point> &path_node_positions) {
+    std::vector<Eigen::Vector3f> &path_node_positions) {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
   path_node_positions = star_planner_->path_node_positions_;
