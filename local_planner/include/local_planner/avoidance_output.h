@@ -2,6 +2,7 @@
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <Eigen/Dense>
 
 #include <vector>
 
@@ -26,8 +27,7 @@ struct avoidanceOutput {
   float min_dist_backoff;  // distance between the vehicle and the closest
                            // point in the cloud
 
-  geometry_msgs::PoseStamped
-      take_off_pose;  // last vehicle position when not armed
+  Eigen::Vector3f take_off_pose;  // last vehicle position when not armed
 
   float costmap_direction_e;  // elevation angle of the minimum cost histogram
                               // cell

@@ -23,9 +23,7 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
   star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
-    take_off_pose_.header = msg.header;
-    take_off_pose_.pose.position = msg.pose.position;
-    take_off_pose_.pose.orientation = msg.pose.orientation;
+    take_off_pose_ = position_;
     reach_altitude_ = false;
   }
 }
@@ -171,9 +169,7 @@ void LocalPlanner::determineStrategy() {
   }
 
   if (!reach_altitude_) {
-    starting_height_ =
-        std::max(goal_.z() - 0.5f,
-                 static_cast<float>(take_off_pose_.pose.position.z) + 1.0f);
+    starting_height_ = std::max(goal_.z() - 0.5f, take_off_pose_.z() + 1.0f);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m",
              starting_height_);
     waypoint_type_ = reachHeight;
