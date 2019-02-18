@@ -100,34 +100,34 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   waypointResult result = getWaypoints();
 
   // THEN: we expect the goto position to point straight up
-  EXPECT_NEAR(position.pose.position.x, result.goto_position.x, 0.1);
-  EXPECT_NEAR(position.pose.position.y, result.goto_position.y, 0.1);
-  EXPECT_LT(position.pose.position.z, result.goto_position.z);
+  EXPECT_NEAR(position.pose.position.x, result.goto_position.x(), 0.1);
+  EXPECT_NEAR(position.pose.position.y, result.goto_position.y(), 0.1);
+  EXPECT_LT(position.pose.position.z, result.goto_position.z());
 
   // THEN: we expect the adapted goto position to be between goal and drone in z
-  EXPECT_GT(result.adapted_goto_position.z, position.pose.position.z);
-  EXPECT_LT(result.adapted_goto_position.z, goal.pose.position.z);
+  EXPECT_GT(result.adapted_goto_position.z(), position.pose.position.z);
+  EXPECT_LT(result.adapted_goto_position.z(), goal.pose.position.z);
 
   // THEN: we expect the adapted goto position to be close to the drone location
   // in xy
-  EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x, 0.1);
-  EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y, 0.1);
+  EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x(), 0.1);
+  EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y(), 0.1);
 
   // THEN: we expect the smoothed goto position to be the same as the drone
   // location
   // (first iteration of smoothing)
-  EXPECT_NEAR(position.pose.position.x, result.smoothed_goto_position.x, 0.1);
-  EXPECT_NEAR(position.pose.position.y, result.smoothed_goto_position.y, 0.1);
-  EXPECT_NEAR(position.pose.position.z, result.smoothed_goto_position.z, 0.1);
+  EXPECT_NEAR(position.pose.position.x, result.smoothed_goto_position.x(), 0.1);
+  EXPECT_NEAR(position.pose.position.y, result.smoothed_goto_position.y(), 0.1);
+  EXPECT_NEAR(position.pose.position.z, result.smoothed_goto_position.z(), 0.1);
 
   // THEN: we expect the smoothed goto position to be the position waypoint,
   // since
   // smoothing was enabled
-  EXPECT_EQ(result.smoothed_goto_position.x,
+  EXPECT_EQ(result.smoothed_goto_position.x(),
             result.position_waypoint.pose.position.x);
-  EXPECT_EQ(result.smoothed_goto_position.y,
+  EXPECT_EQ(result.smoothed_goto_position.y(),
             result.position_waypoint.pose.position.y);
-  EXPECT_EQ(result.smoothed_goto_position.z,
+  EXPECT_EQ(result.smoothed_goto_position.z(),
             result.position_waypoint.pose.position.z);
 
   // WHEN: we generate subsequent waypoints
@@ -139,40 +139,40 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     waypointResult result = getWaypoints();
 
     // THEN: we expect the goto location to point straight up
-    EXPECT_NEAR(position.pose.position.x, result.goto_position.x, 0.1);
-    EXPECT_NEAR(position.pose.position.y, result.goto_position.y, 0.1);
-    EXPECT_LT(position.pose.position.z, result.goto_position.z);
+    EXPECT_NEAR(position.pose.position.x, result.goto_position.x(), 0.1);
+    EXPECT_NEAR(position.pose.position.y, result.goto_position.y(), 0.1);
+    EXPECT_LT(position.pose.position.z, result.goto_position.z());
 
     // THEN: we expect the adapted goto position to be between goal and drone in
     // z
-    EXPECT_GT(result.adapted_goto_position.z, position.pose.position.z);
-    EXPECT_LT(result.adapted_goto_position.z, goal.pose.position.z);
+    EXPECT_GT(result.adapted_goto_position.z(), position.pose.position.z);
+    EXPECT_LT(result.adapted_goto_position.z(), goal.pose.position.z);
 
     // THEN: we expect the adapted goto position to be close to the drone
     // location in xy
-    EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x, 0.1);
-    EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y, 0.1);
+    EXPECT_NEAR(position.pose.position.x, result.adapted_goto_position.x(), 0.1);
+    EXPECT_NEAR(position.pose.position.y, result.adapted_goto_position.y(), 0.1);
 
     // THEN: we expect the smoothed goto position to be between the drone
     // and the adapted goto position in z
-    EXPECT_LT(position.pose.position.z, result.smoothed_goto_position.z);
-    EXPECT_GT(result.adapted_goto_position.z, result.smoothed_goto_position.z);
+    EXPECT_LT(position.pose.position.z, result.smoothed_goto_position.z());
+    EXPECT_GT(result.adapted_goto_position.z(), result.smoothed_goto_position.z());
 
     // THEN: we expect the smoothed goto position to be the position waypoint,
     // since
     // smoothing was enabled
-    EXPECT_EQ(result.smoothed_goto_position.x,
+    EXPECT_EQ(result.smoothed_goto_position.x(),
               result.position_waypoint.pose.position.x);
-    EXPECT_EQ(result.smoothed_goto_position.y,
+    EXPECT_EQ(result.smoothed_goto_position.y(),
               result.position_waypoint.pose.position.y);
-    EXPECT_EQ(result.smoothed_goto_position.z,
+    EXPECT_EQ(result.smoothed_goto_position.z(),
               result.position_waypoint.pose.position.z);
 
     // THEN: we expect the z component of the waypoint to move closer to goal.z
     float goto_to_goal =
-        std::abs(goal.pose.position.z - result.goto_position.z);
+        std::abs(goal.pose.position.z - result.goto_position.z());
     float adapted_to_goal =
-        std::abs(goal.pose.position.z - result.adapted_goto_position.z);
+        std::abs(goal.pose.position.z - result.adapted_goto_position.z());
     float pos_sp_to_goal = std::abs(goal.pose.position.z -
                                     result.position_waypoint.pose.position.z);
     ASSERT_LT(goto_to_goal, goto_to_goal_prev);
@@ -219,10 +219,9 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
 
     waypointResult result = getWaypoints();
     float goto_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.goto_position)).norm();
+        (toEigen(goal.pose.position) - result.goto_position).norm();
     float adapted_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.adapted_goto_position))
-            .norm();
+        (toEigen(goal.pose.position) - result.adapted_goto_position).norm();
     float pos_sp_to_goal = (toEigen(goal.pose.position) -
                             toEigen(result.position_waypoint.pose.position))
                                .norm();
@@ -267,7 +266,7 @@ TEST_F(WaypointGeneratorTests, goBackTest) {
   for (size_t i = 0; i < 10; i++) {
     waypointResult result = getWaypoints();
     float goto_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.goto_position)).norm();
+        (toEigen(goal.pose.position) - result.goto_position).norm();
     float pos_sp_to_goal = (toEigen(goal.pose.position) -
                             toEigen(result.position_waypoint.pose.position))
                                .norm();
@@ -322,9 +321,9 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
 
   // THEN: we expect the position waypoint to be the same as the current vehicle
   // position
-  EXPECT_NEAR(position.pose.position.x, result.goto_position.x, 0.001);
-  EXPECT_NEAR(position.pose.position.y, result.goto_position.y, 0.001);
-  EXPECT_NEAR(position.pose.position.z, result.goto_position.z, 0.001);
+  EXPECT_NEAR(position.pose.position.x, result.goto_position.x(), 0.001);
+  EXPECT_NEAR(position.pose.position.y, result.goto_position.y(), 0.001);
+  EXPECT_NEAR(position.pose.position.z, result.goto_position.z(), 0.001);
 
   EXPECT_NEAR(position.pose.position.x,
               result.position_waypoint.pose.position.x, 0.01);
@@ -361,10 +360,9 @@ TEST_F(WaypointGeneratorTests, costmapTest) {
   for (size_t i = 0; i < 10; i++) {
     waypointResult result = getWaypoints();
     float goto_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.goto_position)).norm();
+        (toEigen(goal.pose.position) - result.goto_position).norm();
     float adapted_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.adapted_goto_position))
-            .norm();
+        (toEigen(goal.pose.position) - result.adapted_goto_position).norm();
     float pos_sp_to_goal = (toEigen(goal.pose.position) -
                             toEigen(result.position_waypoint.pose.position))
                                .norm();
@@ -417,10 +415,9 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
 
     waypointResult result = getWaypoints();
     float goto_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.goto_position)).norm();
+        (toEigen(goal.pose.position) - result.goto_position).norm();
     float adapted_to_goal =
-        (toEigen(goal.pose.position) - toEigen(result.adapted_goto_position))
-            .norm();
+        (toEigen(goal.pose.position) - result.adapted_goto_position).norm();
     float pos_sp_to_goal = (toEigen(goal.pose.position) -
                             toEigen(result.position_waypoint.pose.position))
                                .norm();

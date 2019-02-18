@@ -26,19 +26,18 @@ void WaypointGenerator::calculateWaypoint() {
       if (last_wp_type_ != hover) {
         hover_position_ = position_;
       }
-      output_.goto_position = toPoint(hover_position_);
-      ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x,
-                output_.goto_position.y, output_.goto_position.z);
+      output_.goto_position = hover_position_;
+      ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(),
+                output_.goto_position.y(), output_.goto_position.z());
       getPathMsg();
       break;
     }
     case costmap: {
       PolarPoint p_pol(planner_info_.costmap_direction_e,
                        planner_info_.costmap_direction_z, 1.0);
-      output_.goto_position =
-          toPoint(polarToCartesian(p_pol, position_));
-      ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
-                output_.goto_position.y, output_.goto_position.z);
+      output_.goto_position = polarToCartesian(p_pol, position_);
+      ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x(),
+                output_.goto_position.y(), output_.goto_position.z());
       getPathMsg();
       break;
     }
@@ -57,8 +56,7 @@ void WaypointGenerator::calculateWaypoint() {
           since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
-        output_.goto_position =
-            toPoint(polarToCartesian(p_pol, position_));
+        output_.goto_position = polarToCartesian(p_pol, position_);
       } else {
         ROS_DEBUG("[WG] No valid tree, going straight");
         goStraight();
@@ -123,11 +121,11 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
 // if there isn't any obstacle in front of the UAV, increase cruising speed
 void WaypointGenerator::goStraight() {
   Eigen::Vector3f dir = (goal_ - position_).normalized();
-  output_.goto_position = toPoint(position_ + dir);
+  output_.goto_position = position_ + dir;
 
   ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].",
-            output_.goto_position.x, output_.goto_position.y,
-            output_.goto_position.z);
+            output_.goto_position.x(), output_.goto_position.y(),
+            output_.goto_position.z());
 }
 
 void WaypointGenerator::backOff() {
@@ -136,8 +134,8 @@ void WaypointGenerator::backOff() {
   dir.normalize();
   dir *= 0.5f;
 
-  output_.goto_position = toPoint(position_ + dir);
-  output_.goto_position.z = planner_info_.back_off_start_point.z();
+  output_.goto_position = position_ + dir;
+  output_.goto_position.z() = planner_info_.back_off_start_point.z();
 
   output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
@@ -165,7 +163,7 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
 void WaypointGenerator::reachGoalAltitudeFirst() {
   // goto_position is a unit vector pointing straight up/down from current
   // location
-  output_.goto_position = toPoint(position_);
+  output_.goto_position = position_;
   goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
   goal_.y() = position_.y();
 
@@ -173,9 +171,9 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   if (is_airborne_) {
     // Ascend/Descend to goal altitude
     if (position_.z() <= goal_.z()) {
-      output_.goto_position.z += 1.0f;
+      output_.goto_position.z() += 1.0f;
     } else {
-      output_.goto_position.z -= 1.0f;
+      output_.goto_position.z() -= 1.0f;
     }
   }
 }
@@ -193,8 +191,7 @@ void WaypointGenerator::smoothWaypoint(float dt) {
                                   smoothing_speed_z_);
   const Eigen::Array3f D_constant = 2 * P_constant.sqrt();
 
-  const Eigen::Vector3f desired_location =
-      toEigen(output_.adapted_goto_position);
+  const Eigen::Vector3f desired_location = output_.adapted_goto_position;
 
   // Prevent overshoot when drone is close to goal
   const Eigen::Vector3f desired_velocity =
@@ -216,11 +213,11 @@ void WaypointGenerator::smoothWaypoint(float dt) {
 
   smoothed_goto_location_velocity_ += (p + d) * dt;
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
-  output_.smoothed_goto_position = toPoint(smoothed_goto_location_);
+  output_.smoothed_goto_position = smoothed_goto_location_;
 
   ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
-            output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
-            output_.smoothed_goto_position.z, dt);
+            output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
+            output_.smoothed_goto_position.z(), dt);
 }
 
 void WaypointGenerator::nextSmoothYaw(float dt) {
@@ -257,7 +254,7 @@ void WaypointGenerator::adaptSpeed() {
   // If the goal is so close, that the speed-adapted way point would overreach
   Eigen::Vector3f pose_to_goal = goal_ - position_;
   if (pose_to_goal.norm() < speed_) {
-    output_.adapted_goto_position = toPoint(goal_);
+    output_.adapted_goto_position = goal_;
 
     // First time we reach this goal, remember the heading
     if (!std::isfinite(heading_at_goal_)) {
@@ -279,19 +276,17 @@ void WaypointGenerator::adaptSpeed() {
     }
 
     // Scale the pose_to_wp by the speed
-    Eigen::Vector3f pose_to_wp =
-        toEigen(output_.goto_position) - position_;
+    Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
     pose_to_wp *= speed_;
 
     heading_at_goal_ = NAN;
-    output_.adapted_goto_position =
-        toPoint(position_ + pose_to_wp);
+    output_.adapted_goto_position = position_ + pose_to_wp;
   }
 
   ROS_INFO("[WG] Speed adapted WP: [%f %f %f].",
-           output_.adapted_goto_position.x, output_.adapted_goto_position.y,
-           output_.adapted_goto_position.z);
+           output_.adapted_goto_position.x(), output_.adapted_goto_position.y(),
+           output_.adapted_goto_position.z());
 }
 
 // create the message that is sent to the UAV
@@ -310,8 +305,8 @@ void WaypointGenerator::getPathMsg() {
   smoothWaypoint(dt);
 
   ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
-            output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
-            output_.smoothed_goto_position.z);
+            output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
+            output_.smoothed_goto_position.z());
   output_.position_waypoint =
       createPoseMsg(output_.smoothed_goto_position, setpoint_yaw_);
   transformPositionToVelocityWaypoint();
