@@ -98,11 +98,10 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
                                     bool stay, bool is_airborne) {
-  pose_ = act_pose;
   position_ = toEigen(act_pose.pose.position);
   velocity_ = toEigen(vel.twist.linear);
   goal_ = toEigen(goal.pose.position);
-  curr_yaw_ = static_cast<float>(tf::getYaw(pose_.pose.orientation));
+  curr_yaw_ = static_cast<float>(tf::getYaw(act_pose.pose.orientation));
 
   if (stay) {
     planner_info_.waypoint_type = hover;

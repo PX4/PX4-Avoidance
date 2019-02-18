@@ -9,9 +9,6 @@
 
 #include <Eigen/Dense>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
