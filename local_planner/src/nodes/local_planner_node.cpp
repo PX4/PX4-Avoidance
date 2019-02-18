@@ -598,8 +598,8 @@ void LocalPlannerNode::publishTree() {
 
   path_marker.points.reserve(path_node_positions_.size() * 2);
   for (size_t i = 1; i < path_node_positions_.size(); i++) {
-    path_marker.points.push_back(path_node_positions_[i - 1]);
-    path_marker.points.push_back(path_node_positions_[i]);
+    path_marker.points.push_back(toPoint(path_node_positions_[i - 1]));
+    path_marker.points.push_back(toPoint(path_node_positions_[i]));
   }
 
   complete_tree_pub_.publish(tree_marker);

@@ -114,9 +114,9 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionTargetCost) {
   tree_.back().last_z_ = 90.f;
 
   // last path equal to the given nodes
-  std::vector<geometry_msgs::Point> path_node_positions_;
-  path_node_positions_.push_back(toPoint(node1));
-  path_node_positions_.push_back(toPoint(tree_root));
+  std::vector<Eigen::Vector3f> path_node_positions_;
+  path_node_positions_.push_back(node1);
+  path_node_positions_.push_back(tree_root);
 
   // WHEN: we calculate the cost of node 1 for two different goal locations
   setGoal(toPoint(goal1));
@@ -151,15 +151,15 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionOldPathCost) {
   tree_.back().last_z_ = 90.f;
 
   // last path case 1: equal to the current nodes
-  std::vector<geometry_msgs::Point> path_node_positions1;
-  path_node_positions1.push_back(toPoint(node1));
-  path_node_positions1.push_back(toPoint(tree_root));
+  std::vector<Eigen::Vector3f> path_node_positions1;
+  path_node_positions1.push_back(node1);
+  path_node_positions1.push_back(tree_root);
 
   // last path case 2: different from current nodes
   Eigen::Vector3f node1_old(0.5f, 0.5f, 0.f);
-  std::vector<geometry_msgs::Point> path_node_positions2;
-  path_node_positions2.push_back(toPoint(node1_old));
-  path_node_positions2.push_back(toPoint(tree_root));
+  std::vector<Eigen::Vector3f> path_node_positions2;
+  path_node_positions2.push_back(node1_old);
+  path_node_positions2.push_back(tree_root);
 
   // WHEN: we calculate the cost of node 1 for two different old paths
   path_node_positions_ = path_node_positions1;
@@ -202,8 +202,8 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionYawCost) {
   // last path straight ahead
   Eigen::Vector3f node_old(1.f, 0.f, 0.f);
   path_node_positions_.clear();
-  path_node_positions_.push_back(toPoint(node_old));
-  path_node_positions_.push_back(toPoint(tree_root));
+  path_node_positions_.push_back(node_old);
+  path_node_positions_.push_back(tree_root);
 
   // WHEN: we calculate the cost for both nodes as the drone looks straight
   // ahead

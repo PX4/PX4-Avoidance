@@ -512,7 +512,7 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 
 bool getDirectionFromTree(
     PolarPoint& p_pol,
-    const std::vector<geometry_msgs::Point>& path_node_positions,
+    const std::vector<Eigen::Vector3f>& path_node_positions,
     const Eigen::Vector3f& position, const Eigen::Vector3f& goal) {
   int size = path_node_positions.size();
   bool tree_available = true;
@@ -522,15 +522,11 @@ bool getDirectionFromTree(
 
     // extend path with a node at the end in goal direction (for smoother
     // transition to direct flight)
-    float node_distance =
-        (toEigen(path_node_positions[0]) - toEigen(path_node_positions[1]))
-            .norm();
+    float node_distance = (path_node_positions[0] - path_node_positions[1]).norm();
     Eigen::Vector3f dir_last_node_to_goal =
-        (goal - toEigen(path_node_positions[0])).normalized();
-    geometry_msgs::Point goal_node =
-        toPoint(toEigen(path_node_positions[0]) +
-                node_distance * dir_last_node_to_goal);
-    std::vector<geometry_msgs::Point> path_node_positions_extended;
+        (goal - path_node_positions[0]).normalized();
+    Eigen::Vector3f goal_node = path_node_positions[0] + node_distance * dir_last_node_to_goal;
+    std::vector<Eigen::Vector3f> path_node_positions_extended;
     path_node_positions_extended.push_back(goal_node);
     path_node_positions_extended.insert(path_node_positions_extended.end(),
                                         path_node_positions.begin(),
@@ -550,7 +546,7 @@ bool getDirectionFromTree(
 
     for (int i = 0; i < size_extended; i++) {
       distances.push_back(
-          (position - toEigen(path_node_positions_extended[i])).norm());
+          (position - path_node_positions_extended[i]).norm());
       if (distances[i] < min_dist) {
         second_min_dist_idx = min_dist_idx;
         second_min_dist = min_dist;
@@ -580,8 +576,8 @@ bool getDirectionFromTree(
       float l_frac = l_front / node_distance;
 
       Eigen::Vector3f mean_point =
-          (1.f - l_frac) * toEigen(path_node_positions_extended[wp_idx - 1]) +
-          l_frac * toEigen(path_node_positions_extended[wp_idx]);
+          (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] +
+          l_frac * path_node_positions_extended[wp_idx];
 
       p_pol = cartesianToPolar(mean_point, position);
       p_pol.r = 0.0f;

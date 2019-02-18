@@ -228,7 +228,7 @@ class LocalPlanner {
   * @param[in]     path_node_positions, velocity message coming from the FCU
   **/
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-               std::vector<geometry_msgs::Point> &path_node_positions);
+               std::vector<Eigen::Vector3f> &path_node_positions);
   /**
   * @brief     setter method to send obstacle distance information to FCU
   * @param[in]     obstacle_distance, obstacle distance message

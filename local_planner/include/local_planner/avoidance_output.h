@@ -31,7 +31,7 @@ struct avoidanceOutput {
                               // cell
   float
       costmap_direction_z;  // azimuth angle of the minimum cost histogram cell
-  std::vector<geometry_msgs::Point> path_node_positions;  // array of tree nodes
+  std::vector<Eigen::Vector3f> path_node_positions;  // array of tree nodes
                                                           // position, each node
                                                           // is the minimum cost
                                                           // node for each tree
