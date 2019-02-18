@@ -25,13 +25,13 @@ class WaypointGeneratorTests : public ::testing::Test,
     avoidance_output.velocity_around_obstacles = 1.0;
     avoidance_output.velocity_far_from_obstacles = 3.0;
     avoidance_output.last_path_time = ros::Time(0.28);
-    avoidance_output.back_off_point.x = 0.4;
-    avoidance_output.back_off_point.y = 0.6;
-    avoidance_output.back_off_point.z = 2.2;
+    avoidance_output.back_off_point.x() = 0.4f;
+    avoidance_output.back_off_point.y() = 0.6f;
+    avoidance_output.back_off_point.z() = 2.2f;
 
-    avoidance_output.back_off_start_point.x = 0.0;
-    avoidance_output.back_off_start_point.y = 0.0;
-    avoidance_output.back_off_start_point.z = 2.0;
+    avoidance_output.back_off_start_point.x() = 0.0f;
+    avoidance_output.back_off_start_point.y() = 0.0f;
+    avoidance_output.back_off_start_point.z() = 2.0f;
 
     PolarPoint p_pol = histogramIndexToPolar(15, 35, 6, 0.0);
     avoidance_output.costmap_direction_e = p_pol.e;
