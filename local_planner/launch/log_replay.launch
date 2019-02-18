@@ -33,7 +33,6 @@
        <remap from="/mavros/trajectory/desired" to="/rosbag/mavros/trajectory/desired"/>
        <remap from="/mavros/trajectory/generated" to="/rosbag/mavros/trajectory/generated"/>
        <remap from="/memory_usage" to="/rosbag/memory_usage"/>
-       <remap from="/offboard_pose" to="/rosbag/offboard_pose"/>
        <remap from="/original_waypoint" to="/rosbag/original_waypoint"/>
        <remap from="/path_actual" to="/rosbag/path_actual"/>
        <remap from="/path_waypoint" to="/rosbag/path_waypoint"/>

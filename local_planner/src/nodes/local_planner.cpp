@@ -28,13 +28,6 @@ void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
     take_off_pose_.pose.orientation = msg.pose.orientation;
     reach_altitude_ = false;
   }
-
-  if (!offboard_ && !mission_) {
-    offboard_pose_.header = msg.header;
-    offboard_pose_.pose.position = msg.pose.position;
-    offboard_pose_.pose.orientation = msg.pose.orientation;
-  }
-
 }
 
 // set parameters changed by dynamic rconfigure
@@ -532,7 +525,6 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.min_dist_backoff = min_dist_backoff_;
 
   out.take_off_pose = take_off_pose_;
-  out.offboard_pose = offboard_pose_;
 
   out.costmap_direction_e = costmap_direction_e_;
   out.costmap_direction_z = costmap_direction_z_;

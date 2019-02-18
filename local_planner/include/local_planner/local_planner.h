@@ -167,7 +167,6 @@ class LocalPlanner {
   float ground_distance_ = 2.0;
 
   geometry_msgs::PoseStamped take_off_pose_;
-  geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_;
 
