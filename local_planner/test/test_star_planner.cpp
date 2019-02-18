@@ -18,7 +18,7 @@ class StarPlannerTests : public ::testing::Test {
   float obstacle_min_x = 0.0f;
   float obstacle_max_x = 2.5f;
   float obstacle_y = 2.0f;
-  geometry_msgs::Point goal;
+  Eigen::Vector3f goal;
   Eigen::Vector3f position;
 
 
@@ -35,14 +35,14 @@ class StarPlannerTests : public ::testing::Test {
     position.y() = 0.4f;
     position.z() = 4.0f;
 
-    goal.x = 2.0;
-    goal.y = 14.0;
-    goal.z = 4.0;
+    goal.x() = 2.0f;
+    goal.y() = 14.0f;
+    goal.z() = 4.0f;
 
     pcl::PointCloud<pcl::PointXYZ> cloud;
     for (float x = obstacle_min_x; x < obstacle_max_x; x += 0.05f) {
-      for (float z = goal.z - obstacle_half_height;
-           z < goal.z + obstacle_half_height; z += 0.05f) {
+      for (float z = goal.z() - obstacle_half_height;
+           z < goal.z() + obstacle_half_height; z += 0.05f) {
         cloud.push_back(pcl::PointXYZ(x, obstacle_y, z));
       }
     }
@@ -83,8 +83,7 @@ TEST_F(StarPlannerTests, buildTree) {
 
     // THEN: we expect the distance between the vehicle and the goal to shorten
     // at each iteration
-    float tmp_dist_to_goal =
-        (toEigen(goal) - position).norm();
+    float tmp_dist_to_goal = (goal - position).norm();
     ASSERT_LT(tmp_dist_to_goal, dist_to_goal);
     dist_to_goal = tmp_dist_to_goal;
 
@@ -118,10 +117,10 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionTargetCost) {
   path_node_positions_.push_back(tree_root);
 
   // WHEN: we calculate the cost of node 1 for two different goal locations
-  setGoal(toPoint(goal1));
+  setGoal(goal1);
   tree_age_ = 1;
   double cost1 = treeCostFunction(1);
-  setGoal(toPoint(goal2));
+  setGoal(goal2);
   tree_age_ = 1;
   double cost2 = treeCostFunction(1);
 
@@ -134,7 +133,7 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionOldPathCost) {
   // GIVEN: a tree, a goal and the last path
   StarPlanner star_planner;
   Eigen::Vector3f goal(5.f, 0.f, 0.f);
-  setGoal(toPoint(goal));
+  setGoal(goal);
   tree_age_ = 1;
 
   // insert tree root
@@ -175,7 +174,7 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionYawCost) {
   // GIVEN: a tree, a goal and the last path
   StarPlanner star_planner;
   Eigen::Vector3f goal(5.f, 0.f, 0.f);
-  setGoal(toPoint(goal));
+  setGoal(goal);
   tree_age_ = 1;
 
   // insert tree root
@@ -270,10 +269,10 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionSmoothingCost) {
   Eigen::Vector3f goal3 = polarToCartesian(goal3_pol, node1);
 
   // WHEN: we calculate the cost for nodes 2, 3
-  setGoal(toPoint(goal2));
+  setGoal(goal2);
   tree_[0].yaw_ = 100;
   double cost2 = treeCostFunction(2);
-  setGoal(toPoint(goal3));
+  setGoal(goal3);
   tree_[0].yaw_ = 110;
   double cost3 = treeCostFunction(3);
 

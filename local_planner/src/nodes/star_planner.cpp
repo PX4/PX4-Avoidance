@@ -38,8 +38,8 @@ void StarPlanner::setCloud(
   pointcloud_ = cropped_cloud;
 }
 
-void StarPlanner::setGoal(const geometry_msgs::Point& goal) {
-  goal_ = toEigen(goal);
+void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
+  goal_ = goal;
   tree_age_ = 1000;
 }
 
