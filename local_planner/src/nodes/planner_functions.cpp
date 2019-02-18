@@ -380,7 +380,7 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
                    costParameters cost_params, bool only_yawed) {
   PolarPoint p_pol(e_angle, z_angle, 1.0f);
   Eigen::Vector3f projected_candidate =
-      polarToCartesian(p_pol, toPoint(position));
+      polarToCartesian(p_pol, position);
   Eigen::Vector3f projected_goal = goal;
   Eigen::Vector3f projected_last_wp = last_sent_waypoint;
 

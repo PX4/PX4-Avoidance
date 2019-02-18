@@ -168,7 +168,7 @@ void StarPlanner::buildLookAheadTree() {
 
         // check if another close node has been added
         Eigen::Vector3f node_location =
-            polarToCartesian(p_pol, toPoint(origin_position));
+            polarToCartesian(p_pol, origin_position);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();

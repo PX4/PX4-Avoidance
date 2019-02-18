@@ -187,8 +187,8 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionYawCost) {
   // insert two nodes to both sides
   PolarPoint node1_pol(0, 110, 1);  // to the right
   PolarPoint node2_pol(0, 70, 1);   // to the left
-  Eigen::Vector3f node1 = polarToCartesian(node1_pol, toPoint(tree_root));
-  Eigen::Vector3f node2 = polarToCartesian(node2_pol, toPoint(tree_root));
+  Eigen::Vector3f node1 = polarToCartesian(node1_pol, tree_root);
+  Eigen::Vector3f node2 = polarToCartesian(node2_pol, tree_root);
 
   tree_.push_back(TreeNode(0, 1, node1));
   tree_.back().last_e_ = node1_pol.e;
@@ -252,8 +252,8 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionSmoothingCost) {
   // insert two more nodes with node 1 as origin
   PolarPoint node2_pol(0, 100, 1);
   PolarPoint node3_pol(0, 110, 1);
-  Eigen::Vector3f node2 = polarToCartesian(node2_pol, toPoint(node1));
-  Eigen::Vector3f node3 = polarToCartesian(node3_pol, toPoint(node1));
+  Eigen::Vector3f node2 = polarToCartesian(node2_pol, node1);
+  Eigen::Vector3f node3 = polarToCartesian(node3_pol, node1);
 
   tree_.push_back(TreeNode(1, 2, node2));
   tree_.back().last_e_ = node2_pol.e;
@@ -266,8 +266,8 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionSmoothingCost) {
   // calculate two goal positions in direction of the nodes 2, 3
   PolarPoint goal2_pol(0, 100, 5);
   PolarPoint goal3_pol(0, 110, 5);
-  Eigen::Vector3f goal2 = polarToCartesian(goal2_pol, toPoint(node1));
-  Eigen::Vector3f goal3 = polarToCartesian(goal3_pol, toPoint(node1));
+  Eigen::Vector3f goal2 = polarToCartesian(goal2_pol, node1);
+  Eigen::Vector3f goal3 = polarToCartesian(goal3_pol, node1);
 
   // WHEN: we calculate the cost for nodes 2, 3
   setGoal(toPoint(goal2));
