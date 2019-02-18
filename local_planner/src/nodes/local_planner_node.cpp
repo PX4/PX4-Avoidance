@@ -366,8 +366,8 @@ void LocalPlannerNode::publishReachHeight() {
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = local_planner_->take_off_pose_.pose.position.x;
-  m.pose.position.y = local_planner_->take_off_pose_.pose.position.y;
+  m.pose.position.x = local_planner_->take_off_pose_.x();
+  m.pose.position.y = local_planner_->take_off_pose_.y();
   m.pose.position.z = local_planner_->starting_height_;
   m.pose.orientation.x = 0.0;
   m.pose.orientation.y = 0.0;
@@ -399,7 +399,7 @@ void LocalPlannerNode::publishReachHeight() {
   t.color.b = 0.0;
   t.lifetime = ros::Duration();
   t.id = 0;
-  t.pose.position = local_planner_->take_off_pose_.pose.position;
+  t.pose.position = toPoint(local_planner_->take_off_pose_);
   takeoff_pose_pub_.publish(t);
 }
 
