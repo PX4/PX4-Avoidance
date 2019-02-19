@@ -75,7 +75,7 @@ TEST_F(StarPlannerTests, buildTree) {
       Eigen::Vector3f n = node.getPosition();
       bool node_inside_obstacle =
           n.x() > obstacle_min_x && n.x() < obstacle_max_x &&
-          n.y() > obstacle_y - 0.1f && n.y() < obstacle_y + 0.1 &&
+          n.y() > obstacle_y - 0.1f && n.y() < obstacle_y + 0.1f &&
           n.z() > 4.0f - obstacle_half_height &&
           n.z() < 4.0f + obstacle_half_height;
       EXPECT_FALSE(node_inside_obstacle);
@@ -120,10 +120,10 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionTargetCost) {
   // WHEN: we calculate the cost of node 1 for two different goal locations
   setGoal(goal1);
   tree_age_ = 1;
-  double cost1 = treeCostFunction(1);
+  float cost1 = treeCostFunction(1);
   setGoal(goal2);
   tree_age_ = 1;
-  double cost2 = treeCostFunction(1);
+  float cost2 = treeCostFunction(1);
 
   // THEN: The cost1 should be less than cost2, as in case 1 the node heads
   // closer to the goal
@@ -162,9 +162,9 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionOldPathCost) {
 
   // WHEN: we calculate the cost of node 1 for two different old paths
   path_node_positions_ = path_node_positions1;
-  double cost1 = treeCostFunction(1);
+  float cost1 = treeCostFunction(1);
   path_node_positions_ = path_node_positions2;
-  double cost2 = treeCostFunction(1);
+  float cost2 = treeCostFunction(1);
 
   // THEN: The cost1 should be less than cost2, as in case 1 the node lies
   // closer to the path of the last iteration
@@ -206,20 +206,20 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionYawCost) {
 
   // WHEN: we calculate the cost for both nodes as the drone looks straight
   // ahead
-  double cost1_straight = treeCostFunction(1);
-  double cost2_straight = treeCostFunction(2);
+  float cost1_straight = treeCostFunction(1);
+  float cost2_straight = treeCostFunction(2);
 
   // WHEN: we calculate the cost for both nodes as the drone looks to the right
   tree_[0].yaw_ = 100;  // drone looks 10 degrees to the right
   tree_[0].last_z_ = tree_[0].yaw_;
-  double cost1_right = treeCostFunction(1);
-  double cost2_right = treeCostFunction(2);
+  float cost1_right = treeCostFunction(1);
+  float cost2_right = treeCostFunction(2);
 
   // WHEN: we calculate the cost for both nodes as the drone looks to the left
   tree_[0].yaw_ = 80;  // drone looks 10 degrees to the right
   tree_[0].last_z_ = tree_[0].yaw_;
-  double cost1_left = treeCostFunction(1);
-  double cost2_left = treeCostFunction(2);
+  float cost1_left = treeCostFunction(1);
+  float cost2_left = treeCostFunction(2);
 
   // THEN: case 1: drone looks straight ahead, nodes symmetrical to the left and
   // right should have same costs
@@ -272,10 +272,10 @@ TEST_F(StarPlannerBasicTests, treeCostFunctionSmoothingCost) {
   // WHEN: we calculate the cost for nodes 2, 3
   setGoal(goal2);
   tree_[0].yaw_ = 100;
-  double cost2 = treeCostFunction(2);
+  float cost2 = treeCostFunction(2);
   setGoal(goal3);
   tree_[0].yaw_ = 110;
-  double cost3 = treeCostFunction(3);
+  float cost3 = treeCostFunction(3);
 
   // THEN: the path node with the more curved path (node 3) should be more
   // expensive

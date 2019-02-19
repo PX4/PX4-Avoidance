@@ -3,6 +3,7 @@
 #include <cmath>
 
 #include "../include/local_planner/local_planner.h"
+#include "../include/local_planner/common.h"
 
 // Stateless tests:
 // Create some hardcoded scan data of obstacles in different positions
@@ -75,13 +76,13 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   float shift = 0.f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  for (float y = min_y; y <= max_y; y += 0.01) {
-    for (float z = -1; z <= 1; z += 0.1) {
-      cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
+  for (float y = min_y; y <= max_y; y += 0.01f) {
+    for (float z = -1.f; z <= 1.f; z += 0.1f) {
+      cloud.push_back(pcl::PointXYZ(distance, y, z + 30.f));
     }
   }
   planner.complete_cloud_.push_back(std::move(cloud));
@@ -127,12 +128,12 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
   float shift = -0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  for (float y = min_y; y <= max_y; y += 0.01) {
-    for (float z = -1; z <= 1; z += 0.1) {
+  for (float y = min_y; y <= max_y; y += 0.01f) {
+    for (float z = -1.f; z <= 1.f; z += 0.1f) {
       cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
     }
   }
@@ -174,13 +175,13 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
   float shift = 0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI / 180.f / 2.f);
+  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
-  for (float y = min_y; y <= max_y; y += 0.01) {
-    for (float z = -1; z <= 1; z += 0.1) {
-      cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
+  for (float y = min_y; y <= max_y; y += 0.01f) {
+    for (float z = -1.f; z <= 1.f; z += 0.1f) {
+      cloud.push_back(pcl::PointXYZ(distance, y, z + 30.f));
     }
   }
   planner.complete_cloud_.push_back(std::move(cloud));
