@@ -57,8 +57,10 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   location.pose.position.z = 0;
   float distance = 1.0f;
 
-  std::vector<float> e_angle_filled = {-89.9, -30, 0, 20, 40, 89.9};
-  std::vector<float> z_angle_filled = {-180, -50, 0, 59, 100, 175};
+  std::vector<float> e_angle_filled = {-89.9f, -30.0f, 0.0f,
+                                       20.0f,  40.0f,  89.9f};
+  std::vector<float> z_angle_filled = {-180.0f, -50.0f, 0.0f,
+                                       59.0f,   100.0f, 175.0f};
   std::vector<Eigen::Vector3f> middle_of_cell;
   std::vector<int> e_index, z_index;
 
@@ -249,14 +251,15 @@ TEST(PlannerFunctions, testDirectionTree) {
                                                                  n0};
 
   PolarPoint p, p1, p2;
-  Eigen::Vector3f postion(0.2, 0.3, 1.5);
-  Eigen::Vector3f postion1(1.1, 2.3, 2.5);
-  Eigen::Vector3f postion2(5.4, 2.0, 2.5);
+  Eigen::Vector3f postion(0.2f, 0.3f, 1.5f);
+  Eigen::Vector3f postion1(1.1f, 2.3f, 2.5f);
+  Eigen::Vector3f postion2(5.4f, 2.0f, 2.5f);
+  Eigen::Vector3f goal(10.f, 5.f, 2.5f);
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getDirectionFromTree(p, path_node_positions, postion);
-  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1);
-  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2);
+  bool res = getDirectionFromTree(p, path_node_positions, postion, goal);
+  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1, goal);
+  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2, goal);
 
   // THEN: we expect a direction in between node n1 and n2 for position, between
   // node n3 and n4 for position1, and not to get an available tree for the
@@ -441,9 +444,9 @@ TEST(PlannerFunctions, smoothPolarMatrix) {
 
 TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // GIVEN: a position, goal and an empty histogram
-  Eigen::Vector3f position(0, 0, 0);
-  Eigen::Vector3f goal(0, 5, 0);
-  Eigen::Vector3f last_sent_waypoint(0, 1, 0);
+  Eigen::Vector3f position(0.f, 0.f, 0.f);
+  Eigen::Vector3f goal(0.f, 5.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
   costParameters cost_params;
   cost_params.goal_cost_param = 2.f;
   cost_params.smooth_cost_param = 1.5f;

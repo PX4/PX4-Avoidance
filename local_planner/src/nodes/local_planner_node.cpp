@@ -86,6 +86,8 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/path_actual", 1);
   path_waypoint_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
+  path_adapted_waypoint_pub_ =
+      nh_.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
@@ -330,6 +332,26 @@ void LocalPlannerNode::publishPaths() {
   path_waypoint_marker.points.push_back(newest_waypoint_position_);
   path_waypoint_pub_.publish(path_waypoint_marker);
 
+  // publish path set by calculated waypoints
+  visualization_msgs::Marker path_adapted_waypoint_marker;
+  path_adapted_waypoint_marker.header.frame_id = "local_origin";
+  path_adapted_waypoint_marker.header.stamp = ros::Time::now();
+  path_adapted_waypoint_marker.id = path_length_;
+  path_adapted_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
+  path_adapted_waypoint_marker.action = visualization_msgs::Marker::ADD;
+  path_adapted_waypoint_marker.pose.orientation.w = 1.0;
+  path_adapted_waypoint_marker.scale.x = 0.02;
+  path_adapted_waypoint_marker.color.a = 1.0;
+  path_adapted_waypoint_marker.color.r = 0.0;
+  path_adapted_waypoint_marker.color.g = 0.0;
+  path_adapted_waypoint_marker.color.b = 1.0;
+
+  path_adapted_waypoint_marker.points.push_back(
+      last_adapted_waypoint_position_);
+  path_adapted_waypoint_marker.points.push_back(
+      newest_adapted_waypoint_position_);
+  path_adapted_waypoint_pub_.publish(path_adapted_waypoint_marker);
+
   path_length_++;
 }
 
@@ -545,6 +567,8 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
 
   last_waypoint_position_ = newest_waypoint_position_;
   newest_waypoint_position_ = result.smoothed_goto_position;
+  last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
+  newest_adapted_waypoint_position_ = result.adapted_goto_position;
   publishPaths();
   publishSetpoint(result.velocity_waypoint, result.waypoint_type);
 
