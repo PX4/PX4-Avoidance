@@ -199,11 +199,21 @@ bool WaypointGenerator::withinGoalRadius() {
 
 // when taking off, first publish waypoints to reach the goal altitude
 void WaypointGenerator::reachGoalAltitudeFirst() {
-  // goto_position is a unit vector pointing straight up from current location
+  // goto_position is a unit vector pointing straight up/down from current location
   output_.goto_position = pose_.pose.position;
+  goal_.x() = pose_.pose.position.x; // Needed for adaptSpeed()
+  goal_.y() = pose_.pose.position.y;
+
+  // Only move the setpoint if drone is in the air
   if(airborne_){
-      output_.goto_position.z += 1.0f;
+    // Ascend/Descend to goal altitude
+      if(pose_.pose.position.z <= goal_.z()){
+        output_.goto_position.z += 1.0f;
+      }else{
+        output_.goto_position.z -= 1.0f;
+      }
   }
+  ROS_ERROR("Goal altitude: %f", goal_.z());
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {
