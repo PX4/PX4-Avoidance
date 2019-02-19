@@ -463,7 +463,10 @@ bool getDirectionFromTree(
                                         path_node_positions.end());
     int size_extended = path_node_positions_extended.size();
 
-    // find path nodes between which the drone is currently located
+    // find path nodes between which the drone is currently located:
+    // a vector with the distances of each node to the drone is generated
+    // the indices of the nodes with smallest and next smallest distance are
+    // found
     int min_dist_idx = 0;
     int second_min_dist_idx = 0;
     float min_dist = HUGE_VAL;
@@ -484,11 +487,15 @@ bool getDirectionFromTree(
         second_min_dist_idx = i;
       }
     }
+
+    // the drone is located between the two nodes(min_dist_idx,
+    // second_min_dist_idx),
+    // wp_idx describes the node further ahead in the path
     int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
 
-    if (min_dist > 3.0 ||
-        wp_idx ==
-            0) {  // too far away from tree or drone already passed the tree
+    // if drone is too far away from tree or already at last node -> don't use
+    // tree
+    if (min_dist > 3.0f || wp_idx == 0) {
       tree_available = false;
     } else {
       float cos_alpha = (node_distance * node_distance +
