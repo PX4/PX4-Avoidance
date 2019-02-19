@@ -51,6 +51,7 @@ class WaypointGenerator {
   float smoothing_speed_z_{30.};
 
   bool reached_goal_;
+  bool airborne_ = false;
   float last_yaw_;
   float yaw_reached_goal_;
   float new_yaw_;
@@ -150,7 +151,7 @@ class WaypointGenerator {
   **/
   void updateState(const geometry_msgs::PoseStamped& act_pose,
                    const geometry_msgs::PoseStamped& goal,
-                   const geometry_msgs::TwistStamped& vel, bool stay);
+                   const geometry_msgs::TwistStamped& vel, bool stay, bool airborne);
 
   /**
   * @brief set the responsiveness of the smoothing

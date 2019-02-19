@@ -474,13 +474,10 @@ void LocalPlannerNode::publishBox() {
 }
 
 void LocalPlannerNode::publishWaypoints(bool hover) {
-  // Don't publish waypoints if the drone isn't armed or mission has been
-  // enabled. Need second check to avoid race condition
-  if (!armed_ && !mission_) {
-    return;
-  }
 
-  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover);
+  bool airborne = armed_ && (mission_ || offboard_ || hover);
+
+  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover, airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
