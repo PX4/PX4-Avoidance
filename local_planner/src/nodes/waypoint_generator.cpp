@@ -212,7 +212,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 void WaypointGenerator::smoothWaypoint(float dt) {
   // In first iteration (very small or invalid dt), initialize the smoothing
   // to start at the current drone location
-  if (dt <= 0.01) {
+  if (dt <= 0.01f) {
     smoothed_goto_location_ = toEigen(pose_.pose.position);
     output_.smoothed_goto_position =
         pose_.pose.position;  // needs to be local position!
@@ -220,21 +220,15 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   }
 
   // If the smoothing speed is set to zero, dont smooth, aka use adapted
-  // waypoint
-  // directly
-  if (smoothing_speed_xy_ < 0.01 || smoothing_speed_xy_ < 0.01) {
+  // waypoint directly
+  if (smoothing_speed_xy_ < 0.01f || smoothing_speed_z_ < 0.01f) {
     output_.smoothed_goto_position = output_.adapted_goto_position;
     return;
   }
 
   // Smooth differently in xz than in z
-  const float P_constant_xy = smoothing_speed_xy_;
-  const float P_constant_z = smoothing_speed_z_;
-  const float D_constant_xy =
-      2.f * std::sqrt(P_constant_xy);  // critically damped
-  const float D_constant_z = 2.f * std::sqrt(P_constant_z);
-  const Eigen::Vector3f P_constant(P_constant_xy, P_constant_xy, P_constant_z);
-  const Eigen::Vector3f D_constant(D_constant_xy, D_constant_xy, D_constant_z);
+  const Eigen::Array3f P_constant(smoothing_speed_xy_, smoothing_speed_xy_, smoothing_speed_z_);
+  const Eigen::Array3f D_constant = 2*P_constant.sqrt();
 
   const Eigen::Vector3f desired_location =
       toEigen(output_.adapted_goto_position);
@@ -304,12 +298,12 @@ void WaypointGenerator::adaptSpeed() {
   Eigen::Vector3f pose_to_wp =
       toEigen(output_.goto_position) - toEigen(pose_.pose.position);
   Eigen::Vector3f pose_to_goal = goal_ - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > 0.1) pose_to_wp.normalize();
+  if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
   pose_to_wp *= speed_;
 
   // If the waypoint is in the direction of the goal, but farther, clamp to goal
   if (std::atan2(pose_to_wp.cross(pose_to_goal).norm(),
-                 pose_to_wp.dot(pose_to_goal)) < 0.01 &&
+                 pose_to_wp.dot(pose_to_goal)) < 0.01f &&
       pose_to_wp.norm() > pose_to_goal.norm()) {
     output_.adapted_goto_position = toPoint(goal_);
   } else {
