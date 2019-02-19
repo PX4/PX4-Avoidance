@@ -99,15 +99,15 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 
 TEST(PlannerFunctions, calculateFOV) {
   // GIVEN: the horizontal and vertical Field of View, the vehicle yaw and pitc
-  double h_fov = 90.0;
-  double v_fov = 45.0;
-  double yaw_z_greater_grid_length =
-      3.14;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
-  double yaw_z_max_greater_grid =
-      -2.3;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
-  double yaw_z_min_smaller_zero = 3.9;  // z_FOV_min < 0 && z_FOV_max >= 0
-  double yaw_z_smaller_zero = 5.6;      // z_FOV_max < 0 && z_FOV_min < 0
-  double pitch = 0.0;
+  float h_fov = 90.0f;
+  float v_fov = 45.0f;
+  float yaw_z_greater_grid_length =
+      3.14f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
+  float yaw_z_max_greater_grid =
+      -2.3f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
+  float yaw_z_min_smaller_zero = 3.9f;  // z_FOV_min < 0 && z_FOV_max >= 0
+  float yaw_z_smaller_zero = 5.6f;      // z_FOV_max < 0 && z_FOV_min < 0
+  float pitch = 0.0f;
 
   // WHEN: we calculate the Field of View
   std::vector<int> z_FOV_idx_z_greater_grid_length;
