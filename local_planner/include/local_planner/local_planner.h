@@ -65,6 +65,7 @@ class LocalPlanner {
 
   float velocity_mod_;
   float curr_yaw_;
+  float curr_pitch_;
   float velocity_around_obstacles_;
   float velocity_far_from_obstacles_;
   float keep_distance_;
@@ -98,7 +99,6 @@ class LocalPlanner {
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
-  geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();

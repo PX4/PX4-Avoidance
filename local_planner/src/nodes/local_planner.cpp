@@ -15,11 +15,14 @@ LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
 void LocalPlanner::setPose(const geometry_msgs::PoseStamped msg) {
-  pose_.header = msg.header;
-  pose_.pose.position = msg.pose.position;
-  pose_.pose.orientation = msg.pose.orientation;
   position_ = toEigen(msg.pose.position);
-  curr_yaw_ = static_cast<float>(tf::getYaw(msg.pose.orientation));
+  tf::Quaternion q(msg.pose.orientation.x, msg.pose.orientation.y,
+                   msg.pose.orientation.z, msg.pose.orientation.w);
+  tf::Matrix3x3 m(q);
+  double roll, pitch, yaw;
+  m.getRPY(roll, pitch, yaw);
+  curr_yaw_ = static_cast<float>(yaw);
+  curr_pitch_ = static_cast<float>(pitch);
   star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
@@ -95,14 +98,8 @@ void LocalPlanner::runPlanner() {
            static_cast<int>(complete_cloud_.size()));
 
   // calculate Field of View
-  tf::Quaternion q(pose_.pose.orientation.x, pose_.pose.orientation.y,
-                   pose_.pose.orientation.z, pose_.pose.orientation.w);
-  tf::Matrix3x3 m(q);
-  double roll, pitch, yaw;
-  m.getRPY(roll, pitch, yaw);
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
-               static_cast<float>(yaw), static_cast<float>(pitch));
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_, curr_pitch_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
