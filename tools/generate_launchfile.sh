@@ -44,7 +44,7 @@ IFS=";"
 for camera in $CAMERA_CONFIGS; do
 	IFS="," #Inside each camera configuration, the parameters are comma-separated
 	set $camera
-	if [[ $# != 8 ]]; then
+	if [[ $# < 8 ]]; then
 		echo "Invalid camera configuration $camera"
 	else
 		echo "Adding camera $1 with serial number $2"
@@ -79,10 +79,16 @@ rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_dept
 	fi
 done
 
+if [ $# -eq 9 ]; then
+cat >> local_planner/launch/avoidance.launch <<- EOM
+  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node \$(find local_planner)/cfg/$9.yaml" />
+EOM
+
+fi
+
 cat >> local_planner/launch/avoidance.launch <<- EOM
     <!-- Launch avoidance -->
     <env name="ROSCONSOLE_CONFIG_FILE" value="\$(find local_planner)/resource/custom_rosconsole.conf"/>
-    <rosparam command="load" file="\$(find local_planner)/cfg/params.yaml"/>
     <arg name="pointcloud_topics" default="[$camera_topics]"/>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
