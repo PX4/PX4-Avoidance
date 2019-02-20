@@ -120,7 +120,7 @@ void WaypointGenerator::updateParameters() {
 void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
-                                    bool stay, bool airborne) {
+                                    bool stay, bool is_airborne) {
   if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
     reached_goal_ = false;
   }
@@ -137,7 +137,7 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   if (stay) {
     planner_info_.waypoint_type = hover;
   }
-  airborne_ = airborne;
+  is_airborne_ = is_airborne;
 }
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
@@ -205,7 +205,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   goal_.y() = pose_.pose.position.y;
 
   // Only move the setpoint if drone is in the air
-  if(airborne_){
+  if(is_airborne_){
     // Ascend/Descend to goal altitude
       if(pose_.pose.position.z <= goal_.z()){
         output_.goto_position.z += 1.0f;
@@ -213,7 +213,6 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
         output_.goto_position.z -= 1.0f;
       }
   }
-  ROS_ERROR("Goal altitude: %f", goal_.z());
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {

@@ -13,6 +13,7 @@ class WaypointGeneratorTests : public ::testing::Test,
   geometry_msgs::PoseStamped goal;
   geometry_msgs::TwistStamped velocity;
   bool stay = false;
+  bool is_airborne = true;
   ros::Time time = ros::Time(0.33);
 
   ros::Time getSystemTime() override { return time; }
@@ -92,7 +93,7 @@ class WaypointGeneratorTests : public ::testing::Test,
     velocity.twist.angular.y = 0.0;
     velocity.twist.angular.z = 0.0;
 
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
     setPlannerInfo(avoidance_output);
     setFOV(270.0, 45.0);
 
@@ -115,7 +116,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
 
   // WHEN: we generate the first waypoint
   time = ros::Time(time_sec);
-  updateState(position, goal, velocity, stay);
+  updateState(position, goal, velocity, stay, is_airborne);
   waypointResult result = getWaypoints();
 
   // THEN: we expect the goto position to point straight up
@@ -154,7 +155,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // calculate new vehicle position
     time_sec += 0.03;
     time = ros::Time(time_sec);
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
     waypointResult result = getWaypoints();
 
     // THEN: we expect the goto location to point straight up
@@ -234,7 +235,7 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
   for (size_t i = 0; i < 10; i++) {
     time_sec += 0.03;
     time = ros::Time(time_sec);
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
 
     waypointResult result = getWaypoints();
     float goto_to_goal =
@@ -315,7 +316,7 @@ TEST_F(WaypointGeneratorTests, goBackTest) {
     position.pose.position = toPoint(new_pos);
     time_sec += 0.033;
     time = ros::Time(time_sec);
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
   }
 }
 
@@ -327,14 +328,14 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
   time = ros::Time(time_sec);
-  updateState(position, goal, velocity, stay);
+  updateState(position, goal, velocity, stay, is_airborne);
   waypointResult result = getWaypoints();
 
   avoidance_output.waypoint_type = hover;
   setPlannerInfo(avoidance_output);
   time_sec += 0.033;
   time = ros::Time(time_sec);
-  updateState(position, goal, velocity, stay);
+  updateState(position, goal, velocity, stay, is_airborne);
 
   // WHEN: we generate waypoints
   result = getWaypoints();
@@ -414,7 +415,7 @@ TEST_F(WaypointGeneratorTests, costmapTest) {
     position.pose.position = toPoint(new_pos);
     time_sec += 0.03;
     time = ros::Time(time_sec);
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
   }
 }
 
@@ -432,7 +433,7 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
   for (size_t i = 0; i < 10; i++) {
     time_sec += 0.033;
     time = ros::Time(time_sec);
-    updateState(position, goal, velocity, stay);
+    updateState(position, goal, velocity, stay, is_airborne);
 
     waypointResult result = getWaypoints();
     float goto_to_goal =
