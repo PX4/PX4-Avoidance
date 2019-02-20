@@ -151,7 +151,8 @@ class WaypointGenerator {
   **/
   void updateState(const geometry_msgs::PoseStamped& act_pose,
                    const geometry_msgs::PoseStamped& goal,
-                   const geometry_msgs::TwistStamped& vel, bool stay, bool is_airborne);
+                   const geometry_msgs::TwistStamped& vel, bool stay,
+                   bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing
