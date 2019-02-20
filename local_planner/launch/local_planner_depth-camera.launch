@@ -16,8 +16,6 @@
 
     <!-- Load custom console configuration -->
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
-    <!-- Load waypoint generator paramters -->
-    <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
 
     <!-- Launch local planner -->
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >

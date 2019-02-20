@@ -3,6 +3,8 @@
 #include "local_planner/common.h"
 #include "local_planner/planner_functions.h"
 
+#include <ros/param.h>
+
 #include <tf/transform_listener.h>
 
 namespace avoidance {
@@ -96,10 +98,28 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
   v_FOV_ = v_FOV;
 }
 
+void WaypointGenerator::updateParameters() {
+  ros::param::get("/local_planner_node/goal_acceptance_radius_in_",
+                  param_.goal_acceptance_radius_in);
+  ros::param::get("/local_planner_node/goal_acceptance_radius_out_",
+                  param_.goal_acceptance_radius_out);
+  ros::param::get(
+      "/local_planner_node/factor_close_to_goal_start_speed_limitation_",
+      param_.factor_close_to_goal_start_speed_limitation);
+  ros::param::get(
+      "/local_planner_node/factor_close_to_goal_stop_speed_limitation_",
+      param_.factor_close_to_goal_stop_speed_limitation);
+  ros::param::get("/local_planner_node/max_speed_close_to_goal_factor_",
+                  param_.max_speed_close_to_goal_factor);
+  ros::param::get("/local_planner_node/min_speed_close_to_goal_",
+                  param_.min_speed_close_to_goal);
+}
+
 void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
                                     bool stay, ros::Time t) {
+  updateParameters();
   if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
     reached_goal_ = false;
     limit_speed_close_to_goal_ = false;

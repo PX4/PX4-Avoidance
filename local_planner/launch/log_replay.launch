@@ -43,13 +43,12 @@
        <remap from="/selected_marker" to="/rosbag/selected_marker"/>
        <remap from="/smoothed_waypoint" to="/rosbag/smoothed_waypoint"/>
        <remap from="/take_off_pose" to="/rosbag/take_off_pose"/>
-       <remap from="/tree_path" to="/rosbag/tree_path"/>  
-       <remap from="/goal_position" to="/input/goal_position"/>   
+       <remap from="/tree_path" to="/rosbag/tree_path"/>
+       <remap from="/goal_position" to="/input/goal_position"/>
     </node>
 
     <!-- Launch avoidance -->
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
-    <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
     <arg name="pointcloud_topics" default="[/rosbag/local_pointcloud]"/>
 
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
@@ -58,11 +57,11 @@
       <param name="goal_z_param" value="4" />
       <param name="disable_rise_to_goal_altitude" value="true" />
       <param name="accept_goal_input_topic" value="true" />
-      <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
+      <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
     </node>
-    
+
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
-    
+
     <!-- Launch rqt_reconfigure -->
     <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
 

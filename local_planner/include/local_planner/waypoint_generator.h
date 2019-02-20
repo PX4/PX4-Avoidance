@@ -122,6 +122,11 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
+  /**
+  * @brief     update parameters from ROS dynamic reconfigure server
+  **/
+  void updateParameters();
+
  public:
   waypointGenerator_params param_;
   /**

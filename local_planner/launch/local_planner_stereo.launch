@@ -26,8 +26,6 @@
 
   <!-- Load custom console configuration -->
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
-  <!-- Load waypoint generator paramters -->
-  <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
 
   <!-- Launch local planner -->
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
@@ -35,7 +33,7 @@
     <param name="goal_y_param" value="15"/>
     <param name="goal_z_param" value="4" />
     <param name="world_name" value="$(find local_planner)/../sim/worlds/$(arg world_file_name).yaml" />
-    <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam> 
+    <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
   </node>
 
   <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
