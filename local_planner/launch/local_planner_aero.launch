@@ -30,7 +30,6 @@
   </include>
 
   <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
-  <rosparam command="load" file="$(find local_planner)/cfg/params.yaml"/>
   <arg name="pointcloud_topics" default="[/camera/depth/points]"/>
 
   <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >

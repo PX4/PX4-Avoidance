@@ -136,24 +136,6 @@ void LocalPlannerNode::readParams() {
 
   nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position = goal;
-
-  // Read in parameter for waypoint generator
-  waypointGenerator_params new_params;
-  nh_.param<float>("/goal_acceptance_radius_in",
-                   new_params.goal_acceptance_radius_in, 0.5f);
-  nh_.param<float>("/goal_acceptance_radius_out",
-                   new_params.goal_acceptance_radius_out, 1.5f);
-  nh_.param<float>("/factor_close_to_goal_start_speed_limitation",
-                   new_params.factor_close_to_goal_start_speed_limitation,
-                   3.0f);
-  nh_.param<float>("/factor_close_to_goal_stop_speed_limitation",
-                   new_params.factor_close_to_goal_stop_speed_limitation, 4.0f);
-  nh_.param<float>("/max_speed_close_to_goal_factor",
-                   new_params.max_speed_close_to_goal_factor, 0.1f);
-  nh_.param<float>("/min_speed_close_to_goal",
-                   new_params.min_speed_close_to_goal, 0.5f);
-
-  wp_generator_->param_ = new_params;
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(
