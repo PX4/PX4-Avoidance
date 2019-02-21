@@ -221,7 +221,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update position
-  local_planner_->setPose(newest_pose_);
+  local_planner_->setPose(toEigen(newest_pose_.pose.position), toQuaternion(newest_pose_.pose.orientation));
 
   // Update velocity
   local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
