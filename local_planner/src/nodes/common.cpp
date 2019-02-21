@@ -149,6 +149,15 @@ Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
   return ev3;
 }
 
+Eigen::Quaternionf toQuaternion(const geometry_msgs::Quaternion& gmq) {
+  Eigen::Quaternionf eqf;
+  eqf.x() = gmq.x;
+  eqf.y() = gmq.y;
+  eqf.z() = gmq.z;
+  eqf.w() = gmq.w;
+  return eqf;
+}
+
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   geometry_msgs::Point gmp;
   gmp.x = ev3.x();
@@ -165,12 +174,12 @@ geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
   return gmv3;
 }
 
-geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3) {
+geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& eqf) {
   geometry_msgs::Quaternion q;
-  q.x = qf3.x();
-  q.y = qf3.y();
-  q.z = qf3.z();
-  q.w = qf3.w();
+  q.x = eqf.x();
+  q.y = eqf.y();
+  q.z = eqf.z();
+  q.w = eqf.w();
   return q;
 }
 
