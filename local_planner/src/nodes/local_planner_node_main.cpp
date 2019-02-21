@@ -1,3 +1,4 @@
+#include "local_planner/common.h"
 #include "local_planner/local_planner.h"
 #include "local_planner/local_planner_node.h"
 #include "local_planner/waypoint_generator.h"
@@ -105,7 +106,7 @@ int main(int argc, char** argv) {
           Node.wp_generator_->setPlannerInfo(
               Node.local_planner_->getAvoidanceOutput());
           if (Node.local_planner_->stop_in_front_active_) {
-            Node.goal_msg_.pose.position = Node.local_planner_->getGoal();
+            Node.goal_msg_.pose.position = toPoint(Node.local_planner_->getGoal());
           }
           Node.running_mutex_.unlock();
           // Wake up the planner

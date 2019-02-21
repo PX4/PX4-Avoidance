@@ -22,9 +22,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
-#include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
@@ -186,12 +184,12 @@ class LocalPlanner {
   * @brief     setter method for mission goal
   * @param[in] mgs, goal message coming from the FCU
   **/
-  void setGoal(const geometry_msgs::Point &goal);
+  void setGoal(const Eigen::Vector3f &goal);
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal
   **/
-  geometry_msgs::Point getGoal();
+  Eigen::Vector3f getGoal();
   /**
   * @brief    setter method for mission goal
   **/
@@ -221,7 +219,7 @@ class LocalPlanner {
   * @brief     setter method for vehicle velocity
   * @param[in]     vel, velocity message coming from the FCU
   **/
-  void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
+  void setCurrentVelocity(const Eigen::Vector3f &vel);
 
   /**
   * @brief     getter method to visualize the tree in rviz

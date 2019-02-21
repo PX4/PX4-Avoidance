@@ -93,15 +93,15 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
 }
 
 void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
-                                    const geometry_msgs::PoseStamped& goal,
-                                    const geometry_msgs::TwistStamped& vel,
+                                    const Eigen::Vector3f& goal,
+                                    const Eigen::Vector3f& vel,
                                     bool stay) {
-  if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
+  if ((goal_ - goal).norm() > 0.1f) {
     reached_goal_ = false;
   }
   position_ = toEigen(act_pose.pose.position);
-  velocity_ = toEigen(vel.twist.linear);
-  goal_ = toEigen(goal.pose.position);
+  velocity_ = vel;
+  goal_ = goal;
   curr_yaw_ = static_cast<float>(tf::getYaw(act_pose.pose.orientation));
   curr_vel_magnitude_ = velocity_.norm();
 
@@ -129,7 +129,7 @@ void WaypointGenerator::backOff() {
   output_.goto_position = position_ + dir;
   output_.goto_position.z() = planner_info_.back_off_start_point.z();
 
-  output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
+  createPoseMsg(output_.position_wp, output_.orientation_wp, output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
   last_yaw_ = curr_yaw_;
 
@@ -140,15 +140,10 @@ void WaypointGenerator::backOff() {
 }
 
 void WaypointGenerator::transformPositionToVelocityWaypoint() {
-  output_.velocity_waypoint.linear.x =
-      output_.position_waypoint.pose.position.x - position_.x();
-  output_.velocity_waypoint.linear.y =
-      output_.position_waypoint.pose.position.y - position_.y();
-  output_.velocity_waypoint.linear.z =
-      output_.position_waypoint.pose.position.z - position_.z();
-  output_.velocity_waypoint.angular.x = 0.0;
-  output_.velocity_waypoint.angular.y = 0.0;
-  output_.velocity_waypoint.angular.z = getAngularVelocity(new_yaw_, curr_yaw_);
+  output_.linear_velocity_wp = output_.position_wp - position_;
+  output_.angular_velocity_wp.x() = 0.0f;
+  output_.angular_velocity_wp.y() = 0.0f;
+  output_.angular_velocity_wp.z() = getAngularVelocity(new_yaw_, curr_yaw_);
 }
 
 // check if the UAV has reached the goal set for the mission
@@ -313,8 +308,7 @@ void WaypointGenerator::getPathMsg() {
 
   ROS_DEBUG("[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
             output_.smoothed_goto_position.z());
-  output_.position_waypoint =
-      createPoseMsg(output_.smoothed_goto_position, new_yaw_);
+  createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, new_yaw_);
   transformPositionToVelocityWaypoint();
 }
 
