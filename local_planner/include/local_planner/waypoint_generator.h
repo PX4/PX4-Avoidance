@@ -17,8 +17,10 @@ namespace avoidance {
 
 struct waypointResult {
   waypoint_choice waypoint_type;
-  geometry_msgs::PoseStamped position_waypoint;
-  geometry_msgs::Twist velocity_waypoint;
+  Eigen::Vector3f position_wp;
+  Eigen::Quaternionf orientation_wp;
+  Eigen::Vector3f linear_velocity_wp;
+  Eigen::Vector3f angular_velocity_wp;
   Eigen::Vector3f goto_position;           // correction direction, dist=1
   Eigen::Vector3f adapted_goto_position;   // correction direction & dist
   Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
@@ -128,9 +130,8 @@ class WaypointGenerator {
   * @param[in] t, update system time
   **/
   void updateState(const geometry_msgs::PoseStamped& act_pose,
-                   const geometry_msgs::PoseStamped& goal,
-                   const geometry_msgs::TwistStamped& vel, bool stay,
-                   bool is_airborne);
+                   const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& vel, bool stay, bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing

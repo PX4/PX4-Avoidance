@@ -102,16 +102,12 @@ float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(const Eigen::Vector3f& waypt,
-                                         float yaw) {
-  geometry_msgs::PoseStamped pose_msg;
-  pose_msg.header.stamp = ros::Time::now();
-  pose_msg.header.frame_id = "/local_origin";
-  pose_msg.pose.position.x = waypt.x();
-  pose_msg.pose.position.y = waypt.y();
-  pose_msg.pose.position.z = waypt.z();
-  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-  return pose_msg;
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw) {
+  out_waypt = in_waypt;
+  float roll = 0.0f, pitch = 0.0f;
+  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX())
+      * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY())
+      * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
 void wrapAngleToPlusMinusPI(float& angle) {
@@ -160,11 +156,45 @@ geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   gmp.z = ev3.z();
   return gmp;
 }
+
+geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
+  geometry_msgs::Vector3 gmv3;
+  gmv3.x = ev3.x();
+  gmv3.y = ev3.y();
+  gmv3.z = ev3.z();
+  return gmv3;
+}
+
+geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3) {
+  geometry_msgs::Quaternion q;
+  q.x = qf3.x();
+  q.y = qf3.y();
+  q.z = qf3.z();
+  q.w = qf3.w();
+  return q;
+}
+
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   pcl::PointXYZ xyz;
   xyz.x = ev3.x();
   xyz.y = ev3.y();
   xyz.z = ev3.z();
   return xyz;
+}
+
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a) {
+  geometry_msgs::Twist gmt;
+  gmt.linear = toVector3(l);
+  gmt.angular = toVector3(a);
+  return gmt;
+}
+
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
+  geometry_msgs::PoseStamped gmps;
+  gmps.header.stamp = ros::Time::now();
+  gmps.header.frame_id = "/local_origin";
+  gmps.pose.position = toPoint(ev3);
+  gmps.pose.orientation = toQuaternion(eq);
+  return gmps;
 }
 }

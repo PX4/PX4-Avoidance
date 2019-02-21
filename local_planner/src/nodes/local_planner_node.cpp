@@ -120,7 +120,7 @@ LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  auto goal = local_planner_->getGoal();
+  auto goal = toPoint(local_planner_->getGoal());
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
@@ -215,7 +215,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   local_planner_->setPose(newest_pose_);
 
   // Update velocity
-  local_planner_->setCurrentVelocity(vel_msg_);
+  local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
 
   // update state
   local_planner_->currently_armed_ = armed_;
@@ -224,7 +224,7 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update goal
   if (new_goal_) {
-    local_planner_->setGoal(goal_msg_.pose.position);
+    local_planner_->setGoal(toEigen(goal_msg_.pose.position));
     new_goal_ = false;
   }
 
@@ -341,7 +341,7 @@ void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
-  geometry_msgs::Point goal = local_planner_->getGoal();
+  geometry_msgs::Point goal = toPoint(local_planner_->getGoal());
 
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -456,8 +456,7 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover,
-                             is_airborne);
+  wp_generator_->updateState(newest_pose_, toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
@@ -529,17 +528,17 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
   newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
   publishPaths();
-  publishSetpoint(result.velocity_waypoint, result.waypoint_type);
+  publishSetpoint(toTwist(result.linear_velocity_wp, result.angular_velocity_wp), result.waypoint_type);
 
   // to mavros
 
   mavros_msgs::Trajectory obst_free_path = {};
   if (local_planner_->use_vel_setpoints_) {
-    mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
-    transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
+    mavros_vel_setpoint_pub_.publish(toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
+    transformVelocityToTrajectory(obst_free_path, toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
   } else {
-    mavros_pos_setpoint_pub_.publish(result.position_waypoint);
-    transformPoseToTrajectory(obst_free_path, result.position_waypoint);
+    mavros_pos_setpoint_pub_.publish(toPoseStamped(result.position_wp, result.orientation_wp));
+    transformPoseToTrajectory(obst_free_path, toPoseStamped(result.position_wp, result.orientation_wp));
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
@@ -611,7 +610,7 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_msg_.pose.position.z = local_planner_->getGoal().z;
+  goal_msg_.pose.position.z = local_planner_->getGoal().z();
 }
 
 void LocalPlannerNode::updateGoalCallback(

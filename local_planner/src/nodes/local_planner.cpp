@@ -61,9 +61,9 @@ void LocalPlanner::dynamicReconfigureSetParams(
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
 
-  if (getGoal().z != config.goal_z_param) {
+  if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
-    goal.z = config.goal_z_param;
+    goal.z() = config.goal_z_param;
     setGoal(goal);
   }
 
@@ -79,14 +79,14 @@ void LocalPlanner::dynamicReconfigureSetParams(
   ROS_DEBUG("\033[0;35m[OA] Dynamic reconfigure call \033[0m");
 }
 
-void LocalPlanner::setGoal(const geometry_msgs::Point &goal) {
-  goal_ = toEigen(goal);
+void LocalPlanner::setGoal(const Eigen::Vector3f &goal) {
+  goal_ = goal;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(),
            goal_.z());
   applyGoal();
 }
 
-geometry_msgs::Point LocalPlanner::getGoal() { return toPoint(goal_); }
+Eigen::Vector3f LocalPlanner::getGoal() { return goal_; }
 
 void LocalPlanner::applyGoal() {
   star_planner_->setGoal(goal_);
@@ -487,8 +487,8 @@ void LocalPlanner::getCloudsForVisualization(
   reprojected_points = reprojected_points_;
 }
 
-void LocalPlanner::setCurrentVelocity(const geometry_msgs::TwistStamped &vel) {
-  velocity_ = toEigen(vel.twist.linear);
+void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f &vel) {
+  velocity_ = vel;
 }
 
 void LocalPlanner::getTree(
