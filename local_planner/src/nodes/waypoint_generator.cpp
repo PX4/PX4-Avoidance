@@ -138,6 +138,13 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
     planner_info_.waypoint_type = hover;
   }
   is_airborne_ = is_airborne;
+
+  // Initialize the smoothing point to current location, if it is undefined
+  if (is_airborne_ && !std::isfinite(smoothed_goto_location_.x()) &&
+      !std::isfinite(smoothed_goto_location_.y()) &&
+      !std::isfinite(smoothed_goto_location_.z())) {
+    smoothed_goto_location_ = toEigen(pose_.pose.position);
+  }
 }
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
@@ -202,7 +209,7 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   // goto_position is a unit vector pointing straight up/down from current
   // location
   output_.goto_position = pose_.pose.position;
-  goal_.x() = pose_.pose.position.x;  // Needed for adaptSpeed()
+  goal_.x() = pose_.pose.position.x;  // Needed so adaptSpeed can clamp to goal
   goal_.y() = pose_.pose.position.y;
 
   // Only move the setpoint if drone is in the air
@@ -217,15 +224,6 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {
-  // In first iteration (very small or invalid dt), initialize the smoothing
-  // to start at the current drone location
-  if (dt <= 0.01f) {
-    smoothed_goto_location_ = toEigen(pose_.pose.position);
-    output_.smoothed_goto_position =
-        pose_.pose.position;  // needs to be local position!
-    return;
-  }
-
   // If the smoothing speed is set to zero, dont smooth, aka use adapted
   // waypoint directly
   if (smoothing_speed_xy_ < 0.01f || smoothing_speed_z_ < 0.01f) {
@@ -253,8 +251,8 @@ void WaypointGenerator::smoothWaypoint(float dt) {
     velocity_diff = Eigen::Vector3f::Zero();
   }
 
-  const Eigen::Vector3f p = location_diff.array() * P_constant.array();
-  const Eigen::Vector3f d = velocity_diff.array() * D_constant.array();
+  const Eigen::Vector3f p = location_diff.array() * P_constant;
+  const Eigen::Vector3f d = velocity_diff.array() * D_constant;
 
   smoothed_goto_location_velocity_ += (p + d) * dt;
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
@@ -294,13 +292,15 @@ void WaypointGenerator::adaptSpeed() {
     speed_ = planner_info_.velocity_around_obstacles;
   }
 
-  // check if new point lies in FOV
-  float angle_diff_deg =
-      std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f /
-      M_PI_F;
-  angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
-  speed_ =
-      speed_ * (1.0f - 2 * angle_diff_deg / h_FOV_);  // throttle if outside FOV
+  // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
+  if (output_.waypoint_type != reachHeight) {
+    float angle_diff_deg =
+        std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f /
+        M_PI_F;
+    angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
+    angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
+    speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_);
+  }
 
   // Scale the pose_to_wp by the speed
   Eigen::Vector3f pose_to_wp =
@@ -310,8 +310,7 @@ void WaypointGenerator::adaptSpeed() {
   pose_to_wp *= speed_;
 
   // If the waypoint is in the direction of the goal, but farther, clamp to goal
-  if (std::atan2(pose_to_wp.cross(pose_to_goal).norm(),
-                 pose_to_wp.dot(pose_to_goal)) < 0.01f &&
+  if (pose_to_wp.dot(pose_to_goal) > 0.f &&
       pose_to_wp.norm() > pose_to_goal.norm()) {
     output_.adapted_goto_position = toPoint(goal_);
   } else {

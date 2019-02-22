@@ -36,7 +36,7 @@ class WaypointGenerator {
   waypointResult output_;
   waypoint_choice last_wp_type_;
 
-  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
 
   geometry_msgs::PoseStamped pose_;
