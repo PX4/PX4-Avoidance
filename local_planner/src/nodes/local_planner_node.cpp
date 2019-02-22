@@ -4,6 +4,7 @@
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
 #include "local_planner/waypoint_generator.h"
+#include "local_planner/stopwatch.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -114,6 +115,9 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
   get_px4_param_client_ =
       nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
+
+
+  duration_measurement_pub_ = nh_.advertise<local_planner::ProcessTime>("/performance_check", 1);
 
   local_planner_->applyGoal();
 }

@@ -1,8 +1,13 @@
 #include "local_planner/local_planner.h"
 #include "local_planner/local_planner_node.h"
 #include "local_planner/waypoint_generator.h"
+#include "local_planner/stopwatch.h"
+
+// in rovio the custom msg was in <>
+#include <local_planner/ProcessTime.h>
 
 #include <boost/algorithm/string.hpp>
+
 
 int main(int argc, char** argv) {
   using namespace avoidance;
@@ -20,6 +25,10 @@ int main(int argc, char** argv) {
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
+  
+  // add stuff to stop time
+  StopWatch stopwatch1;
+  StopWatch stopwatch2;
 
   // spin node, execute callbacks
   while (ros::ok()) {
@@ -102,13 +111,46 @@ int main(int argc, char** argv) {
         Node.cameras_.size() != 0) {
       if (Node.canUpdatePlannerInfo()) {
         if (Node.running_mutex_.try_lock()) {
+          //todo: insert start time updatePlannerInfo_time
+          local_planner::ProcessTime updatePlannerInfo_msg;
+          std::string frame_id = "/local_planner_node_main";
+          stopwatch2.function_name_ = "updatePlannerInfo";
+          //uint64_t updatePlannerInfo_time = stopwatch1.split();
+          stopwatch2.restart();
+          
           Node.updatePlannerInfo();
+          //stopwatch1.counter_++;
+          stopwatch2.counter_++;
+          //updatePlannerInfo_time = stopwatch1.elapsed();
+          uint64_t duration = stopwatch2.elapsed();
+
+          //stopwatch2.timings_.push_back(duration); 
+          stopwatch2.setProcessTimeMsg(updatePlannerInfo_msg, frame_id);
+          //std::cout << "updatePlannerInfo1 took " << updatePlannerInfo_time  << std::endl;
+          std::cout << "updatePlannerInfo2 took " << duration  << std::endl;
+          Node.duration_measurement_pub_.publish(updatePlannerInfo_msg);
           // reset all clouds to not yet received
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             Node.cameras_[i].received_ = false;
           }
+          // check how long the wp generator update takes
+          stopwatch1.function_name_ = "setPlannerInfo";
+          stopwatch1.restart();
           Node.wp_generator_->setPlannerInfo(
-              Node.local_planner_->getAvoidanceOutput());
+            // checkout how long it takes to get the avoidance output
+              Node.local_planner_->getAvoidanceOutput()
+              // end avoidance output
+              );
+          stopwatch1.counter_++;
+          //updatePlannerInfo_time = stopwatch1.elapsed();
+          uint64_t duration1 = stopwatch1.elapsed();
+
+          //stopwatch2.timings_.push_back(duration); 
+          stopwatch1.setProcessTimeMsg(updatePlannerInfo_msg, frame_id);
+          //std::cout << "updatePlannerInfo1 took " << updatePlannerInfo_time  << std::endl;
+          std::cout << "updatePlannerInfo2 took " << duration1  << std::endl;
+          Node.duration_measurement_pub_.publish(updatePlannerInfo_msg);
+          // end wp generator
           if (Node.local_planner_->stop_in_front_active_) {
             Node.goal_msg_.pose.position = Node.local_planner_->getGoal();
           }
@@ -142,6 +184,7 @@ int main(int argc, char** argv) {
       Node.t_status_sent_ = now;
     }
   }
+
 
   Node.should_exit_ = true;
   Node.data_ready_cv_.notify_all();

@@ -36,6 +36,9 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 
+// time stuff
+#include <local_planner/ProcessTime.h>
+
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
@@ -149,6 +152,8 @@ class LocalPlannerNode {
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
   tf::TransformListener tf_listener_;
+
+  ros::Publisher duration_measurement_pub_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
