@@ -121,9 +121,6 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
                                     const geometry_msgs::PoseStamped& goal,
                                     const geometry_msgs::TwistStamped& vel,
                                     bool stay, bool is_airborne) {
-  if ((goal_ - toEigen(goal.pose.position)).norm() > 0.1f) {
-    reached_goal_ = false;
-  }
   pose_ = act_pose;
   curr_vel_ = vel;
   goal_ = toEigen(goal.pose.position);
@@ -187,21 +184,6 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
   output_.velocity_waypoint.angular.x = 0.0;
   output_.velocity_waypoint.angular.y = 0.0;
   output_.velocity_waypoint.angular.z = getAngularVelocity(new_yaw_, curr_yaw_);
-}
-
-// check if the UAV has reached the goal set for the mission
-bool WaypointGenerator::withinGoalRadius() {
-  float dist = (goal_ - toEigen(pose_.pose.position)).norm();
-
-  if (dist < param_.goal_acceptance_radius_in) {
-    if (!reached_goal_) {
-      yaw_reached_goal_ = tf::getYaw(pose_.pose.orientation);
-    }
-    reached_goal_ = true;
-  } else if (dist > param_.goal_acceptance_radius_out) {
-    reached_goal_ = false;
-  }
-  return reached_goal_;
 }
 
 // when taking off, first publish waypoints to reach the goal altitude
@@ -337,15 +319,6 @@ void WaypointGenerator::getPathMsg() {
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
   adaptSpeed();
   smoothWaypoint(dt);
-
-  // change waypoint if drone is at goal or above
-  if (withinGoalRadius()) {
-    output_.smoothed_goto_position = toPoint(goal_);
-  }
-
-  if (reached_goal_ && std::isfinite(yaw_reached_goal_)) {
-    new_yaw_ = yaw_reached_goal_;
-  }
 
   ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,

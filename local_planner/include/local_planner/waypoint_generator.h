@@ -25,11 +25,6 @@ struct waypointResult {
   geometry_msgs::Point smoothed_goto_position;  // what is sent to the drone
 };
 
-struct waypointGenerator_params {
-  float goal_acceptance_radius_in;
-  float goal_acceptance_radius_out;
-};
-
 class WaypointGenerator {
  private:
   avoidanceOutput planner_info_;
@@ -50,10 +45,8 @@ class WaypointGenerator {
   float smoothing_speed_xy_{10.};
   float smoothing_speed_z_{30.};
 
-  bool reached_goal_;
   bool is_airborne_ = false;
   float last_yaw_;
-  float yaw_reached_goal_;
   float new_yaw_;
   float new_yaw_velocity_ = 0.0f;
   float speed_ = 1.0f;
@@ -83,11 +76,6 @@ class WaypointGenerator {
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
-  /**
-  * @brief     checks if the goal has been reached
-  * @returns   true, if the goal has been reached
-  **/
-  bool withinGoalRadius();
   /**
   * @brief     checks if the goal altitude has been reached. If not, it computes
   *            waypoints to climb to the goal altitude
@@ -121,7 +109,6 @@ class WaypointGenerator {
   void updateParameters();
 
  public:
-  waypointGenerator_params param_;
   /**
   * @brief     getter method for position and velocity waypoints to be sent to
   *            the FCU
