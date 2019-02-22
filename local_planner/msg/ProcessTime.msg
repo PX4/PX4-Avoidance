@@ -4,5 +4,5 @@
 Header header
 
 string function_name
-uint64 duration
+duration duration
 int32 counter

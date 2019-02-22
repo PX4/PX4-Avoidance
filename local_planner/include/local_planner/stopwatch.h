@@ -25,10 +25,10 @@ namespace avoidance {
 class StopWatch{
 public:
 	// store all durations of a function 
-    std::vector<uint64_t> timings_;
-    uint64_t total_duration_;
-    uint64_t duration_e_;
-    uint64_t duration_s_;
+    std::vector<ros::Duration> timings_;
+    ros::Duration total_duration_;
+    ros::Duration duration_e_;
+    ros::Duration duration_s_;
     int counter_=0;
     std::string function_name_; 
     /**
@@ -48,21 +48,21 @@ public:
     * @brief Calculates the total elapsed time
     * @return ros::Duration: the total elapsed time since (re)started. 
     **/
-    uint64_t elapsed();
+    ros::Duration elapsed();
     /**
      * @brief Calculates the current split.
      *
      * Calculates the elapsed time since the last split.
      * @return ros::Duration : the elapsed time since the last split.
      **/
-    uint64_t split();
+    ros::Duration split();
     /**
      * @brief Create ProcessTIme message
      **/
-    void setProcessTimeMsg(local_planner::ProcessTime& msg,const std::string& frame_id );
+    void setProcessTimeMsg(local_planner::ProcessTime& msg, const std::string& frame_id );
 
 private:
-	uint64_t start_time_, split_time_;
+	ros::Time start_time_, split_time_;
 
 
 };
