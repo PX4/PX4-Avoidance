@@ -7,6 +7,13 @@
 #include "cost_parameters.h"
 #include "histogram.h"
 
+#include "stopwatch.h"
+
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
+
+#include <local_planner/LocalPlannerNodeConfig.h>
+
 #include <Eigen/Dense>
 
 #include <geometry_msgs/Point.h>

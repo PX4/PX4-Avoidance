@@ -8,6 +8,11 @@
 #include "cost_parameters.h"
 #include "histogram.h"
 
+#include "stopwatch.h"
+
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
+
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
@@ -110,6 +115,10 @@ class LocalPlanner {
   Eigen::MatrixXf cost_matrix_;
   std::vector<candidateDirection> candidate_vector_;
 
+  // function frame ids for profiling
+  std::string profiling_frame_id_rP_ = "/../../rPlanner";
+  std::string profiling_frame_id_dS_ = "/../../rPlanner/dStrat";
+  std::string profiling_frame_id_2D_ = "/../../rPlanner/dStrat/create2DObsRep";
   /**
   * @brief     reprojectes the histogram from the previous algorithm iteration
   *around the current vehicle position
@@ -173,6 +182,24 @@ class LocalPlanner {
   geometry_msgs::PoseStamped offboard_pose_;
   sensor_msgs::LaserScan distance_data_ = {};
   geometry_msgs::Point last_sent_waypoint_;
+
+  // add stopwatch objects for profiling
+  StopWatch calculateFOV_sw_;
+  StopWatch filterPointCloud_sw_;
+  StopWatch determineStrategy_sw_;
+  StopWatch create2DObstacleRepresentation_sw_;
+  StopWatch stopInFrontObstacles_sw_;
+  StopWatch evaluateProgressRate_sw_;
+  StopWatch histRelCheck_sw_;
+  StopWatch getCostMatrix_sw_;
+  StopWatch getBestCand_sw_;
+  StopWatch reprojectPoints_sw_;
+  StopWatch propagateHistogram_sw_;
+  StopWatch generateNewHistogram_sw_;
+  StopWatch combinedHistogram_sw_;
+  StopWatch compressHistogramElevation_sw_;
+  StopWatch updateObstacleDistanceMsg_sw_;
+  StopWatch buildLookAheadTree_sw_;
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;

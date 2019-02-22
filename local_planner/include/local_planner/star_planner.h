@@ -5,6 +5,11 @@
 #include "cost_parameters.h"
 #include "histogram.h"
 
+#include "stopwatch.h"
+
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
+
 #include <Eigen/Dense>
 
 #include <pcl/point_cloud.h>
@@ -43,6 +48,9 @@ class StarPlanner {
   Eigen::Vector3f projected_last_wp_;
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
+
+  // function frame ids for profiling
+  std::string profiling_frame_id_buildTree_ = "/../../rPlanner/dStrat/buildLAT";
 
  protected:
   /**
@@ -127,6 +135,16 @@ class StarPlanner {
   **/
   void dynamicReconfigureSetStarParams(
       const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
+
+  // add stopwatch objects for profiling
+  StopWatch calculateFOV_sw_;
+  StopWatch propagateHistogram_sw_;
+  StopWatch generateNewHistogram_sw_;
+  StopWatch combinedHistogram_sw_;
+  StopWatch getCostMatrix_sw_;
+  StopWatch getBestCand_sw_;
+  StopWatch findBestNode_sw_;
+  StopWatch treeCostFunction_sw_;
 };
 }
 #endif  // STAR_PLANNER_H

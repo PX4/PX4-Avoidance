@@ -1,13 +1,13 @@
 #include "local_planner/local_planner.h"
 #include "local_planner/local_planner_node.h"
-#include "local_planner/waypoint_generator.h"
 #include "local_planner/stopwatch.h"
+#include "local_planner/waypoint_generator.h"
 
 // in rovio the custom msg was in <>
-#include <local_planner/ProcessTime.h>
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
 
 #include <boost/algorithm/string.hpp>
-
 
 int main(int argc, char** argv) {
   using namespace avoidance;
@@ -24,11 +24,32 @@ int main(int argc, char** argv) {
   bool callPx4Params = true;
   Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
 
+  /**
+  * add stopwatch object which initializes the publishing rostopic
+  * "/performance_check" and has a member counter
+  **/
+  StopWatch threadFunction_sw;
+  // frame id to track the function calls
+  std::string frame_id = "/main";
+  // ecl StopWatch to measure the timings
+  ecl::StopWatch stopwatch0;
+  // create message for each function
+  local_planner::Profiling threadFunction_msg;
+
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
-  
-  // add stuff to stop time
-  StopWatch stopwatch1;
-  StopWatch stopwatch2;
+  // stop the time with elapsed()
+  ecl::Duration stopwatch0_duration = stopwatch0.elapsed();
+  threadFunction_sw.counter_ += 1;
+  setProfilingMsg(threadFunction_msg, frame_id, "threadFunction",
+                  static_cast<ros::Duration>(stopwatch0_duration),
+                  threadFunction_sw.counter_);
+  threadFunction_sw.duration_measurement_pub_.publish(threadFunction_msg);
+  threadFunction_sw.total_duration_ += threadFunction_msg.duration;
+
+  // create other stopwatch objects
+  StopWatch updatePlannerInfo_sw;
+  StopWatch setPlannerInfo_sw;
+  StopWatch publishWaypoints_sw;
 
   // spin node, execute callbacks
   while (ros::ok()) {
@@ -61,7 +82,6 @@ int main(int argc, char** argv) {
         ros::Duration(Node.local_planner_->pointcloud_timeout_hover_);
     ros::Duration since_last_cloud = now - Node.last_wp_time_;
     ros::Duration since_start = now - start_time;
-    std::cout << "since start " << since_start << std::endl;
 
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
@@ -112,46 +132,42 @@ int main(int argc, char** argv) {
         Node.cameras_.size() != 0) {
       if (Node.canUpdatePlannerInfo()) {
         if (Node.running_mutex_.try_lock()) {
-          //todo: insert start time updatePlannerInfo_time
-          local_planner::ProcessTime updatePlannerInfo_msg;
-          std::string frame_id = "/local_planner_node_main";
-          stopwatch2.function_name_ = "updatePlannerInfo";
-          //uint64_t updatePlannerInfo_time = stopwatch1.split();
-          stopwatch2.restart();
-          
-          Node.updatePlannerInfo();
-          //stopwatch1.counter_++;
-          stopwatch2.counter_++;
-          //updatePlannerInfo_time = stopwatch1.elapsed();
-          ros::Duration duration = stopwatch2.elapsed();
+          local_planner::Profiling updatePlannerInfo_msg;
+          ecl::StopWatch stopwatch1;
 
-          //stopwatch2.timings_.push_back(duration); 
-          stopwatch2.setProcessTimeMsg(updatePlannerInfo_msg, frame_id);
-          //std::cout << "updatePlannerInfo1 took " << updatePlannerInfo_time  << std::endl;
-          std::cout << "updatePlannerInfo2 took " << duration  << std::endl;
-          Node.duration_measurement_pub_.publish(updatePlannerInfo_msg);
+          Node.updatePlannerInfo();
+
+          ecl::Duration stopwatch1_duration = stopwatch1.elapsed();
+          updatePlannerInfo_sw.counter_ += 1;
+          setProfilingMsg(updatePlannerInfo_msg, frame_id, "updatePlannerInfo",
+                          static_cast<ros::Duration>(stopwatch1_duration),
+                          updatePlannerInfo_sw.counter_);
+          updatePlannerInfo_sw.duration_measurement_pub_.publish(
+              updatePlannerInfo_msg);
+          updatePlannerInfo_sw.total_duration_ +=
+              updatePlannerInfo_msg.duration;
+
           // reset all clouds to not yet received
           for (size_t i = 0; i < Node.cameras_.size(); i++) {
             Node.cameras_[i].received_ = false;
           }
           // check how long the wp generator update takes
-          stopwatch1.function_name_ = "setPlannerInfo";
+          local_planner::Profiling setPlannerInfo_msg;
           stopwatch1.restart();
           Node.wp_generator_->setPlannerInfo(
-            // checkout how long it takes to get the avoidance output
+              // checkout how long it takes to get the avoidance output
               Node.local_planner_->getAvoidanceOutput()
               // end avoidance output
               );
-          stopwatch1.counter_++;
-          //updatePlannerInfo_time = stopwatch1.elapsed();
-          ros::Duration duration1 = stopwatch1.elapsed();
+          stopwatch1_duration = stopwatch1.elapsed();
+          setPlannerInfo_sw.counter_ += 1;
+          setProfilingMsg(setPlannerInfo_msg, frame_id, "setPlannerInfo",
+                          static_cast<ros::Duration>(stopwatch1_duration),
+                          setPlannerInfo_sw.counter_);
+          setPlannerInfo_sw.duration_measurement_pub_.publish(
+              setPlannerInfo_msg);
+          setPlannerInfo_sw.total_duration_ += setPlannerInfo_msg.duration;
 
-          //stopwatch2.timings_.push_back(duration); 
-          stopwatch1.setProcessTimeMsg(updatePlannerInfo_msg, frame_id);
-          //std::cout << "updatePlannerInfo1 took " << updatePlannerInfo_time  << std::endl;
-          std::cout << "updatePlannerInfo2 took " << duration1  << std::endl;
-          Node.duration_measurement_pub_.publish(updatePlannerInfo_msg);
-          // end wp generator
           if (Node.local_planner_->stop_in_front_active_) {
             Node.goal_msg_.pose.position = Node.local_planner_->getGoal();
           }
@@ -166,7 +182,19 @@ int main(int argc, char** argv) {
 
     // send waypoint
     if (!Node.never_run_ && !landing) {
+      local_planner::Profiling publishWaypoints_msg;
+      ecl::StopWatch stopwatch1;
       Node.publishWaypoints(hover);
+      ecl::Duration stopwatch1_duration = stopwatch1.elapsed();
+      ;
+      publishWaypoints_sw.counter_ += 1;
+      setProfilingMsg(publishWaypoints_msg, frame_id, "publishWaypoints",
+                      static_cast<ros::Duration>(stopwatch1_duration),
+                      publishWaypoints_sw.counter_);
+      publishWaypoints_sw.duration_measurement_pub_.publish(
+          publishWaypoints_msg);
+      publishWaypoints_sw.total_duration_ += publishWaypoints_msg.duration;
+
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
@@ -185,7 +213,6 @@ int main(int argc, char** argv) {
       Node.t_status_sent_ = now;
     }
   }
-
 
   Node.should_exit_ = true;
   Node.data_ready_cv_.notify_all();

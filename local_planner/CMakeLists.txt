@@ -84,7 +84,7 @@ endif(DISABLE_SIMULATION)
 # )
 add_message_files(
   FILES
-  ProcessTime.msg
+  Profiling.msg
 )
 
 generate_messages(
@@ -158,6 +158,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
                               "src/nodes/common.cpp"
+                              "src/nodes/stopwatch.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"

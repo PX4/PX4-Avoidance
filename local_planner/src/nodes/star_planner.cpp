@@ -138,26 +138,95 @@ void StarPlanner::buildLookAheadTree() {
     // build new histogram
     std::vector<int> z_FOV_idx;
     int e_FOV_min, e_FOV_max;
+
+    ecl::StopWatch stopwatch;
+    local_planner::Profiling calculateFOV_msg;
     calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
                  tree_[origin].yaw_,
                  0.0f);  // assume pitch is zero at every node
+    ecl::Duration stopwatch_duration = stopwatch.elapsed();
+    calculateFOV_sw_.counter_ += 1;
+    setProfilingMsg(calculateFOV_msg, profiling_frame_id_buildTree_,
+                    "calculateFOV",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    calculateFOV_sw_.counter_);
+    calculateFOV_sw_.duration_measurement_pub_.publish(calculateFOV_msg);
+    calculateFOV_sw_.total_duration_ += calculateFOV_msg.duration;
 
     Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
     Histogram histogram = Histogram(ALPHA_RES);
 
+    local_planner::Profiling propagateHistogram_msg;
+    stopwatch.restart();
     propagateHistogram(propagated_histogram, reprojected_points_,
                        reprojected_points_age_, origin_position);
+    stopwatch_duration = stopwatch.elapsed();
+    propagateHistogram_sw_.counter_ += 1;
+    setProfilingMsg(propagateHistogram_msg, profiling_frame_id_buildTree_,
+                    "propagateHistogram",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    propagateHistogram_sw_.counter_);
+    propagateHistogram_sw_.duration_measurement_pub_.publish(
+        propagateHistogram_msg);
+    propagateHistogram_sw_.total_duration_ += propagateHistogram_msg.duration;
+
+    local_planner::Profiling generateNewHistogram_msg;
+    stopwatch.restart();
     generateNewHistogram(histogram, pointcloud_, origin_position);
+    stopwatch_duration = stopwatch.elapsed();
+    generateNewHistogram_sw_.counter_ += 1;
+    setProfilingMsg(generateNewHistogram_msg, profiling_frame_id_buildTree_,
+                    "generateNewHistogram",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    generateNewHistogram_sw_.counter_);
+    generateNewHistogram_sw_.duration_measurement_pub_.publish(
+        generateNewHistogram_msg);
+    generateNewHistogram_sw_.total_duration_ +=
+        generateNewHistogram_msg.duration;
+
+    local_planner::Profiling combinedHistogram_msg;
+    stopwatch.restart();
     combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
                       z_FOV_idx, e_FOV_min, e_FOV_max);
+    stopwatch_duration = stopwatch.elapsed();
+    combinedHistogram_sw_.counter_ += 1;
+    setProfilingMsg(combinedHistogram_msg, profiling_frame_id_buildTree_,
+                    "combinedHistogram",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    combinedHistogram_sw_.counter_);
+    combinedHistogram_sw_.duration_measurement_pub_.publish(
+        combinedHistogram_msg);
+    combinedHistogram_sw_.total_duration_ += combinedHistogram_msg.duration;
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
+    
+    local_planner::Profiling getCostMatrix_msg;
+    stopwatch.restart();
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
-                  projected_last_wp_, cost_params_, false, cost_matrix);
+              projected_last_wp_, cost_params_, false, cost_matrix);
+    stopwatch_duration = stopwatch.elapsed();
+    getCostMatrix_sw_.counter_ += 1;
+    setProfilingMsg(getCostMatrix_msg, profiling_frame_id_buildTree_,
+                    "getCostMatrix",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    getCostMatrix_sw_.counter_);
+    getCostMatrix_sw_.duration_measurement_pub_.publish(getCostMatrix_msg);
+    getCostMatrix_sw_.total_duration_ += getCostMatrix_msg.duration;
+
+    local_planner::Profiling getBestCand_msg;
+    stopwatch.restart();
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
+    stopwatch_duration = stopwatch.elapsed();
+    getBestCand_sw_.counter_ += 1;
+    setProfilingMsg(getBestCand_msg, profiling_frame_id_buildTree_,
+                    "getBestCand",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    getBestCand_sw_.counter_);
+    getBestCand_sw_.duration_measurement_pub_.publish(getBestCand_msg);
+    getBestCand_sw_.total_duration_ += getBestCand_msg.duration;
 
     // add candidates as nodes
     if (candidate_vector.empty()) {
@@ -186,7 +255,20 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
           float h = treeHeuristicFunction(tree_.size() - 1);
+
+          local_planner::Profiling treeCostFunction_msg;
+          stopwatch.restart();
           float c = treeCostFunction(tree_.size() - 1);
+          stopwatch_duration = stopwatch.elapsed();
+          treeCostFunction_sw_.counter_ += 1;
+          setProfilingMsg(treeCostFunction_msg, profiling_frame_id_buildTree_,
+                          "treeCostFunction",
+                          static_cast<ros::Duration>(stopwatch_duration),
+                          treeCostFunction_sw_.counter_);
+          treeCostFunction_sw_.duration_measurement_pub_.publish(
+              treeCostFunction_msg);
+          treeCostFunction_sw_.total_duration_ += treeCostFunction_msg.duration;
+
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ =
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
@@ -201,6 +283,8 @@ void StarPlanner::buildLookAheadTree() {
 
     closed_set_.push_back(origin);
 
+    local_planner::Profiling findBestNode_msg;
+    stopwatch.restart();
     // find best node to continue
     float minimal_cost = HUGE_VAL;
     for (size_t i = 0; i < tree_.size(); i++) {
@@ -219,6 +303,14 @@ void StarPlanner::buildLookAheadTree() {
         origin = i;
       }
     }
+    stopwatch_duration = stopwatch.elapsed();
+    findBestNode_sw_.counter_ += 1;
+    setProfilingMsg(findBestNode_msg, profiling_frame_id_buildTree_,
+                    "findBestNode_BuildTree",
+                    static_cast<ros::Duration>(stopwatch_duration),
+                    findBestNode_sw_.counter_);
+    findBestNode_sw_.duration_measurement_pub_.publish(findBestNode_msg);
+    findBestNode_sw_.total_duration_ += findBestNode_msg.duration;
   }
   // smoothing between trees
   int tree_end = origin;

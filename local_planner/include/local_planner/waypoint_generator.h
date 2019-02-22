@@ -3,6 +3,14 @@
 
 #include "avoidance_output.h"
 
+#include "stopwatch.h"
+
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
+
+#include <dynamic_reconfigure/server.h>
+#include <local_planner/LocalPlannerNodeConfig.h>
+
 #include <Eigen/Dense>
 
 #include <geometry_msgs/Point.h>
@@ -103,6 +111,11 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
+  // function frame ids for profiling
+  std::string profiling_frame_id_getWp_ = "/../pubWp/getWp";
+  std::string profiling_frame_id_calWp_ = "/../pubWp/getWp/calWp";
+  std::string profiling_frame_id_getP_ = "/../pubWp/getWp/calWp/getPath";
+
  public:
   /**
   * @brief     getter method for position and velocity waypoints to be sent to
@@ -152,7 +165,15 @@ class WaypointGenerator {
   **/
   virtual ros::Time getSystemTime();
 
-  WaypointGenerator() = default;
+  // add stopwatch objects for profiling
+  StopWatch calculateWaypoint_sw_;
+  StopWatch getPathMsg_sw_;
+  StopWatch getDirectionFromTree_sw_;
+  StopWatch nextSmoothYaw_sw_;
+  StopWatch adaptSpeed_sw_;
+  StopWatch smoothWaypoint_sw_;
+
+  WaypointGenerator();
   virtual ~WaypointGenerator() = default;
 };
 }

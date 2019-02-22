@@ -8,6 +8,8 @@
 #include "local_planner/rviz_world_loader.h"
 #endif
 
+#include "local_planner/stopwatch.h"
+
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
@@ -37,7 +39,8 @@
 #include <boost/bind.hpp>
 
 // time stuff
-#include <local_planner/ProcessTime.h>
+#include <local_planner/Profiling.h>
+#include <ecl/time.hpp>
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
@@ -119,6 +122,13 @@ class LocalPlannerNode {
 
   std::vector<cameraData> cameras_;
 
+  // add stopwatch objects for profiling
+  StopWatch setPose_sw_;
+  StopWatch setCurrentVelocity_sw_;
+  StopWatch getWaypoints_sw_;
+  StopWatch transformVelocityToTrajectory_sw_;
+  StopWatch transformPoseToTrajectory_sw_;
+
   ModelParameters model_params_;
 
   ros::CallbackQueue pointcloud_queue_;
@@ -152,8 +162,6 @@ class LocalPlannerNode {
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
   tf::TransformListener tf_listener_;
-
-  ros::Publisher duration_measurement_pub_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
@@ -275,6 +283,9 @@ class LocalPlannerNode {
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   boost::recursive_mutex config_mutex_;
 
+  // function frame ids for profiling
+  std::string profiling_frame_id_uPI_ = "/../upPlannerInfo";
+  std::string profiling_frame_id_pubW_ = "/../pubWp";
   /**
   * @brief     callaback for parameters dynamic reconfigure server
   * @param     config, struct with all the parameters

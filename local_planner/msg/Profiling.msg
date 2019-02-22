@@ -1,4 +1,4 @@
-# TimeCarrier.msg 
+# Profiling.msg 
 # function duration message
 
 Header header

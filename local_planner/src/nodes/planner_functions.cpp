@@ -250,7 +250,13 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   cost_matrix.fill(0.f);
 
+  StopWatch fillCostMatrix_sw_;
+  StopWatch smoothPolarMatrix_sw_;
+
   // fill in cost matrix
+  std::string profiling_frame_id_gCM = "/../rPlanner/dStrat/buildLAT/gCostMat";
+  ecl::StopWatch stopwatch;
+  local_planner::Profiling fillCostMatrix_msg;
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
@@ -262,13 +268,32 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
       distance_matrix(e_index, z_index) = distance_cost;
     }
   }
+  ecl::Duration stopwatch_duration = stopwatch.elapsed();
+  fillCostMatrix_sw_.counter_ += 1;
+  setProfilingMsg(fillCostMatrix_msg, profiling_frame_id_gCM, "fillCostMatrix",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  fillCostMatrix_sw_.counter_);
+  fillCostMatrix_sw_.duration_measurement_pub_.publish(fillCostMatrix_msg);
+  fillCostMatrix_sw_.total_duration_ += fillCostMatrix_msg.duration;
 
+  local_planner::Profiling smoothPolarMatrix_msg;
   unsigned int smooth_radius = 1;
   float smoothing_margin_degrees = 45;
   int smoothing_steps = ceil(smoothing_margin_degrees / ALPHA_RES);
+  stopwatch.restart();
   for (int i = 0; i < smoothing_steps; i++) {
     smoothPolarMatrix(distance_matrix, smooth_radius);
   }
+
+  stopwatch_duration = stopwatch.elapsed();
+  smoothPolarMatrix_sw_.counter_ += 1;
+  setProfilingMsg(smoothPolarMatrix_msg, profiling_frame_id_gCM,
+                  "smoothPolarMatrix",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  smoothPolarMatrix_sw_.counter_);
+  smoothPolarMatrix_sw_.duration_measurement_pub_.publish(
+      smoothPolarMatrix_msg);
+  smoothPolarMatrix_sw_.total_duration_ += fillCostMatrix_msg.duration;
 
   cost_matrix = cost_matrix + distance_matrix;
 }
@@ -308,7 +333,19 @@ void getBestCandidatesFromCostMatrix(
 void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   // pad matrix by smoothing radius respecting all wrapping rules
   Eigen::MatrixXf matrix_padded;
+  std::string profiling_frame_id_sPM =
+      "/../rPlanner/dStrat/buildLAT/gCostMat/smoothPolMat";
+  StopWatch padPolarMatrix_sw_;
+  local_planner::Profiling padPolarMatrix_msg;
+  ecl::StopWatch stopwatch;
   padPolarMatrix(matrix, smoothing_radius, matrix_padded);
+  ecl::Duration stopwatch_duration = stopwatch.elapsed();
+  padPolarMatrix_sw_.counter_ += 1;
+  setProfilingMsg(padPolarMatrix_msg, profiling_frame_id_sPM, "padPolarMatrix",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  padPolarMatrix_sw_.counter_);
+  padPolarMatrix_sw_.duration_measurement_pub_.publish(padPolarMatrix_msg);
+  padPolarMatrix_sw_.total_duration_ += padPolarMatrix_msg.duration;
 
   // filter matrix (max-mean)
   for (int row_index = smoothing_radius;

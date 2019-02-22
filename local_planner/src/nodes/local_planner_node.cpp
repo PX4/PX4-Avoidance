@@ -4,7 +4,6 @@
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
 #include "local_planner/waypoint_generator.h"
-#include "local_planner/stopwatch.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -116,9 +115,6 @@ LocalPlannerNode::LocalPlannerNode() {
   get_px4_param_client_ =
       nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
-
-  duration_measurement_pub_ = nh_.advertise<local_planner::ProcessTime>("/performance_check", 1);
-
   local_planner_->applyGoal();
 }
 
@@ -217,11 +213,32 @@ void LocalPlannerNode::updatePlannerInfo() {
     }
   }
 
+  local_planner::Profiling setPose_msg;
+  ecl::StopWatch stopwatch1;
+
   // update position
   local_planner_->setPose(newest_pose_);
+  ecl::Duration stopwatch1_duration = stopwatch1.elapsed();
+  setPose_sw_.counter_ += 1;
+  setProfilingMsg(setPose_msg, profiling_frame_id_uPI_, "setPose",
+                  static_cast<ros::Duration>(stopwatch1_duration),
+                  setPose_sw_.counter_);
+  setPose_sw_.duration_measurement_pub_.publish(setPose_msg);
+  setPose_sw_.total_duration_ += setPose_msg.duration;
 
+  local_planner::Profiling setCurrentVelocity_msg;
+  stopwatch1.restart();
   // Update velocity
   local_planner_->setCurrentVelocity(vel_msg_);
+  stopwatch1_duration = stopwatch1.elapsed();
+  setCurrentVelocity_sw_.counter_ += 1;
+  setProfilingMsg(setCurrentVelocity_msg, profiling_frame_id_uPI_,
+                  "setCurrentVelocity",
+                  static_cast<ros::Duration>(stopwatch1_duration),
+                  setCurrentVelocity_sw_.counter_);
+  setCurrentVelocity_sw_.duration_measurement_pub_.publish(
+      setCurrentVelocity_msg);
+  setCurrentVelocity_sw_.total_duration_ += setCurrentVelocity_msg.duration;
 
   // update state
   local_planner_->currently_armed_ = armed_;
@@ -484,7 +501,17 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
 
   wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover,
                              is_airborne);
+
+  local_planner::Profiling getWaypoints_msg;
+  ecl::StopWatch stopwatch1;
   waypointResult result = wp_generator_->getWaypoints();
+  ecl::Duration stopwatch1_duration = stopwatch1.elapsed();
+  getWaypoints_sw_.counter_ += 1;
+  setProfilingMsg(getWaypoints_msg, profiling_frame_id_pubW_, "getWaypoints",
+                  static_cast<ros::Duration>(stopwatch1_duration),
+                  getWaypoints_sw_.counter_);
+  getWaypoints_sw_.duration_measurement_pub_.publish(getWaypoints_msg);
+  getWaypoints_sw_.total_duration_ += getWaypoints_msg.duration;
 
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
@@ -568,10 +595,36 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   mavros_msgs::Trajectory obst_free_path = {};
   if (local_planner_->use_vel_setpoints_) {
     mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
+
+    local_planner::Profiling transformVeltoTraj_msg;
+    stopwatch1.restart();
     transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
+    stopwatch1_duration = stopwatch1.elapsed();
+    transformVelocityToTrajectory_sw_.counter_ += 1;
+    setProfilingMsg(transformVeltoTraj_msg, profiling_frame_id_pubW_,
+                    "transformVelocityToTrajectory",
+                    static_cast<ros::Duration>(stopwatch1_duration),
+                    transformVelocityToTrajectory_sw_.counter_);
+    transformVelocityToTrajectory_sw_.duration_measurement_pub_.publish(
+        transformVeltoTraj_msg);
+    transformVelocityToTrajectory_sw_.total_duration_ +=
+        transformVeltoTraj_msg.duration;
   } else {
     mavros_pos_setpoint_pub_.publish(result.position_waypoint);
+
+    local_planner::Profiling transformPosetoTraj_msg;
+    stopwatch1.restart();
     transformPoseToTrajectory(obst_free_path, result.position_waypoint);
+    stopwatch1_duration = stopwatch1.elapsed();
+    transformPoseToTrajectory_sw_.counter_ += 1;
+    setProfilingMsg(transformPosetoTraj_msg, profiling_frame_id_pubW_,
+                    "transformPoseToTrajectory",
+                    static_cast<ros::Duration>(stopwatch1_duration),
+                    transformPoseToTrajectory_sw_.counter_);
+    transformPoseToTrajectory_sw_.duration_measurement_pub_.publish(
+        transformPosetoTraj_msg);
+    transformPoseToTrajectory_sw_.total_duration_ +=
+        transformPosetoTraj_msg.duration;
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
@@ -972,6 +1025,7 @@ void LocalPlannerNode::threadFunction() {
       std::lock_guard<std::mutex> guard(running_mutex_);
       never_run_ = false;
       std::clock_t start_time = std::clock();
+
       local_planner_->runPlanner();
       publishPlannerData();
 

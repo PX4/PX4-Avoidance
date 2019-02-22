@@ -8,6 +8,7 @@
 #include <tf/transform_listener.h>
 
 namespace avoidance {
+WaypointGenerator::WaypointGenerator() {}
 
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
@@ -22,6 +23,9 @@ void WaypointGenerator::calculateWaypoint() {
   last_time_ = current_time_;
   current_time_ = getSystemTime();
 
+  ecl::StopWatch stopwatch;
+  local_planner::Profiling getPath_msg;
+  ecl::Duration stopwatch_duration;
   switch (planner_info_.waypoint_type) {
     case hover: {
       if (last_wp_type_ != hover) {
@@ -30,7 +34,17 @@ void WaypointGenerator::calculateWaypoint() {
       output_.goto_position = toPoint(hover_position_);
       ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
+
+      stopwatch.restart();
       getPathMsg();
+      stopwatch_duration = stopwatch.elapsed();
+      getPathMsg_sw_.counter_ += 1;
+      setProfilingMsg(getPath_msg, profiling_frame_id_calWp_,
+                      "getPathMsg_hover",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getPathMsg_sw_.counter_);
+      getPathMsg_sw_.duration_measurement_pub_.publish(getPath_msg);
+      getPathMsg_sw_.total_duration_ += getPath_msg.duration;
       break;
     }
     case costmap: {
@@ -40,15 +54,38 @@ void WaypointGenerator::calculateWaypoint() {
           toPoint(polarToCartesian(p_pol, pose_.pose.position));
       ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x,
                 output_.goto_position.y, output_.goto_position.z);
+
+      stopwatch.restart();
       getPathMsg();
+      stopwatch_duration = stopwatch.elapsed();
+      getPathMsg_sw_.counter_ += 1;
+      setProfilingMsg(getPath_msg, profiling_frame_id_calWp_,
+                      "getPathMsg_costmap",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getPathMsg_sw_.counter_);
+      getPathMsg_sw_.duration_measurement_pub_.publish(getPath_msg);
+      getPathMsg_sw_.total_duration_ += getPath_msg.duration;
       break;
     }
 
     case tryPath: {
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);
+
+      local_planner::Profiling getDirectionFromTree_msg;
+      stopwatch.restart();
       bool tree_available =
           getDirectionFromTree(p_pol, planner_info_.path_node_positions,
                                toEigen(pose_.pose.position), goal_);
+      stopwatch_duration = stopwatch.elapsed();
+      getDirectionFromTree_sw_.counter_ += 1;
+      setProfilingMsg(getDirectionFromTree_msg, profiling_frame_id_calWp_,
+                      "getDirectionFromTree",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getDirectionFromTree_sw_.counter_);
+      getDirectionFromTree_sw_.duration_measurement_pub_.publish(
+          getDirectionFromTree_msg);
+      getDirectionFromTree_sw_.total_duration_ +=
+          getDirectionFromTree_msg.duration;
 
       float dist_goal = (goal_ - toEigen(pose_.pose.position)).norm();
       ros::Duration since_last_path =
@@ -65,21 +102,52 @@ void WaypointGenerator::calculateWaypoint() {
         goStraight();
         output_.waypoint_type = direct;
       }
+
+      stopwatch.restart();
       getPathMsg();
+      stopwatch_duration = stopwatch.elapsed();
+      getPathMsg_sw_.counter_ += 1;
+      setProfilingMsg(getPath_msg, profiling_frame_id_calWp_,
+                      "getPathMsg_tryPath",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getPathMsg_sw_.counter_);
+      getPathMsg_sw_.duration_measurement_pub_.publish(getPath_msg);
+      getPathMsg_sw_.total_duration_ += getPath_msg.duration;
       break;
     }
 
     case direct: {
       ROS_DEBUG("[WG] No obstacle ahead, going straight");
-      goStraight();
+
+      goStraight();  // no function call
+
+      stopwatch.restart();
       getPathMsg();
+      stopwatch_duration = stopwatch.elapsed();
+      getPathMsg_sw_.counter_ += 1;
+      setProfilingMsg(getPath_msg, profiling_frame_id_calWp_,
+                      "getPathMsg_direct",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getPathMsg_sw_.counter_);
+      getPathMsg_sw_.duration_measurement_pub_.publish(getPath_msg);
+      getPathMsg_sw_.total_duration_ += getPath_msg.duration;
       break;
     }
 
     case reachHeight: {
       ROS_DEBUG("[WG] Reaching height first");
-      reachGoalAltitudeFirst();
+      reachGoalAltitudeFirst();  // no function call
+
+      stopwatch.restart();
       getPathMsg();
+      stopwatch_duration = stopwatch.elapsed();
+      getPathMsg_sw_.counter_ += 1;
+      setProfilingMsg(getPath_msg, profiling_frame_id_calWp_,
+                      "getPathMsg_reachHeight",
+                      static_cast<ros::Duration>(stopwatch_duration),
+                      getPathMsg_sw_.counter_);
+      getPathMsg_sw_.duration_measurement_pub_.publish(getPath_msg);
+      getPathMsg_sw_.total_duration_ += getPath_msg.duration;
       break;
     }
     case goBack: {
@@ -306,22 +374,63 @@ void WaypointGenerator::getPathMsg() {
   float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.0001f;
 
   // set the yaw at the setpoint based on our smoothed location
+  ecl::StopWatch stopwatch;
+  local_planner::Profiling nextSmoothYaw_msg;
   nextSmoothYaw(dt);
+  ecl::Duration stopwatch_duration = stopwatch.elapsed();
+  calculateWaypoint_sw_.counter_ += 1;
+  setProfilingMsg(nextSmoothYaw_msg, profiling_frame_id_getP_, "nextSmoothYaw",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  calculateWaypoint_sw_.counter_);
+  calculateWaypoint_sw_.duration_measurement_pub_.publish(nextSmoothYaw_msg);
+  calculateWaypoint_sw_.total_duration_ += nextSmoothYaw_msg.duration;
 
   // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
+  local_planner::Profiling adaptSpeed_msg;
+  stopwatch.restart();
   adaptSpeed();
+  stopwatch_duration = stopwatch.elapsed();
+  adaptSpeed_sw_.counter_ += 1;
+  setProfilingMsg(adaptSpeed_msg, profiling_frame_id_getP_, "adaptSpeed",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  adaptSpeed_sw_.counter_);
+  adaptSpeed_sw_.duration_measurement_pub_.publish(adaptSpeed_msg);
+  adaptSpeed_sw_.total_duration_ += adaptSpeed_msg.duration;
+
+  local_planner::Profiling smoothWaypoint_msg;
+  stopwatch.restart();
   smoothWaypoint(dt);
+  stopwatch_duration = stopwatch.elapsed();
+  smoothWaypoint_sw_.counter_ += 1;
+  setProfilingMsg(smoothWaypoint_msg, profiling_frame_id_getP_,
+                  "smoothWaypoint",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  smoothWaypoint_sw_.counter_);
+  smoothWaypoint_sw_.duration_measurement_pub_.publish(smoothWaypoint_msg);
+  smoothWaypoint_sw_.total_duration_ += smoothWaypoint_msg.duration;
 
   ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
   output_.position_waypoint =
       createPoseMsg(output_.smoothed_goto_position, new_yaw_);
+
   transformPositionToVelocityWaypoint();
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
+  ecl::StopWatch stopwatch;
+  local_planner::Profiling calculateWaypoint_msg;
   calculateWaypoint();
+  ecl::Duration stopwatch_duration = stopwatch.elapsed();
+  calculateWaypoint_sw_.counter_ += 1;
+  setProfilingMsg(calculateWaypoint_msg, profiling_frame_id_getWp_,
+                  "calculateWaypoint",
+                  static_cast<ros::Duration>(stopwatch_duration),
+                  calculateWaypoint_sw_.counter_);
+  calculateWaypoint_sw_.duration_measurement_pub_.publish(
+      calculateWaypoint_msg);
+  calculateWaypoint_sw_.total_duration_ += calculateWaypoint_msg.duration;
   return output_;
 }
 
