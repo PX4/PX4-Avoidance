@@ -42,6 +42,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
     avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   cost_params_.goal_cost_param = config.goal_cost_param_;
+  cost_params_.heading_cost_param = config.heading_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
   velocity_around_obstacles_ =
       static_cast<float>(config.velocity_around_obstacles_);
@@ -279,13 +280,23 @@ void LocalPlanner::determineStrategy() {
           star_planner_->setReprojectedPoints(reprojected_points_,
                                               reprojected_points_age_);
           star_planner_->setCloud(final_cloud_);
+
+          //set last chosen direction for smoothing
+          PolarPoint last_wp_pol = cartesianToPolar(toEigen(last_sent_waypoint_), toEigen(pose_.pose.position));
+          last_wp_pol.r = (toEigen(pose_.pose.position) - goal_).norm();
+          Eigen::Vector3f projected_last_wp =
+              polarToCartesian(last_wp_pol, pose_.pose.position);
+          star_planner_->setLastDirection(projected_last_wp);
+
+          //build search tree
           star_planner_->buildLookAheadTree();
 
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
+          float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
           getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
-                        toEigen(last_sent_waypoint_), cost_params_,
+        		        yaw_angle, toEigen(last_sent_waypoint_), cost_params_,
                         velocity_mod_ < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
