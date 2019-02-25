@@ -229,7 +229,12 @@ void WaypointGenerator::smoothWaypoint(float dt) {
 
   const Eigen::Vector3f desired_location =
       toEigen(output_.adapted_goto_position);
-  const Eigen::Vector3f desired_velocity = toEigen(curr_vel_.twist.linear);
+
+  // Prevent overshoot when drone is close to goal
+  const Eigen::Vector3f desired_velocity =
+                  (desired_location - goal_).norm() < 0.1
+                  ? Eigen::Vector3f::Zero()
+                  : toEigen(curr_vel_.twist.linear);
 
   Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
   if (!location_diff.allFinite()) {
@@ -293,15 +298,9 @@ void WaypointGenerator::adaptSpeed() {
     speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_);
   }
 
-  // Scale the pose_to_wp by the speed
-  Eigen::Vector3f pose_to_wp =
-      toEigen(output_.goto_position) - toEigen(pose_.pose.position);
+  // If the goal is so close, that the speed-adapted way point would overreach
   Eigen::Vector3f pose_to_goal = goal_ - toEigen(pose_.pose.position);
-  if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
-  pose_to_wp *= speed_;
-
-  // If the waypoint is farther than the goal, clamp to goal
-  if (pose_to_wp.norm() > pose_to_goal.norm()) {
+  if (planner_info_.velocity_around_obstacles > pose_to_goal.norm()) {
     output_.adapted_goto_position = toPoint(goal_);
 
     // First time we reach this goal, remember the heading
@@ -311,6 +310,12 @@ void WaypointGenerator::adaptSpeed() {
     new_yaw_ = heading_at_goal_;
 
   } else {
+    // Scale the pose_to_wp by the speed
+    Eigen::Vector3f pose_to_wp =
+        toEigen(output_.goto_position) - toEigen(pose_.pose.position);
+    if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
+    pose_to_wp *= speed_;
+
     heading_at_goal_ = NAN;
     output_.adapted_goto_position =
         toPoint(toEigen(pose_.pose.position) + pose_to_wp);
