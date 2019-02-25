@@ -30,9 +30,11 @@ find_package(PCL 1.7 REQUIRED)
 if(DISABLE_SIMULATION)
   message(STATUS "Building local planner without Gazebo Simulation")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+  set(RVIZ_WORLD_LOADER "")
 else()
   message(STATUS "Building local planner with Gazebo Simulation")
   find_package(yaml-cpp REQUIRED)
+  set(RVIZ_WORLD_LOADER "src/nodes/rviz_world_loader.cpp")
 endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -139,32 +141,18 @@ include_directories(
 # add_library(avoidance
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
+add_library(local_planner
+  src/nodes/local_planner.cpp
+  src/nodes/waypoint_generator.cpp
+  src/nodes/histogram.cpp
+  src/nodes/tree_node.cpp
+  src/nodes/box.cpp
+  src/nodes/star_planner.cpp
+  src/nodes/planner_functions.cpp
+  src/nodes/common.cpp
+  ${RVIZ_WORLD_LOADER}
+)
 
-if(DISABLE_SIMULATION)
-  add_library(local_planner
-    src/nodes/local_planner.cpp
-    src/nodes/waypoint_generator.cpp
-    src/nodes/histogram.cpp
-    src/nodes/tree_node.cpp
-    src/nodes/box.cpp
-    src/nodes/star_planner.cpp
-    src/nodes/planner_functions.cpp
-    src/nodes/common.cpp
-  )
-else()
-  message(STATUS "Building local planner with Gazebo Simulation")
-  add_library(local_planner
-    src/nodes/local_planner.cpp
-    src/nodes/waypoint_generator.cpp
-    src/nodes/histogram.cpp
-    src/nodes/tree_node.cpp
-    src/nodes/box.cpp
-    src/nodes/star_planner.cpp
-    src/nodes/planner_functions.cpp
-    src/nodes/common.cpp
-    src/nodes/rviz_world_loader.cpp
-  )
-endif(DISABLE_SIMULATION)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
@@ -236,8 +224,8 @@ if(CATKIN_ENABLE_TESTING)
 	                                      test/test_common.cpp
 	                                      test/test_local_planner.cpp
 	                                      test/test_planner_functions.cpp
-                                              test/test_star_planner.cpp
-                                              test/test_waypoint_generator.cpp)
+                                        test/test_star_planner.cpp
+                                        test/test_waypoint_generator.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
 	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
 	                                             ${catkin_LIBRARIES}
