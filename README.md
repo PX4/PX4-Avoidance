@@ -344,17 +344,22 @@ The global planner has been so far tested on a Odroid companion computer by the 
 
 ## Local Planner
 
-Once the catkin workspace has been built, to run the planner with a Realsense D435 camera launch *local_planner_example.launch* editing the arguments:
+Once the catkin workspace has been built, to run the planner with a Realsense D435 camera you can generate the launch file using the script *generate_launchfile.sh*
 
-1. `tf_*` representing the displacement between the camera and the flight controller
-2. `fcu_url` representing the port connecting the companion computer to the flight controller
-3. `serial_no_camera_front` representing the Realsense serial number
+1. `export CAMERA_CONFIGS="camera_namespace, realsense_serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the eight parameters of each camera separated by a semicolon.
+2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
+3. `export VEHICLE_CONFIG=params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be use.
 
 For example:
 ```bash
-roslaunch local_planner local_planner_example.launch tf_x:=0.20 tf_y:=0.0 tf_z:=-0.2
+export CAMERA_CONFIGS="camera_main,819612070807,0.3,0.32,-0.11,0,0,0"
+export DEPTH_CAMERA_FRAME_RATE=30
+export VEHICLE_CONFIG=~/catkin_ws/src/avoidance/local_planner/cfg/params_vehicle_1.yaml
+./tools/generate_launchfile.sh
+roslaunch local_planner avoidance.launch fcu_url:=/dev/ttyACM0:57600
 ```
 
+where `fcu_url` representing the port connecting the companion computer to the flight controller.
 The planner is running correctly when
 
 ```bash
