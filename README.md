@@ -346,9 +346,9 @@ The global planner has been so far tested on a Odroid companion computer by the 
 
 Once the catkin workspace has been built, to run the planner with a Realsense D435 camera you can generate the launch file using the script *generate_launchfile.sh*
 
-1. `export CAMERA_CONFIGS="camera_namespace, realsense_serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the eight parameters of each camera separated by a semicolon.
+1. `export CAMERA_CONFIGS="camera_namespace, realsense_serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.  
 2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
-3. `export VEHICLE_CONFIG=params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be use.
+3. `export VEHICLE_CONFIG=params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
 
 For example:
 ```bash
