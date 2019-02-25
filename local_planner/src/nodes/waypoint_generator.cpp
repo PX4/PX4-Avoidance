@@ -304,7 +304,15 @@ void WaypointGenerator::adaptSpeed() {
   if (pose_to_wp.dot(pose_to_goal) > 0.f &&
       pose_to_wp.norm() > pose_to_goal.norm()) {
     output_.adapted_goto_position = toPoint(goal_);
+
+    // First time we reach this goal, remember the heading
+    if(!std::isfinite(heading_at_goal_)){
+      heading_at_goal_ = curr_yaw_;
+    }
+    new_yaw_ = heading_at_goal_;
+    
   } else {
+    heading_at_goal_ = NAN;
     output_.adapted_goto_position =
         toPoint(toEigen(pose_.pose.position) + pose_to_wp);
   }

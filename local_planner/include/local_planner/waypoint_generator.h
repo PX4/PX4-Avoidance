@@ -48,6 +48,7 @@ class WaypointGenerator {
   bool is_airborne_ = false;
   float last_yaw_;
   float new_yaw_;
+  float heading_at_goal_ = NAN;
   float new_yaw_velocity_ = 0.0f;
   float speed_ = 1.0f;
   float h_FOV_ = 59.0f;
