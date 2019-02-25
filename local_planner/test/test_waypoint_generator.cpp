@@ -96,9 +96,6 @@ class WaypointGeneratorTests : public ::testing::Test,
     updateState(position, goal, velocity, stay, is_airborne);
     setPlannerInfo(avoidance_output);
     setFOV(270.0, 45.0);
-
-    param_.goal_acceptance_radius_in = 0.5;
-    param_.goal_acceptance_radius_out = 1.5;
   }
   void TearDown() override {}
 };
