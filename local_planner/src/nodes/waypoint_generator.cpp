@@ -142,6 +142,15 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
       !std::isfinite(smoothed_goto_location_.z())) {
     smoothed_goto_location_ = toEigen(pose_.pose.position);
   }
+
+  // If the smoothed goto location is farther away than adaptSpeed would ever
+  // scale it, reset to local pose. This could happen if the mission was
+  // started, then stopped manually, and re-enabled after some manual flight
+  if (is_airborne_ &&
+      (smoothed_goto_location_ - toEigen(pose_.pose.position)).norm() >
+          1.2f * planner_info_.velocity_far_from_obstacles) {
+    smoothed_goto_location_ = toEigen(pose_.pose.position);
+  }
 }
 
 // if there isn't any obstacle in front of the UAV, increase cruising speed
