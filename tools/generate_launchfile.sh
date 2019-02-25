@@ -44,7 +44,7 @@ IFS=";"
 for camera in $CAMERA_CONFIGS; do
 	IFS="," #Inside each camera configuration, the parameters are comma-separated
 	set $camera
-	if [[ $# < 8 ]]; then
+	if [[ $# != 8 ]]; then
 		echo "Invalid camera configuration $camera"
 	else
 		echo "Adding camera $1 with serial number $2"
@@ -79,11 +79,11 @@ rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_dept
 	fi
 done
 
-if [ $# -eq 9 ]; then
+if [ ! -z $VEHICLE_CONFIG ]; then
 cat >> local_planner/launch/avoidance.launch <<- EOM
-  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node \$(find local_planner)/cfg/$9.yaml" />
+  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node \$(find local_planner)/cfg/$VEHICLE_CONFIG.yaml" />
 EOM
-
+echo "Adding vehicle paramters: $VEHICLE_CONFIG"
 fi
 
 cat >> local_planner/launch/avoidance.launch <<- EOM
