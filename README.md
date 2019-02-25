@@ -6,10 +6,10 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 
 The two algorithms are standalone and they are not meant to be used together.
 
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. On the other hand, the *global_planner* is computatonally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. 
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. On the other hand, the *global_planner* is computatonally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required.
 
 > **Note** The development team is right now focused on the *local_planner*.
-  
+
 The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 16.04, for both avoidance and collision prevention use cases.
 
 > **Note** PX4-side setup is covered in the PX4 User Guide:
@@ -75,17 +75,17 @@ Note that in the following instructions, we assume your catkin workspace (in whi
 
    ```bash
    sudo apt install ros-kinetic-desktop-full
-   
+
    # Source ROS
    source /opt/ros/kinetic/setup.bash
    ```
 
   Full installation of ROS Kinetic comes with Gazebo 7.
-  
-  If you are using different version of Gazebo, 
-  
+
+  If you are using different version of Gazebo,
+
   please make sure install ros-gazebo related packages
-  
+
   For Gazebo 8,
   ```
   sudo apt install ros-kinetic-gazebo8-*
@@ -94,7 +94,7 @@ Note that in the following instructions, we assume your catkin workspace (in whi
   ```
   sudo apt install ros-kinetic-gazebo9-*
   ```
-  
+
 1. Initialize rosdep.
 
    ```bash
@@ -141,9 +141,9 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    ```bash
    catkin build -w ~/catkin_ws
    ```
-   
+
    Note that you can build the node in release mode this way:
-   
+
    ```bash
    catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
    ```
@@ -156,7 +156,7 @@ Note that in the following instructions, we assume your catkin workspace (in whi
 
 ## Run the Avoidance Gazebo Simulation
 
-In the following section we guide you trough installing and running a Gazebo simulation of both local and global planner. 
+In the following section we guide you trough installing and running a Gazebo simulation of both local and global planner.
 
 ### Build and Run the Simulator
 
@@ -243,7 +243,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    ```bash
    # if stereo-image-proc not yet installed
    sudo apt install ros-kinetic-stereo-image-proc
-   
+
    roslaunch local_planner local_planner_stereo.launch
    ```
 
@@ -252,7 +252,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    ```bash
    # if image_view is not yet installed
    sudo apt install ros-kinetic-image-view
-   
+
    rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
    ```
 
@@ -328,7 +328,7 @@ Parameters to set through QGC:
 
 ### Companion Computer
 
-* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system). 
+* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system).
 * ROS Kinetic: see [Installation](#installaton)
 * Other Required Components for Intel Realsense:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
@@ -427,11 +427,11 @@ More information about the communication between avoidance system and the Autopi
 
 This is the complete message flow *from* PX4 Firmware to the local planner.
 
-PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic 
+PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic
 --- | --- | --- | --- | ---
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
-vehicle_local_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude 
+vehicle_local_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 home_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_air_data | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
@@ -439,7 +439,7 @@ vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | traje
 
 This is the complete message flow *to* PX4 Firmware from the local planner.
 
-ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic 
+ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 --- | --- | --- | --- | ---
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
 /mavros/setpoint_velocity/cmd_vel_unstamped (offboard) | geometry_msgs::TwistStamped | setpoint_velocity | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
@@ -451,14 +451,14 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 
 This is the complete message flow *from* PX4 Firmware *to* the global planner.
 
-PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | Topic 
+PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | Topic
 --- | --- | --- | --- | ---
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
 
 This is the complete message flow *to* PX4 Firmware *from* the global planner.
 
-ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic 
+ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 --- | --- | --- | --- | ---
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
 
