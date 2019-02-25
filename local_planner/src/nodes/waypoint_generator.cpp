@@ -300,9 +300,8 @@ void WaypointGenerator::adaptSpeed() {
   if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
   pose_to_wp *= speed_;
 
-  // If the waypoint is in the direction of the goal, but farther, clamp to goal
-  if (pose_to_wp.dot(pose_to_goal) > 0.f &&
-      pose_to_wp.norm() > pose_to_goal.norm()) {
+  // If the waypoint is farther than the goal, clamp to goal
+  if (pose_to_wp.norm() > pose_to_goal.norm()) {
     output_.adapted_goto_position = toPoint(goal_);
 
     // First time we reach this goal, remember the heading
@@ -310,7 +309,7 @@ void WaypointGenerator::adaptSpeed() {
       heading_at_goal_ = curr_yaw_;
     }
     new_yaw_ = heading_at_goal_;
-    
+
   } else {
     heading_at_goal_ = NAN;
     output_.adapted_goto_position =
