@@ -388,14 +388,6 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
   Eigen::Vector3f projected_last_wp =
       polarToCartesian(last_wp_pol, toPoint(position));
 
-  if ((goal - position).norm() > 0.0001f) {
-    Eigen::Vector3f projected_goal = (goal - position).normalized();
-  }
-  if ((last_sent_waypoint - position).norm() > 0.0001f) {
-    Eigen::Vector3f projected_last_wp =
-        (last_sent_waypoint - position).normalized();
-  }
-
   // goal costs
   float yaw_cost =
       cost_params.goal_cost_param *
@@ -427,17 +419,10 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
 
   // combine costs
   float cost = 0.0f;
-  if (!only_yawed) {
-    cost = yaw_cost +
-           cost_params.height_change_cost_param_adapted * pitch_cost_up +
-           cost_params.height_change_cost_param * pitch_cost_down +
-           yaw_cost_smooth + pitch_cost_smooth + distance_cost;
-  } else {
-    cost = yaw_cost +
-           cost_params.height_change_cost_param_adapted * pitch_cost_up +
-           cost_params.height_change_cost_param * pitch_cost_down +
-           0.5f * yaw_cost_smooth + 0.5f * pitch_cost_smooth + distance_cost;
-  }
+  cost = yaw_cost +
+         cost_params.height_change_cost_param_adapted * pitch_cost_up +
+         cost_params.height_change_cost_param * pitch_cost_down +
+         yaw_cost_smooth + pitch_cost_smooth + distance_cost;
 
   return cost;
 }
