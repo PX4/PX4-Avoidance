@@ -176,15 +176,15 @@ In the following section we guide you trough installing and running a Gazebo sim
    ```bash
    # Add the models from the avoidance module to GAZEBO_MODEL_PATH
    export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
-   
+
    # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
    export QT_X11_NO_MITSHM=1
-   
-   # Setup some more Gazebo-related environment variables
-   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
-   
+
    # Build and run simulation
    make px4_sitl_default gazebo
+
+   # Setup some more Gazebo-related environment variables
+   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
