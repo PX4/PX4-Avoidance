@@ -243,6 +243,10 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix) {
+
+  Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
+  float distance_cost = 0.f;
+  float other_costs = 0.f;
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   cost_matrix.fill(0.f);
@@ -253,18 +257,21 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol =
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
-      cost_matrix(e_index, z_index) =
-          costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position,
-                       last_sent_waypoint, cost_params, only_yawed);
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position,
+                   last_sent_waypoint, cost_params, distance_cost, other_costs);
+      cost_matrix(e_index, z_index) = other_costs;
+      distance_matrix(e_index, z_index) = distance_cost;
     }
   }
 
   unsigned int smooth_radius = 1;
-  smoothPolarMatrix(cost_matrix, smooth_radius);
-  smoothPolarMatrix(cost_matrix, smooth_radius);
-  smoothPolarMatrix(cost_matrix, smooth_radius);
-  smoothPolarMatrix(cost_matrix, smooth_radius);
-  smoothPolarMatrix(cost_matrix, smooth_radius);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
+
+  cost_matrix = cost_matrix + distance_matrix;
 }
 
 void getBestCandidatesFromCostMatrix(
@@ -374,10 +381,10 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-float costFunction(float e_angle, float z_angle, float obstacle_distance,
+void costFunction(float e_angle, float z_angle, float obstacle_distance,
                    const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed) {
+                   costParameters cost_params, float& distance_cost, float& other_costs) {
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate =
@@ -412,19 +419,17 @@ float costFunction(float e_angle, float z_angle, float obstacle_distance,
       std::abs(projected_last_wp.z() - projected_candidate.z());
 
   // distance cost
-  float distance_cost = 0.0f;
+  distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 1000.0f * 1.0f / obstacle_distance;
+    distance_cost = 5000.0f * 1.0f / obstacle_distance;
   }
 
   // combine costs
-  float cost = 0.0f;
-  cost = yaw_cost +
+  other_costs = 0.0f;
+  other_costs = yaw_cost +
          cost_params.height_change_cost_param_adapted * pitch_cost_up +
          cost_params.height_change_cost_param * pitch_cost_down +
          yaw_cost_smooth + pitch_cost_smooth + distance_cost;
-
-  return cost;
 }
 
 bool getDirectionFromTree(

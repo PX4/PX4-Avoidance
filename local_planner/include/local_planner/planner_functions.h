@@ -151,13 +151,14 @@ void getBestCandidatesFromCostMatrix(
 * @param[] position, current vehicle position
 * @param[] last_sent_waypoint, previous position waypoint
 * @param[] cost_params, weights for goal oriented vs smooth behaviour
-* @param[] only_yawed, true if the vehicle has only to yaw
-* return   cost of direction (e_angle, z_angle)
+* @param[out] distance_cost, cost component due to proximity to obstacles
+* @param[out] other_costs, cost component due to goal and smoothness
 **/
-float costFunction(float e_angle, float z_angle, float obstacle_distance,
+void costFunction(float e_angle, float z_angle, float obstacle_distance,
                    const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed);
+                   costParameters cost_params, float& distance_cost,
+				   float& other_costs);
 
 /**
 * @brief   max-median filtes the cost matrix
