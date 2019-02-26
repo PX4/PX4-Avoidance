@@ -16,6 +16,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
+  max_path_length_ = static_cast<float>(config.max_path_length_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) {
@@ -208,7 +209,9 @@ void StarPlanner::buildLookAheadTree() {
           closed = true;
         }
       }
-      if (tree_[i].total_cost_ < minimal_cost && !closed) {
+
+      float node_distance = (tree_[i].getPosition() - toEigen(pose_.pose.position)).norm();
+      if (tree_[i].total_cost_ < minimal_cost && !closed && node_distance < max_path_length_) {
         minimal_cost = tree_[i].total_cost_;
         origin = i;
       }

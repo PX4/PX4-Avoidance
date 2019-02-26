@@ -30,6 +30,7 @@ class StarPlanner {
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
+  float max_path_length_ = 4.f;
   float curr_yaw_;
 
   std::vector<int> reprojected_points_age_;
