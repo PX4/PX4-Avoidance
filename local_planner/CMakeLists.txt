@@ -30,11 +30,9 @@ find_package(PCL 1.7 REQUIRED)
 if(DISABLE_SIMULATION)
   message(STATUS "Building local planner without Gazebo Simulation")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
-  set(RVIZ_WORLD_LOADER "")
 else()
   message(STATUS "Building local planner with Gazebo Simulation")
   find_package(yaml-cpp REQUIRED)
-  set(RVIZ_WORLD_LOADER "src/nodes/rviz_world_loader.cpp")
 endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -141,17 +139,20 @@ include_directories(
 # add_library(avoidance
 #   src/${PROJECT_NAME}/avoidance.cpp
 # )
-add_library(local_planner
-  src/nodes/local_planner.cpp
-  src/nodes/waypoint_generator.cpp
-  src/nodes/histogram.cpp
-  src/nodes/tree_node.cpp
-  src/nodes/box.cpp
-  src/nodes/star_planner.cpp
-  src/nodes/planner_functions.cpp
-  src/nodes/common.cpp
-  ${RVIZ_WORLD_LOADER}
+set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
+                              "src/nodes/waypoint_generator.cpp"
+                              "src/nodes/histogram.cpp"
+                              "src/nodes/tree_node.cpp"
+                              "src/nodes/box.cpp"
+                              "src/nodes/star_planner.cpp"
+                              "src/nodes/planner_functions.cpp"
+                              "src/nodes/common.cpp"
 )
+if(NOT DISABLE_SIMULATION)
+  set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
+                              "src/nodes/rviz_world_loader.cpp")
+endif()
+add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
 
 
 ## Add cmake target dependencies of the library
