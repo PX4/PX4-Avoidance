@@ -474,14 +474,17 @@ void LocalPlannerNode::publishBox() {
 }
 
 void LocalPlannerNode::publishWaypoints(bool hover) {
-  const ros::Time now = ros::Time::now();
+  bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover, now);
+  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover,
+                             is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
   visualization_msgs::Marker sphere3;
+
+  ros::Time now = ros::Time::now();
 
   sphere1.header.frame_id = "local_origin";
   sphere1.header.stamp = now;
@@ -943,7 +946,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_->dynamicReconfigureSetParams(config, level);
-  wp_generator_->setSmoothingSpeed(config.smoothing_speed_);
+  wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_,
+                                   config.smoothing_speed_z_);
   rqt_param_config_ = config;
 }
 

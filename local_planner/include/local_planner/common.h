@@ -94,18 +94,6 @@ geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
                                          float yaw);
 
 /**
-* @brief     computes a speed using the upper and lower speed limit, as well as
-*            current acceleration and velocity
-* @param[in] max_vel upper limit for speed
-* @param[in] min_vel lower limit for speed, currently always set as 0.0 hence
-*            not used
-* @param[in] slope hard coded as 1.0
-* @param[in] v_old
-* @param[in] elapsed time [s]
-* @returns   speed within the given limits
-**/
-float velocityLinear(float max_vel, float slope, float v_old, float elapsed);
-/**
 * @brief     wrappes the input angle in to plus minus PI space
 * @param[in, out] angle to be wrapped  [rad]
 **/

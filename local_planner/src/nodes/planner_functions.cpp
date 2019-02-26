@@ -175,6 +175,8 @@ void generateNewHistogram(Histogram& polar_histogram,
       if (counter(e, z) > 0) {
         polar_histogram.set_dist(
             e, z, polar_histogram.get_dist(e, z) / counter(e, z));
+      } else {
+        polar_histogram.set_dist(e, z, 0.f);
       }
     }
   }

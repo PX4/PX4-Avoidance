@@ -43,8 +43,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
-  min_speed_ = static_cast<float>(config.min_speed_);
-  max_speed_ = static_cast<float>(config.max_speed_);
+  velocity_around_obstacles_ =
+      static_cast<float>(config.velocity_around_obstacles_);
+  velocity_far_from_obstacles_ =
+      static_cast<float>(config.velocity_far_from_obstacles_);
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
   relevance_margin_e_degree_ =
@@ -57,8 +59,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
   min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
   min_dist_backoff_ = static_cast<float>(config.min_dist_backoff_);
-  pointcloud_timeout_hover_ = config.pointcloud_timeout_hover_;
-  pointcloud_timeout_land_ = config.pointcloud_timeout_land_;
+  pointcloud_timeout_hover_ =
+      static_cast<float>(config.pointcloud_timeout_hover_);
+  pointcloud_timeout_land_ =
+      static_cast<float>(config.pointcloud_timeout_land_);
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
 
@@ -516,10 +520,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() {
   out.waypoint_type = waypoint_type_;
 
   out.obstacle_ahead = obstacle_;
-  out.reach_altitude = reach_altitude_;
-  out.min_speed = min_speed_;
-  out.max_speed = max_speed_;
-  out.velocity_sigmoid_slope = velocity_sigmoid_slope_;
+  out.velocity_around_obstacles = velocity_around_obstacles_;
+  out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
   out.last_path_time = last_path_time_;
 
   out.back_off_point = toPoint(back_off_point_);

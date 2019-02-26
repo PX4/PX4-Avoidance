@@ -25,44 +25,31 @@ struct waypointResult {
   geometry_msgs::Point smoothed_goto_position;  // what is sent to the drone
 };
 
-struct waypointGenerator_params {
-  float goal_acceptance_radius_in;
-  float goal_acceptance_radius_out;
-  float factor_close_to_goal_start_speed_limitation;
-  float factor_close_to_goal_stop_speed_limitation;
-  float min_speed_close_to_goal;
-  float max_speed_close_to_goal_factor;
-};
-
 class WaypointGenerator {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
   waypoint_choice last_wp_type_;
 
-  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
 
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_;
   float curr_yaw_;
-  float curr_vel_magnitude_;
-  ros::Time update_time_;
   geometry_msgs::TwistStamped curr_vel_;
-  ros::Time last_time_{0.};
-  ros::Time current_time_{0.};
+  ros::Time last_time_{99999.};
+  ros::Time current_time_{99999.};
 
-  float smoothing_speed_{10.};
+  float smoothing_speed_xy_{10.f};
+  float smoothing_speed_z_{3.0f};
 
-  bool reached_goal_;
-  bool limit_speed_close_to_goal_ = false;
-  bool waypoint_outside_FOV_;
+  bool is_airborne_ = false;
   float last_yaw_;
-  float yaw_reached_goal_;
   float new_yaw_;
+  float heading_at_goal_ = NAN;
   float new_yaw_velocity_ = 0.0f;
   float speed_ = 1.0f;
-  int e_FOV_max_, e_FOV_min_;
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
 
@@ -71,7 +58,6 @@ class WaypointGenerator {
   Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 
   ros::Time velocity_time_;
-  std::vector<int> z_FOV_idx_;
 
   /**
   * @brief     computes position and velocity waypoints based on the input
@@ -81,7 +67,7 @@ class WaypointGenerator {
   /**
   * @brief     computes waypoints when there isn't any obstacle
   **/
-  void goFast();
+  void goStraight();
   /**
   * @brief     computes waypoints to move away from an obstacle
   **/
@@ -90,11 +76,6 @@ class WaypointGenerator {
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
-  /**
-  * @brief     checks if the goal has been reached
-  * @returns   true, if the goal has been reached
-  **/
-  bool withinGoalRadius();
   /**
   * @brief     checks if the goal altitude has been reached. If not, it computes
   *            waypoints to climb to the goal altitude
@@ -122,13 +103,7 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
-  /**
-  * @brief     update parameters from ROS dynamic reconfigure server
-  **/
-  void updateParameters();
-
  public:
-  waypointGenerator_params param_;
   /**
   * @brief     getter method for position and velocity waypoints to be sent to
   *            the FCU
@@ -159,14 +134,16 @@ class WaypointGenerator {
   void updateState(const geometry_msgs::PoseStamped& act_pose,
                    const geometry_msgs::PoseStamped& goal,
                    const geometry_msgs::TwistStamped& vel, bool stay,
-                   ros::Time t);
+                   bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing
-  * @param[in] smoothing_speed, set to 0 to disable
+  * @param[in] smoothing_speed_xy, set to 0 to disable
+  * @param[in] smoothing_speed_z, set to 0 to disable
   **/
-  void setSmoothingSpeed(float smoothing_speed) {
-    smoothing_speed_ = smoothing_speed;
+  void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
+    smoothing_speed_xy_ = smoothing_speed_xy;
+    smoothing_speed_z_ = smoothing_speed_z;
   }
 
   /**
