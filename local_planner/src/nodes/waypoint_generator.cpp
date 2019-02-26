@@ -136,20 +136,11 @@ void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
   }
   is_airborne_ = is_airborne;
 
-  // Initialize the smoothing point to current location, if it is undefined
-  if (is_airborne_ && !std::isfinite(smoothed_goto_location_.x()) &&
-      !std::isfinite(smoothed_goto_location_.y()) &&
-      !std::isfinite(smoothed_goto_location_.z())) {
+  // Initialize the smoothing point to current location, if it is undefined or
+  // the  vehicle is not flying autonomously yet
+  if(!is_airborne_ || !smoothed_goto_location_.allFinite() || !smoothed_goto_location_velocity_.allFinite()){
     smoothed_goto_location_ = toEigen(pose_.pose.position);
-  }
-
-  // If the smoothed goto location is farther away than adaptSpeed would ever
-  // scale it, reset to local pose. This could happen if the mission was
-  // started, then stopped manually, and re-enabled after some manual flight
-  if (is_airborne_ &&
-      (smoothed_goto_location_ - toEigen(pose_.pose.position)).norm() >
-          1.2f * planner_info_.velocity_far_from_obstacles) {
-    smoothed_goto_location_ = toEigen(pose_.pose.position);
+    smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   }
 }
 
@@ -288,20 +279,14 @@ void WaypointGenerator::adaptSpeed() {
     speed_ = planner_info_.velocity_around_obstacles;
   }
 
-  // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
-  if (output_.waypoint_type != reachHeight) {
-    float angle_diff_deg =
-        std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f /
-        M_PI_F;
-    angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
-    angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
-    speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_);
-  }
+
 
   // If the goal is so close, that the speed-adapted way point would overreach
   Eigen::Vector3f pose_to_goal = goal_ - toEigen(pose_.pose.position);
-  if (planner_info_.velocity_around_obstacles > pose_to_goal.norm()) {
+  if (pose_to_goal.norm() < speed_) {
     output_.adapted_goto_position = toPoint(goal_);
+
+
 
     // First time we reach this goal, remember the heading
     if(!std::isfinite(heading_at_goal_)){
@@ -310,6 +295,16 @@ void WaypointGenerator::adaptSpeed() {
     new_yaw_ = heading_at_goal_;
 
   } else {
+    // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
+    if (output_.waypoint_type != reachHeight) {
+      float angle_diff_deg =
+          std::abs(nextYaw(pose_, output_.goto_position) - curr_yaw_) * 180.f /
+          M_PI_F;
+      angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
+      angle_diff_deg = std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
+      speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_);
+    }
+
     // Scale the pose_to_wp by the speed
     Eigen::Vector3f pose_to_wp =
         toEigen(output_.goto_position) - toEigen(pose_.pose.position);
@@ -341,7 +336,7 @@ void WaypointGenerator::getPathMsg() {
   adaptSpeed();
   smoothWaypoint(dt);
 
-  ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
+ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
   output_.position_waypoint =
