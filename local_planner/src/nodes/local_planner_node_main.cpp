@@ -25,6 +25,9 @@ int main(int argc, char** argv) {
   while (ros::ok()) {
     hover = false;
 
+#ifdef DISABLE_SIMULATION
+    startup = false;
+#else
     // visualize world in RVIZ
     if (!Node.world_path_.empty() && startup) {
       visualization_msgs::MarkerArray marker_array;
@@ -33,6 +36,8 @@ int main(int argc, char** argv) {
       }
       startup = false;
     }
+
+#endif
 
     // Process callbacks & wait for a position update
     while (!Node.position_received_ && ros::ok()) {
