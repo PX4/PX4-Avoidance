@@ -94,15 +94,17 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
   v_FOV_ = v_FOV;
 }
 
-void WaypointGenerator::updateState(const geometry_msgs::PoseStamped& act_pose,
+void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
+                                    const Eigen::Quaternionf& q,
                                     const Eigen::Vector3f& goal,
                                     const Eigen::Vector3f& vel,
                                     bool stay, bool is_airborne) {
 
-  position_ = toEigen(act_pose.pose.position);
+  position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
-  curr_yaw_ = static_cast<float>(tf::getYaw(act_pose.pose.orientation));
+  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
+  curr_yaw_ = euler[0];
 
   if (stay) {
     planner_info_.waypoint_type = hover;

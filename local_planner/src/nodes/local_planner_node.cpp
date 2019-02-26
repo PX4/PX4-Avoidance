@@ -456,7 +456,7 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(newest_pose_, toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
+  wp_generator_->updateState(toEigen(newest_pose_.pose.position), toQuaternion(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;

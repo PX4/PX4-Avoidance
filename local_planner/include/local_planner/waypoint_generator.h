@@ -5,9 +5,6 @@
 
 #include <Eigen/Dense>
 
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-
 #include <ros/time.h>
 
 #include <string>
@@ -123,13 +120,15 @@ class WaypointGenerator {
   void setFOV(float h_FOV, float v_FOV);
   /**
   * @brief update with FCU vehice states
-  * @param[in] act_pose, current vehicle position and orientation
+  * @param[in] act_pose, current vehicle position
+  * @param[in] act_pose, current vehicle orientation
   * @param[in] goal, current goal
   * @param[in] vel, current vehicle velocity
   * @param[in] stay, true if the vehicle is loitering
   * @param[in] t, update system time
   **/
-  void updateState(const geometry_msgs::PoseStamped& act_pose,
+  void updateState(const Eigen::Vector3f& act_pose,
+                   const Eigen::Quaternionf& q,
                    const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& vel, bool stay, bool is_airborne);
 

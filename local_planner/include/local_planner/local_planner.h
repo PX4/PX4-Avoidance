@@ -22,8 +22,6 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
-#include <geometry_msgs/PoseStamped.h>
-
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
