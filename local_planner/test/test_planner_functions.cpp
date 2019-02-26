@@ -457,8 +457,8 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   Histogram histogram = Histogram(ALPHA_RES);
 
   // WHEN: we calculate the cost matrix from the input data
-  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint, cost_params,
-                false, cost_matrix);
+  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
+                cost_params, false, cost_matrix);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);
