@@ -42,7 +42,7 @@ class WaypointGenerator {
   ros::Time current_time_{99999.};
 
   float smoothing_speed_xy_{10.f};
-  float smoothing_speed_z_{1.5f};
+  float smoothing_speed_z_{3.0f};
 
   bool is_airborne_ = false;
   float last_yaw_;
