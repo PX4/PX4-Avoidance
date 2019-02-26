@@ -239,12 +239,10 @@ void compressHistogramElevation(Histogram& new_hist,
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position,
-				   const float heading,
+                   const Eigen::Vector3f& position, const float heading,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix) {
-
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   float distance_cost = 0.f;
   float other_costs = 0.f;
@@ -267,9 +265,9 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
 
   unsigned int smooth_radius = 1;
   float smoothing_margin_degrees = 30;
-  int smoothing_steps = ceil(smoothing_margin_degrees/ALPHA_RES);
-  for(int i = 0; i < smoothing_steps; i++){
-	  smoothPolarMatrix(distance_matrix, smooth_radius);
+  int smoothing_steps = ceil(smoothing_margin_degrees / ALPHA_RES);
+  for (int i = 0; i < smoothing_steps; i++) {
+    smoothPolarMatrix(distance_matrix, smooth_radius);
   }
 
   cost_matrix = cost_matrix + distance_matrix;
@@ -383,16 +381,18 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
-                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const float heading, const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, float& distance_cost, float& other_costs) {
+                  const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                  const float heading,
+                  const Eigen::Vector3f& last_sent_waypoint,
+                  costParameters cost_params, float& distance_cost,
+                  float& other_costs) {
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate =
       polarToCartesian(p_pol, toPoint(position));
   PolarPoint heading_pol(e_angle, heading, goal_dist);
   Eigen::Vector3f projected_heading =
-        polarToCartesian(heading_pol, toPoint(position));
+      polarToCartesian(heading_pol, toPoint(position));
   Eigen::Vector3f projected_goal = goal;
   PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
   last_wp_pol.r = goal_dist;
@@ -422,11 +422,11 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
       cost_params.smooth_cost_param *
       std::abs(projected_last_wp.z() - projected_candidate.z());
 
-  //heading cost
+  // heading cost
   float heading_cost =
-	      cost_params.heading_cost_param *
-	      (projected_heading.topRows<2>() - projected_candidate.topRows<2>())
-	          .norm();
+      cost_params.heading_cost_param *
+      (projected_heading.topRows<2>() - projected_candidate.topRows<2>())
+          .norm();
 
   // distance cost
   distance_cost = 0.0f;
@@ -436,10 +436,10 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 
   // combine costs
   other_costs = 0.0f;
-  other_costs = yaw_cost +
-         cost_params.height_change_cost_param_adapted * pitch_cost_up +
-         cost_params.height_change_cost_param * pitch_cost_down +
-         yaw_cost_smooth + pitch_cost_smooth + heading_cost + distance_cost;
+  other_costs =
+      yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
+      cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
+      pitch_cost_smooth + heading_cost + distance_cost;
 }
 
 bool getDirectionFromTree(

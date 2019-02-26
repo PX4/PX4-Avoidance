@@ -154,8 +154,8 @@ void StarPlanner::buildLookAheadTree() {
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
-    getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_, projected_last_wp_,
-                  cost_params_, false, cost_matrix);
+    getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
+                  projected_last_wp_, cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 
@@ -192,7 +192,8 @@ void StarPlanner::buildLookAheadTree() {
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
           float yaw_radians = atan2(diff.y(), diff.x());
-          tree_.back().yaw_ = std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
+          tree_.back().yaw_ =
+              std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
           children++;
         }
       }
@@ -210,8 +211,10 @@ void StarPlanner::buildLookAheadTree() {
         }
       }
 
-      float node_distance = (tree_[i].getPosition() - toEigen(pose_.pose.position)).norm();
-      if (tree_[i].total_cost_ < minimal_cost && !closed && node_distance < max_path_length_) {
+      float node_distance =
+          (tree_[i].getPosition() - toEigen(pose_.pose.position)).norm();
+      if (tree_[i].total_cost_ < minimal_cost && !closed &&
+          node_distance < max_path_length_) {
         minimal_cost = tree_[i].total_cost_;
         origin = i;
       }

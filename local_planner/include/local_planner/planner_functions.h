@@ -128,8 +128,7 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[out] cost_matrix,
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position,
-				   const float heading,
+                   const Eigen::Vector3f& position, const float heading,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix);
@@ -157,10 +156,11 @@ void getBestCandidatesFromCostMatrix(
 * @param[out] other_costs, cost component due to goal and smoothness
 **/
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
-                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-				   const float heading, const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, float& distance_cost,
-				   float& other_costs);
+                  const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                  const float heading,
+                  const Eigen::Vector3f& last_sent_waypoint,
+                  costParameters cost_params, float& distance_cost,
+                  float& other_costs);
 
 /**
 * @brief   max-median filtes the cost matrix

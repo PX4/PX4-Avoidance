@@ -281,14 +281,15 @@ void LocalPlanner::determineStrategy() {
                                               reprojected_points_age_);
           star_planner_->setCloud(final_cloud_);
 
-          //set last chosen direction for smoothing
-          PolarPoint last_wp_pol = cartesianToPolar(toEigen(last_sent_waypoint_), toEigen(pose_.pose.position));
+          // set last chosen direction for smoothing
+          PolarPoint last_wp_pol = cartesianToPolar(
+              toEigen(last_sent_waypoint_), toEigen(pose_.pose.position));
           last_wp_pol.r = (toEigen(pose_.pose.position) - goal_).norm();
           Eigen::Vector3f projected_last_wp =
               polarToCartesian(last_wp_pol, pose_.pose.position);
           star_planner_->setLastDirection(projected_last_wp);
 
-          //build search tree
+          // build search tree
           star_planner_->buildLookAheadTree();
 
           waypoint_type_ = tryPath;
@@ -296,7 +297,7 @@ void LocalPlanner::determineStrategy() {
         } else {
           float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
           getCostMatrix(polar_histogram_, goal_, toEigen(pose_.pose.position),
-        		        yaw_angle, toEigen(last_sent_waypoint_), cost_params_,
+                        yaw_angle, toEigen(last_sent_waypoint_), cost_params_,
                         velocity_mod_ < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
