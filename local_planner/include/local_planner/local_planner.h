@@ -176,7 +176,8 @@ class LocalPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] mgs, position message coming from the FCU
+  * @param[in] pos, vehicle position message coming from the FCU
+  * @param[in] q, vehicle orientation message coming from the FCU
   **/
   void setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q);
   /**

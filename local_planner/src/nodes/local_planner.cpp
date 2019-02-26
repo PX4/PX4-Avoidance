@@ -19,7 +19,6 @@ void LocalPlanner::setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf 
   Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
   curr_yaw_ = euler[0];
   curr_pitch_ = euler[1];
-  printf("E yaw %f pitch %f roll %f \n", euler[0], euler[1], euler[2]);
   star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {

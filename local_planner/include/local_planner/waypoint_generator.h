@@ -34,8 +34,8 @@ class WaypointGenerator {
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f position_;
-  Eigen::Vector3f velocity_;
+  Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   float last_yaw_ = NAN;
   float curr_yaw_ = NAN;
