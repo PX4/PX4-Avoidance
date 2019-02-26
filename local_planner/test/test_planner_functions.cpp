@@ -447,6 +447,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   Eigen::Vector3f position(0.f, 0.f, 0.f);
   Eigen::Vector3f goal(0.f, 5.f, 0.f);
   Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
+  float heading = 0.f;
   costParameters cost_params;
   cost_params.goal_cost_param = 2.f;
   cost_params.smooth_cost_param = 1.5f;
@@ -456,7 +457,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   Histogram histogram = Histogram(ALPHA_RES);
 
   // WHEN: we calculate the cost matrix from the input data
-  getCostMatrix(histogram, goal, position, last_sent_waypoint, cost_params,
+  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint, cost_params,
                 false, cost_matrix);
 
   // THEN: The minimum cost should be in the direction of the goal
