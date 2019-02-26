@@ -23,27 +23,18 @@ class LocalPlannerTests : public ::testing::Test {
     planner.dynamicReconfigureSetParams(config, 1);
 
     // start with basic pose
-    geometry_msgs::PoseStamped msg;
-    msg.header.seq = 42;
-    msg.header.stamp = ros::Time(500, 0);
-    msg.header.frame_id = 1;
-    msg.pose.position.x = 0;
-    msg.pose.position.y = 0;
-    msg.pose.position.z = 0;
-    msg.pose.orientation.w = 1;
+    Eigen::Vector3f pos(0.f, 0.f, 0.f);
+    Eigen::Quaternionf q(1.f, 0.f, 0.f, 0.f);
     planner.currently_armed_ = false;
-    planner.setPose(msg);
+    planner.setPose(pos, q);
 
     // rise to altitude
     planner.currently_armed_ = true;
-    msg.pose.position.z = 30;
-    planner.setPose(msg);
+    pos.z() = 30.f;
+    planner.setPose(pos, q);
 
     // goal straight in front, 100m away
-    geometry_msgs::Point goal;
-    goal.x = 100;
-    goal.y = 0;
-    goal.z = 30;
+    Eigen::Vector3f goal(100.f, 0.f, 30.f);
     planner.setGoal(goal);
 
     planner.complete_cloud_.clear();

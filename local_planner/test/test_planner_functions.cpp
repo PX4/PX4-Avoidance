@@ -38,7 +38,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
 
   // WHEN: we build a histogram
   generateNewHistogram(histogram_output, empty_cloud,
-                       toEigen(location.pose.position), 10);
+                       toEigen(location.pose.position));
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -79,7 +79,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud, location, 10);
+  generateNewHistogram(histogram_output, cloud, location);
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros
