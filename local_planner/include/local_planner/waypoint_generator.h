@@ -37,13 +37,12 @@ class WaypointGenerator {
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_;
   float curr_yaw_;
-  float curr_vel_magnitude_;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
 
-  float smoothing_speed_xy_{10.};
-  float smoothing_speed_z_{30.};
+  float smoothing_speed_xy_{10.f};
+  float smoothing_speed_z_{1.5f};
 
   bool is_airborne_ = false;
   float last_yaw_;
@@ -103,11 +102,6 @@ class WaypointGenerator {
   *            orientation
   **/
   void getPathMsg();
-
-  /**
-  * @brief     update parameters from ROS dynamic reconfigure server
-  **/
-  void updateParameters();
 
  public:
   /**
