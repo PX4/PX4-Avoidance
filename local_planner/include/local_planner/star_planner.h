@@ -30,6 +30,7 @@ class StarPlanner {
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
+  float max_path_length_ = 4.f;
   float curr_yaw_;
 
   std::vector<int> reprojected_points_age_;
@@ -39,6 +40,7 @@ class StarPlanner {
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   Eigen::Vector3f goal_;
+  Eigen::Vector3f projected_last_wp_;
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
 
@@ -71,6 +73,12 @@ class StarPlanner {
   * @param[in] cost_params, parameters for the histogram cost function
   **/
   void setParams(costParameters cost_params);
+
+  /**
+  * @brief     setter method for last sent waypoint
+  * @param[in] projected_last_wp, last waypoint projected out to goal distance
+  **/
+  void setLastDirection(const Eigen::Vector3f& projected_last_wp);
 
   /**
   * @brief     setter method for Fielf of View

@@ -16,10 +16,15 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
+  max_path_length_ = static_cast<float>(config.max_path_length_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) {
   cost_params_ = cost_params;
+}
+
+void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) {
+  projected_last_wp_ = projected_last_wp;
 }
 
 void StarPlanner::setFOV(float h_FOV, float v_FOV) {
@@ -149,8 +154,8 @@ void StarPlanner::buildLookAheadTree() {
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
-    getCostMatrix(histogram, goal_, origin_position, origin_origin_position,
-                  cost_params_, false, cost_matrix);
+    getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
+                  projected_last_wp_, cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 
@@ -186,7 +191,9 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().total_cost_ =
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
-          tree_.back().yaw_ = atan2(diff.y(), diff.x());
+          float yaw_radians = atan2(diff.y(), diff.x());
+          tree_.back().yaw_ =
+              std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
           children++;
         }
       }
@@ -203,7 +210,11 @@ void StarPlanner::buildLookAheadTree() {
           closed = true;
         }
       }
-      if (tree_[i].total_cost_ < minimal_cost && !closed) {
+
+      float node_distance =
+          (tree_[i].getPosition() - toEigen(pose_.pose.position)).norm();
+      if (tree_[i].total_cost_ < minimal_cost && !closed &&
+          node_distance < max_path_length_) {
         minimal_cost = tree_[i].total_cost_;
         origin = i;
       }
