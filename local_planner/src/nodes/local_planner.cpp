@@ -16,9 +16,9 @@ LocalPlanner::~LocalPlanner() {}
 // update UAV pose
 void LocalPlanner::setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
   position_ = pos;
-  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(2, 1, 0);
-  curr_yaw_ = euler[0];
-  curr_pitch_ = euler[1];
+  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(1, 0, 2);
+  curr_yaw_ = euler[2];
+  curr_pitch_ = euler[0];
   star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
