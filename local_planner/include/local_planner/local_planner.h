@@ -58,7 +58,6 @@ class LocalPlanner {
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
 
-  float velocity_mod_;
   float curr_yaw_;
   float curr_pitch_;
   float velocity_around_obstacles_;

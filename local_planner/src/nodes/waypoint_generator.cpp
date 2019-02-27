@@ -103,8 +103,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
-  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(1, 0, 2);
-  curr_yaw_ = euler[2];
+  curr_yaw_ = q.toRotationMatrix().eulerAngles(1, 0, 2).z();
 
   if (stay) {
     planner_info_.waypoint_type = hover;

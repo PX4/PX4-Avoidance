@@ -149,7 +149,7 @@ Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
   return ev3;
 }
 
-Eigen::Quaternionf toQuaternion(const geometry_msgs::Quaternion& gmq) {
+Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq) {
   Eigen::Quaternionf eqf;
   eqf.x() = gmq.x;
   eqf.y() = gmq.y;

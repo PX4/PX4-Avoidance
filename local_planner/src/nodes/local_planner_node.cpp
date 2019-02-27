@@ -212,7 +212,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update position
-  local_planner_->setPose(toEigen(newest_pose_.pose.position), toQuaternion(newest_pose_.pose.orientation));
+  local_planner_->setPose(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation));
 
   // Update velocity
   local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
@@ -456,7 +456,7 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(toEigen(newest_pose_.pose.position), toQuaternion(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
+  wp_generator_->updateState(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
@@ -724,8 +724,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   int beta_z = floor(
       (atan2(x - drone_pos.x(), y - drone_pos.y()) *
        180.0 / M_PI));  //(-180. +180]
-  int beta_e = floor((atan((z - drone_pos.z()) / sqrt((x - drone_pos.x()) *
-        (x - drone_pos.x()) + (y - drone_pos.y()) * (y - drone_pos.y()))) *
+  int beta_e = floor((atan((z - drone_pos.z()) / (Eigen::Vector2f(x,y) - drone_pos.topRows<2>()).norm()) *
                       180.0 / M_PI));  //(-90.+90)
 
   beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[-170,+190]
