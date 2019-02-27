@@ -522,6 +522,140 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   EXPECT_TRUE(row4);
 }
 
+TEST(PlannerFunctions, CostfunctionGoalCost) {
+  // GIVEN: a scenario with two different goal locations
+  Eigen::Vector3f position(0.f, 0.f, 0.f);
+  Eigen::Vector3f goal_1(0.f, 5.f, 0.f);
+  Eigen::Vector3f goal_2(3.f, 3.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
+  float heading = 0.f;
+  costParameters cost_params;
+  cost_params.goal_cost_param = 3.f;
+  cost_params.heading_cost_param = 0.5f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
+  float obstacle_distance = 0.f;
+  float distance_cost_1, other_costs_1, distance_cost_2, other_costs_2;
+
+  Eigen::Vector2f candidate_1(0.f, 0.f);
+
+  // WHEN: we calculate the cost of one cell for the same scenario but with two
+  // different goals
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_1,
+               position, heading, last_sent_waypoint, cost_params,
+               distance_cost_1, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_2,
+               position, heading, last_sent_waypoint, cost_params,
+               distance_cost_2, other_costs_2);
+
+  // THEN: The cost in the case where the goal is in the cell direction should
+  // be lower
+  EXPECT_LT(other_costs_1, other_costs_2);
+}
+
+TEST(PlannerFunctions, CostfunctionDistanceCost) {
+  // GIVEN: a scenario with two different obstacle distances
+  Eigen::Vector3f position(0.f, 0.f, 0.f);
+  Eigen::Vector3f goal(0.f, 5.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
+  float heading = 0.f;
+  costParameters cost_params;
+  cost_params.goal_cost_param = 3.f;
+  cost_params.heading_cost_param = 0.5f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
+  float distance_1 = 0.f;
+  float distance_2 = 3.f;
+  float distance_3 = 5.f;
+  float distance_cost_1, distance_cost_2, distance_cost_3, other_costs;
+
+  Eigen::Vector2f candidate_1(0.f, 0.f);
+
+  // WHEN: we calculate the cost of one cell for the same scenario but with two
+  // different obstacle distance
+  costFunction(candidate_1.y(), candidate_1.x(), distance_1, goal, position,
+               heading, last_sent_waypoint, cost_params, distance_cost_1,
+               other_costs);
+  costFunction(candidate_1.y(), candidate_1.x(), distance_2, goal, position,
+               heading, last_sent_waypoint, cost_params, distance_cost_2,
+               other_costs);
+  costFunction(candidate_1.y(), candidate_1.x(), distance_3, goal, position,
+               heading, last_sent_waypoint, cost_params, distance_cost_3,
+               other_costs);
+
+  // THEN: The distance cost for no obstacle should be zero and the distance
+  // cost for the closer obstacle should be bigger
+  EXPECT_LT(distance_cost_1, distance_cost_2);
+  EXPECT_LT(distance_cost_3, distance_cost_2);
+  EXPECT_FLOAT_EQ(distance_cost_1, 0.f);
+}
+
+TEST(PlannerFunctions, CostfunctionHeadingCost) {
+  // GIVEN: a scenario with two different initial headings
+  Eigen::Vector3f position(0.f, 0.f, 0.f);
+  Eigen::Vector3f goal(0.f, 5.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
+  float heading_1 = 10.f;
+  float heading_2 = 30.f;
+  costParameters cost_params;
+  cost_params.goal_cost_param = 3.f;
+  cost_params.heading_cost_param = 0.5f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
+  float obstacle_distance = 0.f;
+  float distance_cost, other_costs_1, other_costs_2;
+
+  Eigen::Vector2f candidate_1(0.f, 0.f);
+
+  // WHEN: we calculate the cost of one cell for the same scenario but with two
+  // different initial headings
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
+               position, heading_1, last_sent_waypoint, cost_params,
+               distance_cost, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
+               position, heading_2, last_sent_waypoint, cost_params,
+               distance_cost, other_costs_2);
+
+  // THEN: The cost in the case where the initial heading is closer to the
+  // candidate should be lower
+  EXPECT_LT(other_costs_1, other_costs_2);
+}
+
+TEST(PlannerFunctions, CostfunctionSmoothingCost) {
+  // GIVEN: a scenario with two different initial headings
+  Eigen::Vector3f position(0.f, 0.f, 0.f);
+  Eigen::Vector3f goal(0.f, 5.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint_1(1.f, 2.f, 0.f);
+  Eigen::Vector3f last_sent_waypoint_2(1.5f, 1.5f, 0.f);
+  float heading = 0.f;
+  costParameters cost_params;
+  cost_params.goal_cost_param = 3.f;
+  cost_params.heading_cost_param = 0.5f;
+  cost_params.smooth_cost_param = 1.5f;
+  cost_params.height_change_cost_param = 4.f;
+  cost_params.height_change_cost_param_adapted = 4.f;
+  float obstacle_distance = 0.f;
+  float distance_cost, other_costs_1, other_costs_2;
+
+  Eigen::Vector2f candidate_1(0.f, 0.f);
+
+  // WHEN: we calculate the cost of one cell for the same scenario but with two
+  // different last waypoints
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
+               position, heading, last_sent_waypoint_1, cost_params,
+               distance_cost, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
+               position, heading, last_sent_waypoint_2, cost_params,
+               distance_cost, other_costs_2);
+
+  // THEN: The cost in the case where the last waypoint is closer to the
+  // candidate should be lower
+  EXPECT_LT(other_costs_1, other_costs_2);
+}
+
 TEST(Histogram, HistogramDownsampleCorrectUsage) {
   // GIVEN: a histogram of the correct resolution
   Histogram histogram = Histogram(ALPHA_RES);
