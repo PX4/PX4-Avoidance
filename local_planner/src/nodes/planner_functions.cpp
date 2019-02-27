@@ -264,7 +264,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
   }
 
   unsigned int smooth_radius = 1;
-  float smoothing_margin_degrees = 30;
+  float smoothing_margin_degrees = 45;
   int smoothing_steps = ceil(smoothing_margin_degrees / ALPHA_RES);
   for (int i = 0; i < smoothing_steps; i++) {
     smoothPolarMatrix(distance_matrix, smooth_radius);
@@ -431,7 +431,7 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
   // distance cost
   distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 7000.0f / obstacle_distance;
+    distance_cost = 12000.0f / obstacle_distance;
   }
 
   // combine costs
