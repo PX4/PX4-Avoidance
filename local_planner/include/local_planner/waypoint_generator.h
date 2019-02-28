@@ -127,10 +127,9 @@ class WaypointGenerator {
   * @param[in] stay, true if the vehicle is loitering
   * @param[in] t, update system time
   **/
-  void updateState(const Eigen::Vector3f& act_pose,
-                   const Eigen::Quaternionf& q,
-                   const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& vel, bool stay, bool is_airborne);
+  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
+                   const Eigen::Vector3f& goal, const Eigen::Vector3f& vel,
+                   bool stay, bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing

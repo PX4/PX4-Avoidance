@@ -14,7 +14,8 @@ ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG(
       "\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, "
-      "%f].\033[0m", position_.x(), position_.y(), position_.z());
+      "%f].\033[0m",
+      position_.x(), position_.y(), position_.z());
   output_.waypoint_type = planner_info_.waypoint_type;
 
   // Timing
@@ -44,9 +45,8 @@ void WaypointGenerator::calculateWaypoint() {
 
     case tryPath: {
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);
-      bool tree_available =
-          getDirectionFromTree(p_pol, planner_info_.path_node_positions,
-                               position_, goal_);
+      bool tree_available = getDirectionFromTree(
+          p_pol, planner_info_.path_node_positions, position_, goal_);
 
       float dist_goal = (goal_ - position_).norm();
       ros::Duration since_last_path =
@@ -97,9 +97,8 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
                                     const Eigen::Quaternionf& q,
                                     const Eigen::Vector3f& goal,
-                                    const Eigen::Vector3f& vel,
-                                    bool stay, bool is_airborne) {
-
+                                    const Eigen::Vector3f& vel, bool stay,
+                                    bool is_airborne) {
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
@@ -142,11 +141,13 @@ void WaypointGenerator::backOff() {
   output_.goto_position = position_ + dir;
   output_.goto_position.z() = planner_info_.back_off_start_point.z();
 
-  createPoseMsg(output_.position_wp, output_.orientation_wp, output_.goto_position, last_yaw_);
+  createPoseMsg(output_.position_wp, output_.orientation_wp,
+                output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
 
-  ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].", planner_info_.back_off_point.x(),
-            planner_info_.back_off_point.y(), planner_info_.back_off_point.z());
+  ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].",
+            planner_info_.back_off_point.x(), planner_info_.back_off_point.y(),
+            planner_info_.back_off_point.z());
   ROS_DEBUG("[WG] Back off selected direction: [%f, %f, %f].", dir.x(), dir.y(),
             dir.z());
 }
@@ -196,7 +197,8 @@ void WaypointGenerator::smoothWaypoint(float dt) {
 
   // Prevent overshoot when drone is close to goal
   const Eigen::Vector3f desired_velocity =
-      (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero() : velocity_;
+      (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero()
+                                              : velocity_;
 
   Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
   if (!location_diff.allFinite()) {
@@ -217,7 +219,8 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   output_.smoothed_goto_position = smoothed_goto_location_;
 
   ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
-            output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
+            output_.smoothed_goto_position.x(),
+            output_.smoothed_goto_position.y(),
             output_.smoothed_goto_position.z(), dt);
 }
 
@@ -267,8 +270,8 @@ void WaypointGenerator::adaptSpeed() {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
     if (output_.waypoint_type != reachHeight) {
       float angle_diff_deg =
-          std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_) * 180.f /
-          M_PI_F;
+          std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_) *
+          180.f / M_PI_F;
       angle_diff_deg =
           std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
       angle_diff_deg =
@@ -305,9 +308,9 @@ void WaypointGenerator::getPathMsg() {
   adaptSpeed();
   smoothWaypoint(dt);
 
-  ROS_DEBUG("[WG] Final waypoint: [%f %f %f].",
-            output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
-            output_.smoothed_goto_position.z());
+  ROS_DEBUG(
+      "[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(),
+      output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z());
   createPoseMsg(output_.position_wp, output_.orientation_wp,
                 output_.smoothed_goto_position, setpoint_yaw_);
   transformPositionToVelocityWaypoint();

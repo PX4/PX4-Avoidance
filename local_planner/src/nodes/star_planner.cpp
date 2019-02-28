@@ -80,7 +80,8 @@ float StarPlanner::treeCostFunction(int node_number) {
     int partner_node_idx =
         path_node_positions_.size() - 1 - tree_[node_number].depth_;
     if (partner_node_idx >= 0) {
-      Eigen::Vector3f partner_node_position = path_node_positions_[partner_node_idx];
+      Eigen::Vector3f partner_node_position =
+          path_node_positions_[partner_node_idx];
       Eigen::Vector3f node_position = tree_[node_number].getPosition();
       float dist = (partner_node_position - node_position).norm();
       smooth_cost_to_old_tree =

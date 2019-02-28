@@ -16,8 +16,12 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
                                  const Eigen::Vector3f& pos) {
   Eigen::Vector3f p;
-  p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
-  p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.x() =
+      pos.x() +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+  p.y() =
+      pos.y() +
+      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
   p.z() = pos.z() + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
@@ -102,12 +106,13 @@ float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
   return atan2(dy, dx);
 }
 
-void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw) {
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
+                   const Eigen::Vector3f& in_waypt, float yaw) {
   out_waypt = in_waypt;
   float roll = 0.0f, pitch = 0.0f;
-  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX())
-      * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY())
-      * Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) *
+          Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+          Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
 void wrapAngleToPlusMinusPI(float& angle) {
@@ -191,14 +196,16 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   return xyz;
 }
 
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a) {
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
+                             const Eigen::Vector3f& a) {
   geometry_msgs::Twist gmt;
   gmt.linear = toVector3(l);
   gmt.angular = toVector3(a);
   return gmt;
 }
 
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
+                                         const Eigen::Quaternionf& eq) {
   geometry_msgs::PoseStamped gmps;
   gmps.header.stamp = ros::Time::now();
   gmps.header.frame_id = "/local_origin";

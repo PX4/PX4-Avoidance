@@ -14,7 +14,8 @@ LocalPlanner::LocalPlanner() : star_planner_(new StarPlanner()) {}
 LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
-void LocalPlanner::setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
+void LocalPlanner::setPose(const Eigen::Vector3f &pos,
+                           const Eigen::Quaternionf &q) {
   position_ = pos;
   tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
   tf::Matrix3x3 tf_m(tf_q);
@@ -100,7 +101,8 @@ void LocalPlanner::runPlanner() {
 
   // calculate Field of View
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_, curr_pitch_);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_,
+               curr_pitch_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -260,9 +262,11 @@ void LocalPlanner::determineStrategy() {
           star_planner_->setCloud(final_cloud_);
 
           // set last chosen direction for smoothing
-          PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
+          PolarPoint last_wp_pol =
+              cartesianToPolar(last_sent_waypoint_, position_);
           last_wp_pol.r = (position_ - goal_).norm();
-          Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position_);
+          Eigen::Vector3f projected_last_wp =
+              polarToCartesian(last_wp_pol, position_);
           star_planner_->setLastDirection(projected_last_wp);
 
           // build search tree
@@ -272,8 +276,8 @@ void LocalPlanner::determineStrategy() {
           last_path_time_ = ros::Time::now();
         } else {
           float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
-          getCostMatrix(polar_histogram_, goal_, position_,
-                        yaw_angle, last_sent_waypoint_, cost_params_,
+          getCostMatrix(polar_histogram_, goal_, position_, yaw_angle,
+                        last_sent_waypoint_, cost_params_,
                         velocity_.norm() < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
@@ -490,9 +494,9 @@ void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f &vel) {
   velocity_ = vel;
 }
 
-void LocalPlanner::getTree(
-    std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-    std::vector<Eigen::Vector3f> &path_node_positions) {
+void LocalPlanner::getTree(std::vector<TreeNode> &tree,
+                           std::vector<int> &closed_set,
+                           std::vector<Eigen::Vector3f> &path_node_positions) {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
   path_node_positions = star_planner_->path_node_positions_;

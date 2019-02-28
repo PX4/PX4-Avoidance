@@ -212,7 +212,8 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update position
-  local_planner_->setPose(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation));
+  local_planner_->setPose(toEigen(newest_pose_.pose.position),
+                          toEigen(newest_pose_.pose.orientation));
 
   // Update velocity
   local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
@@ -456,7 +457,10 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position), toEigen(vel_msg_.twist.linear), hover, is_airborne);
+  wp_generator_->updateState(
+      toEigen(newest_pose_.pose.position),
+      toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position),
+      toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
@@ -528,17 +532,25 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
   newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
   publishPaths();
-  publishSetpoint(toTwist(result.linear_velocity_wp, result.angular_velocity_wp), result.waypoint_type);
+  publishSetpoint(
+      toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
+      result.waypoint_type);
 
   // to mavros
 
   mavros_msgs::Trajectory obst_free_path = {};
   if (local_planner_->use_vel_setpoints_) {
-    mavros_vel_setpoint_pub_.publish(toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
-    transformVelocityToTrajectory(obst_free_path, toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
+    mavros_vel_setpoint_pub_.publish(
+        toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
+    transformVelocityToTrajectory(
+        obst_free_path,
+        toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
   } else {
-    mavros_pos_setpoint_pub_.publish(toPoseStamped(result.position_wp, result.orientation_wp));
-    transformPoseToTrajectory(obst_free_path, toPoseStamped(result.position_wp, result.orientation_wp));
+    mavros_pos_setpoint_pub_.publish(
+        toPoseStamped(result.position_wp, result.orientation_wp));
+    transformPoseToTrajectory(
+        obst_free_path,
+        toPoseStamped(result.position_wp, result.orientation_wp));
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
@@ -703,7 +715,8 @@ void LocalPlannerNode::publishGround() {
   plane.type = visualization_msgs::Marker::CUBE;
   plane.action = visualization_msgs::Marker::ADD;
   plane.pose.position = toPoint(drone_pos);
-  plane.pose.position.z = drone_pos.z() - static_cast<double>(local_planner_->ground_distance_);
+  plane.pose.position.z =
+      drone_pos.z() - static_cast<double>(local_planner_->ground_distance_);
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
@@ -721,11 +734,12 @@ void LocalPlannerNode::publishGround() {
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   Eigen::Vector3f drone_pos = local_planner_->getPosition();
-  int beta_z = floor(
-      (atan2(x - drone_pos.x(), y - drone_pos.y()) *
-       180.0 / M_PI));  //(-180. +180]
-  int beta_e = floor((atan((z - drone_pos.z()) / (Eigen::Vector2f(x,y) - drone_pos.topRows<2>()).norm()) *
-                      180.0 / M_PI));  //(-90.+90)
+  int beta_z = floor((atan2(x - drone_pos.x(), y - drone_pos.y()) * 180.0 /
+                      M_PI));  //(-180. +180]
+  int beta_e =
+      floor((atan((z - drone_pos.z()) /
+                  (Eigen::Vector2f(x, y) - drone_pos.topRows<2>()).norm()) *
+             180.0 / M_PI));  //(-90.+90)
 
   beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[-170,+190]
   beta_e = beta_e + (ALPHA_RES - beta_e % ALPHA_RES);  //[-80,+90]

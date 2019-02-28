@@ -21,7 +21,6 @@ class StarPlannerTests : public ::testing::Test {
   Eigen::Vector3f goal;
   Eigen::Vector3f position;
 
-
   void SetUp() override {
     ros::Time::init();
 

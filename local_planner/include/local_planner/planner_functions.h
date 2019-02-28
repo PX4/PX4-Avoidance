@@ -197,8 +197,7 @@ void printHistogram(Histogram& histogram);
 * @param[in]  position, current vehicle position
 **/
 bool getDirectionFromTree(
-    PolarPoint& p_pol,
-    const std::vector<Eigen::Vector3f>& path_node_positions,
+    PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
     const Eigen::Vector3f& position, const Eigen::Vector3f& goal);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

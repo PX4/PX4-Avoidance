@@ -3,8 +3,8 @@
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Vector3Stamped.h>
 #include <geometry_msgs/Twist.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
 
@@ -91,7 +91,8 @@ void wrapPolar(PolarPoint& p_pol);
 **/
 float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v);
 
-void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw);
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
+                   const Eigen::Vector3f& in_waypt, float yaw);
 
 /**
 * @brief     wrappes the input angle in to plus minus PI space
@@ -120,8 +121,10 @@ geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
 geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3);
 geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3);
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a);
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p, const Eigen::Quaternionf& q);
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
+                             const Eigen::Vector3f& a);
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p,
+                                         const Eigen::Quaternionf& q);
 }
 
 #endif  // COMMON_H

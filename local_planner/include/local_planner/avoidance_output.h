@@ -20,7 +20,7 @@ struct avoidanceOutput {
 
   Eigen::Vector3f back_off_point;  // closest point to the vehicle in the cloud
   Eigen::Vector3f back_off_start_point;  // vehicle position when a point in the
-                                         // cloud is closer than  min_dist_backoff
+  // cloud is closer than  min_dist_backoff
   float min_dist_backoff;  // distance between the vehicle and the closest
                            // point in the cloud
 
@@ -31,9 +31,9 @@ struct avoidanceOutput {
   float
       costmap_direction_z;  // azimuth angle of the minimum cost histogram cell
   std::vector<Eigen::Vector3f> path_node_positions;  // array of tree nodes
-                                                          // position, each node
-                                                          // is the minimum cost
-                                                          // node for each tree
-                                                          // depth level
+                                                     // position, each node
+                                                     // is the minimum cost
+                                                     // node for each tree
+                                                     // depth level
 };
 }
