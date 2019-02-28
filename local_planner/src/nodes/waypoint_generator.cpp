@@ -103,7 +103,11 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
-  curr_yaw_ = q.toRotationMatrix().eulerAngles(1, 0, 2).z();
+  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
+  tf::Matrix3x3 tf_m(tf_q);
+  double roll, pitch, yaw;
+  tf_m.getRPY(roll, pitch, yaw);
+  curr_yaw_ = static_cast<float>(yaw);
 
   if (stay) {
     planner_info_.waypoint_type = hover;

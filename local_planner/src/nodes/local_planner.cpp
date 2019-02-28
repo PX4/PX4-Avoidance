@@ -16,9 +16,12 @@ LocalPlanner::~LocalPlanner() {}
 // update UAV pose
 void LocalPlanner::setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q) {
   position_ = pos;
-  Eigen::Vector3f euler = q.toRotationMatrix().eulerAngles(1, 0, 2);
-  curr_yaw_ = euler[2];
-  curr_pitch_ = euler[0];
+  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
+  tf::Matrix3x3 tf_m(tf_q);
+  double roll, pitch, yaw;
+  tf_m.getRPY(roll, pitch, yaw);
+  curr_yaw_ = static_cast<float>(yaw);
+  curr_pitch_ = static_cast<float>(pitch);
   star_planner_->setPose(position_, curr_yaw_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
