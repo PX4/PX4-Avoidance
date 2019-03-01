@@ -200,15 +200,17 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   const Eigen::Vector3f desired_location =
       toEigen(output_.adapted_goto_position);
 
-  // Prevent overshoot when drone is close to goal
-  const Eigen::Vector3f desired_velocity =
-      (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero()
-                                              : toEigen(curr_vel_.twist.linear);
-
   Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
   if (!location_diff.allFinite()) {
     location_diff = Eigen::Vector3f::Zero();
   }
+
+  // Prevent overshoot by scaling desired_velocity to 0 if close to goal
+  const float vel_scale =
+      (desired_location - goal_).norm() / smoothing_speed_xy_;
+  const float clamped_scale = std::min(std::max(vel_scale, 0.f), 1.f);
+  const Eigen::Vector3f desired_velocity =
+      clamped_scale * toEigen(curr_vel_.twist.linear);
 
   Eigen::Vector3f velocity_diff =
       desired_velocity - smoothed_goto_location_velocity_;
