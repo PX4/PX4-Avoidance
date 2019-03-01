@@ -35,10 +35,11 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   location.pose.position.x = 0;
   location.pose.position.y = 0;
   location.pose.position.z = 0;
+  int min_n_points = 1;
 
   // WHEN: we build a histogram
   generateNewHistogram(histogram_output, empty_cloud,
-                       toEigen(location.pose.position));
+                       toEigen(location.pose.position), min_n_points);
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -56,6 +57,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   location.pose.position.y = 0;
   location.pose.position.z = 0;
   float distance = 1.0f;
+  int min_n_points = 1;
 
   std::vector<float> e_angle_filled = {-89.9f, -30.0f, 0.0f,
                                        20.0f,  40.0f,  89.9f};
@@ -82,8 +84,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, cloud,
-                       toEigen(location.pose.position));
+  generateNewHistogram(histogram_output, cloud, toEigen(location.pose.position),
+                       min_n_points);
 
   // THEN: the filled cells in the histogram should be one and the others be
   // zeros
