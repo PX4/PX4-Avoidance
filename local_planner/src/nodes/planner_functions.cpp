@@ -154,7 +154,8 @@ void propagateHistogram(
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
                           const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-                          const Eigen::Vector3f& position, int n_points_occupied) {
+                          const Eigen::Vector3f& position,
+                          int n_points_occupied) {
   Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
