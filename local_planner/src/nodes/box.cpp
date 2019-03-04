@@ -35,9 +35,4 @@ void Box::setBoxLimits(const geometry_msgs::Point& pos,
   ymax_ = static_cast<float>(pos.y) + radius_;
   zmax_ = static_cast<float>(pos.z) + radius_;
 }
-
-bool Box::isPointWithinBox(const float& x, const float& y, const float& z) {
-  return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ &&
-         z > zmin_;
-}
 }
