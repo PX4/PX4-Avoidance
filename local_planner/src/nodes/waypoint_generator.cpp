@@ -160,7 +160,8 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
       output_.position_waypoint.pose.position.z - pose_.pose.position.z;
   output_.velocity_waypoint.angular.x = 0.0;
   output_.velocity_waypoint.angular.y = 0.0;
-  output_.velocity_waypoint.angular.z = getAngularVelocity(setpoint_yaw_, curr_yaw_);
+  output_.velocity_waypoint.angular.z =
+      getAngularVelocity(setpoint_yaw_, curr_yaw_);
 }
 
 // when taking off, first publish waypoints to reach the goal altitude
@@ -236,12 +237,14 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   const float desired_setpoint_yaw = nextYaw(pose_, output_.goto_position);
   const float desired_yaw_velocity = 0.0;
 
-  float yaw_diff =
-      std::isfinite(desired_setpoint_yaw) ? desired_setpoint_yaw - setpoint_yaw_ : 0.0f;
+  float yaw_diff = std::isfinite(desired_setpoint_yaw)
+                       ? desired_setpoint_yaw - setpoint_yaw_
+                       : 0.0f;
 
   wrapAngleToPlusMinusPI(yaw_diff);
   const float p = yaw_diff * P_constant_xy;
-  const float d = (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
+  const float d =
+      (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
 
   setpoint_yaw_velocity_ += (p + d) * dt;
   setpoint_yaw_ += setpoint_yaw_velocity_ * dt;
