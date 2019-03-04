@@ -245,22 +245,65 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
+  distance_matrix.fill(NAN);
   float distance_cost = 0.f;
   float other_costs = 0.f;
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
-  cost_matrix.fill(0.f);
+  cost_matrix.fill(NAN);
 
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
-    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
+    int z_scale = static_cast<int>(
+        std::round(
+        1 / std::cos(histogramIndexToPolar(e_index, 0, ALPHA_RES, 1).e *
+                     DEG_TO_RAD)));
+
+    z_scale = 1;
+    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index += z_scale) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol =
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
+
       costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, heading,
                    last_sent_waypoint, cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
+    }
+    if (z_scale > 1) {
+      // horizontally interpolate all of the un-calculated values
+      int last_index = 0;
+      for (int z_index = z_scale; z_index < GRID_LENGTH_Z; z_index += z_scale) {
+        float other_costs_gradient =
+            (cost_matrix(e_index, z_index) - cost_matrix(e_index, last_index)) /
+            z_scale;
+        float distance_cost_gradient = (distance_matrix(e_index, z_index) -
+                                        distance_matrix(e_index, last_index)) /
+                                       z_scale;
+        for (int i = 1; i < z_scale; i++) {
+          cost_matrix(e_index, last_index + i) =
+              cost_matrix(e_index, last_index) + other_costs_gradient * i;
+          distance_matrix(e_index, last_index + i) =
+              distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+        }
+        last_index = z_index;
+      }
+      
+      // special case the last columns wrapping around back to 0
+      int clamped_z_scale = GRID_LENGTH_Z - last_index;
+      float other_costs_gradient =
+          (cost_matrix(e_index, 0) - cost_matrix(e_index, last_index)) /
+          clamped_z_scale;
+      float distance_cost_gradient =
+          (distance_matrix(e_index, 0) - distance_matrix(e_index, last_index)) /
+          clamped_z_scale;
+
+      for (int i = 1; i < clamped_z_scale; i++) {
+        cost_matrix(e_index, last_index + i) =
+            cost_matrix(e_index, last_index) + other_costs_gradient * i;
+        distance_matrix(e_index, last_index + i) =
+            distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+      }
     }
   }
 
