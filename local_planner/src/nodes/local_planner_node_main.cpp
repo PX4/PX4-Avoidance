@@ -56,7 +56,7 @@ int main(int argc, char** argv) {
     if (since_last_cloud > pointcloud_timeout_land &&
         since_start > pointcloud_timeout_land) {
       if (planner_is_healthy) {
-    	planner_is_healthy = false;
+        planner_is_healthy = false;
         Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
         ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
       }
