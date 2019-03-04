@@ -16,14 +16,6 @@ The documentation contains information about how to setup and run the two planne
   - [Obstacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
   - [Collision Prevention](https://docs.px4.io/en/computer_vision/collision_prevention.html)
 
-## Bi-weekly Dev Call
-The active developers of the avoidance repo are syncing up on a bi-weekly basis on the WG dev call.
-
-* Join the call: https://zoom.us/j/506512712
-* Time: Monday, 5PM CET
-* Meeting ID: 506512712
-* Dronecode calendar: https://www.dronecode.org/calendar/
-
 [![PX4 Avoidance video](http://img.youtube.com/vi/VqZkAWSl_U0/0.jpg)](https://www.youtube.com/watch?v=VqZkAWSl_U0)
 
 # Table of Contents
