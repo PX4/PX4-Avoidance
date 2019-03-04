@@ -189,10 +189,11 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max) {
   hist_empty = true;
-  for (int e = 0; e < GRID_LENGTH_E; e++) {
-    for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end() &&
-          e > e_FOV_min && e < e_FOV_max) {  // inside FOV
+  for (int z = 0; z < GRID_LENGTH_Z; z++) {
+    bool inside_FOV_z =
+        std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end();
+    for (int e = 0; e < GRID_LENGTH_E; e++) {
+      if (inside_FOV_z && e > e_FOV_min && e < e_FOV_max) {  // inside FOV
         if (new_hist.get_dist(e, z) > 0) {
           new_hist.set_age(e, z, 1);
           hist_empty = false;
