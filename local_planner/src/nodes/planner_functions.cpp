@@ -254,8 +254,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
 
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
-    int z_scale = static_cast<int>(
-        std::round(
+    int z_scale = static_cast<int>(std::round(
         1 / std::cos(histogramIndexToPolar(e_index, 0, ALPHA_RES, 1).e *
                      DEG_TO_RAD)));
 
@@ -288,7 +287,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
         }
         last_index = z_index;
       }
-      
+
       // special case the last columns wrapping around back to 0
       int clamped_z_scale = GRID_LENGTH_Z - last_index;
       float other_costs_gradient =
@@ -307,12 +306,9 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
     }
   }
 
-  unsigned int smooth_radius = 1;
   float smoothing_margin_degrees = 45;
-  int smoothing_steps = ceil(smoothing_margin_degrees / ALPHA_RES);
-  for (int i = 0; i < smoothing_steps; i++) {
-    smoothPolarMatrix(distance_matrix, smooth_radius);
-  }
+  unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
 
   cost_matrix = cost_matrix + distance_matrix;
 }
@@ -353,22 +349,36 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   // pad matrix by smoothing radius respecting all wrapping rules
   Eigen::MatrixXf matrix_padded;
   padPolarMatrix(matrix, smoothing_radius, matrix_padded);
+  Eigen::ArrayXXf kernel = getConicKernel(smoothing_radius);
 
-  // filter matrix (max-mean)
-  for (int row_index = smoothing_radius;
-       row_index < matrix_padded.rows() - smoothing_radius; row_index++) {
-    for (int col_index = smoothing_radius;
-         col_index < matrix_padded.cols() - smoothing_radius; col_index++) {
-      float original_val = matrix_padded(row_index, col_index);
-      float mean_val =
-          matrix_padded
-              .block(row_index - smoothing_radius, col_index - smoothing_radius,
-                     2 * smoothing_radius + 1, 2 * smoothing_radius + 1)
-              .mean();
-      matrix(row_index - smoothing_radius, col_index - smoothing_radius) =
-          std::max(original_val, mean_val);
+  for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+    for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+      float original_val = matrix_padded(row_index + smoothing_radius,
+                                         col_index + smoothing_radius);
+      // clang-format off
+      float smooth_val =
+          (matrix_padded
+               .block(row_index,
+                      col_index,
+                      2 * smoothing_radius + 1,
+                      2 * smoothing_radius + 1).array() * kernel).sum();
+      // clang-format on
+      matrix(row_index, col_index) = std::max(original_val, smooth_val);
     }
   }
+}
+
+Eigen::ArrayXXf getConicKernel(unsigned int radius) {
+  Eigen::ArrayXXf kernel(radius * 2 + 1, radius * 2 + 1);
+  Eigen::Vector2f center(radius, radius);
+  for (int col = 0; col < kernel.cols(); col++) {
+    for (int row = 0; row < kernel.rows(); row++) {
+      kernel(row, col) = std::max(
+          0.f, 1.f + radius - (Eigen::Vector2f(col, row) - center).norm());
+    }
+  }
+  kernel *= 1.f / kernel.sum();
+  return kernel;
 }
 
 void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,

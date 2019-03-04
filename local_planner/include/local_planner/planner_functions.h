@@ -180,6 +180,14 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
                     Eigen::MatrixXf& matrix_padded);
 
 /**
+ * @brief creates an square 2d array with sides 2*radius + 1 in length
+ * and fills it with a conic kernel value
+ * @param[in] radius the radius of the kernel
+ * @return the smoothing kernel
+ **/
+Eigen::ArrayXXf getConicKernel(unsigned int radius);
+
+/**
 * @brief   helper method to output on the console the histogram
 * @param[] histogram, polar histogram
 **/
