@@ -258,7 +258,6 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
         1 / std::cos(histogramIndexToPolar(e_index, 0, ALPHA_RES, 1).e *
                      DEG_TO_RAD)));
 
-    z_scale = 1;
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index += z_scale) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol =

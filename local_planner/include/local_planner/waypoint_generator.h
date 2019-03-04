@@ -35,8 +35,8 @@ class WaypointGenerator {
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
 
   geometry_msgs::PoseStamped pose_;
-  Eigen::Vector3f goal_;
-  float curr_yaw_;
+  Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  float curr_yaw_ = NAN;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
@@ -45,10 +45,9 @@ class WaypointGenerator {
   float smoothing_speed_z_{3.0f};
 
   bool is_airborne_ = false;
-  float last_yaw_;
-  float new_yaw_;
+  float setpoint_yaw_ = 0.0f;
+  float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_ = NAN;
-  float new_yaw_velocity_ = 0.0f;
   float speed_ = 1.0f;
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
