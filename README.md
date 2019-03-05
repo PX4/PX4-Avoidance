@@ -459,5 +459,7 @@ ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 Fork the project and then clone your repository. Create a new branch off of master for your new feature or bug fix.
 
 Please, take into consideration our [coding style](https://github.com/PX4/avoidance/blob/master/tools/fix_style.sh).
+For convenience, you can install the commit hooks which will run this formatting on every commit. To do so, run
+`./tools/set_up_commit_hooks` from the main directory.
 
 Commit your changes with informative commit messages, push your branch and open a new pull request. Please provide ROS bags and the Autopilot flight logs relevant to the changes you have made.
