@@ -254,7 +254,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
 
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
-    // determine how many bins at this elevation angle would be equivalent to 
+    // determine how many bins at this elevation angle would be equivalent to
     // a single bin at horizontal, then work in steps of that size
     const float bin_width = std::cos(
         histogramIndexToPolar(e_index, 0, ALPHA_RES, 1).e * DEG_TO_RAD);
