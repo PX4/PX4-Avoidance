@@ -36,6 +36,7 @@ class WaypointGenerator {
 
   geometry_msgs::PoseStamped pose_;
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  float last_yaw_ = NAN;
   float curr_yaw_ = NAN;
   geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};

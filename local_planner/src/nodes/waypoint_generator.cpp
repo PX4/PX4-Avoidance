@@ -90,6 +90,7 @@ void WaypointGenerator::calculateWaypoint() {
   }
   last_wp_type_ = planner_info_.waypoint_type;
   last_position_waypoint_ = output_.position_waypoint;
+  last_yaw_ = curr_yaw_;
   last_velocity_ =
       Eigen::Vector2f(curr_vel_.twist.linear.x, curr_vel_.twist.linear.y);
 }
@@ -142,7 +143,7 @@ void WaypointGenerator::backOff() {
   output_.goto_position = toPoint(toEigen(pose_.pose.position) + dir);
   output_.goto_position.z = planner_info_.back_off_start_point.z;
 
-  output_.position_waypoint = createPoseMsg(output_.goto_position, curr_yaw_);
+  output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
 
   ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].", planner_info_.back_off_point.x,
