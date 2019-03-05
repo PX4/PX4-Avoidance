@@ -22,15 +22,10 @@ cat >> .git/hooks/pre-commit <<- EOM
 #!/bin/bash
 
 STYLE="google"
-if [ -n "${STYLE}" ] ; then
-  STYLEARG="-style=${STYLE}"
-else
-  STYLEARG=""
-fi
 
 format_file() {
   file="${1}"
-  clang-format-3.8 -i ${STYLEARG} ${1}
+  clang-format-3.8 -i -style=${STYLE} ${1}
   git add ${1}
 }
 
