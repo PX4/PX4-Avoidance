@@ -9,9 +9,6 @@
 
 #include <Eigen/Dense>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
@@ -200,8 +197,7 @@ void printHistogram(Histogram& histogram);
 * @param[in]  position, current vehicle position
 **/
 bool getDirectionFromTree(
-    PolarPoint& p_pol,
-    const std::vector<geometry_msgs::Point>& path_node_positions,
+    PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
     const Eigen::Vector3f& position, const Eigen::Vector3f& goal);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

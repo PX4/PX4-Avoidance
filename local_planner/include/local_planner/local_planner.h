@@ -22,10 +22,6 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/Twist.h>
-
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 
@@ -62,8 +58,8 @@ class LocalPlanner {
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
 
-  float velocity_mod_;
   float curr_yaw_;
+  float curr_pitch_;
   float velocity_around_obstacles_;
   float velocity_far_from_obstacles_;
   float keep_distance_;
@@ -97,13 +93,13 @@ class LocalPlanner {
 
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
 
-  geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
-  geometry_msgs::TwistStamped curr_vel_;
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
@@ -116,10 +112,6 @@ class LocalPlanner {
   * @param     histogram, histogram from the previous algorith iteration
   **/
   void reprojectPoints(Histogram histogram);
-  /**
-  * @brief     setter method for current vehicle velocity
-  **/
-  void setVelocity();
   /**
   * @brief     calculates the cost function weights to fly around or over
   *obstacles based on the progress towards the goal over time
@@ -169,10 +161,10 @@ class LocalPlanner {
   float speed_ = 1.0f;
   float ground_distance_ = 2.0;
 
-  geometry_msgs::PoseStamped take_off_pose_;
-  geometry_msgs::PoseStamped offboard_pose_;
+  Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
+  ;
   sensor_msgs::LaserScan distance_data_ = {};
-  geometry_msgs::Point last_sent_waypoint_;
+  Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
@@ -182,19 +174,20 @@ class LocalPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] mgs, position message coming from the FCU
+  * @param[in] pos, vehicle position message coming from the FCU
+  * @param[in] q, vehicle orientation message coming from the FCU
   **/
-  void setPose(const geometry_msgs::PoseStamped msg);
+  void setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q);
   /**
   * @brief     setter method for mission goal
   * @param[in] mgs, goal message coming from the FCU
   **/
-  void setGoal(const geometry_msgs::Point &goal);
+  void setGoal(const Eigen::Vector3f &goal);
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal
   **/
-  geometry_msgs::Point getGoal();
+  Eigen::Vector3f getGoal();
   /**
   * @brief    setter method for mission goal
   **/
@@ -210,7 +203,7 @@ class LocalPlanner {
   * @brief     getter method for current vehicle position and orientation
   * @returns   vehicle positiona and orientation
   **/
-  geometry_msgs::PoseStamped getPosition();
+  Eigen::Vector3f getPosition();
 
   /**
   * @brief     getter method to visualize pointcloud in rviz
@@ -224,7 +217,7 @@ class LocalPlanner {
   * @brief     setter method for vehicle velocity
   * @param[in]     vel, velocity message coming from the FCU
   **/
-  void setCurrentVelocity(const geometry_msgs::TwistStamped &vel);
+  void setCurrentVelocity(const Eigen::Vector3f &vel);
 
   /**
   * @brief     getter method to visualize the tree in rviz
@@ -232,7 +225,7 @@ class LocalPlanner {
   * @param[in]     path_node_positions, velocity message coming from the FCU
   **/
   void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-               std::vector<geometry_msgs::Point> &path_node_positions);
+               std::vector<Eigen::Vector3f> &path_node_positions);
   /**
   * @brief     setter method to send obstacle distance information to FCU
   * @param[in]     obstacle_distance, obstacle distance message

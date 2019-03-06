@@ -5,10 +5,6 @@
 
 #include <Eigen/Dense>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-#include <geometry_msgs/TwistStamped.h>
-
 #include <ros/time.h>
 
 #include <string>
@@ -18,11 +14,13 @@ namespace avoidance {
 
 struct waypointResult {
   waypoint_choice waypoint_type;
-  geometry_msgs::PoseStamped position_waypoint;
-  geometry_msgs::Twist velocity_waypoint;
-  geometry_msgs::Point goto_position;           // correction direction, dist=1
-  geometry_msgs::Point adapted_goto_position;   // correction direction & dist
-  geometry_msgs::Point smoothed_goto_position;  // what is sent to the drone
+  Eigen::Vector3f position_wp;
+  Eigen::Quaternionf orientation_wp;
+  Eigen::Vector3f linear_velocity_wp;
+  Eigen::Vector3f angular_velocity_wp;
+  Eigen::Vector3f goto_position;           // correction direction, dist=1
+  Eigen::Vector3f adapted_goto_position;   // correction direction & dist
+  Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
 class WaypointGenerator {
@@ -33,12 +31,11 @@ class WaypointGenerator {
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
-
-  geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   float last_yaw_ = NAN;
   float curr_yaw_ = NAN;
-  geometry_msgs::TwistStamped curr_vel_;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
 
@@ -54,8 +51,6 @@ class WaypointGenerator {
   float v_FOV_ = 46.0f;
 
   Eigen::Vector3f hover_position_;
-  geometry_msgs::PoseStamped last_position_waypoint_;
-  Eigen::Vector2f last_velocity_{0.f, 0.f};  ///< last vehicle's velocity
 
   ros::Time velocity_time_;
 
@@ -125,16 +120,16 @@ class WaypointGenerator {
   void setFOV(float h_FOV, float v_FOV);
   /**
   * @brief update with FCU vehice states
-  * @param[in] act_pose, current vehicle position and orientation
+  * @param[in] act_pose, current vehicle position
+  * @param[in] act_pose, current vehicle orientation
   * @param[in] goal, current goal
   * @param[in] vel, current vehicle velocity
   * @param[in] stay, true if the vehicle is loitering
   * @param[in] t, update system time
   **/
-  void updateState(const geometry_msgs::PoseStamped& act_pose,
-                   const geometry_msgs::PoseStamped& goal,
-                   const geometry_msgs::TwistStamped& vel, bool stay,
-                   bool is_airborne);
+  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
+                   const Eigen::Vector3f& goal, const Eigen::Vector3f& vel,
+                   bool stay, bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing

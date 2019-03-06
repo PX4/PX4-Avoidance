@@ -71,7 +71,7 @@ struct cameraData {
 struct ModelParameters {
   // clang-format off
   int mpc_auto_mode = 1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
-  float jerk_min = 8.0f; // Velocity-based jerk limit 
+  float jerk_min = 8.0f; // Velocity-based jerk limit
   float up_acc = 10.0f;   // Maximum vertical acceleration in velocity controlled modes upward
   float up_vel = 3.0f;   // Maximum vertical ascent velocity
   float down_acc = 10.0f; // Maximum vertical acceleration in velocity controlled modes down
@@ -121,7 +121,7 @@ class LocalPlannerNode {
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
 
-  std::vector<geometry_msgs::Point> path_node_positions_;
+  std::vector<Eigen::Vector3f> path_node_positions_;
   geometry_msgs::PoseStamped hover_point_;
   geometry_msgs::PoseStamped newest_pose_;
   geometry_msgs::PoseStamped last_pose_;
@@ -253,7 +253,6 @@ class LocalPlannerNode {
   ros::Publisher path_adapted_waypoint_pub_;
   ros::Publisher marker_goal_pub_;
   ros::Publisher takeoff_pose_pub_;
-  ros::Publisher offboard_pose_pub_;
   ros::Publisher initial_height_pub_;
   ros::Publisher complete_tree_pub_;
   ros::Publisher tree_path_pub_;

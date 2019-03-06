@@ -458,16 +458,13 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   float& other_costs) {
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
-  Eigen::Vector3f projected_candidate =
-      polarToCartesian(p_pol, toPoint(position));
+  Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, position);
   PolarPoint heading_pol(e_angle, heading, goal_dist);
-  Eigen::Vector3f projected_heading =
-      polarToCartesian(heading_pol, toPoint(position));
+  Eigen::Vector3f projected_heading = polarToCartesian(heading_pol, position);
   Eigen::Vector3f projected_goal = goal;
   PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
   last_wp_pol.r = goal_dist;
-  Eigen::Vector3f projected_last_wp =
-      polarToCartesian(last_wp_pol, toPoint(position));
+  Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position);
 
   // goal costs
   float yaw_cost =
@@ -513,8 +510,7 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 }
 
 bool getDirectionFromTree(
-    PolarPoint& p_pol,
-    const std::vector<geometry_msgs::Point>& path_node_positions,
+    PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
     const Eigen::Vector3f& position, const Eigen::Vector3f& goal) {
   int size = path_node_positions.size();
   bool tree_available = true;
@@ -525,14 +521,12 @@ bool getDirectionFromTree(
     // extend path with a node at the end in goal direction (for smoother
     // transition to direct flight)
     float node_distance =
-        (toEigen(path_node_positions[0]) - toEigen(path_node_positions[1]))
-            .norm();
+        (path_node_positions[0] - path_node_positions[1]).norm();
     Eigen::Vector3f dir_last_node_to_goal =
-        (goal - toEigen(path_node_positions[0])).normalized();
-    geometry_msgs::Point goal_node =
-        toPoint(toEigen(path_node_positions[0]) +
-                node_distance * dir_last_node_to_goal);
-    std::vector<geometry_msgs::Point> path_node_positions_extended;
+        (goal - path_node_positions[0]).normalized();
+    Eigen::Vector3f goal_node =
+        path_node_positions[0] + node_distance * dir_last_node_to_goal;
+    std::vector<Eigen::Vector3f> path_node_positions_extended;
     path_node_positions_extended.push_back(goal_node);
     path_node_positions_extended.insert(path_node_positions_extended.end(),
                                         path_node_positions.begin(),
@@ -551,8 +545,7 @@ bool getDirectionFromTree(
     distances.reserve(size_extended);
 
     for (int i = 0; i < size_extended; i++) {
-      distances.push_back(
-          (position - toEigen(path_node_positions_extended[i])).norm());
+      distances.push_back((position - path_node_positions_extended[i]).norm());
       if (distances[i] < min_dist) {
         second_min_dist_idx = min_dist_idx;
         second_min_dist = min_dist;
@@ -582,8 +575,8 @@ bool getDirectionFromTree(
       float l_frac = l_front / node_distance;
 
       Eigen::Vector3f mean_point =
-          (1.f - l_frac) * toEigen(path_node_positions_extended[wp_idx - 1]) +
-          l_frac * toEigen(path_node_positions_extended[wp_idx]);
+          (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] +
+          l_frac * path_node_positions_extended[wp_idx];
 
       p_pol = cartesianToPolar(mean_point, position);
       p_pol.r = 0.0f;

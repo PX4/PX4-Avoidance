@@ -14,15 +14,15 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
 }
 
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const geometry_msgs::Point& pos) {
+                                 const Eigen::Vector3f& pos) {
   Eigen::Vector3f p;
   p.x() =
-      static_cast<float>(pos.x) +
+      pos.x() +
       p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
   p.y() =
-      static_cast<float>(pos.y) +
+      pos.y() +
       p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
-  p.z() = static_cast<float>(pos.z) + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
+  p.z() = pos.z() + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
@@ -99,24 +99,20 @@ void wrapPolar(PolarPoint& p_pol) {
 }
 
 // calculate the yaw for the next waypoint
-float nextYaw(const geometry_msgs::PoseStamped& u,
-              const geometry_msgs::Point& v) {
-  float dx = static_cast<float>(v.x - u.pose.position.x);
-  float dy = static_cast<float>(v.y - u.pose.position.y);
+float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
+  float dx = v.x() - u.x();
+  float dy = v.y() - u.y();
 
   return atan2(dy, dx);
 }
 
-geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
-                                         float yaw) {
-  geometry_msgs::PoseStamped pose_msg;
-  pose_msg.header.stamp = ros::Time::now();
-  pose_msg.header.frame_id = "/local_origin";
-  pose_msg.pose.position.x = waypt.x;
-  pose_msg.pose.position.y = waypt.y;
-  pose_msg.pose.position.z = waypt.z;
-  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
-  return pose_msg;
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
+                   const Eigen::Vector3f& in_waypt, float yaw) {
+  out_waypt = in_waypt;
+  float roll = 0.0f, pitch = 0.0f;
+  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) *
+          Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+          Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
 void wrapAngleToPlusMinusPI(float& angle) {
@@ -158,6 +154,15 @@ Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
   return ev3;
 }
 
+Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq) {
+  Eigen::Quaternionf eqf;
+  eqf.x() = gmq.x;
+  eqf.y() = gmq.y;
+  eqf.z() = gmq.z;
+  eqf.w() = gmq.w;
+  return eqf;
+}
+
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   geometry_msgs::Point gmp;
   gmp.x = ev3.x();
@@ -165,11 +170,47 @@ geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
   gmp.z = ev3.z();
   return gmp;
 }
+
+geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
+  geometry_msgs::Vector3 gmv3;
+  gmv3.x = ev3.x();
+  gmv3.y = ev3.y();
+  gmv3.z = ev3.z();
+  return gmv3;
+}
+
+geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& eqf) {
+  geometry_msgs::Quaternion q;
+  q.x = eqf.x();
+  q.y = eqf.y();
+  q.z = eqf.z();
+  q.w = eqf.w();
+  return q;
+}
+
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   pcl::PointXYZ xyz;
   xyz.x = ev3.x();
   xyz.y = ev3.y();
   xyz.z = ev3.z();
   return xyz;
+}
+
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
+                             const Eigen::Vector3f& a) {
+  geometry_msgs::Twist gmt;
+  gmt.linear = toVector3(l);
+  gmt.angular = toVector3(a);
+  return gmt;
+}
+
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
+                                         const Eigen::Quaternionf& eq) {
+  geometry_msgs::PoseStamped gmps;
+  gmps.header.stamp = ros::Time::now();
+  gmps.header.frame_id = "/local_origin";
+  gmps.pose.position = toPoint(ev3);
+  gmps.pose.orientation = toQuaternion(eq);
+  return gmps;
 }
 }

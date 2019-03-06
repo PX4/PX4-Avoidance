@@ -48,23 +48,23 @@ TEST(Common, indexAngleDifferenceCheck) {
   float angle_diff4 = indexAngleDifference(a4, b4);
 
   // THEN: the angle should be...
-  EXPECT_FLOAT_EQ(0., angle_diff1);
-  EXPECT_FLOAT_EQ(0., angle_diff2);
-  EXPECT_FLOAT_EQ(0., angle_diff3);
-  ASSERT_NEAR(0.99999, angle_diff4, .00001);
+  EXPECT_FLOAT_EQ(0.f, angle_diff1);
+  EXPECT_FLOAT_EQ(0.f, angle_diff2);
+  EXPECT_FLOAT_EQ(0.f, angle_diff3);
+  ASSERT_NEAR(0.99999f, angle_diff4, .00001f);
 }
 
 TEST(Common, azimuthAnglefromCartesian) {
   // GIVEN: two points
-  const Eigen::Vector3f point_right(1.0d, 0.0d, 0.0d);
-  const Eigen::Vector3f point_up(0.0d, 1.0d, 0.0d);
-  const Eigen::Vector3f point_left(-1.0d, 0.0d, 0.0d);
-  const Eigen::Vector3f point_down(0.0d, -1.0d, 0.0d);
-  const Eigen::Vector3f point_q1(1.0d, 2.0d, 0.0d);
-  const Eigen::Vector3f point_q2(-3.0d, 4.0d, 0.0d);
-  const Eigen::Vector3f point_q3(-5.0d, -6.0d, 0.0d);
-  const Eigen::Vector3f point_q4(7.0d, -8.0d, 0.0d);
-  const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
+  const Eigen::Vector3f point_right(1.0f, 0.0f, 0.0f);
+  const Eigen::Vector3f point_up(0.0f, 1.0f, 0.0f);
+  const Eigen::Vector3f point_left(-1.0f, 0.0f, 0.0f);
+  const Eigen::Vector3f point_down(0.0f, -1.0f, 0.0f);
+  const Eigen::Vector3f point_q1(1.0f, 2.0f, 0.0f);
+  const Eigen::Vector3f point_q2(-3.0f, 4.0f, 0.0f);
+  const Eigen::Vector3f point_q3(-5.0f, -6.0f, 0.0f);
+  const Eigen::Vector3f point_q4(7.0f, -8.0f, 0.0f);
+  const Eigen::Vector3f origin(0.0f, 0.0f, 0.0f);
 
   // WHEN: calculating the azimuth angle between the two points
   float angle_right = cartesianToPolar(point_right, origin).z;
@@ -79,30 +79,30 @@ TEST(Common, azimuthAnglefromCartesian) {
   float angle_non_zero_origin = cartesianToPolar(point_q1, point_q2).z;
 
   // THEN:  angle should be ..
-  EXPECT_FLOAT_EQ(90, angle_right);
-  EXPECT_FLOAT_EQ(0, angle_up);
-  EXPECT_FLOAT_EQ(180, angle_down);
-  EXPECT_FLOAT_EQ(-90, angle_left);
-  EXPECT_FLOAT_EQ(0, angle_undetermined);
-  EXPECT_FLOAT_EQ(26.565051, angle_q1);
-  EXPECT_FLOAT_EQ(-36.869897, angle_q2);
-  EXPECT_FLOAT_EQ(-140.194428, angle_q3);
-  EXPECT_FLOAT_EQ(138.814074, angle_q4);
-  EXPECT_FLOAT_EQ(116.565051, angle_non_zero_origin);
+  EXPECT_FLOAT_EQ(90.f, angle_right);
+  EXPECT_FLOAT_EQ(0.f, angle_up);
+  EXPECT_FLOAT_EQ(180.f, angle_down);
+  EXPECT_FLOAT_EQ(-90.f, angle_left);
+  EXPECT_FLOAT_EQ(0.f, angle_undetermined);
+  EXPECT_FLOAT_EQ(26.565051f, angle_q1);
+  EXPECT_FLOAT_EQ(-36.869897f, angle_q2);
+  EXPECT_FLOAT_EQ(-140.194428f, angle_q3);
+  EXPECT_FLOAT_EQ(138.814074f, angle_q4);
+  EXPECT_FLOAT_EQ(116.565051f, angle_non_zero_origin);
 }
 
 TEST(Common, elevationAnglefromCartesian) {
   // GIVEN: two points
-  const Eigen::Vector3f point_front(0.0d, 1.0d, 0.0d);
-  const Eigen::Vector3f point_up(0.0d, 0.0d, 1.0d);
-  const Eigen::Vector3f point_behind(0.0d, -1.0d, 0.0d);
-  const Eigen::Vector3f point_down(0.0d, 0.0d, -1.0d);
-  const Eigen::Vector3f point_q1(0.0d, 1.0d, 1.732050808d);
-  const Eigen::Vector3f point_30(0.0d, 1.0d, 0.577350269d);
-  const Eigen::Vector3f point_q2(0.0d, -3.0d, 4.0d);
-  const Eigen::Vector3f point_q3(0.0d, -5.0d, -6.0d);
-  const Eigen::Vector3f point_q4(0.0d, 7.0d, -8.0d);
-  const Eigen::Vector3f origin(0.0d, 0.0d, 0.0d);
+  const Eigen::Vector3f point_front(0.0f, 1.0f, 0.0f);
+  const Eigen::Vector3f point_up(0.0f, 0.0f, 1.0f);
+  const Eigen::Vector3f point_behind(0.0f, -1.0f, 0.0f);
+  const Eigen::Vector3f point_down(0.0f, 0.0f, -1.0f);
+  const Eigen::Vector3f point_q1(0.0f, 1.0f, 1.732050808f);
+  const Eigen::Vector3f point_30(0.0f, 1.0f, 0.577350269f);
+  const Eigen::Vector3f point_q2(0.0f, -3.0f, 4.0f);
+  const Eigen::Vector3f point_q3(0.0f, -5.0f, -6.0f);
+  const Eigen::Vector3f point_q4(0.0f, 7.0f, -8.0f);
+  const Eigen::Vector3f origin(0.0f, 0.0f, 0.0f);
 
   // WHEN: we get the elevation angle between the two points
   const float angle_front = cartesianToPolar(point_front, origin).e;
@@ -125,10 +125,10 @@ TEST(Common, elevationAnglefromCartesian) {
   EXPECT_FLOAT_EQ(0.f, angle_undetermined);
   EXPECT_FLOAT_EQ(60.f, angle_q1);
   EXPECT_FLOAT_EQ(30.f, angle_30);
-  EXPECT_FLOAT_EQ(53.130110, angle_q2);
-  EXPECT_FLOAT_EQ(-50.194429, angle_q3);
-  EXPECT_FLOAT_EQ(-48.8140748, angle_q4);
-  EXPECT_FLOAT_EQ(-50.194428, angle_non_zero_origin);
+  EXPECT_FLOAT_EQ(53.130110f, angle_q2);
+  EXPECT_FLOAT_EQ(-50.194429f, angle_q3);
+  EXPECT_FLOAT_EQ(-48.8140748f, angle_q4);
+  EXPECT_FLOAT_EQ(-50.194428f, angle_non_zero_origin);
 }
 
 TEST(Common, polarToHistogramIndex) {
@@ -205,12 +205,12 @@ TEST(Common, polarToCartesian) {
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[3], radius[0]);
-    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, pos));
   }
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[i], radius[1]);
-    pos_out.push_back(polarToCartesian(p_pol, toPoint(pos)));
+    pos_out.push_back(polarToCartesian(p_pol, pos));
   }
 
   // THEN: the cartesian coordinates are
@@ -244,24 +244,24 @@ TEST(Common, polarToCartesian) {
 
 TEST(Common, PolarToCatesianToPolar) {
   // GIVEN: a current position and a radius
-  double radius = 2.168;
-  Eigen::Vector3f pos(4.21, 2.34, 0.19);
+  float radius = 2.168f;
+  Eigen::Vector3f pos(4.21f, 2.34f, 0.19f);
 
   // WHEN: going through all valid polar coordinates and transform it to
   // cartesian and back again
   for (float e = -90.f; e <= 90.f; e = e + 3.f) {
     for (float z = -180.f; z <= 180.f; z = z + 6.f) {
       PolarPoint p_pol(e, z, radius);
-      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
+      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
 
       PolarPoint p_pol_new = cartesianToPolar(p_cartesian, pos);
 
       // THEN: the resulting polar positions are expected to be the same as
       // before the conversion
-      ASSERT_GE(p_pol_new.z, -180);
-      ASSERT_LE(p_pol_new.z, 180);
-      ASSERT_GE(p_pol_new.e, -90);
-      ASSERT_LE(p_pol_new.e, 90);
+      ASSERT_GE(p_pol_new.z, -180.f);
+      ASSERT_LE(p_pol_new.z, 180.f);
+      ASSERT_GE(p_pol_new.e, -90.f);
+      ASSERT_LE(p_pol_new.e, 90.f);
 
       if (std::abs(std::abs(p_pol_new.e) - 90.f) > 1e-5) {
         if (std::abs(std::abs(p_pol_new.z) - 180.f) < 1e-5) {
@@ -277,7 +277,7 @@ TEST(Common, PolarToCatesianToPolar) {
 
 TEST(Common, cartesianTopolarToCartesian) {
   // GIVEN: a current position
-  Eigen::Vector3f pos(0.81, 5.17, 3.84);
+  Eigen::Vector3f pos(0.81f, 5.17f, 3.84f);
 
   // WHEN: going through some valid cartesian coordinates and transform it to
   // polar and back to cartesian
@@ -287,7 +287,7 @@ TEST(Common, cartesianTopolarToCartesian) {
         Eigen::Vector3f origin(x, y, z);
         PolarPoint p_pol = cartesianToPolar(origin, pos);
         // p_pol.r = (origin - pos).norm();
-        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, toPoint(pos));
+        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as
@@ -300,29 +300,26 @@ TEST(Common, cartesianTopolarToCartesian) {
 
 TEST(Common, nextYawAngle) {
   // GIVEN: two points
-  geometry_msgs::PoseStamped location;
-  location.pose.position.x = 0;
-  location.pose.position.y = 0;
-  location.pose.position.z = 0;
-  Eigen::Vector3f next_pos1(1.0d, 1.0d, 0.0d);
-  Eigen::Vector3f next_pos2(0.0d, 0.0d, 0.0d);
+  Eigen::Vector3f location(0.0f, 0.0f, 0.0f);
+  Eigen::Vector3f next_pos1(1.0f, 1.0f, 0.0f);
+  Eigen::Vector3f next_pos2(0.0f, 0.0f, 0.0f);
 
   // WHEN: we get the yaw between the two points
-  double yaw1 = nextYaw(location, toPoint(next_pos1));
-  double yaw2 = nextYaw(location, toPoint(next_pos2));
+  float yaw1 = nextYaw(location, next_pos1);
+  float yaw2 = nextYaw(location, next_pos2);
 
   // THEN: the angle in rad should be...
-  EXPECT_NEAR(0.785398163, yaw1, 0.00001);
-  EXPECT_NEAR(0.f, yaw2, 0.00001);
+  EXPECT_NEAR(0.785398163f, yaw1, 0.00001f);
+  EXPECT_NEAR(0.f, yaw2, 0.00001f);
 }
 
 TEST(Common, wrapAngle) {
   // GIVEN: an angle in rad
-  float angle1 = 0.d;
-  float angle2 = 30.d * M_PI / 180.d;
-  float angle3 = 270.d * M_PI / 180.d;
-  float angle4 = -90.d * M_PI / 180.d;
-  float angle5 = -225.d * M_PI / 180.d;
+  float angle1 = 0.f;
+  float angle2 = 30.f * M_PI_F / 180.f;
+  float angle3 = 270.f * M_PI_F / 180.f;
+  float angle4 = -90.f * M_PI_F / 180.f;
+  float angle5 = -225.f * M_PI_F / 180.f;
   float angle6 = std::numeric_limits<float>::infinity();
 
   // WHEN: it is wrapped to the space (-PI; PI] space

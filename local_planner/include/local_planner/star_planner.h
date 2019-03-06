@@ -10,9 +10,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <geometry_msgs/Point.h>
-#include <geometry_msgs/PoseStamped.h>
-
 #include <nav_msgs/GridCells.h>
 
 #include <dynamic_reconfigure/server.h>
@@ -41,7 +38,7 @@ class StarPlanner {
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
-  geometry_msgs::PoseStamped pose_;
+  Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
  protected:
@@ -60,7 +57,7 @@ class StarPlanner {
   float treeHeuristicFunction(int node_number);
 
  public:
-  std::vector<geometry_msgs::Point> path_node_positions_;
+  std::vector<Eigen::Vector3f> path_node_positions_;
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;
@@ -100,16 +97,16 @@ class StarPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] pose, vehicle current position and orientation
+  * @param[in] pos, vehicle current position and orientation
   * @param[in] curr_yaw, vehicle current yaw
   **/
-  void setPose(const geometry_msgs::PoseStamped& pose, float curr_yaw);
+  void setPose(const Eigen::Vector3f& pos, float curr_yaw);
 
   /**
   * @brief     setter method for current goal
   * @param[in] goal, current goal position
   **/
-  void setGoal(const geometry_msgs::Point& pose);
+  void setGoal(const Eigen::Vector3f& pose);
 
   /**
   * @brief     setter method for pointcloud

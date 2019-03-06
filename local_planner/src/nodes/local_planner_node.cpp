@@ -103,8 +103,6 @@ LocalPlannerNode::LocalPlannerNode() {
       nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
   takeoff_pose_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
-  offboard_pose_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/offboard_pose", 1);
   initial_height_pub_ =
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
   histogram_image_pub_ =
@@ -122,7 +120,7 @@ LocalPlannerNode::~LocalPlannerNode() { delete server_; }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  auto goal = local_planner_->getGoal();
+  auto goal = toPoint(local_planner_->getGoal());
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
@@ -214,10 +212,11 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update position
-  local_planner_->setPose(newest_pose_);
+  local_planner_->setPose(toEigen(newest_pose_.pose.position),
+                          toEigen(newest_pose_.pose.orientation));
 
   // Update velocity
-  local_planner_->setCurrentVelocity(vel_msg_);
+  local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
 
   // update state
   local_planner_->currently_armed_ = armed_;
@@ -226,7 +225,7 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update goal
   if (new_goal_) {
-    local_planner_->setGoal(goal_msg_.pose.position);
+    local_planner_->setGoal(toEigen(goal_msg_.pose.position));
     new_goal_ = false;
   }
 
@@ -240,7 +239,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update last sent waypoint
-  local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
+  local_planner_->last_sent_waypoint_ = toEigen(newest_waypoint_position_);
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -343,7 +342,7 @@ void LocalPlannerNode::publishGoal() {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
-  geometry_msgs::Point goal = local_planner_->getGoal();
+  geometry_msgs::Point goal = toPoint(local_planner_->getGoal());
 
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -368,8 +367,8 @@ void LocalPlannerNode::publishReachHeight() {
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = local_planner_->take_off_pose_.pose.position.x;
-  m.pose.position.y = local_planner_->take_off_pose_.pose.position.y;
+  m.pose.position.x = local_planner_->take_off_pose_.x();
+  m.pose.position.y = local_planner_->take_off_pose_.y();
   m.pose.position.z = local_planner_->starting_height_;
   m.pose.orientation.x = 0.0;
   m.pose.orientation.y = 0.0;
@@ -401,30 +400,13 @@ void LocalPlannerNode::publishReachHeight() {
   t.color.b = 0.0;
   t.lifetime = ros::Duration();
   t.id = 0;
-  t.pose.position = local_planner_->take_off_pose_.pose.position;
+  t.pose.position = toPoint(local_planner_->take_off_pose_);
   takeoff_pose_pub_.publish(t);
-
-  visualization_msgs::Marker a;
-  a.header.frame_id = "local_origin";
-  a.header.stamp = ros::Time::now();
-  a.type = visualization_msgs::Marker::SPHERE;
-  a.action = visualization_msgs::Marker::ADD;
-  a.scale.x = 0.2;
-  a.scale.y = 0.2;
-  a.scale.z = 0.2;
-  a.color.a = 1.0;
-  a.color.r = 0.5;
-  a.color.g = 0.0;
-  a.color.b = 0.5;
-  a.lifetime = ros::Duration();
-  a.id = 0;
-  a.pose.position = local_planner_->offboard_pose_.pose.position;
-  offboard_pose_pub_.publish(a);
 }
 
 void LocalPlannerNode::publishBox() {
   visualization_msgs::MarkerArray marker_array;
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
   double histogram_box_radius =
       static_cast<double>(local_planner_->histogram_box_.radius_);
 
@@ -434,9 +416,7 @@ void LocalPlannerNode::publishBox() {
   box.id = 0;
   box.type = visualization_msgs::Marker::SPHERE;
   box.action = visualization_msgs::Marker::ADD;
-  box.pose.position.x = drone_pos.pose.position.x;
-  box.pose.position.y = drone_pos.pose.position.y;
-  box.pose.position.z = drone_pos.pose.position.z;
+  box.pose.position = toPoint(drone_pos);
   box.pose.orientation.x = 0.0;
   box.pose.orientation.y = 0.0;
   box.pose.orientation.z = 0.0;
@@ -456,8 +436,7 @@ void LocalPlannerNode::publishBox() {
   plane.id = 1;
   plane.type = visualization_msgs::Marker::CUBE;
   plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position.x = drone_pos.pose.position.x;
-  plane.pose.position.y = drone_pos.pose.position.y;
+  plane.pose.position = toPoint(drone_pos);
   plane.pose.position.z = local_planner_->histogram_box_.zmin_;
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
@@ -478,8 +457,10 @@ void LocalPlannerNode::publishBox() {
 void LocalPlannerNode::publishWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
-  wp_generator_->updateState(newest_pose_, goal_msg_, vel_msg_, hover,
-                             is_airborne);
+  wp_generator_->updateState(
+      toEigen(newest_pose_.pose.position),
+      toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position),
+      toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   visualization_msgs::Marker sphere1;
@@ -493,9 +474,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere1.id = 0;
   sphere1.type = visualization_msgs::Marker::SPHERE;
   sphere1.action = visualization_msgs::Marker::ADD;
-  sphere1.pose.position.x = result.goto_position.x;
-  sphere1.pose.position.y = result.goto_position.y;
-  sphere1.pose.position.z = result.goto_position.z;
+  sphere1.pose.position = toPoint(result.goto_position);
   sphere1.pose.orientation.x = 0.0;
   sphere1.pose.orientation.y = 0.0;
   sphere1.pose.orientation.z = 0.0;
@@ -513,9 +492,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere2.id = 0;
   sphere2.type = visualization_msgs::Marker::SPHERE;
   sphere2.action = visualization_msgs::Marker::ADD;
-  sphere2.pose.position.x = result.adapted_goto_position.x;
-  sphere2.pose.position.y = result.adapted_goto_position.y;
-  sphere2.pose.position.z = result.adapted_goto_position.z;
+  sphere2.pose.position = toPoint(result.adapted_goto_position);
   sphere2.pose.orientation.x = 0.0;
   sphere2.pose.orientation.y = 0.0;
   sphere2.pose.orientation.z = 0.0;
@@ -533,9 +510,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   sphere3.id = 0;
   sphere3.type = visualization_msgs::Marker::SPHERE;
   sphere3.action = visualization_msgs::Marker::ADD;
-  sphere3.pose.position.x = result.smoothed_goto_position.x;
-  sphere3.pose.position.y = result.smoothed_goto_position.y;
-  sphere3.pose.position.z = result.smoothed_goto_position.z;
+  sphere3.pose.position = toPoint(result.smoothed_goto_position);
   sphere3.pose.orientation.x = 0.0;
   sphere3.pose.orientation.y = 0.0;
   sphere3.pose.orientation.z = 0.0;
@@ -553,21 +528,29 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   smoothed_wp_pub_.publish(sphere3);
 
   last_waypoint_position_ = newest_waypoint_position_;
-  newest_waypoint_position_ = result.smoothed_goto_position;
+  newest_waypoint_position_ = toPoint(result.smoothed_goto_position);
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
-  newest_adapted_waypoint_position_ = result.adapted_goto_position;
+  newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
   publishPaths();
-  publishSetpoint(result.velocity_waypoint, result.waypoint_type);
+  publishSetpoint(
+      toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
+      result.waypoint_type);
 
   // to mavros
 
   mavros_msgs::Trajectory obst_free_path = {};
   if (local_planner_->use_vel_setpoints_) {
-    mavros_vel_setpoint_pub_.publish(result.velocity_waypoint);
-    transformVelocityToTrajectory(obst_free_path, result.velocity_waypoint);
+    mavros_vel_setpoint_pub_.publish(
+        toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
+    transformVelocityToTrajectory(
+        obst_free_path,
+        toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
   } else {
-    mavros_pos_setpoint_pub_.publish(result.position_waypoint);
-    transformPoseToTrajectory(obst_free_path, result.position_waypoint);
+    mavros_pos_setpoint_pub_.publish(
+        toPoseStamped(result.position_wp, result.orientation_wp));
+    transformPoseToTrajectory(
+        obst_free_path,
+        toPoseStamped(result.position_wp, result.orientation_wp));
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
@@ -620,8 +603,8 @@ void LocalPlannerNode::publishTree() {
 
   path_marker.points.reserve(path_node_positions_.size() * 2);
   for (size_t i = 1; i < path_node_positions_.size(); i++) {
-    path_marker.points.push_back(path_node_positions_[i - 1]);
-    path_marker.points.push_back(path_node_positions_[i]);
+    path_marker.points.push_back(toPoint(path_node_positions_[i - 1]));
+    path_marker.points.push_back(toPoint(path_node_positions_[i]));
   }
 
   complete_tree_pub_.publish(tree_marker);
@@ -639,7 +622,7 @@ void LocalPlannerNode::clickedGoalCallback(
   goal_msg_ = msg;
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_msg_.pose.position.z = local_planner_->getGoal().z;
+  goal_msg_.pose.position.z = local_planner_->getGoal().z();
 }
 
 void LocalPlannerNode::updateGoalCallback(
@@ -690,7 +673,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
            model_params_.up_acc, msg.value.real);
     model_params_.up_acc = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
-    printf("model parameter auto mode is set from  %i to %i \n",
+    printf("model parameter auto mode is set from  %i to %li \n",
            model_params_.mpc_auto_mode, msg.value.integer);
     model_params_.mpc_auto_mode = msg.value.integer;
   } else if (msg.param_id == "MPC_JERK_MIN") {
@@ -721,7 +704,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
 }
 
 void LocalPlannerNode::publishGround() {
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
   visualization_msgs::Marker plane;
   double histogram_box_radius =
       static_cast<double>(local_planner_->histogram_box_.radius_);
@@ -731,10 +714,9 @@ void LocalPlannerNode::publishGround() {
   plane.id = 1;
   plane.type = visualization_msgs::Marker::CUBE;
   plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position.x = drone_pos.pose.position.x;
-  plane.pose.position.y = drone_pos.pose.position.y;
-  plane.pose.position.z = drone_pos.pose.position.z -
-                          static_cast<double>(local_planner_->ground_distance_);
+  plane.pose.position = toPoint(drone_pos);
+  plane.pose.position.z =
+      drone_pos.z() - static_cast<double>(local_planner_->ground_distance_);
   plane.pose.orientation.x = 0.0;
   plane.pose.orientation.y = 0.0;
   plane.pose.orientation.z = 0.0;
@@ -751,16 +733,13 @@ void LocalPlannerNode::publishGround() {
 }
 
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
-  geometry_msgs::PoseStamped drone_pos = local_planner_->getPosition();
-  int beta_z = floor(
-      (atan2(x - drone_pos.pose.position.x, y - drone_pos.pose.position.y) *
-       180.0 / M_PI));  //(-180. +180]
-  int beta_e = floor((atan((z - drone_pos.pose.position.z) /
-                           sqrt((x - drone_pos.pose.position.x) *
-                                    (x - drone_pos.pose.position.x) +
-                                (y - drone_pos.pose.position.y) *
-                                    (y - drone_pos.pose.position.y))) *
-                      180.0 / M_PI));  //(-90.+90)
+  Eigen::Vector3f drone_pos = local_planner_->getPosition();
+  int beta_z = floor((atan2(x - drone_pos.x(), y - drone_pos.y()) * 180.0 /
+                      M_PI));  //(-180. +180]
+  int beta_e =
+      floor((atan((z - drone_pos.z()) /
+                  (Eigen::Vector2f(x, y) - drone_pos.topRows<2>()).norm()) *
+             180.0 / M_PI));  //(-90.+90)
 
   beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[-170,+190]
   beta_e = beta_e + (ALPHA_RES - beta_e % ALPHA_RES);  //[-80,+90]

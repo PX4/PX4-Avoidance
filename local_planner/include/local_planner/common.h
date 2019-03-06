@@ -3,8 +3,10 @@
 
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
 #include <Eigen/Core>
+#include <Eigen/Dense>
 
 #include <pcl/point_types.h>
 
@@ -38,7 +40,7 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 * @returns   point in cartesian CS
 **/
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const geometry_msgs::Point& pos);
+                                 const Eigen::Vector3f& pos);
 float indexAngleDifference(float a, float b);
 /**
 * @brief     compute point in the histogram to a polar point
@@ -87,11 +89,10 @@ void wrapPolar(PolarPoint& p_pol);
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad
 **/
-float nextYaw(const geometry_msgs::PoseStamped& u,
-              const geometry_msgs::Point& v);
+float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v);
 
-geometry_msgs::PoseStamped createPoseMsg(const geometry_msgs::Point& waypt,
-                                         float yaw);
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
+                   const Eigen::Vector3f& in_waypt, float yaw);
 
 /**
 * @brief     wrappes the input angle in to plus minus PI space
@@ -114,9 +115,16 @@ double getAngularVelocity(float desired_yaw, float curr_yaw);
 Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
 Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3);
 Eigen::Vector3f toEigen(const pcl::PointXYZ& xyz);
+Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq);
 
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
+geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3);
+geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3);
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
+                             const Eigen::Vector3f& a);
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p,
+                                         const Eigen::Quaternionf& q);
 }
 
 #endif  // COMMON_H
