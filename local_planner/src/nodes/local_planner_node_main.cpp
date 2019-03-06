@@ -47,48 +47,11 @@ int main(int argc, char** argv) {
 
     // Check if all information was received
     ros::Time now = ros::Time::now();
-    ros::Duration pointcloud_timeout_land =
-        ros::Duration(Node.local_planner_->pointcloud_timeout_land_);
-    ros::Duration pointcloud_timeout_hover =
-        ros::Duration(Node.local_planner_->pointcloud_timeout_hover_);
     ros::Duration since_last_cloud = now - Node.last_wp_time_;
     ros::Duration since_start = now - start_time;
 
-    if (since_last_cloud > pointcloud_timeout_land &&
-        since_start > pointcloud_timeout_land) {
-      if (planner_is_healthy) {
-        planner_is_healthy = false;
-        Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
-        ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
-      }
-    } else {
-      if (since_last_cloud > pointcloud_timeout_hover &&
-          since_start > pointcloud_timeout_hover) {
-        if (Node.position_received_) {
-          hover = true;
-          Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
-          std::string not_received = "";
-          for (size_t i = 0; i < Node.cameras_.size(); i++) {
-            if (!Node.cameras_[i].received_) {
-              not_received.append(" , no cloud received on topic ");
-              not_received.append(Node.cameras_[i].topic_);
-            }
-          }
-          if (!Node.canUpdatePlannerInfo()) {
-            not_received.append(" , missing transforms ");
-          }
-          ROS_INFO(
-              "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
-              "\n "
-              "\033[0m",
-              not_received.c_str());
-        } else {
-          ROS_WARN(
-              "\033[1;33m Pointcloud timeout: No position received, no WP to "
-              "output.... \n \033[0m");
-        }
-      }
-    }
+    Node.checkFailsafe(since_last_cloud, since_start, planner_is_healthy,
+                       hover);
 
     // If planner is not running, update planner info and get last results
     if (Node.cameras_.size() == Node.numReceivedClouds() &&

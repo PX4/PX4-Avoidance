@@ -220,6 +220,18 @@ class LocalPlannerNode {
   **/
   void publishWaypoints(bool hover);
 
+  /**
+  * @brief     check healthiness of the avoidance system to trigger failsafe in
+  *the FCU
+  * @param     since_last_cloud, time elapsed since the last waypoint was
+  *published to the FCU
+  * @param     since_start, time elapsed since staring the node
+  * @param     planner_is_healthy, true if the planner is running without errors
+  * @param     hover, true if the vehicle is hovering
+  **/
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
+                     bool& planner_is_healthy, bool& hover);
+
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 
  private:
