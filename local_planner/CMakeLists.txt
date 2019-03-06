@@ -147,6 +147,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
                               "src/nodes/common.cpp"
+                              "src/nodes/local_planner_node.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
@@ -162,8 +163,7 @@ add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
-add_executable(local_planner_node src/nodes/local_planner_node.cpp
-                                  src/nodes/local_planner_node_main.cpp)
+add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -226,7 +226,8 @@ if(CATKIN_ENABLE_TESTING)
 	                                      test/test_local_planner.cpp
 	                                      test/test_planner_functions.cpp
                                         test/test_star_planner.cpp
-                                        test/test_waypoint_generator.cpp)
+                                        test/test_waypoint_generator.cpp
+                                        test/test_local_planner_node.cpp)
 	if(TARGET ${PROJECT_NAME}-test)
 	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
 	                                             ${catkin_LIBRARIES}
