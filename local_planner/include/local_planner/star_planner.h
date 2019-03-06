@@ -39,8 +39,8 @@ class StarPlanner {
   pcl::PointCloud<pcl::PointXYZ> pointcloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
-  Eigen::Vector3f goal_;
-  Eigen::Vector3f projected_last_wp_;
+  Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
   geometry_msgs::PoseStamped pose_;
   costParameters cost_params_;
 

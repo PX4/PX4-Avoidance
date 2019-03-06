@@ -69,7 +69,7 @@ TEST_F(StarPlannerTests, buildTree) {
   // line position-goal
 
   float dist_to_goal = 1000.0f;
-
+  float min_dist_to_goal = dist_to_goal;
   // WHEN: we build the tree for 15 times
   for (size_t i = 0; i < 15; i++) {
     star_planner.buildLookAheadTree();
@@ -88,8 +88,9 @@ TEST_F(StarPlannerTests, buildTree) {
     // at each iteration
     float tmp_dist_to_goal =
         (toEigen(goal) - toEigen(position.pose.position)).norm();
-    ASSERT_LT(tmp_dist_to_goal, dist_to_goal);
+    EXPECT_LT(tmp_dist_to_goal, min_dist_to_goal * 1.1);
     dist_to_goal = tmp_dist_to_goal;
+    if (dist_to_goal < min_dist_to_goal) min_dist_to_goal = dist_to_goal;
 
     // we set the vehicle position to be the first node position after the
     // origin for the next algorithm iterarion

@@ -145,7 +145,6 @@ void WaypointGenerator::backOff() {
 
   output_.position_waypoint = createPoseMsg(output_.goto_position, last_yaw_);
   transformPositionToVelocityWaypoint();
-  last_yaw_ = curr_yaw_;
 
   ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].", planner_info_.back_off_point.x,
             planner_info_.back_off_point.y, planner_info_.back_off_point.z);
@@ -162,7 +161,8 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
       output_.position_waypoint.pose.position.z - pose_.pose.position.z;
   output_.velocity_waypoint.angular.x = 0.0;
   output_.velocity_waypoint.angular.y = 0.0;
-  output_.velocity_waypoint.angular.z = getAngularVelocity(new_yaw_, curr_yaw_);
+  output_.velocity_waypoint.angular.z =
+      getAngularVelocity(setpoint_yaw_, curr_yaw_);
 }
 
 // when taking off, first publish waypoints to reach the goal altitude
@@ -235,19 +235,21 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   const float D_constant_xy =
       2.f * std::sqrt(P_constant_xy);  // critically damped
 
-  const float desired_new_yaw = nextYaw(pose_, output_.goto_position);
+  const float desired_setpoint_yaw = nextYaw(pose_, output_.goto_position);
   const float desired_yaw_velocity = 0.0;
 
-  float yaw_diff =
-      std::isfinite(desired_new_yaw) ? desired_new_yaw - new_yaw_ : 0.0f;
+  float yaw_diff = std::isfinite(desired_setpoint_yaw)
+                       ? desired_setpoint_yaw - setpoint_yaw_
+                       : 0.0f;
 
   wrapAngleToPlusMinusPI(yaw_diff);
   const float p = yaw_diff * P_constant_xy;
-  const float d = (desired_yaw_velocity - new_yaw_velocity_) * D_constant_xy;
+  const float d =
+      (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
 
-  new_yaw_velocity_ += (p + d) * dt;
-  new_yaw_ += new_yaw_velocity_ * dt;
-  wrapAngleToPlusMinusPI(new_yaw_);
+  setpoint_yaw_velocity_ += (p + d) * dt;
+  setpoint_yaw_ += setpoint_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(setpoint_yaw_);
 }
 
 void WaypointGenerator::adaptSpeed() {
@@ -266,7 +268,7 @@ void WaypointGenerator::adaptSpeed() {
     if (!std::isfinite(heading_at_goal_)) {
       heading_at_goal_ = curr_yaw_;
     }
-    new_yaw_ = heading_at_goal_;
+    setpoint_yaw_ = heading_at_goal_;
 
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
@@ -316,7 +318,7 @@ void WaypointGenerator::getPathMsg() {
             output_.smoothed_goto_position.x, output_.smoothed_goto_position.y,
             output_.smoothed_goto_position.z);
   output_.position_waypoint =
-      createPoseMsg(output_.smoothed_goto_position, new_yaw_);
+      createPoseMsg(output_.smoothed_goto_position, setpoint_yaw_);
   transformPositionToVelocityWaypoint();
 }
 

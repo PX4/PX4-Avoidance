@@ -497,19 +497,19 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // check that columns farther away have bigger cost. Leave out direct neighbor
   // rows as the center might be split over cells
   Eigen::MatrixXf matrix_padded2 =
-      matrix_padded.block(3, 0, cost_matrix.rows(),
-                          matrix_padded.cols());  // cut off padded top part
-  bool col1 = (matrix_padded2.col(best_index_padded_z + 2).array() >
+      matrix_padded.block(3, 3, cost_matrix.rows(),
+                          cost_matrix.cols());  // cut off padded top part
+  bool col1 = (matrix_padded2.col(best_index_padded_z + 10).array() >
                matrix_padded2.col(best_index_padded_z + 1).array())
                   .all();
-  bool col2 = (matrix_padded2.col(best_index_padded_z + 3).array() >
-               matrix_padded2.col(best_index_padded_z + 2).array())
+  bool col2 = (matrix_padded2.col(best_index_padded_z + 20).array() >
+               matrix_padded2.col(best_index_padded_z + 10).array())
                   .all();
-  bool col3 = (matrix_padded2.col(best_index_padded_z - 2).array() >
+  bool col3 = (matrix_padded2.col(best_index_padded_z - 10).array() >
                matrix_padded2.col(best_index_padded_z).array() - 1)
                   .all();
-  bool col4 = (matrix_padded2.col(best_index_padded_z - 3).array() >
-               matrix_padded2.col(best_index_padded_z).array() - 2)
+  bool col4 = (matrix_padded2.col(best_index_padded_z - 20).array() >
+               matrix_padded2.col(best_index_padded_z).array() - 10)
                   .all();
 
   EXPECT_TRUE(col1);

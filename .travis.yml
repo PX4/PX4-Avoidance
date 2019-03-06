@@ -24,7 +24,7 @@ before_install:
   - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
   - sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
   - sudo apt-get update -qq
-  - sudo apt-get install -y build-essential git
+  - sudo apt-get install -y build-essential git valgrind
   - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
   # Install clang-format 3.8
   - sudo apt-get install -y clang-format-3.8
@@ -73,4 +73,4 @@ script:
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   - ./check_code_format.sh
   - catkin build local_planner global_planner --no-deps -v -i --catkin-make-args tests
-  - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do $f || status=1; done && exit $status
+  - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done && exit $status

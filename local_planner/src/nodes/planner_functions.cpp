@@ -189,10 +189,11 @@ void combinedHistogram(bool& hist_empty, Histogram& new_hist,
                        const std::vector<int>& z_FOV_idx, int e_FOV_min,
                        int e_FOV_max) {
   hist_empty = true;
-  for (int e = 0; e < GRID_LENGTH_E; e++) {
-    for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end() &&
-          e > e_FOV_min && e < e_FOV_max) {  // inside FOV
+  for (int z = 0; z < GRID_LENGTH_Z; z++) {
+    bool inside_FOV_z =
+        std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end();
+    for (int e = 0; e < GRID_LENGTH_E; e++) {
+      if (inside_FOV_z && e > e_FOV_min && e < e_FOV_max) {  // inside FOV
         if (new_hist.get_dist(e, z) > 0) {
           new_hist.set_age(e, z, 1);
           hist_empty = false;
@@ -244,31 +245,72 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
+  distance_matrix.fill(NAN);
   float distance_cost = 0.f;
   float other_costs = 0.f;
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
-  cost_matrix.fill(0.f);
+  cost_matrix.fill(NAN);
 
   // fill in cost matrix
   for (int e_index = 0; e_index < GRID_LENGTH_E; e_index++) {
-    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index++) {
+    // determine how many bins at this elevation angle would be equivalent to
+    // a single bin at horizontal, then work in steps of that size
+    const float bin_width = std::cos(
+        histogramIndexToPolar(e_index, 0, ALPHA_RES, 1).e * DEG_TO_RAD);
+    const int step_size = static_cast<int>(std::round(1 / bin_width));
+
+    for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index += step_size) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol =
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
+
       costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, heading,
                    last_sent_waypoint, cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
+    if (step_size > 1) {
+      // horizontally interpolate all of the un-calculated values
+      int last_index = 0;
+      for (int z_index = step_size; z_index < GRID_LENGTH_Z;
+           z_index += step_size) {
+        float other_costs_gradient =
+            (cost_matrix(e_index, z_index) - cost_matrix(e_index, last_index)) /
+            step_size;
+        float distance_cost_gradient = (distance_matrix(e_index, z_index) -
+                                        distance_matrix(e_index, last_index)) /
+                                       step_size;
+        for (int i = 1; i < step_size; i++) {
+          cost_matrix(e_index, last_index + i) =
+              cost_matrix(e_index, last_index) + other_costs_gradient * i;
+          distance_matrix(e_index, last_index + i) =
+              distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+        }
+        last_index = z_index;
+      }
+
+      // special case the last columns wrapping around back to 0
+      int clamped_z_scale = GRID_LENGTH_Z - last_index;
+      float other_costs_gradient =
+          (cost_matrix(e_index, 0) - cost_matrix(e_index, last_index)) /
+          clamped_z_scale;
+      float distance_cost_gradient =
+          (distance_matrix(e_index, 0) - distance_matrix(e_index, last_index)) /
+          clamped_z_scale;
+
+      for (int i = 1; i < clamped_z_scale; i++) {
+        cost_matrix(e_index, last_index + i) =
+            cost_matrix(e_index, last_index) + other_costs_gradient * i;
+        distance_matrix(e_index, last_index + i) =
+            distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+      }
+    }
   }
 
-  unsigned int smooth_radius = 1;
   float smoothing_margin_degrees = 45;
-  int smoothing_steps = ceil(smoothing_margin_degrees / ALPHA_RES);
-  for (int i = 0; i < smoothing_steps; i++) {
-    smoothPolarMatrix(distance_matrix, smooth_radius);
-  }
+  unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
+  smoothPolarMatrix(distance_matrix, smooth_radius);
 
   cost_matrix = cost_matrix + distance_matrix;
 }
@@ -309,22 +351,50 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   // pad matrix by smoothing radius respecting all wrapping rules
   Eigen::MatrixXf matrix_padded;
   padPolarMatrix(matrix, smoothing_radius, matrix_padded);
+  Eigen::ArrayXf kernel1d = getConicKernel(smoothing_radius);
 
-  // filter matrix (max-mean)
-  for (int row_index = smoothing_radius;
-       row_index < matrix_padded.rows() - smoothing_radius; row_index++) {
-    for (int col_index = smoothing_radius;
-         col_index < matrix_padded.cols() - smoothing_radius; col_index++) {
-      float original_val = matrix_padded(row_index, col_index);
-      float mean_val =
-          matrix_padded
-              .block(row_index - smoothing_radius, col_index - smoothing_radius,
-                     2 * smoothing_radius + 1, 2 * smoothing_radius + 1)
-              .mean();
-      matrix(row_index - smoothing_radius, col_index - smoothing_radius) =
-          std::max(original_val, mean_val);
+  Eigen::ArrayXf temp_col(matrix_padded.rows());
+
+  for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+    temp_col.fill(NAN);
+    for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+      float smooth_val = (matrix_padded.col(col_index)
+                              .segment(row_index, 2 * smoothing_radius + 1)
+                              .array() *
+                          kernel1d)
+                             .sum();
+      temp_col(row_index + smoothing_radius) = smooth_val;
     }
+    matrix_padded.col(col_index) = temp_col;
   }
+
+  Eigen::ArrayXf temp_row(matrix_padded.cols());
+  for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+    temp_row.fill(NAN);
+    for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+      float smooth_val = (matrix_padded.row(row_index)
+                              .segment(col_index, 2 * smoothing_radius + 1)
+                              .transpose()
+                              .array() *
+                          kernel1d)
+                             .sum();
+
+      temp_row(col_index + smoothing_radius) = smooth_val;
+    }
+    matrix_padded.row(row_index) = temp_row.transpose();
+  }
+  matrix = matrix.cwiseMax(matrix_padded.block(
+      smoothing_radius, smoothing_radius, matrix.rows(), matrix.cols()));
+}
+
+Eigen::ArrayXf getConicKernel(int radius) {
+  Eigen::ArrayXf kernel(radius * 2 + 1);
+  for (int row = 0; row < kernel.rows(); row++) {
+    kernel(row) = std::max(0.f, 1.f + radius - std::abs(row - radius));
+  }
+
+  kernel *= 1.f / kernel.sum();
+  return kernel;
 }
 
 void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
