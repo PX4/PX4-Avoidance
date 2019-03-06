@@ -158,7 +158,6 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
   output_.angular_velocity_wp.y() = 0.0f;
   output_.angular_velocity_wp.z() =
       getAngularVelocity(setpoint_yaw_, curr_yaw_);
-      getAngularVelocity(setpoint_yaw_, curr_yaw_);
 }
 
 // when taking off, first publish waypoints to reach the goal altitude

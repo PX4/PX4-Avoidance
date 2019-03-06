@@ -38,7 +38,7 @@ class StarPlanner {
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f position_;
+  Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
  protected:

@@ -164,7 +164,7 @@ class LocalPlanner {
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
   ;
   sensor_msgs::LaserScan distance_data_ = {};
-  Eigen::Vector3f last_sent_waypoint_;
+  Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
