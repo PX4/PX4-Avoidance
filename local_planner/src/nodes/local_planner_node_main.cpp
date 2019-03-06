@@ -61,8 +61,8 @@ int main(int argc, char** argv) {
         ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
       }
     } else {
-      if (Node.never_run_ || (since_last_cloud > pointcloud_timeout_hover &&
-                              since_start > pointcloud_timeout_hover)) {
+      if (since_last_cloud > pointcloud_timeout_hover &&
+          since_start > pointcloud_timeout_hover) {
         if (Node.position_received_) {
           hover = true;
           Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
