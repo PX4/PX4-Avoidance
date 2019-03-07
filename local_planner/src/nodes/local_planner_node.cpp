@@ -975,8 +975,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
       ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
     }
   } else {
-    if (since_last_cloud > timeout_critical &&
-        since_start > timeout_critical) {
+    if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
       if (position_received_) {
         hover = true;
         status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;

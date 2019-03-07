@@ -29,7 +29,8 @@ TEST(LocalPlannerNodeTests, failsafe) {
     since_last_cloud = since_last_cloud + ros::Duration(time_increment);
     since_start = since_start + ros::Duration(time_increment);
     EXPECT_TRUE(planner_is_healthy);
-    EXPECT_EQ(Node.status_msg_.state, static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE));
+    EXPECT_EQ(Node.status_msg_.state,
+              static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE));
   }
 
   for (int i = active_n_iter; i < critical_n_iter; i++) {
@@ -38,7 +39,8 @@ TEST(LocalPlannerNodeTests, failsafe) {
     since_last_cloud = since_last_cloud + ros::Duration(time_increment);
     since_start = since_start + ros::Duration(time_increment);
     EXPECT_TRUE(planner_is_healthy);
-    EXPECT_EQ(Node.status_msg_.state, static_cast<int>(MAV_STATE::MAV_STATE_CRITICAL));
+    EXPECT_EQ(Node.status_msg_.state,
+              static_cast<int>(MAV_STATE::MAV_STATE_CRITICAL));
   }
 
   for (int i = critical_n_iter; i < 91; i++) {

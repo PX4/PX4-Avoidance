@@ -54,10 +54,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
   min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
   min_dist_backoff_ = static_cast<float>(config.min_dist_backoff_);
-  timeout_critical_ =
-      static_cast<float>(config.timeout_critical_);
-  timeout_termination_ =
-      static_cast<float>(config.timeout_termination_);
+  timeout_critical_ = static_cast<float>(config.timeout_critical_);
+  timeout_termination_ = static_cast<float>(config.timeout_termination_);
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
 
