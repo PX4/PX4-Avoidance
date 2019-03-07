@@ -1000,8 +1000,6 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
             "\033[1;33m Pointcloud timeout: No position received, no WP to "
             "output.... \n \033[0m");
       }
-    } else {
-      status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     }
   }
 }
