@@ -962,21 +962,21 @@ void LocalPlannerNode::threadFunction() {
 void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
                                      ros::Duration since_start,
                                      bool& planner_is_healthy, bool& hover) {
-  ros::Duration pointcloud_timeout_land =
-      ros::Duration(local_planner_->pointcloud_timeout_land_);
-  ros::Duration pointcloud_timeout_hover =
-      ros::Duration(local_planner_->pointcloud_timeout_hover_);
+  ros::Duration timeout_termination =
+      ros::Duration(local_planner_->timeout_termination_);
+  ros::Duration timeout_critical =
+      ros::Duration(local_planner_->timeout_critical_);
 
-  if (since_last_cloud > pointcloud_timeout_land &&
-      since_start > pointcloud_timeout_land) {
+  if (since_last_cloud > timeout_termination &&
+      since_start > timeout_termination) {
     if (planner_is_healthy) {
       planner_is_healthy = false;
       status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
       ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
     }
   } else {
-    if (since_last_cloud > pointcloud_timeout_hover &&
-        since_start > pointcloud_timeout_hover) {
+    if (since_last_cloud > timeout_critical &&
+        since_start > timeout_critical) {
       if (position_received_) {
         hover = true;
         status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;

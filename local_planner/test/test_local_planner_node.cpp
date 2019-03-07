@@ -20,8 +20,8 @@ TEST(LocalPlannerNodeTests, failsafe) {
   ros::Duration since_last_cloud = ros::Duration(0.0);
   ros::Duration since_start = ros::Duration(0.0);
   double time_increment = 0.2f;
-  int active_n_iter = std::ceil(config.pointcloud_timeout_hover_ / time_increment);
-  int critical_n_iter = std::ceil(config.pointcloud_timeout_land_ / time_increment);
+  int active_n_iter = std::ceil(config.timeout_critical_ / time_increment);
+  int critical_n_iter = std::ceil(config.timeout_termination_ / time_increment);
 
   for (int i = 0; i < active_n_iter; i++) {
     Node.checkFailsafe(since_last_cloud, since_start, planner_is_healthy,
