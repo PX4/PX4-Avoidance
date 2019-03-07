@@ -113,6 +113,12 @@ LocalPlannerNode::LocalPlannerNode() {
   get_px4_param_client_ =
       nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
+  //pointcloud summary
+  pc_used_summary_pub_ = nh_.advertise<geometry_msgs::Point>(
+        "/pointcloud_used_summary", 10);
+  pc_received_summary_pub_ = nh_.advertise<geometry_msgs::Point>(
+        "/pointcloud_received_summary", 10);
+
   local_planner_->applyGoal();
 }
 
@@ -195,6 +201,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   for (size_t i = 0; i < cameras_.size(); ++i) {
     sensor_msgs::PointCloud2 pc2cloud_world;
     pcl::PointCloud<pcl::PointXYZ> complete_cloud;
+    pcl::PointCloud<pcl::PointXYZ> complete_cloud_small;
     try {
       tf::StampedTransform transform;
       tf_listener_.lookupTransform(
@@ -204,7 +211,20 @@ void LocalPlannerNode::updatePlannerInfo() {
                                    cameras_[i].newest_cloud_msg_,
                                    pc2cloud_world);
       pcl::fromROSMsg(pc2cloud_world, complete_cloud);
-      local_planner_->complete_cloud_.push_back(std::move(complete_cloud));
+
+      //filter out nans
+      std::vector< int > dummy_index;
+      pcl::removeNaNFromPointCloud(complete_cloud, complete_cloud_small, dummy_index);
+
+      //print summary
+      geometry_msgs::Point message;
+      message.x = complete_cloud_small.header.stamp;
+      message.y = complete_cloud_small.header.stamp;
+      message.z = complete_cloud_small.points.size();
+      pc_used_summary_pub_.publish(message);
+
+
+      local_planner_->complete_cloud_.push_back(std::move(complete_cloud_small));
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
@@ -753,6 +773,13 @@ void LocalPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
   cameras_[index].received_ = true;
+
+  //print summary
+  geometry_msgs::Point message;
+  message.x = msg->header.stamp.sec;
+  message.y = msg->header.stamp.nsec;
+  message.z = msg->data.size();
+  pc_received_summary_pub_.publish(message);
 }
 
 void LocalPlannerNode::cameraInfoCallback(

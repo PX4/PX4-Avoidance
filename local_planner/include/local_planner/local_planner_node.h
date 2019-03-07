@@ -21,6 +21,7 @@
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
+#include <pcl/filters/filter.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>  // transformPointCloud
 #include <ros/ros.h>
@@ -260,6 +261,8 @@ class LocalPlannerNode {
   ros::Publisher adapted_wp_pub_;
   ros::Publisher smoothed_wp_pub_;
   ros::Publisher histogram_image_pub_;
+  ros::Publisher pc_used_summary_pub_;
+  ros::Publisher pc_received_summary_pub_;
 
   std::vector<float> algo_time;
 
