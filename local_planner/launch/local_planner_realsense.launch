@@ -1,0 +1,60 @@
+<!-- SITL launch file which uses an authentic gazebo model of the Realsense camera-->
+<!-- To be able to run this complete the following steps:-->
+<!-- Clone this package into catkin_ws and build:-->
+<!-- git clone git@github.com:SyrianSpock/realsense_gazebo_plugin.git-->
+<!-- catkin build realsense_gazebo_plugin (for ROS kinetic, the kinetic-devel branch must be used)-->
+<!-- Add to Gazebo model path:-->
+<!-- export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:/catkin_ws/src/realsense_gazebo_plugin/models-->
+
+
+<launch>
+    <arg name="world_file_name"    default="simple_obstacle" />
+    <arg name="world_path" default="$(find local_planner)/../sim/worlds/$(arg world_file_name).world" />
+    <arg name="pointcloud_topics" default="[/realsense/camera/depth/points]"/>
+
+    <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
+          args="0 0 0 -1.57 0 -1.57 fcu color 10"/>
+
+    <!-- Launch PX4 and mavros -->
+    <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
+        <arg name="model" value="iris_realsense" />
+        <arg name="world_path" value="$(arg world_path)" />
+    </include>
+
+    <!-- Load custom console configuration -->
+    <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
+
+    <!-- Launch local planner -->
+    <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
+        <param name="goal_x_param" value="17" />
+        <param name="goal_y_param" value="15"/>
+        <param name="goal_z_param" value="3" />
+        <param name="world_name" value="$(find local_planner)/../sim/worlds/$(arg world_file_name).yaml" />
+        <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
+    </node>
+    
+    <!-- Launch pointcloud generation from Realsense images -->  
+    <arg name="camera_info" value="/realsense/camera/color/camera_info"/>
+    <arg name="depReg_imgraw" value="/realsense/camera/depth/image_raw"/>  <!--Raw depth image-->
+    <arg name="depReg_imgrect" value="/realsense/camera/depth/image_rect"/>  <!--Raw depth image-->
+    <arg name="out_cloud" value="/realsense/camera/depth/points"/>
+   
+    <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
+   
+    <!-- Convert depth from mm (in uint16) to meters -->
+    <node pkg="nodelet" type="nodelet" name="convert_metric" args="load depth_image_proc/convert_metric standalone_nodelet">
+      <remap from="image_raw" to="$(arg depReg_imgraw)"/>
+      <remap from="image" to="$(arg depReg_imgrect)"/>
+    </node>
+   
+    <!-- Construct point cloud of the rgb and depth topics -->
+    <node pkg="nodelet" type="nodelet" name="points_xyz" args="load depth_image_proc/point_cloud_xyz standalone_nodelet --no-bond">
+      <remap from="camera_info" to="$(arg camera_info)" />
+      <remap from="image_rect" to="$(arg depReg_imgrect)"/>
+      <remap from="points" to="$(arg out_cloud)"/>
+    </node>
+   
+    <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />
+
+</launch>
