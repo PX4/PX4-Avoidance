@@ -182,7 +182,7 @@ void LocalPlanner::determineStrategy() {
     if (send_obstacles_fcu_) {
       create2DObstacleRepresentation(true);
     }
-  } else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ &&
+  } else if (final_cloud_.points.size() >= min_cloud_size_ && stop_in_front_ &&
              reach_altitude_) {
     obstacle_ = true;
     ROS_INFO(
@@ -195,7 +195,7 @@ void LocalPlanner::determineStrategy() {
     }
   } else {
     if (((counter_close_points_backoff_ > 200 &&
-          final_cloud_.points.size() > min_cloud_size_) ||
+          final_cloud_.points.size() >= min_cloud_size_) ||
          back_off_) &&
         reach_altitude_ && use_back_off_) {
       if (!back_off_) {
@@ -251,7 +251,7 @@ void LocalPlanner::determineStrategy() {
         waypoint_type_ = tryPath;
       }
 
-      if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
+      if (reach_altitude_) {
         obstacle_ = true;
 
         if (use_VFH_star_) {

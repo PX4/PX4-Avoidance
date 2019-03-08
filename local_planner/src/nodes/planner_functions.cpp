@@ -49,7 +49,7 @@ void filterPointCloud(
   cropped_cloud.header.frame_id = complete_cloud[0].header.frame_id;
   cropped_cloud.height = 1;
   cropped_cloud.width = cropped_cloud.points.size();
-  if (cropped_cloud.points.size() <= min_cloud_size) {
+  if (cropped_cloud.points.size() < min_cloud_size) {
     cropped_cloud.points.clear();
     cropped_cloud.width = 0;
   }
