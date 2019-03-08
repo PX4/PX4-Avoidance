@@ -102,7 +102,7 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode();
+  LocalPlannerNode(const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
@@ -149,7 +149,7 @@ class LocalPlannerNode {
   ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
-  tf::TransformListener tf_listener_;
+  tf::TransformListener* tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
@@ -219,6 +219,18 @@ class LocalPlannerNode {
   * @param     hover, true if the vehicle is loitering
   **/
   void publishWaypoints(bool hover);
+
+  /**
+  * @brief     check healthiness of the avoidance system to trigger failsafe in
+  *the FCU
+  * @param     since_last_cloud, time elapsed since the last waypoint was
+  *published to the FCU
+  * @param     since_start, time elapsed since staring the node
+  * @param     planner_is_healthy, true if the planner is running without errors
+  * @param     hover, true if the vehicle is hovering
+  **/
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
+                     bool& planner_is_healthy, bool& hover);
 
   const ros::NodeHandle& nodeHandle() const { return nh_; }
 

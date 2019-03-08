@@ -15,11 +15,14 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode() {
+LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
   nh_ = ros::NodeHandle("~");
   readParams();
+
+  tf_listener_ = new tf::TransformListener(
+      ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
 
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
@@ -116,7 +119,10 @@ LocalPlannerNode::LocalPlannerNode() {
   local_planner_->applyGoal();
 }
 
-LocalPlannerNode::~LocalPlannerNode() { delete server_; }
+LocalPlannerNode::~LocalPlannerNode() {
+  delete server_;
+  delete tf_listener_;
+}
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
@@ -180,7 +186,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
   // point cloud
   size_t missing_transforms = 0;
   for (size_t i = 0; i < cameras_.size(); ++i) {
-    if (!tf_listener_.canTransform(
+    if (!tf_listener_->canTransform(
             "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
             ros::Time(0))) {
       missing_transforms++;
@@ -205,7 +211,7 @@ void LocalPlannerNode::updatePlannerInfo() {
 
       // transform cloud to /local_origin frame
       pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
-                                   tf_listener_);
+                                   *tf_listener_);
 
       local_planner_->complete_cloud_.push_back(std::move(pcl_cloud));
     } catch (tf::TransformException& ex) {
@@ -955,6 +961,50 @@ void LocalPlannerNode::threadFunction() {
 
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));
+    }
+  }
+}
+
+void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
+                                     ros::Duration since_start,
+                                     bool& planner_is_healthy, bool& hover) {
+  ros::Duration timeout_termination =
+      ros::Duration(local_planner_->timeout_termination_);
+  ros::Duration timeout_critical =
+      ros::Duration(local_planner_->timeout_critical_);
+
+  if (since_last_cloud > timeout_termination &&
+      since_start > timeout_termination) {
+    if (planner_is_healthy) {
+      planner_is_healthy = false;
+      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
+    }
+  } else {
+    if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
+      if (position_received_) {
+        hover = true;
+        status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
+        std::string not_received = "";
+        for (size_t i = 0; i < cameras_.size(); i++) {
+          if (!cameras_[i].received_) {
+            not_received.append(" , no cloud received on topic ");
+            not_received.append(cameras_[i].topic_);
+          }
+        }
+        if (!canUpdatePlannerInfo()) {
+          not_received.append(" , missing transforms ");
+        }
+        ROS_INFO(
+            "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
+            "\n "
+            "\033[0m",
+            not_received.c_str());
+      } else {
+        ROS_WARN(
+            "\033[1;33m Pointcloud timeout: No position received, no WP to "
+            "output.... \n \033[0m");
+      }
     }
   }
 }

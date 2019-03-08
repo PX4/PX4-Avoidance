@@ -155,8 +155,8 @@ class LocalPlanner {
   bool stop_in_front_active_ = false;
   bool disable_rise_to_goal_altitude_ = false;
 
-  double pointcloud_timeout_hover_;
-  double pointcloud_timeout_land_;
+  double timeout_critical_;
+  double timeout_termination_;
   double starting_height_ = 0.0;
   float speed_ = 1.0f;
   float ground_distance_ = 2.0;
