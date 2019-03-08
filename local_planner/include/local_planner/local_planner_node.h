@@ -102,7 +102,7 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const bool tf_spin_thread);
+  LocalPlannerNode(const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
@@ -240,8 +240,6 @@ class LocalPlannerNode {
 
   mavros_msgs::Altitude ground_distance_msg_;
   int path_length_ = 0;
-
-  const bool tf_spin_thread_ = true;
 
   // Subscribers
   ros::Subscriber pose_sub_;

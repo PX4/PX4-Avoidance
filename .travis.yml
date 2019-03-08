@@ -74,4 +74,4 @@ script:
   - ./check_code_format.sh
   - catkin build local_planner global_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done
-  - status=0 && (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done && exit $status
+  - (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done && exit $status

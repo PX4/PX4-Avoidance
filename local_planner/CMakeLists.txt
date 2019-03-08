@@ -225,8 +225,8 @@ if(CATKIN_ENABLE_TESTING)
 	                                      test/test_common.cpp
 	                                      test/test_local_planner.cpp
 	                                      test/test_planner_functions.cpp
-                                        test/test_star_planner.cpp
-                                        test/test_waypoint_generator.cpp)
+                                             test/test_star_planner.cpp
+                                             test/test_waypoint_generator.cpp)
 
   catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
                                         test/test_local_planner_node.cpp)
