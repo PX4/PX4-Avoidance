@@ -149,7 +149,7 @@ class LocalPlannerNode {
   ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
-  tf::TransformListener *tf_listener_;
+  tf::TransformListener* tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)

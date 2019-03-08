@@ -15,15 +15,15 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) :
-  tf_spin_thread_{tf_spin_thread} {
-
+LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread)
+    : tf_spin_thread_{tf_spin_thread} {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
   nh_ = ros::NodeHandle("~");
   readParams();
 
-  tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread_);
+  tf_listener_ = new tf::TransformListener(
+      ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread_);
 
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
