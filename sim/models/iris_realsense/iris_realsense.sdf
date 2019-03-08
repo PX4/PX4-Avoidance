@@ -1,5 +1,5 @@
 <sdf version='1.5'>
-  <model name='iris_depth_camera'>
+  <model name='iris_realsense'>
     <include>
       <uri>model://iris</uri>
     </include>

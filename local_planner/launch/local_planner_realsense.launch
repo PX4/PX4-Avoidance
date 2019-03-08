@@ -4,7 +4,7 @@
 <!-- git clone git@github.com:SyrianSpock/realsense_gazebo_plugin.git-->
 <!-- catkin build realsense_gazebo_plugin (for ROS kinetic, the kinetic-devel branch must be used)-->
 <!-- Add to Gazebo model path:-->
-<!-- export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:/catkin_ws/src/realsense_gazebo_plugin/models-->
+<!-- export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:my_path/catkin_ws/src/realsense_gazebo_plugin/models-->
 
 
 <launch>
