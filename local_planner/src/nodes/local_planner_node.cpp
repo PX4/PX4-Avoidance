@@ -15,11 +15,15 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode() {
+LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) :
+  tf_spin_thread_{tf_spin_thread} {
+
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
   nh_ = ros::NodeHandle("~");
   readParams();
+
+  tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread_);
 
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
@@ -116,7 +120,10 @@ LocalPlannerNode::LocalPlannerNode() {
   local_planner_->applyGoal();
 }
 
-LocalPlannerNode::~LocalPlannerNode() { delete server_; }
+LocalPlannerNode::~LocalPlannerNode() {
+  delete server_;
+  delete tf_listener_;
+}
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
@@ -180,7 +187,7 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
   // point cloud
   size_t missing_transforms = 0;
   for (size_t i = 0; i < cameras_.size(); ++i) {
-    if (!tf_listener_.canTransform(
+    if (!tf_listener_->canTransform(
             "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
             ros::Time(0))) {
       missing_transforms++;
@@ -205,7 +212,7 @@ void LocalPlannerNode::updatePlannerInfo() {
 
       // transform cloud to /local_origin frame
       pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
-                                   tf_listener_);
+                                   *tf_listener_);
 
       local_planner_->complete_cloud_.push_back(std::move(pcl_cloud));
     } catch (tf::TransformException& ex) {

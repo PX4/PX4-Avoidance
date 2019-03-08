@@ -102,7 +102,7 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode();
+  LocalPlannerNode(const bool tf_spin_thread);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
@@ -149,7 +149,7 @@ class LocalPlannerNode {
   ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
-  tf::TransformListener tf_listener_;
+  tf::TransformListener *tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
@@ -240,6 +240,8 @@ class LocalPlannerNode {
 
   mavros_msgs::Altitude ground_distance_msg_;
   int path_length_ = 0;
+
+  const bool tf_spin_thread_ = true;
 
   // Subscribers
   ros::Subscriber pose_sub_;
