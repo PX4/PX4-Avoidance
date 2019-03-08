@@ -191,7 +191,9 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
 }
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
+  std::clock_t start_time = std::clock();
   local_planner_->complete_cloud_.clear();
+  int n_points = 0;
   for (size_t i = 0; i < cameras_.size(); ++i) {
     pcl::PointCloud<pcl::PointXYZ> pcl_cloud_world_frame;
     pcl::PointCloud<pcl::PointXYZ> pcl_cloud_cam_frame;
@@ -209,11 +211,13 @@ void LocalPlannerNode::updatePlannerInfo() {
       pcl_ros::transformPointCloud ("/local_origin", pcl_cloud_cam_frame_without_nan, pcl_cloud_world_frame, tf_listener_);
 
       local_planner_->complete_cloud_.push_back(std::move(pcl_cloud_world_frame));
+      n_points += pcl_cloud_world_frame.points.size();
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
     }
   }
+  float time_cloud = ((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
 
   // update position
   local_planner_->setPose(toEigen(newest_pose_.pose.position),
@@ -244,6 +248,12 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update last sent waypoint
   local_planner_->last_sent_waypoint_ = toEigen(newest_waypoint_position_);
+
+  //measure time
+  std::ofstream myfile1("LocalPlanner_new_time", std::ofstream::app);
+  float time_update = ((std::clock() - start_time) / (double) (CLOCKS_PER_SEC / 1000));
+  myfile1 << time_cloud << "\t" << time_update <<"\t" << n_points<<"\n";
+  myfile1.close();
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
