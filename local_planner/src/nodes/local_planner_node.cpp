@@ -193,24 +193,21 @@ void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_->complete_cloud_.clear();
   for (size_t i = 0; i < cameras_.size(); ++i) {
-    pcl::PointCloud<pcl::PointXYZ> pcl_cloud_world_frame;
-    pcl::PointCloud<pcl::PointXYZ> pcl_cloud_cam_frame;
+    pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
     try {
       // transform message to pcl type
-      pcl::fromROSMsg(cameras_[i].newest_cloud_msg_, pcl_cloud_cam_frame);
+      pcl::fromROSMsg(cameras_[i].newest_cloud_msg_, pcl_cloud);
 
       // remove nan padding
       std::vector<int> dummy_index;
-      dummy_index.reserve(pcl_cloud_cam_frame.points.size());
-      pcl::removeNaNFromPointCloud(pcl_cloud_cam_frame, pcl_cloud_cam_frame,
-                                   dummy_index);
+      dummy_index.reserve(pcl_cloud.points.size());
+      pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
 
       // transform cloud to /local_origin frame
-      pcl_ros::transformPointCloud("/local_origin", pcl_cloud_cam_frame,
-                                   pcl_cloud_world_frame, tf_listener_);
+      pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
+                                   tf_listener_);
 
-      local_planner_->complete_cloud_.push_back(
-          std::move(pcl_cloud_world_frame));
+      local_planner_->complete_cloud_.push_back(std::move(pcl_cloud));
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
