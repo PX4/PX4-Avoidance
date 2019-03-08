@@ -195,19 +195,18 @@ void LocalPlannerNode::updatePlannerInfo() {
   for (size_t i = 0; i < cameras_.size(); ++i) {
     pcl::PointCloud<pcl::PointXYZ> pcl_cloud_world_frame;
     pcl::PointCloud<pcl::PointXYZ> pcl_cloud_cam_frame;
-    pcl::PointCloud<pcl::PointXYZ> pcl_cloud_cam_frame_without_nan;
     try {
       // transform message to pcl type
       pcl::fromROSMsg(cameras_[i].newest_cloud_msg_, pcl_cloud_cam_frame);
 
       // remove nan padding
       std::vector<int> dummy_index;
-      pcl::removeNaNFromPointCloud(
-          pcl_cloud_cam_frame, pcl_cloud_cam_frame_without_nan, dummy_index);
+      dummy_index.reserve(pcl_cloud_cam_frame.points.size());
+      pcl::removeNaNFromPointCloud(pcl_cloud_cam_frame, pcl_cloud_cam_frame,
+                                   dummy_index);
 
       // transform cloud to /local_origin frame
-      pcl_ros::transformPointCloud("/local_origin",
-                                   pcl_cloud_cam_frame_without_nan,
+      pcl_ros::transformPointCloud("/local_origin", pcl_cloud_cam_frame,
                                    pcl_cloud_world_frame, tf_listener_);
 
       local_planner_->complete_cloud_.push_back(
