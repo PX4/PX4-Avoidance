@@ -23,6 +23,7 @@
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>  // transformPointCloud
+#include <pcl/filters/filter.h>
 #include <ros/ros.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/PointCloud2.h>
