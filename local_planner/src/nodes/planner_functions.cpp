@@ -243,7 +243,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float heading,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXf& cost_matrix) {
+                   Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -308,11 +308,56 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
     }
   }
 
-  float smoothing_margin_degrees = 45;
+  float smoothing_margin_degrees = 30;
   unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
   smoothPolarMatrix(distance_matrix, smooth_radius);
 
+  generateCostImage(cost_matrix, distance_matrix, image);
   cost_matrix = cost_matrix + distance_matrix;
+}
+
+void generateCostImage(const Eigen::MatrixXf& cost_matrix,
+                       const Eigen::MatrixXf& distance_matrix,
+                       sensor_msgs::Image& image) {
+  float max_val = std::max(cost_matrix.maxCoeff(), distance_matrix.maxCoeff());
+  // float max_val = cost_matrix.maxCoeff();
+  image.header.stamp = ros::Time::now();
+  image.height = GRID_LENGTH_E;
+  image.width = GRID_LENGTH_Z;
+  image.encoding = "rgb8";
+  image.is_bigendian = 0;
+  image.step = 3 * image.width;
+
+  int image_size = static_cast<int>(image.height * image.width);
+  image.data.clear();
+  image.data.reserve(3 * image_size);
+
+  for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      float distance_cost = 255.f * distance_matrix(e, z) / max_val;
+      float other_cost = 255.f * cost_matrix(e, z) / max_val;
+      image.data.push_back((int)std::max(0.0f, std::min(255.f, distance_cost)));
+
+      image.data.push_back((int)std::max(0.0f, std::min(255.f, other_cost)));
+
+      image.data.push_back(0);
+    }
+  }
+}
+
+int colorImageIndex(int e_ind, int z_ind, int color) {
+  // color = 0 (red), color = 1 (green), color = 2 (blue)
+  int index = 0;
+  int res = 0;
+  for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      if (e == e_ind && z == z_ind) {
+        res = index + color;
+      }
+      index = index + 3;
+    }
+  }
+  return res;
 }
 
 void getBestCandidatesFromCostMatrix(
@@ -355,7 +400,7 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
 
   Eigen::ArrayXf temp_col(matrix_padded.rows());
 
-  for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+  for (int col_index = 0; col_index < matrix_padded.cols(); col_index++) {
     temp_col.fill(NAN);
     for (int row_index = 0; row_index < matrix.rows(); row_index++) {
       float smooth_val = (matrix_padded.col(col_index)
@@ -369,7 +414,7 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   }
 
   Eigen::ArrayXf temp_row(matrix_padded.cols());
-  for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+  for (int row_index = 0; row_index < matrix_padded.rows(); row_index++) {
     temp_row.fill(NAN);
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
       float smooth_val = (matrix_padded.row(row_index)
@@ -383,8 +428,8 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
     }
     matrix_padded.row(row_index) = temp_row.transpose();
   }
-  matrix = matrix.cwiseMax(matrix_padded.block(
-      smoothing_radius, smoothing_radius, matrix.rows(), matrix.cols()));
+  matrix = matrix_padded.block(smoothing_radius, smoothing_radius,
+                               matrix.rows(), matrix.cols());
 }
 
 Eigen::ArrayXf getConicKernel(int radius) {
@@ -393,7 +438,7 @@ Eigen::ArrayXf getConicKernel(int radius) {
     kernel(row) = std::max(0.f, 1.f + radius - std::abs(row - radius));
   }
 
-  kernel *= 1.f / kernel.sum();
+  kernel *= 1.f / kernel.maxCoeff();
   return kernel;
 }
 
@@ -498,15 +543,15 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
   // distance cost
   distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 12000.0f / obstacle_distance;
+    distance_cost = 700.0f / obstacle_distance;
   }
 
   // combine costs
   other_costs = 0.0f;
-  other_costs =
-      yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-      cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
-      pitch_cost_smooth + heading_cost + distance_cost;
+  other_costs = yaw_cost +
+                cost_params.height_change_cost_param_adapted * pitch_cost_up +
+                cost_params.height_change_cost_param * pitch_cost_down +
+                yaw_cost_smooth + pitch_cost_smooth + heading_cost;
 }
 
 bool getDirectionFromTree(

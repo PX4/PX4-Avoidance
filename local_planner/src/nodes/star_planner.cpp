@@ -152,9 +152,11 @@ void StarPlanner::buildLookAheadTree() {
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
+    sensor_msgs::Image cost_image;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
-                  projected_last_wp_, cost_params_, false, cost_matrix);
+                  projected_last_wp_, cost_params_, false, cost_matrix,
+                  cost_image);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 

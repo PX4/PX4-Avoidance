@@ -14,6 +14,8 @@
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 
 #include <queue>
 #include <vector>
@@ -128,12 +130,30 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float heading,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXf& cost_matrix);
+                   Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image);
+
+/**
+* @brief      get the index in the data vector of a color image
+*             from the histogram index
+* @param[in] histogram index e,z and color (0=red, 1=green, 2=blue)
+* @param[out] index in image data vector
+**/
+int colorImageIndex(int e_ind, int z_ind, int color);
+
+/**
+* @brief      transform cost_matrix into an image
+* @param[in]  cost matrices
+* @param[out] image
+**/
+void generateCostImage(const Eigen::MatrixXf& cost_matrix,
+                       const Eigen::MatrixXf& distance_matrix,
+                       sensor_msgs::Image& image);
+
 /**
 * @brief      classifies the candidate directions in increasing cost order
 * @param[in]  matrix, cost matrix
-* @param[in]  number_of_candidates, number of candiate direction to consider
-* @param[out] candidate_vector, array of candidate polar direction arraged from
+* @param[in]  number_of_candidates, number of candidate direction to consider
+* @param[out] candidate_vector, array of candidate polar direction arranged from
 *the least to the most expensive
 **/
 void getBestCandidatesFromCostMatrix(

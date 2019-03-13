@@ -110,7 +110,7 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
       nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
   histogram_image_pub_ =
       nh_.advertise<sensor_msgs::Image>("/histogram_image", 1);
-
+  cost_image_pub_ = nh_.advertise<sensor_msgs::Image>("/cost_image", 1);
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
   get_px4_param_client_ =
@@ -564,8 +564,54 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
-void LocalPlannerNode::publishHistogramImage() {
+void LocalPlannerNode::publishDataImages() {
+  sensor_msgs::Image cost_img = local_planner_->cost_image_;
+
+  // current orientation
+  Eigen::Quaternionf q = toEigen(newest_pose_.pose.orientation);
+  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
+  tf::Matrix3x3 tf_m(tf_q);
+  double roll, pitch, yaw;
+  tf_m.getRPY(roll, pitch, yaw);
+  float yaw_angle =
+      std::round((-static_cast<float>(yaw) * 180.0f / M_PI_F)) + 90.0f;
+  PolarPoint heading_pol(0, yaw_angle, 1.0);
+  Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
+
+  // current setpoint
+  PolarPoint waypoint_pol = cartesianToPolar(
+      toEigen(newest_waypoint_position_), toEigen(newest_pose_.pose.position));
+  Eigen::Vector2i waypoint_index =
+      polarToHistogramIndex(waypoint_pol, ALPHA_RES);
+  PolarPoint adapted_waypoint_pol =
+      cartesianToPolar(toEigen(newest_adapted_waypoint_position_),
+                       toEigen(newest_pose_.pose.position));
+  Eigen::Vector2i adapted_waypoint_index =
+      polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
+
+  // color in the image
+  if (cost_img.data.size() == 3 * GRID_LENGTH_E * GRID_LENGTH_Z) {
+    // current heading blue
+    cost_img.data[colorImageIndex(heading_index.y(), heading_index.x(), 2)] =
+        255.f;
+
+    // waypoint white
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 0)] =
+        255.f;
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 1)] =
+        255.f;
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 2)] =
+        255.f;
+
+    // adapted waypoint light blue
+    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
+                                  adapted_waypoint_index.x(), 1)] = 255.f;
+    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
+                                  adapted_waypoint_index.x(), 2)] = 255.f;
+  }
+
   histogram_image_pub_.publish(local_planner_->histogram_image_);
+  cost_image_pub_.publish(cost_img);
 }
 
 void LocalPlannerNode::publishTree() {
@@ -929,7 +975,7 @@ void LocalPlannerNode::publishPlannerData() {
   publishGoal();
   publishBox();
   publishReachHeight();
-  publishHistogramImage();
+  publishDataImages();
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(

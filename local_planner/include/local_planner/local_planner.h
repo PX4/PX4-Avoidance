@@ -69,8 +69,6 @@ class LocalPlanner {
   float distance_to_closest_point_;
   int min_cloud_size_ = 160;
   float min_dist_backoff_;
-  float relevance_margin_z_degree_ = 40.0f;
-  float relevance_margin_e_degree_ = 25.0f;
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
   float costmap_direction_e_;
@@ -146,6 +144,7 @@ class LocalPlanner {
   float v_FOV_ = 46.0f;
   Box histogram_box_;
   sensor_msgs::Image histogram_image_;
+  sensor_msgs::Image cost_image_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;

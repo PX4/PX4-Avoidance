@@ -44,10 +44,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_far_from_obstacles_);
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
-  relevance_margin_e_degree_ =
-      static_cast<float>(config.relevance_margin_e_degree_);
-  relevance_margin_z_degree_ =
-      static_cast<float>(config.relevance_margin_z_degree_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
 
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
@@ -162,6 +158,10 @@ sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
 void LocalPlanner::determineStrategy() {
   star_planner_->tree_age_++;
 
+  // clear cost image
+  cost_image_.data.reserve(3 * GRID_LENGTH_E * GRID_LENGTH_Z);
+  std::fill(cost_image_.data.begin(), cost_image_.data.end(), 0);
+
   if (disable_rise_to_goal_altitude_) {
     reach_altitude_ = true;
   }
@@ -216,41 +216,19 @@ void LocalPlanner::determineStrategy() {
 
       create2DObstacleRepresentation(send_obstacles_fcu_);
 
-      // check histogram relevance
-      bool hist_relevant = true;
-      if (!hist_is_empty_) {
-        hist_relevant = false;
-        int relevance_margin_z_cells =
-            std::ceil(relevance_margin_z_degree_ / ALPHA_RES);
-        int relevance_margin_e_cells =
-            std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
-        int n_occupied_cells = 0;
-
-        PolarPoint goal_pol = cartesianToPolar(goal_, position_);
-        Eigen::Vector2i goal_index = polarToHistogramIndex(goal_pol, ALPHA_RES);
-
-        for (int e = goal_index.y() - relevance_margin_e_cells;
-             e < goal_index.y() + relevance_margin_e_cells; e++) {
-          for (int z = goal_index.x() - relevance_margin_z_cells;
-               z < goal_index.x() + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_dist(e, z) > FLT_MIN) {
-              n_occupied_cells++;
-            }
-          }
-        }
-        if (n_occupied_cells > 0) {
-          hist_relevant = true;
-        }
-      }
-
       // decide how to proceed
-      if (hist_is_empty_ || !hist_relevant) {
+      if (hist_is_empty_) {
         obstacle_ = false;
         waypoint_type_ = tryPath;
       }
 
-      if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
+      if (!hist_is_empty_ && reach_altitude_) {
         obstacle_ = true;
+
+        float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
+        getCostMatrix(polar_histogram_, goal_, position_, yaw_angle,
+                      last_sent_waypoint_, cost_params_,
+                      velocity_.norm() < 0.1f, cost_matrix_, cost_image_);
 
         if (use_VFH_star_) {
           star_planner_->setParams(cost_params_);
@@ -273,10 +251,6 @@ void LocalPlanner::determineStrategy() {
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
-          getCostMatrix(polar_histogram_, goal_, position_, yaw_angle,
-                        last_sent_waypoint_, cost_params_,
-                        velocity_.norm() < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
           if (candidate_vector_.empty()) {
