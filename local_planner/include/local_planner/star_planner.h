@@ -14,7 +14,6 @@
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
-#include <sensor_msgs/Image.h>
 
 #include <vector>
 

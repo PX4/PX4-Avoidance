@@ -125,38 +125,30 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   polar_histogram_ = new_histogram;
 
   // generate histogram image for logging
-  histogram_image_ = generateHistogramImage(polar_histogram_);
+  generateHistogramImage(polar_histogram_);
 }
 
-sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
-  sensor_msgs::Image image;
-  float sensor_max_dist = 20.0;
-  image.header.stamp = ros::Time::now();
-  image.height = GRID_LENGTH_E;
-  image.width = GRID_LENGTH_Z;
-  image.encoding = sensor_msgs::image_encodings::MONO8;
-  image.is_bigendian = 0;
-  image.step = 255;
-
-  int image_size = static_cast<int>(image.height * image.width);
-  image.data.reserve(image_size);
+void LocalPlanner::generateHistogramImage(Histogram &histogram) {
+  histogram_image_data_.clear();
+  histogram_image_data_.reserve(GRID_LENGTH_E * GRID_LENGTH_Z);
+  float sensor_max_dist = 10.f;
 
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      float depth_val = image.step * histogram.get_dist(e, z) / sensor_max_dist;
-      image.data.push_back(
-          (int)std::max(0.0f, std::min((float)image.step, depth_val)));
+      float depth_val = 255.f * histogram.get_dist(e, z) / sensor_max_dist;
+      histogram_image_data_.push_back(
+          (int)std::max(0.0f, std::min(255.f, depth_val)));
     }
   }
-  return image;
 }
 
 void LocalPlanner::determineStrategy() {
   star_planner_->tree_age_++;
 
   // clear cost image
-  std::fill(cost_image_.data.begin(), cost_image_.data.end(), 0);
+  cost_image_data_.clear();
+  cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
   if (disable_rise_to_goal_altitude_) {
     reach_altitude_ = true;
@@ -223,10 +215,10 @@ void LocalPlanner::determineStrategy() {
 
         float yaw_angle_histogram_frame =
             std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
-        getCostMatrix(polar_histogram_, goal_, position_,
-                      yaw_angle_histogram_frame, last_sent_waypoint_,
-                      cost_params_, velocity_.norm() < 0.1f,
-                      smoothing_margin_degrees_, cost_matrix_, cost_image_);
+        getCostMatrix(
+            polar_histogram_, goal_, position_, yaw_angle_histogram_frame,
+            last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
+            smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
         if (use_VFH_star_) {
           star_planner_->setParams(cost_params_);

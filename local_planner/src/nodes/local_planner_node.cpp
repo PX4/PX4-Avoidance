@@ -565,8 +565,14 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
 }
 
 void LocalPlannerNode::publishDataImages() {
-  sensor_msgs::Image cost_img = local_planner_->cost_image_;
+  sensor_msgs::Image cost_img;
   cost_img.header.stamp = ros::Time::now();
+  cost_img.height = GRID_LENGTH_E;
+  cost_img.width = GRID_LENGTH_Z;
+  cost_img.encoding = "rgb8";
+  cost_img.is_bigendian = 0;
+  cost_img.step = 3 * cost_img.width;
+  cost_img.data = local_planner_->cost_image_data_;
 
   // current orientation
   float curr_yaw_fcu_frame =
@@ -609,7 +615,17 @@ void LocalPlannerNode::publishDataImages() {
                                   adapted_waypoint_index.x(), 2)] = 255.f;
   }
 
-  histogram_image_pub_.publish(local_planner_->histogram_image_);
+  // histogram image
+  sensor_msgs::Image hist_img;
+  hist_img.header.stamp = ros::Time::now();
+  hist_img.height = GRID_LENGTH_E;
+  hist_img.width = GRID_LENGTH_Z;
+  hist_img.encoding = sensor_msgs::image_encodings::MONO8;
+  hist_img.is_bigendian = 0;
+  hist_img.step = 255;
+  hist_img.data = local_planner_->histogram_image_data_;
+
+  histogram_image_pub_.publish(hist_img);
   cost_image_pub_.publish(cost_img);
 }
 

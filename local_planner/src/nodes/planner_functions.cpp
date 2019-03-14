@@ -246,7 +246,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    const float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image) {
+                   Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -315,33 +316,26 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
   unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
   smoothPolarMatrix(distance_matrix, smooth_radius);
 
-  generateCostImage(cost_matrix, distance_matrix, image);
+  generateCostImage(cost_matrix, distance_matrix, image_data);
   cost_matrix = cost_matrix + distance_matrix;
 }
 
 void generateCostImage(const Eigen::MatrixXf& cost_matrix,
                        const Eigen::MatrixXf& distance_matrix,
-                       sensor_msgs::Image& image) {
+                       std::vector<uint8_t>& image_data) {
   float max_val = std::max(cost_matrix.maxCoeff(), distance_matrix.maxCoeff());
-  image.height = GRID_LENGTH_E;
-  image.width = GRID_LENGTH_Z;
-  image.encoding = "rgb8";
-  image.is_bigendian = 0;
-  image.step = 3 * image.width;
-
-  int image_size = static_cast<int>(image.height * image.width);
-  image.data.clear();
-  image.data.reserve(3 * image_size);
+  image_data.clear();
+  image_data.reserve(3 * GRID_LENGTH_E * GRID_LENGTH_Z);
 
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       float distance_cost = 255.f * distance_matrix(e, z) / max_val;
       float other_cost = 255.f * cost_matrix(e, z) / max_val;
-      image.data.push_back(
+      image_data.push_back(
           static_cast<uint8_t>(std::max(0.0f, std::min(255.f, distance_cost))));
-      image.data.push_back(
+      image_data.push_back(
           static_cast<uint8_t>(std::max(0.0f, std::min(255.f, other_cost))));
-      image.data.push_back(0);
+      image_data.push_back(0);
     }
   }
 }

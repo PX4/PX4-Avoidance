@@ -7,26 +7,6 @@
 
 using namespace avoidance;
 
-void check_indexes(nav_msgs::GridCells &test,
-                   std::vector<Eigen::Vector2i> &truth, int resolution) {
-  for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-
-    EXPECT_EQ(truth[j], cell_idx);
-  }
-}
-
-void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
-                   int resolution) {
-  for (int i = 0; i < test.cells.size(); i++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-    EXPECT_EQ(truth_idx_e, cell_idx.y());
-    EXPECT_EQ(truth_idx_z, cell_idx.x());
-  }
-}
-
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
   pcl::PointCloud<pcl::PointXYZ> empty_cloud;
@@ -474,9 +454,10 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   float smoothing_radius = 30.f;
 
   // WHEN: we calculate the cost matrix from the input data
-  sensor_msgs::Image image;
+  std::vector<uint8_t> cost_image_data;
   getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
-                cost_params, false, smoothing_radius, cost_matrix, image);
+                cost_params, false, smoothing_radius, cost_matrix,
+                cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);

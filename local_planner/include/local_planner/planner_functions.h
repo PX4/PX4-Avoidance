@@ -12,11 +12,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <nav_msgs/GridCells.h>
-#include <nav_msgs/Path.h>
-#include <sensor_msgs/Image.h>
-#include <sensor_msgs/image_encodings.h>
-
 #include <queue>
 #include <vector>
 
@@ -136,7 +131,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    const float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image);
+                   Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -153,7 +149,7 @@ int colorImageIndex(int e_ind, int z_ind, int color);
 **/
 void generateCostImage(const Eigen::MatrixXf& cost_matrix,
                        const Eigen::MatrixXf& distance_matrix,
-                       sensor_msgs::Image& image);
+                       std::vector<uint8_t>& image_data);
 
 /**
 * @brief      classifies the candidate directions in increasing cost order

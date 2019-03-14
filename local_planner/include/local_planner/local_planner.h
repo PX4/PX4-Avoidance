@@ -18,7 +18,6 @@
 
 #include <tf/transform_listener.h>
 
-#include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -138,14 +137,14 @@ class LocalPlanner {
   * @param     histogram, polar histogram representing obstacles
   * @returns   histogram image
   **/
-  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
+  void generateHistogramImage(Histogram &histogram);
 
  public:
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
   Box histogram_box_;
-  sensor_msgs::Image histogram_image_;
-  sensor_msgs::Image cost_image_;
+  std::vector<uint8_t> histogram_image_data_;
+  std::vector<uint8_t> cost_image_data_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;
@@ -162,7 +161,6 @@ class LocalPlanner {
   float ground_distance_ = 2.0;
 
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
-  ;
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
