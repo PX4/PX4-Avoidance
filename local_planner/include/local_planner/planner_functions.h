@@ -60,7 +60,8 @@ void filterPointCloud(
 * @note azimuth angle is wrapped, elevation is not
 **/
 void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame, float pitch_fcu_frame);
+                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame,
+                  float pitch_fcu_frame);
 
 /**
 * @brief     calculates a histogram from older pointcloud data around the
@@ -130,10 +131,11 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position, const float yaw_angle_histogram_frame,
+                   const Eigen::Vector3f& position,
+                   const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-				   const float smoothing_margin_degrees,
+                   const float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image);
 
 /**

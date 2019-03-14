@@ -569,9 +569,11 @@ void LocalPlannerNode::publishDataImages() {
   cost_img.header.stamp = ros::Time::now();
 
   // current orientation
-  float curr_yaw_fcu_frame = getYawFromQuaternion(toEigen(newest_pose_.pose.orientation));
+  float curr_yaw_fcu_frame =
+      getYawFromQuaternion(toEigen(newest_pose_.pose.orientation));
   float yaw_angle_histogram_frame =
-      std::round((-static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F)) + 90.0f;
+      std::round((-static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F)) +
+      90.0f;
   PolarPoint heading_pol(0, yaw_angle_histogram_frame, 1.0);
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 

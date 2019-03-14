@@ -49,7 +49,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
+  smoothing_margin_degrees_ =
+      static_cast<float>(config.smoothing_margin_degrees_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -91,8 +92,8 @@ void LocalPlanner::runPlanner() {
 
   // calculate Field of View
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_fcu_frame_,
-               curr_pitch_fcu_frame_);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
+               curr_yaw_fcu_frame_, curr_pitch_fcu_frame_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -155,7 +156,6 @@ void LocalPlanner::determineStrategy() {
   star_planner_->tree_age_++;
 
   // clear cost image
-  cost_image_.data.reserve(3 * GRID_LENGTH_E * GRID_LENGTH_Z);
   std::fill(cost_image_.data.begin(), cost_image_.data.end(), 0);
 
   if (disable_rise_to_goal_altitude_) {
@@ -221,11 +221,12 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && reach_altitude_) {
         obstacle_ = true;
 
-        float yaw_angle_histogram_frame = std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
-        getCostMatrix(polar_histogram_, goal_, position_, yaw_angle_histogram_frame,
-                      last_sent_waypoint_, cost_params_,
-                      velocity_.norm() < 0.1f, smoothing_margin_degrees_,
-					  cost_matrix_, cost_image_);
+        float yaw_angle_histogram_frame =
+            std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
+        getCostMatrix(polar_histogram_, goal_, position_,
+                      yaw_angle_histogram_frame, last_sent_waypoint_,
+                      cost_params_, velocity_.norm() < 0.1f,
+                      smoothing_margin_degrees_, cost_matrix_, cost_image_);
 
         if (use_VFH_star_) {
           star_planner_->setParams(cost_params_);
