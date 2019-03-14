@@ -320,8 +320,6 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix,
                        const Eigen::MatrixXf& distance_matrix,
                        sensor_msgs::Image& image) {
   float max_val = std::max(cost_matrix.maxCoeff(), distance_matrix.maxCoeff());
-  // float max_val = cost_matrix.maxCoeff();
-  image.header.stamp = ros::Time::now();
   image.height = GRID_LENGTH_E;
   image.width = GRID_LENGTH_Z;
   image.encoding = "rgb8";

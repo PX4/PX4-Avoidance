@@ -566,6 +566,7 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
 
 void LocalPlannerNode::publishDataImages() {
   sensor_msgs::Image cost_img = local_planner_->cost_image_;
+  cost_img.header.stamp = ros::Time::now();
 
   // current orientation
   Eigen::Quaternionf q = toEigen(newest_pose_.pose.orientation);
