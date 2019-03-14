@@ -426,6 +426,38 @@ TEST(PlannerFunctions, smoothPolarMatrix) {
   EXPECT_TRUE(greater_equal);
 }
 
+TEST(PlannerFunctions, smoothMatrix) {
+  // GIVEN: a matrix with a single cell set
+  unsigned int smooth_radius = 4;
+  Eigen::MatrixXf matrix;
+  matrix.resize(10, 20);
+  matrix.fill(0);
+  matrix(3, 16) = 100;
+  matrix(6, 6) = -100;
+
+  // WHEN: we smooth it
+  Eigen::MatrixXf matrix_old = matrix;
+  smoothPolarMatrix(matrix, smooth_radius);
+
+  // THEN: it should match the matrix we expect
+  Eigen::MatrixXf expected_matrix(matrix.rows(), matrix.cols());
+  // clang-format off
+  expected_matrix <<
+   8, 0,   4,   8,  12,  16,  20,  16,  12,   8,   4, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+  12, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+  16, 0,  -4,  -8, -12, -16, -20, -16, -12,  -8,  -4, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  20, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, 20, 40,  60,  80, 100,  80,  60, 40,
+  16, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  12, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+   8, 0, -20, -40, -60, -80,-100, -80, -60, -40, -20, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+   4, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0,  4,  8,  12,  16,  20,  16,  12,  8,
+   0, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0,  0,  0,   0,   0,   0,   0,   0,  0,
+  -4, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, -4, -8, -12, -16, -20, -16, -12, -8;
+  // clang-format on
+
+  EXPECT_LT((expected_matrix - matrix).cwiseAbs().maxCoeff(), 1e-5);
+}
+
 TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // GIVEN: a position, goal and an empty histogram
   Eigen::Vector3f position(0.f, 0.f, 0.f);

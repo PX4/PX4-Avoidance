@@ -397,37 +397,26 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   Eigen::ArrayXf kernel1d = getConicKernel(smoothing_radius);
 
   Eigen::ArrayXf temp_col(matrix_padded.rows());
-
   for (int col_index = 0; col_index < matrix_padded.cols(); col_index++) {
-    temp_col.fill(NAN);
+    temp_col = matrix_padded.col(col_index);
     for (int row_index = 0; row_index < matrix.rows(); row_index++) {
-      float smooth_val = (matrix_padded.col(col_index)
-                              .segment(row_index, 2 * smoothing_radius + 1)
-                              .array() *
-                          kernel1d)
-                             .sum();
-      temp_col(row_index + smoothing_radius) = smooth_val;
+      float smooth_val =
+          (temp_col.segment(row_index, 2 * smoothing_radius + 1) * kernel1d)
+              .sum();
+      matrix_padded(row_index + smoothing_radius, col_index) = smooth_val;
     }
-    matrix_padded.col(col_index) = temp_col;
   }
 
   Eigen::ArrayXf temp_row(matrix_padded.cols());
-  for (int row_index = 0; row_index < matrix_padded.rows(); row_index++) {
-    temp_row.fill(NAN);
+  for (int row_index = 0; row_index < matrix.rows(); row_index++) {
+    temp_row = matrix_padded.row(row_index + smoothing_radius);
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
-      float smooth_val = (matrix_padded.row(row_index)
-                              .segment(col_index, 2 * smoothing_radius + 1)
-                              .transpose()
-                              .array() *
-                          kernel1d)
-                             .sum();
-
-      temp_row(col_index + smoothing_radius) = smooth_val;
+      float smooth_val =
+          (temp_row.segment(col_index, 2 * smoothing_radius + 1) * kernel1d)
+              .sum();
+      matrix(row_index, col_index) = smooth_val;
     }
-    matrix_padded.row(row_index) = temp_row.transpose();
   }
-  matrix = matrix_padded.block(smoothing_radius, smoothing_radius,
-                               matrix.rows(), matrix.cols());
 }
 
 Eigen::ArrayXf getConicKernel(int radius) {
