@@ -243,6 +243,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
+				   const float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
@@ -308,7 +309,6 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
     }
   }
 
-  float smoothing_margin_degrees = 30;
   unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
   smoothPolarMatrix(distance_matrix, smooth_radius);
 

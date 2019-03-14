@@ -17,6 +17,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.max_path_length_);
+  smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) {
@@ -155,8 +156,8 @@ void StarPlanner::buildLookAheadTree() {
     sensor_msgs::Image cost_image;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
-                  projected_last_wp_, cost_params_, false, cost_matrix,
-                  cost_image);
+                  projected_last_wp_, cost_params_, false, smoothing_margin_degrees_,
+				  cost_matrix, cost_image);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 

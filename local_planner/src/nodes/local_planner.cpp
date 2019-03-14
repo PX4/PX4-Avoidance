@@ -41,7 +41,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
-
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
@@ -50,6 +49,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
+  smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -224,7 +224,8 @@ void LocalPlanner::determineStrategy() {
         float yaw_angle_histogram_frame = std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
         getCostMatrix(polar_histogram_, goal_, position_, yaw_angle_histogram_frame,
                       last_sent_waypoint_, cost_params_,
-                      velocity_.norm() < 0.1f, cost_matrix_, cost_image_);
+                      velocity_.norm() < 0.1f, smoothing_margin_degrees_,
+					  cost_matrix_, cost_image_);
 
         if (use_VFH_star_) {
           star_planner_->setParams(cost_params_);

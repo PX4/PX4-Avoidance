@@ -471,11 +471,12 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   cost_params.height_change_cost_param_adapted = 4.f;
   Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
+  float smoothing_radius = 30.f;
 
   // WHEN: we calculate the cost matrix from the input data
   sensor_msgs::Image image;
   getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
-                cost_params, false, cost_matrix, image);
+                cost_params, false, smoothing_radius, cost_matrix, image);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);

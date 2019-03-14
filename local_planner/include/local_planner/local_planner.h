@@ -73,6 +73,7 @@ class LocalPlanner {
   float min_realsense_dist_ = 0.2f;
   float costmap_direction_e_;
   float costmap_direction_z_;
+  float smoothing_margin_degrees_ = 30.f;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;

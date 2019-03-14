@@ -125,12 +125,15 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[in]  last_sent_waypoint, last position waypoint
 * @param[in]  cost_params, weight for the cost function
 * @param[in]  only_yawed, true if
-* @param[out] cost_matrix,
+* @param[in]  parameter how far an obstacle is spread in the cost matrix
+* @param[out] cost_matrix
+* @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
+				   const float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image);
 
 /**
