@@ -57,21 +57,21 @@ void filterPointCloud(
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch) {
+                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame, float pitch_fcu_frame) {
   int z_FOV_max =
-      static_cast<int>(std::round((-yaw * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
+      static_cast<int>(std::round((-yaw_fcu_frame * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
                                   static_cast<float>(ALPHA_RES))) -
       1;
   int z_FOV_min =
-      static_cast<int>(std::round((-yaw * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
+      static_cast<int>(std::round((-yaw_fcu_frame * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
                                   static_cast<float>(ALPHA_RES))) -
       1;
   e_FOV_max =
-      static_cast<int>(std::round((-pitch * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
+      static_cast<int>(std::round((-pitch_fcu_frame * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
                                   static_cast<float>(ALPHA_RES))) -
       1;
   e_FOV_min =
-      static_cast<int>(std::round((-pitch * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
+      static_cast<int>(std::round((-pitch_fcu_frame * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
                                   static_cast<float>(ALPHA_RES))) -
       1;
 
@@ -240,7 +240,7 @@ void compressHistogramElevation(Histogram& new_hist,
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position, const float heading,
+                   const Eigen::Vector3f& position, const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image) {
@@ -265,7 +265,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
       PolarPoint p_pol =
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, heading,
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, yaw_angle_histogram_frame,
                    last_sent_waypoint, cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
@@ -484,14 +484,14 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float heading,
+                  const float yaw_angle_histogram_frame,
                   const Eigen::Vector3f& last_sent_waypoint,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs) {
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, position);
-  PolarPoint heading_pol(e_angle, heading, goal_dist);
+  PolarPoint heading_pol(e_angle, yaw_angle_histogram_frame, goal_dist);
   Eigen::Vector3f projected_heading = polarToCartesian(heading_pol, position);
   Eigen::Vector3f projected_goal = goal;
   PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);

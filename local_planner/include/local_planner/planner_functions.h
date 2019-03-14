@@ -60,7 +60,7 @@ void filterPointCloud(
 * @note azimuth angle is wrapped, elevation is not
 **/
 void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch);
+                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame, float pitch_fcu_frame);
 
 /**
 * @brief     calculates a histogram from older pointcloud data around the
@@ -121,13 +121,14 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[in]  histogram, polar histogram representing obstacles
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
+* @param[in]  current vehicle heading in histogram angle convention
 * @param[in]  last_sent_waypoint, last position waypoint
 * @param[in]  cost_params, weight for the cost function
 * @param[in]  only_yawed, true if
 * @param[out] cost_matrix,
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position, const float heading,
+                   const Eigen::Vector3f& position, const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix, sensor_msgs::Image& image);
@@ -166,7 +167,7 @@ void getBestCandidatesFromCostMatrix(
 * @param[] z_angle, azimuth angle [deg]
 * @param[] goal, current goal position
 * @param[] position, current vehicle position
-* @param[] position, current vehicle heading
+* @param[] position, current vehicle heading in histogram angle convention
 * @param[] last_sent_waypoint, previous position waypoint
 * @param[] cost_params, weights for goal oriented vs smooth behaviour
 * @param[out] distance_cost, cost component due to proximity to obstacles
@@ -174,7 +175,7 @@ void getBestCandidatesFromCostMatrix(
 **/
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float heading,
+                  const float yaw_angle_histogram_frame,
                   const Eigen::Vector3f& last_sent_waypoint,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs);

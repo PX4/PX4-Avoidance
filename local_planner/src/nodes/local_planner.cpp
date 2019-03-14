@@ -17,13 +17,9 @@ LocalPlanner::~LocalPlanner() {}
 void LocalPlanner::setPose(const Eigen::Vector3f &pos,
                            const Eigen::Quaternionf &q) {
   position_ = pos;
-  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
-  tf::Matrix3x3 tf_m(tf_q);
-  double roll, pitch, yaw;
-  tf_m.getRPY(roll, pitch, yaw);
-  curr_yaw_ = static_cast<float>(yaw);
-  curr_pitch_ = static_cast<float>(pitch);
-  star_planner_->setPose(position_, curr_yaw_);
+  curr_yaw_fcu_frame_ = getYawFromQuaternion(q);
+  curr_pitch_fcu_frame_ = getPitchFromQuaternion(q);
+  star_planner_->setPose(position_, curr_yaw_fcu_frame_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -95,8 +91,8 @@ void LocalPlanner::runPlanner() {
 
   // calculate Field of View
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_,
-               curr_pitch_);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_fcu_frame_,
+               curr_pitch_fcu_frame_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -225,8 +221,8 @@ void LocalPlanner::determineStrategy() {
       if (!hist_is_empty_ && reach_altitude_) {
         obstacle_ = true;
 
-        float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
-        getCostMatrix(polar_histogram_, goal_, position_, yaw_angle,
+        float yaw_angle_histogram_frame = std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
+        getCostMatrix(polar_histogram_, goal_, position_, yaw_angle_histogram_frame,
                       last_sent_waypoint_, cost_params_,
                       velocity_.norm() < 0.1f, cost_matrix_, cost_image_);
 

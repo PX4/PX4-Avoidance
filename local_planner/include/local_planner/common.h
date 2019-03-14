@@ -95,6 +95,18 @@ void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
                    const Eigen::Vector3f& in_waypt, float yaw);
 
 /**
+* @brief     Compute the yaw angle from a quaternion
+* @returns   yaw angle in degrees
+**/
+float getYawFromQuaternion(const Eigen::Quaternionf q);
+
+/**
+* @brief     Compute the pitch angle from a quaternion
+* @returns   pitch angle in degrees
+**/
+float getPitchFromQuaternion(const Eigen::Quaternionf q);
+
+/**
 * @brief     wrappes the input angle in to plus minus PI space
 * @param[in, out] angle to be wrapped  [rad]
 **/
