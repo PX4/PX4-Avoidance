@@ -248,7 +248,9 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update last sent waypoint
-  local_planner_->last_sent_waypoint_ = toEigen(newest_waypoint_position_);
+  PolarPoint last_wp_pol = cartesianToPolar(
+      toEigen(newest_waypoint_position_), toEigen(newest_pose_.pose.position));
+  local_planner_->last_sent_waypoint_direction_ = last_wp_pol;
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {

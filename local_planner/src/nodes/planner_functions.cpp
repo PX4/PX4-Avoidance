@@ -241,7 +241,7 @@ void compressHistogramElevation(Histogram& new_hist,
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float heading,
-                   const Eigen::Vector3f& last_sent_waypoint,
+                   const PolarPoint& last_sent_waypoint_direction,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
@@ -266,7 +266,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
       costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, heading,
-                   last_sent_waypoint, cost_params, distance_cost, other_costs);
+                   last_sent_waypoint_direction, cost_params, distance_cost,
+                   other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -453,18 +454,26 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                   const float heading,
-                  const Eigen::Vector3f& last_sent_waypoint,
+                  const PolarPoint& last_sent_waypoint_direction,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs) {
+  // project candidate
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, position);
+
+  // project heading
   PolarPoint heading_pol(e_angle, heading, goal_dist);
   Eigen::Vector3f projected_heading = polarToCartesian(heading_pol, position);
+
+  // project goal
   Eigen::Vector3f projected_goal = goal;
-  PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
-  last_wp_pol.r = goal_dist;
-  Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position);
+
+  // project last waypoint
+  PolarPoint last_wp_projected_pol = last_sent_waypoint_direction;
+  last_wp_projected_pol.r = goal_dist;
+  Eigen::Vector3f projected_last_wp =
+      polarToCartesian(last_wp_projected_pol, position);
 
   // goal costs
   float yaw_cost =

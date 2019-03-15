@@ -5,6 +5,7 @@
 #include "avoidance_output.h"
 #include "box.h"
 #include "candidate_direction.h"
+#include "common.h"
 #include "cost_parameters.h"
 #include "histogram.h"
 
@@ -162,9 +163,8 @@ class LocalPlanner {
   float ground_distance_ = 2.0;
 
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
-  ;
   sensor_msgs::LaserScan distance_data_ = {};
-  Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
+  PolarPoint last_sent_waypoint_direction_;
 
   // complete_cloud_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;

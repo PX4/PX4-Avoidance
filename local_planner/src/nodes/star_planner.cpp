@@ -23,8 +23,8 @@ void StarPlanner::setParams(costParameters cost_params) {
   cost_params_ = cost_params;
 }
 
-void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) {
-  projected_last_wp_ = projected_last_wp;
+void StarPlanner::setLastDirection(const PolarPoint& last_wp_direction) {
+  last_wp_direction_ = last_wp_direction;
 }
 
 void StarPlanner::setFOV(float h_FOV, float v_FOV) {
@@ -154,7 +154,7 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::MatrixXf cost_matrix;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
-                  projected_last_wp_, cost_params_, false, cost_matrix);
+                  last_wp_direction_, cost_params_, false, cost_matrix);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 

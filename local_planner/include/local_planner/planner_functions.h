@@ -126,7 +126,7 @@ void compressHistogramElevation(Histogram& new_hist,
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const float heading,
-                   const Eigen::Vector3f& last_sent_waypoint,
+                   const PolarPoint& last_sent_waypoint_direction,
                    costParameters cost_params, bool only_yawed,
                    Eigen::MatrixXf& cost_matrix);
 /**
@@ -155,7 +155,7 @@ void getBestCandidatesFromCostMatrix(
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                   const float heading,
-                  const Eigen::Vector3f& last_sent_waypoint,
+                  const PolarPoint& last_sent_waypoint_direction,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs);
 

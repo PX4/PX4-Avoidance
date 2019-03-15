@@ -2,6 +2,7 @@
 #define STAR_PLANNER_H
 
 #include "box.h"
+#include "common.h"
 #include "cost_parameters.h"
 #include "histogram.h"
 
@@ -37,7 +38,7 @@ class StarPlanner {
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
+  PolarPoint last_wp_direction_;
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
@@ -73,9 +74,9 @@ class StarPlanner {
 
   /**
   * @brief     setter method for last sent waypoint
-  * @param[in] projected_last_wp, last waypoint projected out to goal distance
+  * @param[in] polar point of last waypoint, last sent direction
   **/
-  void setLastDirection(const Eigen::Vector3f& projected_last_wp);
+  void setLastDirection(const PolarPoint& last_wp_direction);
 
   /**
   * @brief     setter method for Fielf of View
