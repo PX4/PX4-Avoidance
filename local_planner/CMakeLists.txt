@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.9)
 project(local_planner)
 
 add_definitions(-std=c++11)
@@ -164,6 +164,18 @@ add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
+
+## Check for Link Time Optimization support
+## and enable it on the library and node if we are doing a release build
+include(CheckIPOSupported)
+check_ipo_supported(RESULT ipo_supported OUTPUT error)
+if( ipo_supported AND ${CMAKE_BUILD_TYPE} STREQUAL "Release")
+    message(STATUS "IPO / LTO enabled")
+    set_property(TARGET local_planner PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    set_property(TARGET local_planner_node PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+else()
+    message(STATUS "IPO / LTO not enabled: <${error}>")
+endif()
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
