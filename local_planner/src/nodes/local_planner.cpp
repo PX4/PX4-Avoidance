@@ -131,12 +131,12 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
 void LocalPlanner::generateHistogramImage(Histogram &histogram) {
   histogram_image_data_.clear();
   histogram_image_data_.reserve(GRID_LENGTH_E * GRID_LENGTH_Z);
-  float sensor_max_dist = 10.f;
 
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      float depth_val = 255.f * histogram.get_dist(e, z) / sensor_max_dist;
+      float depth_val =
+          255.f * histogram.get_dist(e, z) / histogram_box_.radius_;
       histogram_image_data_.push_back(
           (int)std::max(0.0f, std::min(255.f, depth_val)));
     }
