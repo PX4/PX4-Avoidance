@@ -237,6 +237,13 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_->setGoal(toEigen(goal_msg_.pose.position));
     new_goal_ = false;
   }
+  if (!goal_set_to_straight_){
+	goal_msg_.pose.position.x = newest_pose_.pose.position.x + 10;
+	goal_msg_.pose.position.y = newest_pose_.pose.position.y;
+	goal_msg_.pose.position.z = newest_pose_.pose.position.z + 1;
+	local_planner_->setGoal(toEigen(goal_msg_.pose.position));
+	goal_set_to_straight_ = true;
+  }
 
   // update ground distance
   if (ros::Time::now() - ground_distance_msg_.header.stamp <
