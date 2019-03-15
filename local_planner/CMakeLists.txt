@@ -153,7 +153,8 @@ if(NOT DISABLE_SIMULATION)
   set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
                               "src/nodes/rviz_world_loader.cpp")
 endif()
-add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
+add_library(local_planner STATIC
+                          "${LOCAL_PLANNER_CPP_FILES}")
 
 
 ## Add cmake target dependencies of the library
