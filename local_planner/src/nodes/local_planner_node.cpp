@@ -426,7 +426,10 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     ROS_INFO("parameter collision prevention distance is set from  %f to %f \n",
              local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
     local_planner_->px4_.param_mpc_col_prev_d = msg.value.real;
-  }
+  } else if (msg.param_id == "MIS_TAKEOFF_ALT") {
+    ROS_INFO("model parameter minimum mission takeoff altitude is set from  %f to %f \n",
+           local_planner_->px4_.param_mis_takeoff_alt, msg.value.real);
+   }
 }
 
 void LocalPlannerNode::checkPx4Parameters() {
@@ -445,6 +448,12 @@ void LocalPlannerNode::checkPx4Parameters() {
     req.request.param_id = "MPC_COL_PREV_D";
     if (get_px4_param_client_.call(req) && req.response.success) {
       local_planner_->px4_.param_mpc_col_prev_d = req.response.value.real;
+    }
+
+    req.response.success = false;
+    req.request.param_id = "MIS_TAKEOFF_ALT";
+    if (get_px4_param_client_.call(req) && req.response.success) {
+      local_planner_->px4_.param_mis_takeoff_alt = req.response.value.real;
     }
     std::this_thread::sleep_for(std::chrono::seconds(30));
   }

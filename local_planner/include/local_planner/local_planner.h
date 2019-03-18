@@ -59,6 +59,8 @@ struct ModelParameters {
   float param_mpc_tko_speed = NAN; // Takeoff climb rate
   float param_mpc_land_speed = NAN;   // Landing descend rate
 
+  float param_mis_takeoff_alt = NAN; // Minimum takeoff altitude
+
   // TODO: add estimator limitations for max speed and height
 
   float param_mpc_col_prev_d = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
@@ -167,6 +169,8 @@ class LocalPlanner {
 
   // original_cloud_vector_ contains n complete clouds from the cameras
   std::vector<pcl::PointCloud<pcl::PointXYZ>> original_cloud_vector_;
+
+  ModelParameters model_params_; // PX4 Firmware paramters
 
   LocalPlanner();
   ~LocalPlanner();
