@@ -273,6 +273,7 @@ class LocalPlannerNode {
   ros::Publisher adapted_wp_pub_;
   ros::Publisher smoothed_wp_pub_;
   ros::Publisher histogram_image_pub_;
+  ros::Publisher cost_image_pub_;
 
   std::vector<float> algo_time;
 
@@ -396,7 +397,7 @@ class LocalPlannerNode {
   /**
   * @brief     publishes polar histogram image for Rviz visualization
   **/
-  void publishHistogramImage();
+  void publishDataImages();
   /**
   * @brief     publishes ground plane visualization for Rviz
   **/

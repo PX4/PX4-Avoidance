@@ -17,13 +17,9 @@ LocalPlanner::~LocalPlanner() {}
 void LocalPlanner::setPose(const Eigen::Vector3f &pos,
                            const Eigen::Quaternionf &q) {
   position_ = pos;
-  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
-  tf::Matrix3x3 tf_m(tf_q);
-  double roll, pitch, yaw;
-  tf_m.getRPY(roll, pitch, yaw);
-  curr_yaw_ = static_cast<float>(yaw);
-  curr_pitch_ = static_cast<float>(pitch);
-  star_planner_->setPose(position_, curr_yaw_);
+  curr_yaw_fcu_frame_ = getYawFromQuaternion(q);
+  curr_pitch_fcu_frame_ = getPitchFromQuaternion(q);
+  star_planner_->setPose(position_, curr_yaw_fcu_frame_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -44,12 +40,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_far_from_obstacles_);
   keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
-  relevance_margin_e_degree_ =
-      static_cast<float>(config.relevance_margin_e_degree_);
-  relevance_margin_z_degree_ =
-      static_cast<float>(config.relevance_margin_z_degree_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
-
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
@@ -58,6 +49,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
+  smoothing_margin_degrees_ =
+      static_cast<float>(config.smoothing_margin_degrees_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -99,8 +92,8 @@ void LocalPlanner::runPlanner() {
 
   // calculate Field of View
   z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_, curr_yaw_,
-               curr_pitch_);
+  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
+               curr_yaw_fcu_frame_, curr_pitch_fcu_frame_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -132,35 +125,30 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   polar_histogram_ = new_histogram;
 
   // generate histogram image for logging
-  histogram_image_ = generateHistogramImage(polar_histogram_);
+  generateHistogramImage(polar_histogram_);
 }
 
-sensor_msgs::Image LocalPlanner::generateHistogramImage(Histogram &histogram) {
-  sensor_msgs::Image image;
-  float sensor_max_dist = 20.0;
-  image.header.stamp = ros::Time::now();
-  image.height = GRID_LENGTH_E;
-  image.width = GRID_LENGTH_Z;
-  image.encoding = sensor_msgs::image_encodings::MONO8;
-  image.is_bigendian = 0;
-  image.step = 255;
-
-  int image_size = static_cast<int>(image.height * image.width);
-  image.data.reserve(image_size);
+void LocalPlanner::generateHistogramImage(Histogram &histogram) {
+  histogram_image_data_.clear();
+  histogram_image_data_.reserve(GRID_LENGTH_E * GRID_LENGTH_Z);
 
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      float depth_val = image.step * histogram.get_dist(e, z) / sensor_max_dist;
-      image.data.push_back(
-          (int)std::max(0.0f, std::min((float)image.step, depth_val)));
+      float depth_val =
+          255.f * histogram.get_dist(e, z) / histogram_box_.radius_;
+      histogram_image_data_.push_back(
+          (int)std::max(0.0f, std::min(255.f, depth_val)));
     }
   }
-  return image;
 }
 
 void LocalPlanner::determineStrategy() {
   star_planner_->tree_age_++;
+
+  // clear cost image
+  cost_image_data_.clear();
+  cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
   if (disable_rise_to_goal_altitude_) {
     reach_altitude_ = true;
@@ -216,41 +204,21 @@ void LocalPlanner::determineStrategy() {
 
       create2DObstacleRepresentation(send_obstacles_fcu_);
 
-      // check histogram relevance
-      bool hist_relevant = true;
-      if (!hist_is_empty_) {
-        hist_relevant = false;
-        int relevance_margin_z_cells =
-            std::ceil(relevance_margin_z_degree_ / ALPHA_RES);
-        int relevance_margin_e_cells =
-            std::ceil(relevance_margin_e_degree_ / ALPHA_RES);
-        int n_occupied_cells = 0;
-
-        PolarPoint goal_pol = cartesianToPolar(goal_, position_);
-        Eigen::Vector2i goal_index = polarToHistogramIndex(goal_pol, ALPHA_RES);
-
-        for (int e = goal_index.y() - relevance_margin_e_cells;
-             e < goal_index.y() + relevance_margin_e_cells; e++) {
-          for (int z = goal_index.x() - relevance_margin_z_cells;
-               z < goal_index.x() + relevance_margin_z_cells; z++) {
-            if (polar_histogram_.get_dist(e, z) > FLT_MIN) {
-              n_occupied_cells++;
-            }
-          }
-        }
-        if (n_occupied_cells > 0) {
-          hist_relevant = true;
-        }
-      }
-
       // decide how to proceed
-      if (hist_is_empty_ || !hist_relevant) {
+      if (hist_is_empty_) {
         obstacle_ = false;
         waypoint_type_ = tryPath;
       }
 
-      if (!hist_is_empty_ && hist_relevant && reach_altitude_) {
+      if (!hist_is_empty_ && reach_altitude_) {
         obstacle_ = true;
+
+        float yaw_angle_histogram_frame =
+            std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) + 90.0f;
+        getCostMatrix(
+            polar_histogram_, goal_, position_, yaw_angle_histogram_frame,
+            last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
+            smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
         if (use_VFH_star_) {
           star_planner_->setParams(cost_params_);
@@ -273,10 +241,6 @@ void LocalPlanner::determineStrategy() {
           waypoint_type_ = tryPath;
           last_path_time_ = ros::Time::now();
         } else {
-          float yaw_angle = std::round((-curr_yaw_ * 180.0f / M_PI_F)) + 90.0f;
-          getCostMatrix(polar_histogram_, goal_, position_, yaw_angle,
-                        last_sent_waypoint_, cost_params_,
-                        velocity_.norm() < 0.1f, cost_matrix_);
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
           if (candidate_vector_.empty()) {

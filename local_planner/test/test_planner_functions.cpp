@@ -7,26 +7,6 @@
 
 using namespace avoidance;
 
-void check_indexes(nav_msgs::GridCells &test,
-                   std::vector<Eigen::Vector2i> &truth, int resolution) {
-  for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-
-    EXPECT_EQ(truth[j], cell_idx);
-  }
-}
-
-void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
-                   int resolution) {
-  for (int i = 0; i < test.cells.size(); i++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-    EXPECT_EQ(truth_idx_e, cell_idx.y());
-    EXPECT_EQ(truth_idx_z, cell_idx.x());
-  }
-}
-
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
   pcl::PointCloud<pcl::PointXYZ> empty_cloud;
@@ -426,6 +406,38 @@ TEST(PlannerFunctions, smoothPolarMatrix) {
   EXPECT_TRUE(greater_equal);
 }
 
+TEST(PlannerFunctions, smoothMatrix) {
+  // GIVEN: a matrix with a single cell set
+  unsigned int smooth_radius = 4;
+  Eigen::MatrixXf matrix;
+  matrix.resize(10, 20);
+  matrix.fill(0);
+  matrix(3, 16) = 100;
+  matrix(6, 6) = -100;
+
+  // WHEN: we smooth it
+  Eigen::MatrixXf matrix_old = matrix;
+  smoothPolarMatrix(matrix, smooth_radius);
+
+  // THEN: it should match the matrix we expect
+  Eigen::MatrixXf expected_matrix(matrix.rows(), matrix.cols());
+  // clang-format off
+  expected_matrix <<
+   8, 0,   4,   8,  12,  16,  20,  16,  12,   8,   4, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+  12, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+  16, 0,  -4,  -8, -12, -16, -20, -16, -12,  -8,  -4, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  20, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, 20, 40,  60,  80, 100,  80,  60, 40,
+  16, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  12, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+   8, 0, -20, -40, -60, -80,-100, -80, -60, -40, -20, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+   4, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0,  4,  8,  12,  16,  20,  16,  12,  8,
+   0, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0,  0,  0,   0,   0,   0,   0,   0,  0,
+  -4, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, -4, -8, -12, -16, -20, -16, -12, -8;
+  // clang-format on
+
+  EXPECT_LT((expected_matrix - matrix).cwiseAbs().maxCoeff(), 1e-5);
+}
+
 TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // GIVEN: a position, goal and an empty histogram
   Eigen::Vector3f position(0.f, 0.f, 0.f);
@@ -439,10 +451,13 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   cost_params.height_change_cost_param_adapted = 4.f;
   Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
+  float smoothing_radius = 30.f;
 
   // WHEN: we calculate the cost matrix from the input data
+  std::vector<uint8_t> cost_image_data;
   getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
-                cost_params, false, cost_matrix);
+                cost_params, false, smoothing_radius, cost_matrix,
+                cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);

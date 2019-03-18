@@ -28,7 +28,8 @@ class StarPlanner {
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
   float max_path_length_ = 4.f;
-  float curr_yaw_;
+  float curr_yaw_fcu_frame_;
+  float smoothing_margin_degrees_ = 30.f;
 
   std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;

@@ -57,23 +57,24 @@ void filterPointCloud(
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw, float pitch) {
-  int z_FOV_max =
-      static_cast<int>(std::round((-yaw * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
-                                  static_cast<float>(ALPHA_RES))) -
-      1;
-  int z_FOV_min =
-      static_cast<int>(std::round((-yaw * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
-                                  static_cast<float>(ALPHA_RES))) -
-      1;
-  e_FOV_max =
-      static_cast<int>(std::round((-pitch * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
-                                  static_cast<float>(ALPHA_RES))) -
-      1;
-  e_FOV_min =
-      static_cast<int>(std::round((-pitch * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
-                                  static_cast<float>(ALPHA_RES))) -
-      1;
+                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame,
+                  float pitch_fcu_frame) {
+  int z_FOV_max = static_cast<int>(std::round(
+                      (-yaw_fcu_frame * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
+                      static_cast<float>(ALPHA_RES))) -
+                  1;
+  int z_FOV_min = static_cast<int>(std::round(
+                      (-yaw_fcu_frame * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
+                      static_cast<float>(ALPHA_RES))) -
+                  1;
+  e_FOV_max = static_cast<int>(std::round(
+                  (-pitch_fcu_frame * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
+                  static_cast<float>(ALPHA_RES))) -
+              1;
+  e_FOV_min = static_cast<int>(std::round(
+                  (-pitch_fcu_frame * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
+                  static_cast<float>(ALPHA_RES))) -
+              1;
 
   if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
     z_FOV_max -= GRID_LENGTH_Z;
@@ -240,10 +241,13 @@ void compressHistogramElevation(Histogram& new_hist,
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position, const float heading,
+                   const Eigen::Vector3f& position,
+                   const float yaw_angle_histogram_frame,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
-                   Eigen::MatrixXf& cost_matrix) {
+                   const float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -265,8 +269,9 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
       PolarPoint p_pol =
           histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, heading,
-                   last_sent_waypoint, cost_params, distance_cost, other_costs);
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position,
+                   yaw_angle_histogram_frame, last_sent_waypoint, cost_params,
+                   distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -308,11 +313,36 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
     }
   }
 
-  float smoothing_margin_degrees = 45;
   unsigned int smooth_radius = ceil(smoothing_margin_degrees / ALPHA_RES);
   smoothPolarMatrix(distance_matrix, smooth_radius);
 
+  generateCostImage(cost_matrix, distance_matrix, image_data);
   cost_matrix = cost_matrix + distance_matrix;
+}
+
+void generateCostImage(const Eigen::MatrixXf& cost_matrix,
+                       const Eigen::MatrixXf& distance_matrix,
+                       std::vector<uint8_t>& image_data) {
+  float max_val = std::max(cost_matrix.maxCoeff(), distance_matrix.maxCoeff());
+  image_data.clear();
+  image_data.reserve(3 * GRID_LENGTH_E * GRID_LENGTH_Z);
+
+  for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      float distance_cost = 255.f * distance_matrix(e, z) / max_val;
+      float other_cost = 255.f * cost_matrix(e, z) / max_val;
+      image_data.push_back(
+          static_cast<uint8_t>(std::max(0.0f, std::min(255.f, distance_cost))));
+      image_data.push_back(
+          static_cast<uint8_t>(std::max(0.0f, std::min(255.f, other_cost))));
+      image_data.push_back(0);
+    }
+  }
+}
+
+int colorImageIndex(int e_ind, int z_ind, int color) {
+  // color = 0 (red), color = 1 (green), color = 2 (blue)
+  return ((GRID_LENGTH_E - e_ind - 1) * GRID_LENGTH_Z + z_ind) * 3 + color;
 }
 
 void getBestCandidatesFromCostMatrix(
@@ -354,37 +384,26 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
   Eigen::ArrayXf kernel1d = getConicKernel(smoothing_radius);
 
   Eigen::ArrayXf temp_col(matrix_padded.rows());
-
-  for (int col_index = 0; col_index < matrix.cols(); col_index++) {
-    temp_col.fill(NAN);
+  for (int col_index = 0; col_index < matrix_padded.cols(); col_index++) {
+    temp_col = matrix_padded.col(col_index);
     for (int row_index = 0; row_index < matrix.rows(); row_index++) {
-      float smooth_val = (matrix_padded.col(col_index)
-                              .segment(row_index, 2 * smoothing_radius + 1)
-                              .array() *
-                          kernel1d)
-                             .sum();
-      temp_col(row_index + smoothing_radius) = smooth_val;
+      float smooth_val =
+          (temp_col.segment(row_index, 2 * smoothing_radius + 1) * kernel1d)
+              .sum();
+      matrix_padded(row_index + smoothing_radius, col_index) = smooth_val;
     }
-    matrix_padded.col(col_index) = temp_col;
   }
 
   Eigen::ArrayXf temp_row(matrix_padded.cols());
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
-    temp_row.fill(NAN);
+    temp_row = matrix_padded.row(row_index + smoothing_radius);
     for (int col_index = 0; col_index < matrix.cols(); col_index++) {
-      float smooth_val = (matrix_padded.row(row_index)
-                              .segment(col_index, 2 * smoothing_radius + 1)
-                              .transpose()
-                              .array() *
-                          kernel1d)
-                             .sum();
-
-      temp_row(col_index + smoothing_radius) = smooth_val;
+      float smooth_val =
+          (temp_row.segment(col_index, 2 * smoothing_radius + 1) * kernel1d)
+              .sum();
+      matrix(row_index, col_index) = smooth_val;
     }
-    matrix_padded.row(row_index) = temp_row.transpose();
   }
-  matrix = matrix.cwiseMax(matrix_padded.block(
-      smoothing_radius, smoothing_radius, matrix.rows(), matrix.cols()));
 }
 
 Eigen::ArrayXf getConicKernel(int radius) {
@@ -393,7 +412,7 @@ Eigen::ArrayXf getConicKernel(int radius) {
     kernel(row) = std::max(0.f, 1.f + radius - std::abs(row - radius));
   }
 
-  kernel *= 1.f / kernel.sum();
+  kernel *= 1.f / kernel.maxCoeff();
   return kernel;
 }
 
@@ -452,14 +471,14 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float heading,
+                  const float yaw_angle_histogram_frame,
                   const Eigen::Vector3f& last_sent_waypoint,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs) {
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
   Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, position);
-  PolarPoint heading_pol(e_angle, heading, goal_dist);
+  PolarPoint heading_pol(e_angle, yaw_angle_histogram_frame, goal_dist);
   Eigen::Vector3f projected_heading = polarToCartesian(heading_pol, position);
   Eigen::Vector3f projected_goal = goal;
   PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
@@ -498,15 +517,15 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
   // distance cost
   distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 12000.0f / obstacle_distance;
+    distance_cost = 700.0f / obstacle_distance;
   }
 
   // combine costs
   other_costs = 0.0f;
-  other_costs =
-      yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-      cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth +
-      pitch_cost_smooth + heading_cost + distance_cost;
+  other_costs = yaw_cost +
+                cost_params.height_change_cost_param_adapted * pitch_cost_up +
+                cost_params.height_change_cost_param * pitch_cost_down +
+                yaw_cost_smooth + pitch_cost_smooth + heading_cost;
 }
 
 bool getDirectionFromTree(

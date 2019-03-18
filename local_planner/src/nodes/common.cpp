@@ -115,6 +115,22 @@ void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
           Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
+float getYawFromQuaternion(const Eigen::Quaternionf q) {
+  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
+  tf::Matrix3x3 tf_m(tf_q);
+  double roll, pitch, yaw;
+  tf_m.getRPY(roll, pitch, yaw);
+  return static_cast<float>(yaw);
+}
+
+float getPitchFromQuaternion(const Eigen::Quaternionf q) {
+  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
+  tf::Matrix3x3 tf_m(tf_q);
+  double roll, pitch, yaw;
+  tf_m.getRPY(roll, pitch, yaw);
+  return static_cast<float>(pitch);
+}
+
 void wrapAngleToPlusMinusPI(float& angle) {
   angle = angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
 }

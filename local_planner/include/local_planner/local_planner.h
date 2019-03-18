@@ -18,7 +18,6 @@
 
 #include <tf/transform_listener.h>
 
-#include <sensor_msgs/Image.h>
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/PointCloud2.h>
 
@@ -58,8 +57,8 @@ class LocalPlanner {
   int reproj_age_;
   int counter_close_points_backoff_ = 0;
 
-  float curr_yaw_;
-  float curr_pitch_;
+  float curr_yaw_fcu_frame_;
+  float curr_pitch_fcu_frame_;
   float velocity_around_obstacles_;
   float velocity_far_from_obstacles_;
   float keep_distance_;
@@ -69,12 +68,11 @@ class LocalPlanner {
   float distance_to_closest_point_;
   int min_cloud_size_ = 160;
   float min_dist_backoff_;
-  float relevance_margin_z_degree_ = 40.0f;
-  float relevance_margin_e_degree_ = 25.0f;
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
   float costmap_direction_e_;
   float costmap_direction_z_;
+  float smoothing_margin_degrees_ = 30.f;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
@@ -139,13 +137,14 @@ class LocalPlanner {
   * @param     histogram, polar histogram representing obstacles
   * @returns   histogram image
   **/
-  sensor_msgs::Image generateHistogramImage(Histogram &histogram);
+  void generateHistogramImage(Histogram &histogram);
 
  public:
   float h_FOV_ = 59.0f;
   float v_FOV_ = 46.0f;
   Box histogram_box_;
-  sensor_msgs::Image histogram_image_;
+  std::vector<uint8_t> histogram_image_data_;
+  std::vector<uint8_t> cost_image_data_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool offboard_ = false;
@@ -162,7 +161,6 @@ class LocalPlanner {
   float ground_distance_ = 2.0;
 
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
-  ;
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
