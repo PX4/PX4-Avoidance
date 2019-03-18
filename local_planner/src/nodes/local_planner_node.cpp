@@ -427,9 +427,11 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
              local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
     local_planner_->px4_.param_mpc_col_prev_d = msg.value.real;
   } else if (msg.param_id == "MIS_TAKEOFF_ALT") {
-    ROS_INFO("model parameter minimum mission takeoff altitude is set from  %f to %f \n",
-           local_planner_->px4_.param_mis_takeoff_alt, msg.value.real);
-   }
+    ROS_INFO(
+        "model parameter minimum mission takeoff altitude is set from  %f to "
+        "%f \n",
+        local_planner_->px4_.param_mis_takeoff_alt, msg.value.real);
+  }
 }
 
 void LocalPlannerNode::checkPx4Parameters() {
