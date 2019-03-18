@@ -37,8 +37,6 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
       nh.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
   current_waypoint_pub_ =
       nh.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  takeoff_pose_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
   initial_height_pub_ =
       nh.advertise<visualization_msgs::Marker>("/initial_height", 1);
   histogram_image_pub_ =
@@ -71,7 +69,7 @@ void LocalPlannerVisualization::visualizePlannerData(
              planner.histogram_box_.zmin_);
 
   // publish data related to takeoff maneuver
-  publishReachHeight(planner.take_off_pose_, planner.starting_height_);
+  publishReachHeight(planner.getPosition(), planner.starting_height_);
 
   // publish histogram image
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_,
@@ -201,13 +199,13 @@ void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos,
 }
 
 void LocalPlannerVisualization::publishReachHeight(
-    const Eigen::Vector3f& take_off_pose, float starting_height) const {
+    const Eigen::Vector3f& drone_pos, float starting_height) const {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
   m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = take_off_pose.x();
-  m.pose.position.y = take_off_pose.y();
+  m.pose.position.x = drone_pos.x();
+  m.pose.position.y = drone_pos.y();
   m.pose.position.z = starting_height;
   m.pose.orientation.x = 0.0;
   m.pose.orientation.y = 0.0;
@@ -224,23 +222,6 @@ void LocalPlannerVisualization::publishReachHeight(
   m.id = 0;
 
   initial_height_pub_.publish(m);
-
-  visualization_msgs::Marker t;
-  t.header.frame_id = "local_origin";
-  t.header.stamp = ros::Time::now();
-  t.type = visualization_msgs::Marker::SPHERE;
-  t.action = visualization_msgs::Marker::ADD;
-  t.scale.x = 0.2;
-  t.scale.y = 0.2;
-  t.scale.z = 0.2;
-  t.color.a = 1.0;
-  t.color.r = 1.0;
-  t.color.g = 0.0;
-  t.color.b = 0.0;
-  t.lifetime = ros::Duration();
-  t.id = 0;
-  t.pose.position = toPoint(take_off_pose);
-  takeoff_pose_pub_.publish(t);
 }
 
 void LocalPlannerVisualization::publishDataImages(
