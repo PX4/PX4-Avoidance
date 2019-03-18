@@ -57,51 +57,31 @@ void filterPointCloud(
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
 void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame,
-                  float pitch_fcu_frame) {
-  int z_FOV_max = static_cast<int>(std::round(
-                      (-yaw_fcu_frame * RAD_TO_DEG + h_fov / 2.0f + 270.0f) /
-                      static_cast<float>(ALPHA_RES))) -
-                  1;
-  int z_FOV_min = static_cast<int>(std::round(
-                      (-yaw_fcu_frame * RAD_TO_DEG - h_fov / 2.0f + 270.0f) /
-                      static_cast<float>(ALPHA_RES))) -
-                  1;
-  e_FOV_max = static_cast<int>(std::round(
-                  (-pitch_fcu_frame * RAD_TO_DEG + v_fov / 2.0f + 90.0f) /
-                  static_cast<float>(ALPHA_RES))) -
-              1;
-  e_FOV_min = static_cast<int>(std::round(
-                  (-pitch_fcu_frame * RAD_TO_DEG - v_fov / 2.0f + 90.0f) /
-                  static_cast<float>(ALPHA_RES))) -
-              1;
+                  int& e_FOV_min, int& e_FOV_max, float yaw_deg_histogram_frame,
+                  float pitch_deg) {
+  PolarPoint max_angle(pitch_deg + v_fov / 2.0f,
+                       yaw_deg_histogram_frame + h_fov / 2.0f, 1.f);
+  PolarPoint min_angle(pitch_deg - v_fov / 2.0f,
+                       yaw_deg_histogram_frame - h_fov / 2.0f, 1.f);
+  Eigen::Vector2i max_ind = polarToHistogramIndex(max_angle, ALPHA_RES);
+  Eigen::Vector2i min_ind = polarToHistogramIndex(min_angle, ALPHA_RES);
 
-  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z) {
-    z_FOV_max -= GRID_LENGTH_Z;
-    z_FOV_min -= GRID_LENGTH_Z;
-  }
-  if (z_FOV_max < 0 && z_FOV_min < 0) {
-    z_FOV_max += GRID_LENGTH_Z;
-    z_FOV_min += GRID_LENGTH_Z;
+  e_FOV_max = max_ind.y();
+  e_FOV_min = min_ind.y();
+
+  // indices not wrapped
+  if (max_ind.x() > min_ind.x()) {
+    for (int i = min_ind.x(); i <= max_ind.x(); i++) {
+      z_FOV_idx.push_back(i);
+    }
   }
 
-  z_FOV_idx.clear();
-  if (z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z) {
-    for (int i = 0; i < z_FOV_max - GRID_LENGTH_Z; i++) {
+  // indices wrapped
+  if (min_ind.x() > max_ind.x()) {
+    for (int i = 0; i <= max_ind.x(); i++) {
       z_FOV_idx.push_back(i);
     }
-    for (int i = z_FOV_min; i < GRID_LENGTH_Z; i++) {
-      z_FOV_idx.push_back(i);
-    }
-  } else if (z_FOV_min < 0 && z_FOV_max >= 0) {
-    for (int i = 0; i < z_FOV_max; i++) {
-      z_FOV_idx.push_back(i);
-    }
-    for (int i = z_FOV_min + GRID_LENGTH_Z; i < GRID_LENGTH_Z; i++) {
-      z_FOV_idx.push_back(i);
-    }
-  } else {
-    for (int i = z_FOV_min; i < z_FOV_max; i++) {
+    for (int i = min_ind.x(); i < GRID_LENGTH_Z; i++) {
       z_FOV_idx.push_back(i);
     }
   }

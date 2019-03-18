@@ -36,7 +36,7 @@ void StarPlanner::setFOV(float h_FOV, float v_FOV) {
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
   position_ = pos;
-  curr_yaw_fcu_frame_ = curr_yaw;
+  curr_yaw_deg_histogram_frame_ = curr_yaw;
 }
 
 void StarPlanner::setCloud(
@@ -123,9 +123,7 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, position_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ =
-      std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) +
-      90.0f;  // from radian to angle and shift reference to y-axis
+  tree_.back().yaw_ = curr_yaw_deg_histogram_frame_;
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;

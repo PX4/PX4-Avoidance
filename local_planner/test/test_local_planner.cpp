@@ -87,7 +87,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
     // width determined empirically, TODO investigate why it isn't symmetrical
-    if (10 <= i && i <= 18)
+    if (10 <= i && i <= 19)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -136,9 +136,10 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.sendObstacleDistanceDataToFcu(scan);
+
   for (size_t i = 0; i < scan.ranges.size(); i++) {
     // width determined empirically, TODO investigate why it doesnt match angles
-    if (12 <= i && i <= 18)
+    if (12 <= i && i <= 19)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -185,7 +186,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   planner.sendObstacleDistanceDataToFcu(scan);
   for (size_t i = 0; i < scan.ranges.size(); i++) {
     // width determined empirically, TODO investigate why it doesnt match angles
-    if (9 <= i && i <= 17)
+    if (10 <= i && i <= 17)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
