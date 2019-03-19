@@ -115,22 +115,22 @@ void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
 }
 
 float getYawFromQuaternion(const Eigen::Quaternionf q) {
-  float siny_cosp = 2.0 * (q.w() * q.z() + q.x() * q.y());
-  float cosy_cosp = 1.0 - 2.0 * (q.y() * q.y() + q.z() * q.z());
+  float siny_cosp = 2.f * (q.w() * q.z() + q.x() * q.y());
+  float cosy_cosp = 1.f - 2.f * (q.y() * q.y() + q.z() * q.z());
   float yaw = atan2(siny_cosp, cosy_cosp);
 
-  return static_cast<float>(yaw * RAD_TO_DEG);
+  return yaw * RAD_TO_DEG;
 }
 
 float getPitchFromQuaternion(const Eigen::Quaternionf q) {
-  float pitch = 0;
-  float sinp = 2.0 * (q.w() * q.y() - q.z() * q.x());
-  if (fabs(sinp) >= 1) {
-    pitch = copysign(M_PI / 2, sinp);  // use PI/2 if out of range
+  float pitch = 0.f;
+  float sinp = 2.f * (q.w() * q.y() - q.z() * q.x());
+  if (fabs(sinp) >= 1.f) {
+    pitch = copysign(M_PI / 2.f, sinp);  // use PI/2 if out of range
   } else {
     pitch = asin(sinp);
   }
-  return static_cast<float>(pitch * RAD_TO_DEG);
+  return pitch * RAD_TO_DEG;
 }
 
 void wrapAngleToPlusMinusPI(float& angle) {
