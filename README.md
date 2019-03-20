@@ -267,16 +267,16 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    ```bash
    roslaunch local_planner local_planner_sitl_3cam.launch
    ```
-   
+
 * simulate one Intel Realsense camera:
 
    ```bash
    git clone git@github.com:SyrianSpock/realsense_gazebo_plugin.git
-   
+
    catkin build realsense_gazebo_plugin #(for ROS kinetic, the kinetic-devel branch must be used)
-   
+
    export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/realsense_gazebo_plugin/models
-   
+
    roslaunch local_planner local_planner_realsense.launch
    ```
 
@@ -364,21 +364,16 @@ roslaunch local_planner avoidance.launch fcu_url:=/dev/ttyACM0:57600
 ```
 
 where `fcu_url` representing the port connecting the companion computer to the flight controller.
-The planner is running correctly when
+The planner is running correctly if the rate of the processed point cloud is around 10-20 Hz. To check the rate run:
 
 ```bash
-[OA] Planning started, using 1 cameras
+rostopic hz /local_pointcloud
 ```
 
-is displayed on the console.
-
-The local planner supports also multi camera setups. `local_planner_example.launch` needs to be modified by:
-
-1. launching one RealSense nodlet (`rs_depthcloud.launch`) for each camera making sure that each of them has a unique `namespace`
-2. launch one `static_transform_publisher` node for each camera
-
-An example of a three camera launch file is [local_planner_A700_3cam.launch](https://github.com/PX4/avoidance/blob/master/local_planner/launch/local_planner_A700_3cam.launch).
-
+If you would like to read debug statements on the console, please change `custom_rosconsole.conf` to
+```bash
+log4j.logger.ros.local_planner=DEBUG
+```
 
 # Troubleshooting
 
