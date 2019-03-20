@@ -53,6 +53,8 @@
   <build_depend>tf</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>mavros</build_depend>
+  <build_depend>mavros_extras</build_depend>
+
 
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>message_runtime</run_depend>
@@ -66,6 +68,7 @@
   <run_depend>tf</run_depend>
   <run_depend>pcl_ros</run_depend>
   <run_depend>mavros</run_depend>
+  <run_depend>mavros_extras</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
