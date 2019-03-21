@@ -704,7 +704,7 @@ void LocalPlannerNode::publishTree() {
   tree_path_pub_.publish(path_marker);
 }
 
-void LocalPlannerNode::publishSystemStatus(){
+void LocalPlannerNode::publishSystemStatus() {
   status_msg_.header.stamp = ros::Time::now();
   status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
   mavros_system_status_pub_.publish(status_msg_);

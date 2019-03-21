@@ -60,8 +60,7 @@ int main(int argc, char** argv) {
     if (!Node.never_run_ && planner_is_healthy) {
       Node.publishWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
-    }
-    else {
+    } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
         Node.cameras_[i].camera_info_sub_.shutdown();
@@ -71,8 +70,8 @@ int main(int argc, char** argv) {
     Node.position_received_ = false;
 
     // publish system status
-    if (now - Node.t_status_sent_ > ros::Duration(0.2)) Node.publishSystemStatus();
-
+    if (now - Node.t_status_sent_ > ros::Duration(0.2))
+      Node.publishSystemStatus();
   }
 
   Node.should_exit_ = true;
