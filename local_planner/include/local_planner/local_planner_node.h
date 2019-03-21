@@ -220,6 +220,7 @@ class LocalPlannerNode {
   * @param     hover, true if the vehicle is loitering
   **/
   void publishWaypoints(bool hover);
+  void publishSystemStatus();
 
   /**
   * @brief     check healthiness of the avoidance system to trigger failsafe in

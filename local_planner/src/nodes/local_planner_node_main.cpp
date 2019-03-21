@@ -60,7 +60,8 @@ int main(int argc, char** argv) {
     if (!Node.never_run_ && planner_is_healthy) {
       Node.publishWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
-    } else {
+    }
+    else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
         // once the camera info have been set once, unsubscribe from topic
         Node.cameras_[i].camera_info_sub_.shutdown();
@@ -70,12 +71,8 @@ int main(int argc, char** argv) {
     Node.position_received_ = false;
 
     // publish system status
-    if (now - Node.t_status_sent_ > ros::Duration(0.2)) {
-      Node.status_msg_.header.stamp = ros::Time::now();
-      Node.status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-      Node.mavros_system_status_pub_.publish(Node.status_msg_);
-      Node.t_status_sent_ = now;
-    }
+    if (now - Node.t_status_sent_ > ros::Duration(0.2)) Node.publishSystemStatus();
+
   }
 
   Node.should_exit_ = true;
