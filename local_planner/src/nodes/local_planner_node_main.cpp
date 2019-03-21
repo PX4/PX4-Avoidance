@@ -54,29 +54,7 @@ int main(int argc, char** argv) {
                        hover);
 
     // If planner is not running, update planner info and get last results
-    if (Node.cameras_.size() == Node.numReceivedClouds() &&
-        Node.cameras_.size() != 0) {
-      if (Node.canUpdatePlannerInfo()) {
-        if (Node.running_mutex_.try_lock()) {
-          Node.updatePlannerInfo();
-          // reset all clouds to not yet received
-          for (size_t i = 0; i < Node.cameras_.size(); i++) {
-            Node.cameras_[i].received_ = false;
-          }
-          Node.wp_generator_->setPlannerInfo(
-              Node.local_planner_->getAvoidanceOutput());
-          if (Node.local_planner_->stop_in_front_active_) {
-            Node.goal_msg_.pose.position =
-                toPoint(Node.local_planner_->getGoal());
-          }
-          Node.running_mutex_.unlock();
-          // Wake up the planner
-          std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
-          Node.data_ready_ = true;
-          Node.data_ready_cv_.notify_one();
-        }
-      }
-    }
+    Node.updatePlanner();
 
     // send waypoint
     if (!Node.never_run_ && planner_is_healthy) {

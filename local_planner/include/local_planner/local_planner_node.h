@@ -155,7 +155,6 @@ class LocalPlannerNode {
                               /// output data (point cloud, position, ...)
 
   std::mutex data_ready_mutex_;
-  bool data_ready_ = false;
   std::condition_variable data_ready_cv_;
 
   /**
@@ -170,6 +169,8 @@ class LocalPlannerNode {
   * @brief     handles threads for data publication and subscription
   **/
   void threadFunction();
+
+  void updatePlanner();
 
   /**
   * @brief     checks if the transformation from the camera frame to
@@ -279,6 +280,7 @@ class LocalPlannerNode {
 
   geometry_msgs::TwistStamped vel_msg_;
   bool armed_, offboard_, mission_, new_goal_;
+  bool data_ready_ = false;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   boost::recursive_mutex config_mutex_;
