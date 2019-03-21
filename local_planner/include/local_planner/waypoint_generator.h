@@ -41,6 +41,7 @@ class WaypointGenerator {
 
   float smoothing_speed_xy_{10.f};
   float smoothing_speed_z_{3.0f};
+  float min_takeoff_speed_{0.0f};
 
   bool is_airborne_ = false;
   float setpoint_yaw_ = 0.0f;
@@ -139,6 +140,14 @@ class WaypointGenerator {
   void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
     smoothing_speed_xy_ = smoothing_speed_xy;
     smoothing_speed_z_ = smoothing_speed_z;
+  }
+
+  /**
+  * @brief set the minimum takeoff speed
+  * @param[in] takeoff speed
+  **/
+  void setMinTakeoffSpeed(float min_takeoff_speed) {
+    min_takeoff_speed_ = min_takeoff_speed;
   }
 
   /**

@@ -281,6 +281,12 @@ void WaypointGenerator::adaptSpeed() {
     // Scale the pose_to_wp by the speed
     Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
+
+    // in takeoff mode respect minimal takeoff throttle
+    if (planner_info_.waypoint_type == reachHeight) {
+      speed_ = std::max(speed_, min_takeoff_speed_);
+    }
+
     pose_to_wp *= speed_;
 
     heading_at_goal_ = NAN;

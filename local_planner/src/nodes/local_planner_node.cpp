@@ -999,6 +999,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(
   local_planner_->dynamicReconfigureSetParams(config, level);
   wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_,
                                    config.smoothing_speed_z_);
+  wp_generator_->setMinTakeoffSpeed(config.min_takeoff_speed_);
   rqt_param_config_ = config;
 }
 
