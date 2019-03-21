@@ -102,7 +102,8 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private, const bool tf_spin_thread = true);
+  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
+                   const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
