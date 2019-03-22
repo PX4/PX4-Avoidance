@@ -181,6 +181,29 @@ size_t LocalPlannerNode::numReceivedClouds() {
   return num_received_clouds;
 }
 
+void LocalPlannerNode::updatePlanner() {
+  if (cameras_.size() == numReceivedClouds() && cameras_.size() != 0) {
+    if (canUpdatePlannerInfo()) {
+      if (running_mutex_.try_lock()) {
+        updatePlannerInfo();
+        // reset all clouds to not yet received
+        for (size_t i = 0; i < cameras_.size(); i++) {
+          cameras_[i].received_ = false;
+        }
+        wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
+        if (local_planner_->stop_in_front_active_) {
+          goal_msg_.pose.position = toPoint(local_planner_->getGoal());
+        }
+        running_mutex_.unlock();
+        // Wake up the planner
+        std::unique_lock<std::mutex> lck(data_ready_mutex_);
+        data_ready_ = true;
+        data_ready_cv_.notify_one();
+      }
+    }
+  }
+}
+
 bool LocalPlannerNode::canUpdatePlannerInfo() {
   // Check if we have a transformation available at the time of the current
   // point cloud
@@ -679,6 +702,13 @@ void LocalPlannerNode::publishTree() {
 
   complete_tree_pub_.publish(tree_marker);
   tree_path_pub_.publish(path_marker);
+}
+
+void LocalPlannerNode::publishSystemStatus() {
+  status_msg_.header.stamp = ros::Time::now();
+  status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
+  mavros_system_status_pub_.publish(status_msg_);
+  t_status_sent_ = ros::Time::now();
 }
 
 void LocalPlannerNode::clickedPointCallback(
