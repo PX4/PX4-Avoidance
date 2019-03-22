@@ -13,9 +13,8 @@
    fun:_ZN3ros5startEv
    fun:_ZN3ros10NodeHandle9constructERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
    fun:_ZN3ros10NodeHandleC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS6_S6_St4lessIS6_ESaISt4pairIS7_S6_EEE
-   fun:_ZN9avoidance16LocalPlannerNodeC1Eb
    fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
-   fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
+   fun:_ZN7testing8internal38HandleSehExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
    fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
    fun:_ZN7testing4Test3RunEv
 }
