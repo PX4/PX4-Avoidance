@@ -166,9 +166,6 @@ In the following section we guide you trough installing and running a Gazebo sim
 1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
    ```bash
-   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
-   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
-
    # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
    export QT_X11_NO_MITSHM=1
 
@@ -177,6 +174,9 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    # Setup some more Gazebo-related environment variables
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+
+   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
+   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
@@ -262,7 +262,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    roslaunch local_planner local_planner_depth-camera.launch
    ```
 
-* simulate a three kinect depth sensors:
+* simulate three kinect depth sensors:
 
    ```bash
    roslaunch local_planner local_planner_sitl_3cam.launch
@@ -293,7 +293,7 @@ The drone will first change its altitude to reach the goal height. It is possibl
 Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
 # Run on Hardware
 
@@ -327,7 +327,7 @@ A stream of point-clouds should now be published to */point_cloud*.
 ### PX4 Autopilot
 
 Parameters to set through QGC:
-* `MPC_OBS_AVOID` to Enabled
+* `COM_OBS_AVOID` to Enabled
 * `MAV_1_CONFIG`, `MAV_1_MODE`, `SER_TEL2_BAUD` to enable MAVLink on a serial port. For more information: [PX4 Dev Guide](http://dev.px4.io/en/companion_computer/pixhawk_companion.html#pixhawk-setup)
 
 ### Companion Computer
