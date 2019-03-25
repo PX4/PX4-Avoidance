@@ -65,7 +65,7 @@ void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
 * @param[in] reprojected_points, previous iterations occupied histogram bins
 *reprojected in 3D space
 * @param[in] reprojected_points_age, age of each reprojected point
-* @param[]   position, current vehicle positon
+* @param[in]   position, current vehicle positon
 **/
 void propagateHistogram(
     Histogram& polar_histogram_est,
@@ -117,7 +117,7 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[in]  histogram, polar histogram representing obstacles
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
-* @param[in]  current vehicle heading in histogram angle convention
+* @param[in]  current vehicle heading in histogram angle convention [deg]
 * @param[in]  last_sent_waypoint, last position waypoint
 * @param[in]  cost_params, weight for the cost function
 * @param[in]  only_yawed, true if
@@ -127,7 +127,7 @@ void compressHistogramElevation(Histogram& new_hist,
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame,
+                   const float yaw_angle_histogram_frame_deg,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    const float smoothing_margin_degrees,
@@ -164,19 +164,20 @@ void getBestCandidatesFromCostMatrix(
 
 /**
 * @brief   computes the cost of each direction in the polar histogram
-* @param[] e_angle, elevation angle [deg]
-* @param[] z_angle, azimuth angle [deg]
-* @param[] goal, current goal position
-* @param[] position, current vehicle position
-* @param[] position, current vehicle heading in histogram angle convention
-* @param[] last_sent_waypoint, previous position waypoint
-* @param[] cost_params, weights for goal oriented vs smooth behaviour
+* @param[in] e_angle, elevation angle [deg]
+* @param[in] z_angle, azimuth angle [deg]
+* @param[in] goal, current goal position
+* @param[in] position, current vehicle position
+* @param[in] position, current vehicle heading in histogram angle convention
+*[deg]
+* @param[in] last_sent_waypoint, previous position waypoint
+* @param[in] cost_params, weights for goal oriented vs smooth behaviour
 * @param[out] distance_cost, cost component due to proximity to obstacles
 * @param[out] other_costs, cost component due to goal and smoothness
 **/
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float yaw_angle_histogram_frame,
+                  const float yaw_angle_histogram_frame_deg,
                   const Eigen::Vector3f& last_sent_waypoint,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs);
@@ -184,7 +185,7 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 /**
 * @brief   max-median filtes the cost matrix
 * @param   matrix, cost matrix
-* @param[] smoothing_radius, median filter window size
+* @param[in] smoothing_radius, median filter window size
 **/
 void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius);
 
@@ -208,7 +209,7 @@ Eigen::ArrayXf getConicKernel(int radius);
 
 /**
 * @brief   helper method to output on the console the histogram
-* @param[] histogram, polar histogram
+* @param[in] histogram, polar histogram
 **/
 void printHistogram(Histogram& histogram);
 
