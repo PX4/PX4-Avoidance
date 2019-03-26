@@ -31,6 +31,7 @@
 #include <std_msgs/Bool.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/String.h>
+#include <std_msgs/UInt32.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -276,6 +277,7 @@ class LocalPlannerNode {
   ros::Publisher smoothed_wp_pub_;
   ros::Publisher histogram_image_pub_;
   ros::Publisher cost_image_pub_;
+  ros::Publisher pointcloud_size_pub_;
 
   std::vector<float> algo_time;
 

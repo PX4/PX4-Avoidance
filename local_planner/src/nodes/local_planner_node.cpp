@@ -111,6 +111,7 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
   histogram_image_pub_ =
       nh_.advertise<sensor_msgs::Image>("/histogram_image", 1);
   cost_image_pub_ = nh_.advertise<sensor_msgs::Image>("/cost_image", 1);
+  pointcloud_size_pub_ = nh_.advertise<std_msgs::UInt32>("/pointcloud_size", 1);
   mavros_set_mode_client_ =
       nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
   get_px4_param_client_ =
@@ -1006,6 +1007,7 @@ void LocalPlannerNode::publishPlannerData() {
   local_planner_->getCloudsForVisualization(final_cloud, reprojected_points);
   local_pointcloud_pub_.publish(final_cloud);
   reprojected_points_pub_.publish(reprojected_points);
+  pointcloud_size_pub_.publish(static_cast<uint32_t>(final_cloud.size()));
 
   publishTree();
 
