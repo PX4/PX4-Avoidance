@@ -63,11 +63,6 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
   px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1,
                                  &LocalPlannerNode::px4ParamsCallback, this);
-
-  // initialize standard publishers
-  world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
-  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
-
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
@@ -84,6 +79,7 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
+  world_visualizer_.initializePublishers(nh_);
 
   // pass initial goal into local planner
   local_planner_->applyGoal();
@@ -251,10 +247,9 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
-  visualization_msgs::Marker marker;
   if (!world_path_.empty()) {
-    if (!visualizeDrone(msg, marker)) {
-      drone_pub_.publish(marker);
+    if (!world_visualizer_.visualizeDrone(msg)) {
+      ROS_WARN("failed to visualize RViz dron marker");
     }
   }
 #endif

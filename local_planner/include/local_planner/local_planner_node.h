@@ -135,9 +135,7 @@ class LocalPlannerNode {
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   LocalPlannerVisualization visualizer_;
-
-  ros::Publisher world_pub_;
-  ros::Publisher drone_pub_;
+  WorldVisualizer world_visualizer_;
 
   ros::Publisher mavros_pos_setpoint_pub_;
   ros::Publisher mavros_vel_setpoint_pub_;
