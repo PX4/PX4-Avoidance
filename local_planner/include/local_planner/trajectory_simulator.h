@@ -5,6 +5,7 @@
 namespace avoidance {
 
 struct simulation_state {
+  float time = NAN;
   Eigen::Vector3f position = NAN * Eigen::Vector3f::Ones();
   Eigen::Vector3f velocity = NAN * Eigen::Vector3f::Ones();
   Eigen::Vector3f acceleration = NAN * Eigen::Vector3f::Ones();

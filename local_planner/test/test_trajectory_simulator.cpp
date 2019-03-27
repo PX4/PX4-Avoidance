@@ -102,6 +102,7 @@ TEST(TrajectorySimulator, givesConstantVelWhenVelCorrect) {
   state.position = Eigen::Vector3f::Zero();
   state.velocity << 3.f, 0.f, 0.f;
   state.acceleration = Eigen::Vector3f::Zero();
+  state.time = 0.f;
 
   simulation_limits config;
   config.max_z_velocity = 1.f;
@@ -134,6 +135,7 @@ TEST(TrajectorySimulator, acceleratesToConstantVel) {
   state.position = Eigen::Vector3f::Zero();
   state.velocity << -3.f, 0.f, 0.f;
   state.acceleration = Eigen::Vector3f::Zero();
+  state.time = 0.f;
 
   simulation_limits config;
   config.max_z_velocity = 1.f;

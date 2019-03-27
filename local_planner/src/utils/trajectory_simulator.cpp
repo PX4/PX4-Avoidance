@@ -26,20 +26,11 @@ std::vector<simulation_state> run_steps(const simulation_limits& config,
       config.max_xy_velocity_norm, config.min_z_velocity,
       config.max_z_velocity);
 
-  // calculate P and D constants such that they hit the jerk limit when
-  // doing a full-speed reverse. but not when doing accel from 0
-  // TODO: is this what actually happens when the firmware controls a drone?
-  /** Math: in maximum case, vel*p + 2*sqrt(p)*accel = max_jerk
-   * let k = sqrt(p), then solve quadratically
-   * k = (-2*accel + sqrt(4*accel*accel - 4*vel*(-max_jerk)))/(2*vel)
-   * thus p = ((sqrt(accel*accel + vel*max_jerk) - accel)/vel)^2
-   */
   auto sqr = [](float f) -> float { return f * f; };
   auto cube = [](float f) -> float { return f * f * f; };
-  float vel = desired_velocity.norm();
-  float accel = config.max_acceleration_norm;
-  float P_constant =
-      sqr((std::sqrt(sqr(accel) + vel * config.max_jerk_norm) - accel) / vel);
+  // calculate P and D constants such that they hit the jerk limit when
+  // doing accel from 0
+  float P_constant = config.max_jerk_norm;
   float D_constant = 2 * std::sqrt(P_constant);
 
   for (int i = 0; i < num_steps; i++) {
@@ -69,6 +60,7 @@ std::vector<simulation_state> run_steps(const simulation_limits& config,
     run_state.velocity +=
         run_state.acceleration * step_time + 0.5f * sqr(step_time) * jerk;
     run_state.acceleration += step_time * jerk;
+    run_state.time += step_time;
 
     timepoints.push_back(run_state);
   }
