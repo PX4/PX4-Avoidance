@@ -140,8 +140,8 @@ void generateNewHistogram(Histogram& polar_histogram,
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-    float dist = (p - position).norm();
     PolarPoint p_pol = cartesianToPolar(p, position);
+    float dist = p_pol.r;
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
     counter(p_ind.y(), p_ind.x()) += 1;

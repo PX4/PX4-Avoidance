@@ -125,6 +125,7 @@ void LocalPlannerNode::initializeCameraSubscribers(
         camera_topics[i], 1,
         boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
+    cameras_[i].received_ = false;
 
     // get each namespace in the pointcloud topic and construct the camera_info
     // topic
