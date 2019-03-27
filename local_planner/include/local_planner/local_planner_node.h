@@ -135,7 +135,10 @@ class LocalPlannerNode {
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   LocalPlannerVisualization visualizer_;
+
+#ifndef DISABLE_SIMULATION
   WorldVisualizer world_visualizer_;
+#endif
 
   ros::Publisher mavros_pos_setpoint_pub_;
   ros::Publisher mavros_vel_setpoint_pub_;

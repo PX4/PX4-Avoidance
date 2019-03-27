@@ -79,7 +79,9 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
+#ifndef DISABLE_SIMULATION
   world_visualizer_.initializePublishers(nh_);
+#endif
 
   // pass initial goal into local planner
   local_planner_->applyGoal();
