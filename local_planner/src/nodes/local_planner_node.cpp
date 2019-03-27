@@ -541,10 +541,10 @@ void LocalPlannerNode::dynamicReconfigureCallback(
   rqt_param_config_ = config;
 }
 
-void LocalPlannerNode::publishLaserScan() {
+void LocalPlannerNode::publishLaserScan() const {
   if (local_planner_->send_obstacles_fcu_) {
     sensor_msgs::LaserScan distance_data_to_fcu;
-    local_planner_->sendObstacleDistanceDataToFcu(distance_data_to_fcu);
+    local_planner_->getObstacleDistanceData(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
   }
 }

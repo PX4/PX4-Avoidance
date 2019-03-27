@@ -83,8 +83,8 @@ void LocalPlannerVisualization::visualizePlannerData(
 }
 
 void LocalPlannerVisualization::publishTree(
-    const std::vector<TreeNode>& tree, const std::vector<int> closed_set,
-    const std::vector<Eigen::Vector3f> path_node_positions) const {
+    const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
+    const std::vector<Eigen::Vector3f>& path_node_positions) const {
   visualization_msgs::Marker tree_marker;
   tree_marker.header.frame_id = "local_origin";
   tree_marker.header.stamp = ros::Time::now();
@@ -132,7 +132,7 @@ void LocalPlannerVisualization::publishTree(
 }
 
 void LocalPlannerVisualization::publishGoal(
-    const geometry_msgs::Point goal) const {
+    const geometry_msgs::Point& goal) const {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
@@ -154,9 +154,9 @@ void LocalPlannerVisualization::publishGoal(
   marker_goal_pub_.publish(marker_goal);
 }
 
-void LocalPlannerVisualization::publishBox(const Eigen::Vector3f drone_pos,
-                                           const float box_radius,
-                                           const float plane_height) const {
+void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos,
+                                           float box_radius,
+                                           float plane_height) const {
   visualization_msgs::MarkerArray marker_array;
 
   visualization_msgs::Marker box;
@@ -204,7 +204,7 @@ void LocalPlannerVisualization::publishBox(const Eigen::Vector3f drone_pos,
 }
 
 void LocalPlannerVisualization::publishReachHeight(
-    const Eigen::Vector3f& take_off_pose, const float starting_height) const {
+    const Eigen::Vector3f& take_off_pose, float starting_height) const {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -385,10 +385,11 @@ void LocalPlannerVisualization::visualizeWaypoints(
 }
 
 void LocalPlannerVisualization::publishPaths(
-    const geometry_msgs::Point last_pos, const geometry_msgs::Point newest_pos,
-    const geometry_msgs::Point last_wp, const geometry_msgs::Point newest_wp,
-    const geometry_msgs::Point last_adapted_wp,
-    const geometry_msgs::Point newest_adapted_wp) {
+    const geometry_msgs::Point& last_pos,
+    const geometry_msgs::Point& newest_pos, const geometry_msgs::Point& last_wp,
+    const geometry_msgs::Point& newest_wp,
+    const geometry_msgs::Point& last_adapted_wp,
+    const geometry_msgs::Point& newest_adapted_wp) {
   // publish actual path
   visualization_msgs::Marker path_actual_marker;
   path_actual_marker.header.frame_id = "local_origin";
@@ -447,8 +448,8 @@ void LocalPlannerVisualization::publishPaths(
 }
 
 void LocalPlannerVisualization::publishCurrentSetpoint(
-    const geometry_msgs::Twist& wp, waypoint_choice& waypoint_type,
-    const geometry_msgs::Point newest_pos) const {
+    const geometry_msgs::Twist& wp, const waypoint_choice& waypoint_type,
+    const geometry_msgs::Point& newest_pos) const {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
   setpoint.header.stamp = ros::Time::now();
@@ -509,9 +510,9 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
   current_waypoint_pub_.publish(setpoint);
 }
 
-void LocalPlannerVisualization::publishGround(
-    const Eigen::Vector3f& drone_pos, const float box_radius,
-    const float ground_distance) const {
+void LocalPlannerVisualization::publishGround(const Eigen::Vector3f& drone_pos,
+                                              float box_radius,
+                                              float ground_distance) const {
   visualization_msgs::Marker plane;
 
   plane.header.frame_id = "local_origin";

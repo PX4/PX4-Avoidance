@@ -132,7 +132,7 @@ class LocalPlanner {
   * @brief     creates a polar histogram representation of the pointcloud
   * @param[in] send_to_fcu, true if the histogram is sent to the FCU
   **/
-  void create2DObstacleRepresentation(const bool send_to_fcu);
+  void create2DObstacleRepresentation(bool send_to_fcu);
   /**
   * @brief     generates an image represention of the polar histogram
   * @param     histogram, polar histogram representing obstacles
@@ -206,13 +206,13 @@ class LocalPlanner {
 
   /**
   * @brief     getter method to visualize the cropped pointcloud in rviz
-  * @param[out]reference to pointcloud
+  * @returns   reference to pointcloud
   **/
   const pcl::PointCloud<pcl::PointXYZ>& getCroppedCloud() const;
 
   /**
   * @brief     getter method to visualize the reprojected points
-  * @param[out]reference to reprojected points
+  * @returns   reference to reprojected points
   **/
   const pcl::PointCloud<pcl::PointXYZ>& getReprojectedPoints() const;
 
@@ -224,16 +224,17 @@ class LocalPlanner {
 
   /**
   * @brief     getter method to visualize the tree in rviz
+  * @param[in] tree, the whole tree built during planning (vector of nodes)
   * @param[in] closed_set, velocity message coming from the FCU
   * @param[in] path_node_positions, velocity message coming from the FCU
   **/
   void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
                std::vector<Eigen::Vector3f>& path_node_positions) const;
   /**
-  * @brief     setter method to send obstacle distance information to FCU
-  * @param[in] obstacle_distance, obstacle distance message
+  * @brief     getter method for obstacle distance information
+  * @param     obstacle_distance, obstacle distance message to fill
   **/
-  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan& obstacle_distance);
+  void getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_distance);
 
   /**
   * @brief     getter method of the local planner algorithm

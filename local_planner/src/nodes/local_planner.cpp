@@ -466,7 +466,7 @@ void LocalPlanner::getTree(
   path_node_positions = star_planner_->path_node_positions_;
 }
 
-void LocalPlanner::sendObstacleDistanceDataToFcu(
+void LocalPlanner::getObstacleDistanceData(
     sensor_msgs::LaserScan& obstacle_distance) {
   obstacle_distance = distance_data_;
 }

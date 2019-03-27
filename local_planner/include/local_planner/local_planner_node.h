@@ -163,7 +163,7 @@ class LocalPlannerNode {
 
   /**
   * @brief     checks if the transformation from the camera frame to
-  *local_origin is available at the pointcloud timestamp
+  *            local_origin is available at the pointcloud timestamp
   * @returns   true, if the transformation is available
   **/
   bool canUpdatePlannerInfo();
@@ -171,7 +171,7 @@ class LocalPlannerNode {
   /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
   *            vehicle position, velocity, state, and distance to ground, goal,
-  *setpoint sent to the FCU
+  *            setpoint sent to the FCU
   **/
   void updatePlannerInfo();
 
@@ -182,46 +182,48 @@ class LocalPlannerNode {
   size_t numReceivedClouds();
 
   /**
-  * @brief     transforms position setpoints from ROS message to MavROS message
-  * @params[out] obst_avoid, position setpoint in MavROS message form
-  * @params[in] pose, position setpoint computed by the planner
+  * @brief      transforms position setpoints from ROS message to MavROS message
+  * @param[out] obst_avoid, position setpoint in MavROS message form
+  * @param[in]  pose, position setpoint computed by the planner
   **/
   void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
                                  geometry_msgs::PoseStamped pose);
   /**
-  * @brief       transforms velocity setpoints from ROS message to MavROS
-  *message
-  * @params[out] obst_avoid, velocity setpoint in MavROS message form
-  * @params[in]  vel, velocity setpoint computd by the planner
+  * @brief      transforms velocity setpoints from ROS message to MavROS
+  *             message
+  * @param[out] obst_avoid, velocity setpoint in MavROS message form
+  * @param[in]  vel, velocity setpoint computd by the planner
   **/
   void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
                                      geometry_msgs::Twist vel);
 
   /**
-  * @brief     fills MavROS trajectory messages with NAN
-  * @params    point, setpoint to be filled with NAN
+  * @brief      fills MavROS trajectory messages with NAN
+  * @param      point, setpoint to be filled with NAN
   **/
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 
   /**
-  * @brief     calculates position and velocity setpoints and sends to the FCU
-  * @param     hover, true if the vehicle is loitering
+  * @brief      calculates position and velocity setpoints and sends to the FCU
+  * @param[in]  hover, true if the vehicle is loitering
   **/
   void calculateWaypoints(bool hover);
 
   /**
-  * @brief     sends out a status to the FCU which will be received as a heartbeat
+  * @brief      sends out a status to the FCU which will be received as a
+  *heartbeat
   **/
   void publishSystemStatus();
 
   /**
-  * @brief     check healthiness of the avoidance system to trigger failsafe in
-  *            the FCU
-  * @param     since_last_cloud, time elapsed since the last waypoint was
-  *            published to the FCU
-  * @param     since_start, time elapsed since staring the node
-  * @param     planner_is_healthy, true if the planner is running without errors
-  * @param     hover, true if the vehicle is hovering
+  * @brief      check healthiness of the avoidance system to trigger failsafe in
+  *             the FCU
+  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
+  *             published to the FCU
+  * @param[in]  since_start, time elapsed since staring the node
+  * @param[out] planner_is_healthy, true if the planner is running without
+  *errors
+  * @param[out] hover, true if the vehicle is hovering
   **/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& planner_is_healthy, bool& hover);
@@ -344,7 +346,7 @@ class LocalPlannerNode {
   /**
   * @brief     sends out emulated LaserScan data to the flight controller
   **/
-  void publishLaserScan();
+  void publishLaserScan() const;
 };
 }
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
