@@ -107,13 +107,13 @@ class LocalPlanner {
 
   /**
   * @brief     reprojectes the histogram from the previous algorithm iteration
-  *around the current vehicle position
+  *            around the current vehicle position
   * @param     histogram, histogram from the previous algorith iteration
   **/
   void reprojectPoints(Histogram histogram);
   /**
   * @brief     calculates the cost function weights to fly around or over
-  *obstacles based on the progress towards the goal over time
+  *            obstacles based on the progress towards the goal over time
   **/
   void evaluateProgressRate();
   /**
@@ -125,20 +125,20 @@ class LocalPlanner {
   **/
   void updateObstacleDistanceMsg(Histogram hist);
   /**
-  * @brief      fills message to send empty histogram to the FCU
+  * @brief     fills message to send empty histogram to the FCU
   **/
   void updateObstacleDistanceMsg();
   /**
-  * @brief      creates a polar histogram representation of the pointcloud
-  * @params[in] send_to_fcu, true if the histogram is sent to the FCU
+  * @brief     creates a polar histogram representation of the pointcloud
+  * @param[in] send_to_fcu, true if the histogram is sent to the FCU
   **/
-  void create2DObstacleRepresentation(const bool send_to_fcu);
+  void create2DObstacleRepresentation(bool send_to_fcu);
   /**
   * @brief     generates an image represention of the polar histogram
   * @param     histogram, polar histogram representing obstacles
   * @returns   histogram image
   **/
-  void generateHistogramImage(Histogram &histogram);
+  void generateHistogramImage(Histogram& histogram);
 
  public:
   float h_FOV_ = 59.0f;
@@ -176,17 +176,17 @@ class LocalPlanner {
   * @param[in] pos, vehicle position message coming from the FCU
   * @param[in] q, vehicle orientation message coming from the FCU
   **/
-  void setPose(const Eigen::Vector3f &pos, const Eigen::Quaternionf &q);
+  void setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q);
   /**
   * @brief     setter method for mission goal
   * @param[in] mgs, goal message coming from the FCU
   **/
-  void setGoal(const Eigen::Vector3f &goal);
+  void setGoal(const Eigen::Vector3f& goal);
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal
   **/
-  Eigen::Vector3f getGoal();
+  Eigen::Vector3f getGoal() const;
   /**
   * @brief    setter method for mission goal
   **/
@@ -196,50 +196,55 @@ class LocalPlanner {
   * @param     config, struct containing all the paramters
   * @param     level, bitmsak to group together reconfigurable parameters
   **/
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig &config,
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
                                    uint32_t level);
   /**
   * @brief     getter method for current vehicle position and orientation
   * @returns   vehicle positiona and orientation
   **/
-  Eigen::Vector3f getPosition();
+  Eigen::Vector3f getPosition() const;
 
   /**
-  * @brief     getter method to visualize pointcloud in rviz
-  * @param     final_cloud, filtered pointcloud from the current camera frame
-  * @param     reprojected_points, pointcloud saved from previous frames
+  * @brief     getter method to visualize the cropped pointcloud in rviz
+  * @returns   reference to pointcloud
   **/
-  void getCloudsForVisualization(
-      pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-      pcl::PointCloud<pcl::PointXYZ> &reprojected_points);
+  const pcl::PointCloud<pcl::PointXYZ>& getCroppedCloud() const;
+
+  /**
+  * @brief     getter method to visualize the reprojected points
+  * @returns   reference to reprojected points
+  **/
+  const pcl::PointCloud<pcl::PointXYZ>& getReprojectedPoints() const;
+
   /**
   * @brief     setter method for vehicle velocity
-  * @param[in]     vel, velocity message coming from the FCU
+  * @param[in] vel, velocity message coming from the FCU
   **/
-  void setCurrentVelocity(const Eigen::Vector3f &vel);
+  void setCurrentVelocity(const Eigen::Vector3f& vel);
 
   /**
   * @brief     getter method to visualize the tree in rviz
-  * @param[in]     closed_set, velocity message coming from the FCU
-  * @param[in]     path_node_positions, velocity message coming from the FCU
+  * @param[in] tree, the whole tree built during planning (vector of nodes)
+  * @param[in] closed_set, velocity message coming from the FCU
+  * @param[in] path_node_positions, velocity message coming from the FCU
   **/
-  void getTree(std::vector<TreeNode> &tree, std::vector<int> &closed_set,
-               std::vector<Eigen::Vector3f> &path_node_positions);
+  void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
+               std::vector<Eigen::Vector3f>& path_node_positions) const;
   /**
-  * @brief     setter method to send obstacle distance information to FCU
-  * @param[in]     obstacle_distance, obstacle distance message
+  * @brief     getter method for obstacle distance information
+  * @param     obstacle_distance, obstacle distance message to fill
   **/
-  void sendObstacleDistanceDataToFcu(sensor_msgs::LaserScan &obstacle_distance);
+  void getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_distance);
 
   /**
   * @brief     getter method of the local planner algorithm
-  * @param[in]     output of a local planner iteration
+  * @param[in] output of a local planner iteration
   **/
-  avoidanceOutput getAvoidanceOutput();
+  avoidanceOutput getAvoidanceOutput() const;
 
   /**
   * @brief     determines the way the obstacle is avoided and the algorithm to
-  *use
+  *            use
   **/
   void determineStrategy();
   /**

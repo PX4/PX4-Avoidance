@@ -1,14 +1,14 @@
 #ifndef RVIZ_WORLD_H
 #define RVIZ_WORLD_H
 
+#include <geometry_msgs/PoseStamped.h>
+#include <ros/ros.h>
 #include <Eigen/Core>
 #include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
 #include "yaml-cpp/yaml.h"
-
-#include <geometry_msgs/PoseStamped.h>
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
@@ -28,19 +28,42 @@ struct world_object {
   Eigen::Vector3f scale;
 };
 
-// extraction operators
+// yaml file extraction operators
 void operator>>(const YAML::Node& node, Eigen::Vector3f& v);
 void operator>>(const YAML::Node& node, Eigen::Vector4f& v);
 void operator>>(const YAML::Node& node, world_object& item);
 
-// helper function to resolve gazebo model paths
-int resolveUri(std::string& uri);
+class WorldVisualizer {
+ private:
+  /**
+  * @brief      helper function to resolve gazebo model path
+  **/
+  int resolveUri(std::string& uri);
 
-// yaml parsing and marker publishing
-int visualizeRVIZWorld(const std::string& world_path,
-                       visualization_msgs::MarkerArray& marker_array);
-int visualizeDrone(const geometry_msgs::PoseStamped& pose,
-                   visualization_msgs::Marker& marker);
+  ros::Publisher world_pub_;
+  ros::Publisher drone_pub_;
+
+ public:
+  WorldVisualizer();
+
+  /**
+  * @brief      initializes all publishers used for local planner visualization
+  * @param      nh, nodehandle to initialize publishers
+  **/
+  void initializePublishers(ros::NodeHandle& nh);
+
+  /**
+  * @brief      parse the yaml file and publish world marker
+  * @param[in]  world_path, path of the yaml file describing the world
+  **/
+  int visualizeRVIZWorld(const std::string& world_path);
+
+  /**
+  * @brief      visualize the drone mesh at the current drone position
+  * @param[in]  pose, current drone pose
+  **/
+  int visualizeDrone(const geometry_msgs::PoseStamped& pose);
+};
 }
 
 #endif  // RVIZ_WORLD_H

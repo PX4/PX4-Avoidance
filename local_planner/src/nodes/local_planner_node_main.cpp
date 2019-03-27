@@ -31,9 +31,8 @@ int main(int argc, char** argv) {
 #else
     // visualize world in RVIZ
     if (!Node.world_path_.empty() && startup) {
-      visualization_msgs::MarkerArray marker_array;
-      if (!visualizeRVIZWorld(Node.world_path_, marker_array)) {
-        Node.world_pub_.publish(marker_array);
+      if (!Node.world_visualizer_.visualizeRVIZWorld(Node.world_path_)) {
+        ROS_WARN("Failed to visualize Rviz world");
       }
       startup = false;
     }
@@ -58,7 +57,7 @@ int main(int argc, char** argv) {
 
     // send waypoint
     if (!Node.never_run_ && planner_is_healthy) {
-      Node.publishWaypoints(hover);
+      Node.calculateWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {

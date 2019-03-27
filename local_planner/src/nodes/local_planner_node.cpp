@@ -41,7 +41,7 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
     dynamicReconfigureCallback(rqt_param_config_, 1);
   }
 
-  // initialize subscribers and publishers
+  // initialize standard subscribers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
       this);
@@ -63,34 +63,6 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
   px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1,
                                  &LocalPlannerNode::px4ParamsCallback, this);
-
-  world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
-  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
-  local_pointcloud_pub_ =
-      nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
-  reprojected_points_pub_ =
-      nh_.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
-  bounding_box_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
-  ground_measurement_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
-  original_wp_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
-  adapted_wp_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
-  smoothed_wp_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
-  complete_tree_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/complete_tree", 1);
-  tree_path_pub_ = nh_.advertise<visualization_msgs::Marker>("/tree_path", 1);
-  marker_goal_pub_ =
-      nh_.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  path_actual_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/path_actual", 1);
-  path_waypoint_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
-  path_adapted_waypoint_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
@@ -102,20 +74,16 @@ LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
   mavros_system_status_pub_ =
       nh_.advertise<mavros_msgs::CompanionProcessStatus>(
           "/mavros/companion_process/status", 1);
-  current_waypoint_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  takeoff_pose_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
-  initial_height_pub_ =
-      nh_.advertise<visualization_msgs::Marker>("/initial_height", 1);
-  histogram_image_pub_ =
-      nh_.advertise<sensor_msgs::Image>("/histogram_image", 1);
-  cost_image_pub_ = nh_.advertise<sensor_msgs::Image>("/cost_image", 1);
-  mavros_set_mode_client_ =
-      nh_.serviceClient<mavros_msgs::SetMode>("/mavros/set_mode");
   get_px4_param_client_ =
       nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
+  // initialize visualization topics
+  visualizer_.initializePublishers(nh_);
+#ifndef DISABLE_SIMULATION
+  world_visualizer_.initializePublishers(nh_);
+#endif
+
+  // pass initial goal into local planner
   local_planner_->applyGoal();
 }
 
@@ -281,10 +249,9 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
-  visualization_msgs::Marker marker;
   if (!world_path_.empty()) {
-    if (!visualizeDrone(msg, marker)) {
-      drone_pub_.publish(marker);
+    if (!world_visualizer_.visualizeDrone(msg)) {
+      ROS_WARN("failed to visualize RViz dron marker");
     }
   }
 #endif
@@ -310,183 +277,7 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   }
 }
 
-void LocalPlannerNode::publishPaths() {
-  // publish actual path
-  visualization_msgs::Marker path_actual_marker;
-  path_actual_marker.header.frame_id = "local_origin";
-  path_actual_marker.header.stamp = ros::Time::now();
-  path_actual_marker.id = path_length_;
-  path_actual_marker.type = visualization_msgs::Marker::LINE_STRIP;
-  path_actual_marker.action = visualization_msgs::Marker::ADD;
-  path_actual_marker.pose.orientation.w = 1.0;
-  path_actual_marker.scale.x = 0.03;
-  path_actual_marker.color.a = 1.0;
-  path_actual_marker.color.r = 0.0;
-  path_actual_marker.color.g = 1.0;
-  path_actual_marker.color.b = 0.0;
-
-  path_actual_marker.points.push_back(last_pose_.pose.position);
-  path_actual_marker.points.push_back(newest_pose_.pose.position);
-  path_actual_pub_.publish(path_actual_marker);
-
-  // publish path set by calculated waypoints
-  visualization_msgs::Marker path_waypoint_marker;
-  path_waypoint_marker.header.frame_id = "local_origin";
-  path_waypoint_marker.header.stamp = ros::Time::now();
-  path_waypoint_marker.id = path_length_;
-  path_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
-  path_waypoint_marker.action = visualization_msgs::Marker::ADD;
-  path_waypoint_marker.pose.orientation.w = 1.0;
-  path_waypoint_marker.scale.x = 0.02;
-  path_waypoint_marker.color.a = 1.0;
-  path_waypoint_marker.color.r = 1.0;
-  path_waypoint_marker.color.g = 0.0;
-  path_waypoint_marker.color.b = 0.0;
-
-  path_waypoint_marker.points.push_back(last_waypoint_position_);
-  path_waypoint_marker.points.push_back(newest_waypoint_position_);
-  path_waypoint_pub_.publish(path_waypoint_marker);
-
-  // publish path set by calculated waypoints
-  visualization_msgs::Marker path_adapted_waypoint_marker;
-  path_adapted_waypoint_marker.header.frame_id = "local_origin";
-  path_adapted_waypoint_marker.header.stamp = ros::Time::now();
-  path_adapted_waypoint_marker.id = path_length_;
-  path_adapted_waypoint_marker.type = visualization_msgs::Marker::LINE_STRIP;
-  path_adapted_waypoint_marker.action = visualization_msgs::Marker::ADD;
-  path_adapted_waypoint_marker.pose.orientation.w = 1.0;
-  path_adapted_waypoint_marker.scale.x = 0.02;
-  path_adapted_waypoint_marker.color.a = 1.0;
-  path_adapted_waypoint_marker.color.r = 0.0;
-  path_adapted_waypoint_marker.color.g = 0.0;
-  path_adapted_waypoint_marker.color.b = 1.0;
-
-  path_adapted_waypoint_marker.points.push_back(
-      last_adapted_waypoint_position_);
-  path_adapted_waypoint_marker.points.push_back(
-      newest_adapted_waypoint_position_);
-  path_adapted_waypoint_pub_.publish(path_adapted_waypoint_marker);
-
-  path_length_++;
-}
-
-void LocalPlannerNode::publishGoal() {
-  visualization_msgs::MarkerArray marker_goal;
-  visualization_msgs::Marker m;
-
-  geometry_msgs::Point goal = toPoint(local_planner_->getGoal());
-
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::SPHERE;
-  m.action = visualization_msgs::Marker::ADD;
-  m.scale.x = 0.5;
-  m.scale.y = 0.5;
-  m.scale.z = 0.5;
-  m.color.a = 1.0;
-  m.color.r = 1.0;
-  m.color.g = 1.0;
-  m.color.b = 0.0;
-  m.lifetime = ros::Duration();
-  m.id = 0;
-  m.pose.position = goal;
-  marker_goal.markers.push_back(m);
-  marker_goal_pub_.publish(marker_goal);
-}
-
-void LocalPlannerNode::publishReachHeight() {
-  visualization_msgs::Marker m;
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = local_planner_->take_off_pose_.x();
-  m.pose.position.y = local_planner_->take_off_pose_.y();
-  m.pose.position.z = local_planner_->starting_height_;
-  m.pose.orientation.x = 0.0;
-  m.pose.orientation.y = 0.0;
-  m.pose.orientation.z = 0.0;
-  m.pose.orientation.w = 1.0;
-  m.scale.x = 10;
-  m.scale.y = 10;
-  m.scale.z = 0.001;
-  m.color.a = 0.5;
-  m.color.r = 0.0;
-  m.color.g = 0.0;
-  m.color.b = 1.0;
-  m.lifetime = ros::Duration(0.5);
-  m.id = 0;
-
-  initial_height_pub_.publish(m);
-
-  visualization_msgs::Marker t;
-  t.header.frame_id = "local_origin";
-  t.header.stamp = ros::Time::now();
-  t.type = visualization_msgs::Marker::SPHERE;
-  t.action = visualization_msgs::Marker::ADD;
-  t.scale.x = 0.2;
-  t.scale.y = 0.2;
-  t.scale.z = 0.2;
-  t.color.a = 1.0;
-  t.color.r = 1.0;
-  t.color.g = 0.0;
-  t.color.b = 0.0;
-  t.lifetime = ros::Duration();
-  t.id = 0;
-  t.pose.position = toPoint(local_planner_->take_off_pose_);
-  takeoff_pose_pub_.publish(t);
-}
-
-void LocalPlannerNode::publishBox() {
-  visualization_msgs::MarkerArray marker_array;
-  Eigen::Vector3f drone_pos = local_planner_->getPosition();
-  double histogram_box_radius =
-      static_cast<double>(local_planner_->histogram_box_.radius_);
-
-  visualization_msgs::Marker box;
-  box.header.frame_id = "local_origin";
-  box.header.stamp = ros::Time::now();
-  box.id = 0;
-  box.type = visualization_msgs::Marker::SPHERE;
-  box.action = visualization_msgs::Marker::ADD;
-  box.pose.position = toPoint(drone_pos);
-  box.pose.orientation.x = 0.0;
-  box.pose.orientation.y = 0.0;
-  box.pose.orientation.z = 0.0;
-  box.pose.orientation.w = 1.0;
-  box.scale.x = 2.0 * histogram_box_radius;
-  box.scale.y = 2.0 * histogram_box_radius;
-  box.scale.z = 2.0 * histogram_box_radius;
-  box.color.a = 0.5;
-  box.color.r = 0.0;
-  box.color.g = 1.0;
-  box.color.b = 0.0;
-  marker_array.markers.push_back(box);
-
-  visualization_msgs::Marker plane;
-  plane.header.frame_id = "local_origin";
-  plane.header.stamp = ros::Time::now();
-  plane.id = 1;
-  plane.type = visualization_msgs::Marker::CUBE;
-  plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position = toPoint(drone_pos);
-  plane.pose.position.z = local_planner_->histogram_box_.zmin_;
-  plane.pose.orientation.x = 0.0;
-  plane.pose.orientation.y = 0.0;
-  plane.pose.orientation.z = 0.0;
-  plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * histogram_box_radius;
-  plane.scale.y = 2.0 * histogram_box_radius;
-  plane.scale.z = 0.001;
-  plane.color.a = 0.5;
-  plane.color.r = 0.0;
-  plane.color.g = 1.0;
-  plane.color.b = 0.0;
-  marker_array.markers.push_back(plane);
-
-  bounding_box_pub_.publish(marker_array);
-}
-
-void LocalPlannerNode::publishWaypoints(bool hover) {
+void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (mission_ || offboard_ || hover);
 
   wp_generator_->updateState(
@@ -495,81 +286,24 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
       toEigen(vel_msg_.twist.linear), hover, is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
-  visualization_msgs::Marker sphere1;
-  visualization_msgs::Marker sphere2;
-  visualization_msgs::Marker sphere3;
-
-  ros::Time now = ros::Time::now();
-
-  sphere1.header.frame_id = "local_origin";
-  sphere1.header.stamp = now;
-  sphere1.id = 0;
-  sphere1.type = visualization_msgs::Marker::SPHERE;
-  sphere1.action = visualization_msgs::Marker::ADD;
-  sphere1.pose.position = toPoint(result.goto_position);
-  sphere1.pose.orientation.x = 0.0;
-  sphere1.pose.orientation.y = 0.0;
-  sphere1.pose.orientation.z = 0.0;
-  sphere1.pose.orientation.w = 1.0;
-  sphere1.scale.x = 0.2;
-  sphere1.scale.y = 0.2;
-  sphere1.scale.z = 0.2;
-  sphere1.color.a = 0.8;
-  sphere1.color.r = 0.5;
-  sphere1.color.g = 1.0;
-  sphere1.color.b = 0.0;
-
-  sphere2.header.frame_id = "local_origin";
-  sphere2.header.stamp = now;
-  sphere2.id = 0;
-  sphere2.type = visualization_msgs::Marker::SPHERE;
-  sphere2.action = visualization_msgs::Marker::ADD;
-  sphere2.pose.position = toPoint(result.adapted_goto_position);
-  sphere2.pose.orientation.x = 0.0;
-  sphere2.pose.orientation.y = 0.0;
-  sphere2.pose.orientation.z = 0.0;
-  sphere2.pose.orientation.w = 1.0;
-  sphere2.scale.x = 0.2;
-  sphere2.scale.y = 0.2;
-  sphere2.scale.z = 0.2;
-  sphere2.color.a = 0.8;
-  sphere2.color.r = 1.0;
-  sphere2.color.g = 1.0;
-  sphere2.color.b = 0.0;
-
-  sphere3.header.frame_id = "local_origin";
-  sphere3.header.stamp = now;
-  sphere3.id = 0;
-  sphere3.type = visualization_msgs::Marker::SPHERE;
-  sphere3.action = visualization_msgs::Marker::ADD;
-  sphere3.pose.position = toPoint(result.smoothed_goto_position);
-  sphere3.pose.orientation.x = 0.0;
-  sphere3.pose.orientation.y = 0.0;
-  sphere3.pose.orientation.z = 0.0;
-  sphere3.pose.orientation.w = 1.0;
-  sphere3.scale.x = 0.2;
-  sphere3.scale.y = 0.2;
-  sphere3.scale.z = 0.2;
-  sphere3.color.a = 0.8;
-  sphere3.color.r = 1.0;
-  sphere3.color.g = 0.5;
-  sphere3.color.b = 0.0;
-
-  original_wp_pub_.publish(sphere1);
-  adapted_wp_pub_.publish(sphere2);
-  smoothed_wp_pub_.publish(sphere3);
-
   last_waypoint_position_ = newest_waypoint_position_;
   newest_waypoint_position_ = toPoint(result.smoothed_goto_position);
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
   newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
-  publishPaths();
-  publishSetpoint(
+
+  // visualize waypoint topics
+  visualizer_.visualizeWaypoints(result.goto_position,
+                                 result.adapted_goto_position,
+                                 result.smoothed_goto_position);
+  visualizer_.publishPaths(last_pose_.pose.position, newest_pose_.pose.position,
+                           last_waypoint_position_, newest_waypoint_position_,
+                           last_adapted_waypoint_position_,
+                           newest_adapted_waypoint_position_);
+  visualizer_.publishCurrentSetpoint(
       toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
-      result.waypoint_type);
+      result.waypoint_type, newest_pose_.pose.position);
 
-  // to mavros
-
+  // send waypoints to mavros
   mavros_msgs::Trajectory obst_free_path = {};
   if (local_planner_->use_vel_setpoints_) {
     mavros_vel_setpoint_pub_.publish(
@@ -585,123 +319,6 @@ void LocalPlannerNode::publishWaypoints(bool hover) {
         toPoseStamped(result.position_wp, result.orientation_wp));
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
-}
-
-void LocalPlannerNode::publishDataImages() {
-  sensor_msgs::Image cost_img;
-  cost_img.header.stamp = ros::Time::now();
-  cost_img.height = GRID_LENGTH_E;
-  cost_img.width = GRID_LENGTH_Z;
-  cost_img.encoding = "rgb8";
-  cost_img.is_bigendian = 0;
-  cost_img.step = 3 * cost_img.width;
-  cost_img.data = local_planner_->cost_image_data_;
-
-  // current orientation
-  float curr_yaw_fcu_frame =
-      getYawFromQuaternion(toEigen(newest_pose_.pose.orientation));
-  float yaw_angle_histogram_frame =
-      std::round((-static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F)) +
-      90.0f;
-  PolarPoint heading_pol(0, yaw_angle_histogram_frame, 1.0);
-  Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
-
-  // current setpoint
-  PolarPoint waypoint_pol = cartesianToPolar(
-      toEigen(newest_waypoint_position_), toEigen(newest_pose_.pose.position));
-  Eigen::Vector2i waypoint_index =
-      polarToHistogramIndex(waypoint_pol, ALPHA_RES);
-  PolarPoint adapted_waypoint_pol =
-      cartesianToPolar(toEigen(newest_adapted_waypoint_position_),
-                       toEigen(newest_pose_.pose.position));
-  Eigen::Vector2i adapted_waypoint_index =
-      polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
-
-  // color in the image
-  if (cost_img.data.size() == 3 * GRID_LENGTH_E * GRID_LENGTH_Z) {
-    // current heading blue
-    cost_img.data[colorImageIndex(heading_index.y(), heading_index.x(), 2)] =
-        255.f;
-
-    // waypoint white
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 0)] =
-        255.f;
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 1)] =
-        255.f;
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 2)] =
-        255.f;
-
-    // adapted waypoint light blue
-    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
-                                  adapted_waypoint_index.x(), 1)] = 255.f;
-    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
-                                  adapted_waypoint_index.x(), 2)] = 255.f;
-  }
-
-  // histogram image
-  sensor_msgs::Image hist_img;
-  hist_img.header.stamp = ros::Time::now();
-  hist_img.height = GRID_LENGTH_E;
-  hist_img.width = GRID_LENGTH_Z;
-  hist_img.encoding = sensor_msgs::image_encodings::MONO8;
-  hist_img.is_bigendian = 0;
-  hist_img.step = 255;
-  hist_img.data = local_planner_->histogram_image_data_;
-
-  histogram_image_pub_.publish(hist_img);
-  cost_image_pub_.publish(cost_img);
-}
-
-void LocalPlannerNode::publishTree() {
-  visualization_msgs::Marker tree_marker;
-  tree_marker.header.frame_id = "local_origin";
-  tree_marker.header.stamp = ros::Time::now();
-  tree_marker.id = 0;
-  tree_marker.type = visualization_msgs::Marker::LINE_LIST;
-  tree_marker.action = visualization_msgs::Marker::ADD;
-  tree_marker.pose.orientation.w = 1.0;
-  tree_marker.scale.x = 0.05;
-  tree_marker.color.a = 0.8;
-  tree_marker.color.r = 0.4;
-  tree_marker.color.g = 0.0;
-  tree_marker.color.b = 0.6;
-
-  visualization_msgs::Marker path_marker;
-  path_marker.header.frame_id = "local_origin";
-  path_marker.header.stamp = ros::Time::now();
-  path_marker.id = 0;
-  path_marker.type = visualization_msgs::Marker::LINE_LIST;
-  path_marker.action = visualization_msgs::Marker::ADD;
-  path_marker.pose.orientation.w = 1.0;
-  path_marker.scale.x = 0.05;
-  path_marker.color.a = 0.8;
-  path_marker.color.r = 1.0;
-  path_marker.color.g = 0.0;
-  path_marker.color.b = 0.0;
-
-  std::vector<TreeNode> tree;
-  std::vector<int> closed_set;
-
-  local_planner_->getTree(tree, closed_set, path_node_positions_);
-
-  tree_marker.points.reserve(closed_set.size() * 2);
-  for (size_t i = 0; i < closed_set.size(); i++) {
-    int node_nr = closed_set[i];
-    geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
-    int origin = tree[node_nr].origin_;
-    geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
-    tree_marker.points.push_back(p1);
-    tree_marker.points.push_back(p2);
-  }
-
-  path_marker.points.reserve(path_node_positions_.size() * 2);
-  for (size_t i = 1; i < path_node_positions_.size(); i++) {
-    path_marker.points.push_back(toPoint(path_node_positions_[i - 1]));
-    path_marker.points.push_back(toPoint(path_node_positions_[i]));
-  }
-
-  complete_tree_pub_.publish(tree_marker);
-  tree_path_pub_.publish(path_marker);
 }
 
 void LocalPlannerNode::publishSystemStatus() {
@@ -747,7 +364,9 @@ void LocalPlannerNode::distanceSensorCallback(
     const mavros_msgs::Altitude& msg) {
   if (!std::isnan(msg.bottom_clearance)) {
     ground_distance_msg_ = msg;
-    publishGround();
+    visualizer_.publishGround(local_planner_->getPosition(),
+                              local_planner_->histogram_box_.radius_,
+                              local_planner_->ground_distance_);
   }
 }
 
@@ -803,35 +422,6 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   }
 }
 
-void LocalPlannerNode::publishGround() {
-  Eigen::Vector3f drone_pos = local_planner_->getPosition();
-  visualization_msgs::Marker plane;
-  double histogram_box_radius =
-      static_cast<double>(local_planner_->histogram_box_.radius_);
-
-  plane.header.frame_id = "local_origin";
-  plane.header.stamp = ros::Time::now();
-  plane.id = 1;
-  plane.type = visualization_msgs::Marker::CUBE;
-  plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position = toPoint(drone_pos);
-  plane.pose.position.z =
-      drone_pos.z() - static_cast<double>(local_planner_->ground_distance_);
-  plane.pose.orientation.x = 0.0;
-  plane.pose.orientation.y = 0.0;
-  plane.pose.orientation.z = 0.0;
-  plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * histogram_box_radius;
-  plane.scale.y = 2.0 * histogram_box_radius;
-  plane.scale.z = 0.001;
-  ;
-  plane.color.a = 0.5;
-  plane.color.r = 0.0;
-  plane.color.g = 0.0;
-  plane.color.b = 1.0;
-  ground_measurement_pub_.publish(plane);
-}
-
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   Eigen::Vector3f drone_pos = local_planner_->getPosition();
   int beta_z = floor((atan2(x - drone_pos.x(), y - drone_pos.y()) * 180.0 /
@@ -870,68 +460,6 @@ void LocalPlannerNode::cameraInfoCallback(
       2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
       M_PI);
   wp_generator_->setFOV(local_planner_->h_FOV_, local_planner_->v_FOV_);
-}
-
-void LocalPlannerNode::publishSetpoint(const geometry_msgs::Twist& wp,
-                                       waypoint_choice& waypoint_type) {
-  visualization_msgs::Marker setpoint;
-  setpoint.header.frame_id = "local_origin";
-  setpoint.header.stamp = ros::Time::now();
-  setpoint.id = 0;
-  setpoint.type = visualization_msgs::Marker::ARROW;
-  setpoint.action = visualization_msgs::Marker::ADD;
-
-  geometry_msgs::Point tip;
-  tip.x = newest_pose_.pose.position.x + wp.linear.x;
-  tip.y = newest_pose_.pose.position.y + wp.linear.y;
-  tip.z = newest_pose_.pose.position.z + wp.linear.z;
-  setpoint.points.push_back(newest_pose_.pose.position);
-  setpoint.points.push_back(tip);
-  setpoint.scale.x = 0.1;
-  setpoint.scale.y = 0.1;
-  setpoint.scale.z = 0.1;
-  setpoint.color.a = 1.0;
-
-  switch (waypoint_type) {
-    case hover: {
-      setpoint.color.r = 1.0;
-      setpoint.color.g = 1.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
-    case costmap: {
-      setpoint.color.r = 0.0;
-      setpoint.color.g = 1.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
-    case tryPath: {
-      setpoint.color.r = 0.0;
-      setpoint.color.g = 1.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
-    case direct: {
-      setpoint.color.r = 0.0;
-      setpoint.color.g = 0.0;
-      setpoint.color.b = 1.0;
-      break;
-    }
-    case reachHeight: {
-      setpoint.color.r = 1.0;
-      setpoint.color.g = 0.0;
-      setpoint.color.b = 1.0;
-      break;
-    }
-    case goBack: {
-      setpoint.color.r = 1.0;
-      setpoint.color.g = 0.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
-  }
-
-  current_waypoint_pub_.publish(setpoint);
 }
 
 void LocalPlannerNode::fillUnusedTrajectoryPoint(
@@ -1001,28 +529,6 @@ void LocalPlannerNode::transformVelocityToTrajectory(
   obst_avoid.point_valid = {true, false, false, false, false};
 }
 
-void LocalPlannerNode::publishPlannerData() {
-  pcl::PointCloud<pcl::PointXYZ> final_cloud, reprojected_points;
-  local_planner_->getCloudsForVisualization(final_cloud, reprojected_points);
-  local_pointcloud_pub_.publish(final_cloud);
-  reprojected_points_pub_.publish(reprojected_points);
-
-  publishTree();
-
-  last_wp_time_ = ros::Time::now();
-
-  if (local_planner_->send_obstacles_fcu_) {
-    sensor_msgs::LaserScan distance_data_to_fcu;
-    local_planner_->sendObstacleDistanceDataToFcu(distance_data_to_fcu);
-    mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
-  }
-
-  publishGoal();
-  publishBox();
-  publishReachHeight();
-  publishDataImages();
-}
-
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
@@ -1030,6 +536,14 @@ void LocalPlannerNode::dynamicReconfigureCallback(
   wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_,
                                    config.smoothing_speed_z_);
   rqt_param_config_ = config;
+}
+
+void LocalPlannerNode::publishLaserScan() const {
+  if (local_planner_->send_obstacles_fcu_) {
+    sensor_msgs::LaserScan distance_data_to_fcu;
+    local_planner_->getObstacleDistanceData(distance_data_to_fcu);
+    mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
+  }
 }
 
 void LocalPlannerNode::threadFunction() {
@@ -1048,7 +562,11 @@ void LocalPlannerNode::threadFunction() {
       never_run_ = false;
       std::clock_t start_time = std::clock();
       local_planner_->runPlanner();
-      publishPlannerData();
+      visualizer_.visualizePlannerData(
+          *(local_planner_.get()), newest_waypoint_position_,
+          newest_adapted_waypoint_position_, newest_pose_);
+      publishLaserScan();
+      last_wp_time_ = ros::Time::now();
 
       ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
                 (std::clock() - start_time) / (double)(CLOCKS_PER_SEC / 1000));

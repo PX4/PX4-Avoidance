@@ -29,5 +29,5 @@ void TreeNode::setCosts(float h, float c) {
   total_cost_ = c;
 }
 
-Eigen::Vector3f TreeNode::getPosition() { return position_; }
+Eigen::Vector3f TreeNode::getPosition() const { return position_; }
 }
