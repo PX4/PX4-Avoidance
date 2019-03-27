@@ -56,7 +56,7 @@ void StarPlanner::setReprojectedPoints(
   reprojected_points_age_ = reprojected_points_age;
 }
 
-float StarPlanner::treeCostFunction(int node_number) {
+float StarPlanner::treeCostFunction(int node_number) const {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
@@ -96,7 +96,7 @@ float StarPlanner::treeCostFunction(int node_number) {
                   static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
-float StarPlanner::treeHeuristicFunction(int node_number) {
+float StarPlanner::treeHeuristicFunction(int node_number) const {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, node_position);
 

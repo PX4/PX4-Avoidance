@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
 
     // send waypoint
     if (!Node.never_run_ && planner_is_healthy) {
-      Node.publishWaypoints(hover);
+      Node.calculateWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {

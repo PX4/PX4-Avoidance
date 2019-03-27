@@ -14,8 +14,8 @@ LocalPlanner::LocalPlanner() : star_planner_(new StarPlanner()) {}
 LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
-void LocalPlanner::setPose(const Eigen::Vector3f &pos,
-                           const Eigen::Quaternionf &q) {
+void LocalPlanner::setPose(const Eigen::Vector3f& pos,
+                           const Eigen::Quaternionf& q) {
   position_ = pos;
   curr_yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   curr_yaw_histogram_frame_deg_ = -curr_yaw_fcu_frame_deg_ + 90.0f;
@@ -31,7 +31,7 @@ void LocalPlanner::setPose(const Eigen::Vector3f &pos,
 
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(
-    avoidance::LocalPlannerNodeConfig &config, uint32_t level) {
+    avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.heading_cost_param = config.heading_cost_param_;
@@ -72,14 +72,14 @@ void LocalPlanner::dynamicReconfigureSetParams(
   ROS_DEBUG("\033[0;35m[OA] Dynamic reconfigure call \033[0m");
 }
 
-void LocalPlanner::setGoal(const Eigen::Vector3f &goal) {
+void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(),
            goal_.z());
   applyGoal();
 }
 
-Eigen::Vector3f LocalPlanner::getGoal() { return goal_; }
+Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
 
 void LocalPlanner::applyGoal() {
   star_planner_->setGoal(goal_);
@@ -130,7 +130,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   generateHistogramImage(polar_histogram_);
 }
 
-void LocalPlanner::generateHistogramImage(Histogram &histogram) {
+void LocalPlanner::generateHistogramImage(Histogram& histogram) {
   histogram_image_data_.clear();
   histogram_image_data_.reserve(GRID_LENGTH_E * GRID_LENGTH_Z);
 
@@ -342,7 +342,7 @@ void LocalPlanner::reprojectPoints(Histogram histogram) {
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (histogram.get_dist(e, z) > FLT_MIN) {
-        for (auto &i : p_pol) {
+        for (auto& i : p_pol) {
           i.r = histogram.get_dist(e, z);
           i = histogramIndexToPolar(e, z, ALPHA_RES, i.r);
         }
@@ -443,33 +443,35 @@ void LocalPlanner::stopInFrontObstacles() {
       goal_.x(), goal_.y(), goal_.z(), distance_to_closest_point_);
 }
 
-Eigen::Vector3f LocalPlanner::getPosition() { return position_; }
+Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
-void LocalPlanner::getCloudsForVisualization(
-    pcl::PointCloud<pcl::PointXYZ> &final_cloud,
-    pcl::PointCloud<pcl::PointXYZ> &reprojected_points) {
-  final_cloud = final_cloud_;
-  reprojected_points = reprojected_points_;
+const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getCroppedCloud() const {
+  return final_cloud_;
 }
 
-void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f &vel) {
+const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getReprojectedPoints()
+    const {
+  return reprojected_points_;
+}
+
+void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
   velocity_ = vel;
 }
 
-void LocalPlanner::getTree(std::vector<TreeNode> &tree,
-                           std::vector<int> &closed_set,
-                           std::vector<Eigen::Vector3f> &path_node_positions) {
+void LocalPlanner::getTree(
+    std::vector<TreeNode>& tree, std::vector<int>& closed_set,
+    std::vector<Eigen::Vector3f>& path_node_positions) const {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
   path_node_positions = star_planner_->path_node_positions_;
 }
 
 void LocalPlanner::sendObstacleDistanceDataToFcu(
-    sensor_msgs::LaserScan &obstacle_distance) {
+    sensor_msgs::LaserScan& obstacle_distance) {
   obstacle_distance = distance_data_;
 }
 
-avoidanceOutput LocalPlanner::getAvoidanceOutput() {
+avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
 

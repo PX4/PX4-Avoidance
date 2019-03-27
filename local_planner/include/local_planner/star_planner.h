@@ -48,14 +48,14 @@ class StarPlanner {
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeCostFunction(int node_number);
+  float treeCostFunction(int node_number) const;
 
   /**
   * @brief     computes the heuristic for a node
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeHeuristicFunction(int node_number);
+  float treeHeuristicFunction(int node_number) const;
 
  public:
   std::vector<Eigen::Vector3f> path_node_positions_;

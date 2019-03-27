@@ -33,7 +33,7 @@ class TreeNode {
   * @brief     getter method for tree node position
   * @returns   node position in 3D cartesian coordinates
   **/
-  Eigen::Vector3f getPosition();
+  Eigen::Vector3f getPosition() const;
 };
 }
 

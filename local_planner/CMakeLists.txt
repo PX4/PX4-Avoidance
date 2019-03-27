@@ -148,6 +148,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/planner_functions.cpp"
                               "src/nodes/common.cpp"
                               "src/nodes/local_planner_node.cpp"
+                              "src/nodes/local_planner_visualization.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
