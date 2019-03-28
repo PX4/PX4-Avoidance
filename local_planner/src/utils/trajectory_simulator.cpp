@@ -77,9 +77,9 @@ std::vector<simulation_state> TrajectorySimulator::generate_trajectory(
   return timepoints;
 }
 
-simulation_state TrajectorySimulator::simulate_step_constant_jerk(const simulation_state& state,
-                                             const Eigen::Vector3f& jerk,
-                                             float step_time) {
+simulation_state TrajectorySimulator::simulate_step_constant_jerk(
+    const simulation_state& state, const Eigen::Vector3f& jerk,
+    float step_time) {
   simulation_state next_state;
   next_state.position = state.position + step_time * state.velocity +
                         0.5f * sqr(step_time) * state.acceleration +
