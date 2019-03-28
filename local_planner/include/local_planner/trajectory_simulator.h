@@ -19,18 +19,29 @@ struct simulation_limits {
   float max_jerk_norm = NAN;
 };
 
-std::vector<simulation_state> velocity_trajectory(
-    const simulation_limits& config, const simulation_state& start,
-    const Eigen::Vector3f& goal_direction, float step_time, int num_steps);
+class TrajectorySimulator {
+ public:
+  TrajectorySimulator(const simulation_limits& config,
+                      const simulation_state& start, float step_time = 0.1f);
 
-simulation_state simulate_step_constant_jerk(const simulation_state& state,
-                                             const Eigen::Vector3f& jerk,
-                                             float step_time);
+  std::vector<simulation_state> generate_trajectory(
+      const Eigen::Vector3f& goal_direction, float simulation_duration);
 
-Eigen::Vector3f jerk_for_velocity_setpoint(
-    float P_constant, float D_constant, float max_jerk_norm,
-    const Eigen::Vector3f& desired_velocity, const simulation_state& state);
+ protected:
+  const simulation_limits config_;
+  const simulation_state start_;
+  const float step_time_;
 
+  static simulation_state simulate_step_constant_jerk(
+      const simulation_state& state, const Eigen::Vector3f& jerk,
+      float step_time);
+
+  static Eigen::Vector3f jerk_for_velocity_setpoint(
+      float P_constant, float D_constant, float max_jerk_norm,
+      const Eigen::Vector3f& desired_velocity, const simulation_state& state);
+};
+
+// templated helper function
 template <int N>
 Eigen::Matrix<float, N, 1> norm_clamp(const Eigen::Matrix<float, N, 1>& val,
                                       float max_norm) {
