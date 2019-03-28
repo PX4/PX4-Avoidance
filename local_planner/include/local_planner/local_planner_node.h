@@ -101,7 +101,8 @@ enum class MAV_STATE {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const bool tf_spin_thread = true);
+  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
+                   const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   mavros_msgs::CompanionProcessStatus status_msg_;
@@ -229,10 +230,10 @@ class LocalPlannerNode {
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& planner_is_healthy, bool& hover);
 
-  const ros::NodeHandle& nodeHandle() const { return nh_; }
-
  private:
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
+
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   mavros_msgs::Altitude ground_distance_msg_;

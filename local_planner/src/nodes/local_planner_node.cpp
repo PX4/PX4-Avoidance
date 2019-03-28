@@ -15,10 +15,13 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode(const bool tf_spin_thread) {
+LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
+                                   const ros::NodeHandle& nh_private,
+                                   const bool tf_spin_thread)
+    : nh_(nh), nh_private_(nh_private) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-  nh_ = ros::NodeHandle("~");
+
   readParams();
 
   tf_listener_ = new tf::TransformListener(
