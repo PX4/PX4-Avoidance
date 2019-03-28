@@ -5,26 +5,31 @@
 using namespace avoidance;
 
 void expect_respects_limits(simulation_limits config, simulation_state start,
-                            float step_time, int num_steps,
+                            int num_steps,
                             const std::vector<simulation_state>& steps) {
   const simulation_state* last_step = &start;
   EXPECT_EQ(num_steps, steps.size());
   for (const auto& step : steps) {
+    float step_time = step.time - last_step->time;
     Eigen::Vector3f jerk =
         (step.acceleration - last_step->acceleration) / step_time;
     last_step = &step;
 
-    EXPECT_LE(jerk.norm(), config.max_jerk_norm);
-    EXPECT_LE(step.acceleration.norm(), config.max_acceleration_norm);
-    EXPECT_LE(step.velocity.topRows<2>().norm(), config.max_xy_velocity_norm);
+    const float eps = 1e-5f;
+    EXPECT_LE(jerk.norm(), config.max_jerk_norm + eps) << " step time: "
+                                                       << step_time;
+    EXPECT_LE(step.acceleration.norm(), config.max_acceleration_norm + eps);
+    EXPECT_LE(step.velocity.topRows<2>().norm(),
+              config.max_xy_velocity_norm + eps);
   }
 }
 
 void expect_goes_in_goal_direction(Eigen::Vector3f goal_dir,
-                                   simulation_state start, float step_time,
+                                   simulation_state start,
                                    const std::vector<simulation_state>& steps) {
   const simulation_state* last_step = &start;
   for (const auto& step : steps) {
+    float step_time = step.time - last_step->time;
     Eigen::Vector3f jerk =
         (step.acceleration - last_step->acceleration) / step_time;
     last_step = &step;
@@ -37,9 +42,30 @@ void expect_goes_in_goal_direction(Eigen::Vector3f goal_dir,
     Eigen::Vector3f vel_dir_error =
         step.velocity.normalized() - goal_dir.normalized();
 
-    if (vel_dir_error.dot(step.acceleration.normalized()) < 0) {
-      EXPECT_GE(jerk.dot(goal_dir), 0);
+    if (vel_dir_error.dot(step.acceleration.normalized()) > 0) {
+      EXPECT_LE(jerk.dot(vel_dir_error), 0)
+          << "vel err:" << vel_dir_error.transpose()
+          << "  accel: " << step.acceleration.transpose()
+          << "  jerk:" << jerk.transpose();
     }
+  }
+}
+
+void print_states(simulation_state start,
+                  const std::vector<simulation_state>& steps) {
+  std::cout << std::endl;
+  const simulation_state* last_step = &start;
+  for (const auto& step : steps) {
+    float step_time = step.time - last_step->time;
+    Eigen::Vector3f jerk =
+        (step.acceleration - last_step->acceleration) / step_time;
+    last_step = &step;
+
+    std::cout << "jer: " << jerk.transpose();
+    std::cout << "    acc: " << step.acceleration.transpose();
+    std::cout << "    vel: " << step.velocity.transpose();
+    std::cout << "    pos: " << step.position.transpose();
+    std::cout << "    time: " << step.time << std::endl;
   }
 }
 
@@ -84,13 +110,13 @@ TEST(TrajectorySimulator, givesEmptyListWithNoSteps) {
   // GIVEN: a starting point, and not set up simulation limits
   simulation_state state;
   simulation_limits config;
-  Eigen::Vector3f goal_dir;
-  float step_time = 0.01;
+  Eigen::Vector3f goal_dir = Eigen::Vector3f::Zero();
+  float step_time = 0.1;
 
   // WHEN: we get the list of trajectories with 0 steps
   int num_steps = 0;
   std::vector<simulation_state> steps =
-      run_steps(config, state, goal_dir, step_time, num_steps);
+      velocity_trajectory(config, state, goal_dir, step_time, num_steps);
 
   // THEN: we should get an empty list
   EXPECT_EQ(0, steps.size());
@@ -117,7 +143,7 @@ TEST(TrajectorySimulator, givesConstantVelWhenVelCorrect) {
   // WHEN: we get the list of trajectories with 0 steps
   int num_steps = 10;
   std::vector<simulation_state> steps =
-      run_steps(config, state, goal_dir, step_time, num_steps);
+      velocity_trajectory(config, state, goal_dir, step_time, num_steps);
 
   // THEN: we should get a list with all the same velocity, zero accel
   EXPECT_EQ(num_steps, steps.size());
@@ -126,7 +152,7 @@ TEST(TrajectorySimulator, givesConstantVelWhenVelCorrect) {
     EXPECT_TRUE(step.acceleration.norm() < 1e-5);
   }
   EXPECT_NO_FATAL_FAILURE(
-      expect_respects_limits(config, state, step_time, num_steps, steps));
+      expect_respects_limits(config, state, num_steps, steps));
 }
 
 TEST(TrajectorySimulator, acceleratesToConstantVel) {
@@ -141,20 +167,68 @@ TEST(TrajectorySimulator, acceleratesToConstantVel) {
   config.max_z_velocity = 1.f;
   config.min_z_velocity = -0.5f;
   config.max_xy_velocity_norm = 3.f;
-  config.max_acceleration_norm = 3.f;
+  config.max_acceleration_norm = 4.f;
   config.max_jerk_norm = 20.f;
 
   Eigen::Vector3f goal_dir(1.f, 0.f, 0.f);
   float step_time = 0.1;
 
   // WHEN: we get the list of trajectories with 0 steps
-  int num_steps = 300;
+  int num_steps = 100;
   std::vector<simulation_state> steps =
-      run_steps(config, state, goal_dir, step_time, num_steps);
+      velocity_trajectory(config, state, goal_dir, step_time, num_steps);
 
   // THEN: we should get a list where it moves in the goal direction
   EXPECT_NO_FATAL_FAILURE(
-      expect_respects_limits(config, state, step_time, num_steps, steps));
+      expect_goes_in_goal_direction(goal_dir, state, steps));
+
+  // AND: it should respect the configured limits
   EXPECT_NO_FATAL_FAILURE(
-      expect_goes_in_goal_direction(goal_dir, state, step_time, steps));
+      expect_respects_limits(config, state, num_steps, steps));
+
+  // AND: it should, at the end, have reached the goal velocity
+  simulation_state last = steps[steps.size() - 1];
+  EXPECT_LT((last.velocity.normalized() - goal_dir.normalized()).norm(), 1e-5);
+  EXPECT_LT(last.acceleration.norm(), 1e-5);
+
+  //   print_states(state, steps);
+}
+
+TEST(TrajectorySimulator, acceleratesSidewaysToConstantVel) {
+  // GIVEN: a starting point
+  simulation_state state;
+  state.position = Eigen::Vector3f::Zero();
+  state.velocity << 3.f, 0.f, 0.f;
+  state.acceleration = Eigen::Vector3f::Zero();
+  state.time = 0.f;
+
+  simulation_limits config;
+  config.max_z_velocity = 1.f;
+  config.min_z_velocity = -0.5f;
+  config.max_xy_velocity_norm = 3.f;
+  config.max_acceleration_norm = 4.f;
+  config.max_jerk_norm = 20.f;
+
+  Eigen::Vector3f goal_dir(0.f, 1.f, 0.f);
+  float step_time = 0.1;
+
+  // WHEN: we get the list of trajectories with 0 steps
+  int num_steps = 100;
+  std::vector<simulation_state> steps =
+      velocity_trajectory(config, state, goal_dir, step_time, num_steps);
+
+  // THEN: we should get a list where it moves in the goal direction
+  EXPECT_NO_FATAL_FAILURE(
+      expect_goes_in_goal_direction(goal_dir, state, steps));
+
+  // AND: it should respect the configured limits
+  EXPECT_NO_FATAL_FAILURE(
+      expect_respects_limits(config, state, num_steps, steps));
+
+  // AND: it should, at the end, have reached the goal velocity
+  simulation_state last = steps[steps.size() - 1];
+  EXPECT_LT((last.velocity.normalized() - goal_dir.normalized()).norm(), 1e-5);
+  EXPECT_LT(last.acceleration.norm(), 1e-5);
+
+  //   print_states(state, steps);
 }
