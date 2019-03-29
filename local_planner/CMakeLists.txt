@@ -149,6 +149,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/common.cpp"
                               "src/nodes/local_planner_node.cpp"
                               "src/nodes/local_planner_visualization.cpp"
+                              "src/utils/trajectory_simulator.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
@@ -220,29 +221,30 @@ target_link_libraries(local_planner_node
 #############
 
 if(CATKIN_ENABLE_TESTING)
-	# Add gtest based cpp test target and link libraries
-	catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
-	                                      test/test_example.cpp
-	                                      test/test_common.cpp
-	                                      test/test_local_planner.cpp
-	                                      test/test_planner_functions.cpp
-                                             test/test_star_planner.cpp
-                                             test/test_waypoint_generator.cpp)
+    # Add gtest based cpp test target and link libraries
+    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
+                                          test/test_example.cpp
+                                          test/test_common.cpp
+                                          test/test_local_planner.cpp
+                                          test/test_planner_functions.cpp
+                                          test/test_star_planner.cpp
+                                          test/test_trajectory_simulator.cpp
+                                          test/test_waypoint_generator.cpp)
 
   catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
                                         test/test_local_planner_node.cpp)
-	if(TARGET ${PROJECT_NAME}-test)
-	  target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
-	                                             ${catkin_LIBRARIES}
-	                                             ${YAML_CPP_LIBRARIES})
-	endif()
+    if(TARGET ${PROJECT_NAME}-test)
+      target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
+                                                 ${catkin_LIBRARIES}
+                                                 ${YAML_CPP_LIBRARIES})
+    endif()
 
   if(TARGET ${PROJECT_NAME}-test-roscore)
-	  target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
-	                                             ${catkin_LIBRARIES}
-	                                             ${YAML_CPP_LIBRARIES})
-	endif()
+      target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
+                                                 ${catkin_LIBRARIES}
+                                                 ${YAML_CPP_LIBRARIES})
+    endif()
 
-	## Add folders to be run by python nosetests
-	# catkin_add_nosetests(test)
+    ## Add folders to be run by python nosetests
+    # catkin_add_nosetests(test)
 endif()
