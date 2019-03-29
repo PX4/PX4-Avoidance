@@ -267,6 +267,13 @@ class LocalPlannerNode {
   NavigationState nav_state_ = NavigationState::none;
   bool new_goal_ = false;
   bool data_ready_ = false;
+  bool hover_;
+  bool planner_is_healthy_;
+  bool startup_;
+  bool callPx4Params_;
+  ros::Time start_time_;
+
+
   double spin_dt_;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
