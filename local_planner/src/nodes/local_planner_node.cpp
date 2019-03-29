@@ -100,6 +100,9 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   planner_is_healthy_ = true;
   startup_ = true;
   callPx4Params_ = true;
+  mission_ = false;
+  offboard_ = false;
+  armed_ = false;
   start_time_ = ros::Time::now();
 }
 
