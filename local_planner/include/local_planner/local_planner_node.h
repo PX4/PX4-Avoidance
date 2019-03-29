@@ -113,7 +113,6 @@ class LocalPlannerNode {
   WorldVisualizer world_visualizer_;
 #endif
 
-
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
 
@@ -212,7 +211,6 @@ class LocalPlannerNode {
   void checkPx4Parameters();
 
  private:
-
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
   ros::NodeHandle nh_;
