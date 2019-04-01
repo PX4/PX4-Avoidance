@@ -84,11 +84,11 @@ TEST(PlannerFunctions, calculateFOV) {
   float h_fov = 90.0f;
   float v_fov = 45.0f;
   float yaw_z_greater_grid_length =
-      3.14f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
+      270.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
   float yaw_z_max_greater_grid =
-      -2.3f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
-  float yaw_z_min_smaller_zero = 3.9f;  // z_FOV_min < 0 && z_FOV_max >= 0
-  float yaw_z_smaller_zero = 5.6f;      // z_FOV_max < 0 && z_FOV_min < 0
+      210.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
+  float yaw_z_min_smaller_zero = -140.f;  // z_FOV_min < 0 && z_FOV_max >= 0
+  float yaw_z_smaller_zero = -235.f;      // z_FOV_max < 0 && z_FOV_min < 0
   float pitch = 0.0f;
 
   // WHEN: we calculate the Field of View
@@ -110,16 +110,24 @@ TEST(PlannerFunctions, calculateFOV) {
 
   // THEN: we expect polar histogram indexes that are in the Field of View
   std::vector<int> output_z_greater_grid_length = {
-      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
-  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6, 7,
-                                                8, 9, 10, 11, 12, 58, 59};
-  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6, 7,
-                                                8, 9, 10, 11, 12, 13, 59};
+      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                8, 9, 10, 11, 12, 57, 58, 59};
+  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                8, 9, 10, 11, 12, 13, 14, 59};
   std::vector<int> output_z_smaller_zero = {43, 44, 45, 46, 47, 48, 49, 50,
                                             51, 52, 53, 54, 55, 56, 57, 58};
 
   EXPECT_EQ(18, e_FOV_max);
-  EXPECT_EQ(10, e_FOV_min);
+  EXPECT_EQ(11, e_FOV_min);
+
+  // vector sizes:
+  EXPECT_EQ(output_z_greater_grid_length.size(),
+            z_FOV_idx_z_greater_grid_length.size());
+  EXPECT_EQ(output_z_max_greater_grid.size(), output_z_max_greater_grid.size());
+  EXPECT_EQ(output_z_min_smaller_zero.size(), output_z_min_smaller_zero.size());
+  EXPECT_EQ(output_z_smaller_zero.size(), output_z_smaller_zero.size());
+
   for (size_t i = 0; i < z_FOV_idx_z_greater_grid_length.size(); i++) {
     EXPECT_EQ(output_z_greater_grid_length.at(i),
               z_FOV_idx_z_greater_grid_length.at(i));

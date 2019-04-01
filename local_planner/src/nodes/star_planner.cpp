@@ -36,7 +36,7 @@ void StarPlanner::setFOV(float h_FOV, float v_FOV) {
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
   position_ = pos;
-  curr_yaw_fcu_frame_ = curr_yaw;
+  curr_yaw_histogram_frame_deg_ = curr_yaw;
 }
 
 void StarPlanner::setCloud(
@@ -56,7 +56,7 @@ void StarPlanner::setReprojectedPoints(
   reprojected_points_age_ = reprojected_points_age;
 }
 
-float StarPlanner::treeCostFunction(int node_number) {
+float StarPlanner::treeCostFunction(int node_number) const {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
@@ -96,7 +96,7 @@ float StarPlanner::treeCostFunction(int node_number) {
                   static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
-float StarPlanner::treeHeuristicFunction(int node_number) {
+float StarPlanner::treeHeuristicFunction(int node_number) const {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, node_position);
 
@@ -123,9 +123,7 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, position_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ =
-      std::round((-curr_yaw_fcu_frame_ * 180.0f / M_PI_F)) +
-      90.0f;  // from radian to angle and shift reference to y-axis
+  tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;

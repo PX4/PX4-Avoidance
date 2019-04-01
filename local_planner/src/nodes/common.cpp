@@ -6,7 +6,6 @@
 #include <limits>
 #include <vector>
 
-#include <tf/transform_listener.h>
 namespace avoidance {
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
@@ -116,19 +115,22 @@ void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
 }
 
 float getYawFromQuaternion(const Eigen::Quaternionf q) {
-  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
-  tf::Matrix3x3 tf_m(tf_q);
-  double roll, pitch, yaw;
-  tf_m.getRPY(roll, pitch, yaw);
-  return static_cast<float>(yaw);
+  float siny_cosp = 2.f * (q.w() * q.z() + q.x() * q.y());
+  float cosy_cosp = 1.f - 2.f * (q.y() * q.y() + q.z() * q.z());
+  float yaw = atan2(siny_cosp, cosy_cosp);
+
+  return yaw * RAD_TO_DEG;
 }
 
 float getPitchFromQuaternion(const Eigen::Quaternionf q) {
-  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
-  tf::Matrix3x3 tf_m(tf_q);
-  double roll, pitch, yaw;
-  tf_m.getRPY(roll, pitch, yaw);
-  return static_cast<float>(pitch);
+  float pitch = 0.f;
+  float sinp = 2.f * (q.w() * q.y() - q.z() * q.x());
+  if (fabs(sinp) >= 1.f) {
+    pitch = copysign(M_PI / 2.f, sinp);  // use PI/2 if out of range
+  } else {
+    pitch = asin(sinp);
+  }
+  return pitch * RAD_TO_DEG;
 }
 
 void wrapAngleToPlusMinusPI(float& angle) {

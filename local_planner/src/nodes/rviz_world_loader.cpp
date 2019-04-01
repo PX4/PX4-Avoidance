@@ -4,31 +4,14 @@
 
 namespace avoidance {
 
-// extraction operators
-void operator>>(const YAML::Node& node, Eigen::Vector3f& v) {
-  v.x() = node[0].as<float>();
-  v.y() = node[1].as<float>();
-  v.z() = node[2].as<float>();
+WorldVisualizer::WorldVisualizer() {}
+
+void WorldVisualizer::initializePublishers(ros::NodeHandle& nh) {
+  world_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/world", 1);
+  drone_pub_ = nh.advertise<visualization_msgs::Marker>("/drone", 1);
 }
 
-void operator>>(const YAML::Node& node, Eigen::Vector4f& v) {
-  v.x() = node[0].as<float>();
-  v.y() = node[1].as<float>();
-  v.z() = node[2].as<float>();
-  v.w() = node[3].as<float>();
-}
-
-void operator>>(const YAML::Node& node, world_object& item) {
-  item.type = node["type"].as<std::string>();
-  item.name = node["name"].as<std::string>();
-  item.frame_id = node["frame_id"].as<std::string>();
-  item.mesh_resource = node["mesh_resource"].as<std::string>();
-  node["position"] >> item.position;
-  node["orientation"] >> item.orientation;
-  node["scale"] >> item.scale;
-}
-
-int resolveUri(std::string& uri) {
+int WorldVisualizer::resolveUri(std::string& uri) {
   // Iterate through all locations in GAZEBO_MODEL_PATH
   char* gazebo_model_path = getenv("GAZEBO_MODEL_PATH");
   char* home = getenv("HOME");
@@ -52,11 +35,11 @@ int resolveUri(std::string& uri) {
   return 1;
 }
 
-int visualizeRVIZWorld(const std::string& world_path,
-                       visualization_msgs::MarkerArray& marker_array) {
+int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
   std::ifstream fin(world_path);
   YAML::Node doc = YAML::Load(fin);
   size_t object_counter = 0;
+  visualization_msgs::MarkerArray marker_array;
 
   for (YAML::const_iterator it = doc.begin(); it != doc.end(); ++it) {
     const YAML::Node& node = *it;
@@ -122,12 +105,13 @@ int visualizeRVIZWorld(const std::string& world_path,
     ROS_ERROR("Could not display all world objects");
   }
 
+  world_pub_.publish(marker_array);
   ROS_INFO("Successfully loaded rviz world");
   return 0;
 }
 
-int visualizeDrone(const geometry_msgs::PoseStamped& pose,
-                   visualization_msgs::Marker& drone) {
+int WorldVisualizer::visualizeDrone(const geometry_msgs::PoseStamped& pose) {
+  visualization_msgs::Marker drone;
   drone.header.frame_id = "local_origin";
   drone.header.stamp = ros::Time::now();
   drone.type = visualization_msgs::Marker::MESH_RESOURCE;
@@ -153,6 +137,32 @@ int visualizeDrone(const geometry_msgs::PoseStamped& pose,
   drone.lifetime = ros::Duration();
   drone.action = visualization_msgs::Marker::ADD;
 
+  drone_pub_.publish(drone);
+
   return 0;
+}
+
+// extraction operators
+void operator>>(const YAML::Node& node, Eigen::Vector3f& v) {
+  v.x() = node[0].as<float>();
+  v.y() = node[1].as<float>();
+  v.z() = node[2].as<float>();
+}
+
+void operator>>(const YAML::Node& node, Eigen::Vector4f& v) {
+  v.x() = node[0].as<float>();
+  v.y() = node[1].as<float>();
+  v.z() = node[2].as<float>();
+  v.w() = node[3].as<float>();
+}
+
+void operator>>(const YAML::Node& node, world_object& item) {
+  item.type = node["type"].as<std::string>();
+  item.name = node["name"].as<std::string>();
+  item.frame_id = node["frame_id"].as<std::string>();
+  item.mesh_resource = node["mesh_resource"].as<std::string>();
+  node["position"] >> item.position;
+  node["orientation"] >> item.orientation;
+  node["scale"] >> item.scale;
 }
 }

@@ -28,7 +28,7 @@ class StarPlanner {
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
   float max_path_length_ = 4.f;
-  float curr_yaw_fcu_frame_;
+  float curr_yaw_histogram_frame_deg_ = 90.f;
   float smoothing_margin_degrees_ = 30.f;
 
   std::vector<int> reprojected_points_age_;
@@ -48,14 +48,14 @@ class StarPlanner {
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeCostFunction(int node_number);
+  float treeCostFunction(int node_number) const;
 
   /**
   * @brief     computes the heuristic for a node
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeHeuristicFunction(int node_number);
+  float treeHeuristicFunction(int node_number) const;
 
  public:
   std::vector<Eigen::Vector3f> path_node_positions_;

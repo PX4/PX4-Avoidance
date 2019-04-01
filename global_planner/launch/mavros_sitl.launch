@@ -16,6 +16,7 @@
 
     <!-- Launch PX4 SITL -->
     <include file="$(find px4)/launch/px4.launch">
+      <arg name="vehicle" default="iris_obs_avoid"/>
     </include>
 
     <!-- Launch MavROS -->
