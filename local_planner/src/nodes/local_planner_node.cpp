@@ -399,6 +399,10 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     printf("model parameter jerk minimum is set from  %f to %f \n",
            local_planner_->model_params_.param_mpc_jerk_min, msg.value.real);
     local_planner_->model_params_.param_mpc_jerk_min = msg.value.real;
+  }  else if (msg.param_id == "MPC_JERK_MAX") {
+    printf("model parameter jerk maximum is set from  %f to %f \n",
+           local_planner_->model_params_.param_mpc_jerk_max, msg.value.real);
+    local_planner_->model_params_.param_mpc_jerk_max = msg.value.real;
   } else if (msg.param_id == "MPC_LAND_SPEED") {
     printf("model parameter landing speed is set from  %f to %f \n",
            local_planner_->model_params_.param_mpc_land_speed, msg.value.real);

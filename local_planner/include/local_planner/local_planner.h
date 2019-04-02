@@ -47,7 +47,8 @@ class TreeNode;
 struct ModelParameters {
   // clang-format off
   int param_mpc_auto_mode = 1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
-  float param_mpc_jerk_min = 8.0f; // Velocity-based jerk limit
+  float param_mpc_jerk_min = 8.0f; // Velocity-based minimum jerk limit
+  float param_mpc_jerk_max = 20.f; // Velocity-based maximum jerk limit
   float param_acc_up_max = 10.0f;   // Maximum vertical acceleration in velocity controlled modes upward
   float param_mpc_z_vel_max_up = 3.0f;   // Maximum vertical ascent velocity
   float param_mpc_acc_down_max = 10.0f; // Maximum vertical acceleration in velocity controlled modes down
