@@ -60,6 +60,8 @@ struct ModelParameters {
   // limitations given by sensors
   float param_ekf2_rng_a_hmax = 5.0f;
   float param_ekf2_rng_a_vmax = 5.0f;
+
+  float param_mpc_col_prev_d = -1.0f; // Collision Prevention distance to keep from obstacle. -1 for disabled
   // clang-format on
 };
 
@@ -80,7 +82,7 @@ class LocalPlanner {
   float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
                           // fcu frame
   float velocity_around_obstacles_;
-  float velocity_far_from_obstacles_;
+  float keep_distance_;
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;

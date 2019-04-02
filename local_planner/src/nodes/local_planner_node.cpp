@@ -419,6 +419,10 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     printf("model parameter velocity up is set from  %f to %f \n",
            local_planner_->model_params_.param_mpc_z_vel_max_up, msg.value.real);
     local_planner_->model_params_.param_mpc_z_vel_max_up = msg.value.real;
+  } else if (msg.param_id == "MPC_COL_PREV_D") {
+    printf("model parameter collision prevention distance is set from  %f to %f \n",
+           local_planner_->model_params_.param_mpc_col_prev_d, msg.value.real);
+    local_planner_->model_params_.param_mpc_col_prev_d = msg.value.real;
   }
 }
 
