@@ -34,6 +34,35 @@ namespace avoidance {
 class StarPlanner;
 class TreeNode;
 
+/**
+* @brief struct to contain the parameters needed for the model based trajectory
+*planning
+* when MPC_AUTO_MODE is set to 1 (default) then all members are used for the
+*jerk limited
+* trajectory on the flight controller side
+* when MPC_AUTO_MODE is set to 0, only up_accl, down_accl, xy_acc are used on
+*the
+* flight controller side
+**/
+struct ModelParameters {
+  // clang-format off
+  int param_mpc_auto_mode = 1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
+  float param_mpc_jerk_min = 8.0f; // Velocity-based jerk limit
+  float param_acc_up_max = 10.0f;   // Maximum vertical acceleration in velocity controlled modes upward
+  float param_mpc_z_vel_max_up = 3.0f;   // Maximum vertical ascent velocity
+  float param_mpc_acc_down_max = 10.0f; // Maximum vertical acceleration in velocity controlled modes down
+  float param_mpc_vel_max_dn = 1.0f; // Maximum vertical descent velocity
+  float param_mpc_acc_hor = 5.0f;  // Maximum horizontal acceleration for auto mode and
+                      // maximum deceleration for manual mode
+  float param_mpc_xy_cruise = 1.0f;   // Desired horizontal velocity in mission
+  float param_mpc_tko_speed = 1.0f; // Takeoff climb rate
+  float param_mpc_land_speed = 0.7f;   // Landing descend rate
+  // limitations given by sensors
+  float param_ekf2_rng_a_hmax = 5.0f;
+  float param_ekf2_rng_a_vmax = 5.0f;
+  // clang-format on
+};
+
 class LocalPlanner {
  private:
   bool adapt_cost_params_;
@@ -130,6 +159,8 @@ class LocalPlanner {
   double starting_height_ = 0.0;
   float speed_ = 1.0f;
   float ground_distance_ = 2.0;
+
+  ModelParameters model_params_; // PX4 Firmware paramters
 
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
   sensor_msgs::LaserScan distance_data_ = {};
