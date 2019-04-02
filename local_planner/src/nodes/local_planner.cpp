@@ -110,7 +110,6 @@ void LocalPlanner::runPlanner() {
 void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // construct histogram if it is needed
   // or if it is required by the FCU
-  reprojectPoints(polar_histogram_);
   Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
   Histogram new_histogram = Histogram(ALPHA_RES);
   to_fcu_histogram_.setZero();
@@ -125,6 +124,9 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
     updateObstacleDistanceMsg(to_fcu_histogram_);
   }
   polar_histogram_ = new_histogram;
+
+  // create 3D points from combined histogram
+  reprojectPoints(polar_histogram_);
 
   // generate histogram image for logging
   generateHistogramImage(polar_histogram_);
@@ -225,7 +227,6 @@ void LocalPlanner::determineStrategy() {
           star_planner_->setFOV(h_FOV_, v_FOV_);
           star_planner_->setReprojectedPoints(reprojected_points_,
                                               reprojected_points_age_);
-          star_planner_->setCloud(final_cloud_);
 
           // set last chosen direction for smoothing
           PolarPoint last_wp_pol =

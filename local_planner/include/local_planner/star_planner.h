@@ -34,7 +34,6 @@ class StarPlanner {
   std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> pointcloud_;
   pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -108,12 +107,6 @@ class StarPlanner {
   * @param[in] goal, current goal position
   **/
   void setGoal(const Eigen::Vector3f& pose);
-
-  /**
-  * @brief     setter method for pointcloud
-  * @param[in] cropped_cloud, current point cloud cropped around the vehicle
-  **/
-  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
 
   /**
   * @brief     build tree of candidates directions towards the goal
