@@ -381,51 +381,51 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
     local_planner_->px4_.param_ekf2_rng_a_vmax = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
     ROS_INFO("parameter acceleration down is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_acc_down_max, msg.value.real);
+             local_planner_->px4_.param_mpc_acc_down_max, msg.value.real);
     local_planner_->px4_.param_mpc_acc_down_max = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_HOR") {
     ROS_INFO("parameter acceleration horizontal is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_acc_hor, msg.value.real);
+             local_planner_->px4_.param_mpc_acc_hor, msg.value.real);
     local_planner_->px4_.param_mpc_acc_hor = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_UP_MAX") {
     ROS_INFO("parameter acceleration up is set from  %f to %f \n",
-           local_planner_->px4_.param_acc_up_max, msg.value.real);
+             local_planner_->px4_.param_acc_up_max, msg.value.real);
     local_planner_->px4_.param_acc_up_max = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
     ROS_INFO("parameter auto mode is set from  %i to %li \n",
-           local_planner_->px4_.param_mpc_auto_mode, msg.value.integer);
+             local_planner_->px4_.param_mpc_auto_mode, msg.value.integer);
     local_planner_->px4_.param_mpc_auto_mode = msg.value.integer;
   } else if (msg.param_id == "MPC_JERK_MIN") {
     ROS_INFO("parameter jerk minimum is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_jerk_min, msg.value.real);
+             local_planner_->px4_.param_mpc_jerk_min, msg.value.real);
     local_planner_->px4_.param_mpc_jerk_min = msg.value.real;
-  }  else if (msg.param_id == "MPC_JERK_MAX") {
+  } else if (msg.param_id == "MPC_JERK_MAX") {
     ROS_INFO("parameter jerk maximum is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_jerk_max, msg.value.real);
+             local_planner_->px4_.param_mpc_jerk_max, msg.value.real);
     local_planner_->px4_.param_mpc_jerk_max = msg.value.real;
   } else if (msg.param_id == "MPC_LAND_SPEED") {
     ROS_INFO("parameter landing speed is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_land_speed, msg.value.real);
+             local_planner_->px4_.param_mpc_land_speed, msg.value.real);
     local_planner_->px4_.param_mpc_land_speed = msg.value.real;
   } else if (msg.param_id == "MPC_TKO_SPEED") {
     ROS_INFO("parameter takeoff speed is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_tko_speed, msg.value.real);
+             local_planner_->px4_.param_mpc_tko_speed, msg.value.real);
     local_planner_->px4_.param_mpc_tko_speed = msg.value.real;
   } else if (msg.param_id == "MPC_XY_CRUISE") {
     ROS_INFO("parameter velocity horizontal is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_xy_cruise, msg.value.real);
+             local_planner_->px4_.param_mpc_xy_cruise, msg.value.real);
     local_planner_->px4_.param_mpc_xy_cruise = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
     ROS_INFO("parameter velocity down is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_vel_max_dn, msg.value.real);
+             local_planner_->px4_.param_mpc_vel_max_dn, msg.value.real);
     local_planner_->px4_.param_mpc_vel_max_dn = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
     ROS_INFO("parameter velocity up is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_z_vel_max_up, msg.value.real);
+             local_planner_->px4_.param_mpc_z_vel_max_up, msg.value.real);
     local_planner_->px4_.param_mpc_z_vel_max_up = msg.value.real;
   } else if (msg.param_id == "MPC_COL_PREV_D") {
     ROS_INFO("parameter collision prevention distance is set from  %f to %f \n",
-           local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
+             local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
     local_planner_->px4_.param_mpc_col_prev_d = msg.value.real;
   }
 }
