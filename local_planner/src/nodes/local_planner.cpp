@@ -40,7 +40,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_around_obstacles_);
   velocity_far_from_obstacles_ =
       static_cast<float>(config.velocity_far_from_obstacles_);
-  keep_distance_ = config.keep_distance_;
   reproj_age_ = static_cast<float>(config.reproj_age_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
@@ -61,7 +60,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   }
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
-  stop_in_front_ = config.stop_in_front_;
   use_back_off_ = config.use_back_off_;
   use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
@@ -87,8 +85,6 @@ void LocalPlanner::applyGoal() {
 }
 
 void LocalPlanner::runPlanner() {
-  stop_in_front_active_ = false;
-
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
            static_cast<int>(complete_cloud_.size()));
 
@@ -172,17 +168,6 @@ void LocalPlanner::determineStrategy() {
     if (send_obstacles_fcu_) {
       create2DObstacleRepresentation(true);
     }
-  } else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ &&
-             reach_altitude_) {
-    obstacle_ = true;
-    ROS_INFO(
-        "\033[1;35m[OA] There is an Obstacle Ahead stop in front\n \033[0m");
-    stopInFrontObstacles();
-    waypoint_type_ = direct;
-
-    if (send_obstacles_fcu_) {
-      create2DObstacleRepresentation(true);
-    }
   } else {
     if (((counter_close_points_backoff_ > 200 &&
           final_cloud_.points.size() > min_cloud_size_) ||
@@ -245,9 +230,7 @@ void LocalPlanner::determineStrategy() {
           getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
 
           if (candidate_vector_.empty()) {
-            stopInFrontObstacles();
             waypoint_type_ = direct;
-            stop_in_front_ = true;
             ROS_INFO(
                 "\033[1;35m[OA] All directions blocked: Stopping in front "
                 "obstacle. \n \033[0m");
@@ -258,8 +241,6 @@ void LocalPlanner::determineStrategy() {
           }
         }
       }
-
-      first_brake_ = true;
     }
   }
   position_old_ = position_;
@@ -423,25 +404,6 @@ void LocalPlanner::evaluateProgressRate() {
     cost_params_.height_change_cost_param_adapted =
         cost_params_.height_change_cost_param;
   }
-}
-
-// stop in front of an obstacle at a distance defined by the variable
-// keep_distance_
-void LocalPlanner::stopInFrontObstacles() {
-  if (first_brake_) {
-    float braking_distance =
-        std::abs(distance_to_closest_point_ - keep_distance_);
-    Eigen::Vector2f xyPos = position_.topRows<2>();
-    Eigen::Vector2f pose_to_goal = goal_.topRows<2>() - xyPos;
-    goal_.topRows<2>() =
-        xyPos + braking_distance * pose_to_goal / pose_to_goal.norm();
-    first_brake_ = false;
-    stop_in_front_active_ = true;
-  }
-  ROS_INFO(
-      "\033[0;35m [OA] New Stop Goal: [%.2f %.2f %.2f], obstacle distance "
-      "%.2f. \033[0m",
-      goal_.x(), goal_.y(), goal_.z(), distance_to_closest_point_);
 }
 
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }

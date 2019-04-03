@@ -39,11 +39,9 @@ class LocalPlanner {
   bool use_back_off_;
   bool use_VFH_star_;
   bool adapt_cost_params_;
-  bool stop_in_front_;
 
   bool reach_altitude_ = false;
   bool obstacle_ = false;
-  bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
   bool back_off_ = false;
   bool hist_is_empty_ = false;
@@ -62,7 +60,6 @@ class LocalPlanner {
                           // fcu frame
   float velocity_around_obstacles_;
   float velocity_far_from_obstacles_;
-  float keep_distance_;
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;
@@ -117,10 +114,6 @@ class LocalPlanner {
   **/
   void evaluateProgressRate();
   /**
-  * @brief     stops the vehicle in front of an obstacle
-  **/
-  void stopInFrontObstacles();
-  /**
   * @brief     fills message to send histogram to the FCU
   **/
   void updateObstacleDistanceMsg(Histogram hist);
@@ -152,7 +145,6 @@ class LocalPlanner {
   bool mission_ = false;
   bool smooth_waypoints_ = true;
   bool send_obstacles_fcu_ = false;
-  bool stop_in_front_active_ = false;
   bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_critical_;
