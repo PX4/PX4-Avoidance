@@ -33,15 +33,6 @@ void WaypointGenerator::calculateWaypoint() {
       getPathMsg();
       break;
     }
-    case costmap: {
-      PolarPoint p_pol(planner_info_.costmap_direction_e,
-                       planner_info_.costmap_direction_z, 1.0);
-      output_.goto_position = polarToCartesian(p_pol, position_);
-      ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x(),
-                output_.goto_position.y(), output_.goto_position.z());
-      getPathMsg();
-      break;
-    }
 
     case tryPath: {
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);

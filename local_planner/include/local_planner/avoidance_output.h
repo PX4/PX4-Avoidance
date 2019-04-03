@@ -7,7 +7,7 @@
 
 namespace avoidance {
 
-enum waypoint_choice { hover, costmap, tryPath, direct, reachHeight, goBack };
+enum waypoint_choice { hover, tryPath, direct, reachHeight, goBack };
 
 struct avoidanceOutput {
   waypoint_choice waypoint_type;

@@ -37,7 +37,6 @@ class TreeNode;
 class LocalPlanner {
  private:
   bool use_back_off_;
-  bool use_VFH_star_;
   bool adapt_cost_params_;
 
   bool reach_altitude_ = false;

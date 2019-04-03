@@ -475,12 +475,6 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
       setpoint.color.b = 0.0;
       break;
     }
-    case costmap: {
-      setpoint.color.r = 0.0;
-      setpoint.color.g = 1.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
     case tryPath: {
       setpoint.color.r = 0.0;
       setpoint.color.g = 1.0;

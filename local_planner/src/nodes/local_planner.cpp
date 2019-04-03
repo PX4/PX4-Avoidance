@@ -61,7 +61,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   use_back_off_ = config.use_back_off_;
-  use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
   send_obstacles_fcu_ = config.send_obstacles_fcu_;
 
@@ -207,39 +206,24 @@ void LocalPlanner::determineStrategy() {
             last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
             smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
-        if (use_VFH_star_) {
-          star_planner_->setParams(cost_params_);
-          star_planner_->setFOV(h_FOV_, v_FOV_);
-          star_planner_->setReprojectedPoints(reprojected_points_,
-                                              reprojected_points_age_);
+        star_planner_->setParams(cost_params_);
+        star_planner_->setFOV(h_FOV_, v_FOV_);
+        star_planner_->setReprojectedPoints(reprojected_points_,
+                                            reprojected_points_age_);
 
-          // set last chosen direction for smoothing
-          PolarPoint last_wp_pol =
-              cartesianToPolar(last_sent_waypoint_, position_);
-          last_wp_pol.r = (position_ - goal_).norm();
-          Eigen::Vector3f projected_last_wp =
-              polarToCartesian(last_wp_pol, position_);
-          star_planner_->setLastDirection(projected_last_wp);
+        // set last chosen direction for smoothing
+        PolarPoint last_wp_pol =
+            cartesianToPolar(last_sent_waypoint_, position_);
+        last_wp_pol.r = (position_ - goal_).norm();
+        Eigen::Vector3f projected_last_wp =
+            polarToCartesian(last_wp_pol, position_);
+        star_planner_->setLastDirection(projected_last_wp);
 
-          // build search tree
-          star_planner_->buildLookAheadTree();
+        // build search tree
+        star_planner_->buildLookAheadTree();
 
-          waypoint_type_ = tryPath;
-          last_path_time_ = ros::Time::now();
-        } else {
-          getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
-
-          if (candidate_vector_.empty()) {
-            waypoint_type_ = direct;
-            ROS_INFO(
-                "\033[1;35m[OA] All directions blocked: Stopping in front "
-                "obstacle. \n \033[0m");
-          } else {
-            costmap_direction_e_ = candidate_vector_[0].elevation_angle;
-            costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
-            waypoint_type_ = costmap;
-          }
-        }
+        waypoint_type_ = tryPath;
+        last_path_time_ = ros::Time::now();
       }
     }
   }
