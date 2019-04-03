@@ -493,12 +493,6 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
       setpoint.color.b = 1.0;
       break;
     }
-    case goBack: {
-      setpoint.color.r = 1.0;
-      setpoint.color.g = 0.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
   }
 
   current_waypoint_pub_.publish(setpoint);

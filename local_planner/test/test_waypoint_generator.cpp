@@ -28,8 +28,6 @@ class WaypointGeneratorTests : public ::testing::Test,
     avoidance_output.velocity_around_obstacles = 1.0;
     avoidance_output.velocity_far_from_obstacles = 3.0;
     avoidance_output.last_path_time = ros::Time(0.28);
-    avoidance_output.back_off_point = Eigen::Vector3f(0.4f, 0.6f, 2.2f);
-    avoidance_output.back_off_start_point = Eigen::Vector3f(0.f, 0.f, 2.f);
 
     PolarPoint p_pol = histogramIndexToPolar(15, 35, 6, 0.f);
     avoidance_output.costmap_direction_e = p_pol.e;
@@ -205,46 +203,6 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
     // calculate new vehicle position
     Eigen::Vector3f new_pos = position + pos_to_pos_sp;
     position = new_pos;
-  }
-}
-
-TEST_F(WaypointGeneratorTests, goBackTest) {
-  // GIVEN: a waypoint of type goBack (adapted_goto_position not filled in this
-  // case)
-  avoidance_output.waypoint_type = goBack;
-  setPlannerInfo(avoidance_output);
-
-  float goto_to_goal_prev = -1.0f;
-  float pos_sp_to_goal_prev = -1.0f;
-  double time_sec = 0.33;
-
-  // WHEN: we generate waypoints
-  for (size_t i = 0; i < 10; i++) {
-    waypointResult result = getWaypoints();
-    float goto_to_goal = (goal - result.goto_position).norm();
-    float pos_sp_to_goal = (goal - result.position_wp).norm();
-    // THEN: we expect the waypoints to move further away from the goal
-    ASSERT_GT(goto_to_goal, goto_to_goal_prev);
-    ASSERT_GT(pos_sp_to_goal, pos_sp_to_goal_prev);
-    goto_to_goal_prev = goto_to_goal;
-    pos_sp_to_goal_prev = pos_sp_to_goal;
-
-    // Assume we get halfway from current position to the setpoint
-    Eigen::Vector3f pos_to_pos_sp = (result.position_wp - position) * 0.5;
-
-    // THEN: we expect the angle between the position and velocity waypoint to
-    // be small
-    float angle_pos_vel_sp =
-        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(),
-                   pos_to_pos_sp.dot(result.linear_velocity_wp));
-    EXPECT_NEAR(0.0, angle_pos_vel_sp, 1.0);
-
-    // calculate new vehicle position
-    Eigen::Vector3f new_pos = position + pos_to_pos_sp;
-    position = new_pos;
-    time_sec += 0.033;
-    time = ros::Time(time_sec);
-    updateState(position, q, goal, velocity, stay, is_airborne);
   }
 }
 
