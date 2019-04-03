@@ -79,5 +79,11 @@ int main(int argc, char** argv) {
   Node.should_exit_ = true;
   Node.data_ready_cv_.notify_all();
   worker.join();
+
+  for (size_t i = 0; i < Node.cameras_.size(); ++i) {
+    Node.cameras_[i].cloud_ready_cv_->notify_all();
+    Node.cameras_[i].transform_thread_.join();
+  }
+
   return 0;
 }

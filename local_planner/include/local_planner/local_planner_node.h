@@ -55,7 +55,17 @@ struct cameraData {
   ros::Subscriber pointcloud_sub_;
   ros::Subscriber camera_info_sub_;
   sensor_msgs::PointCloud2 newest_cloud_msg_;
+
+  std::unique_ptr<std::mutex> trans_ready_mutex_;
+  std::unique_ptr<std::condition_variable> trans_ready_cv_;
+
+  std::unique_ptr<std::mutex> cloud_ready_mutex_;
+  std::unique_ptr<std::condition_variable> cloud_ready_cv_;
+  std::thread transform_thread_;
+  pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
+
   bool received_;
+  bool transformed_;
 };
 
 /**
@@ -184,9 +194,20 @@ class LocalPlannerNode {
   size_t numReceivedClouds();
 
   /**
-  * @brief      transforms position setpoints from ROS message to MavROS message
-  * @param[out] obst_avoid, position setpoint in MavROS message form
-  * @param[in]  pose, position setpoint computed by the planner
+  * @brief     computes the number of transformed pointclouds
+  * @ returns  number of transformed pointclouds
+  **/
+  size_t numTransformedClouds();
+
+  /**
+  * @brief     threads for transforming pointclouds
+  **/
+  void pointCloudTransformThread(int index);
+
+  /**
+  * @brief     transforms position setpoints from ROS message to MavROS message
+  * @params[out] obst_avoid, position setpoint in MavROS message form
+  * @params[in] pose, position setpoint computed by the planner
   **/
   void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
                                  geometry_msgs::PoseStamped pose);
