@@ -46,23 +46,23 @@ class TreeNode;
 **/
 struct ModelParameters {
   // clang-format off
-  int param_mpc_auto_mode = 1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
-  float param_mpc_jerk_min = 8.0f; // Velocity-based minimum jerk limit
-  float param_mpc_jerk_max = 20.f; // Velocity-based maximum jerk limit
-  float param_acc_up_max = 10.0f;   // Maximum vertical acceleration in velocity controlled modes upward
-  float param_mpc_z_vel_max_up = 3.0f;   // Maximum vertical ascent velocity
-  float param_mpc_acc_down_max = 10.0f; // Maximum vertical acceleration in velocity controlled modes down
-  float param_mpc_vel_max_dn = 1.0f; // Maximum vertical descent velocity
-  float param_mpc_acc_hor = 5.0f;  // Maximum horizontal acceleration for auto mode and
+  int param_mpc_auto_mode = -1; // Auto sub-mode - 0: default line tracking, 1 jerk-limited trajectory
+  float param_mpc_jerk_min = NAN; // Velocity-based minimum jerk limit
+  float param_mpc_jerk_max = NAN; // Velocity-based maximum jerk limit
+  float param_acc_up_max = NAN;   // Maximum vertical acceleration in velocity controlled modes upward
+  float param_mpc_z_vel_max_up = NAN;   // Maximum vertical ascent velocity
+  float param_mpc_acc_down_max = NAN; // Maximum vertical acceleration in velocity controlled modes down
+  float param_mpc_vel_max_dn = NAN; // Maximum vertical descent velocity
+  float param_mpc_acc_hor = NAN;  // Maximum horizontal acceleration for auto mode and
                       // maximum deceleration for manual mode
-  float param_mpc_xy_cruise = 1.0f;   // Desired horizontal velocity in mission
-  float param_mpc_tko_speed = 1.0f; // Takeoff climb rate
-  float param_mpc_land_speed = 0.7f;   // Landing descend rate
+  float param_mpc_xy_cruise = NAN;   // Desired horizontal velocity in mission
+  float param_mpc_tko_speed = NAN; // Takeoff climb rate
+  float param_mpc_land_speed = NAN;   // Landing descend rate
   // limitations given by sensors
-  float param_ekf2_rng_a_hmax = 5.0f;
-  float param_ekf2_rng_a_vmax = 5.0f;
+  float param_ekf2_rng_a_hmax = NAN;
+  float param_ekf2_rng_a_vmax = NAN;
 
-  float param_mpc_col_prev_d = -1.0f; // Collision Prevention distance to keep from obstacle. -1 for disabled
+  float param_mpc_col_prev_d = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
   // clang-format on
 };
 
