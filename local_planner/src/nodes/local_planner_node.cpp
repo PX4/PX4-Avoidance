@@ -375,11 +375,7 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   // when adding new parameter to the struct ModelParameters,
   // add new else if case with correct value type
 
-  if (msg.param_id == "EKF2_RNG_A_HMAX") {
-    local_planner_->px4_.param_ekf2_rng_a_hmax = msg.value.real;
-  } else if (msg.param_id == "EKF2_RNG_A_VMAX") {
-    local_planner_->px4_.param_ekf2_rng_a_vmax = msg.value.real;
-  } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
+  if (msg.param_id == "MPC_ACC_DOWN_MAX") {
     ROS_INFO("parameter acceleration down is set from  %f to %f \n",
              local_planner_->px4_.param_mpc_acc_down_max, msg.value.real);
     local_planner_->px4_.param_mpc_acc_down_max = msg.value.real;

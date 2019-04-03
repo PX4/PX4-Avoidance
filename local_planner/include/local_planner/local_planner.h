@@ -58,9 +58,8 @@ struct ModelParameters {
   float param_mpc_xy_cruise = NAN;   // Desired horizontal velocity in mission
   float param_mpc_tko_speed = NAN; // Takeoff climb rate
   float param_mpc_land_speed = NAN;   // Landing descend rate
-  // limitations given by sensors
-  float param_ekf2_rng_a_hmax = NAN;
-  float param_ekf2_rng_a_vmax = NAN;
+
+  // TODO: add estimator limitations for max speed and height
 
   float param_mpc_col_prev_d = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
   // clang-format on

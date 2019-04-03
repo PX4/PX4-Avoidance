@@ -316,8 +316,6 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_xy_cruise = 3.f;
   px4_.param_mpc_tko_speed = 1.f;
   px4_.param_mpc_land_speed = 0.7f;
-  px4_.param_ekf2_rng_a_hmax = 5.f;
-  px4_.param_ekf2_rng_a_vmax = 5.f;
   px4_.param_mpc_col_prev_d = 4.f;
 }
 
