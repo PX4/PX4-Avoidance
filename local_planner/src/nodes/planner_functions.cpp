@@ -56,21 +56,26 @@ void processPointcloud(
   for (const pcl::PointXYZI& xyzi : old_cloud) {
     // adding older points if not expired and space is free according to new
     // cloud
-    PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-    if (high_res_histogram.get_age(p_ind.y(), p_ind.x()) == 0 &&
-        xyzi.intensity < max_age) {
-      pcl::PointXYZI cloud_point = pcl::PointXYZI(xyzi);
-      cloud_point.intensity = xyzi.intensity + 1;
-      final_cloud.points.push_back(cloud_point);
-      high_res_histogram.set_age(p_ind.y(), p_ind.x(), 1);
+    if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
+      distance = (position - toEigen(xyzi)).norm();
+      if (distance < histogram_box.radius_) {
+        PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
+        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+        if (high_res_histogram.get_age(p_ind.y(), p_ind.x()) == 0 &&
+            xyzi.intensity < max_age) {
+          pcl::PointXYZI cloud_point = pcl::PointXYZI(xyzi);
+          cloud_point.intensity = xyzi.intensity + 1;
+          final_cloud.points.push_back(cloud_point);
+          high_res_histogram.set_age(p_ind.y(), p_ind.x(), 1);
+        }
+      }
     }
-  }
 
-  final_cloud.header.stamp = complete_cloud[0].header.stamp;
-  final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
-  final_cloud.height = 1;
-  final_cloud.width = final_cloud.points.size();
+    final_cloud.header.stamp = complete_cloud[0].header.stamp;
+    final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
+    final_cloud.height = 1;
+    final_cloud.width = final_cloud.points.size();
+  }
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!
@@ -282,7 +287,8 @@ void getBestCandidatesFromCostMatrix(
       }
     }
   }
-  // copy queue to vector and change order such that lowest cost is at the front
+  // copy queue to vector and change order such that lowest cost is at the
+  // front
   candidate_vector.clear();
   candidate_vector.reserve(queue.size());
   while (!queue.empty()) {
