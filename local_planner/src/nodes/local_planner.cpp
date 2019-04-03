@@ -57,7 +57,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   adapt_cost_params_ = config.adapt_cost_params_;
-  send_obstacles_fcu_ = model_params_.param_mpc_col_prev_d > 0.f;
+  send_obstacles_fcu_ = px4_.param_mpc_col_prev_d > 0.f;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -323,7 +323,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.obstacle_ahead = !polar_histogram_.isEmpty();
   out.velocity_around_obstacles = velocity_around_obstacles_;
-  out.velocity_far_from_obstacles = model_params_.param_mpc_xy_cruise;
+  out.velocity_far_from_obstacles = px4_.param_mpc_xy_cruise;
   out.last_path_time = last_path_time_;
 
   out.take_off_pose = take_off_pose_;

@@ -163,7 +163,7 @@ class LocalPlanner {
   float speed_ = 1.0f;
   float ground_distance_ = 2.0;
 
-  ModelParameters model_params_; // PX4 Firmware paramters
+  ModelParameters px4_; // PX4 Firmware paramters
 
   Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
   sensor_msgs::LaserScan distance_data_ = {};
