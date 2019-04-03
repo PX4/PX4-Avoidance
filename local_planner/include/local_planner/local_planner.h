@@ -249,6 +249,11 @@ class LocalPlanner {
   * @brief     starts a iteration of the local planner algorithm
   **/
   void runPlanner();
+
+  /**
+  * @brief     setter method for PX4 Firmware paramters
+  **/
+  void setDefaultPx4Parameters();
 };
 }
 
