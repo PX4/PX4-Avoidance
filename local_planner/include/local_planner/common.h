@@ -126,7 +126,8 @@ double getAngularVelocity(float desired_yaw, float curr_yaw);
 
 Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
 Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3);
-Eigen::Vector3f toEigen(const pcl::PointXYZ& xyz);
+Eigen::Vector3f toEigen(const pcl::PointXYZ& p);
+Eigen::Vector3f toEigen(const pcl::PointXYZI& p);
 Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq);
 
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);

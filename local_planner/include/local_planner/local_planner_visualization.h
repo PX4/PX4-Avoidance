@@ -141,7 +141,6 @@ class LocalPlannerVisualization {
 
  private:
   ros::Publisher local_pointcloud_pub_;
-  ros::Publisher reprojected_points_pub_;
   ros::Publisher pointcloud_size_pub_;
   ros::Publisher bounding_box_pub_;
   ros::Publisher ground_measurement_pub_;

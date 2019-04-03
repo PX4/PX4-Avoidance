@@ -40,10 +40,9 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_around_obstacles_);
   velocity_far_from_obstacles_ =
       static_cast<float>(config.velocity_far_from_obstacles_);
-  reproj_age_ = static_cast<float>(config.reproj_age_);
+  max_point_age_ = config.max_point_age_;
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
-  min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
@@ -83,7 +82,7 @@ void LocalPlanner::applyGoal() {
 
 void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
-           static_cast<int>(complete_cloud_.size()));
+           static_cast<int>(original_cloud_vector_.size()));
 
   // calculate Field of View
   z_FOV_idx_.clear();
@@ -92,8 +91,8 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-  filterPointCloud(final_cloud_, complete_cloud_, min_cloud_size_,
-                   histogram_box_, position_, min_realsense_dist_);
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
+                    position_, min_realsense_dist_, max_point_age_);
 
   determineStrategy();
 }
@@ -101,23 +100,15 @@ void LocalPlanner::runPlanner() {
 void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // construct histogram if it is needed
   // or if it is required by the FCU
-  Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
   Histogram new_histogram = Histogram(ALPHA_RES);
   to_fcu_histogram_.setZero();
-
-  propagateHistogram(propagated_histogram, reprojected_points_,
-                     reprojected_points_age_, position_);
   generateNewHistogram(new_histogram, final_cloud_, position_);
-  combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
-                    waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+
   if (send_to_fcu) {
     compressHistogramElevation(to_fcu_histogram_, new_histogram);
     updateObstacleDistanceMsg(to_fcu_histogram_);
   }
   polar_histogram_ = new_histogram;
-
-  // create 3D points from combined histogram
-  reprojectPoints(polar_histogram_);
 
   // generate histogram image for logging
   generateHistogramImage(polar_histogram_);
@@ -177,8 +168,7 @@ void LocalPlanner::determineStrategy() {
 
       star_planner_->setParams(cost_params_);
       star_planner_->setFOV(h_FOV_, v_FOV_);
-      star_planner_->setReprojectedPoints(reprojected_points_,
-                                          reprojected_points_age_);
+      star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
       PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
@@ -189,7 +179,6 @@ void LocalPlanner::determineStrategy() {
 
       // build search tree
       star_planner_->buildLookAheadTree();
-
       last_path_time_ = ros::Time::now();
     }
   }
@@ -256,59 +245,6 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   distance_data_ = msg;
 }
 
-// get 3D points from old histogram
-void LocalPlanner::reprojectPoints(Histogram histogram) {
-  float dist;
-  int age;
-  // ALPHA_RES%2=0 as per definition, see histogram.h
-  int half_res = ALPHA_RES / 2;
-  Eigen::Vector3f temp_array[4];
-
-  std::array<PolarPoint, 4> p_pol;
-  reprojected_points_age_.clear();
-
-  reprojected_points_.points.clear();
-  reprojected_points_.header.stamp = final_cloud_.header.stamp;
-  reprojected_points_.header.frame_id = "local_origin";
-
-  for (int e = 0; e < GRID_LENGTH_E; e++) {
-    for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_dist(e, z) > FLT_MIN) {
-        for (auto& i : p_pol) {
-          i.r = histogram.get_dist(e, z);
-          i = histogramIndexToPolar(e, z, ALPHA_RES, i.r);
-        }
-        // transform from array index to angle
-        p_pol[0].e += half_res;
-        p_pol[0].z += half_res;
-        p_pol[1].e -= half_res;
-        p_pol[1].z += half_res;
-        p_pol[2].e += half_res;
-        p_pol[2].z -= half_res;
-        p_pol[3].e -= half_res;
-        p_pol[3].z -= half_res;
-
-        // transform from Polar to Cartesian
-        temp_array[0] = polarToCartesian(p_pol[0], position_);
-        temp_array[1] = polarToCartesian(p_pol[1], position_);
-        temp_array[2] = polarToCartesian(p_pol[2], position_);
-        temp_array[3] = polarToCartesian(p_pol[3], position_);
-
-        for (int i = 0; i < 4; i++) {
-          dist = (position_ - temp_array[i]).norm();
-          age = histogram.get_age(e, z);
-
-          if (dist < 2.0f * histogram_box_.radius_ && dist > 0.3f &&
-              age < reproj_age_) {
-            reprojected_points_.points.push_back(toXYZ(temp_array[i]));
-            reprojected_points_age_.push_back(age);
-          }
-        }
-      }
-    }
-  }
-}
-
 // calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_) {
@@ -358,13 +294,8 @@ void LocalPlanner::evaluateProgressRate() {
 
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
-const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getCroppedCloud() const {
+const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const {
   return final_cloud_;
-}
-
-const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getReprojectedPoints()
-    const {
-  return reprojected_points_;
 }
 
 void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
