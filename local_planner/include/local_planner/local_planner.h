@@ -37,9 +37,7 @@ class TreeNode;
 class LocalPlanner {
  private:
   bool adapt_cost_params_;
-
   bool reach_altitude_ = false;
-  bool obstacle_ = false;
   bool waypoint_outside_FOV_ = false;
   bool hist_is_empty_ = false;
 
