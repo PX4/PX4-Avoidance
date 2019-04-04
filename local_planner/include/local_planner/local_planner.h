@@ -62,8 +62,6 @@ class LocalPlanner {
   int min_cloud_size_ = 160;
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
-  float costmap_direction_e_;
-  float costmap_direction_z_;
   float smoothing_margin_degrees_ = 30.f;
 
   waypoint_choice waypoint_type_;
@@ -91,7 +89,6 @@ class LocalPlanner {
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
   Eigen::MatrixXf cost_matrix_;
-  std::vector<candidateDirection> candidate_vector_;
 
   /**
   * @brief     reprojectes the histogram from the previous algorithm iteration

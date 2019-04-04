@@ -30,8 +30,6 @@ class WaypointGeneratorTests : public ::testing::Test,
     avoidance_output.last_path_time = ros::Time(0.28);
 
     PolarPoint p_pol = histogramIndexToPolar(15, 35, 6, 0.f);
-    avoidance_output.costmap_direction_e = p_pol.e;
-    avoidance_output.costmap_direction_z = p_pol.z;
 
     float n1_x = 0.8f;
     float n2_x = 1.3f;

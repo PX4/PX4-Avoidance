@@ -20,10 +20,6 @@ struct avoidanceOutput {
 
   Eigen::Vector3f take_off_pose;  // last vehicle position when not armed
 
-  float costmap_direction_e;  // elevation angle of the minimum cost histogram
-                              // cell
-  float
-      costmap_direction_z;  // azimuth angle of the minimum cost histogram cell
   std::vector<Eigen::Vector3f> path_node_positions;  // array of tree nodes
                                                      // position, each node
                                                      // is the minimum cost
