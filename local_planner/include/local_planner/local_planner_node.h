@@ -107,6 +107,8 @@ class LocalPlannerNode {
 
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
   LocalPlannerVisualization visualizer_;
 
 #ifndef DISABLE_SIMULATION
@@ -225,7 +227,6 @@ class LocalPlannerNode {
 
   ros::Timer cmdloop_timer_;
   ros::CallbackQueue cmdloop_queue_;
-  ros::AsyncSpinner cmdloop_spinner_;
 
   // Publishers
   ros::Publisher mavros_pos_setpoint_pub_;
