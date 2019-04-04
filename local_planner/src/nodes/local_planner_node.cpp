@@ -37,8 +37,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   cmdloop_timer_ = nh_.createTimer(timer_options);
 
-  cmdloop_spinner_.start();
-
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
       config_mutex_, nh_);
@@ -113,6 +111,8 @@ LocalPlannerNode::~LocalPlannerNode() {
   delete server_;
   delete tf_listener_;
 }
+
+void LocalPlannerNode::startNode() { cmdloop_spinner_.start(); }
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
