@@ -27,13 +27,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   tf_listener_ = new tf::TransformListener(
       ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
 
-  ros::TimerOptions timer_options(
-      ros::Duration(spin_dt_),
-      boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
-      &cmdloop_queue_);
-
-  cmdloop_timer_ = nh_.createTimer(timer_options);
-
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(
       config_mutex_, nh_);
@@ -110,6 +103,12 @@ LocalPlannerNode::~LocalPlannerNode() {
 }
 
 void LocalPlannerNode::startNode() {
+  ros::TimerOptions timer_options(
+      ros::Duration(spin_dt_),
+      boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
 }
