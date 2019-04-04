@@ -179,11 +179,11 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
 
   // WHEN: we filter the PointCloud with different values of min_cloud_size
-  filterPointCloud(cropped_cloud, complete_cloud, 5.0,
-                   histogram_box, position, min_realsense_dist);
+  filterPointCloud(cropped_cloud, complete_cloud, 5.0, histogram_box, position,
+                   min_realsense_dist);
 
-  filterPointCloud(cropped_cloud2, complete_cloud, 20.0,
-                   histogram_box, position, min_realsense_dist);
+  filterPointCloud(cropped_cloud2, complete_cloud, 20.0, histogram_box,
+                   position, min_realsense_dist);
 
   // THEN: we expect cropped_cloud to have 6 points while
   // cropped_cloud2 to be empty

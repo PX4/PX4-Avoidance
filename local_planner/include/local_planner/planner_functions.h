@@ -31,8 +31,8 @@ namespace avoidance {
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    int min_cloud_size, Box histogram_box,
-    const Eigen::Vector3f& position, float min_realsense_dist);
+    int min_cloud_size, Box histogram_box, const Eigen::Vector3f& position,
+    float min_realsense_dist);
 
 /**
 * @brief      calculates the histogram cells within the Field of View
