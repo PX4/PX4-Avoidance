@@ -21,7 +21,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
     : nh_(nh), nh_private_(nh_private), spin_dt_(0.1) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
 
   readParams();
 
@@ -110,7 +109,10 @@ LocalPlannerNode::~LocalPlannerNode() {
   delete tf_listener_;
 }
 
-void LocalPlannerNode::startNode() { cmdloop_spinner_->start(); }
+void LocalPlannerNode::startNode() {
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
+}
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
