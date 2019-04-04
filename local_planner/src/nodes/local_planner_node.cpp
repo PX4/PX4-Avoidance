@@ -220,8 +220,8 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update state
   local_planner_->currently_armed_ = armed_;
-  local_planner_->offboard_ = offboard_;
-  local_planner_->mission_ = mission_;
+  local_planner_->offboard_ = (nav_state_ == NavigationState::offboard);
+  local_planner_->mission_ = (nav_state_ == NavigationState::mission);
 
   // update goal
   if (new_goal_) {
@@ -266,19 +266,20 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   armed_ = msg.armed;
 
   if (msg.mode == "AUTO.MISSION") {
-    offboard_ = false;
-    mission_ = true;
+    nav_state_ = NavigationState::mission;
+  } else if (msg.mode == "AUTO.TAKEOFF") {
+    nav_state_ = NavigationState::auto_takeoff;
+  } else if (msg.mode == "AUTO.LAND") {
+    nav_state_ = NavigationState::auto_land;
   } else if (msg.mode == "OFFBOARD") {
-    offboard_ = true;
-    mission_ = false;
+    nav_state_ = NavigationState::offboard;
   } else {
-    offboard_ = false;
-    mission_ = false;
+    nav_state_ = NavigationState::none;
   }
 }
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
-  bool is_airborne = armed_ && (mission_ || offboard_ || hover);
+  bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
   wp_generator_->updateState(
       toEigen(newest_pose_.pose.position),
