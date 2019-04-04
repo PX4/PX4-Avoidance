@@ -164,23 +164,21 @@ void LocalPlanner::determineStrategy() {
       create2DObstacleRepresentation(true);
     }
   } else {
-    evaluateProgressRate();
+    waypoint_type_ = tryPath;
 
+    evaluateProgressRate();
     create2DObstacleRepresentation(send_obstacles_fcu_);
 
     // decide how to proceed
     if (hist_is_empty_) {
       obstacle_ = false;
-      waypoint_type_ = tryPath;
-    }
-
-    if (!hist_is_empty_ && reach_altitude_) {
+    } else {
       obstacle_ = true;
 
-      getCostMatrix(
-          polar_histogram_, goal_, position_, curr_yaw_histogram_frame_deg_,
-          last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
-          smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+      getCostMatrix(polar_histogram_, goal_, position_,
+                    curr_yaw_histogram_frame_deg_, last_sent_waypoint_,
+                    cost_params_, velocity_.norm() < 0.1f,
+                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
       star_planner_->setFOV(h_FOV_, v_FOV_);
@@ -188,8 +186,7 @@ void LocalPlanner::determineStrategy() {
                                           reprojected_points_age_);
 
       // set last chosen direction for smoothing
-      PolarPoint last_wp_pol =
-          cartesianToPolar(last_sent_waypoint_, position_);
+      PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
       Eigen::Vector3f projected_last_wp =
           polarToCartesian(last_wp_pol, position_);
@@ -198,7 +195,6 @@ void LocalPlanner::determineStrategy() {
       // build search tree
       star_planner_->buildLookAheadTree();
 
-      waypoint_type_ = tryPath;
       last_path_time_ = ros::Time::now();
     }
   }
