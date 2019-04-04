@@ -219,6 +219,24 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   return xyz;
 }
 
+pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity) {
+  pcl::PointXYZI p;
+  p.x = ev3.x();
+  p.y = ev3.y();
+  p.z = ev3.z();
+  p.intensity = intensity;
+  return p;
+}
+
+pcl::PointXYZI toXYZI(float x, float y, float z, float intensity) {
+  pcl::PointXYZI p;
+  p.x = x;
+  p.y = y;
+  p.z = z;
+  p.intensity = intensity;
+  return p;
+}
+
 geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
                              const Eigen::Vector3f& a) {
   geometry_msgs::Twist gmt;

@@ -39,7 +39,6 @@ class LocalPlanner {
   bool adapt_cost_params_;
   bool reach_altitude_ = false;
   bool waypoint_outside_FOV_ = false;
-  bool hist_is_empty_ = false;
 
   int e_FOV_max_, e_FOV_min_;
   size_t dist_incline_window_size_ = 50;

@@ -1,6 +1,7 @@
 #ifndef HISTOGRAM_H
 #define HISTOGRAM_H
 
+#include <float.h>
 #include <math.h>
 #include <Eigen/Dense>
 #include <vector>
@@ -106,6 +107,13 @@ class Histogram {
   * @brief     resets all histogram cells age and distance to zero
   **/
   void setZero();
+
+  /**
+  * @brief     determines whether the histogram is empty (distance layer
+  *            contains no distance bigger than zero)
+  * @returns   whether histogram is empty
+  **/
+  bool isEmpty() const;
 };
 }
 

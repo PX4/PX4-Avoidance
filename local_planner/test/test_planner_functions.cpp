@@ -9,7 +9,7 @@ using namespace avoidance;
 
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
-  pcl::PointCloud<pcl::PointXYZ> empty_cloud;
+  pcl::PointCloud<pcl::PointXYZI> empty_cloud;
   Histogram histogram_output = Histogram(ALPHA_RES);
   geometry_msgs::PoseStamped location;
   location.pose.position.x = 0;
@@ -50,11 +50,11 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
     }
   }
 
-  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::PointCloud<pcl::PointXYZI> cloud;
   for (int i = 0; i < middle_of_cell.size(); i++) {
     // put 1000 point in every occupied cell
     for (int j = 0; j < 1000; j++) {
-      cloud.push_back(toXYZ(middle_of_cell[i]));
+      cloud.push_back(toXYZI(middle_of_cell[i], 0));
     }
   }
 
@@ -148,15 +148,14 @@ TEST(PlannerFunctions, calculateFOV) {
   }
 }
 
-TEST(PlannerFunctionsTests, filterPointCloud) {
+TEST(PlannerFunctionsTests, processPointcloud) {
   // GIVEN: two point clouds
   const Eigen::Vector3f position(1.5f, 1.0f, 4.5f);
   pcl::PointCloud<pcl::PointXYZ> p1;
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.1f, 0.8f, 0.1f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(2.2f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.0f, -3.0f, 1.0f)));
-  p1.push_back(toXYZ(
-      position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));  // < min_dist_backoff
+  p1.push_back(toXYZ(position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
@@ -176,25 +175,22 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
-  pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
+  pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2;
+  Eigen::Vector3f memory_point(-0.4f, 0.3f, -0.4f);
+  processed_cloud1.push_back(toXYZI(position + memory_point, 5));
+  processed_cloud2.push_back(toXYZI(position + memory_point, 5));
 
-  // WHEN: we filter the PointCloud with different values of min_cloud_size
-  filterPointCloud(cropped_cloud, complete_cloud, 5.0, histogram_box, position,
-                   min_realsense_dist);
+  // WHEN: we filter the PointCloud with different values max_age
+  processPointcloud(processed_cloud1, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 0);
 
-  filterPointCloud(cropped_cloud2, complete_cloud, 20.0, histogram_box,
-                   position, min_realsense_dist);
+  processPointcloud(processed_cloud2, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 10);
 
-  // THEN: we expect cropped_cloud to have 6 points while
-  // cropped_cloud2 to be empty
-  for (int i = 0; i < p1.points.size(); i++) {
-    bool same_point = (p1.points[i].x == cropped_cloud.points[i].x) &&
-                      (p1.points[i].y == cropped_cloud.points[i].y) &&
-                      (p1.points[i].z == cropped_cloud.points[i].z);
-    ASSERT_TRUE(same_point);
-  }
-
-  EXPECT_EQ(0, cropped_cloud2.points.size());
+  // THEN: we expect the first cloud to have 6 points
+  // the second cloud should contain 7 points
+  EXPECT_EQ(processed_cloud1.size(), 6);
+  EXPECT_EQ(processed_cloud2.size(), 7);
 }
 
 TEST(PlannerFunctions, testDirectionTree) {

@@ -64,4 +64,16 @@ void Histogram::setZero() {
   age_.fill(0);
   dist_.fill(0.f);
 }
+
+bool Histogram::isEmpty() const {
+  int counter = 0;
+  for (int e = 0; e < e_dim_; e++) {
+    for (int z = 0; z < z_dim_; z++) {
+      if (dist_(e, z) > FLT_MIN) {
+        counter++;
+      }
+    }
+  }
+  return counter == 0;
+}
 }

@@ -38,12 +38,7 @@ void processPointcloud(
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             if (high_res_histogram.get_age(p_ind.y(), p_ind.x()) == 0) {
-              pcl::PointXYZI cloud_point;
-              cloud_point.x = xyz.x;
-              cloud_point.y = xyz.y;
-              cloud_point.z = xyz.z;
-              cloud_point.intensity = 0;
-              final_cloud.points.push_back(cloud_point);
+              final_cloud.points.push_back(toXYZI(xyz.x, xyz.y, xyz.z, 0));
               high_res_histogram.set_age(p_ind.y(), p_ind.x(), 1);
             }
           }
@@ -63,9 +58,8 @@ void processPointcloud(
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
         if (high_res_histogram.get_age(p_ind.y(), p_ind.x()) == 0 &&
             xyzi.intensity < max_age) {
-          pcl::PointXYZI cloud_point = pcl::PointXYZI(xyzi);
-          cloud_point.intensity = xyzi.intensity + 1;
-          final_cloud.points.push_back(cloud_point);
+          final_cloud.points.push_back(
+              toXYZI(xyzi.x, xyzi.y, xyzi.z, xyzi.intensity + 1));
           high_res_histogram.set_age(p_ind.y(), p_ind.x(), 1);
         }
       }

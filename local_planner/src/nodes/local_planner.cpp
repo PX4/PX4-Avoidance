@@ -160,7 +160,7 @@ void LocalPlanner::determineStrategy() {
     evaluateProgressRate();
     create2DObstacleRepresentation(send_obstacles_fcu_);
 
-    if (!hist_is_empty_) {
+    if (!polar_histogram_.isEmpty()) {
       getCostMatrix(polar_histogram_, goal_, position_,
                     curr_yaw_histogram_frame_deg_, last_sent_waypoint_,
                     cost_params_, velocity_.norm() < 0.1f,
@@ -319,7 +319,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
 
-  out.obstacle_ahead = !hist_is_empty_;
+  out.obstacle_ahead = !polar_histogram_.isEmpty();
   out.velocity_around_obstacles = velocity_around_obstacles_;
   out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
   out.last_path_time = last_path_time_;
