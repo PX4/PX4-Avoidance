@@ -221,8 +221,6 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update state
   local_planner_->currently_armed_ = armed_;
-  local_planner_->offboard_ = (nav_state_ == NavigationState::offboard);
-  local_planner_->mission_ = (nav_state_ == NavigationState::mission);
 
   // update goal
   if (new_goal_) {
