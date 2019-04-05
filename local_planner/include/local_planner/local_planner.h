@@ -39,7 +39,6 @@ class LocalPlanner {
   bool adapt_cost_params_;
   bool reach_altitude_ = false;
   bool waypoint_outside_FOV_ = false;
-  bool hist_is_empty_ = false;
 
   int e_FOV_max_, e_FOV_min_;
   size_t dist_incline_window_size_ = 50;
@@ -47,7 +46,6 @@ class LocalPlanner {
   int tree_age_ = 0;
   int children_per_node_;
   int n_expanded_nodes_;
-  int reproj_age_;
 
   float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
   float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
@@ -57,13 +55,14 @@ class LocalPlanner {
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;
-  int min_cloud_size_ = 160;
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
+  float max_point_age_s_ = 10;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
+  ros::Time last_pointcloud_process_time_;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
@@ -71,13 +70,12 @@ class LocalPlanner {
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
   std::vector<int> closed_set_;
-  std::vector<int> reprojected_points_age_;
 
   std::vector<TreeNode> tree_;
   std::unique_ptr<StarPlanner> star_planner_;
   costParameters cost_params_;
 
-  pcl::PointCloud<pcl::PointXYZ> reprojected_points_, final_cloud_;
+  pcl::PointCloud<pcl::PointXYZI> final_cloud_;
 
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
@@ -88,12 +86,6 @@ class LocalPlanner {
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
   Eigen::MatrixXf cost_matrix_;
 
-  /**
-  * @brief     reprojectes the histogram from the previous algorithm iteration
-  *            around the current vehicle position
-  * @param     histogram, histogram from the previous algorith iteration
-  **/
-  void reprojectPoints(Histogram histogram);
   /**
   * @brief     calculates the cost function weights to fly around or over
   *            obstacles based on the progress towards the goal over time
@@ -143,8 +135,8 @@ class LocalPlanner {
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
-  // complete_cloud_ contains n complete clouds from the cameras
-  std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud_;
+  // original_cloud_vector_ contains n complete clouds from the cameras
+  std::vector<pcl::PointCloud<pcl::PointXYZ>> original_cloud_vector_;
 
   LocalPlanner();
   ~LocalPlanner();
@@ -171,28 +163,22 @@ class LocalPlanner {
   void applyGoal();
   /**
   * @brief     sets parameters from ROS parameter server
-  * @param     config, struct containing all the paramters
-  * @param     level, bitmsak to group together reconfigurable parameters
+  * @param     config, struct containing all the parameters
+  * @param     level, bitmask to group together reconfigurable parameters
   **/
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
                                    uint32_t level);
   /**
   * @brief     getter method for current vehicle position and orientation
-  * @returns   vehicle positiona and orientation
+  * @returns   vehicle position and orientation
   **/
   Eigen::Vector3f getPosition() const;
 
   /**
-  * @brief     getter method to visualize the cropped pointcloud in rviz
+  * @brief     getter method to visualize the pointcloud used for planning
   * @returns   reference to pointcloud
   **/
-  const pcl::PointCloud<pcl::PointXYZ>& getCroppedCloud() const;
-
-  /**
-  * @brief     getter method to visualize the reprojected points
-  * @returns   reference to reprojected points
-  **/
-  const pcl::PointCloud<pcl::PointXYZ>& getReprojectedPoints() const;
+  const pcl::PointCloud<pcl::PointXYZI>& getPointcloud() const;
 
   /**
   * @brief     setter method for vehicle velocity

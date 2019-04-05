@@ -35,15 +35,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_->setCallback(f);
 
-  // disable memory if using more than one camera
-  if (cameras_.size() > 1) {
-    config_mutex_.lock();
-    rqt_param_config_.reproj_age_ = std::min(10, rqt_param_config_.reproj_age_);
-    config_mutex_.unlock();
-    server_->updateConfig(rqt_param_config_);
-    dynamicReconfigureCallback(rqt_param_config_, 1);
-  }
-
   // initialize standard subscribers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &LocalPlannerNode::positionCallback,
@@ -209,10 +200,10 @@ bool LocalPlannerNode::canUpdatePlannerInfo() {
 }
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
-  local_planner_->complete_cloud_.clear();
+  local_planner_->original_cloud_vector_.clear();
   for (size_t i = 0; i < cameras_.size(); ++i) {
     try {
-      local_planner_->complete_cloud_.push_back(
+      local_planner_->original_cloud_vector_.push_back(
           std::move(cameras_[i].pcl_cloud));
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",

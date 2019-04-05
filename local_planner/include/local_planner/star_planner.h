@@ -31,10 +31,9 @@ class StarPlanner {
   float curr_yaw_histogram_frame_deg_ = 90.f;
   float smoothing_margin_degrees_ = 30.f;
 
-  std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
+  pcl::PointCloud<pcl::PointXYZI> cloud_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
@@ -85,15 +84,10 @@ class StarPlanner {
   void setFOV(float h_FOV, float v_FOV);
 
   /**
-  * @brief     setter method for reprojected pointcloud
-  * @param[in] reprojected_points, pointcloud from previous frames reprojected
-  *            around the vehicle current position
-  * @param[in] reprojected_points_age, array containing the age of each
-  *            reprojected point
+  * @brief     setter method for star_planner pointcloud
+  * @param[in] cloud, processed data already cropped and combined with history
   **/
-  void setReprojectedPoints(
-      const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-      const std::vector<int>& reprojected_points_age);
+  void setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud);
 
   /**
   * @brief     setter method for vehicle position
