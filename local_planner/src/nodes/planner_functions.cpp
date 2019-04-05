@@ -15,10 +15,12 @@ void processPointcloud(
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age) {
-  pcl::PointCloud<pcl::PointXYZI> old_cloud = final_cloud;
-
+  pcl::PointCloud<pcl::PointXYZI> old_cloud;
+  std::swap(final_cloud, old_cloud);
   final_cloud.points.clear();
   final_cloud.width = 0;
+  final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
+
   float distance;
 
   // double resolution histogram for subsampling
@@ -38,7 +40,7 @@ void processPointcloud(
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0) {
-              final_cloud.points.push_back(toXYZI(xyz.x, xyz.y, xyz.z, 0));
+              final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
               high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
             }
           }
@@ -59,7 +61,7 @@ void processPointcloud(
         if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0 &&
             xyzi.intensity < max_age) {
           final_cloud.points.push_back(
-              toXYZI(xyzi.x, xyzi.y, xyzi.z, xyzi.intensity + 1));
+              toXYZI(toEigen(xyzi), xyzi.intensity + 1));
           high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
         }
       }
