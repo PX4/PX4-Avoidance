@@ -21,27 +21,18 @@ namespace avoidance {
 * @brief      crops the pointcloud so that only the points inside the bounding
 *box around the vehicle position are considered
 * @param[out] cropped_cloud, filtered pointcloud
-* @param[out] closest_point, closest poincloud point to the vehicle position
-* @param[out] distance_to_closest_point, 3D euclidean distance between the
-*vehicle and closest_point [m]
-* @param[out] counter_backoff, number of points closer than min_dist_backoff to
-*the vehicle
 * @param[in]  complete_cloud, array of pointclouds from the sensors
 * @param[in]  min_cloud_size, minimum number of points in a pointcloud for it to
 *be considered
-* @param[in]  min_dist_backoff, distance bewteen the vehicle and a point in the
-*cloud at which going backwards is considered [m]
 * @param[in]  histogram_box, geometry definition of the bounding box
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 **/
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-    Eigen::Vector3f& closest_point, float& distance_to_closest_point,
-    int& counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    int min_cloud_size, float min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f& position, float min_realsense_dist);
+    int min_cloud_size, Box histogram_box, const Eigen::Vector3f& position,
+    float min_realsense_dist);
 
 /**
 * @brief      calculates the histogram cells within the Field of View

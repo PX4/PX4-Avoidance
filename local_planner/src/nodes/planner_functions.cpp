@@ -12,16 +12,12 @@ namespace avoidance {
 // considered
 void filterPointCloud(
     pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-    Eigen::Vector3f& closest_point, float& distance_to_closest_point,
-    int& counter_backoff,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    int min_cloud_size, float min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f& position, float min_realsense_dist) {
+    int min_cloud_size, Box histogram_box, const Eigen::Vector3f& position,
+    float min_realsense_dist) {
   cropped_cloud.points.clear();
   cropped_cloud.width = 0;
-  distance_to_closest_point = HUGE_VAL;
   float distance;
-  counter_backoff = 0;
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
@@ -32,13 +28,6 @@ void filterPointCloud(
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
             cropped_cloud.points.push_back(pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
-            if (distance < distance_to_closest_point) {
-              distance_to_closest_point = distance;
-              closest_point = toEigen(xyz);
-            }
-            if (distance < min_dist_backoff) {
-              counter_backoff++;
-            }
           }
         }
       }

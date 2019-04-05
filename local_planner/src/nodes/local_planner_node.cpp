@@ -183,9 +183,6 @@ void LocalPlannerNode::updatePlanner() {
           cameras_[i].received_ = false;
         }
         wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
-        if (local_planner_->stop_in_front_active_) {
-          goal_msg_.pose.position = toPoint(local_planner_->getGoal());
-        }
         running_mutex_.unlock();
         // Wake up the planner
         std::unique_lock<std::mutex> lck(data_ready_mutex_);

@@ -36,16 +36,9 @@ class TreeNode;
 
 class LocalPlanner {
  private:
-  bool use_back_off_;
-  bool use_VFH_star_;
   bool adapt_cost_params_;
-  bool stop_in_front_;
-
   bool reach_altitude_ = false;
-  bool obstacle_ = false;
-  bool first_brake_ = true;
   bool waypoint_outside_FOV_ = false;
-  bool back_off_ = false;
   bool hist_is_empty_ = false;
 
   int e_FOV_max_, e_FOV_min_;
@@ -55,24 +48,18 @@ class LocalPlanner {
   int children_per_node_;
   int n_expanded_nodes_;
   int reproj_age_;
-  int counter_close_points_backoff_ = 0;
 
   float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
   float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
                           // fcu frame
   float velocity_around_obstacles_;
   float velocity_far_from_obstacles_;
-  float keep_distance_;
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;
-  float distance_to_closest_point_;
   int min_cloud_size_ = 160;
-  float min_dist_backoff_;
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
-  float costmap_direction_e_;
-  float costmap_direction_z_;
   float smoothing_margin_degrees_ = 30.f;
 
   waypoint_choice waypoint_type_;
@@ -95,15 +82,11 @@ class LocalPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f back_off_point_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f back_off_start_point_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f closest_point_ = Eigen::Vector3f::Zero();
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
   Eigen::MatrixXf cost_matrix_;
-  std::vector<candidateDirection> candidate_vector_;
 
   /**
   * @brief     reprojectes the histogram from the previous algorithm iteration
@@ -116,10 +99,6 @@ class LocalPlanner {
   *            obstacles based on the progress towards the goal over time
   **/
   void evaluateProgressRate();
-  /**
-  * @brief     stops the vehicle in front of an obstacle
-  **/
-  void stopInFrontObstacles();
   /**
   * @brief     fills message to send histogram to the FCU
   **/
@@ -152,7 +131,6 @@ class LocalPlanner {
   bool mission_ = false;
   bool smooth_waypoints_ = true;
   bool send_obstacles_fcu_ = false;
-  bool stop_in_front_active_ = false;
   bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_critical_;
