@@ -132,6 +132,7 @@ class LocalPlannerNode {
                               /// output data (point cloud, position, ...)
 
   std::mutex data_ready_mutex_;
+  std::mutex px4_params_mutex_;
   std::condition_variable data_ready_cv_;
 
   /**
@@ -219,6 +220,11 @@ class LocalPlannerNode {
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& planner_is_healthy, bool& hover);
 
+  /**
+  * @brief     polls PX4 Firmware paramters every 30 seconds
+  **/
+  void checkPx4Parameters();
+
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -238,8 +244,6 @@ class LocalPlannerNode {
   ros::Subscriber goal_topic_sub_;
   ros::Subscriber distance_sensor_sub_;
   ros::Subscriber px4_param_sub_;
-
-  ros::Time param_update_time_ = ros::Time(0.0);
 
   std::vector<float> algo_time;
 
@@ -340,11 +344,6 @@ class LocalPlannerNode {
   * @brief     sends out emulated LaserScan data to the flight controller
   **/
   void publishLaserScan() const;
-
-  /**
-  * @brief     polls PX4 Firmware paramters every 30 seconds
-  **/
-  void checkPx4Parameters();
 };
 }
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
