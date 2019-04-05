@@ -26,12 +26,13 @@ namespace avoidance {
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 * @param[in]  max_age, maximum age (compute cycles) to keep data
+* @param[in]  elapsed, time elapsed since last processing [s]
 **/
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const Eigen::Vector3f& position,
-    float min_realsense_dist, int max_age);
+    float min_realsense_dist, int max_age, float elapsed_s);
 
 /**
 * @brief      calculates the histogram cells within the Field of View

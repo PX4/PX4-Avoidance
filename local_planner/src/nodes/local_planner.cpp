@@ -40,7 +40,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_around_obstacles_);
   velocity_far_from_obstacles_ =
       static_cast<float>(config.velocity_far_from_obstacles_);
-  max_point_age_ = config.max_point_age_;
+  max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
@@ -91,8 +91,13 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
-                    position_, min_realsense_dist_, max_point_age_);
+  float elapsed_since_last_processing = static_cast<float>(
+      (ros::Time::now() - last_pointcloud_process_time_).toSec());
+  processPointcloud(final_cloud_, original_cloud_vector_,
+                    histogram_box_, position_,
+                    min_realsense_dist_, max_point_age_s_,
+                    elapsed_since_last_processing);
+  last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
 }

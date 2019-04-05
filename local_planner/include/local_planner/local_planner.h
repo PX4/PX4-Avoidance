@@ -46,7 +46,6 @@ class LocalPlanner {
   int tree_age_ = 0;
   int children_per_node_;
   int n_expanded_nodes_;
-  int max_point_age_;
 
   float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
   float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
@@ -59,9 +58,11 @@ class LocalPlanner {
   float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
+  float max_point_age_s_ = 10;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
+  ros::Time last_pointcloud_process_time_;
 
   std::vector<int> e_FOV_idx_;
   std::vector<int> z_FOV_idx_;
