@@ -34,12 +34,16 @@ struct FOV_indices {
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 * @param[in]  max_age, maximum age (compute cycles) to keep data
 * @param[in]  elapsed, time elapsed since last processing [s]
+* @param[in]  min_num_points_per_cell, number of points from which on they will
+*             be kept, less points are discarded as noise (careful: 0 is not
+*             a valid input here)
 **/
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const FOV_indices& FOV, const Eigen::Vector3f& position,
-    float min_realsense_dist, int max_age, float elapsed_s);
+    float min_realsense_dist, int max_age, float elapsed_s,
+    int min_num_points_per_cell);
 
 /**
 * @brief      calculates the histogram cells within the Field of View

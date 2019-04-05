@@ -194,13 +194,13 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   // WHEN: we filter the PointCloud with different values max_age
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 0.f, 0.5f);
+                    position, min_realsense_dist, 0.f, 0.5f, 1);
 
   processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 10.f, .5f);
+                    position, min_realsense_dist, 10.f, .5f, 1);
 
   processPointcloud(processed_cloud3, complete_cloud, histogram_box,
-                    FOV_regular, position, min_realsense_dist, 10.f, .5f);
+                    FOV_regular, position, min_realsense_dist, 10.f, 0.5f, 1);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
