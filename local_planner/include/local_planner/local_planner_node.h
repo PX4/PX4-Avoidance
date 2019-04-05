@@ -103,6 +103,7 @@ enum class NavigationState {
   mission,
   auto_takeoff,
   auto_land,
+  auto_rtl,
   auto_rtgs,
   offboard,
   none,
