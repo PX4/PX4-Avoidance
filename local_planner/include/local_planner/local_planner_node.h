@@ -124,7 +124,6 @@ class LocalPlannerNode {
   ros::Publisher mavros_vel_setpoint_pub_;
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_obstacle_distance_pub_;
-  ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
   ros::Publisher mavros_system_status_pub_;
   tf::TransformListener* tf_listener_;
@@ -240,6 +239,8 @@ class LocalPlannerNode {
   ros::Subscriber distance_sensor_sub_;
   ros::Subscriber px4_param_sub_;
 
+  ros::Time param_update_time_ = ros::Time(0.0);
+
   std::vector<float> algo_time;
 
   geometry_msgs::TwistStamped vel_msg_;
@@ -339,6 +340,11 @@ class LocalPlannerNode {
   * @brief     sends out emulated LaserScan data to the flight controller
   **/
   void publishLaserScan() const;
+
+  /**
+  * @brief     polls PX4 Firmware paramters every 30 seconds
+  **/
+  void checkPx4Parameters();
 };
 }
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H

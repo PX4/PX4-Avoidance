@@ -426,6 +426,22 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   }
 }
 
+void LocalPlannerNode::checkPx4Parameters() {
+  if ((ros::Time::now() - param_update_time_) > ros::Duration(30.0)) {
+    param_update_time_ = ros::Time::now();
+    mavros_msgs::ParamGet req;
+    req.request.param_id = "MPC_XY_CRUISE";
+    if (get_px4_param_client_.call(req) && req.response.success) {
+      local_planner_->px4_.param_mpc_xy_cruise = req.response.value.real;
+    }
+    req.response.success = false;
+    req.request.param_id = "MPC_COL_PREV_D";
+    if (get_px4_param_client_.call(req) && req.response.success) {
+      local_planner_->px4_.param_mpc_col_prev_d = req.response.value.real;
+    }
+  }
+}
+
 void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   Eigen::Vector3f drone_pos = local_planner_->getPosition();
   int beta_z = floor((atan2(x - drone_pos.x(), y - drone_pos.y()) * 180.0 /
@@ -571,6 +587,7 @@ void LocalPlannerNode::threadFunction() {
       std::lock_guard<std::mutex> guard(running_mutex_);
       never_run_ = false;
       std::clock_t start_time = std::clock();
+      checkPx4Parameters();
       local_planner_->runPlanner();
       visualizer_.visualizePlannerData(
           *(local_planner_.get()), newest_waypoint_position_,

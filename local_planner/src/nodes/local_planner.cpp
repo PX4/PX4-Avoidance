@@ -338,8 +338,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.obstacle_ahead = !polar_histogram_.isEmpty();
   out.velocity_around_obstacles = velocity_around_obstacles_;
-  out.velocity_far_from_obstacles =
-      std::isfinite(px4_.param_mpc_xy_cruise) ? px4_.param_mpc_xy_cruise : 3.f;
+  out.velocity_far_from_obstacles = px4_.param_mpc_xy_cruise;
   out.last_path_time = last_path_time_;
 
   out.take_off_pose = take_off_pose_;
