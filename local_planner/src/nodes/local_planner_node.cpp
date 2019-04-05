@@ -272,6 +272,8 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
     nav_state_ = NavigationState::auto_takeoff;
   } else if (msg.mode == "AUTO.LAND") {
     nav_state_ = NavigationState::auto_land;
+  } else if (msg.mode == "AUTO.RTGS") {
+    nav_state_ = NavigationState::auto_rtgs;
   } else if (msg.mode == "OFFBOARD") {
     nav_state_ = NavigationState::offboard;
   } else {
