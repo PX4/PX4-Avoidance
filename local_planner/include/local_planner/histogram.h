@@ -19,7 +19,6 @@ class Histogram {
   int resolution_;
   int z_dim_;
   int e_dim_;
-  Eigen::MatrixXi age_;
   Eigen::MatrixXf dist_;
 
   /**
@@ -39,17 +38,6 @@ class Histogram {
   ~Histogram() = default;
 
   /**
-  * @brief     getter method for histogram cell age
-  * @param[in] x, elevation angle index
-  * @param[in] y, azimuth angle index
-  * @returns   cell age
-  **/
-  inline int get_age(int x, int y) const {
-    wrapIndex(x, y);
-    return age_(x, y);
-  }
-
-  /**
   * @brief     getter method for histogram cell distance
   * @param[in] x, elevation angle index
   * @param[in] y, azimuth angle index
@@ -59,14 +47,6 @@ class Histogram {
     wrapIndex(x, y);
     return dist_(x, y);
   }
-
-  /**
-  * @brief     setter method for histogram cell age
-  * @param[in] x, elevation angle index
-  * @param[in] y, azimuth angle index
-  * @param[in] value, cell age
-  **/
-  inline void set_age(int x, int y, int value) { age_(x, y) = value; }
 
   /**
   * @brief     setter method for histogram cell distance
