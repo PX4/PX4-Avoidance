@@ -93,9 +93,8 @@ void LocalPlanner::runPlanner() {
 
   float elapsed_since_last_processing = static_cast<float>(
       (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_,
-                    histogram_box_, position_,
-                    min_realsense_dist_, max_point_age_s_,
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
+                    position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing);
   last_pointcloud_process_time_ = ros::Time::now();
 

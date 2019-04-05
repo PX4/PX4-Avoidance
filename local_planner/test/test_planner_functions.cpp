@@ -182,10 +182,10 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   // WHEN: we filter the PointCloud with different values max_age
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, position,
-                    min_realsense_dist, 0);
+                    min_realsense_dist, 0.f, 0.5f);
 
   processPointcloud(processed_cloud2, complete_cloud, histogram_box, position,
-                    min_realsense_dist, 10);
+                    min_realsense_dist, 10.f, .5f);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
@@ -654,10 +654,6 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
   histogram.set_dist(1, 0, 1.3);
   histogram.set_dist(0, 1, 1.3);
   histogram.set_dist(1, 1, 1.3);
-  histogram.set_age(2, 2, 3);
-  histogram.set_age(3, 2, 3);
-  histogram.set_age(2, 3, 3);
-  histogram.set_age(3, 3, 3);
 
   // WHEN: we downsample the histogram to have a larger bin size
   histogram.downsample();
@@ -668,13 +664,10 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
     for (int j = 0; j < GRID_LENGTH_Z / 2; ++j) {
       if (i == 0 && j == 0) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if (i == 1 && j == 1) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }
@@ -684,7 +677,6 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
   // GIVEN: a histogram of the correct resolution
   Histogram histogram = Histogram(ALPHA_RES * 2);
   histogram.set_dist(0, 0, 1.3);
-  histogram.set_age(1, 1, 3);
 
   // WHEN: we upsample the histogram to have regular bin size
   histogram.upsample();
@@ -696,14 +688,11 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
       if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) ||
           (i == 1 && j == 1)) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if ((i == 2 && j == 2) || (i == 2 && j == 3) ||
                  (i == 3 && j == 2) || (i == 3 && j == 3)) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }

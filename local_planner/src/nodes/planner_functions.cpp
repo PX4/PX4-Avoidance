@@ -15,7 +15,6 @@ void processPointcloud(
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s) {
-
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
   final_cloud.points.clear();
