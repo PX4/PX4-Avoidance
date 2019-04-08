@@ -37,14 +37,14 @@ class LocalPlannerTests : public ::testing::Test {
     Eigen::Vector3f goal(100.f, 0.f, 30.f);
     planner.setGoal(goal);
 
-    planner.complete_cloud_.clear();
+    planner.original_cloud_vector_.clear();
   }
   void TearDown() override {}
 };
 
 TEST_F(LocalPlannerTests, no_obstacles) {
   // GIVEN: a local planner, a scan with no obstacles, pose and goal
-  planner.complete_cloud_.emplace_back();
+  planner.original_cloud_vector_.emplace_back();
 
   // WHEN: we run the local planner
   planner.runPlanner();
@@ -76,7 +76,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
       cloud.push_back(pcl::PointXYZ(distance, y, z + 30.f));
     }
   }
-  planner.complete_cloud_.push_back(std::move(cloud));
+  planner.original_cloud_vector_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
   planner.runPlanner();
@@ -127,7 +127,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
       cloud.push_back(pcl::PointXYZ(distance, y, z + 30));
     }
   }
-  planner.complete_cloud_.push_back(std::move(cloud));
+  planner.original_cloud_vector_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
   planner.runPlanner();
@@ -174,7 +174,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
       cloud.push_back(pcl::PointXYZ(distance, y, z + 30.f));
     }
   }
-  planner.complete_cloud_.push_back(std::move(cloud));
+  planner.original_cloud_vector_.push_back(std::move(cloud));
 
   // WHEN: we run the local planner
   planner.runPlanner();

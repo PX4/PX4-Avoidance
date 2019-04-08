@@ -9,7 +9,7 @@ using namespace avoidance;
 
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
-  pcl::PointCloud<pcl::PointXYZ> empty_cloud;
+  pcl::PointCloud<pcl::PointXYZI> empty_cloud;
   Histogram histogram_output = Histogram(ALPHA_RES);
   geometry_msgs::PoseStamped location;
   location.pose.position.x = 0;
@@ -50,11 +50,11 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
     }
   }
 
-  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::PointCloud<pcl::PointXYZI> cloud;
   for (int i = 0; i < middle_of_cell.size(); i++) {
     // put 1000 point in every occupied cell
     for (int j = 0; j < 1000; j++) {
-      cloud.push_back(toXYZ(middle_of_cell[i]));
+      cloud.push_back(toXYZI(middle_of_cell[i], 0));
     }
   }
 
@@ -148,16 +148,14 @@ TEST(PlannerFunctions, calculateFOV) {
   }
 }
 
-TEST(PlannerFunctionsTests, filterPointCloud) {
+TEST(PlannerFunctionsTests, processPointcloud) {
   // GIVEN: two point clouds
   const Eigen::Vector3f position(1.5f, 1.0f, 4.5f);
-  Eigen::Vector3f closest(0.7f, 0.3f, -0.5f);
   pcl::PointCloud<pcl::PointXYZ> p1;
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.1f, 0.8f, 0.1f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(2.2f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.0f, -3.0f, 1.0f)));
-  p1.push_back(toXYZ(
-      position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));  // < min_dist_backoff
+  p1.push_back(toXYZ(position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
@@ -173,40 +171,26 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
   complete_cloud.push_back(p1);
   complete_cloud.push_back(p2);
-  float min_dist_backoff = 1.0f;
   Box histogram_box(5.0f);
   histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
-  pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
-  Eigen::Vector3f closest_point, closest_point2;
-  float distance_to_closest_point, distance_to_closest_point2;
-  int counter_backoff, counter_backoff2;
+  pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2;
+  Eigen::Vector3f memory_point(-0.4f, 0.3f, -0.4f);
+  processed_cloud1.push_back(toXYZI(position + memory_point, 5));
+  processed_cloud2.push_back(toXYZI(position + memory_point, 5));
 
-  // WHEN: we filter the PointCloud with different values of min_cloud_size
-  filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
-                   counter_backoff, complete_cloud, 5.0, min_dist_backoff,
-                   histogram_box, position, min_realsense_dist);
+  // WHEN: we filter the PointCloud with different values max_age
+  processPointcloud(processed_cloud1, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 0.f, 0.5f);
 
-  filterPointCloud(cropped_cloud2, closest_point2, distance_to_closest_point2,
-                   counter_backoff2, complete_cloud, 20.0, min_dist_backoff,
-                   histogram_box, position, min_realsense_dist);
+  processPointcloud(processed_cloud2, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 10.f, .5f);
 
-  // THEN: we expect cropped_cloud to have 6 points and a backoff point, while
-  // cropped_cloud2 to be empty
-  EXPECT_FLOAT_EQ((position + closest).x(), closest_point.x());
-  EXPECT_FLOAT_EQ((position + closest).y(), closest_point.y());
-  EXPECT_FLOAT_EQ((position + closest).z(), closest_point.z());
-  EXPECT_FLOAT_EQ(closest.norm(), distance_to_closest_point);
-  EXPECT_EQ(1, counter_backoff);
-  for (int i = 0; i < p1.points.size(); i++) {
-    bool same_point = (p1.points[i].x == cropped_cloud.points[i].x) &&
-                      (p1.points[i].y == cropped_cloud.points[i].y) &&
-                      (p1.points[i].z == cropped_cloud.points[i].z);
-    ASSERT_TRUE(same_point);
-  }
-
-  EXPECT_EQ(0, cropped_cloud2.points.size());
+  // THEN: we expect the first cloud to have 6 points
+  // the second cloud should contain 7 points
+  EXPECT_EQ(processed_cloud1.size(), 6);
+  EXPECT_EQ(processed_cloud2.size(), 7);
 }
 
 TEST(PlannerFunctions, testDirectionTree) {
@@ -670,10 +654,6 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
   histogram.set_dist(1, 0, 1.3);
   histogram.set_dist(0, 1, 1.3);
   histogram.set_dist(1, 1, 1.3);
-  histogram.set_age(2, 2, 3);
-  histogram.set_age(3, 2, 3);
-  histogram.set_age(2, 3, 3);
-  histogram.set_age(3, 3, 3);
 
   // WHEN: we downsample the histogram to have a larger bin size
   histogram.downsample();
@@ -684,13 +664,10 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
     for (int j = 0; j < GRID_LENGTH_Z / 2; ++j) {
       if (i == 0 && j == 0) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if (i == 1 && j == 1) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }
@@ -700,7 +677,6 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
   // GIVEN: a histogram of the correct resolution
   Histogram histogram = Histogram(ALPHA_RES * 2);
   histogram.set_dist(0, 0, 1.3);
-  histogram.set_age(1, 1, 3);
 
   // WHEN: we upsample the histogram to have regular bin size
   histogram.upsample();
@@ -712,14 +688,11 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
       if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) ||
           (i == 1 && j == 1)) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if ((i == 2 && j == 2) || (i == 2 && j == 3) ||
                  (i == 3 && j == 2) || (i == 3 && j == 3)) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }

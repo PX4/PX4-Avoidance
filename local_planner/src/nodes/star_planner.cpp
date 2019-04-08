@@ -39,21 +39,13 @@ void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
   curr_yaw_histogram_frame_deg_ = curr_yaw;
 }
 
-void StarPlanner::setCloud(
-    const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud) {
-  pointcloud_ = cropped_cloud;
-}
-
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
   tree_age_ = 1000;
 }
 
-void StarPlanner::setReprojectedPoints(
-    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-    const std::vector<int>& reprojected_points_age) {
-  reprojected_points_ = reprojected_points;
-  reprojected_points_age_ = reprojected_points_age;
+void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) {
+  cloud_ = cloud;
 }
 
 float StarPlanner::treeCostFunction(int node_number) const {
@@ -141,14 +133,8 @@ void StarPlanner::buildLookAheadTree() {
                  tree_[origin].yaw_,
                  0.0f);  // assume pitch is zero at every node
 
-    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
     Histogram histogram = Histogram(ALPHA_RES);
-
-    propagateHistogram(propagated_histogram, reprojected_points_,
-                       reprojected_points_age_, origin_position);
-    generateNewHistogram(histogram, pointcloud_, origin_position);
-    combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
-                      z_FOV_idx, e_FOV_min, e_FOV_max);
+    generateNewHistogram(histogram, cloud_, position_);
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;

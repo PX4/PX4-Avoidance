@@ -40,13 +40,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
       static_cast<float>(config.velocity_around_obstacles_);
   velocity_far_from_obstacles_ =
       static_cast<float>(config.velocity_far_from_obstacles_);
-  keep_distance_ = config.keep_distance_;
-  reproj_age_ = static_cast<float>(config.reproj_age_);
+  max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
-  min_cloud_size_ = config.min_cloud_size_;
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
-  min_dist_backoff_ = static_cast<float>(config.min_dist_backoff_);
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
@@ -61,9 +58,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   }
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
-  stop_in_front_ = config.stop_in_front_;
-  use_back_off_ = config.use_back_off_;
-  use_VFH_star_ = config.use_VFH_star_;
   adapt_cost_params_ = config.adapt_cost_params_;
   send_obstacles_fcu_ = config.send_obstacles_fcu_;
 
@@ -87,10 +81,8 @@ void LocalPlanner::applyGoal() {
 }
 
 void LocalPlanner::runPlanner() {
-  stop_in_front_active_ = false;
-
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
-           static_cast<int>(complete_cloud_.size()));
+           static_cast<int>(original_cloud_vector_.size()));
 
   // calculate Field of View
   z_FOV_idx_.clear();
@@ -99,10 +91,12 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-  filterPointCloud(final_cloud_, closest_point_, distance_to_closest_point_,
-                   counter_close_points_backoff_, complete_cloud_,
-                   min_cloud_size_, min_dist_backoff_, histogram_box_,
-                   position_, min_realsense_dist_);
+  float elapsed_since_last_processing = static_cast<float>(
+      (ros::Time::now() - last_pointcloud_process_time_).toSec());
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
+                    position_, min_realsense_dist_, max_point_age_s_,
+                    elapsed_since_last_processing);
+  last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
 }
@@ -110,16 +104,10 @@ void LocalPlanner::runPlanner() {
 void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // construct histogram if it is needed
   // or if it is required by the FCU
-  reprojectPoints(polar_histogram_);
-  Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
   Histogram new_histogram = Histogram(ALPHA_RES);
   to_fcu_histogram_.setZero();
-
-  propagateHistogram(propagated_histogram, reprojected_points_,
-                     reprojected_points_age_, position_);
   generateNewHistogram(new_histogram, final_cloud_, position_);
-  combinedHistogram(hist_is_empty_, new_histogram, propagated_histogram,
-                    waypoint_outside_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_);
+
   if (send_to_fcu) {
     compressHistogramElevation(to_fcu_histogram_, new_histogram);
     updateObstacleDistanceMsg(to_fcu_histogram_);
@@ -170,95 +158,32 @@ void LocalPlanner::determineStrategy() {
     if (send_obstacles_fcu_) {
       create2DObstacleRepresentation(true);
     }
-  } else if (final_cloud_.points.size() > min_cloud_size_ && stop_in_front_ &&
-             reach_altitude_) {
-    obstacle_ = true;
-    ROS_INFO(
-        "\033[1;35m[OA] There is an Obstacle Ahead stop in front\n \033[0m");
-    stopInFrontObstacles();
-    waypoint_type_ = direct;
-
-    if (send_obstacles_fcu_) {
-      create2DObstacleRepresentation(true);
-    }
   } else {
-    if (((counter_close_points_backoff_ > 200 &&
-          final_cloud_.points.size() > min_cloud_size_) ||
-         back_off_) &&
-        reach_altitude_ && use_back_off_) {
-      if (!back_off_) {
-        back_off_point_ = closest_point_;
-        back_off_start_point_ = position_;
-        back_off_ = true;
-      } else {
-        float dist = (position_ - back_off_point_).norm();
-        if (dist > min_dist_backoff_ + 1.0f) {
-          back_off_ = false;
-        }
-      }
-      waypoint_type_ = goBack;
-      if (send_obstacles_fcu_) {
-        create2DObstacleRepresentation(true);
-      }
+    waypoint_type_ = tryPath;
 
-    } else {
-      evaluateProgressRate();
+    evaluateProgressRate();
+    create2DObstacleRepresentation(send_obstacles_fcu_);
 
-      create2DObstacleRepresentation(send_obstacles_fcu_);
+    if (!polar_histogram_.isEmpty()) {
+      getCostMatrix(polar_histogram_, goal_, position_,
+                    curr_yaw_histogram_frame_deg_, last_sent_waypoint_,
+                    cost_params_, velocity_.norm() < 0.1f,
+                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
-      // decide how to proceed
-      if (hist_is_empty_) {
-        obstacle_ = false;
-        waypoint_type_ = tryPath;
-      }
+      star_planner_->setParams(cost_params_);
+      star_planner_->setFOV(h_FOV_, v_FOV_);
+      star_planner_->setPointcloud(final_cloud_);
 
-      if (!hist_is_empty_ && reach_altitude_) {
-        obstacle_ = true;
+      // set last chosen direction for smoothing
+      PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
+      last_wp_pol.r = (position_ - goal_).norm();
+      Eigen::Vector3f projected_last_wp =
+          polarToCartesian(last_wp_pol, position_);
+      star_planner_->setLastDirection(projected_last_wp);
 
-        getCostMatrix(
-            polar_histogram_, goal_, position_, curr_yaw_histogram_frame_deg_,
-            last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
-            smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
-
-        if (use_VFH_star_) {
-          star_planner_->setParams(cost_params_);
-          star_planner_->setFOV(h_FOV_, v_FOV_);
-          star_planner_->setReprojectedPoints(reprojected_points_,
-                                              reprojected_points_age_);
-          star_planner_->setCloud(final_cloud_);
-
-          // set last chosen direction for smoothing
-          PolarPoint last_wp_pol =
-              cartesianToPolar(last_sent_waypoint_, position_);
-          last_wp_pol.r = (position_ - goal_).norm();
-          Eigen::Vector3f projected_last_wp =
-              polarToCartesian(last_wp_pol, position_);
-          star_planner_->setLastDirection(projected_last_wp);
-
-          // build search tree
-          star_planner_->buildLookAheadTree();
-
-          waypoint_type_ = tryPath;
-          last_path_time_ = ros::Time::now();
-        } else {
-          getBestCandidatesFromCostMatrix(cost_matrix_, 1, candidate_vector_);
-
-          if (candidate_vector_.empty()) {
-            stopInFrontObstacles();
-            waypoint_type_ = direct;
-            stop_in_front_ = true;
-            ROS_INFO(
-                "\033[1;35m[OA] All directions blocked: Stopping in front "
-                "obstacle. \n \033[0m");
-          } else {
-            costmap_direction_e_ = candidate_vector_[0].elevation_angle;
-            costmap_direction_z_ = candidate_vector_[0].azimuth_angle;
-            waypoint_type_ = costmap;
-          }
-        }
-      }
-
-      first_brake_ = true;
+      // build search tree
+      star_planner_->buildLookAheadTree();
+      last_path_time_ = ros::Time::now();
     }
   }
   position_old_ = position_;
@@ -324,59 +249,6 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   distance_data_ = msg;
 }
 
-// get 3D points from old histogram
-void LocalPlanner::reprojectPoints(Histogram histogram) {
-  float dist;
-  int age;
-  // ALPHA_RES%2=0 as per definition, see histogram.h
-  int half_res = ALPHA_RES / 2;
-  Eigen::Vector3f temp_array[4];
-
-  std::array<PolarPoint, 4> p_pol;
-  reprojected_points_age_.clear();
-
-  reprojected_points_.points.clear();
-  reprojected_points_.header.stamp = final_cloud_.header.stamp;
-  reprojected_points_.header.frame_id = "local_origin";
-
-  for (int e = 0; e < GRID_LENGTH_E; e++) {
-    for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      if (histogram.get_dist(e, z) > FLT_MIN) {
-        for (auto& i : p_pol) {
-          i.r = histogram.get_dist(e, z);
-          i = histogramIndexToPolar(e, z, ALPHA_RES, i.r);
-        }
-        // transform from array index to angle
-        p_pol[0].e += half_res;
-        p_pol[0].z += half_res;
-        p_pol[1].e -= half_res;
-        p_pol[1].z += half_res;
-        p_pol[2].e += half_res;
-        p_pol[2].z -= half_res;
-        p_pol[3].e -= half_res;
-        p_pol[3].z -= half_res;
-
-        // transform from Polar to Cartesian
-        temp_array[0] = polarToCartesian(p_pol[0], position_old_);
-        temp_array[1] = polarToCartesian(p_pol[1], position_old_);
-        temp_array[2] = polarToCartesian(p_pol[2], position_old_);
-        temp_array[3] = polarToCartesian(p_pol[3], position_old_);
-
-        for (int i = 0; i < 4; i++) {
-          dist = (position_ - temp_array[i]).norm();
-          age = histogram.get_age(e, z);
-
-          if (dist < 2.0f * histogram_box_.radius_ && dist > 0.3f &&
-              age < reproj_age_) {
-            reprojected_points_.points.push_back(toXYZ(temp_array[i]));
-            reprojected_points_age_.push_back(age);
-          }
-        }
-      }
-    }
-  }
-}
-
 // calculate the correct weight between fly over and fly around
 void LocalPlanner::evaluateProgressRate() {
   if (reach_altitude_ && adapt_cost_params_) {
@@ -424,34 +296,10 @@ void LocalPlanner::evaluateProgressRate() {
   }
 }
 
-// stop in front of an obstacle at a distance defined by the variable
-// keep_distance_
-void LocalPlanner::stopInFrontObstacles() {
-  if (first_brake_) {
-    float braking_distance =
-        std::abs(distance_to_closest_point_ - keep_distance_);
-    Eigen::Vector2f xyPos = position_.topRows<2>();
-    Eigen::Vector2f pose_to_goal = goal_.topRows<2>() - xyPos;
-    goal_.topRows<2>() =
-        xyPos + braking_distance * pose_to_goal / pose_to_goal.norm();
-    first_brake_ = false;
-    stop_in_front_active_ = true;
-  }
-  ROS_INFO(
-      "\033[0;35m [OA] New Stop Goal: [%.2f %.2f %.2f], obstacle distance "
-      "%.2f. \033[0m",
-      goal_.x(), goal_.y(), goal_.z(), distance_to_closest_point_);
-}
-
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
-const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getCroppedCloud() const {
+const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const {
   return final_cloud_;
-}
-
-const pcl::PointCloud<pcl::PointXYZ>& LocalPlanner::getReprojectedPoints()
-    const {
-  return reprojected_points_;
 }
 
 void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
@@ -475,19 +323,13 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
 
-  out.obstacle_ahead = obstacle_;
+  out.obstacle_ahead = !polar_histogram_.isEmpty();
   out.velocity_around_obstacles = velocity_around_obstacles_;
   out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
   out.last_path_time = last_path_time_;
 
-  out.back_off_point = back_off_point_;
-  out.back_off_start_point = back_off_start_point_;
-  out.min_dist_backoff = min_dist_backoff_;
-
   out.take_off_pose = take_off_pose_;
 
-  out.costmap_direction_e = costmap_direction_e_;
-  out.costmap_direction_z = costmap_direction_z_;
   out.path_node_positions = star_planner_->path_node_positions_;
   return out;
 }

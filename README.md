@@ -6,7 +6,7 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 
 The two algorithms are standalone and they are not meant to be used together.
 
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. On the other hand, the *global_planner* is computatonally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required.
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
 
 > **Note** The development team is right now focused on the *local_planner*.
 

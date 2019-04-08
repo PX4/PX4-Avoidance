@@ -10,18 +10,23 @@ namespace avoidance {
 
 // trim the point cloud so that only points inside the bounding box are
 // considered
-void filterPointCloud(
-    pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
-    Eigen::Vector3f& closest_point, float& distance_to_closest_point,
-    int& counter_backoff,
+void processPointcloud(
+    pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    int min_cloud_size, float min_dist_backoff, Box histogram_box,
-    const Eigen::Vector3f& position, float min_realsense_dist) {
-  cropped_cloud.points.clear();
-  cropped_cloud.width = 0;
-  distance_to_closest_point = HUGE_VAL;
+    Box histogram_box, const Eigen::Vector3f& position,
+    float min_realsense_dist, int max_age, float elapsed_s) {
+  pcl::PointCloud<pcl::PointXYZI> old_cloud;
+  std::swap(final_cloud, old_cloud);
+  final_cloud.points.clear();
+  final_cloud.width = 0;
+  final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
+
   float distance;
-  counter_backoff = 0;
+
+  // double resolution histogram for subsampling
+  // the distance layer will show whether the cell is already
+  // occupied by a point
+  Histogram high_res_histogram = Histogram(ALPHA_RES / 2);
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
@@ -31,13 +36,12 @@ void filterPointCloud(
           distance = (position - toEigen(xyz)).norm();
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
-            cropped_cloud.points.push_back(pcl::PointXYZ(xyz.x, xyz.y, xyz.z));
-            if (distance < distance_to_closest_point) {
-              distance_to_closest_point = distance;
-              closest_point = toEigen(xyz);
-            }
-            if (distance < min_dist_backoff) {
-              counter_backoff++;
+            // subsampling the cloud
+            PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
+            Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+            if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0) {
+              final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
+              high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
             }
           }
         }
@@ -45,13 +49,28 @@ void filterPointCloud(
     }
   }
 
-  cropped_cloud.header.stamp = complete_cloud[0].header.stamp;
-  cropped_cloud.header.frame_id = complete_cloud[0].header.frame_id;
-  cropped_cloud.height = 1;
-  cropped_cloud.width = cropped_cloud.points.size();
-  if (cropped_cloud.points.size() <= min_cloud_size) {
-    cropped_cloud.points.clear();
-    cropped_cloud.width = 0;
+  // combine with old cloud
+  for (const pcl::PointXYZI& xyzi : old_cloud) {
+    // adding older points if not expired and space is free according to new
+    // cloud
+    if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
+      distance = (position - toEigen(xyzi)).norm();
+      if (distance < histogram_box.radius_) {
+        PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
+        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+        if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0 &&
+            xyzi.intensity < max_age) {
+          final_cloud.points.push_back(
+              toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
+          high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
+        }
+      }
+    }
+
+    final_cloud.header.stamp = complete_cloud[0].header.stamp;
+    final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
+    final_cloud.height = 1;
+    final_cloud.width = final_cloud.points.size();
   }
 }
 
@@ -87,54 +106,9 @@ void calculateFOV(float h_fov, float v_fov, std::vector<int>& z_FOV_idx,
   }
 }
 
-// Build histogram estimate from reprojected points
-void propagateHistogram(
-    Histogram& polar_histogram_est,
-    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-    const std::vector<int>& reprojected_points_age,
-    const Eigen::Vector3f& position) {
-  Eigen::MatrixXi counter(GRID_LENGTH_E / 2, GRID_LENGTH_Z / 2);
-  counter.fill(0);
-
-  for (size_t i = 0; i < reprojected_points.points.size(); i++) {
-    PolarPoint p_pol =
-        cartesianToPolar(toEigen(reprojected_points.points[i]), position);
-    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, 2 * ALPHA_RES);
-    float point_distance =
-        (position - toEigen(reprojected_points.points[i])).norm();
-
-    counter(p_ind.y(), p_ind.x()) += 1;
-    polar_histogram_est.set_age(
-        p_ind.y(), p_ind.x(),
-        polar_histogram_est.get_age(p_ind.y(), p_ind.x()) +
-            reprojected_points_age[i]);
-    polar_histogram_est.set_dist(
-        p_ind.y(), p_ind.x(),
-        polar_histogram_est.get_dist(p_ind.y(), p_ind.x()) + point_distance);
-  }
-
-  for (int e = 0; e < GRID_LENGTH_E / 2; e++) {
-    for (int z = 0; z < GRID_LENGTH_Z / 2; z++) {
-      if (counter(e, z) >= 6) {
-        polar_histogram_est.set_dist(
-            e, z, polar_histogram_est.get_dist(e, z) / counter(e, z));
-        polar_histogram_est.set_age(
-            e, z, static_cast<int>(polar_histogram_est.get_age(e, z) /
-                                   counter(e, z)));
-      } else {  // not enough points to confidently block cell
-        polar_histogram_est.set_dist(e, z, 0.f);
-        polar_histogram_est.set_age(e, z, 0);
-      }
-    }
-  }
-
-  // Upsample propagated histogram
-  polar_histogram_est.upsample();
-}
-
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram,
-                          const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud,
+                          const pcl::PointCloud<pcl::PointXYZI>& cropped_cloud,
                           const Eigen::Vector3f& position) {
   Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
   counter.fill(0);
@@ -158,44 +132,6 @@ void generateNewHistogram(Histogram& polar_histogram,
             e, z, polar_histogram.get_dist(e, z) / counter(e, z));
       } else {
         polar_histogram.set_dist(e, z, 0.f);
-      }
-    }
-  }
-}
-
-// Combine propagated histogram and new histogram to the final binary histogram
-void combinedHistogram(bool& hist_empty, Histogram& new_hist,
-                       const Histogram& propagated_hist,
-                       bool waypoint_outside_FOV,
-                       const std::vector<int>& z_FOV_idx, int e_FOV_min,
-                       int e_FOV_max) {
-  hist_empty = true;
-  for (int z = 0; z < GRID_LENGTH_Z; z++) {
-    bool inside_FOV_z =
-        std::find(z_FOV_idx.begin(), z_FOV_idx.end(), z) != z_FOV_idx.end();
-    for (int e = 0; e < GRID_LENGTH_E; e++) {
-      if (inside_FOV_z && e > e_FOV_min && e < e_FOV_max) {  // inside FOV
-        if (new_hist.get_dist(e, z) > 0) {
-          new_hist.set_age(e, z, 1);
-          hist_empty = false;
-        }
-      } else {
-        if (propagated_hist.get_dist(e, z) > 0) {
-          if (waypoint_outside_FOV) {
-            new_hist.set_age(e, z, propagated_hist.get_age(e, z));
-          } else {
-            new_hist.set_age(e, z, propagated_hist.get_age(e, z) + 1);
-          }
-          hist_empty = false;
-        }
-        if (new_hist.get_dist(e, z) > 0) {
-          new_hist.set_age(e, z, 1);
-          hist_empty = false;
-        }
-        if (propagated_hist.get_dist(e, z) > 0 &&
-            new_hist.get_dist(e, z) < FLT_MIN) {
-          new_hist.set_dist(e, z, propagated_hist.get_dist(e, z));
-        }
       }
     }
   }
@@ -347,7 +283,8 @@ void getBestCandidatesFromCostMatrix(
       }
     }
   }
-  // copy queue to vector and change order such that lowest cost is at the front
+  // copy queue to vector and change order such that lowest cost is at the
+  // front
   candidate_vector.clear();
   candidate_vector.reserve(queue.size());
   while (!queue.empty()) {

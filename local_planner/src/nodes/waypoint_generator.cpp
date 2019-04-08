@@ -33,15 +33,6 @@ void WaypointGenerator::calculateWaypoint() {
       getPathMsg();
       break;
     }
-    case costmap: {
-      PolarPoint p_pol(planner_info_.costmap_direction_e,
-                       planner_info_.costmap_direction_z, 1.0);
-      output_.goto_position = polarToCartesian(p_pol, position_);
-      ROS_DEBUG("[WG] Costmap to: [%f, %f, %f].", output_.goto_position.x(),
-                output_.goto_position.y(), output_.goto_position.z());
-      getPathMsg();
-      break;
-    }
 
     case tryPath: {
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);
@@ -77,11 +68,6 @@ void WaypointGenerator::calculateWaypoint() {
       ROS_DEBUG("[WG] Reaching height first");
       reachGoalAltitudeFirst();
       getPathMsg();
-      break;
-    }
-    case goBack: {
-      ROS_DEBUG("[WG] Too close, backing off");
-      backOff();
       break;
     }
   }
@@ -130,26 +116,6 @@ void WaypointGenerator::goStraight() {
   ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].",
             output_.goto_position.x(), output_.goto_position.y(),
             output_.goto_position.z());
-}
-
-void WaypointGenerator::backOff() {
-  Eigen::Vector3f dir = position_ - planner_info_.back_off_point;
-  dir.z() = 0;
-  dir.normalize();
-  dir *= 0.5f;
-
-  output_.goto_position = position_ + dir;
-  output_.goto_position.z() = planner_info_.back_off_start_point.z();
-
-  createPoseMsg(output_.position_wp, output_.orientation_wp,
-                output_.goto_position, last_yaw_);
-  transformPositionToVelocityWaypoint();
-
-  ROS_DEBUG("[WG] Backoff Point: [%f, %f, %f].",
-            planner_info_.back_off_point.x(), planner_info_.back_off_point.y(),
-            planner_info_.back_off_point.z());
-  ROS_DEBUG("[WG] Back off selected direction: [%f, %f, %f].", dir.x(), dir.y(),
-            dir.z());
 }
 
 void WaypointGenerator::transformPositionToVelocityWaypoint() {

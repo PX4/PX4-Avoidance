@@ -172,6 +172,11 @@ Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
   return ev3;
 }
 
+Eigen::Vector3f toEigen(const pcl::PointXYZI& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
 Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq) {
   Eigen::Quaternionf eqf;
   eqf.x() = gmq.x;
@@ -212,6 +217,24 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   xyz.y = ev3.y();
   xyz.z = ev3.z();
   return xyz;
+}
+
+pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity) {
+  pcl::PointXYZI p;
+  p.x = ev3.x();
+  p.y = ev3.y();
+  p.z = ev3.z();
+  p.intensity = intensity;
+  return p;
+}
+
+pcl::PointXYZI toXYZI(float x, float y, float z, float intensity) {
+  pcl::PointXYZI p;
+  p.x = x;
+  p.y = y;
+  p.z = z;
+  p.intensity = intensity;
+  return p;
 }
 
 geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,

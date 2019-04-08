@@ -13,8 +13,6 @@ namespace avoidance {
 void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   local_pointcloud_pub_ =
       nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
-  reprojected_points_pub_ =
-      nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/reprojected_points", 1);
   pointcloud_size_pub_ = nh.advertise<std_msgs::UInt32>("/pointcloud_size", 1);
   bounding_box_pub_ =
       nh.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
@@ -54,10 +52,9 @@ void LocalPlannerVisualization::visualizePlannerData(
     const geometry_msgs::Point& newest_adapted_waypoint_position,
     const geometry_msgs::PoseStamped& newest_pose) const {
   // visualize clouds
-  local_pointcloud_pub_.publish(planner.getCroppedCloud());
-  reprojected_points_pub_.publish(planner.getReprojectedPoints());
+  local_pointcloud_pub_.publish(planner.getPointcloud());
   pointcloud_size_pub_.publish(
-      static_cast<uint32_t>(planner.getCroppedCloud().size()));
+      static_cast<uint32_t>(planner.getPointcloud().size()));
 
   // visualize tree calculation
   std::vector<TreeNode> tree;
@@ -475,12 +472,6 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
       setpoint.color.b = 0.0;
       break;
     }
-    case costmap: {
-      setpoint.color.r = 0.0;
-      setpoint.color.g = 1.0;
-      setpoint.color.b = 0.0;
-      break;
-    }
     case tryPath: {
       setpoint.color.r = 0.0;
       setpoint.color.g = 1.0;
@@ -497,12 +488,6 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
       setpoint.color.r = 1.0;
       setpoint.color.g = 0.0;
       setpoint.color.b = 1.0;
-      break;
-    }
-    case goBack: {
-      setpoint.color.r = 1.0;
-      setpoint.color.g = 0.0;
-      setpoint.color.b = 0.0;
       break;
     }
   }
