@@ -356,6 +356,8 @@ void LocalPlannerNode::updateGoalCallback(
 
 void LocalPlannerNode::fcuInputGoalCallback(
     const mavros_msgs::Trajectory& msg) {
+  ROS_DEBUG("goal_msg_ %f %f msg %f %f valid %d ", goal_msg_.pose.position.x, goal_msg_.pose.position.y,
+    msg.point_2.position.x, msg.point_2.position.y, msg.point_valid[1]);
   if ((msg.point_valid[1] == true) &&
       (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position))
               .norm() > 0.01f) {

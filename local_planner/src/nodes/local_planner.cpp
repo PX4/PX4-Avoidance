@@ -148,6 +148,7 @@ void LocalPlanner::determineStrategy() {
   if (disable_rise_to_goal_altitude_) {
     reach_altitude_ = true;
   }
+  reach_altitude_ = true;
 
   if (!reach_altitude_) {
     starting_height_ = std::max(goal_.z() - 0.5f, take_off_pose_.z() + 1.0f);

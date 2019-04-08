@@ -35,6 +35,8 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
+      ROS_DEBUG("pos %f %f %f ", position_.x(), position_.y(), position_.z());
+      ROS_DEBUG("goal %f %f %f ", goal_.x(), goal_.y(), goal_.z());
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);
       bool tree_available = getDirectionFromTree(
           p_pol, planner_info_.path_node_positions, position_, goal_);
@@ -48,6 +50,8 @@ void WaypointGenerator::calculateWaypoint() {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
         output_.goto_position = polarToCartesian(p_pol, position_);
+        ROS_DEBUG("dir from tree %f %f %f ", output_.goto_position.x(), output_.goto_position.y(),
+      output_.goto_position.z());
       } else {
         ROS_DEBUG("[WG] No valid tree, going straight");
         goStraight();
@@ -64,12 +68,12 @@ void WaypointGenerator::calculateWaypoint() {
       break;
     }
 
-    case reachHeight: {
-      ROS_DEBUG("[WG] Reaching height first");
-      reachGoalAltitudeFirst();
-      getPathMsg();
-      break;
-    }
+    // case reachHeight: {
+    //   ROS_DEBUG("[WG] Reaching height first");
+    //   reachGoalAltitudeFirst();
+    //   getPathMsg();
+    //   break;
+    // }
   }
   last_wp_type_ = planner_info_.waypoint_type;
   last_yaw_ = curr_yaw_;
@@ -253,9 +257,9 @@ void WaypointGenerator::adaptSpeed() {
     output_.adapted_goto_position = position_ + pose_to_wp;
   }
 
-  ROS_INFO("[WG] Speed adapted WP: [%f %f %f].",
+  ROS_DEBUG("[WG] Speed adapted WP: [%f %f %f]. SPEED %F ",
            output_.adapted_goto_position.x(), output_.adapted_goto_position.y(),
-           output_.adapted_goto_position.z());
+           output_.adapted_goto_position.z(), speed_);
 }
 
 // create the message that is sent to the UAV
