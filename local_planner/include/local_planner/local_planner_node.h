@@ -109,6 +109,16 @@ enum class MAV_STATE {
   MAV_STATE_FLIGHT_TERMINATION,
 };
 
+enum class NavigationState {
+  mission,
+  auto_takeoff,
+  auto_land,
+  auto_rtl,
+  auto_rtgs,
+  offboard,
+  none,
+};
+
 class LocalPlannerNode {
  public:
   LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
@@ -274,7 +284,9 @@ class LocalPlannerNode {
   std::vector<float> algo_time;
 
   geometry_msgs::TwistStamped vel_msg_;
-  bool armed_, offboard_, mission_, new_goal_;
+  bool armed_ = false;
+  NavigationState nav_state_ = NavigationState::none;
+  bool new_goal_ = false;
   bool data_ready_ = false;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
