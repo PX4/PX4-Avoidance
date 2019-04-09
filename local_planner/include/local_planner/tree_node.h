@@ -17,6 +17,7 @@ class TreeNode {
   int origin_;
   int depth_;
   float yaw_;
+  bool closed_;
 
   TreeNode();
   TreeNode(int from, int d, const Eigen::Vector3f& pos);

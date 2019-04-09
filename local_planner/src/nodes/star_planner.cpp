@@ -88,6 +88,7 @@ float StarPlanner::treeCostFunction(int node_number) const {
                   static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
+
 float StarPlanner::treeHeuristicFunction(int node_number) const {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, node_position);
@@ -109,6 +110,17 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
+
+  Eigen::Vector3f origin_position, origin_origin_position;
+  Histogram histogram(ALPHA_RES);
+  std::vector<uint8_t> cost_image_data;
+  std::vector<candidateDirection> candidate_vector;
+  Eigen::MatrixXf cost_matrix;
+
+  Eigen::Vector3f node_location, diff;
+
+  bool is_expanded_node = true;
+
   tree_.clear();
   closed_set_.clear();
 
@@ -119,25 +131,15 @@ void StarPlanner::buildLookAheadTree() {
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
-
-  for (int n = 0; n < n_expanded_nodes_; n++) {
-    Eigen::Vector3f origin_position = tree_[origin].getPosition();
+  for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
+    origin_position = tree_[origin].getPosition();
     int old_origin = tree_[origin].origin_;
-    Eigen::Vector3f origin_origin_position = tree_[old_origin].getPosition();
-    bool hist_is_empty = false;  // unused
+    origin_origin_position = tree_[old_origin].getPosition();
 
-    // build new histogram
-    FOV_indices FOV;
-    calculateFOV(h_FOV_deg_, v_FOV_deg_, FOV, tree_[origin].yaw_,
-                 0.0f);  // assume pitch is zero at every node
-
-    Histogram histogram = Histogram(ALPHA_RES);
+    histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
 
     // calculate candidates
-    Eigen::MatrixXf cost_matrix;
-    std::vector<uint8_t> cost_image_data;
-    std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
                   projected_last_wp_, cost_params_, false,
                   smoothing_margin_degrees_, cost_matrix, cost_image_data);
@@ -156,13 +158,13 @@ void StarPlanner::buildLookAheadTree() {
                          tree_node_distance_);
 
         // check if another close node has been added
-        Eigen::Vector3f node_location =
-            polarToCartesian(p_pol, origin_position);
+        node_location = polarToCartesian(p_pol, origin_position);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
           if (dist < 0.2f) {
             close_nodes++;
+            break;
           }
         }
 
@@ -175,7 +177,7 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ =
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-          Eigen::Vector3f diff = node_location - origin_position;
+          diff = node_location - origin_position;
           float yaw_radians = atan2(diff.y(), diff.x());
           tree_.back().yaw_ =
               std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
@@ -185,24 +187,25 @@ void StarPlanner::buildLookAheadTree() {
     }
 
     closed_set_.push_back(origin);
+    tree_[origin].closed_ = true;
 
     // find best node to continue
     float minimal_cost = HUGE_VAL;
+    is_expanded_node = false;
     for (size_t i = 0; i < tree_.size(); i++) {
-      bool closed = false;
-      for (size_t j = 0; j < closed_set_.size(); j++) {
-        if (closed_set_[j] == (int)i) {
-          closed = true;
+      if (!(tree_[i].closed_)) {
+        float node_distance = (tree_[i].getPosition() - position_).norm();
+        if (tree_[i].total_cost_ < minimal_cost &&
+            node_distance < max_path_length_) {
+          minimal_cost = tree_[i].total_cost_;
+          origin = i;
+          is_expanded_node = true;
         }
       }
-
-      float node_distance = (tree_[i].getPosition() - position_).norm();
-      if (tree_[i].total_cost_ < minimal_cost && !closed &&
-          node_distance < max_path_length_) {
-        minimal_cost = tree_[i].total_cost_;
-        origin = i;
-      }
     }
+
+    cost_image_data.clear();
+    candidate_vector.clear();
   }
   // smoothing between trees
   int tree_end = origin;
