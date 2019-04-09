@@ -35,6 +35,9 @@ PathHandlerNode::PathHandlerNode() {
       nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
   three_point_msg_publisher_ =
       nh_.advertise<global_planner::ThreePointMsg>("/three_point_msg", 10);
+  mavros_system_status_pub_ =
+      nh_.advertise<mavros_msgs::CompanionProcessStatus>(
+          "/mavros/companion_process/status", 1);
   // avoidance_triplet_msg_publisher_ =
   // nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet",
   // 10);
@@ -259,6 +262,16 @@ void PathHandlerNode::publishSetpoint() {
   mavros_msgs::Trajectory obst_free_path = {};
   transformPoseToObstacleAvoidance(obst_free_path, setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
+  publishSystemStatus();
+}
+
+// Publish companion process status
+void PathHandlerNode::publishSystemStatus() {
+  mavros_msgs::CompanionProcessStatus status_msg;
+  status_msg.header.stamp = ros::Time::now();
+  status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
+  status_msg.state = static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE);
+  mavros_system_status_pub_.publish(status_msg);
 }
 
 // Send a 3-point message representing the current path
