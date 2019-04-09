@@ -9,6 +9,8 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
+
+#include <mavros_msgs/CompanionProcessStatus.h>
 #include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/Path.h>
 #include <ros/ros.h>
@@ -22,6 +24,18 @@
 #include <global_planner/ThreePointMsg.h>
 
 namespace global_planner {
+
+enum class MAV_STATE {
+  MAV_STATE_UNINIT,
+  MAV_STATE_BOOT,
+  MAV_STATE_CALIBRATIN,
+  MAV_STATE_STANDBY,
+  MAV_STATE_ACTIVE,
+  MAV_STATE_CRITICAL,
+  MAV_STATE_EMERGENCY,
+  MAV_STATE_POWEROFF,
+  MAV_STATE_FLIGHT_TERMINATION,
+};
 
 class PathHandlerNode {
  public:
@@ -62,6 +76,7 @@ class PathHandlerNode {
   ros::Publisher three_point_msg_publisher_;
   ros::Publisher avoidance_triplet_msg_publisher_;
   ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_system_status_pub_;
 
   tf::TransformListener listener_;
 
@@ -84,6 +99,7 @@ class PathHandlerNode {
                                         geometry_msgs::PoseStamped pose);
   void publishSetpoint();
   void publishThreePointMsg();
+  void publishSystemStatus();
 };
 
 }  // namespace global_planner
