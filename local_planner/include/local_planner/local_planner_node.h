@@ -70,12 +70,9 @@ struct cameraData {
 
 /**
 * @brief struct to contain the parameters needed for the model based trajectory
-*planning
-* when MPC_AUTO_MODE is set to 1 (default) then all members are used for the
-*jerk limited
-* trajectory on the flight controller side
-* when MPC_AUTO_MODE is set to 0, only up_accl, down_accl, xy_acc are used on
-*the
+* planning when MPC_AUTO_MODE is set to 1 (default) then all members are used
+* for the jerk limited trajectory on the flight controller side when
+* MPC_AUTO_MODE is set to 0, only up_accl, down_accl, xy_acc are used on the
 * flight controller side
 **/
 struct ModelParameters {

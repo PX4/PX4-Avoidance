@@ -253,14 +253,17 @@ void WaypointGenerator::adaptSpeed() {
     output_.adapted_goto_position = position_ + pose_to_wp;
   }
 
-  ROS_INFO("[WG] Speed adapted WP: [%f %f %f].",
-           output_.adapted_goto_position.x(), output_.adapted_goto_position.y(),
-           output_.adapted_goto_position.z());
+  ROS_DEBUG(
+      "[WG] Speed adapted WP: [%f %f %f].", output_.adapted_goto_position.x(),
+      output_.adapted_goto_position.y(), output_.adapted_goto_position.z());
 }
 
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
+  ROS_DEBUG("[WG] original GoTo position WP: [%f %f %f].",
+            output_.goto_position.x(), output_.goto_position.y(),
+            output_.goto_position.z());
 
   float time_diff_sec =
       static_cast<float>((current_time_ - last_time_).toSec());

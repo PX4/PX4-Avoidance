@@ -57,11 +57,10 @@ void LocalPlannerVisualization::visualizePlannerData(
       static_cast<uint32_t>(planner.getPointcloud().size()));
 
   // visualize tree calculation
-  std::vector<TreeNode> tree;
   std::vector<int> closed_set;
   std::vector<Eigen::Vector3f> path_node_positions;
-  planner.getTree(tree, closed_set, path_node_positions);
-  publishTree(tree, closed_set, path_node_positions);
+  planner.getTreeClosedSet(closed_set, path_node_positions);
+  publishTree(planner.getTree(), closed_set, path_node_positions);
 
   // visualize goal
   publishGoal(toPoint(planner.getGoal()));
@@ -108,14 +107,28 @@ void LocalPlannerVisualization::publishTree(
   path_marker.color.g = 0.0;
   path_marker.color.b = 0.0;
 
-  tree_marker.points.reserve(closed_set.size() * 2);
+  if (closed_set.size() > 1) {
+    int states_per_node = tree[closed_set[1]].actual_states_to_node_.size();
+    tree_marker.points.reserve(closed_set.size() * 2 * states_per_node);
+  }
+
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
-    geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
-    int origin = tree[node_nr].origin_;
-    geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
-    tree_marker.points.push_back(p1);
-    tree_marker.points.push_back(p2);
+    int node_origin = tree[node_nr].origin_;
+    for (size_t j = 0; j < tree[node_nr].actual_states_to_node_.size(); j++) {
+      geometry_msgs::Point p1;
+      if (j == 0) {
+        p1 = toPoint(tree[node_origin].getPosition());
+      } else {
+        p1 = toPoint(tree[node_nr].actual_states_to_node_[j - 1].position);
+      }
+
+      int origin = tree[node_nr].origin_;
+      geometry_msgs::Point p2 =
+          toPoint(tree[node_nr].actual_states_to_node_[j].position);
+      tree_marker.points.push_back(p1);
+      tree_marker.points.push_back(p2);
+    }
   }
 
   path_marker.points.reserve(path_node_positions.size() * 2);

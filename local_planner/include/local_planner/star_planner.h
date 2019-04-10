@@ -25,7 +25,7 @@ class StarPlanner {
   float v_FOV_ = 46.0f;
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
-  float tree_node_distance_ = 1.0f;
+  float simulation_time_horizon_s_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
   float max_path_length_ = 4.f;
   float curr_yaw_histogram_frame_deg_ = 90.f;
@@ -38,6 +38,7 @@ class StarPlanner {
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
  protected:
@@ -91,10 +92,12 @@ class StarPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] pos, vehicle current position and orientation
+  * @param[in] pos, vehicle current position
+  * @param[in] vel, vehicle current velocity
   * @param[in] curr_yaw, vehicle current yaw
   **/
-  void setPose(const Eigen::Vector3f& pos, float curr_yaw);
+  void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel,
+               float curr_yaw);
 
   /**
   * @brief     setter method for current goal
