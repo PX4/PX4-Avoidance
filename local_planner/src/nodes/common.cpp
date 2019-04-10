@@ -6,7 +6,6 @@
 #include <limits>
 #include <vector>
 
-#include <tf/transform_listener.h>
 namespace avoidance {
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
@@ -115,6 +114,25 @@ void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
           Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
+float getYawFromQuaternion(const Eigen::Quaternionf q) {
+  float siny_cosp = 2.f * (q.w() * q.z() + q.x() * q.y());
+  float cosy_cosp = 1.f - 2.f * (q.y() * q.y() + q.z() * q.z());
+  float yaw = atan2(siny_cosp, cosy_cosp);
+
+  return yaw * RAD_TO_DEG;
+}
+
+float getPitchFromQuaternion(const Eigen::Quaternionf q) {
+  float pitch = 0.f;
+  float sinp = 2.f * (q.w() * q.y() - q.z() * q.x());
+  if (fabs(sinp) >= 1.f) {
+    pitch = copysign(M_PI / 2.f, sinp);  // use PI/2 if out of range
+  } else {
+    pitch = asin(sinp);
+  }
+  return pitch * RAD_TO_DEG;
+}
+
 void wrapAngleToPlusMinusPI(float& angle) {
   angle = angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
 }
@@ -150,6 +168,11 @@ Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3) {
 }
 
 Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+Eigen::Vector3f toEigen(const pcl::PointXYZI& p) {
   Eigen::Vector3f ev3(p.x, p.y, p.z);
   return ev3;
 }
@@ -194,6 +217,24 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
   xyz.y = ev3.y();
   xyz.z = ev3.z();
   return xyz;
+}
+
+pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity) {
+  pcl::PointXYZI p;
+  p.x = ev3.x();
+  p.y = ev3.y();
+  p.z = ev3.z();
+  p.intensity = intensity;
+  return p;
+}
+
+pcl::PointXYZI toXYZI(float x, float y, float z, float intensity) {
+  pcl::PointXYZI p;
+  p.x = x;
+  p.y = y;
+  p.z = z;
+  p.intensity = intensity;
+  return p;
 }
 
 geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,

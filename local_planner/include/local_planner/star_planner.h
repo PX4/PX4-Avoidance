@@ -28,13 +28,12 @@ class StarPlanner {
   float tree_node_distance_ = 1.0f;
   float tree_discount_factor_ = 0.8f;
   float max_path_length_ = 4.f;
-  float curr_yaw_;
+  float curr_yaw_histogram_frame_deg_ = 90.f;
+  float smoothing_margin_degrees_ = 30.f;
 
-  std::vector<int> reprojected_points_age_;
   std::vector<int> path_node_origins_;
 
-  pcl::PointCloud<pcl::PointXYZ> pointcloud_;
-  pcl::PointCloud<pcl::PointXYZ> reprojected_points_;
+  pcl::PointCloud<pcl::PointXYZI> cloud_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
@@ -47,14 +46,14 @@ class StarPlanner {
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeCostFunction(int node_number);
+  float treeCostFunction(int node_number) const;
 
   /**
   * @brief     computes the heuristic for a node
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeHeuristicFunction(int node_number);
+  float treeHeuristicFunction(int node_number) const;
 
  public:
   std::vector<Eigen::Vector3f> path_node_positions_;
@@ -85,15 +84,10 @@ class StarPlanner {
   void setFOV(float h_FOV, float v_FOV);
 
   /**
-  * @brief     setter method for reprojected pointcloud
-  * @param[in] reprojected_points, pointcloud from previous frames reprojected
-  *            around the vehicle current position
-  * @param[in] reprojected_points_age, array containing the age of each
-  *            reprojected point
+  * @brief     setter method for star_planner pointcloud
+  * @param[in] cloud, processed data already cropped and combined with history
   **/
-  void setReprojectedPoints(
-      const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-      const std::vector<int>& reprojected_points_age);
+  void setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud);
 
   /**
   * @brief     setter method for vehicle position
@@ -107,12 +101,6 @@ class StarPlanner {
   * @param[in] goal, current goal position
   **/
   void setGoal(const Eigen::Vector3f& pose);
-
-  /**
-  * @brief     setter method for pointcloud
-  * @param[in] cropped_cloud, current point cloud cropped around the vehicle
-  **/
-  void setCloud(const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud);
 
   /**
   * @brief     build tree of candidates directions towards the goal

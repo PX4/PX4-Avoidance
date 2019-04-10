@@ -17,6 +17,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.max_path_length_);
+  smoothing_margin_degrees_ =
+      static_cast<float>(config.smoothing_margin_degrees_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) {
@@ -34,12 +36,7 @@ void StarPlanner::setFOV(float h_FOV, float v_FOV) {
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
   position_ = pos;
-  curr_yaw_ = curr_yaw;
-}
-
-void StarPlanner::setCloud(
-    const pcl::PointCloud<pcl::PointXYZ>& cropped_cloud) {
-  pointcloud_ = cropped_cloud;
+  curr_yaw_histogram_frame_deg_ = curr_yaw;
 }
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
@@ -47,14 +44,11 @@ void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
   tree_age_ = 1000;
 }
 
-void StarPlanner::setReprojectedPoints(
-    const pcl::PointCloud<pcl::PointXYZ>& reprojected_points,
-    const std::vector<int>& reprojected_points_age) {
-  reprojected_points_ = reprojected_points;
-  reprojected_points_age_ = reprojected_points_age;
+void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) {
+  cloud_ = cloud;
 }
 
-float StarPlanner::treeCostFunction(int node_number) {
+float StarPlanner::treeCostFunction(int node_number) const {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
   float z = tree_[node_number].last_z_;
@@ -94,7 +88,7 @@ float StarPlanner::treeCostFunction(int node_number) {
                   static_cast<float>(tree_[node_number].depth_)) *
          (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
 }
-float StarPlanner::treeHeuristicFunction(int node_number) {
+float StarPlanner::treeHeuristicFunction(int node_number) const {
   Eigen::Vector3f node_position = tree_[node_number].getPosition();
   PolarPoint goal_pol = cartesianToPolar(goal_, node_position);
 
@@ -121,9 +115,7 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, position_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ =
-      std::round((-curr_yaw_ * 180.0f / M_PI_F)) +
-      90.0f;  // from radian to angle and shift reference to y-axis
+  tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
@@ -141,20 +133,16 @@ void StarPlanner::buildLookAheadTree() {
                  tree_[origin].yaw_,
                  0.0f);  // assume pitch is zero at every node
 
-    Histogram propagated_histogram = Histogram(2 * ALPHA_RES);
     Histogram histogram = Histogram(ALPHA_RES);
-
-    propagateHistogram(propagated_histogram, reprojected_points_,
-                       reprojected_points_age_, origin_position);
-    generateNewHistogram(histogram, pointcloud_, origin_position);
-    combinedHistogram(hist_is_empty, histogram, propagated_histogram, false,
-                      z_FOV_idx, e_FOV_min, e_FOV_max);
+    generateNewHistogram(histogram, cloud_, position_);
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
+    std::vector<uint8_t> cost_image_data;
     std::vector<candidateDirection> candidate_vector;
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
-                  projected_last_wp_, cost_params_, false, cost_matrix);
+                  projected_last_wp_, cost_params_, false,
+                  smoothing_margin_degrees_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_,
                                     candidate_vector);
 

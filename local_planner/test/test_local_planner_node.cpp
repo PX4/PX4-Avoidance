@@ -6,7 +6,9 @@ using namespace avoidance;
 
 TEST(LocalPlannerNodeTests, failsafe) {
   ros::Time::init();
-  LocalPlannerNode Node(false);
+  ros::NodeHandle nh("~");
+  ros::NodeHandle nh_private("");
+  LocalPlannerNode Node(nh, nh_private, false);
   bool planner_is_healthy = true;
   bool hover = false;
 

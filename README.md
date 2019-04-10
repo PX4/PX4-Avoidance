@@ -6,7 +6,7 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 
 The two algorithms are standalone and they are not meant to be used together.
 
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. On the other hand, the *global_planner* is computatonally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required.
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
 
 > **Note** The development team is right now focused on the *local_planner*.
 
@@ -166,9 +166,6 @@ In the following section we guide you trough installing and running a Gazebo sim
 1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
    ```bash
-   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
-   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
-
    # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
    export QT_X11_NO_MITSHM=1
 
@@ -177,6 +174,9 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    # Setup some more Gazebo-related environment variables
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+
+   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
+   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
@@ -262,21 +262,21 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    roslaunch local_planner local_planner_depth-camera.launch
    ```
 
-* simulate a three kinect depth sensors:
+* simulate three kinect depth sensors:
 
    ```bash
    roslaunch local_planner local_planner_sitl_3cam.launch
    ```
-   
+
 * simulate one Intel Realsense camera:
 
    ```bash
    git clone git@github.com:SyrianSpock/realsense_gazebo_plugin.git
-   
+
    catkin build realsense_gazebo_plugin #(for ROS kinetic, the kinetic-devel branch must be used)
-   
+
    export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/realsense_gazebo_plugin/models
-   
+
    roslaunch local_planner local_planner_realsense.launch
    ```
 
@@ -293,7 +293,7 @@ The drone will first change its altitude to reach the goal height. It is possibl
 Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `MPC_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
 # Run on Hardware
 
@@ -327,7 +327,7 @@ A stream of point-clouds should now be published to */point_cloud*.
 ### PX4 Autopilot
 
 Parameters to set through QGC:
-* `MPC_OBS_AVOID` to Enabled
+* `COM_OBS_AVOID` to Enabled
 * `MAV_1_CONFIG`, `MAV_1_MODE`, `SER_TEL2_BAUD` to enable MAVLink on a serial port. For more information: [PX4 Dev Guide](http://dev.px4.io/en/companion_computer/pixhawk_companion.html#pixhawk-setup)
 
 ### Companion Computer
@@ -364,21 +364,16 @@ roslaunch local_planner avoidance.launch fcu_url:=/dev/ttyACM0:57600
 ```
 
 where `fcu_url` representing the port connecting the companion computer to the flight controller.
-The planner is running correctly when
+The planner is running correctly if the rate of the processed point cloud is around 10-20 Hz. To check the rate run:
 
 ```bash
-[OA] Planning started, using 1 cameras
+rostopic hz /local_pointcloud
 ```
 
-is displayed on the console.
-
-The local planner supports also multi camera setups. `local_planner_example.launch` needs to be modified by:
-
-1. launching one RealSense nodlet (`rs_depthcloud.launch`) for each camera making sure that each of them has a unique `namespace`
-2. launch one `static_transform_publisher` node for each camera
-
-An example of a three camera launch file is [local_planner_A700_3cam.launch](https://github.com/PX4/avoidance/blob/master/local_planner/launch/local_planner_A700_3cam.launch).
-
+If you would like to read debug statements on the console, please change `custom_rosconsole.conf` to
+```bash
+log4j.logger.ros.local_planner=DEBUG
+```
 
 # Troubleshooting
 

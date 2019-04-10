@@ -8,7 +8,10 @@
 int main(int argc, char** argv) {
   using namespace avoidance;
   ros::init(argc, argv, "local_planner_node");
-  LocalPlannerNode Node(true);
+  ros::NodeHandle nh("~");
+  ros::NodeHandle nh_private("");
+
+  LocalPlannerNode Node(nh, nh_private, true);
   ros::Duration(2).sleep();
   ros::Time start_time = ros::Time::now();
   bool hover = false;
@@ -31,9 +34,8 @@ int main(int argc, char** argv) {
 #else
     // visualize world in RVIZ
     if (!Node.world_path_.empty() && startup) {
-      visualization_msgs::MarkerArray marker_array;
-      if (!visualizeRVIZWorld(Node.world_path_, marker_array)) {
-        Node.world_pub_.publish(marker_array);
+      if (!Node.world_visualizer_.visualizeRVIZWorld(Node.world_path_)) {
+        ROS_WARN("Failed to visualize Rviz world");
       }
       startup = false;
     }
@@ -54,33 +56,11 @@ int main(int argc, char** argv) {
                        hover);
 
     // If planner is not running, update planner info and get last results
-    if (Node.cameras_.size() == Node.numReceivedClouds() &&
-        Node.cameras_.size() != 0) {
-      if (Node.canUpdatePlannerInfo()) {
-        if (Node.running_mutex_.try_lock()) {
-          Node.updatePlannerInfo();
-          // reset all clouds to not yet received
-          for (size_t i = 0; i < Node.cameras_.size(); i++) {
-            Node.cameras_[i].received_ = false;
-          }
-          Node.wp_generator_->setPlannerInfo(
-              Node.local_planner_->getAvoidanceOutput());
-          if (Node.local_planner_->stop_in_front_active_) {
-            Node.goal_msg_.pose.position =
-                toPoint(Node.local_planner_->getGoal());
-          }
-          Node.running_mutex_.unlock();
-          // Wake up the planner
-          std::unique_lock<std::mutex> lck(Node.data_ready_mutex_);
-          Node.data_ready_ = true;
-          Node.data_ready_cv_.notify_one();
-        }
-      }
-    }
+    Node.updatePlanner();
 
     // send waypoint
     if (!Node.never_run_ && planner_is_healthy) {
-      Node.publishWaypoints(hover);
+      Node.calculateWaypoints(hover);
       if (!hover) Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
     } else {
       for (size_t i = 0; i < Node.cameras_.size(); ++i) {
@@ -92,16 +72,18 @@ int main(int argc, char** argv) {
     Node.position_received_ = false;
 
     // publish system status
-    if (now - Node.t_status_sent_ > ros::Duration(0.2)) {
-      Node.status_msg_.header.stamp = ros::Time::now();
-      Node.status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-      Node.mavros_system_status_pub_.publish(Node.status_msg_);
-      Node.t_status_sent_ = now;
-    }
+    if (now - Node.t_status_sent_ > ros::Duration(0.2))
+      Node.publishSystemStatus();
   }
 
   Node.should_exit_ = true;
   Node.data_ready_cv_.notify_all();
   worker.join();
+
+  for (size_t i = 0; i < Node.cameras_.size(); ++i) {
+    Node.cameras_[i].cloud_ready_cv_->notify_all();
+    Node.cameras_[i].transform_thread_.join();
+  }
+
   return 0;
 }

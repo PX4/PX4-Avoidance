@@ -38,24 +38,20 @@ class StarPlannerTests : public ::testing::Test {
     goal.y() = 14.0f;
     goal.z() = 4.0f;
 
-    pcl::PointCloud<pcl::PointXYZ> cloud;
+    pcl::PointCloud<pcl::PointXYZI> cloud;
     for (float x = obstacle_min_x; x < obstacle_max_x; x += 0.05f) {
       for (float z = goal.z() - obstacle_half_height;
            z < goal.z() + obstacle_half_height; z += 0.05f) {
-        cloud.push_back(pcl::PointXYZ(x, obstacle_y, z));
+        cloud.push_back(toXYZI(x, obstacle_y, z, 0));
       }
     }
     costParameters cost_params;
-    const pcl::PointCloud<pcl::PointXYZ> reprojected_points;
-    const std::vector<int> reprojected_points_age;
 
     star_planner.setParams(cost_params);
     star_planner.setFOV(270.0f, 45.0f);
-    star_planner.setReprojectedPoints(reprojected_points,
-                                      reprojected_points_age);
+    star_planner.setPointcloud(cloud);
     star_planner.setPose(position, 0.0f);
     star_planner.setGoal(goal);
-    star_planner.setCloud(cloud);
   }
   void TearDown() override {}
 };

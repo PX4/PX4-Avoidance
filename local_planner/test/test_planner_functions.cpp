@@ -7,29 +7,9 @@
 
 using namespace avoidance;
 
-void check_indexes(nav_msgs::GridCells &test,
-                   std::vector<Eigen::Vector2i> &truth, int resolution) {
-  for (int i = 0, j = 0; i < test.cells.size(), j < truth.size(); i++, j++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-
-    EXPECT_EQ(truth[j], cell_idx);
-  }
-}
-
-void check_indexes(nav_msgs::GridCells &test, int truth_idx_e, int truth_idx_z,
-                   int resolution) {
-  for (int i = 0; i < test.cells.size(); i++) {
-    PolarPoint p_pol(test.cells[i].x, test.cells[i].y, 0.0f);
-    Eigen::Vector2i cell_idx = polarToHistogramIndex(p_pol, resolution);
-    EXPECT_EQ(truth_idx_e, cell_idx.y());
-    EXPECT_EQ(truth_idx_z, cell_idx.x());
-  }
-}
-
 TEST(PlannerFunctions, generateNewHistogramEmpty) {
   // GIVEN: an empty pointcloud
-  pcl::PointCloud<pcl::PointXYZ> empty_cloud;
+  pcl::PointCloud<pcl::PointXYZI> empty_cloud;
   Histogram histogram_output = Histogram(ALPHA_RES);
   geometry_msgs::PoseStamped location;
   location.pose.position.x = 0;
@@ -70,11 +50,11 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
     }
   }
 
-  pcl::PointCloud<pcl::PointXYZ> cloud;
+  pcl::PointCloud<pcl::PointXYZI> cloud;
   for (int i = 0; i < middle_of_cell.size(); i++) {
     // put 1000 point in every occupied cell
     for (int j = 0; j < 1000; j++) {
-      cloud.push_back(toXYZ(middle_of_cell[i]));
+      cloud.push_back(toXYZI(middle_of_cell[i], 0));
     }
   }
 
@@ -104,11 +84,11 @@ TEST(PlannerFunctions, calculateFOV) {
   float h_fov = 90.0f;
   float v_fov = 45.0f;
   float yaw_z_greater_grid_length =
-      3.14f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
+      270.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
   float yaw_z_max_greater_grid =
-      -2.3f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
-  float yaw_z_min_smaller_zero = 3.9f;  // z_FOV_min < 0 && z_FOV_max >= 0
-  float yaw_z_smaller_zero = 5.6f;      // z_FOV_max < 0 && z_FOV_min < 0
+      210.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
+  float yaw_z_min_smaller_zero = -140.f;  // z_FOV_min < 0 && z_FOV_max >= 0
+  float yaw_z_smaller_zero = -235.f;      // z_FOV_max < 0 && z_FOV_min < 0
   float pitch = 0.0f;
 
   // WHEN: we calculate the Field of View
@@ -130,16 +110,24 @@ TEST(PlannerFunctions, calculateFOV) {
 
   // THEN: we expect polar histogram indexes that are in the Field of View
   std::vector<int> output_z_greater_grid_length = {
-      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21};
-  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6, 7,
-                                                8, 9, 10, 11, 12, 58, 59};
-  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6, 7,
-                                                8, 9, 10, 11, 12, 13, 59};
+      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
+  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                8, 9, 10, 11, 12, 57, 58, 59};
+  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6,  7,
+                                                8, 9, 10, 11, 12, 13, 14, 59};
   std::vector<int> output_z_smaller_zero = {43, 44, 45, 46, 47, 48, 49, 50,
                                             51, 52, 53, 54, 55, 56, 57, 58};
 
   EXPECT_EQ(18, e_FOV_max);
-  EXPECT_EQ(10, e_FOV_min);
+  EXPECT_EQ(11, e_FOV_min);
+
+  // vector sizes:
+  EXPECT_EQ(output_z_greater_grid_length.size(),
+            z_FOV_idx_z_greater_grid_length.size());
+  EXPECT_EQ(output_z_max_greater_grid.size(), output_z_max_greater_grid.size());
+  EXPECT_EQ(output_z_min_smaller_zero.size(), output_z_min_smaller_zero.size());
+  EXPECT_EQ(output_z_smaller_zero.size(), output_z_smaller_zero.size());
+
   for (size_t i = 0; i < z_FOV_idx_z_greater_grid_length.size(); i++) {
     EXPECT_EQ(output_z_greater_grid_length.at(i),
               z_FOV_idx_z_greater_grid_length.at(i));
@@ -160,16 +148,14 @@ TEST(PlannerFunctions, calculateFOV) {
   }
 }
 
-TEST(PlannerFunctionsTests, filterPointCloud) {
+TEST(PlannerFunctionsTests, processPointcloud) {
   // GIVEN: two point clouds
   const Eigen::Vector3f position(1.5f, 1.0f, 4.5f);
-  Eigen::Vector3f closest(0.7f, 0.3f, -0.5f);
   pcl::PointCloud<pcl::PointXYZ> p1;
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.1f, 0.8f, 0.1f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(2.2f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(1.0f, -3.0f, 1.0f)));
-  p1.push_back(toXYZ(
-      position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));  // < min_dist_backoff
+  p1.push_back(toXYZ(position + Eigen::Vector3f(0.7f, 0.3f, -0.5f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, 1.0f, 1.0f)));
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
@@ -185,40 +171,26 @@ TEST(PlannerFunctionsTests, filterPointCloud) {
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
   complete_cloud.push_back(p1);
   complete_cloud.push_back(p2);
-  float min_dist_backoff = 1.0f;
   Box histogram_box(5.0f);
   histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
-  pcl::PointCloud<pcl::PointXYZ> cropped_cloud, cropped_cloud2;
-  Eigen::Vector3f closest_point, closest_point2;
-  float distance_to_closest_point, distance_to_closest_point2;
-  int counter_backoff, counter_backoff2;
+  pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2;
+  Eigen::Vector3f memory_point(-0.4f, 0.3f, -0.4f);
+  processed_cloud1.push_back(toXYZI(position + memory_point, 5));
+  processed_cloud2.push_back(toXYZI(position + memory_point, 5));
 
-  // WHEN: we filter the PointCloud with different values of min_cloud_size
-  filterPointCloud(cropped_cloud, closest_point, distance_to_closest_point,
-                   counter_backoff, complete_cloud, 5.0, min_dist_backoff,
-                   histogram_box, position, min_realsense_dist);
+  // WHEN: we filter the PointCloud with different values max_age
+  processPointcloud(processed_cloud1, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 0.f, 0.5f);
 
-  filterPointCloud(cropped_cloud2, closest_point2, distance_to_closest_point2,
-                   counter_backoff2, complete_cloud, 20.0, min_dist_backoff,
-                   histogram_box, position, min_realsense_dist);
+  processPointcloud(processed_cloud2, complete_cloud, histogram_box, position,
+                    min_realsense_dist, 10.f, .5f);
 
-  // THEN: we expect cropped_cloud to have 6 points and a backoff point, while
-  // cropped_cloud2 to be empty
-  EXPECT_FLOAT_EQ((position + closest).x(), closest_point.x());
-  EXPECT_FLOAT_EQ((position + closest).y(), closest_point.y());
-  EXPECT_FLOAT_EQ((position + closest).z(), closest_point.z());
-  EXPECT_FLOAT_EQ(closest.norm(), distance_to_closest_point);
-  EXPECT_EQ(1, counter_backoff);
-  for (int i = 0; i < p1.points.size(); i++) {
-    bool same_point = (p1.points[i].x == cropped_cloud.points[i].x) &&
-                      (p1.points[i].y == cropped_cloud.points[i].y) &&
-                      (p1.points[i].z == cropped_cloud.points[i].z);
-    ASSERT_TRUE(same_point);
-  }
-
-  EXPECT_EQ(0, cropped_cloud2.points.size());
+  // THEN: we expect the first cloud to have 6 points
+  // the second cloud should contain 7 points
+  EXPECT_EQ(processed_cloud1.size(), 6);
+  EXPECT_EQ(processed_cloud2.size(), 7);
 }
 
 TEST(PlannerFunctions, testDirectionTree) {
@@ -426,6 +398,38 @@ TEST(PlannerFunctions, smoothPolarMatrix) {
   EXPECT_TRUE(greater_equal);
 }
 
+TEST(PlannerFunctions, smoothMatrix) {
+  // GIVEN: a matrix with a single cell set
+  unsigned int smooth_radius = 4;
+  Eigen::MatrixXf matrix;
+  matrix.resize(10, 20);
+  matrix.fill(0);
+  matrix(3, 16) = 100;
+  matrix(6, 6) = -100;
+
+  // WHEN: we smooth it
+  Eigen::MatrixXf matrix_old = matrix;
+  smoothPolarMatrix(matrix, smooth_radius);
+
+  // THEN: it should match the matrix we expect
+  Eigen::MatrixXf expected_matrix(matrix.rows(), matrix.cols());
+  // clang-format off
+  expected_matrix <<
+   8, 0,   4,   8,  12,  16,  20,  16,  12,   8,   4, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+  12, 0,   0,   0,   0,   0,   0,   0,   0,   0,   0, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+  16, 0,  -4,  -8, -12, -16, -20, -16, -12,  -8,  -4, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  20, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, 20, 40,  60,  80, 100,  80,  60, 40,
+  16, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0, 16, 32,  48,  64,  80,  64,  48, 32,
+  12, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0, 12, 24,  36,  48,  60,  48,  36, 24,
+   8, 0, -20, -40, -60, -80,-100, -80, -60, -40, -20, 0,  8, 16,  24,  32,  40,  32,  24, 16,
+   4, 0, -16, -32, -48, -64, -80, -64, -48, -32, -16, 0,  4,  8,  12,  16,  20,  16,  12,  8,
+   0, 0, -12, -24, -36, -48, -60, -48, -36, -24, -12, 0,  0,  0,   0,   0,   0,   0,   0,  0,
+  -4, 0,  -8, -16, -24, -32, -40, -32, -24, -16,  -8, 0, -4, -8, -12, -16, -20, -16, -12, -8;
+  // clang-format on
+
+  EXPECT_LT((expected_matrix - matrix).cwiseAbs().maxCoeff(), 1e-5);
+}
+
 TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   // GIVEN: a position, goal and an empty histogram
   Eigen::Vector3f position(0.f, 0.f, 0.f);
@@ -439,10 +443,13 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   cost_params.height_change_cost_param_adapted = 4.f;
   Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
+  float smoothing_radius = 30.f;
 
   // WHEN: we calculate the cost matrix from the input data
+  std::vector<uint8_t> cost_image_data;
   getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
-                cost_params, false, cost_matrix);
+                cost_params, false, smoothing_radius, cost_matrix,
+                cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);
@@ -647,10 +654,6 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
   histogram.set_dist(1, 0, 1.3);
   histogram.set_dist(0, 1, 1.3);
   histogram.set_dist(1, 1, 1.3);
-  histogram.set_age(2, 2, 3);
-  histogram.set_age(3, 2, 3);
-  histogram.set_age(2, 3, 3);
-  histogram.set_age(3, 3, 3);
 
   // WHEN: we downsample the histogram to have a larger bin size
   histogram.downsample();
@@ -661,13 +664,10 @@ TEST(Histogram, HistogramDownsampleCorrectUsage) {
     for (int j = 0; j < GRID_LENGTH_Z / 2; ++j) {
       if (i == 0 && j == 0) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if (i == 1 && j == 1) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }
@@ -677,7 +677,6 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
   // GIVEN: a histogram of the correct resolution
   Histogram histogram = Histogram(ALPHA_RES * 2);
   histogram.set_dist(0, 0, 1.3);
-  histogram.set_age(1, 1, 3);
 
   // WHEN: we upsample the histogram to have regular bin size
   histogram.upsample();
@@ -689,14 +688,11 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
       if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) ||
           (i == 1 && j == 1)) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       } else if ((i == 2 && j == 2) || (i == 2 && j == 3) ||
                  (i == 3 && j == 2) || (i == 3 && j == 3)) {
-        EXPECT_FLOAT_EQ(3, histogram.get_age(i, j));
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
-        EXPECT_FLOAT_EQ(0.0, histogram.get_age(i, j));
       }
     }
   }

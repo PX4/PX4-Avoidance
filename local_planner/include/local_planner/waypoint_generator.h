@@ -64,10 +64,6 @@ class WaypointGenerator {
   **/
   void goStraight();
   /**
-  * @brief     computes waypoints to move away from an obstacle
-  **/
-  void backOff();
-  /**
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
