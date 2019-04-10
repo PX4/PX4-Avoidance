@@ -173,9 +173,11 @@ class LocalPlanner {
   /**
   * @brief     setter method for vehicle position
   * @param[in] pos, vehicle position message coming from the FCU
+  * @param[in] vel, vehicle velocity message coming from the FCU
   * @param[in] q, vehicle orientation message coming from the FCU
   **/
-  void setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q);
+  void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel,
+               const Eigen::Quaternionf& q);
   /**
   * @brief     setter method for mission goal
   * @param[in] mgs, goal message coming from the FCU
@@ -210,19 +212,20 @@ class LocalPlanner {
   const pcl::PointCloud<pcl::PointXYZI>& getPointcloud() const;
 
   /**
-  * @brief     setter method for vehicle velocity
-  * @param[in] vel, velocity message coming from the FCU
-  **/
-  void setCurrentVelocity(const Eigen::Vector3f& vel);
-
-  /**
-  * @brief     getter method to visualize the tree in rviz
-  * @param[in] tree, the whole tree built during planning (vector of nodes)
+  * @brief     getter method to get the set of expanded nodes
   * @param[in] closed_set, velocity message coming from the FCU
   * @param[in] path_node_positions, velocity message coming from the FCU
   **/
-  void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-               std::vector<Eigen::Vector3f>& path_node_positions) const;
+  void getTreeClosedSet(
+      std::vector<int>& closed_set,
+      std::vector<Eigen::Vector3f>& path_node_positions) const;
+
+  /**
+  * @brief     getter method to visualize the tree in rviz
+  * @returns   reference to tree
+  **/
+  const std::vector<TreeNode>& getTree() const;
+
   /**
   * @brief     getter method for obstacle distance information
   * @param     obstacle_distance, obstacle distance message to fill

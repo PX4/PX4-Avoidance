@@ -14,13 +14,15 @@ LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
 void LocalPlanner::setPose(const Eigen::Vector3f& pos,
+                           const Eigen::Vector3f& vel,
                            const Eigen::Quaternionf& q) {
   position_ = pos;
+  velocity_ = vel;
   curr_yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   curr_yaw_histogram_frame_deg_ = -curr_yaw_fcu_frame_deg_ + 90.0f;
 
   curr_pitch_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, curr_yaw_histogram_frame_deg_);
+  star_planner_->setPose(position_, velocity_, curr_yaw_histogram_frame_deg_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -296,8 +298,15 @@ const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const {
   return final_cloud_;
 }
 
-void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
-  velocity_ = vel;
+const std::vector<TreeNode>& LocalPlanner::getTree() const {
+  return star_planner_->tree_;
+}
+
+void LocalPlanner::getTreeClosedSet(
+    std::vector<int>& closed_set,
+    std::vector<Eigen::Vector3f>& path_node_positions) const {
+  closed_set = star_planner_->closed_set_;
+  path_node_positions = star_planner_->path_node_positions_;
 }
 
 void LocalPlanner::setDefaultPx4Parameters() {
@@ -313,14 +322,6 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_tko_speed = 1.f;
   px4_.param_mpc_land_speed = 0.7f;
   px4_.param_mpc_col_prev_d = 4.f;
-}
-
-void LocalPlanner::getTree(
-    std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-    std::vector<Eigen::Vector3f>& path_node_positions) const {
-  tree = star_planner_->tree_;
-  closed_set = star_planner_->closed_set_;
-  path_node_positions = star_planner_->path_node_positions_;
 }
 
 void LocalPlanner::getObstacleDistanceData(

@@ -458,17 +458,16 @@ bool getDirectionFromTree(
   int size = path_node_positions.size();
   bool tree_available = true;
 
-  if (size >
-      1) {  // path contains at least 2 points (current position and one wp)
-
+  // path contains at least 2 points (current position and one wp)
+  if (size > 1) {
     // extend path with a node at the end in goal direction (for smoother
     // transition to direct flight)
-    float node_distance =
+    float node_distance_last =
         (path_node_positions[0] - path_node_positions[1]).norm();
     Eigen::Vector3f dir_last_node_to_goal =
         (goal - path_node_positions[0]).normalized();
     Eigen::Vector3f goal_node =
-        path_node_positions[0] + node_distance * dir_last_node_to_goal;
+        path_node_positions[0] + node_distance_last * dir_last_node_to_goal;
     std::vector<Eigen::Vector3f> path_node_positions_extended;
     path_node_positions_extended.push_back(goal_node);
     path_node_positions_extended.insert(path_node_positions_extended.end(),
@@ -510,12 +509,15 @@ bool getDirectionFromTree(
     if (min_dist > 3.0f || wp_idx == 0) {
       tree_available = false;
     } else {
-      float cos_alpha = (node_distance * node_distance +
+      float node_distance_current = (path_node_positions_extended[wp_idx] -
+                                     path_node_positions_extended[wp_idx + 1])
+                                        .norm();
+      float cos_alpha = (node_distance_current * node_distance_current +
                          distances[wp_idx] * distances[wp_idx] -
                          distances[wp_idx + 1] * distances[wp_idx + 1]) /
-                        (2.0f * node_distance * distances[wp_idx]);
+                        (2.0f * node_distance_current * distances[wp_idx]);
       float l_front = distances[wp_idx] * cos_alpha;
-      float l_frac = l_front / node_distance;
+      float l_frac = l_front / node_distance_current;
 
       Eigen::Vector3f mean_point =
           (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] +

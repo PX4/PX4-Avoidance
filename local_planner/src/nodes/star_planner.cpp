@@ -1,6 +1,7 @@
 #include "local_planner/star_planner.h"
 #include "local_planner/common.h"
 #include "local_planner/planner_functions.h"
+#include "local_planner/trajectory_simulator.h"
 #include "local_planner/tree_node.h"
 
 #include <ros/console.h>
@@ -14,7 +15,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(
     const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
+  simulation_time_horizon_s_ =
+      static_cast<float>(config.simulation_time_horizon_s_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.max_path_length_);
   smoothing_margin_degrees_ =
@@ -34,8 +36,10 @@ void StarPlanner::setFOV(float h_FOV, float v_FOV) {
   v_FOV_deg_ = v_FOV;
 }
 
-void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos,
+                          const Eigen::Vector3f& vel, float curr_yaw) {
   position_ = pos;
+  velocity_ = vel;
   curr_yaw_histogram_frame_deg_ = curr_yaw;
 }
 
@@ -113,7 +117,22 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, position_));
+  simulation_state state;
+  state.position = position_;
+  state.velocity = velocity_;
+  // TODO: check if acceleration is available
+  state.acceleration = Eigen::Vector3f::Zero();
+  state.time = 0.f;
+
+  // TODO: check on how to get these limits from FCU
+  simulation_limits config;
+  config.max_z_velocity = 1.f;
+  config.min_z_velocity = -0.5f;
+  config.max_xy_velocity_norm = 3.f;
+  config.max_acceleration_norm = 4.f;
+  config.max_jerk_norm = 20.f;
+
+  tree_.push_back(TreeNode(0, 0, position_, state, config));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;
@@ -153,21 +172,28 @@ void StarPlanner::buildLookAheadTree() {
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle,
-                         tree_node_distance_);
+                         1.0f);
 
         // check if another close node has been added
         Eigen::Vector3f node_location =
             polarToCartesian(p_pol, origin_position);
+        Eigen::Vector3f node_direction =
+            (node_location - origin_position).normalized();
+        std::vector<simulation_state> states =
+            tree_[origin].sim_.generate_trajectory(node_direction,
+                                                   simulation_time_horizon_s_);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
-          float dist = (tree_[i].getPosition() - node_location).norm();
+          float dist = (tree_[i].getPosition() - states.back().position).norm();
           if (dist < 0.2f) {
             close_nodes++;
           }
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, depth, node_location));
+          tree_.push_back(
+              TreeNode(origin, depth, node_direction, states.back(), config));
+          tree_.back().actual_states_to_node_ = states;
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
           float h = treeHeuristicFunction(tree_.size() - 1);
