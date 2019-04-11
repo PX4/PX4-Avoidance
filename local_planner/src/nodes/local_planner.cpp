@@ -36,8 +36,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.heading_cost_param = config.heading_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
-  velocity_around_obstacles_ =
-      static_cast<float>(config.velocity_around_obstacles_);
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
@@ -337,7 +335,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   out.waypoint_type = waypoint_type_;
 
   out.obstacle_ahead = !polar_histogram_.isEmpty();
-  out.velocity_around_obstacles = velocity_around_obstacles_;
+  out.velocity_around_obstacles = px4_.param_mpc_xy_cruise / 2.0f;
   out.velocity_far_from_obstacles = px4_.param_mpc_xy_cruise;
   out.last_path_time = last_path_time_;
 

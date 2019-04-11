@@ -81,7 +81,6 @@ class LocalPlanner {
   float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
   float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
                           // fcu frame
-  float velocity_around_obstacles_;
   float keep_distance_;
   ros::Time integral_time_old_;
   float no_progress_slope_;
