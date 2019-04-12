@@ -46,24 +46,27 @@ int main(int argc, char** argv) {
 
     ros::Duration timeout_termination =
           ros::Duration(Node.local_planner_->timeout_termination_);
+    ros::Time start_query_position = ros::Time::now();
+    bool sent_error = false;
     // Process callbacks & wait for a position update
     while (!Node.position_received_ && ros::ok()) {
       ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
-      ros::Duration since_start = ros::Time::now() - start_time;
-      if (since_start > timeout_termination){
+      ros::Duration since_query = ros::Time::now() - start_query_position;
+      if (since_query > timeout_termination  && !sent_error){
     	  Node.status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
     	  ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
     	   // clang-format off
     	  ROS_WARN("----------------------------- Debugging Info -----------------------------");
     	  ROS_WARN("Local planner has not received a position from FCU, check the following: ");
     	  ROS_WARN("1. Check cables connecting PX4 autopilor with onboard computer");
-    	  ROS_WARN("2. Set PX4 parameter MAV_1_mode to Onbard");
+    	  ROS_WARN("2. Set PX4 parameter MAV_1_MODE to Onbard");
     	  ROS_WARN("3. Set correct fcu_url in launch file:");
     	  ROS_WARN("   Example direct connection to serial port: /dev/ttyUSB0:921600");
     	  ROS_WARN("   Example connection over mavlink router: udp://:14540@localhost:14557");
     	  ROS_WARN("--------------------------------------------------------------------------");
     	   // clang-format on
     	  Node.publishSystemStatus();
+    	  sent_error = true;
       }
     }
 
