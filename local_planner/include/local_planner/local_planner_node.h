@@ -244,8 +244,6 @@ class LocalPlannerNode {
   mavros_msgs::Altitude ground_distance_msg_;
   int path_length_ = 0;
 
-  bool mavros_connected_ = false;
-
   // Subscribers
   ros::Subscriber pose_sub_;
   ros::Subscriber velocity_sub_;

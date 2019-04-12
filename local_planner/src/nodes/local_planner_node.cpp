@@ -244,7 +244,6 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_pose_ = newest_pose_;
   newest_pose_ = msg;
   position_received_ = true;
-  mavros_connected_ = true;
 
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
@@ -623,18 +622,6 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
       planner_is_healthy = false;
       status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
       ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
-      if (!mavros_connected_) {
-        // clang-format off
-    	  ROS_WARN("----------------------------- Debugging Info -----------------------------");
-    	  ROS_WARN("Local planner has not received a position from FCU, check the following: ");
-    	  ROS_WARN("1. Check cables connecting PX4 autopilor with onboard computer");
-    	  ROS_WARN("2. Set PX4 parameter MAV_1_mode to Onbard");
-    	  ROS_WARN("3. Set correct fcu_url in launch file:");
-    	  ROS_WARN("   Example direct connection to serial port: /dev/ttyUSB0:921600");
-    	  ROS_WARN("   Example connection over mavlink router: udp://:14540@localhost:14557");
-    	  ROS_WARN("--------------------------------------------------------------------------");
-        // clang-format on
-      }
     }
   } else {
     if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
