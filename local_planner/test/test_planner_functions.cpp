@@ -708,3 +708,15 @@ TEST(Histogram, HistogramUpDownpsampleInorrectUsage) {
   EXPECT_THROW(low_res_histogram.downsample(), std::logic_error);
   EXPECT_THROW(high_res_histogram.upsample(), std::logic_error);
 }
+
+TEST(Histogram, HistogramisEmpty) {
+  // GIVEN: a histogram
+  Histogram histogram = Histogram(ALPHA_RES);
+  // Set a cell
+  histogram.set_dist(0, 0, 1.3);
+  EXPECT_FALSE(histogram.isEmpty());
+
+  // Set the cell dist to 0.f
+  histogram.set_dist(0, 0, 0.f);
+  EXPECT_TRUE(histogram.isEmpty());
+}
