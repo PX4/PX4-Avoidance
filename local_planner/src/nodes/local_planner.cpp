@@ -335,8 +335,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   out.waypoint_type = waypoint_type_;
 
   out.obstacle_ahead = !polar_histogram_.isEmpty();
-  out.velocity_around_obstacles = px4_.param_mpc_xy_cruise / 2.0f;
-  out.velocity_far_from_obstacles = px4_.param_mpc_xy_cruise;
+  out.cruise_velocity = px4_.param_mpc_xy_cruise;
   out.last_path_time = last_path_time_;
 
   out.take_off_pose = take_off_pose_;
