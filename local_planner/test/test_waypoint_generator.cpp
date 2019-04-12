@@ -25,8 +25,7 @@ class WaypointGeneratorTests : public ::testing::Test,
 
     avoidance_output.waypoint_type = direct;
     avoidance_output.obstacle_ahead = false;
-    avoidance_output.velocity_around_obstacles = 1.0;
-    avoidance_output.velocity_far_from_obstacles = 3.0;
+    avoidance_output.cruise_velocity = 1.0;
     avoidance_output.last_path_time = ros::Time(0.28);
 
     PolarPoint p_pol = histogramIndexToPolar(15, 35, 6, 0.f);

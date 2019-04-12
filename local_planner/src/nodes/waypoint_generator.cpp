@@ -214,11 +214,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 }
 
 void WaypointGenerator::adaptSpeed() {
-  if (!planner_info_.obstacle_ahead) {
-    speed_ = planner_info_.velocity_far_from_obstacles;
-  } else {
-    speed_ = planner_info_.velocity_around_obstacles;
-  }
+  speed_ = planner_info_.cruise_velocity;
 
   // If the goal is so close, that the speed-adapted way point would overreach
   Eigen::Vector3f pose_to_goal = goal_ - position_;
