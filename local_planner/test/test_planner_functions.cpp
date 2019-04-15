@@ -176,21 +176,25 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   float min_realsense_dist = 0.2f;
 
   pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2;
+  Histogram polar_histogram1 = Histogram(ALPHA_RES);
+  Histogram polar_histogram2 = Histogram(ALPHA_RES);
   Eigen::Vector3f memory_point(-0.4f, 0.3f, -0.4f);
   processed_cloud1.push_back(toXYZI(position + memory_point, 5));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5));
 
   // WHEN: we filter the PointCloud with different values max_age
-  processPointcloud(processed_cloud1, complete_cloud, histogram_box, position,
-                    min_realsense_dist, 0.f, 0.5f);
+  processPointcloud(polar_histogram1, processed_cloud1, complete_cloud,
+                    histogram_box, position, min_realsense_dist, 0.f, 0.5f);
 
-  processPointcloud(processed_cloud2, complete_cloud, histogram_box, position,
-                    min_realsense_dist, 10.f, .5f);
+  processPointcloud(polar_histogram2, processed_cloud2, complete_cloud,
+                    histogram_box, position, min_realsense_dist, 10.f, .5f);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
   EXPECT_EQ(processed_cloud1.size(), 6);
   EXPECT_EQ(processed_cloud2.size(), 7);
+  EXPECT_FALSE(polar_histogram1.isEmpty());
+  EXPECT_FALSE(polar_histogram2.isEmpty());
 }
 
 TEST(PlannerFunctions, testDirectionTree) {

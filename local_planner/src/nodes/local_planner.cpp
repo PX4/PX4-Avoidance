@@ -89,9 +89,9 @@ void LocalPlanner::runPlanner() {
 
   float elapsed_since_last_processing = static_cast<float>(
       (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
-                    position_, min_realsense_dist_, max_point_age_s_,
-                    elapsed_since_last_processing);
+  processPointcloud(polar_histogram_, final_cloud_, original_cloud_vector_,
+                    histogram_box_, position_, min_realsense_dist_,
+                    max_point_age_s_, elapsed_since_last_processing);
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -100,15 +100,12 @@ void LocalPlanner::runPlanner() {
 void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // construct histogram if it is needed
   // or if it is required by the FCU
-  Histogram new_histogram = Histogram(ALPHA_RES);
   to_fcu_histogram_.setZero();
-  generateNewHistogram(new_histogram, final_cloud_, position_);
 
   if (send_to_fcu) {
-    compressHistogramElevation(to_fcu_histogram_, new_histogram);
+    compressHistogramElevation(to_fcu_histogram_, polar_histogram_);
     updateObstacleDistanceMsg(to_fcu_histogram_);
   }
-  polar_histogram_ = new_histogram;
 
   // generate histogram image for logging
   generateHistogramImage(polar_histogram_);
@@ -169,6 +166,7 @@ void LocalPlanner::determineStrategy() {
       star_planner_->setParams(cost_params_);
       star_planner_->setFOV(h_FOV_, v_FOV_);
       star_planner_->setPointcloud(final_cloud_);
+      star_planner_->setHistogram(polar_histogram_);
 
       // set last chosen direction for smoothing
       PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);

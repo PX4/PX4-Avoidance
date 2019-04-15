@@ -20,6 +20,7 @@ namespace avoidance {
 /**
 * @brief      crops and subsamples the incomming data, then combines it with
 *             the data from the last timestep
+* @param      polar_histogram, histogram data to be used for planning
 * @param      final_cloud, processed data to be used for planning
 * @param[in]  complete_cloud, array of pointclouds from the sensors
 * @param[in]  histogram_box, geometry definition of the bounding box
@@ -29,7 +30,7 @@ namespace avoidance {
 * @param[in]  elapsed, time elapsed since last processing [s]
 **/
 void processPointcloud(
-    pcl::PointCloud<pcl::PointXYZI>& final_cloud,
+    Histogram& polar_histogram, pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s);

@@ -48,6 +48,10 @@ void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) {
   cloud_ = cloud;
 }
 
+void StarPlanner::setHistogram(const Histogram& polar_histogram_) {
+  histogram_ = polar_histogram_;
+}
+
 float StarPlanner::treeCostFunction(int node_number) const {
   int origin = tree_[node_number].origin_;
   float e = tree_[node_number].last_e_;
@@ -118,6 +122,7 @@ void StarPlanner::buildLookAheadTree() {
   tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;
 
+  Histogram histogram = Histogram(ALPHA_RES);
   int origin = 0;
 
   for (int n = 0; n < n_expanded_nodes_; n++) {
@@ -133,8 +138,12 @@ void StarPlanner::buildLookAheadTree() {
                  tree_[origin].yaw_,
                  0.0f);  // assume pitch is zero at every node
 
-    Histogram histogram = Histogram(ALPHA_RES);
-    generateNewHistogram(histogram, cloud_, position_);
+    if ((0 != n) || (histogram_.isEmpty())) {
+      histogram.setZero();
+      generateNewHistogram(histogram, cloud_, position_);
+    } else {
+      histogram = histogram_;
+    }
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;

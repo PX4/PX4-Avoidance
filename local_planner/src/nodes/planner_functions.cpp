@@ -10,8 +10,9 @@ namespace avoidance {
 
 // trim the point cloud so that only points inside the bounding box are
 // considered
+// generate polar_histogram with the trimmed point cloud.
 void processPointcloud(
-    pcl::PointCloud<pcl::PointXYZI>& final_cloud,
+    Histogram& polar_histogram, pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
     Box histogram_box, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s) {
@@ -21,12 +22,19 @@ void processPointcloud(
   final_cloud.width = 0;
   final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
 
+  polar_histogram.setZero();
+
   float distance;
 
   // double resolution histogram for subsampling
   // the distance layer will show whether the cell is already
   // occupied by a point
   Histogram high_res_histogram = Histogram(ALPHA_RES / 2);
+
+  Eigen::MatrixXi counter(GRID_LENGTH_E, GRID_LENGTH_Z);
+  counter.fill(0);
+  Eigen::Vector2i sub_p_ind, p_ind;
+  PolarPoint p_pol;
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
@@ -37,11 +45,18 @@ void processPointcloud(
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
             // subsampling the cloud
-            PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
-            Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-            if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0) {
+            p_pol = cartesianToPolar(toEigen(xyz), position);
+            sub_p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+            if (high_res_histogram.get_dist(sub_p_ind.y(), sub_p_ind.x()) ==
+                0) {
               final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
-              high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
+              high_res_histogram.set_dist(sub_p_ind.y(), sub_p_ind.x(), 1);
+
+              p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
+              counter(p_ind.y(), p_ind.x()) += 1;
+              polar_histogram.set_dist(
+                  p_ind.y(), p_ind.x(),
+                  polar_histogram.get_dist(p_ind.y(), p_ind.x()) + distance);
             }
           }
         }
@@ -56,13 +71,19 @@ void processPointcloud(
     if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
-        PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-        if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0 &&
+        p_pol = cartesianToPolar(toEigen(xyzi), position);
+        sub_p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+        if (high_res_histogram.get_dist(sub_p_ind.y(), sub_p_ind.x()) == 0 &&
             xyzi.intensity < max_age) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
-          high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
+          high_res_histogram.set_dist(sub_p_ind.y(), sub_p_ind.x(), 1);
+
+          p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
+          counter(p_ind.y(), p_ind.x()) += 1;
+          polar_histogram.set_dist(
+              p_ind.y(), p_ind.x(),
+              polar_histogram.get_dist(p_ind.y(), p_ind.x()) + distance);
         }
       }
     }
@@ -72,6 +93,18 @@ void processPointcloud(
   final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
   final_cloud.height = 1;
   final_cloud.width = final_cloud.points.size();
+
+  // Normalize and get mean in distance bins
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      if (counter(e, z) > 0) {
+        polar_histogram.set_dist(
+            e, z, polar_histogram.get_dist(e, z) / counter(e, z));
+      } else {
+        polar_histogram.set_dist(e, z, 0.f);
+      }
+    }
+  }
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!

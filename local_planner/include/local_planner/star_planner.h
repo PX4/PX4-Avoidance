@@ -34,6 +34,7 @@ class StarPlanner {
   std::vector<int> path_node_origins_;
 
   pcl::PointCloud<pcl::PointXYZI> cloud_;
+  Histogram histogram_ = Histogram(ALPHA_RES);
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
@@ -88,6 +89,12 @@ class StarPlanner {
   * @param[in] cloud, processed data already cropped and combined with history
   **/
   void setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud);
+
+  /**
+  * @brief     setter method for star_planner histogram
+  * @param[in] histogram base current position.
+  **/
+  void setHistogram(const Histogram& polar_histogram_);
 
   /**
   * @brief     setter method for vehicle position
