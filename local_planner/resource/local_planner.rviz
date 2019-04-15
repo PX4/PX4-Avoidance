@@ -291,6 +291,22 @@ Visualization Manager:
         {}
       Queue Size: 100
       Value: false
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /closest_point
+      Name: Offtrack Closest Point
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
+    - Class: rviz/Marker
+      Enabled: true
+      Marker Topic: /deg60_point
+      Name: Offtrack degrees 60 Point
+      Namespaces:
+        {}
+      Queue Size: 100
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 89; 120; 76

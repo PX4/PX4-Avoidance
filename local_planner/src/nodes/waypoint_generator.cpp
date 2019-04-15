@@ -304,4 +304,12 @@ waypointResult WaypointGenerator::getWaypoints() {
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) {
   planner_info_ = input;
 }
+
+void WaypointGenerator::getOfftrackPointsForVisualization(
+    Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
+  closest_pt.x() = closest_pt_.x();
+  closest_pt.y() = closest_pt_.y();
+  closest_pt.z() = goal_.z();
+  deg60_pt = tmp_goal_;
+}
 }

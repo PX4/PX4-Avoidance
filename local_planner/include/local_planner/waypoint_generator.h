@@ -146,6 +146,16 @@ class WaypointGenerator {
   **/
   virtual ros::Time getSystemTime();
 
+  /**
+  * @brief     getter method to visualize offtrack state
+  * @param[in] closest_pt, vehicle position projection on the line previous to
+  * current goal
+  * @param[in] deg60_pt, 60 degrees angle entry point to line previous to
+  * current goal from current vehicle postion
+  **/
+  void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt,
+                                         Eigen::Vector3f& deg60_pt);
+
   WaypointGenerator() = default;
   virtual ~WaypointGenerator() = default;
 };

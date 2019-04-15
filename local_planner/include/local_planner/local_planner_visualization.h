@@ -139,6 +139,16 @@ class LocalPlannerVisualization {
   void publishGround(const Eigen::Vector3f& drone_pos, float box_radius,
                      float ground_distance) const;
 
+  /**
+  * @brief       Visualization of the offtrack state
+  * @params[in]  closest_pt, vehicle position projection on the line previous to
+  * current goal
+  * @params[in]  deg60_pt, 60 degrees angle entry point to line previous to
+  * current goal from current vehicle postion
+  **/
+  void publishOfftrackPoints(Eigen::Vector3f& closest_pt,
+                             Eigen::Vector3f& deg60_pt);
+
  private:
   ros::Publisher local_pointcloud_pub_;
   ros::Publisher pointcloud_size_pub_;
@@ -158,6 +168,8 @@ class LocalPlannerVisualization {
   ros::Publisher initial_height_pub_;
   ros::Publisher histogram_image_pub_;
   ros::Publisher cost_image_pub_;
+  ros::Publisher closest_point_pub_;
+  ros::Publisher deg60_point_pub_;
 
   int path_length_ = 0;
 };
