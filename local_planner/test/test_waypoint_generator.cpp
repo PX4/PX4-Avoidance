@@ -12,6 +12,7 @@ class WaypointGeneratorTests : public ::testing::Test,
   Eigen::Vector3f position;
   Eigen::Quaternionf q;
   Eigen::Vector3f goal;
+  Eigen::Vector3f prev_goal;
   Eigen::Vector3f velocity;
 
   bool stay = false;
@@ -47,8 +48,9 @@ class WaypointGeneratorTests : public ::testing::Test,
     q = Eigen::Quaternionf(1.f, 0.f, 0.f, 0.f);
     goal = Eigen::Vector3f(10.f, 3.f, 2.f);
     velocity = Eigen::Vector3f(0.f, 0.f, 0.f);
+    prev_goal = Eigen::Vector3f(0.f, 0.f, 2.f);
 
-    updateState(position, q, goal, velocity, stay, is_airborne);
+    updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
     setPlannerInfo(avoidance_output);
     setFOV(270.f, 45.f);
   }
@@ -68,7 +70,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
 
   // WHEN: we generate the first waypoint
   time = ros::Time(time_sec);
-  updateState(position, q, goal, velocity, stay, is_airborne);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
   waypointResult result = getWaypoints();
 
   // THEN: we expect the goto position to point straight up
@@ -103,7 +105,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // calculate new vehicle position
     time_sec += 0.03;
     time = ros::Time(time_sec);
-    updateState(position, q, goal, velocity, stay, is_airborne);
+    updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
     waypointResult result = getWaypoints();
 
     // THEN: we expect the goto location to point straight up
@@ -174,7 +176,7 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
   for (size_t i = 0; i < 10; i++) {
     time_sec += 0.03;
     time = ros::Time(time_sec);
-    updateState(position, q, goal, velocity, stay, is_airborne);
+    updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
 
     waypointResult result = getWaypoints();
     float goto_to_goal = (goal - result.goto_position).norm();
@@ -211,14 +213,14 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
   time = ros::Time(time_sec);
-  updateState(position, q, goal, velocity, stay, is_airborne);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
   waypointResult result = getWaypoints();
 
   avoidance_output.waypoint_type = hover;
   setPlannerInfo(avoidance_output);
   time_sec += 0.033;
   time = ros::Time(time_sec);
-  updateState(position, q, goal, velocity, stay, is_airborne);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
 
   // WHEN: we generate waypoints
   result = getWaypoints();
@@ -261,7 +263,7 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
   for (size_t i = 0; i < 10; i++) {
     time_sec += 0.033;
     time = ros::Time(time_sec);
-    updateState(position, q, goal, velocity, stay, is_airborne);
+    updateState(position, q, goal, prev_goal, velocity, stay, is_airborne);
 
     waypointResult result = getWaypoints();
     float goto_to_goal = (goal - result.goto_position).norm();
