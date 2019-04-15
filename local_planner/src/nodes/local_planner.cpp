@@ -36,10 +36,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.heading_cost_param = config.heading_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
-  velocity_around_obstacles_ =
-      static_cast<float>(config.velocity_around_obstacles_);
-  velocity_far_from_obstacles_ =
-      static_cast<float>(config.velocity_far_from_obstacles_);
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
@@ -59,7 +55,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   adapt_cost_params_ = config.adapt_cost_params_;
-  send_obstacles_fcu_ = config.send_obstacles_fcu_;
+  send_obstacles_fcu_ = px4_.param_mpc_col_prev_d > 0.f;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -306,6 +302,21 @@ void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
   velocity_ = vel;
 }
 
+void LocalPlanner::setDefaultPx4Parameters() {
+  px4_.param_mpc_auto_mode = 1;
+  px4_.param_mpc_jerk_min = 8.f;
+  px4_.param_mpc_jerk_max = 20.f;
+  px4_.param_acc_up_max = 10.f;
+  px4_.param_mpc_z_vel_max_up = 3.f;
+  px4_.param_mpc_acc_down_max = 10.f;
+  px4_.param_mpc_vel_max_dn = 1.f;
+  px4_.param_mpc_acc_hor = 5.f;
+  px4_.param_mpc_xy_cruise = 3.f;
+  px4_.param_mpc_tko_speed = 1.f;
+  px4_.param_mpc_land_speed = 0.7f;
+  px4_.param_mpc_col_prev_d = 4.f;
+}
+
 void LocalPlanner::getTree(
     std::vector<TreeNode>& tree, std::vector<int>& closed_set,
     std::vector<Eigen::Vector3f>& path_node_positions) const {
@@ -324,8 +335,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   out.waypoint_type = waypoint_type_;
 
   out.obstacle_ahead = !polar_histogram_.isEmpty();
-  out.velocity_around_obstacles = velocity_around_obstacles_;
-  out.velocity_far_from_obstacles = velocity_far_from_obstacles_;
+  out.cruise_velocity = px4_.param_mpc_xy_cruise;
   out.last_path_time = last_path_time_;
 
   out.take_off_pose = take_off_pose_;

@@ -56,8 +56,8 @@ void Histogram::setZero() { dist_.fill(0.f); }
 
 bool Histogram::isEmpty() const {
   int counter = 0;
-  for (int e = 0; e < e_dim_; e++) {
-    for (int z = 0; z < z_dim_; z++) {
+  for (int e = 0; (e < e_dim_) && (0 == counter); e++) {
+    for (int z = 0; (z < z_dim_) && (0 == counter); z++) {
       if (dist_(e, z) > FLT_MIN) {
         counter++;
       }

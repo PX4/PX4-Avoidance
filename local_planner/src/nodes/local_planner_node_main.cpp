@@ -25,6 +25,8 @@ int main(int argc, char** argv) {
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
+  std::thread worker_params(&LocalPlannerNode::checkPx4Parameters, &Node);
+
   // spin node, execute callbacks
   while (ros::ok()) {
     hover = false;
@@ -79,6 +81,7 @@ int main(int argc, char** argv) {
   Node.should_exit_ = true;
   Node.data_ready_cv_.notify_all();
   worker.join();
+  worker_params.join();
 
   for (size_t i = 0; i < Node.cameras_.size(); ++i) {
     Node.cameras_[i].cloud_ready_cv_->notify_all();

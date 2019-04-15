@@ -220,8 +220,6 @@ void LocalPlannerNode::updatePlannerInfo() {
 
   // update state
   local_planner_->currently_armed_ = armed_;
-  local_planner_->offboard_ = offboard_;
-  local_planner_->mission_ = mission_;
 
   // update goal
   if (new_goal_) {
@@ -266,19 +264,24 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   armed_ = msg.armed;
 
   if (msg.mode == "AUTO.MISSION") {
-    offboard_ = false;
-    mission_ = true;
+    nav_state_ = NavigationState::mission;
+  } else if (msg.mode == "AUTO.TAKEOFF") {
+    nav_state_ = NavigationState::auto_takeoff;
+  } else if (msg.mode == "AUTO.LAND") {
+    nav_state_ = NavigationState::auto_land;
+  } else if (msg.mode == "AUTO.RTL") {
+    nav_state_ = NavigationState::auto_rtl;
+  } else if (msg.mode == "AUTO.RTGS") {
+    nav_state_ = NavigationState::auto_rtgs;
   } else if (msg.mode == "OFFBOARD") {
-    offboard_ = true;
-    mission_ = false;
+    nav_state_ = NavigationState::offboard;
   } else {
-    offboard_ = false;
-    mission_ = false;
+    nav_state_ = NavigationState::none;
   }
 }
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
-  bool is_airborne = armed_ && (mission_ || offboard_ || hover);
+  bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
   wp_generator_->updateState(
       toEigen(newest_pose_.pose.position),
@@ -375,50 +378,75 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   // when adding new parameter to the struct ModelParameters,
   // add new else if case with correct value type
 
-  if (msg.param_id == "EKF2_RNG_A_HMAX") {
-    model_params_.distance_sensor_max_height = msg.value.real;
-  } else if (msg.param_id == "EKF2_RNG_A_VMAX") {
-    model_params_.distance_sensor_max_vel = msg.value.real;
-  } else if (msg.param_id == "MPC_ACC_DOWN_MAX") {
-    printf("model parameter acceleration down is set from  %f to %f \n",
-           model_params_.down_acc, msg.value.real);
-    model_params_.down_acc = msg.value.real;
+  if (msg.param_id == "MPC_ACC_DOWN_MAX") {
+    ROS_INFO("parameter acceleration down is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_acc_down_max, msg.value.real);
+    local_planner_->px4_.param_mpc_acc_down_max = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_HOR") {
-    printf("model parameter acceleration horizontal is set from  %f to %f \n",
-           model_params_.xy_acc, msg.value.real);
-    model_params_.xy_acc = msg.value.real;
+    ROS_INFO("parameter acceleration horizontal is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_acc_hor, msg.value.real);
+    local_planner_->px4_.param_mpc_acc_hor = msg.value.real;
   } else if (msg.param_id == "MPC_ACC_UP_MAX") {
-    printf("model parameter acceleration up is set from  %f to %f \n",
-           model_params_.up_acc, msg.value.real);
-    model_params_.up_acc = msg.value.real;
+    ROS_INFO("parameter acceleration up is set from  %f to %f \n",
+             local_planner_->px4_.param_acc_up_max, msg.value.real);
+    local_planner_->px4_.param_acc_up_max = msg.value.real;
   } else if (msg.param_id == "MPC_AUTO_MODE") {
-    printf("model parameter auto mode is set from  %i to %li \n",
-           model_params_.mpc_auto_mode, msg.value.integer);
-    model_params_.mpc_auto_mode = msg.value.integer;
+    ROS_INFO("parameter auto mode is set from  %i to %li \n",
+             local_planner_->px4_.param_mpc_auto_mode, msg.value.integer);
+    local_planner_->px4_.param_mpc_auto_mode = msg.value.integer;
   } else if (msg.param_id == "MPC_JERK_MIN") {
-    printf("model parameter jerk minimum is set from  %f to %f \n",
-           model_params_.jerk_min, msg.value.real);
-    model_params_.jerk_min = msg.value.real;
+    ROS_INFO("parameter jerk minimum is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_jerk_min, msg.value.real);
+    local_planner_->px4_.param_mpc_jerk_min = msg.value.real;
+  } else if (msg.param_id == "MPC_JERK_MAX") {
+    ROS_INFO("parameter jerk maximum is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_jerk_max, msg.value.real);
+    local_planner_->px4_.param_mpc_jerk_max = msg.value.real;
   } else if (msg.param_id == "MPC_LAND_SPEED") {
-    printf("model parameter landing speed is set from  %f to %f \n",
-           model_params_.land_speed, msg.value.real);
-    model_params_.land_speed = msg.value.real;
+    ROS_INFO("parameter landing speed is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_land_speed, msg.value.real);
+    local_planner_->px4_.param_mpc_land_speed = msg.value.real;
   } else if (msg.param_id == "MPC_TKO_SPEED") {
-    printf("model parameter takeoff speed is set from  %f to %f \n",
-           model_params_.takeoff_speed, msg.value.real);
-    model_params_.takeoff_speed = msg.value.real;
+    ROS_INFO("parameter takeoff speed is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_tko_speed, msg.value.real);
+    local_planner_->px4_.param_mpc_tko_speed = msg.value.real;
   } else if (msg.param_id == "MPC_XY_CRUISE") {
-    printf("model parameter velocity horizontal is set from  %f to %f \n",
-           model_params_.xy_vel, msg.value.real);
-    model_params_.xy_vel = msg.value.real;
+    ROS_INFO("parameter velocity horizontal is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_xy_cruise, msg.value.real);
+    local_planner_->px4_.param_mpc_xy_cruise = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
-    printf("model parameter velocity down is set from  %f to %f \n",
-           model_params_.down_acc, msg.value.real);
-    model_params_.down_vel = msg.value.real;
+    ROS_INFO("parameter velocity down is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_vel_max_dn, msg.value.real);
+    local_planner_->px4_.param_mpc_vel_max_dn = msg.value.real;
   } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
-    printf("model parameter velocity up is set from  %f to %f \n",
-           model_params_.up_vel, msg.value.real);
-    model_params_.up_vel = msg.value.real;
+    ROS_INFO("parameter velocity up is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_z_vel_max_up, msg.value.real);
+    local_planner_->px4_.param_mpc_z_vel_max_up = msg.value.real;
+  } else if (msg.param_id == "MPC_COL_PREV_D") {
+    ROS_INFO("parameter collision prevention distance is set from  %f to %f \n",
+             local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
+    local_planner_->px4_.param_mpc_col_prev_d = msg.value.real;
+  }
+}
+
+void LocalPlannerNode::checkPx4Parameters() {
+  while (!should_exit_) {
+    { std::unique_lock<std::mutex> lk(px4_params_mutex_); }
+
+    if (should_exit_) break;
+
+    mavros_msgs::ParamGet req;
+    req.request.param_id = "MPC_XY_CRUISE";
+    if (get_px4_param_client_.call(req) && req.response.success) {
+      local_planner_->px4_.param_mpc_xy_cruise = req.response.value.real;
+    }
+
+    req.response.success = false;
+    req.request.param_id = "MPC_COL_PREV_D";
+    if (get_px4_param_client_.call(req) && req.response.success) {
+      local_planner_->px4_.param_mpc_col_prev_d = req.response.value.real;
+    }
+    std::this_thread::sleep_for(std::chrono::seconds(30));
   }
 }
 
@@ -434,9 +462,9 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   beta_z = beta_z + (ALPHA_RES - beta_z % ALPHA_RES);  //[-170,+190]
   beta_e = beta_e + (ALPHA_RES - beta_e % ALPHA_RES);  //[-80,+90]
 
-  printf("----- Point: %f %f %f -----\n", x, y, z);
-  printf("Elevation %d Azimuth %d \n", beta_e, beta_z);
-  printf("-------------------------------------------- \n");
+  ROS_INFO("----- Point: %f %f %f -----\n", x, y, z);
+  ROS_INFO("Elevation %d Azimuth %d \n", beta_e, beta_z);
+  ROS_INFO("-------------------------------------------- \n");
 }
 
 void LocalPlannerNode::pointCloudCallback(

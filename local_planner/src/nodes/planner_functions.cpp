@@ -66,12 +66,12 @@ void processPointcloud(
         }
       }
     }
-
-    final_cloud.header.stamp = complete_cloud[0].header.stamp;
-    final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
-    final_cloud.height = 1;
-    final_cloud.width = final_cloud.points.size();
   }
+
+  final_cloud.header.stamp = complete_cloud[0].header.stamp;
+  final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
+  final_cloud.height = 1;
+  final_cloud.width = final_cloud.points.size();
 }
 
 // Calculate FOV. Azimuth angle is wrapped, elevation is not!

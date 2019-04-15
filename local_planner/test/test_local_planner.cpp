@@ -17,9 +17,9 @@ class LocalPlannerTests : public ::testing::Test {
   void SetUp() override {
     ros::Time::init();
 
+    planner.setDefaultPx4Parameters();
     avoidance::LocalPlannerNodeConfig config =
         avoidance::LocalPlannerNodeConfig::__getDefault__();
-    config.send_obstacles_fcu_ = true;
     planner.dynamicReconfigureSetParams(config, 1);
 
     // start with basic pose
