@@ -63,10 +63,7 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="tf_prefix"             value="$1" />
 				<arg name="serial_no"             value="$2"/>
 				<arg name="depth_fps"             value="$DEPTH_CAMERA_FRAME_RATE"/>
-				<arg name="infra1_fps"            value="$DEPTH_CAMERA_FRAME_RATE"/>
-				<arg name="infra2_fps"            value="$DEPTH_CAMERA_FRAME_RATE"/>
 				<arg name="enable_pointcloud"     value="false"/>
-				<arg name="enable_imu"            value="false"/>
 				<arg name="enable_fisheye"        value="false"/>
 			</include>
 		EOM
