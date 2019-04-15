@@ -48,8 +48,32 @@ void WaypointGenerator::calculateWaypoint() {
         output_.goto_position = polarToCartesian(p_pol, position_);
       } else {
         ROS_DEBUG("[WG] No valid tree, going straight");
-        goStraight();
         output_.waypoint_type = direct;
+
+        // calculate the vehicle position on the line between the previous and
+        // current goal
+        Eigen::Vector2f u_prev_to_goal =
+            (goal_ - prev_goal_).head<2>().normalized();
+        Eigen::Vector2f prev_to_pos = (position_ - prev_goal_).head<2>();
+        Eigen::Vector2f pos_2f = position_.head<2>();
+        closest_pt_ = prev_goal_.head<2>() +
+                      (u_prev_to_goal * u_prev_to_goal.dot(prev_to_pos));
+
+        // if the vehicle is more than speed_ away from the line previous to
+        // current goal, set temporary goal on the line  entering at 60 degrees
+        if ((pos_2f - closest_pt_).norm() > speed_) {
+          float len = (pos_2f - closest_pt_).norm() *
+                      std::cos(DEG_TO_RAD * 60.0f) /
+                      std::sin(DEG_TO_RAD * 60.0f);
+          tmp_goal_.x() = closest_pt_.x() + len * u_prev_to_goal.x();
+          tmp_goal_.y() = closest_pt_.y() + len * u_prev_to_goal.y();
+          tmp_goal_.z() = goal_.z();
+
+          Eigen::Vector3f dir = (tmp_goal_ - position_).normalized();
+          output_.goto_position = position_ + dir;
+        } else {
+          goStraight();
+        }
       }
       getPathMsg();
       break;
@@ -80,11 +104,13 @@ void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
                                     const Eigen::Quaternionf& q,
                                     const Eigen::Vector3f& goal,
+                                    const Eigen::Vector3f& prev_goal,
                                     const Eigen::Vector3f& vel, bool stay,
                                     bool is_airborne) {
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
+  prev_goal_ = prev_goal;
   curr_yaw_ = getYawFromQuaternion(q) * DEG_TO_RAD;
 
   if (stay) {

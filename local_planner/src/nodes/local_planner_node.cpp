@@ -380,7 +380,8 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   wp_generator_->updateState(
       toEigen(newest_pose_.pose.position),
       toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position),
-      toEigen(vel_msg_.twist.linear), hover, is_airborne);
+      toEigen(prev_goal_.pose.position), toEigen(vel_msg_.twist.linear), hover,
+      is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
 
   last_waypoint_position_ = newest_waypoint_position_;
@@ -453,6 +454,7 @@ void LocalPlannerNode::fcuInputGoalCallback(
       (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position))
               .norm() > 0.01f) {
     new_goal_ = true;
+    prev_goal_ = goal_msg_;
     goal_msg_.pose.position = msg.point_2.position;
   }
 }

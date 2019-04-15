@@ -34,6 +34,9 @@ class WaypointGenerator {
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f prev_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector2f closest_pt_ = Eigen::Vector2f(NAN, NAN);
+  Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   float curr_yaw_ = NAN;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
@@ -123,7 +126,8 @@ class WaypointGenerator {
   * @param[in] t, update system time
   **/
   void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
-                   const Eigen::Vector3f& goal, const Eigen::Vector3f& vel,
+                   const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel,
                    bool stay, bool is_airborne);
 
   /**
