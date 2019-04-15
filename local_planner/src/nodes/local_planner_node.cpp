@@ -638,7 +638,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
         if (!canUpdatePlannerInfo()) {
           not_received.append(" , missing transforms ");
         }
-        ROS_INFO(
+        ROS_WARN(
             "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
             "\n "
             "\033[0m",
