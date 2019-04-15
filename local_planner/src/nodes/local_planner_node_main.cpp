@@ -58,7 +58,7 @@ int main(int argc, char** argv) {
     	  ROS_WARN("----------------------------- Debugging Info -----------------------------");
     	  ROS_WARN("Local planner has not received a position from FCU, check the following: ");
     	  ROS_WARN("1. Check cables connecting PX4 autopilot with onboard computer");
-    	  ROS_WARN("2. Set PX4 parameter MAV_1_MODE to Onbard");
+    	  ROS_WARN("2. Set PX4 parameter MAV_1_MODE to onbard");
     	  ROS_WARN("3. Set correct fcu_url in local_planner launch file:");
     	  ROS_WARN("   Example direct connection to serial port: /dev/ttyUSB0:921600");
     	  ROS_WARN("   Example connection over mavlink router: udp://:14540@localhost:14557");
