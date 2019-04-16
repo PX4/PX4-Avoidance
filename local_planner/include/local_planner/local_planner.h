@@ -150,7 +150,6 @@ class LocalPlanner {
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
   bool smooth_waypoints_ = true;
-  bool send_obstacles_fcu_ = false;
   bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_critical_;

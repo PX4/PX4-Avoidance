@@ -573,7 +573,7 @@ void LocalPlannerNode::dynamicReconfigureCallback(
 }
 
 void LocalPlannerNode::publishLaserScan() const {
-  if (local_planner_->send_obstacles_fcu_) {
+  if (local_planner_->px4_.param_mpc_col_prev_d > 0) {
     sensor_msgs::LaserScan distance_data_to_fcu;
     local_planner_->getObstacleDistanceData(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);

@@ -55,7 +55,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   adapt_cost_params_ = config.adapt_cost_params_;
-  send_obstacles_fcu_ = px4_.param_mpc_col_prev_d > 0.f;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -151,14 +150,14 @@ void LocalPlanner::determineStrategy() {
       waypoint_type_ = direct;
     }
 
-    if (send_obstacles_fcu_) {
+    if (px4_.param_mpc_col_prev_d > 0.f) {
       create2DObstacleRepresentation(true);
     }
   } else {
     waypoint_type_ = tryPath;
 
     evaluateProgressRate();
-    create2DObstacleRepresentation(send_obstacles_fcu_);
+    create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
       getCostMatrix(polar_histogram_, goal_, position_,
