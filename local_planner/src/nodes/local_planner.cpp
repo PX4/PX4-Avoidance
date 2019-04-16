@@ -55,7 +55,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   adapt_cost_params_ = config.adapt_cost_params_;
-  send_obstacles_fcu_ = px4_.param_mpc_col_prev_d > 0.f;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -151,14 +150,14 @@ void LocalPlanner::determineStrategy() {
       waypoint_type_ = direct;
     }
 
-    if (send_obstacles_fcu_) {
+    if (px4_.param_mpc_col_prev_d > 0.f) {
       create2DObstacleRepresentation(true);
     }
   } else {
     waypoint_type_ = tryPath;
 
     evaluateProgressRate();
-    create2DObstacleRepresentation(send_obstacles_fcu_);
+    create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
       getCostMatrix(polar_histogram_, goal_, position_,
@@ -190,8 +189,8 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "local_origin";
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
-  msg.range_min = 0.2f;
-  msg.range_max = 20.0f;
+  msg.range_min = min_realsense_dist_;
+  msg.range_max = histogram_box_.radius_;
 
   // turn idxs 180 degress to point to local north instead of south
   std::vector<int> z_FOV_idx_north;
@@ -239,8 +238,8 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "local_origin";
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
-  msg.range_min = 0.2f;
-  msg.range_max = 20.0f;
+  msg.range_min = min_realsense_dist_;
+  msg.range_max = histogram_box_.radius_;
 
   distance_data_ = msg;
 }
