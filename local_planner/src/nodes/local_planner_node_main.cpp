@@ -36,7 +36,7 @@ int main(int argc, char** argv) {
 #else
     // visualize world in RVIZ
     if (!Node.world_path_.empty() && startup) {
-      if (!Node.world_visualizer_.visualizeRVIZWorld(Node.world_path_)) {
+      if (Node.world_visualizer_.visualizeRVIZWorld(Node.world_path_)) {
         ROS_WARN("Failed to visualize Rviz world");
       }
       startup = false;
