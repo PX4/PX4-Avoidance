@@ -248,7 +248,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
   if (!world_path_.empty()) {
-    if(world_visualizer_.visualizeDrone(msg)){
+    if (world_visualizer_.visualizeDrone(msg)) {
       ROS_WARN("Failed to visualize drone in RViz");
     }
   }
