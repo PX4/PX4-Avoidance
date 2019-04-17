@@ -9,7 +9,6 @@ int main(int argc, char** argv) {
 
   LocalPlannerNode Node(nh, nh_private, true);
   Node.startNode();
-  ros::Duration(2).sleep();
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
 
