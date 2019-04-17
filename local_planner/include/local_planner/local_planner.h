@@ -7,6 +7,7 @@
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 #include "histogram.h"
+#include "planner_functions.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
@@ -71,7 +72,6 @@ class LocalPlanner {
   bool reach_altitude_ = false;
   bool waypoint_outside_FOV_ = false;
 
-  int e_FOV_max_, e_FOV_min_;
   size_t dist_incline_window_size_ = 50;
   int origin_;
   int tree_age_ = 0;
@@ -90,12 +90,12 @@ class LocalPlanner {
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
 
+  FOV_indices FOV_;
+
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
   ros::Time last_pointcloud_process_time_;
 
-  std::vector<int> e_FOV_idx_;
-  std::vector<int> z_FOV_idx_;
   std::deque<float> goal_dist_incline_;
   std::vector<float> cost_path_candidates_;
   std::vector<int> cost_idx_sorted_;
@@ -142,8 +142,8 @@ class LocalPlanner {
   void generateHistogramImage(Histogram& histogram);
 
  public:
-  float h_FOV_ = 59.0f;
-  float v_FOV_ = 46.0f;
+  float h_FOV_deg_ = 59.0f;
+  float v_FOV_deg_ = 46.0f;
   Box histogram_box_;
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;

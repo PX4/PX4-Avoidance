@@ -30,8 +30,8 @@ void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) {
 }
 
 void StarPlanner::setFOV(float h_FOV, float v_FOV) {
-  h_FOV_ = h_FOV;
-  v_FOV_ = v_FOV;
+  h_FOV_deg_ = h_FOV;
+  v_FOV_deg_ = v_FOV;
 }
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
@@ -127,10 +127,8 @@ void StarPlanner::buildLookAheadTree() {
     bool hist_is_empty = false;  // unused
 
     // build new histogram
-    std::vector<int> z_FOV_idx;
-    int e_FOV_min, e_FOV_max;
-    calculateFOV(h_FOV_, v_FOV_, z_FOV_idx, e_FOV_min, e_FOV_max,
-                 tree_[origin].yaw_,
+    FOV_indices FOV;
+    calculateFOV(h_FOV_deg_, v_FOV_deg_, FOV, tree_[origin].yaw_,
                  0.0f);  // assume pitch is zero at every node
 
     Histogram histogram = Histogram(ALPHA_RES);
