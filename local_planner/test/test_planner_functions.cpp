@@ -183,8 +183,11 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   FOV_indices FOV_zero;  // empty FOV, no remembered points will be forgotten
                          // due to inside FOV
-  FOV_indices FOV_regular;
+  FOV_zero.e_idx_max = 0;
+  FOV_zero.e_idx_min = 0;
+  FOV_zero.z_idx_vec.push_back(0);
 
+  FOV_indices FOV_regular;
   FOV_regular.e_idx_max = 10;
   FOV_regular.e_idx_min = 6;
   FOV_regular.z_idx_vec.push_back(21);
