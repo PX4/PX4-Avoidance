@@ -1,7 +1,6 @@
 #include "local_planner/local_planner.h"
 
 #include "local_planner/common.h"
-#include "local_planner/planner_functions.h"
 #include "local_planner/star_planner.h"
 #include "local_planner/tree_node.h"
 
@@ -80,9 +79,9 @@ void LocalPlanner::runPlanner() {
            static_cast<int>(original_cloud_vector_.size()));
 
   // calculate Field of View
-  z_FOV_idx_.clear();
-  calculateFOV(h_FOV_, v_FOV_, z_FOV_idx_, e_FOV_min_, e_FOV_max_,
-               curr_yaw_histogram_frame_deg_, curr_pitch_deg_);
+  FOV_.z_idx_vec.clear();
+  calculateFOV(h_FOV_deg_, v_FOV_deg_, FOV_, curr_yaw_histogram_frame_deg_,
+               curr_pitch_deg_);
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -166,7 +165,7 @@ void LocalPlanner::determineStrategy() {
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
-      star_planner_->setFOV(h_FOV_, v_FOV_);
+      star_planner_->setFOV(h_FOV_deg_, v_FOV_deg_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
@@ -194,10 +193,10 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
 
   // turn idxs 180 degress to point to local north instead of south
   std::vector<int> z_FOV_idx_north;
-  z_FOV_idx_north.reserve(z_FOV_idx_.size());
+  z_FOV_idx_north.reserve(FOV_.z_idx_vec.size());
 
-  for (size_t i = 0; i < z_FOV_idx_.size(); i++) {
-    int new_idx = z_FOV_idx_[i] + GRID_LENGTH_Z / 2;
+  for (size_t i = 0; i < FOV_.z_idx_vec.size(); i++) {
+    int new_idx = FOV_.z_idx_vec[i] + GRID_LENGTH_Z / 2;
 
     if (new_idx >= GRID_LENGTH_Z) {
       new_idx = new_idx - GRID_LENGTH_Z;

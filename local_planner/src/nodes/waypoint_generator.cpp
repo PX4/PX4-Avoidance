@@ -76,8 +76,8 @@ void WaypointGenerator::calculateWaypoint() {
 }
 
 void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
-  h_FOV_ = h_FOV;
-  v_FOV_ = v_FOV;
+  h_FOV_deg_ = h_FOV;
+  v_FOV_deg_ = v_FOV;
 }
 
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
@@ -236,8 +236,8 @@ void WaypointGenerator::adaptSpeed() {
       angle_diff_deg =
           std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
       angle_diff_deg =
-          std::min(h_FOV_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
-      speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_);
+          std::min(h_FOV_deg_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
+      speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_deg_);
     }
 
     // Scale the pose_to_wp by the speed

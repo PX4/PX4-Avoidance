@@ -47,8 +47,8 @@ class WaypointGenerator {
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_ = NAN;
   float speed_ = 1.0f;
-  float h_FOV_ = 59.0f;
-  float v_FOV_ = 46.0f;
+  float h_FOV_deg_ = 59.0f;
+  float v_FOV_deg_ = 46.0f;
 
   Eigen::Vector3f hover_position_;
 

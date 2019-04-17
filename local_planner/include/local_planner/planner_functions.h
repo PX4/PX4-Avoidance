@@ -17,6 +17,12 @@
 
 namespace avoidance {
 
+struct FOV_indices {
+  std::vector<int> z_idx_vec;
+  int e_idx_min;
+  int e_idx_max;
+};
+
 /**
 * @brief      crops and subsamples the incomming data, then combines it with
 *             the data from the last timestep
@@ -38,16 +44,13 @@ void processPointcloud(
 * @brief      calculates the histogram cells within the Field of View
 * @param[in]  h_FOV, horizontal Field of View [rad]
 * @param[in]  v_FOV, vertical Field of View [rad]
-* @param[out] z_FOV_idx, array of azimuth indexes inside the FOV
-* @param[out] e_FOV_min, minimum elevation index inside the FOV
-* @param[out] e_FOV_max, maximum elevation index inside the FOV
+* @param[out] FOV, indices lying inside the current FOV
 * @param[in]  yaw, vehicle yaw [rad]
 * @param[in]  pitch, vehicle pitch [rad]
 * @note       azimuth angle is wrapped, elevation is not
 **/
-void calculateFOV(float h_FOV, float v_FOV, std::vector<int>& z_FOV_idx,
-                  int& e_FOV_min, int& e_FOV_max, float yaw_fcu_frame,
-                  float pitch_fcu_frame);
+void calculateFOV(float h_FOV, float v_fov, FOV_indices& FOV,
+                  float yaw_fcu_frame, float pitch_fcu_frame);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around

@@ -21,8 +21,9 @@ namespace avoidance {
 class TreeNode;
 
 class StarPlanner {
-  float h_FOV_ = 59.0f;
-  float v_FOV_ = 46.0f;
+  float h_FOV_deg_ = 59.0f;
+  float v_FOV_deg_ = 46.0f;
+
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
