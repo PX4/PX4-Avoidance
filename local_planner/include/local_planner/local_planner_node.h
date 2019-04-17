@@ -99,44 +99,21 @@ class LocalPlannerNode {
   mavros_msgs::CompanionProcessStatus status_msg_;
 
   std::string world_path_;
-  bool never_run_ = true;
-  bool position_received_ = false;
-  bool disable_rise_to_goal_altitude_;
-  bool accept_goal_input_topic_;
   std::atomic<bool> should_exit_{false};
 
   std::vector<cameraData> cameras_;
 
-  ros::CallbackQueue pointcloud_queue_;
-  ros::CallbackQueue main_queue_;
-
-  geometry_msgs::PoseStamped hover_point_;
-  geometry_msgs::PoseStamped newest_pose_;
-  geometry_msgs::PoseStamped last_pose_;
-  geometry_msgs::Point newest_waypoint_position_;
-  geometry_msgs::Point last_waypoint_position_;
-  geometry_msgs::Point newest_adapted_waypoint_position_;
-  geometry_msgs::Point last_adapted_waypoint_position_;
-  geometry_msgs::PoseStamped goal_msg_;
-
-  ros::Time last_wp_time_;
-  ros::Time t_status_sent_;
+  ModelParameters model_params_;
 
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
   LocalPlannerVisualization visualizer_;
 
 #ifndef DISABLE_SIMULATION
   WorldVisualizer world_visualizer_;
 #endif
-
-  ros::Publisher mavros_pos_setpoint_pub_;
-  ros::Publisher mavros_vel_setpoint_pub_;
-  ros::Publisher mavros_obstacle_free_path_pub_;
-  ros::Publisher mavros_obstacle_distance_pub_;
-  ros::ServiceClient get_px4_param_client_;
-  ros::Publisher mavros_system_status_pub_;
-  tf::TransformListener* tf_listener_;
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
@@ -144,11 +121,18 @@ class LocalPlannerNode {
   std::mutex data_ready_mutex_;
   std::mutex px4_params_mutex_;
   std::condition_variable data_ready_cv_;
+  bool never_run_ = true;
+  bool position_received_ = false;
 
   /**
   * @brief     handles threads for data publication and subscription
   **/
   void threadFunction();
+
+  /**
+  * @brief     start spinners
+  **/
+  void startNode();
 
   void updatePlanner();
 
@@ -236,13 +220,20 @@ class LocalPlannerNode {
   void checkPx4Parameters();
 
  private:
+  avoidance::LocalPlannerNodeConfig rqt_param_config_;
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
-  avoidance::LocalPlannerNodeConfig rqt_param_config_;
+  ros::Timer cmdloop_timer_;
+  ros::CallbackQueue cmdloop_queue_;
 
-  mavros_msgs::Altitude ground_distance_msg_;
-  int path_length_ = 0;
+  // Publishers
+  ros::Publisher mavros_pos_setpoint_pub_;
+  ros::Publisher mavros_vel_setpoint_pub_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_obstacle_distance_pub_;
+  ros::Publisher mavros_system_status_pub_;
 
   // Subscribers
   ros::Subscriber pose_sub_;
@@ -255,15 +246,42 @@ class LocalPlannerNode {
   ros::Subscriber distance_sensor_sub_;
   ros::Subscriber px4_param_sub_;
 
+  ros::ServiceClient mavros_set_mode_client_;
+  ros::ServiceClient get_px4_param_client_;
+
+  ros::CallbackQueue pointcloud_queue_;
+  ros::CallbackQueue main_queue_;
+
+  ros::Time start_time_;
+  ros::Time last_wp_time_;
+  ros::Time t_status_sent_;
+
+  geometry_msgs::PoseStamped hover_point_;
+  geometry_msgs::PoseStamped newest_pose_;
+  geometry_msgs::PoseStamped last_pose_;
+  geometry_msgs::Point newest_waypoint_position_;
+  geometry_msgs::Point last_waypoint_position_;
+  geometry_msgs::Point newest_adapted_waypoint_position_;
+  geometry_msgs::Point last_adapted_waypoint_position_;
+  geometry_msgs::PoseStamped goal_msg_;
+  geometry_msgs::TwistStamped vel_msg_;
+  bool new_goal_ = false;
+  NavigationState nav_state_ = NavigationState::none;
+  bool armed_ = false;
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
+  tf::TransformListener* tf_listener_;
+  mavros_msgs::Altitude ground_distance_msg_;
+  bool data_ready_ = false;
+  bool hover_;
+  bool planner_is_healthy_;
+  bool startup_;
+  bool callPx4Params_;
+  bool disable_rise_to_goal_altitude_;
+  bool accept_goal_input_topic_;
+  double spin_dt_;
+  int path_length_ = 0;
   std::vector<float> algo_time;
 
-  geometry_msgs::TwistStamped vel_msg_;
-  bool armed_ = false;
-  NavigationState nav_state_ = NavigationState::none;
-  bool new_goal_ = false;
-  bool data_ready_ = false;
-
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   boost::recursive_mutex config_mutex_;
 
   /**
@@ -312,6 +330,7 @@ class LocalPlannerNode {
   * @param[in] msg, vehicle position and orientation in ENU frame
   **/
   void stateCallback(const mavros_msgs::State& msg);
+  void cmdLoopCallback(const ros::TimerEvent& event);
 
   /**
   * @brief     reads parameters from launch file and yaml file
