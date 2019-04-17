@@ -67,7 +67,8 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   float shift = 0.f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
+  float fov_half_y =
+      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -118,7 +119,8 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
   float shift = -0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
+  float fov_half_y =
+      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -165,7 +167,8 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
   float shift = 0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.h_FOV_ * M_PI_F / 180.f / 2.f);
+  float fov_half_y =
+      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;

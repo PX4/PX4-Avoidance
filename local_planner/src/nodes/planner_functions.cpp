@@ -59,7 +59,7 @@ void processPointcloud(
         PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
         if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0 &&
-            xyzi.intensity < max_age && !pointInsideFOV(FOV, p_ind)) {
+            xyzi.intensity < max_age && !pointInsideFOV(FOV, p_pol)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
           high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
@@ -105,11 +105,11 @@ void calculateFOV(float h_fov, float v_fov, FOV_indices& FOV,
   }
 }
 
-bool pointInsideFOV(const FOV_indices& FOV, const Eigen::Vector2i& point_idx) {
+bool pointInsideFOV(const FOV_indices& FOV, const PolarPoint& p_pol) {
+  Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
   bool inside_FOV_z = std::find(FOV.z_idx_vec.begin(), FOV.z_idx_vec.end(),
-                                point_idx.x()) != FOV.z_idx_vec.end();
-  bool inside_FOV_e =
-      point_idx.y() > FOV.e_idx_min && point_idx.y() < FOV.e_idx_max;
+                                p_ind.x()) != FOV.z_idx_vec.end();
+  bool inside_FOV_e = p_ind.y() > FOV.e_idx_min && p_ind.y() < FOV.e_idx_max;
   return inside_FOV_z && inside_FOV_e;
 }
 

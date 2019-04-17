@@ -59,7 +59,7 @@ void calculateFOV(float h_FOV, float v_fov, FOV_indices& FOV,
 * @param[in]  point_idx, histogram indices of the point
 * @return     whether point is inside the FOV
 **/
-bool pointInsideFOV(const FOV_indices& FOV, const Eigen::Vector2i& point_idx);
+bool pointInsideFOV(const FOV_indices& FOV, const PolarPoint& p_pol);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
