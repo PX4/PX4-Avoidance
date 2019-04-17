@@ -248,8 +248,8 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
   if (!world_path_.empty()) {
-    if (!world_visualizer_.visualizeDrone(msg)) {
-      ROS_WARN("failed to visualize RViz dron marker");
+    if (world_visualizer_.visualizeDrone(msg)) {
+      ROS_WARN("Failed to visualize drone in RViz");
     }
   }
 #endif
@@ -621,7 +621,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
     if (planner_is_healthy) {
       planner_is_healthy = false;
       status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
-      ROS_WARN("\033[1;33m Pointcloud timeout: Aborting \n \033[0m");
+      ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
     }
   } else {
     if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
@@ -638,7 +638,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
         if (!canUpdatePlannerInfo()) {
           not_received.append(" , missing transforms ");
         }
-        ROS_INFO(
+        ROS_WARN(
             "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
             "\n "
             "\033[0m",
