@@ -132,7 +132,7 @@ void StarPlanner::buildLookAheadTree() {
                  0.0f);  // assume pitch is zero at every node
 
     Histogram histogram = Histogram(ALPHA_RES);
-    generateNewHistogram(histogram, cloud_, position_);
+    generateNewHistogram(histogram, cloud_, origin_position);
 
     // calculate candidates
     Eigen::MatrixXf cost_matrix;
