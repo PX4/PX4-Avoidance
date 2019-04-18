@@ -322,8 +322,28 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 #endif
 
   // Process callbacks & wait for a position update
+  ros::Time start_query_position = ros::Time::now();
   while (!position_received_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
+    ros::Duration since_query = ros::Time::now() - start_query_position;
+    if (since_query > ros::Duration(local_planner_->timeout_termination_)) {
+      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      publishSystemStatus();
+      if (!position_not_received_error_sent_) {
+        // clang-format off
+        ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+        ROS_WARN("----------------------------- Debugging Info -----------------------------");
+        ROS_WARN("Local planner has not received a position from FCU, check the following: ");
+        ROS_WARN("1. Check cables connecting PX4 autopilot with onboard computer");
+        ROS_WARN("2. Set PX4 parameter MAV_1_MODE to onbard or external vision");
+        ROS_WARN("3. Set correct fcu_url in local_planner launch file:");
+        ROS_WARN("   Example direct connection to serial port: /dev/ttyUSB0:921600");
+        ROS_WARN("   Example connection over mavlink router: udp://:14540@localhost:14557");
+        ROS_WARN("--------------------------------------------------------------------------");
+        // clang-format on
+        position_not_received_error_sent_ = true;
+      }
+    }
   }
 
   // Check if all information was received

@@ -275,6 +275,7 @@ class LocalPlannerNode {
   bool hover_;
   bool planner_is_healthy_;
   bool startup_;
+  bool position_not_received_error_sent_ = false;
   bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
