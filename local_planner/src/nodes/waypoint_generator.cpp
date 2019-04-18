@@ -35,24 +35,27 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      PolarPoint p_pol(0.0f, 0.0f, 0.0f);
-      bool tree_available = getDirectionFromTree(
-          p_pol, planner_info_.path_node_positions, position_, goal_);
+      int number_of_commands = planner_info_.path_node_commands.size();
+      float elapsed_since_calculation_sec = static_cast<float>(
+          (current_time_ - planner_info_.time_stamp).toSec());
 
-      float dist_goal = (goal_ - position_).norm();
-      ros::Duration since_last_path =
-          getSystemTime() - planner_info_.last_path_time;
-      if (tree_available &&
-          (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
-          since_last_path < ros::Duration(5)) {
-        ROS_DEBUG("[WG] Use calculated tree\n");
-        p_pol.r = 1.0;
-        output_.goto_position = polarToCartesian(p_pol, position_);
+      if (number_of_commands > 0 &&
+          elapsed_since_calculation_sec <
+              number_of_commands * planner_info_.simulation_time_horizon_s) {
+        int current_command_idx =
+            number_of_commands -
+            std::ceil(elapsed_since_calculation_sec /
+                      planner_info_.simulation_time_horizon_s);
+        output_.goto_position =
+            position_ + planner_info_.path_node_commands[current_command_idx];
+        ROS_DEBUG("[WG] Following command from tree");
+
       } else {
-        ROS_DEBUG("[WG] No valid tree, going straight");
+        ROS_DEBUG("[WG] No valid command from tree, going straight");
         goStraight();
         output_.waypoint_type = direct;
       }
+
       getPathMsg();
       break;
     }

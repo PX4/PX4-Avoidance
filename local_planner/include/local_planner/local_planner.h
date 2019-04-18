@@ -89,6 +89,7 @@ class LocalPlanner {
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
+  float simulation_time_horizon_s_ = 1.f;
 
   FOV_indices FOV_;
 

@@ -113,6 +113,7 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
+  tree_time_ = ros::Time::now();
   tree_.clear();
   closed_set_.clear();
 
@@ -234,9 +235,11 @@ void StarPlanner::buildLookAheadTree() {
   int tree_end = origin;
   path_node_positions_.clear();
   path_node_origins_.clear();
+  path_node_commands_.clear();
   while (tree_end > 0) {
     path_node_origins_.push_back(tree_end);
     path_node_positions_.push_back(tree_[tree_end].getPosition());
+    path_node_commands_.push_back(tree_[tree_end].commanded_direction_);
     tree_end = tree_[tree_end].origin_;
   }
   path_node_positions_.push_back(tree_[0].getPosition());

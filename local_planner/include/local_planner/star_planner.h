@@ -59,9 +59,11 @@ class StarPlanner {
 
  public:
   std::vector<Eigen::Vector3f> path_node_positions_;
+  std::vector<Eigen::Vector3f> path_node_commands_;
   std::vector<int> closed_set_;
   int tree_age_;
   std::vector<TreeNode> tree_;
+  ros::Time tree_time_;
 
   StarPlanner();
   ~StarPlanner() = default;

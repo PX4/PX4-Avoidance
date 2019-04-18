@@ -17,10 +17,10 @@ struct avoidanceOutput {
 
   Eigen::Vector3f take_off_pose;  // last vehicle position when not armed
 
-  std::vector<Eigen::Vector3f> path_node_positions;  // array of tree nodes
-                                                     // position, each node
-                                                     // is the minimum cost
-                                                     // node for each tree
-                                                     // depth level
+  std::vector<Eigen::Vector3f> path_node_commands;  // array of command
+                                                    // directions, begin
+                                                    // execution at the end
+  float simulation_time_horizon_s;
+  ros::Time time_stamp;
 };
 }

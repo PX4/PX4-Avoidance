@@ -56,6 +56,8 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
   adapt_cost_params_ = config.adapt_cost_params_;
+  simulation_time_horizon_s_ =
+      static_cast<float>(config.simulation_time_horizon_s_);
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -339,7 +341,11 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.take_off_pose = take_off_pose_;
 
-  out.path_node_positions = star_planner_->path_node_positions_;
+  out.path_node_commands = star_planner_->path_node_commands_;
+  out.simulation_time_horizon_s = simulation_time_horizon_s_;
+  // the calculation is done with the information received at the beginning of
+  // the iteration
+  out.time_stamp = star_planner_->tree_time_;
   return out;
 }
 }
