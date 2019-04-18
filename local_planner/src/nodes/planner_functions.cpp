@@ -452,6 +452,84 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
                 yaw_cost_smooth + pitch_cost_smooth + heading_cost;
 }
 
+bool getDirectionFromTree(
+    PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
+    const Eigen::Vector3f& position, const Eigen::Vector3f& goal) {
+  int size = path_node_positions.size();
+  bool tree_available = true;
+
+  if (size >
+      1) {  // path contains at least 2 points (current position and one wp)
+
+    // extend path with a node at the end in goal direction (for smoother
+    // transition to direct flight)
+    float node_distance =
+        (path_node_positions[0] - path_node_positions[1]).norm();
+    Eigen::Vector3f dir_last_node_to_goal =
+        (goal - path_node_positions[0]).normalized();
+    Eigen::Vector3f goal_node =
+        path_node_positions[0] + node_distance * dir_last_node_to_goal;
+    std::vector<Eigen::Vector3f> path_node_positions_extended;
+    path_node_positions_extended.push_back(goal_node);
+    path_node_positions_extended.insert(path_node_positions_extended.end(),
+                                        path_node_positions.begin(),
+                                        path_node_positions.end());
+    int size_extended = path_node_positions_extended.size();
+
+    // find path nodes between which the drone is currently located:
+    // a vector with the distances of each node to the drone is generated
+    // the indices of the nodes with smallest and next smallest distance are
+    // found
+    int min_dist_idx = 0;
+    int second_min_dist_idx = 0;
+    float min_dist = HUGE_VAL;
+    float second_min_dist = HUGE_VAL;
+    std::vector<float> distances;
+    distances.reserve(size_extended);
+
+    for (int i = 0; i < size_extended; i++) {
+      distances.push_back((position - path_node_positions_extended[i]).norm());
+      if (distances[i] < min_dist) {
+        second_min_dist_idx = min_dist_idx;
+        second_min_dist = min_dist;
+        min_dist = distances[i];
+        min_dist_idx = i;
+      } else if (distances[i] < second_min_dist) {
+        second_min_dist = distances[i];
+        second_min_dist_idx = i;
+      }
+    }
+
+    // the drone is located between the two nodes(min_dist_idx,
+    // second_min_dist_idx),
+    // wp_idx describes the node further ahead in the path
+    int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
+
+    // if drone is too far away from tree or already at last node -> don't use
+    // tree
+    if (min_dist > 3.0f || wp_idx == 0) {
+      tree_available = false;
+    } else {
+      float cos_alpha = (node_distance * node_distance +
+                         distances[wp_idx] * distances[wp_idx] -
+                         distances[wp_idx + 1] * distances[wp_idx + 1]) /
+                        (2.0f * node_distance * distances[wp_idx]);
+      float l_front = distances[wp_idx] * cos_alpha;
+      float l_frac = l_front / node_distance;
+
+      Eigen::Vector3f mean_point =
+          (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] +
+          l_frac * path_node_positions_extended[wp_idx];
+
+      p_pol = cartesianToPolar(mean_point, position);
+      p_pol.r = 0.0f;
+    }
+  } else {
+    tree_available = false;
+  }
+  return tree_available;
+}
+
 void printHistogram(Histogram& histogram) {
   std::cout << "------------------------------------------Histogram------------"
                "------------------------------------\n";
