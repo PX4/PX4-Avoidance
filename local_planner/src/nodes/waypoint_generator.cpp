@@ -217,8 +217,8 @@ void WaypointGenerator::adaptSpeed() {
   speed_ = planner_info_.cruise_velocity;
 
   // If the goal is so close, that the speed-adapted way point would overreach
-  Eigen::Vector3f pose_to_goal = goal_ - position_;
-  if (pose_to_goal.norm() < speed_) {
+  float goal_dist = (goal_ - position_).norm();
+  if (goal_dist < 1.f) {
     output_.adapted_goto_position = goal_;
 
     // First time we reach this goal, remember the heading
@@ -243,7 +243,7 @@ void WaypointGenerator::adaptSpeed() {
     // Scale the pose_to_wp by the speed
     Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
-    pose_to_wp *= speed_;
+    pose_to_wp *= std::min(speed_, goal_dist);
 
     heading_at_goal_ = NAN;
     output_.adapted_goto_position = position_ + pose_to_wp;
