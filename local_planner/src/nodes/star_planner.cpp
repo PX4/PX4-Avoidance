@@ -1,4 +1,5 @@
 #include "local_planner/star_planner.h"
+
 #include "local_planner/common.h"
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
@@ -111,13 +112,10 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
 
-  Eigen::Vector3f origin_position, origin_origin_position;
   Histogram histogram(ALPHA_RES);
   std::vector<uint8_t> cost_image_data;
   std::vector<candidateDirection> candidate_vector;
   Eigen::MatrixXf cost_matrix;
-
-  Eigen::Vector3f node_location, diff;
 
   bool is_expanded_node = true;
 
@@ -132,14 +130,16 @@ void StarPlanner::buildLookAheadTree() {
 
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
-    origin_position = tree_[origin].getPosition();
-    int old_origin = tree_[origin].origin_;
-    origin_origin_position = tree_[old_origin].getPosition();
+    Eigen::Vector3f origin_position = tree_[origin].getPosition();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
 
     // calculate candidates
+    cost_matrix.fill(0.f);
+    cost_image_data.clear();
+    candidate_vector.clear();
+
     getCostMatrix(histogram, goal_, origin_position, tree_[origin].yaw_,
                   projected_last_wp_, cost_params_, false,
                   smoothing_margin_degrees_, cost_matrix, cost_image_data);
@@ -158,7 +158,8 @@ void StarPlanner::buildLookAheadTree() {
                          tree_node_distance_);
 
         // check if another close node has been added
-        node_location = polarToCartesian(p_pol, origin_position);
+        Eigen::Vector3f node_location =
+            polarToCartesian(p_pol, origin_position);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
@@ -177,7 +178,7 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ =
               tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-          diff = node_location - origin_position;
+          Eigen::Vector3f diff = node_location - origin_position;
           float yaw_radians = atan2(diff.y(), diff.x());
           tree_.back().yaw_ =
               std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
