@@ -5,8 +5,6 @@
 
 #include <ros/param.h>
 
-#include <tf/transform_listener.h>
-
 namespace avoidance {
 
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
@@ -72,7 +70,6 @@ void WaypointGenerator::calculateWaypoint() {
     }
   }
   last_wp_type_ = planner_info_.waypoint_type;
-  last_yaw_ = curr_yaw_;
 }
 
 void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
@@ -88,11 +85,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
-  tf::Quaternion tf_q(q.x(), q.y(), q.z(), q.w());
-  tf::Matrix3x3 tf_m(tf_q);
-  double roll, pitch, yaw;
-  tf_m.getRPY(roll, pitch, yaw);
-  curr_yaw_ = static_cast<float>(yaw);
+  curr_yaw_ = getYawFromQuaternion(q) * DEG_TO_RAD;
 
   if (stay) {
     planner_info_.waypoint_type = hover;
