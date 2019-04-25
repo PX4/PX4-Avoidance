@@ -83,7 +83,6 @@ class LocalPlanner {
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;
-  float velocity_sigmoid_slope_ = 1.0;
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;

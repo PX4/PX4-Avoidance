@@ -36,7 +36,6 @@ void LocalPlanner::dynamicReconfigureSetParams(
   cost_params_.heading_cost_param = config.heading_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
-  velocity_sigmoid_slope_ = static_cast<float>(config.velocity_sigmoid_slope_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
   timeout_critical_ = config.timeout_critical_;
