@@ -34,7 +34,6 @@ class WaypointGenerator {
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
-  float last_yaw_ = NAN;
   float curr_yaw_ = NAN;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
