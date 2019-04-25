@@ -238,13 +238,26 @@ void LocalPlannerNode::updatePlannerInfo() {
     local_planner_->setGoal(toEigen(goal_msg_.pose.position));
     new_goal_ = false;
   }
-  {
-	goal_msg_.pose.position.x = newest_pose_.pose.position.x + 10;
-	goal_msg_.pose.position.y = newest_pose_.pose.position.y;
-	goal_msg_.pose.position.z = newest_pose_.pose.position.z;
-	local_planner_->setGoal(toEigen(goal_msg_.pose.position));
-	goal_set_to_straight_ = true;
-  }
+
+  if (tf_listener_->canTransform("/local_origin", "/fcu", ros::Time::now())) {
+      geometry_msgs::PointStamped fake_goal_body_frame, fake_goal_local_origin;
+      fake_goal_body_frame.point.x = 10.0f;
+      fake_goal_body_frame.point.y = 0.0f;
+      fake_goal_body_frame.point.z = 0.0f;
+      fake_goal_body_frame.header.frame_id = "/fcu";
+      fake_goal_body_frame.header.stamp = ros::Time::now();
+
+      tf_listener_->transformPoint("/local_origin", fake_goal_body_frame,
+                                  fake_goal_local_origin);
+
+      goal_msg_.pose.position.x = fake_goal_local_origin.point.x;
+      goal_msg_.pose.position.y = fake_goal_local_origin.point.y;
+      goal_msg_.pose.position.z = fake_goal_local_origin.point.z;
+
+      local_planner_->setGoal(toEigen(goal_msg_.pose.position));
+      goal_set_to_straight_ = true;
+    }
+
 
   // update ground distance
   if (ros::Time::now() - ground_distance_msg_.header.stamp <
@@ -980,30 +993,33 @@ void LocalPlannerNode::transformVelocityToTrajectory(
 }
 
 void LocalPlannerNode::publishPlannerData() {
-
-  //publish local cloud
+  // publish local cloud
   pcl::PointCloud<pcl::PointXYZ> final_cloud, reprojected_points;
   local_planner_->getCloudsForVisualization(final_cloud, reprojected_points);
 
   pcl::PointCloud<pcl::PointXYZI> colored_cloud;
   pcl::PointCloud<pcl::PointXYZ>::iterator pcl_it;
-  double distance,intensity;
+  double distance, intensity;
   double max_dist_rs = 10;
   double min_dist_rs = 0;
 
   for (pcl_it = final_cloud.begin(); pcl_it != final_cloud.end(); ++pcl_it) {
-      // Check if the point is invalid
-      if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) && !std::isnan(pcl_it->z)) {
-          distance = sqrt(pow(newest_pose_.pose.position.x - pcl_it->x, 2) + pow(newest_pose_.pose.position.y - pcl_it->y, 2) +
-                     pow(newest_pose_.pose.position.z - pcl_it->z, 2));
-          intensity = std::max(255.0/(max_dist_rs - min_dist_rs) * std::min(max_dist_rs , distance - min_dist_rs), 0.0);
-          pcl::PointXYZI p;
-          p.intensity = intensity;
-          p.x = pcl_it->x;
-          p.y = pcl_it->y;
-          p.z = pcl_it->z;
-          colored_cloud.points.push_back(p);
-        }
+    // Check if the point is invalid
+    if (!std::isnan(pcl_it->x) && !std::isnan(pcl_it->y) &&
+        !std::isnan(pcl_it->z)) {
+      distance = sqrt(pow(newest_pose_.pose.position.x - pcl_it->x, 2) +
+                      pow(newest_pose_.pose.position.y - pcl_it->y, 2) +
+                      pow(newest_pose_.pose.position.z - pcl_it->z, 2));
+      intensity = std::max(255.0 / (max_dist_rs - min_dist_rs) *
+                               std::min(max_dist_rs, distance - min_dist_rs),
+                           0.0);
+      pcl::PointXYZI p;
+      p.intensity = intensity;
+      p.x = pcl_it->x;
+      p.y = pcl_it->y;
+      p.z = pcl_it->z;
+      colored_cloud.points.push_back(p);
+    }
   }
   colored_cloud.header = final_cloud.header;
   local_pointcloud_pub_.publish(colored_cloud);
