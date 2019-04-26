@@ -31,7 +31,7 @@ RUN ["/bin/bash", "-c", " \
         DONT_RUN=1 make posix_sitl_default gazebo \
 "]
 
-RUN echo "param set MAV_BROADCAST 1" >> ${FIRMWARE_DIR}/posix-configs/SITL/init/ekf2/iris
+RUN echo "param set MAV_BROADCAST 1" >> ${FIRMWARE_DIR}/ROMFS/px4fmu_common/init.d-posix/10016_iris}
 
 ENTRYPOINT ["/root/entrypoint.sh"]
 CMD ["world_path:=\"/root/sim/worlds/test_city_2.world\""]
