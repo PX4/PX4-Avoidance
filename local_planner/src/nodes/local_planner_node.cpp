@@ -471,7 +471,6 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   // collect all px4 parameters needed for model based trajectory planning
   // when adding new parameter to the struct ModelParameters,
   // add new else if case with correct value type
-
   auto parse_param_f = [&msg](const std::string& name, float& val) -> bool {
     if (msg.param_id == name) {
       ROS_INFO("parameter %s is set from  %f to %f \n", name.c_str(), val,
@@ -505,24 +504,19 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   parse_param_f("MPC_Z_VEL_MAX_DN", local_planner_->px4_.param_mpc_vel_max_dn) ||
   parse_param_f("MPC_Z_VEL_MAX_UP", local_planner_->px4_.param_mpc_z_vel_max_up) ||
   parse_param_f("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
-  //clang-format on
+  // clang-format on
 }
 
 void LocalPlannerNode::checkPx4Parameters() {
+  auto& client = get_px4_param_client_;
+  auto request_param = [&client](const std::string& name, float& val) {
+    mavros_msgs::ParamGet req;
+    req.request.param_id = name;
+    if (client.call(req) && req.response.success) {
+      val = req.response.value.real;
+    }
+  };
   while (!should_exit_) {
-    { std::unique_lock<std::mutex> lk(px4_params_mutex_); }
-
-    if (should_exit_) break;
-
-    auto& client = get_px4_param_client_;
-    auto request_param = [&client](const std::string& name, float& val) {
-      mavros_msgs::ParamGet req;
-      req.request.param_id = name;
-      if (client.call(req) && req.response.success) {
-        val = req.response.value.real;
-      }
-    };
-
     request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
     request_param("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
 

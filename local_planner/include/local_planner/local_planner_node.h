@@ -119,7 +119,6 @@ class LocalPlannerNode {
                               /// output data (point cloud, position, ...)
 
   std::mutex data_ready_mutex_;
-  std::mutex px4_params_mutex_;
   std::condition_variable data_ready_cv_;
   bool never_run_ = true;
   bool position_received_ = false;
