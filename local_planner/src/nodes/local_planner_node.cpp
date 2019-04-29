@@ -472,55 +472,40 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   // when adding new parameter to the struct ModelParameters,
   // add new else if case with correct value type
 
-  if (msg.param_id == "MPC_ACC_DOWN_MAX") {
-    ROS_INFO("parameter acceleration down is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_acc_down_max, msg.value.real);
-    local_planner_->px4_.param_mpc_acc_down_max = msg.value.real;
-  } else if (msg.param_id == "MPC_ACC_HOR") {
-    ROS_INFO("parameter acceleration horizontal is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_acc_hor, msg.value.real);
-    local_planner_->px4_.param_mpc_acc_hor = msg.value.real;
-  } else if (msg.param_id == "MPC_ACC_UP_MAX") {
-    ROS_INFO("parameter acceleration up is set from  %f to %f \n",
-             local_planner_->px4_.param_acc_up_max, msg.value.real);
-    local_planner_->px4_.param_acc_up_max = msg.value.real;
-  } else if (msg.param_id == "MPC_AUTO_MODE") {
-    ROS_INFO("parameter auto mode is set from  %i to %li \n",
-             local_planner_->px4_.param_mpc_auto_mode, msg.value.integer);
-    local_planner_->px4_.param_mpc_auto_mode = msg.value.integer;
-  } else if (msg.param_id == "MPC_JERK_MIN") {
-    ROS_INFO("parameter jerk minimum is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_jerk_min, msg.value.real);
-    local_planner_->px4_.param_mpc_jerk_min = msg.value.real;
-  } else if (msg.param_id == "MPC_JERK_MAX") {
-    ROS_INFO("parameter jerk maximum is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_jerk_max, msg.value.real);
-    local_planner_->px4_.param_mpc_jerk_max = msg.value.real;
-  } else if (msg.param_id == "MPC_LAND_SPEED") {
-    ROS_INFO("parameter landing speed is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_land_speed, msg.value.real);
-    local_planner_->px4_.param_mpc_land_speed = msg.value.real;
-  } else if (msg.param_id == "MPC_TKO_SPEED") {
-    ROS_INFO("parameter takeoff speed is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_tko_speed, msg.value.real);
-    local_planner_->px4_.param_mpc_tko_speed = msg.value.real;
-  } else if (msg.param_id == "MPC_XY_CRUISE") {
-    ROS_INFO("parameter velocity horizontal is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_xy_cruise, msg.value.real);
-    local_planner_->px4_.param_mpc_xy_cruise = msg.value.real;
-  } else if (msg.param_id == "MPC_Z_VEL_MAX_DN") {
-    ROS_INFO("parameter velocity down is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_vel_max_dn, msg.value.real);
-    local_planner_->px4_.param_mpc_vel_max_dn = msg.value.real;
-  } else if (msg.param_id == "MPC_Z_VEL_MAX_UP") {
-    ROS_INFO("parameter velocity up is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_z_vel_max_up, msg.value.real);
-    local_planner_->px4_.param_mpc_z_vel_max_up = msg.value.real;
-  } else if (msg.param_id == "MPC_COL_PREV_D") {
-    ROS_INFO("parameter collision prevention distance is set from  %f to %f \n",
-             local_planner_->px4_.param_mpc_col_prev_d, msg.value.real);
-    local_planner_->px4_.param_mpc_col_prev_d = msg.value.real;
-  }
+  auto parse_param_f = [&msg](const std::string& name, float& val) -> bool {
+    if (msg.param_id == name) {
+      ROS_INFO("parameter %s is set from  %f to %f \n", name.c_str(), val,
+               msg.value.real);
+      val = msg.value.real;
+      return true;
+    }
+    return false;
+  };
+
+  auto parse_param_i = [&msg](const std::string& name, int& val) -> bool {
+    if (msg.param_id == name) {
+      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val,
+               msg.value.integer);
+      val = msg.value.integer;
+      return true;
+    }
+    return false;
+  };
+
+  // clang-format off
+  parse_param_f("MPC_ACC_DOWN_MAX", local_planner_->px4_.param_mpc_acc_down_max) ||
+  parse_param_f("MPC_ACC_HOR", local_planner_->px4_.param_mpc_acc_hor) ||
+  parse_param_f("MPC_ACC_UP_MAX", local_planner_->px4_.param_acc_up_max) ||
+  parse_param_i("MPC_AUTO_MODE", local_planner_->px4_.param_mpc_auto_mode) ||
+  parse_param_f("MPC_JERK_MIN", local_planner_->px4_.param_mpc_jerk_min) ||
+  parse_param_f("MPC_JERK_MAX", local_planner_->px4_.param_mpc_jerk_max) ||
+  parse_param_f("MPC_LAND_SPEED", local_planner_->px4_.param_mpc_land_speed) ||
+  parse_param_f("MPC_TKO_SPEED", local_planner_->px4_.param_mpc_tko_speed) ||
+  parse_param_f("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise) ||
+  parse_param_f("MPC_Z_VEL_MAX_DN", local_planner_->px4_.param_mpc_vel_max_dn) ||
+  parse_param_f("MPC_Z_VEL_MAX_UP", local_planner_->px4_.param_mpc_z_vel_max_up) ||
+  parse_param_f("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
+  //clang-format on
 }
 
 void LocalPlannerNode::checkPx4Parameters() {
@@ -529,17 +514,18 @@ void LocalPlannerNode::checkPx4Parameters() {
 
     if (should_exit_) break;
 
-    mavros_msgs::ParamGet req;
-    req.request.param_id = "MPC_XY_CRUISE";
-    if (get_px4_param_client_.call(req) && req.response.success) {
-      local_planner_->px4_.param_mpc_xy_cruise = req.response.value.real;
-    }
+    auto& client = get_px4_param_client_;
+    auto request_param = [&client](const std::string& name, float& val) {
+      mavros_msgs::ParamGet req;
+      req.request.param_id = name;
+      if (client.call(req) && req.response.success) {
+        val = req.response.value.real;
+      }
+    };
 
-    req.response.success = false;
-    req.request.param_id = "MPC_COL_PREV_D";
-    if (get_px4_param_client_.call(req) && req.response.success) {
-      local_planner_->px4_.param_mpc_col_prev_d = req.response.value.real;
-    }
+    request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
+    request_param("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
+
     std::this_thread::sleep_for(std::chrono::seconds(30));
   }
 }
