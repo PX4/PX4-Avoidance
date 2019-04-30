@@ -44,35 +44,11 @@ class PathHandlerNode {
 
  private:
   ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
 
   ros::Timer cmdloop_timer_;
   ros::CallbackQueue cmdloop_queue_;
 
-  // Parameters (Rosparam)
-  geometry_msgs::Point start_pos_;
-  double start_yaw_;
-  // Parameters (Dynamic Reconfiguration)
-  bool three_point_mode_;
-  bool ignore_path_messages_;
-  double min_speed_;
-  double max_speed_;
-  double three_point_speed_;
-  double direct_goal_alt_;
-
-  double speed_ = min_speed_;
-  geometry_msgs::PoseStamped current_goal_;
-  geometry_msgs::PoseStamped last_goal_;
-  geometry_msgs::PoseStamped last_pos_;
-
-  std::vector<geometry_msgs::PoseStamped> path_;
-  std::map<tf::Vector3, double> path_risk_;
-
-  ros::Subscriber direct_goal_sub_;
-  ros::Subscriber path_sub_;
-  ros::Subscriber path_with_risk_sub_;
-  ros::Subscriber ground_truth_sub_;
-
+  // Publishers
   ros::Publisher mavros_waypoint_publisher_;
   ros::Publisher current_waypoint_publisher_;
   ros::Publisher three_point_path_publisher_;
@@ -81,11 +57,36 @@ class PathHandlerNode {
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_system_status_pub_;
 
-  tf::TransformListener listener_;
+  // Subscribers
+  ros::Subscriber direct_goal_sub_;
+  ros::Subscriber path_sub_;
+  ros::Subscriber path_with_risk_sub_;
+  ros::Subscriber ground_truth_sub_;
 
+  // Parameters (Rosparam)
+  geometry_msgs::Point start_pos_;
+  geometry_msgs::PoseStamped current_goal_;
+  geometry_msgs::PoseStamped last_goal_;
+  geometry_msgs::PoseStamped last_pos_;
+
+  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
+  double start_yaw_;
+  // Parameters (Dynamic Reconfiguration)
+  bool three_point_mode_;
+  bool ignore_path_messages_;
+  double min_speed_;
+  double max_speed_;
+  double three_point_speed_;
+  double direct_goal_alt_;
+  double speed_ = min_speed_;
   double spin_dt_;
+
+  std::vector<geometry_msgs::PoseStamped> path_;
+  std::map<tf::Vector3, double> path_risk_;
+
+  tf::TransformListener listener_;
 
   // Methods
   void readParams();
