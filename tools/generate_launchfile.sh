@@ -1,16 +1,11 @@
 #!/bin/bash
 cat > local_planner/launch/avoidance.launch <<- EOM
 <launch>
-    <arg name="mavros_transformation" default="0" />
     <arg name="ns" default="/"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
-
-    <!-- Launch static tf publisher -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
-          args="0 0 0 \$(arg mavros_transformation) 0 0 world local_origin 10"/>
 
     <!-- Launch MavROS -->
     <group ns="\$(arg ns)">
