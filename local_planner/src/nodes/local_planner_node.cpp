@@ -380,8 +380,13 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   wp_generator_->updateState(
       toEigen(newest_pose_.pose.position),
       toEigen(newest_pose_.pose.orientation), toEigen(goal_msg_.pose.position),
-      toEigen(vel_msg_.twist.linear), hover, is_airborne);
+      toEigen(prev_goal_.pose.position), toEigen(vel_msg_.twist.linear), hover,
+      is_airborne);
   waypointResult result = wp_generator_->getWaypoints();
+
+  Eigen::Vector3f closest_pt = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f deg60_pt = Eigen::Vector3f(NAN, NAN, NAN);
+  wp_generator_->getOfftrackPointsForVisualization(closest_pt, deg60_pt);
 
   last_waypoint_position_ = newest_waypoint_position_;
   newest_waypoint_position_ = toPoint(result.smoothed_goto_position);
@@ -399,6 +404,8 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   visualizer_.publishCurrentSetpoint(
       toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
       result.waypoint_type, newest_pose_.pose.position);
+
+  visualizer_.publishOfftrackPoints(closest_pt, deg60_pt);
 
   // send waypoints to mavros
   mavros_msgs::Trajectory obst_free_path = {};
@@ -453,6 +460,7 @@ void LocalPlannerNode::fcuInputGoalCallback(
       (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position))
               .norm() > 0.01f) {
     new_goal_ = true;
+    prev_goal_ = goal_msg_;
     goal_msg_.pose.position = msg.point_2.position;
   }
 }

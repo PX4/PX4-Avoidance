@@ -44,6 +44,10 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   histogram_image_pub_ =
       nh.advertise<sensor_msgs::Image>("/histogram_image", 1);
   cost_image_pub_ = nh.advertise<sensor_msgs::Image>("/cost_image", 1);
+  closest_point_pub_ =
+      nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
+  deg60_point_pub_ =
+      nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(
@@ -77,6 +81,37 @@ void LocalPlannerVisualization::visualizePlannerData(
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_,
                     newest_waypoint_position, newest_adapted_waypoint_position,
                     newest_pose);
+}
+
+void LocalPlannerVisualization::publishOfftrackPoints(
+    Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
+  visualization_msgs::Marker m;
+
+  m.header.frame_id = "local_origin";
+  m.header.stamp = ros::Time::now();
+  m.type = visualization_msgs::Marker::SPHERE;
+  m.action = visualization_msgs::Marker::ADD;
+  m.scale.x = 0.2;
+  m.scale.y = 0.2;
+  m.scale.z = 0.2;
+  m.color.a = 1.0;
+  m.color.r = 1.0;
+  m.color.g = 0.0;
+  m.color.b = 0.0;
+  m.lifetime = ros::Duration();
+  m.id = 0;
+  m.pose.position.x = closest_pt.x();
+  m.pose.position.y = closest_pt.y();
+  m.pose.position.z = closest_pt.z();
+  closest_point_pub_.publish(m);
+
+  m.color.r = 0.0;
+  m.color.g = 0.0;
+  m.color.b = 1.0;
+  m.pose.position.x = deg60_pt.x();
+  m.pose.position.y = deg60_pt.y();
+  m.pose.position.z = deg60_pt.z();
+  deg60_point_pub_.publish(m);
 }
 
 void LocalPlannerVisualization::publishTree(

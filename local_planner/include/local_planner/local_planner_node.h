@@ -265,6 +265,7 @@ class LocalPlannerNode {
   geometry_msgs::Point last_adapted_waypoint_position_;
   geometry_msgs::PoseStamped goal_msg_;
   geometry_msgs::TwistStamped vel_msg_;
+  geometry_msgs::PoseStamped prev_goal_;
   bool new_goal_ = false;
   NavigationState nav_state_ = NavigationState::none;
   bool armed_ = false;
