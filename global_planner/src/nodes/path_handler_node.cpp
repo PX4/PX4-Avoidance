@@ -2,8 +2,7 @@
 
 namespace global_planner {
 
-PathHandlerNode::PathHandlerNode() :
-spin_dt_(0.1) {
+PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   nh_ = ros::NodeHandle("~");
 
   // Set up Dynamic Reconfigure Server
@@ -60,7 +59,6 @@ spin_dt_(0.1) {
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
-
 }
 
 PathHandlerNode::~PathHandlerNode() {}
