@@ -327,7 +327,7 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     ros::Duration since_query = ros::Time::now() - start_query_position;
     if (since_query > ros::Duration(local_planner_->timeout_termination_)) {
-      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       publishSystemStatus();
       if (!position_not_received_error_sent_) {
         // clang-format off
