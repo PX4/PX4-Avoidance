@@ -96,8 +96,6 @@ class LocalPlannerNode {
                    const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
-  mavros_msgs::CompanionProcessStatus status_msg_;
-
   std::string world_path_;
   std::atomic<bool> should_exit_{false};
 
@@ -201,6 +199,16 @@ class LocalPlannerNode {
   void publishSystemStatus();
 
   /**
+  * @brief      set avoidance system status
+  **/
+  void setSystemStatus(MAV_STATE state);
+
+  /**
+  * @brief      get avoidance system status
+  **/
+  MAV_STATE getSystemStatus();
+
+  /**
   * @brief      check healthiness of the avoidance system to trigger failsafe in
   *             the FCU
   * @param[in]  since_last_cloud, time elapsed since the last waypoint was
@@ -265,12 +273,17 @@ class LocalPlannerNode {
   geometry_msgs::PoseStamped goal_msg_;
   geometry_msgs::TwistStamped vel_msg_;
   geometry_msgs::PoseStamped prev_goal_;
+  mavros_msgs::Altitude ground_distance_msg_;
+
   bool new_goal_ = false;
+
   NavigationState nav_state_ = NavigationState::none;
-  bool armed_ = false;
+  MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
+
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
-  mavros_msgs::Altitude ground_distance_msg_;
+
+  bool armed_ = false;
   bool data_ready_ = false;
   bool hover_;
   bool planner_is_healthy_;

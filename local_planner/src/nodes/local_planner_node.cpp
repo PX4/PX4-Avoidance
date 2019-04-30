@@ -82,7 +82,7 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   local_planner_->disable_rise_to_goal_altitude_ =
       disable_rise_to_goal_altitude_;
-  status_msg_.state = (int)MAV_STATE::MAV_STATE_BOOT;
+  setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
   hover_ = false;
   planner_is_healthy_ = true;
@@ -327,7 +327,7 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     ros::Duration since_query = ros::Time::now() - start_query_position;
     if (since_query > ros::Duration(local_planner_->timeout_termination_)) {
-      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       publishSystemStatus();
       if (!position_not_received_error_sent_) {
         // clang-format off
@@ -359,7 +359,7 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   // send waypoint
   if (!never_run_ && planner_is_healthy_) {
     calculateWaypoints(hover_);
-    if (!hover_) status_msg_.state = (int)MAV_STATE::MAV_STATE_ACTIVE;
+    if (!hover_) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
   } else {
     for (size_t i = 0; i < cameras_.size(); ++i) {
       // once the camera info have been set once, unsubscribe from topic
@@ -374,6 +374,13 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 
   return;
 }
+
+void LocalPlannerNode::setSystemStatus(MAV_STATE state) {
+  companion_state_ = state;
+}
+
+MAV_STATE LocalPlannerNode::getSystemStatus() { return companion_state_; }
+
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
@@ -426,9 +433,13 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
 }
 
 void LocalPlannerNode::publishSystemStatus() {
-  status_msg_.header.stamp = ros::Time::now();
-  status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  mavros_system_status_pub_.publish(status_msg_);
+  mavros_msgs::CompanionProcessStatus msg;
+
+  msg.header.stamp = ros::Time::now();
+  msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
+  msg.state = (int)companion_state_;
+
+  mavros_system_status_pub_.publish(msg);
   t_status_sent_ = ros::Time::now();
 }
 
@@ -702,14 +713,14 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
       since_start > timeout_termination) {
     if (planner_is_healthy) {
       planner_is_healthy = false;
-      status_msg_.state = (int)MAV_STATE::MAV_STATE_FLIGHT_TERMINATION;
+      setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
     }
   } else {
     if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
       if (position_received_) {
         hover = true;
-        status_msg_.state = (int)MAV_STATE::MAV_STATE_CRITICAL;
+        setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
         std::string not_received = "";
         for (size_t i = 0; i < cameras_.size(); i++) {
           if (!cameras_[i].received_) {
