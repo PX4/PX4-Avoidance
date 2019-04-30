@@ -44,10 +44,34 @@ class PathHandlerNode {
 
  private:
   ros::NodeHandle nh_;
-  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
+
+  ros::Timer cmdloop_timer_;
+  ros::CallbackQueue cmdloop_queue_;
+
+  // Publishers
+  ros::Publisher mavros_waypoint_publisher_;
+  ros::Publisher current_waypoint_publisher_;
+  ros::Publisher three_point_path_publisher_;
+  ros::Publisher three_point_msg_publisher_;
+  ros::Publisher avoidance_triplet_msg_publisher_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_system_status_pub_;
+
+  // Subscribers
+  ros::Subscriber direct_goal_sub_;
+  ros::Subscriber path_sub_;
+  ros::Subscriber path_with_risk_sub_;
+  ros::Subscriber ground_truth_sub_;
 
   // Parameters (Rosparam)
   geometry_msgs::Point start_pos_;
+  geometry_msgs::PoseStamped current_goal_;
+  geometry_msgs::PoseStamped last_goal_;
+  geometry_msgs::PoseStamped last_pos_;
+
+  dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
   double start_yaw_;
   // Parameters (Dynamic Reconfiguration)
   bool three_point_mode_;
@@ -56,27 +80,11 @@ class PathHandlerNode {
   double max_speed_;
   double three_point_speed_;
   double direct_goal_alt_;
-
   double speed_ = min_speed_;
-  geometry_msgs::PoseStamped current_goal_;
-  geometry_msgs::PoseStamped last_goal_;
-  geometry_msgs::PoseStamped last_pos_;
+  double spin_dt_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
   std::map<tf::Vector3, double> path_risk_;
-
-  ros::Subscriber direct_goal_sub_;
-  ros::Subscriber path_sub_;
-  ros::Subscriber path_with_risk_sub_;
-  ros::Subscriber ground_truth_sub_;
-
-  ros::Publisher mavros_waypoint_publisher_;
-  ros::Publisher current_waypoint_publisher_;
-  ros::Publisher three_point_path_publisher_;
-  ros::Publisher three_point_msg_publisher_;
-  ros::Publisher avoidance_triplet_msg_publisher_;
-  ros::Publisher mavros_obstacle_free_path_pub_;
-  ros::Publisher mavros_system_status_pub_;
 
   tf::TransformListener listener_;
 
@@ -93,6 +101,12 @@ class PathHandlerNode {
   void receivePath(const nav_msgs::Path& msg);
   void receivePathWithRisk(const PathWithRiskMsg& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
+
+  /**
+  * @brief     callaback for main loop
+  **/
+  void cmdLoopCallback(const ros::TimerEvent& event);
+
   // Publishers
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
   void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory& obst_avoid,
