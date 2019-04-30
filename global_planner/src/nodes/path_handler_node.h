@@ -46,6 +46,9 @@ class PathHandlerNode {
   ros::NodeHandle nh_;
   dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
 
+  ros::Timer cmdloop_timer_;
+  ros::CallbackQueue cmdloop_queue_;
+
   // Parameters (Rosparam)
   geometry_msgs::Point start_pos_;
   double start_yaw_;
@@ -80,6 +83,10 @@ class PathHandlerNode {
 
   tf::TransformListener listener_;
 
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
+  double spin_dt_;
+
   // Methods
   void readParams();
   bool shouldPublishThreePoints();
@@ -93,6 +100,12 @@ class PathHandlerNode {
   void receivePath(const nav_msgs::Path& msg);
   void receivePathWithRisk(const PathWithRiskMsg& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
+
+  /**
+  * @brief     callaback for main loop
+  **/
+  void cmdLoopCallback(const ros::TimerEvent& event);
+
   // Publishers
   void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
   void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory& obst_avoid,

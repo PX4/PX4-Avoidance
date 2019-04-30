@@ -2,7 +2,8 @@
 
 namespace global_planner {
 
-PathHandlerNode::PathHandlerNode() {
+PathHandlerNode::PathHandlerNode() :
+spin_dt_(0.1) {
   nh_ = ros::NodeHandle("~");
 
   // Set up Dynamic Reconfigure Server
@@ -50,17 +51,16 @@ PathHandlerNode::PathHandlerNode() {
 
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
-  ros::Rate rate(10);
-  while (ros::ok()) {
-    rate.sleep();
-    ros::spinOnce();
 
-    if (shouldPublishThreePoints()) {
-      publishThreePointMsg();
-    } else {
-      publishSetpoint();
-    }
-  }
+  ros::TimerOptions timer_options(
+      ros::Duration(spin_dt_),
+      boost::bind(&PathHandlerNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
+
 }
 
 PathHandlerNode::~PathHandlerNode() {}
@@ -127,6 +127,14 @@ void PathHandlerNode::dynamicReconfigureCallback(
 
   // Reset speed_
   speed_ = min_speed_;
+}
+
+void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  if (shouldPublishThreePoints()) {
+    publishThreePointMsg();
+  } else {
+    publishSetpoint();
+  }
 }
 
 void PathHandlerNode::receiveDirectGoal(
