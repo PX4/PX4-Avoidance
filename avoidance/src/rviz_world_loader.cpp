@@ -14,7 +14,7 @@ WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
   ros::Duration(1.0).sleep();
   if (!world_path_.empty()) {
     if (visualizeRVIZWorld(world_path_))
-      ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");      
+      ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");
   }
 }
 
