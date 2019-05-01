@@ -40,11 +40,14 @@ class WorldVisualizer {
   **/
   int resolveUri(std::string& uri);
 
+  ros::NodeHandle nh_;
   ros::Publisher world_pub_;
   ros::Publisher drone_pub_;
 
+  std::string world_path_;
+
  public:
-  WorldVisualizer();
+  WorldVisualizer(const ros::NodeHandle& nh);
 
   /**
   * @brief      initializes all publishers used for local planner visualization
