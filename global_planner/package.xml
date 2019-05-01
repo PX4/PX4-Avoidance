@@ -54,7 +54,7 @@
   <build_depend>pcl_ros</build_depend>
   <build_depend>mavros</build_depend>
   <build_depend>mavros_extras</build_depend>
-  <build_depend>avoidnace</build_depend>
+  <build_depend>avoidance</build_depend>
 
 
   <run_depend>dynamic_reconfigure</run_depend>
