@@ -3,7 +3,7 @@
 
 #include "../include/local_planner/planner_functions.h"
 
-#include "../include/local_planner/common.h"
+#include "avoidance/common.h"
 
 using namespace avoidance;
 
