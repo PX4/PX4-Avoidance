@@ -46,6 +46,10 @@ include_directories(
 ## Declare a C++ library
 set(AVOIDANCE_CPP_FILES   "src/common.cpp"
 )
+if(NOT DISABLE_SIMULATION)
+  set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}"
+                              "src/rviz_world_loader.cpp")
+endif()
 add_library(avoidance     "${AVOIDANCE_CPP_FILES}")
 
 
