@@ -148,10 +148,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/local_planner_visualization.cpp"
                               "src/utils/trajectory_simulator.cpp"
 )
-if(NOT DISABLE_SIMULATION)
-  set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
-                              "src/nodes/rviz_world_loader.cpp")
-endif()
+
 add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
 
 

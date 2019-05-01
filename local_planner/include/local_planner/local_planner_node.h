@@ -6,7 +6,7 @@
 
 #ifndef DISABLE_SIMULATION
 // include simulation
-#include "local_planner/rviz_world_loader.h"
+#include "avoidance/rviz_world_loader.h"
 #endif
 
 #include <geometry_msgs/Point.h>
