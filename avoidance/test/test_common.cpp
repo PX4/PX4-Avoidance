@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <limits>
+#include "avoidance/common.h"
 #include "../include/local_planner/histogram.h"
 #include "avoidance/common.h"
 
