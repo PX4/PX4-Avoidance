@@ -18,9 +18,13 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), world_visualizer_(nh), spin_dt_(0.1) {
+    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
+  
+  #ifndef DISABLE_SIMULATION
+    world_visualizer_.reset(new WorldVisualizer(nh)); 
+  #endif
 
   readParams();
 
@@ -269,7 +273,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
   if (!world_path_.empty()) {
-    if (world_visualizer_.visualizeDrone(msg)) {
+    if (world_visualizer_->visualizeDrone(msg)) {
       ROS_WARN("Failed to visualize drone in RViz");
     }
   }

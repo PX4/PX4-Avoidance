@@ -89,7 +89,7 @@ class LocalPlannerNode {
   LocalPlannerVisualization visualizer_;
 
 #ifndef DISABLE_SIMULATION
-  WorldVisualizer world_visualizer_;
+  std::unique_ptr<WorldVisualizer> world_visualizer_;
 #endif
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
