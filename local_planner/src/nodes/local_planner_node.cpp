@@ -23,7 +23,7 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   wp_generator_.reset(new WaypointGenerator());
 
 #ifndef DISABLE_SIMULATION
-  world_visualizer_.reset(new WorldVisualizer(nh));
+  world_visualizer_.reset(new WorldVisualizer(nh_));
 #endif
 
   readParams();
