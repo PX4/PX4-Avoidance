@@ -1,6 +1,6 @@
 #include "local_planner/local_planner.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 #include "local_planner/star_planner.h"
 #include "local_planner/tree_node.h"
 

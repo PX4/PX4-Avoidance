@@ -3,7 +3,7 @@
 
 #include "box.h"
 #include "candidate_direction.h"
-#include "common.h"
+#include "avoidance/common.h"
 #include "cost_parameters.h"
 #include "histogram.h"
 
