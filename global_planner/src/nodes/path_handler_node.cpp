@@ -1,5 +1,7 @@
 #include "path_handler_node.h"
 
+using namespace avoidance;
+
 namespace global_planner {
 
 PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {

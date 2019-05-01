@@ -36,6 +36,7 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 
+#include <avoidance/common.h>
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
@@ -66,28 +67,6 @@ struct cameraData {
 
   bool received_;
   bool transformed_;
-};
-
-enum class MAV_STATE {
-  MAV_STATE_UNINIT,
-  MAV_STATE_BOOT,
-  MAV_STATE_CALIBRATIN,
-  MAV_STATE_STANDBY,
-  MAV_STATE_ACTIVE,
-  MAV_STATE_CRITICAL,
-  MAV_STATE_EMERGENCY,
-  MAV_STATE_POWEROFF,
-  MAV_STATE_FLIGHT_TERMINATION,
-};
-
-enum class NavigationState {
-  mission,
-  auto_takeoff,
-  auto_land,
-  auto_rtl,
-  auto_rtgs,
-  offboard,
-  none,
 };
 
 class LocalPlannerNode {
