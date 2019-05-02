@@ -24,10 +24,10 @@ void processPointcloud(
 
   float distance;
 
-  // double resolution histogram for subsampling
-  // the distance layer will show whether the cell is already
-  // occupied by a point
-  Histogram high_res_histogram = Histogram(ALPHA_RES / 2);
+  // counter to keep track of how many points lie in a given cell
+  Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2),
+                                           360 / (ALPHA_RES / 2));
+  histogram_points_counter.fill(0);
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
@@ -40,10 +40,8 @@ void processPointcloud(
             // subsampling the cloud
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-            high_res_histogram.set_dist(
-                p_ind.y(), p_ind.x(),
-                high_res_histogram.get_dist(p_ind.y(), p_ind.x()) + 1);
-            if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) ==
+            histogram_points_counter(p_ind.y(), p_ind.x())++;
+            if (histogram_points_counter(p_ind.y(), p_ind.x()) ==
                 min_num_points_per_cell) {
               final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
             }
@@ -62,13 +60,18 @@ void processPointcloud(
       if (distance < histogram_box.radius_) {
         PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-        if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) <
+
+        // only remember point if it's in a cell not previously populated by
+        // complete_cloud, as well as outside FOV and 'young' enough
+        if (histogram_points_counter(p_ind.y(), p_ind.x()) <
                 min_num_points_per_cell &&
             xyzi.intensity < max_age && !pointInsideFOV(FOV, p_pol)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
-          high_res_histogram.set_dist(p_ind.y(), p_ind.x(),
-                                      min_num_points_per_cell);
+
+          // to indicate that this cell now has a point
+          histogram_points_counter(p_ind.y(), p_ind.x()) =
+              min_num_points_per_cell;
         }
       }
     }
