@@ -1,7 +1,5 @@
 <launch>
-    <param name="use_sim_time" value="true" />
-
-    <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
+    <arg name="world_path" default="$(find avoidance)/sim/worlds/outdoor_village_3.world" />
     <arg name="headless" default="false"/>
     <arg name="gui" default="false"/>
     <arg name="ns" default="/"/>
@@ -11,6 +9,8 @@
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
+
+    <param name="use_sim_time" value="true" />
 
     <!-- Launch rqt_reconfigure -->
     <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
