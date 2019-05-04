@@ -220,6 +220,14 @@ void PathHandlerNode::positionCallback(
       // }
     }
   }
+#ifndef DISABLE_SIMULATION
+  // visualize drone in RVIZ
+  if (!world_path_.empty()) {
+    if (world_visualizer_.visualizeDrone(pose_msg)) {
+      ROS_WARN("Failed to visualize drone in RViz");
+    }
+  }
+#endif
 }
 
 void PathHandlerNode::fillUnusedTrajectoryPoint(
