@@ -13,7 +13,7 @@
           args="0 0 0 0 0 -1.57 fcu left_camera_link 10"/>
 
     <!-- Launch PX4 and mavros -->
-    <include file="$(find local_planner)/launch/local_planner_sitl_mavros.launch" >
+    <include file="$(find avoidance)/launch/avoidance_sitl_mavros.launch" >
         <arg name="model" value="iris_depth_camera_3" />
         <arg name="world_path" value="$(arg world_path)" />
     </include>
