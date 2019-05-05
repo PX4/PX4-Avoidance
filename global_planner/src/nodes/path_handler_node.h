@@ -18,9 +18,9 @@
 
 #include <global_planner/PathHandlerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
+#include <global_planner/ThreePointMsg.h>
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
-#include <global_planner/ThreePointMsg.h>
 
 #include <avoidance/common.h>
 #include <avoidance/rviz_world_loader.h>
