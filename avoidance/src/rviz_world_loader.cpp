@@ -7,11 +7,14 @@ namespace avoidance {
 WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
+  loop_timer_ =
+      nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
 
   nh_.param<std::string>("world_name", world_path_, "");
+}
 
+void WorldVisualizer::loopCallback(const ros::TimerEvent& event) {
   // visualize world in RVIZ
-  ros::Duration(1.0).sleep();
   if (!world_path_.empty()) {
     if (visualizeRVIZWorld(world_path_))
       ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");
