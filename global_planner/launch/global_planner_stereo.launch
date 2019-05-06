@@ -2,7 +2,6 @@
     <arg name="world_file_name"    default="simple_obstacle" />
     <arg name="world_path" default="$(find avoidance)/sim/worlds/$(arg world_file_name).world" />
     <arg name="use_three_point_msg" default="false" />
-    <arg name="use_stereo_simulation" default="false" />
     <arg name="mavros_transformation" default="0" />
     <arg name="point_cloud_topic" default="/stereo/points2" />
     <arg name="start_pos_x" default="0.5" />
@@ -23,6 +22,16 @@
         <arg name="world_path" value="$(arg world_path)" />
     </include>
 
+    <!-- Launch stereo_image_proc node which runs OpenCV's block matching  -->
+    <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
+        <param name="stereo_algorithm" type="double" value="1.0" />
+        <param name="correlation_window_size" type="double" value="19.0" />
+        <param name="disparity_range" type="double" value="32.0" />
+        <param name="uniqueness_ratio" type="double" value="40.0" />
+        <param name="speckle_size" type="double" value="1000.0" />
+        <param name="speckle_range" type="double" value="2.0" />
+    </node>
+
     <!-- Global planner -->
     <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
@@ -39,11 +48,6 @@
             <param name="cross_factor" value="2.0" />
             <remap from="/path/bezier_pt" to="/three_point_path" />
         </node>
-    </group>
-
-    <!-- Run a node for handling data from simulated stereo-camera -->
-    <group if="$(arg use_stereo_simulation)">
-        <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc"/>
     </group>
 
     <!-- RViz -->
