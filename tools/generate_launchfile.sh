@@ -23,12 +23,6 @@ cat > local_planner/launch/avoidance.launch <<- EOM
     <!-- Launch cameras -->
 EOM
 
-# Fix the on/of script for realsense auto-exposure
-cat > local_planner/resource/realsense_params.sh <<- EOM
-#!/bin/bash
-# Disable and enable auto-exposure for all cameras as it does not work at startup
-EOM
-
 # Set the frame rate to 15 if it is undefined
 if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
@@ -63,11 +57,6 @@ for camera in $CAMERA_CONFIGS; do
 			</include>
 		EOM
 
-    # Append to the realsense auto exposure toggling
-    echo "rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 0
-rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 1
-" >> local_planner/resource/realsense_params.sh
-
 	fi
 done
 
@@ -89,9 +78,6 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <param name="goal_z_param" value="4" />
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
-
-    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
-    <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
 
 </launch>
 EOM
