@@ -21,7 +21,6 @@ find_package(PCL 1.7 REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
   CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs sensor_msgs message_runtime tf
-#  DEPENDS system_lib
   LIBRARIES avoidance
 )
 
