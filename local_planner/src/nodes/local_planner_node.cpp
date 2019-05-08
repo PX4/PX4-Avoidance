@@ -57,6 +57,9 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
       "/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
   px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1,
                                  &LocalPlannerNode::px4ParamsCallback, this);
+  mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1,
+                               &LocalPlannerNode::missionCallback, this);
+
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>(
       "/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>(
@@ -519,10 +522,12 @@ void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   parse_param_f("MPC_JERK_MAX", local_planner_->px4_.param_mpc_jerk_max) ||
   parse_param_f("MPC_LAND_SPEED", local_planner_->px4_.param_mpc_land_speed) ||
   parse_param_f("MPC_TKO_SPEED", local_planner_->px4_.param_mpc_tko_speed) ||
-  parse_param_f("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise) ||
   parse_param_f("MPC_Z_VEL_MAX_DN", local_planner_->px4_.param_mpc_vel_max_dn) ||
   parse_param_f("MPC_Z_VEL_MAX_UP", local_planner_->px4_.param_mpc_z_vel_max_up) ||
   parse_param_f("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
+  if (!mission_item_speed_set_) {
+    parse_param_f("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
+  }
   // clang-format on
 }
 
@@ -536,10 +541,27 @@ void LocalPlannerNode::checkPx4Parameters() {
     }
   };
   while (!should_exit_) {
-    request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
+    if (!mission_item_speed_set_) {
+      request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
+    }
     request_param("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
 
     std::this_thread::sleep_for(std::chrono::seconds(30));
+  }
+}
+
+void LocalPlannerNode::missionCallback(const mavros_msgs::WaypointList& msg) {
+  for (auto waypoint : msg.waypoints) {
+    if (waypoint.command == 178 && (waypoint.param1 - 1.0f) < FLT_MIN &&
+        waypoint.param2 > 0.0f) {
+      // MAV_CMD_DO_CHANGE_SPEED, speed type: ground speed, speed valid
+      local_planner_->px4_.param_mpc_xy_cruise = waypoint.param2;
+      mission_item_speed_set_ = true;
+    }
+
+    if (waypoint.command == 178 && waypoint.param2 < 0.0f) {
+      mission_item_speed_set_ = false;
+    }
   }
 }
 

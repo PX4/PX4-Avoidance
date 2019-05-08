@@ -19,6 +19,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <mavros_msgs/WaypointList.h>
 #include <pcl/filters/filter.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
@@ -231,6 +232,7 @@ class LocalPlannerNode {
   ros::Subscriber goal_topic_sub_;
   ros::Subscriber distance_sensor_sub_;
   ros::Subscriber px4_param_sub_;
+  ros::Subscriber mission_sub_;
 
   ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
@@ -271,6 +273,7 @@ class LocalPlannerNode {
   bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
+  bool mission_item_speed_set_ = false;
   double spin_dt_;
   int path_length_ = 0;
   std::vector<float> algo_time;
@@ -356,7 +359,16 @@ class LocalPlannerNode {
   * @param[in] msg, altitude message
   **/
   void distanceSensorCallback(const mavros_msgs::Altitude& msg);
+  /**
+  * @brief     callaback with the list of FCU parameters
+  * @param[in] msg, list of paramters
+  **/
   void px4ParamsCallback(const mavros_msgs::Param& msg);
+  /**
+  * @brief     callaback with the list of FCU Mission Items
+  * @param[in] msg, list of mission items
+  **/
+  void missionCallback(const mavros_msgs::WaypointList& msg);
 
   /**
   * @brief     callaback for vehicle state
