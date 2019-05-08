@@ -109,6 +109,30 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
          (smooth_cost + goal_cost);
 }
 
+void StarPlanner::getNewOrigin(Eigen::Vector3f& new_origin) {
+  if (path_node_positions_.size() == 0) {
+    new_origin = position_;
+  } else if (path_node_positions_.size() == 1) {
+    new_origin = path_node_positions_[0];
+  } else {
+    double fraction, dist_to_closest_node;
+    int wp_idx;
+    getLocationOnPath(path_node_positions_, position_, fraction, wp_idx,
+                      dist_to_closest_node);
+    if (dist_to_closest_node < 5.0 && wp_idx != 0) {
+      new_origin.x() = (1.0 - fraction) * path_node_positions_[wp_idx].x() +
+                       fraction * path_node_positions_[wp_idx + 1].x();
+      new_origin.y() = (1.0 - fraction) * path_node_positions_[wp_idx].y() +
+                       fraction * path_node_positions_[wp_idx + 1].y();
+      new_origin.z() = (1.0 - fraction) * path_node_positions_[wp_idx].z() +
+                       fraction * path_node_positions_[wp_idx + 1].z();
+    } else {
+      ROS_INFO("Diverged from calculated path");
+      new_origin = position_;
+    }
+  }
+}
+
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
 
@@ -123,7 +147,9 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, position_));
+  Eigen::Vector3f new_origin;
+  getNewOrigin(new_origin);
+  tree_.push_back(TreeNode(0, 0, new_origin));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;

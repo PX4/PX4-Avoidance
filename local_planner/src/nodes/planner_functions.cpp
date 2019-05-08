@@ -453,8 +453,8 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 }
 
 void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
-		const Eigen::Vector3f& position, double& frac,
-					   int& idx_further, double& dist_to_closest_node){
+                       const Eigen::Vector3f& position, double& frac,
+                       int& idx_further, double& dist_to_closest_node) {
   int min_dist_idx = 0;
   int second_min_dist_idx = 0;
   double min_dist = HUGE_VAL;
@@ -485,7 +485,7 @@ void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
   double cos_alpha = (node_distance * node_distance +
                       distances[idx_further] * distances[idx_further] -
                       distances[idx_further + 1] * distances[idx_further + 1]) /
-                      (2 * node_distance * distances[idx_further]);
+                     (2 * node_distance * distances[idx_further]);
   double l_front = distances[idx_further] * cos_alpha;
   frac = l_front / node_distance;
 }
@@ -520,8 +520,9 @@ bool getDirectionFromTree(
     // found
 
     double frac, dist_to_closest_node;
-	  int wp_idx;
-    getLocationOnPath(path_node_positions_extended, position, frac, wp_idx, dist_to_closest_node);
+    int wp_idx;
+    getLocationOnPath(path_node_positions_extended, position, frac, wp_idx,
+                      dist_to_closest_node);
 
     // if drone is too far away from tree or already at last node -> don't use
     // tree

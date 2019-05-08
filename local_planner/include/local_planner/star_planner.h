@@ -104,6 +104,12 @@ class StarPlanner {
   void setGoal(const Eigen::Vector3f& pose);
 
   /**
+  * @brief     calculate position on last path to start next calculations
+  * @param[in] goal, current goal position
+  **/
+  void getNewOrigin(Eigen::Vector3f& new_origin);
+
+  /**
   * @brief     build tree of candidates directions towards the goal
   **/
   void buildLookAheadTree();

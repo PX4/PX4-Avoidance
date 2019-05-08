@@ -190,8 +190,8 @@ void printHistogram(Histogram& histogram);
 * @param[out] dist_to_closest_node, cartesian distance to the closest node
 **/
 void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
-		const Eigen::Vector3f& position, double& frac,
-					   int& idx_further, double& dist_to_closest_node);
+                       const Eigen::Vector3f& position, double& frac,
+                       int& idx_further, double& dist_to_closest_node);
 
 /**
 * @brief      finds the minimum cost direction in the tree
