@@ -2,8 +2,8 @@
 
 #include <cmath>
 
-#include "../include/local_planner/common.h"
 #include "../include/local_planner/local_planner.h"
+#include "avoidance/common.h"
 
 // Stateless tests:
 // Create some hardcoded scan data of obstacles in different positions

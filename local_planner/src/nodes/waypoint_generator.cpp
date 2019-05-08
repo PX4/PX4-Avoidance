@@ -1,6 +1,6 @@
 #include "local_planner/waypoint_generator.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 #include "local_planner/planner_functions.h"
 
 #include <ros/param.h>

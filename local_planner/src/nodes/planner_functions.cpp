@@ -1,6 +1,6 @@
 #include "local_planner/planner_functions.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 
 #include <ros/console.h>
 

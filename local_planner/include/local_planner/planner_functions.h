@@ -1,9 +1,9 @@
 #ifndef LOCAL_PLANNER_FUNCTIONS_H
 #define LOCAL_PLANNER_FUNCTIONS_H
 
+#include "avoidance/common.h"
 #include "box.h"
 #include "candidate_direction.h"
-#include "common.h"
 #include "cost_parameters.h"
 #include "histogram.h"
 

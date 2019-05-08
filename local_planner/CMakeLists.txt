@@ -17,11 +17,9 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_extras
   mavros_msgs
   mavlink
+  avoidance
 )
 find_package(PCL 1.7 REQUIRED)
-
-
-
 
 ################################################
 ## Gazebo Simulation
@@ -111,7 +109,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs mav_msgs sensor_msgs message_runtime tf
+  CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs sensor_msgs message_runtime tf avoidance
 #  DEPENDS system_lib
 )
 
@@ -146,15 +144,11 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/box.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
-                              "src/nodes/common.cpp"
                               "src/nodes/local_planner_node.cpp"
                               "src/nodes/local_planner_visualization.cpp"
                               "src/utils/trajectory_simulator.cpp"
 )
-if(NOT DISABLE_SIMULATION)
-  set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
-                              "src/nodes/rviz_world_loader.cpp")
-endif()
+
 add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
 
 
@@ -224,7 +218,6 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_example.cpp
-                                          test/test_common.cpp
                                           test/test_local_planner.cpp
                                           test/test_planner_functions.cpp
                                           test/test_star_planner.cpp

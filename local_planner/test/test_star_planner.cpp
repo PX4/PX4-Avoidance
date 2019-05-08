@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "../include/local_planner/common.h"
 #include "../include/local_planner/star_planner.h"
 #include "../include/local_planner/tree_node.h"
+#include "avoidance/common.h"
 
 using namespace avoidance;
 

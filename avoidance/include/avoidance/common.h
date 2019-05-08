@@ -12,6 +12,28 @@
 
 namespace avoidance {
 
+enum class MAV_STATE {
+  MAV_STATE_UNINIT,
+  MAV_STATE_BOOT,
+  MAV_STATE_CALIBRATIN,
+  MAV_STATE_STANDBY,
+  MAV_STATE_ACTIVE,
+  MAV_STATE_CRITICAL,
+  MAV_STATE_EMERGENCY,
+  MAV_STATE_POWEROFF,
+  MAV_STATE_FLIGHT_TERMINATION,
+};
+
+enum class NavigationState {
+  mission,
+  auto_takeoff,
+  auto_land,
+  auto_rtl,
+  auto_rtgs,
+  offboard,
+  none,
+};
+
 struct PolarPoint {
   PolarPoint(float e_, float z_, float r_) : e(e_), z(z_), r(r_){};
   PolarPoint() : e(0.0f), z(0.0f), r(0.0f){};
