@@ -452,6 +452,44 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
                 yaw_cost_smooth + pitch_cost_smooth + heading_cost;
 }
 
+void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
+		const Eigen::Vector3f& position, double& frac,
+					   int& idx_further, double& dist_to_closest_node){
+  int min_dist_idx = 0;
+  int second_min_dist_idx = 0;
+  double min_dist = HUGE_VAL;
+  double second_min_dist = HUGE_VAL;
+  std::vector<double> distances;
+  distances.reserve(node_list.size());
+
+  for (int i = 0; i < node_list.size(); i++) {
+    distances.push_back((position - node_list[i]).norm());
+    if (distances[i] < min_dist) {
+      second_min_dist_idx = min_dist_idx;
+      second_min_dist = min_dist;
+      min_dist = distances[i];
+      min_dist_idx = i;
+    } else if (distances[i] < second_min_dist) {
+      second_min_dist = distances[i];
+      second_min_dist_idx = i;
+    }
+  }
+
+  // the drone is located between the two nodes(min_dist_idx,
+  // second_min_dist_idx),
+  // wp_idx describes the node further ahead in the path
+  dist_to_closest_node = min_dist;
+  idx_further = std::min(min_dist_idx, second_min_dist_idx);
+  float node_distance = (node_list[0] - node_list[1]).norm();
+
+  double cos_alpha = (node_distance * node_distance +
+                      distances[idx_further] * distances[idx_further] -
+                      distances[idx_further + 1] * distances[idx_further + 1]) /
+                      (2 * node_distance * distances[idx_further]);
+  double l_front = distances[idx_further] * cos_alpha;
+  frac = l_front / node_distance;
+}
+
 bool getDirectionFromTree(
     PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
     const Eigen::Vector3f& position, const Eigen::Vector3f& goal) {
@@ -480,46 +518,19 @@ bool getDirectionFromTree(
     // a vector with the distances of each node to the drone is generated
     // the indices of the nodes with smallest and next smallest distance are
     // found
-    int min_dist_idx = 0;
-    int second_min_dist_idx = 0;
-    float min_dist = HUGE_VAL;
-    float second_min_dist = HUGE_VAL;
-    std::vector<float> distances;
-    distances.reserve(size_extended);
 
-    for (int i = 0; i < size_extended; i++) {
-      distances.push_back((position - path_node_positions_extended[i]).norm());
-      if (distances[i] < min_dist) {
-        second_min_dist_idx = min_dist_idx;
-        second_min_dist = min_dist;
-        min_dist = distances[i];
-        min_dist_idx = i;
-      } else if (distances[i] < second_min_dist) {
-        second_min_dist = distances[i];
-        second_min_dist_idx = i;
-      }
-    }
-
-    // the drone is located between the two nodes(min_dist_idx,
-    // second_min_dist_idx),
-    // wp_idx describes the node further ahead in the path
-    int wp_idx = std::min(min_dist_idx, second_min_dist_idx);
+    double frac, dist_to_closest_node;
+	  int wp_idx;
+    getLocationOnPath(path_node_positions_extended, position, frac, wp_idx, dist_to_closest_node);
 
     // if drone is too far away from tree or already at last node -> don't use
     // tree
-    if (min_dist > 3.0f || wp_idx == 0) {
+    if (dist_to_closest_node > 3.0f || wp_idx == 0) {
       tree_available = false;
     } else {
-      float cos_alpha = (node_distance * node_distance +
-                         distances[wp_idx] * distances[wp_idx] -
-                         distances[wp_idx + 1] * distances[wp_idx + 1]) /
-                        (2.0f * node_distance * distances[wp_idx]);
-      float l_front = distances[wp_idx] * cos_alpha;
-      float l_frac = l_front / node_distance;
-
       Eigen::Vector3f mean_point =
-          (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] +
-          l_frac * path_node_positions_extended[wp_idx];
+          (1.f - frac) * path_node_positions_extended[wp_idx - 1] +
+          frac * path_node_positions_extended[wp_idx];
 
       p_pol = cartesianToPolar(mean_point, position);
       p_pol.r = 0.0f;

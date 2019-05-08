@@ -182,6 +182,18 @@ Eigen::ArrayXf getConicKernel(int radius);
 void printHistogram(Histogram& histogram);
 
 /**
+* @brief      calculate the progess on the current path
+* @param[in]  node_list, list of all nodes in the path
+* @param[in]  position, location of the drone
+* @param[out] frac, fraction traveled on the current path segment
+* @param[out] idx_further, index of the next node to reach
+* @param[out] dist_to_closest_node, cartesian distance to the closest node
+**/
+void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
+		const Eigen::Vector3f& position, double& frac,
+					   int& idx_further, double& dist_to_closest_node);
+
+/**
 * @brief      finds the minimum cost direction in the tree
 * @param[out] p_pol, polar coordinates of the cheapest direction
 * @param[in]  path_node_positions, array of expanded tree nodes
