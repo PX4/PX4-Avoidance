@@ -118,8 +118,9 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      float dist = histogram.get_dist(e, z);
       float depth_val =
-          255.f * histogram.get_dist(e, z) / histogram_box_.radius_;
+          dist > 0.01f ? 255.f - 255.f * dist / histogram_box_.radius_ : 0.f;
       histogram_image_data_.push_back(
           (int)std::max(0.0f, std::min(255.f, depth_val)));
     }
