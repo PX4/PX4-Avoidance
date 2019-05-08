@@ -453,13 +453,13 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance,
 }
 
 void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
-                       const Eigen::Vector3f& position, double& frac,
-                       int& idx_further, double& dist_to_closest_node) {
+                       const Eigen::Vector3f& position, float& frac,
+                       int& idx_further, float& dist_to_closest_node) {
   int min_dist_idx = 0;
   int second_min_dist_idx = 0;
-  double min_dist = HUGE_VAL;
-  double second_min_dist = HUGE_VAL;
-  std::vector<double> distances;
+  float min_dist = HUGE_VAL;
+  float second_min_dist = HUGE_VAL;
+  std::vector<float> distances;
   distances.reserve(node_list.size());
 
   for (int i = 0; i < node_list.size(); i++) {
@@ -482,12 +482,11 @@ void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
   idx_further = std::min(min_dist_idx, second_min_dist_idx);
   float node_distance = (node_list[0] - node_list[1]).norm();
 
-  double cos_alpha = (node_distance * node_distance +
-                      distances[idx_further] * distances[idx_further] -
-                      distances[idx_further + 1] * distances[idx_further + 1]) /
-                     (2 * node_distance * distances[idx_further]);
-  double l_front = distances[idx_further] * cos_alpha;
-  frac = l_front / node_distance;
+  Eigen::Vector3f path_segment =
+      (node_list[idx_further] - node_list[idx_further + 1]).normalized();
+  Eigen::Vector3f last_node_to_pos = position - node_list[idx_further + 1];
+  frac = 1 - path_segment.dot(last_node_to_pos) / node_distance;
+  frac = std::min(1.f, std::max(0.f, frac));  // constrain to be in [0,1]
 }
 
 bool getDirectionFromTree(
@@ -519,7 +518,7 @@ bool getDirectionFromTree(
     // the indices of the nodes with smallest and next smallest distance are
     // found
 
-    double frac, dist_to_closest_node;
+    float frac, dist_to_closest_node;
     int wp_idx;
     getLocationOnPath(path_node_positions_extended, position, frac, wp_idx,
                       dist_to_closest_node);

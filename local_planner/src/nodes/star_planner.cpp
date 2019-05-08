@@ -115,11 +115,11 @@ void StarPlanner::getNewOrigin(Eigen::Vector3f& new_origin) {
   } else if (path_node_positions_.size() == 1) {
     new_origin = path_node_positions_[0];
   } else {
-    double fraction, dist_to_closest_node;
+    float fraction, dist_to_closest_node;
     int wp_idx;
     getLocationOnPath(path_node_positions_, position_, fraction, wp_idx,
                       dist_to_closest_node);
-    if (dist_to_closest_node < 5.0 && wp_idx != 0) {
+    if (dist_to_closest_node < 2.0 && !(wp_idx == 0 && fraction < 0.1)) {
       new_origin.x() = (1.0 - fraction) * path_node_positions_[wp_idx].x() +
                        fraction * path_node_positions_[wp_idx + 1].x();
       new_origin.y() = (1.0 - fraction) * path_node_positions_[wp_idx].y() +
@@ -127,7 +127,7 @@ void StarPlanner::getNewOrigin(Eigen::Vector3f& new_origin) {
       new_origin.z() = (1.0 - fraction) * path_node_positions_[wp_idx].z() +
                        fraction * path_node_positions_[wp_idx + 1].z();
     } else {
-      ROS_INFO("Diverged from calculated path");
+      ROS_WARN("Diverged from calculated path");
       new_origin = position_;
     }
   }
