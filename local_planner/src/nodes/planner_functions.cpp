@@ -491,7 +491,8 @@ void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
 
 bool getDirectionFromTree(
     PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
-    const Eigen::Vector3f& position, const Eigen::Vector3f& goal) {
+    const Eigen::Vector3f& position, const Eigen::Vector3f& goal,
+    const float speed) {
   int size = path_node_positions.size();
   bool tree_available = true;
 
@@ -523,16 +524,51 @@ bool getDirectionFromTree(
     getLocationOnPath(path_node_positions_extended, position, frac, wp_idx,
                       dist_to_closest_node);
 
+    // L1 control
+    int active_wp = wp_idx;
+    bool intersection_found = false;
+    Eigen::Vector3f point_on_path;
+    while (active_wp > 0 && !intersection_found) {
+      // find intersection points of a circle with r=speed with the path segment
+      // solve quadratic euation to find intersections
+      Eigen::Vector3f p1 = path_node_positions_extended[active_wp];
+      Eigen::Vector3f p2 = path_node_positions_extended[active_wp - 1];
+      float a = (p2.x() - p1.x()) * (p2.x() - p1.x()) +
+                (p2.y() - p1.y()) * (p2.y() - p1.y());
+      float b = 2 * (p2.x() - p1.x()) * (p1.x() - position.x()) +
+                2 * (p2.y() - p1.y()) * (p1.y() - position.y());
+      float c = (p1.x() - position.x()) * (p1.x() - position.x()) +
+                (p1.y() - position.y()) * (p1.y() - position.y()) -
+                speed * speed;
+
+      float t1 = (-b - std::sqrt(b * b - 4 * a * c)) / (2 * a);
+      float t2 = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
+
+      if (t1 >= 0 && t1 <= 1) {
+        point_on_path = (p2 - p1) * t1 + p1;
+        intersection_found = true;
+      } else if (t2 >= 0 && t2 <= 1) {
+        point_on_path = (p2 - p1) * t2 + p1;
+        intersection_found = true;
+      }
+      active_wp--;
+    }
+
     // if drone is too far away from tree or already at last node -> don't use
     // tree
     if (dist_to_closest_node > 3.0f || wp_idx == 0) {
       tree_available = false;
     } else {
-      Eigen::Vector3f mean_point =
-          (1.f - frac) * path_node_positions_extended[wp_idx - 1] +
-          frac * path_node_positions_extended[wp_idx];
+      // if there exists no intersection of the speed vector with the path
+      // set the new waypoint onto the next path segment with the same
+      // progression fraction
+      if (!intersection_found) {
+        point_on_path =
+            (1.f - frac) * path_node_positions_extended[wp_idx - 1] +
+            frac * path_node_positions_extended[wp_idx];
+      }
 
-      p_pol = cartesianToPolar(mean_point, position);
+      p_pol = cartesianToPolar(point_on_path, position);
       p_pol.r = 0.0f;
     }
   } else {

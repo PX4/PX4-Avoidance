@@ -35,7 +35,7 @@ void WaypointGenerator::calculateWaypoint() {
     case tryPath: {
       PolarPoint p_pol(0.0f, 0.0f, 0.0f);
       bool tree_available = getDirectionFromTree(
-          p_pol, planner_info_.path_node_positions, position_, goal_);
+          p_pol, planner_info_.path_node_positions, position_, goal_, speed_);
 
       float dist_goal = (goal_ - position_).norm();
       ros::Duration since_last_path =

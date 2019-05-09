@@ -201,6 +201,7 @@ void getLocationOnPath(const std::vector<Eigen::Vector3f>& node_list,
 **/
 bool getDirectionFromTree(
     PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
-    const Eigen::Vector3f& position, const Eigen::Vector3f& goal);
+    const Eigen::Vector3f& position, const Eigen::Vector3f& goal,
+    const float speed);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
