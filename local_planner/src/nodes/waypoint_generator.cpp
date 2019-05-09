@@ -212,13 +212,14 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   // Use xy smoothing constant for yaw, since this makes more sense than z,
   // and we dont want to introduce yet another parameter
 
+  const float desired_setpoint_yaw_rad =
+      nextYaw(position_, output_.goto_position);
+
   if (smoothing_speed_xy_ > 0) {
     const float P_constant_xy = smoothing_speed_xy_;
     const float D_constant_xy =
         2.f * std::sqrt(P_constant_xy);  // critically damped
 
-    const float desired_setpoint_yaw_rad =
-        nextYaw(position_, output_.goto_position);
     const float desired_yaw_velocity = 0.0;
 
     float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
@@ -234,7 +235,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
     setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
     wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
   } else {
-    setpoint_yaw_rad_ = nextYaw(position_, output_.goto_position);
+    setpoint_yaw_rad_ = desired_setpoint_yaw_rad;
   }
 }
 
