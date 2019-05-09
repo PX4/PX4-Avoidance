@@ -59,9 +59,10 @@ void WaypointGenerator::calculateWaypoint() {
         closest_pt_ = prev_goal_.head<2>() +
                       (u_prev_to_goal * u_prev_to_goal.dot(prev_to_pos));
 
-        // if the vehicle is more than speed_ away from the line previous to
-        // current goal, set temporary goal on the line  entering at 60 degrees
-        if ((pos_2f - closest_pt_).norm() > speed_) {
+        // if the vehicle is more than the cruise velocity away from the line
+        // previous to current goal, set temporary goal on the line  entering
+        // at 60 degrees
+        if ((pos_2f - closest_pt_).norm() > planner_info_.cruise_velocity) {
           float len = (pos_2f - closest_pt_).norm() *
                       std::cos(DEG_TO_RAD * 60.0f) /
                       std::sin(DEG_TO_RAD * 60.0f);
