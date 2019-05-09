@@ -52,6 +52,7 @@ include_directories(
 ## Declare a C++ library
 set(AVOIDANCE_CPP_FILES   "src/common.cpp"
                           "src/histogram.cpp"
+                          "src/avoidance_node.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}"
