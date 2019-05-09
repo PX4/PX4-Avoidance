@@ -111,7 +111,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
   velocity_ = vel;
   goal_ = goal;
   prev_goal_ = prev_goal;
-  curr_yaw_ = getYawFromQuaternion(q) * DEG_TO_RAD;
+  curr_yaw_rad_ = getYawFromQuaternion(q) * DEG_TO_RAD;
 
   if (stay) {
     planner_info_.waypoint_type = hover;
@@ -142,7 +142,7 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
   output_.angular_velocity_wp.x() = 0.0f;
   output_.angular_velocity_wp.y() = 0.0f;
   output_.angular_velocity_wp.z() =
-      getAngularVelocity(setpoint_yaw_, curr_yaw_);
+      getAngularVelocity(setpoint_yaw_rad_, curr_yaw_rad_);
 }
 
 // when taking off, first publish waypoints to reach the goal altitude
@@ -211,25 +211,32 @@ void WaypointGenerator::smoothWaypoint(float dt) {
 void WaypointGenerator::nextSmoothYaw(float dt) {
   // Use xy smoothing constant for yaw, since this makes more sense than z,
   // and we dont want to introduce yet another parameter
-  const float P_constant_xy = smoothing_speed_xy_;
-  const float D_constant_xy =
-      2.f * std::sqrt(P_constant_xy);  // critically damped
 
-  const float desired_setpoint_yaw = nextYaw(position_, output_.goto_position);
-  const float desired_yaw_velocity = 0.0;
+  const float desired_setpoint_yaw_rad =
+      nextYaw(position_, output_.goto_position);
 
-  float yaw_diff = std::isfinite(desired_setpoint_yaw)
-                       ? desired_setpoint_yaw - setpoint_yaw_
-                       : 0.0f;
+  if (smoothing_speed_xy_ > 0) {
+    const float P_constant_xy = smoothing_speed_xy_;
+    const float D_constant_xy =
+        2.f * std::sqrt(P_constant_xy);  // critically damped
 
-  wrapAngleToPlusMinusPI(yaw_diff);
-  const float p = yaw_diff * P_constant_xy;
-  const float d =
-      (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
+    const float desired_yaw_velocity = 0.0;
 
-  setpoint_yaw_velocity_ += (p + d) * dt;
-  setpoint_yaw_ += setpoint_yaw_velocity_ * dt;
-  wrapAngleToPlusMinusPI(setpoint_yaw_);
+    float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
+                         ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
+                         : 0.0f;
+
+    wrapAngleToPlusMinusPI(yaw_diff);
+    const float p = yaw_diff * P_constant_xy;
+    const float d =
+        (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
+
+    setpoint_yaw_velocity_ += (p + d) * dt;
+    setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
+    wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
+  } else {
+    setpoint_yaw_rad_ = desired_setpoint_yaw_rad;
+  }
 }
 
 void WaypointGenerator::adaptSpeed() {
@@ -241,16 +248,15 @@ void WaypointGenerator::adaptSpeed() {
     output_.adapted_goto_position = goal_;
 
     // First time we reach this goal, remember the heading
-    if (!std::isfinite(heading_at_goal_)) {
-      heading_at_goal_ = curr_yaw_;
+    if (!std::isfinite(heading_at_goal_rad_)) {
+      heading_at_goal_rad_ = curr_yaw_rad_;
     }
-    setpoint_yaw_ = heading_at_goal_;
-
+    setpoint_yaw_rad_ = heading_at_goal_rad_;
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
     if (output_.waypoint_type != reachHeight) {
       float angle_diff_deg =
-          std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_) *
+          std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_rad_) *
           180.f / M_PI_F;
       angle_diff_deg =
           std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
@@ -264,7 +270,7 @@ void WaypointGenerator::adaptSpeed() {
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
     pose_to_wp *= std::min(speed_, goal_dist);
 
-    heading_at_goal_ = NAN;
+    heading_at_goal_rad_ = NAN;
     output_.adapted_goto_position = position_ + pose_to_wp;
   }
 
@@ -292,7 +298,7 @@ void WaypointGenerator::getPathMsg() {
       "[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(),
       output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z());
   createPoseMsg(output_.position_wp, output_.orientation_wp,
-                output_.smoothed_goto_position, setpoint_yaw_);
+                output_.smoothed_goto_position, setpoint_yaw_rad_);
   transformPositionToVelocityWaypoint();
 }
 
