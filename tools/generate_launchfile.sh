@@ -62,7 +62,7 @@ done
 
 if [ ! -z $VEHICLE_CONFIG ]; then
 cat >> local_planner/launch/avoidance.launch <<- EOM
-  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node \$(find local_planner)/cfg/$VEHICLE_CONFIG.yaml" />
+  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node $VEHICLE_CONFIG" />
 EOM
 echo "Adding vehicle paramters: $VEHICLE_CONFIG"
 fi
