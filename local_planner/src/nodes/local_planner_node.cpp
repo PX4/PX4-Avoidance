@@ -708,6 +708,8 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
       ros::Duration(local_planner_->timeout_termination_);
   ros::Duration timeout_critical =
       ros::Duration(local_planner_->timeout_critical_);
+  ros::Duration timeout_startup =
+      ros::Duration(local_planner_->timeout_startup_);
 
   if (since_last_cloud > timeout_termination &&
       since_start > timeout_termination) {
@@ -717,7 +719,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
       ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
     }
   } else {
-    if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
+    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
       if (position_received_) {
         hover = true;
         setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);

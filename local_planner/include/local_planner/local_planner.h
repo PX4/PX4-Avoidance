@@ -148,6 +148,7 @@ class LocalPlanner {
   bool smooth_waypoints_ = true;
   bool disable_rise_to_goal_altitude_ = false;
 
+  double timeout_startup_;
   double timeout_critical_;
   double timeout_termination_;
   double starting_height_ = 0.0;

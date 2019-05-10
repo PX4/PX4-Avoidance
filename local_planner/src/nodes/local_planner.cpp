@@ -38,6 +38,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
+  timeout_startup_ = config.timeout_startup_;
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
