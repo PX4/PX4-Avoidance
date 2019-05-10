@@ -20,7 +20,7 @@ TEST(LocalPlannerNodeTests, failsafe) {
       avoidance::LocalPlannerNodeConfig::__getDefault__();
 
   ros::Duration since_last_cloud = ros::Duration(0.0);
-  ros::Duration since_start = ros::Duration(0.0);
+  ros::Duration since_start = ros::Duration(config.timeout_startup_);
   double time_increment = 0.2f;
   int active_n_iter = std::ceil(config.timeout_critical_ / time_increment);
   int critical_n_iter = std::ceil(config.timeout_termination_ / time_increment);

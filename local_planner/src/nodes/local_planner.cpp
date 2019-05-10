@@ -39,6 +39,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   min_num_points_per_cell_ = config.min_num_points_per_cell_;
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
+  timeout_startup_ = config.timeout_startup_;
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
