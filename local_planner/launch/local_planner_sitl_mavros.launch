@@ -3,7 +3,7 @@
 
     <arg name="world_path" default="$(find local_planner)/../sim/worlds/outdoor_village_3.world" />
     <arg name="headless" default="false"/>
-    <arg name="gui" default="false"/>
+    <arg name="gui" default="true"/>
     <arg name="ns" default="/"/>
     <arg name="model" default="iris_depth_camera"/>
     <arg name="build" default="px4_sitl_default"/>
