@@ -175,7 +175,7 @@ class LocalPlannerNode {
   * @param[out] hover, true if the vehicle is hovering
   **/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& planner_is_healthy, bool& hover);
+                     bool& hover);
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds

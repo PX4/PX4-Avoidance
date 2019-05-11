@@ -328,16 +328,15 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   ros::Duration since_last_cloud = now - last_wp_time_;
   ros::Duration since_start = now - start_time_;
 
-  checkFailsafe(since_last_cloud, since_start, planner_is_healthy_, hover_);
+  checkFailsafe(since_last_cloud, since_start, hover_);
 
   // If planner is not running, update planner info and get last results
   updatePlanner();
 
   // send waypoint
-  if (!never_run_ && planner_is_healthy_) {
-    calculateWaypoints(hover_);
-    if (!hover_) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
-  } else {
+  calculateWaypoints(hover_);
+
+  if (!never_run_){
     for (size_t i = 0; i < cameras_.size(); ++i) {
       // once the camera info have been set once, unsubscribe from topic
       cameras_[i].camera_info_sub_.shutdown();
@@ -617,7 +616,7 @@ void LocalPlannerNode::threadFunction() {
 
 void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
                                      ros::Duration since_start,
-                                     bool& planner_is_healthy, bool& hover) {
+                                     bool& hover) {
   ros::Duration timeout_termination =
       ros::Duration(local_planner_->timeout_termination_);
   ros::Duration timeout_critical =
@@ -627,11 +626,8 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
 
   if (since_last_cloud > timeout_termination &&
       since_start > timeout_termination) {
-    if (planner_is_healthy) {
-      planner_is_healthy = false;
-      setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-      ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
-    }
+    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
   } else {
     if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
       if (position_received_) {
@@ -657,6 +653,9 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
             "\033[1;33m Pointcloud timeout: No position received, no WP to "
             "output.... \n \033[0m");
       }
+    }
+    else{
+      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
     }
   }
 }
