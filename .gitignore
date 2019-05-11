@@ -6,3 +6,4 @@
 .clang_complete
 *.kdev4
 /local_planner/launch/avoidance.launch
+.idea/*
