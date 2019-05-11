@@ -334,7 +334,7 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   updatePlanner();
 
   // send waypoint
-  calculateWaypoints(hover_);
+  if(companion_state_ == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
 
   if (!never_run_){
     for (size_t i = 0; i < cameras_.size(); ++i) {
