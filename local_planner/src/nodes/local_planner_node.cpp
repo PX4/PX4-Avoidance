@@ -334,9 +334,10 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   updatePlanner();
 
   // send waypoint
-  if(companion_state_ == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
+  if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE)
+    calculateWaypoints(hover_);
 
-  if (!never_run_){
+  if (!never_run_) {
     for (size_t i = 0; i < cameras_.size(); ++i) {
       // once the camera info have been set once, unsubscribe from topic
       cameras_[i].camera_info_sub_.shutdown();
@@ -615,8 +616,7 @@ void LocalPlannerNode::threadFunction() {
 }
 
 void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
-                                     ros::Duration since_start,
-                                     bool& hover) {
+                                     ros::Duration since_start, bool& hover) {
   ros::Duration timeout_termination =
       ros::Duration(local_planner_->timeout_termination_);
   ros::Duration timeout_critical =
@@ -653,8 +653,7 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
             "\033[1;33m Pointcloud timeout: No position received, no WP to "
             "output.... \n \033[0m");
       }
-    }
-    else{
+    } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
     }
   }
