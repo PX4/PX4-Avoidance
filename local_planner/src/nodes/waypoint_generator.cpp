@@ -5,6 +5,8 @@
 
 #include <ros/param.h>
 
+#define normXY() topRows<2>().norm()
+
 namespace avoidance {
 
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
@@ -214,8 +216,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   // and we dont want to introduce yet another parameter
 
   const float desired_setpoint_yaw_rad =
-      (position_.topRows<2>() - output_.goto_position.topRows<2>()).norm() >
-              0.1f
+      (position_ - output_.goto_position).normXY() > 0.1f
           ? nextYaw(position_, output_.goto_position)
           : curr_yaw_rad_;
 
