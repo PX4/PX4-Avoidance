@@ -224,26 +224,26 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   if (smoothing_speed_xy_ <= 0.01f) {
     setpoint_yaw_rad_ = desired_setpoint_yaw_rad;
     return;
-  } else {
-    const float P_constant_xy = smoothing_speed_xy_;
-    const float D_constant_xy =
-        2.f * std::sqrt(P_constant_xy);  // critically damped
-
-    const float desired_yaw_velocity = 0.0f;
-
-    float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
-                         ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
-                         : 0.0f;
-
-    wrapAngleToPlusMinusPI(yaw_diff);
-    const float p = yaw_diff * P_constant_xy;
-    const float d =
-        (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
-
-    setpoint_yaw_velocity_ += (p + d) * dt;
-    setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
-    wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
   }
+
+  const float P_constant_xy = smoothing_speed_xy_;
+  const float D_constant_xy =
+      2.f * std::sqrt(P_constant_xy);  // critically damped
+
+  const float desired_yaw_velocity = 0.0f;
+
+  float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
+                       ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
+                       : 0.0f;
+
+  wrapAngleToPlusMinusPI(yaw_diff);
+  const float p = yaw_diff * P_constant_xy;
+  const float d =
+      (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
+
+  setpoint_yaw_velocity_ += (p + d) * dt;
+  setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
 }
 
 void WaypointGenerator::adaptSpeed() {
