@@ -5,6 +5,8 @@
 
 #include <ros/param.h>
 
+#define normXY() topRows<2>().norm()
+
 namespace avoidance {
 
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
@@ -214,30 +216,34 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   // and we dont want to introduce yet another parameter
 
   const float desired_setpoint_yaw_rad =
-      nextYaw(position_, output_.goto_position);
+      (position_ - output_.goto_position).normXY() > 0.1f
+          ? nextYaw(position_, output_.goto_position)
+          : curr_yaw_rad_;
 
-  if (smoothing_speed_xy_ > 0) {
-    const float P_constant_xy = smoothing_speed_xy_;
-    const float D_constant_xy =
-        2.f * std::sqrt(P_constant_xy);  // critically damped
-
-    const float desired_yaw_velocity = 0.0;
-
-    float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
-                         ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
-                         : 0.0f;
-
-    wrapAngleToPlusMinusPI(yaw_diff);
-    const float p = yaw_diff * P_constant_xy;
-    const float d =
-        (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
-
-    setpoint_yaw_velocity_ += (p + d) * dt;
-    setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
-    wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
-  } else {
+  // If smoothing is disabled, set yaw to face goal directly
+  if (smoothing_speed_xy_ <= 0.01f) {
     setpoint_yaw_rad_ = desired_setpoint_yaw_rad;
+    return;
   }
+
+  const float P_constant_xy = smoothing_speed_xy_;
+  const float D_constant_xy =
+      2.f * std::sqrt(P_constant_xy);  // critically damped
+
+  const float desired_yaw_velocity = 0.0f;
+
+  float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
+                       ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
+                       : 0.0f;
+
+  wrapAngleToPlusMinusPI(yaw_diff);
+  const float p = yaw_diff * P_constant_xy;
+  const float d =
+      (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
+
+  setpoint_yaw_velocity_ += (p + d) * dt;
+  setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
+  wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
 }
 
 void WaypointGenerator::adaptSpeed() {
