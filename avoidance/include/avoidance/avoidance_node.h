@@ -2,6 +2,7 @@
 #define AVOIDANCE_AVOIDANCE_NODE_H
 
 #include "ros/ros.h"
+#include "ros/callback_queue.h"
 
 
 namespace avoidance {
