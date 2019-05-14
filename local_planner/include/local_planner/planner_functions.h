@@ -29,7 +29,6 @@ struct FOV_indices {
 * @param      final_cloud, processed data to be used for planning
 * @param[in]  complete_cloud, array of pointclouds from the sensors
 * @param[in]  histogram_box, geometry definition of the bounding box
-* @param[in]  FOV, histogram indices currently lying inside the FOV
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 * @param[in]  max_age, maximum age (compute cycles) to keep data
@@ -41,7 +40,7 @@ struct FOV_indices {
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, const FOV_indices& FOV, const Eigen::Vector3f& position,
+    Box histogram_box, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s,
     int min_num_points_per_cell);
 
@@ -56,14 +55,6 @@ void processPointcloud(
 **/
 void calculateFOV(float h_FOV, float v_fov, FOV_indices& FOV,
                   float yaw_fcu_frame, float pitch_fcu_frame);
-
-/**
-* @brief      determines whether point is inside FOV
-* @param[in]  FOV, indices lying inside the current FOV
-* @param[in]  point_idx, histogram indices of the point
-* @return     whether point is inside the FOV
-**/
-bool pointInsideFOV(const FOV_indices& FOV, const PolarPoint& p_pol);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
