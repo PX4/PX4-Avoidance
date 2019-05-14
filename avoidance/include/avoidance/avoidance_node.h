@@ -18,10 +18,13 @@ class AvoidanceNode {
   ros::NodeHandle nh_private_;
 
   ros::Timer cmdloop_timer_;
-
+  ros::CallbackQueue cmdloop_queue_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   double spin_dt_;
 
+  void cmdLoopCallback(const ros::TimerEvent& event);
+  
 };
 }
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H
