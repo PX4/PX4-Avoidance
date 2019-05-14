@@ -22,7 +22,7 @@ void processPointcloud(
   final_cloud.width = 0;
   final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
 
-  float  distance = 0.f;
+  float distance = 0.f;
   float h_min = 180.f, h_max = -180.f;
 
   // counter to keep track of how many points lie in a given cell
@@ -68,8 +68,7 @@ void processPointcloud(
         // complete_cloud, as well as outside FOV and 'young' enough
         if (histogram_points_counter(p_ind.y(), p_ind.x()) <
                 min_num_points_per_cell &&
-            xyzi.intensity < max_age &&
-            (p_pol.z < h_min || p_pol.z > h_max)) {
+            xyzi.intensity < max_age && (p_pol.z < h_min || p_pol.z > h_max)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 
