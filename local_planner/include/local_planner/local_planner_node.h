@@ -89,7 +89,7 @@ class LocalPlannerNode {
   LocalPlannerVisualization visualizer_;
 
 #ifndef DISABLE_SIMULATION
-  WorldVisualizer world_visualizer_;
+  std::unique_ptr<WorldVisualizer> world_visualizer_;
 #endif
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
@@ -266,7 +266,6 @@ class LocalPlannerNode {
   bool data_ready_ = false;
   bool hover_;
   bool planner_is_healthy_;
-  bool startup_;
   bool position_not_received_error_sent_ = false;
   bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;

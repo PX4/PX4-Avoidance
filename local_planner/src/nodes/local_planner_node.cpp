@@ -22,6 +22,10 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
+#ifndef DISABLE_SIMULATION
+  world_visualizer_.reset(new WorldVisualizer(nh_));
+#endif
+
   readParams();
 
   tf_listener_ = new tf::TransformListener(
@@ -73,9 +77,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
-#ifndef DISABLE_SIMULATION
-  world_visualizer_.initializePublishers(nh_);
-#endif
 
   // pass initial goal into local planner
   local_planner_->applyGoal();
@@ -86,7 +87,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   hover_ = false;
   planner_is_healthy_ = true;
-  startup_ = true;
   callPx4Params_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
@@ -273,7 +273,7 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
 #ifndef DISABLE_SIMULATION
   // visualize drone in RVIZ
   if (!world_path_.empty()) {
-    if (world_visualizer_.visualizeDrone(msg)) {
+    if (world_visualizer_->visualizeDrone(msg)) {
       ROS_WARN("Failed to visualize drone in RViz");
     }
   }
@@ -307,19 +307,6 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
 
 void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
-
-#ifdef DISABLE_SIMULATION
-  startup_ = false;
-#else
-  // visualize world in RVIZ
-  if (!world_path_.empty() && startup_) {
-    if (world_visualizer_.visualizeRVIZWorld(world_path_)) {
-      ROS_WARN("Failed to visualize Rviz world");
-    }
-    startup_ = false;
-  }
-
-#endif
 
   // Process callbacks & wait for a position update
   ros::Time start_query_position = ros::Time::now();
