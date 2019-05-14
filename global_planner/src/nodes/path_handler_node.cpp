@@ -43,12 +43,17 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   // avoidance_triplet_msg_publisher_ =
   // nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet",
   // 10);
+  nh_.param<std::string>("world_name", world_path_, "");
 
   // Initialize goal
   current_goal_.header.frame_id = "/world";
   current_goal_.pose.position = start_pos_;
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
+
+#ifndef DISABLE_SIMULATION
+  world_visualizer_.reset(new WorldVisualizer(nh_));
+#endif
 
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
@@ -130,6 +135,18 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+#ifndef DISABLE_SIMULATION
+  // visualize world in RVIZ
+  if (!world_path_.empty() && startup_) {
+    if (world_visualizer_->visualizeRVIZWorld(world_path_)) {
+      ROS_WARN("Failed to visualize Rviz world");
+    }
+    startup_ = false;
+  }
+#else
+  startup_ = false;
+#endif
+
   if (shouldPublishThreePoints()) {
     publishThreePointMsg();
   } else {
@@ -202,6 +219,14 @@ void PathHandlerNode::positionCallback(
       // }
     }
   }
+#ifndef DISABLE_SIMULATION
+  // visualize drone in RVIZ
+  if (!world_path_.empty()) {
+    if (world_visualizer_->visualizeDrone(pose_msg)) {
+      ROS_WARN("Failed to visualize drone in RViz");
+    }
+  }
+#endif
 }
 
 void PathHandlerNode::fillUnusedTrajectoryPoint(

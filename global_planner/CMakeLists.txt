@@ -23,6 +23,18 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
 
+################################################
+## Gazebo Simulation
+################################################
+# Disable yaml-cpp when no simulation is required
+if(DISABLE_SIMULATION)
+  message(STATUS "Building local planner without Gazebo Simulation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+else()
+  message(STATUS "Building local planner with Gazebo Simulation")
+  find_package(yaml-cpp REQUIRED)
+endif(DISABLE_SIMULATION)
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -138,6 +150,7 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${OCTOMAP_INCLUDE_DIRS}
+  ${YAML_CPP_INCLUDE_DIR}
 )
 link_libraries(${OCTOMAP_LIBRARIES})
 
@@ -167,9 +180,10 @@ add_dependencies(path_handler_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(global_planner_node
-  global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES})
+  global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES}
+)
 target_link_libraries(path_handler_node
-  ${catkin_LIBRARIES})
+  ${catkin_LIBRARIES} ${YAML_CPP_LIBRARIES})
 
 #############
 ## Install ##

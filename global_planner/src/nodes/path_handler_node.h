@@ -10,7 +10,6 @@
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
 
-#include <avoidance/common.h>
 #include <mavros_msgs/CompanionProcessStatus.h>
 #include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/Path.h>
@@ -19,10 +18,15 @@
 
 #include <global_planner/PathHandlerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
+#include <global_planner/ThreePointMsg.h>
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
 
-#include <global_planner/ThreePointMsg.h>
+#include <avoidance/common.h>
+
+#ifndef DISABLE_SIMULATION
+#include <avoidance/rviz_world_loader.h>
+#endif
 
 namespace global_planner {
 
@@ -31,8 +35,14 @@ class PathHandlerNode {
   PathHandlerNode();
   ~PathHandlerNode();
 
+  std::string world_path_;
+
  private:
   ros::NodeHandle nh_;
+
+#ifndef DISABLE_SIMULATION
+  std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
+#endif
 
   ros::Timer cmdloop_timer_;
   ros::CallbackQueue cmdloop_queue_;
@@ -65,6 +75,7 @@ class PathHandlerNode {
   // Parameters (Dynamic Reconfiguration)
   bool three_point_mode_;
   bool ignore_path_messages_;
+  bool startup_;
   double min_speed_;
   double max_speed_;
   double three_point_speed_;
