@@ -42,9 +42,30 @@ struct PolarPoint {
   float r;
 };
 
+/**
+* Struct defining the Field of View of the sensor. This is defined by
+* the current yaw and pitch (in local frame) and the horizontal and vertical
+* field of view of the sensor
+*/
+struct FOV {
+  FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
+  float yaw_deg;
+  float pitch_deg;
+  float h_fov_deg;
+  float v_fov_deg;
+};
+
 #define M_PI_F 3.14159265358979323846f
 const float DEG_TO_RAD = M_PI_F / 180.f;
 const float RAD_TO_DEG = 180.0f / M_PI_F;
+
+/**
+* @brief      determines whether point is inside FOV
+* @param[in]  FOV, struct defining current field of view
+* @param[in]  p_pol, polar representation of the point in question
+* @return     whether point is inside the FOV
+**/
+bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
 
 /**
 * @brief     calculates the distance between two polar points

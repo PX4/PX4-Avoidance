@@ -87,7 +87,7 @@ class LocalPlanner {
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
 
-  FOV_indices FOV_;
+  FOV fov_;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
@@ -139,8 +139,6 @@ class LocalPlanner {
   void generateHistogramImage(Histogram& histogram);
 
  public:
-  float h_FOV_deg_ = 59.0f;
-  float v_FOV_deg_ = 46.0f;
   Box histogram_box_;
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
@@ -179,6 +177,13 @@ class LocalPlanner {
   * @param[in] mgs, goal message coming from the FCU
   **/
   void setGoal(const Eigen::Vector3f& goal);
+  /**
+  * @brief     setter method for field of view
+  * @param[in] horizontal angle in degrees of the sensor data
+  * @param[in] vertical angle in degrees of the sensor data
+  */
+  void setFOV(float h_FOV_deg, float v_FOV_deg);
+  
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal
