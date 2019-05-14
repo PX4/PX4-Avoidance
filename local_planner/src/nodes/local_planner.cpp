@@ -167,7 +167,6 @@ void LocalPlanner::determineStrategy() {
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
-      star_planner_->setFOV(h_FOV_deg_, v_FOV_deg_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
