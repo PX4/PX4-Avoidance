@@ -68,7 +68,7 @@ void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   applyGoal();
 }
 
-void LocalPlanner::setFOV(float h_FOV_deg, float v_FOV_deg){
+void LocalPlanner::setFOV(float h_FOV_deg, float v_FOV_deg) {
   fov_.h_fov_deg = h_FOV_deg;
   fov_.v_fov_deg = v_FOV_deg;
 }
@@ -197,13 +197,14 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.range_max = histogram_box_.radius_;
   msg.ranges.reserve(GRID_LENGTH_Z);
 
-  for (int i = 0; i < GRID_LENGTH_Z; ++i){
+  for (int i = 0; i < GRID_LENGTH_Z; ++i) {
     // turn idxs 180 degress to point to local north instead of south
-    int j = (i +  GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    int j = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
     float dist = hist.get_dist(0, j);
 
     // special case: distance of 0 denotes 'no obstacle in sight'
-    msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
+    msg.ranges.push_back(
+        dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
   }
 
   distance_data_ = msg;

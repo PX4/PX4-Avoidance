@@ -5,6 +5,9 @@
 #include "../include/local_planner/local_planner.h"
 #include "avoidance/common.h"
 
+#define TO_DEG 180.f / M_PI_F
+#define TO_RAD M_PI_F / 180.f
+
 // Stateless tests:
 // Create some hardcoded scan data of obstacles in different positions
 // For each one check that the planner response is correct
@@ -21,6 +24,7 @@ class LocalPlannerTests : public ::testing::Test {
     avoidance::LocalPlannerNodeConfig config =
         avoidance::LocalPlannerNodeConfig::__getDefault__();
     planner.dynamicReconfigureSetParams(config, 1);
+    planner.setFOV(59.0f, 46.0f);
 
     // start with basic pose
     Eigen::Vector3f pos(0.f, 0.f, 0.f);
@@ -68,7 +72,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   float shift = 0.f;
   float distance = 2.f;
   float fov_half_y =
-      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
+      distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -85,9 +89,15 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) /
+                       (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(min_y, distance) ) /
+                       (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (10 <= i && i <= 19)
+    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -120,7 +130,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   float shift = -0.5f;
   float distance = 2.f;
   float fov_half_y =
-      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
+      distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -137,9 +147,16 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) /
+                       (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(min_y, distance) ) /
+                       (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (12 <= i && i <= 19)
+    if (idx_lower_obstacle_boundary_bin <= i &&
+        i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -168,7 +185,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   float shift = 0.5f;
   float distance = 2.f;
   float fov_half_y =
-      distance * std::tan(planner.h_FOV_deg_ * M_PI_F / 180.f / 2.f);
+      distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -185,8 +202,16 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) /
+                       (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2- atan2(min_y, distance)) /
+                       (scan.angle_increment));
+
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (10 <= i && i <= 17)
+    if (idx_lower_obstacle_boundary_bin <= i &&
+        i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);

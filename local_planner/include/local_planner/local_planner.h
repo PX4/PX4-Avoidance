@@ -183,7 +183,13 @@ class LocalPlanner {
   * @param[in] vertical angle in degrees of the sensor data
   */
   void setFOV(float h_FOV_deg, float v_FOV_deg);
-  
+
+  /**
+  * @brief     Getters for the FOV
+  */
+  float getHFOV() { return fov_.h_fov_deg; }
+  float getVFOV() { return fov_.v_fov_deg; }
+
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal

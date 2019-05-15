@@ -39,7 +39,6 @@ void processPointcloud(
     float min_realsense_dist, int max_age, float elapsed_s,
     int min_num_points_per_cell);
 
-
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
 *             the current vehicle position

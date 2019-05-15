@@ -557,9 +557,9 @@ void LocalPlannerNode::cameraInfoCallback(
   // v_fov = 2 * atan (image_height / (2 * focal_length_y))
   // Assumption: if there are n cameras the total horizonal field of view is n
   // times the horizontal field of view of a single camera
-  float h_fov =  static_cast<float>(
-     static_cast<double>(cameras_.size()) * 2.0 *
-     atan(static_cast<double>(msg->width) / (2.0 * msg->K[0])) * 180.0 / M_PI);
+  float h_fov = static_cast<float>(
+      static_cast<double>(cameras_.size()) * 2.0 *
+      atan(static_cast<double>(msg->width) / (2.0 * msg->K[0])) * 180.0 / M_PI);
   float v_fov = static_cast<float>(
       2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
       M_PI);
