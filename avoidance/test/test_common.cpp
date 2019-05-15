@@ -5,6 +5,24 @@
 
 using namespace avoidance;
 
+TEST(Common, pointInsideFOV){
+  // GIVEN: three points and a regular FOV
+  FOV fov(34.0f, 12.0f, 90.0f, 60.0f);
+  PolarPoint p_outside_yaw(-1.0f, 126.0f, 2.0f);
+  PolarPoint p_outside_pitch(-60.0f, 30.0f, 2.0f);
+  PolarPoint p_inside_fov(5.0f, 25.0f, 2.0f);
+
+  // WHEN: we check whether they are inside the FOV
+  bool outside_yaw = pointInsideFOV(fov, p_outside_yaw);
+  bool outside_pitch = pointInsideFOV(fov, p_outside_pitch);
+  bool inside = pointInsideFOV(fov, p_inside_fov);
+
+  // THEN: they should lie in the expected region
+  EXPECT_FALSE(outside_yaw);
+  EXPECT_FALSE(outside_pitch);
+  EXPECT_TRUE(inside);
+}
+
 TEST(PlannerFunctions, HistogramResolution) {
   // Test that the hardcoded histogram resolution ALPHA_RES is valid
   ASSERT_GT(ALPHA_RES, 0);
