@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include <limits>
-#include "avoidance/histogram.h"
 #include "avoidance/common.h"
+#include "avoidance/histogram.h"
 
 using namespace avoidance;
 

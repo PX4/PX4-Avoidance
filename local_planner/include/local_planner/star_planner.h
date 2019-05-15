@@ -1,9 +1,9 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
+#include "avoidance/histogram.h"
 #include "box.h"
 #include "cost_parameters.h"
-#include "avoidance/histogram.h"
 
 #include <Eigen/Dense>
 
