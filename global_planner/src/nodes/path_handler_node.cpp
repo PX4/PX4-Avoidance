@@ -33,10 +33,6 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
       "/mavros/trajectory/generated", 10);
   current_waypoint_publisher_ =
       nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
-  three_point_path_publisher_ =
-      nh_.advertise<nav_msgs::Path>("/three_point_path", 10);
-  three_point_msg_publisher_ =
-      nh_.advertise<global_planner::ThreePointMsg>("/three_point_msg", 10);
   mavros_system_status_pub_ =
       nh_.advertise<mavros_msgs::CompanionProcessStatus>(
           "/mavros/companion_process/status", 1);
@@ -76,20 +72,7 @@ void PathHandlerNode::readParams() {
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
 }
 
-bool PathHandlerNode::shouldPublishThreePoints() { return three_point_mode_; }
-
-bool PathHandlerNode::isCloseToGoal() {
-  if (shouldPublishThreePoints()) {
-    // For three point messages we send a new message when we are close to the
-    // end
-    return distance(last_pos_.pose.position, current_goal_.pose.position) +
-               0.5 >
-           distance(last_pos_.pose.position, path_.front().pose.position);
-    // return distance(last_pos_.pose.position, path_.front().pose.position)
-    // < 1.0;
-  }
-  return distance(current_goal_, last_pos_) < 1.5;
-}
+bool PathHandlerNode::isCloseToGoal() {  return distance(current_goal_, last_pos_) < 1.5; }
 
 double PathHandlerNode::getRiskOfCurve(
     const std::vector<geometry_msgs::PoseStamped>& poses) {
@@ -124,10 +107,8 @@ void PathHandlerNode::setCurrentPath(
 void PathHandlerNode::dynamicReconfigureCallback(
     global_planner::PathHandlerNodeConfig& config, uint32_t level) {
   ignore_path_messages_ = config.ignore_path_messages_;
-  three_point_mode_ = config.three_point_mode_;
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
-  three_point_speed_ = config.three_point_speed_;
   direct_goal_alt_ = config.direct_goal_alt_;
 
   // Reset speed_
@@ -135,11 +116,7 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
-  if (shouldPublishThreePoints()) {
-    publishThreePointMsg();
-  } else {
-    publishSetpoint();
-  }
+  publishSetpoint();
 }
 
 void PathHandlerNode::receiveDirectGoal(
@@ -285,49 +262,6 @@ void PathHandlerNode::publishSystemStatus() {
   status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
   status_msg.state = static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE);
   mavros_system_status_pub_.publish(status_msg);
-}
-
-// Send a 3-point message representing the current path
-void PathHandlerNode::publishThreePointMsg() {
-  geometry_msgs::PoseStamped next_goal;
-  if (!path_.empty()) {
-    next_goal = path_.front();
-  } else {
-    next_goal = current_goal_;
-  }
-  nav_msgs::Path three_point_path;
-  three_point_path.header.frame_id = "/world";
-  three_point_path.poses = {last_goal_, current_goal_, next_goal};
-  three_point_path.poses[0].pose.position =
-      middlePoint(last_goal_.pose.position, current_goal_.pose.position);
-  three_point_path.poses[2].pose.position =
-      middlePoint(current_goal_.pose.position, next_goal.pose.position);
-  // three_point_path = smoothPath(three_point_path);
-  three_point_path_publisher_.publish(three_point_path);
-
-  double risk = getRiskOfCurve(three_point_path.poses);
-  // Send the three points as a ThreePointMessage
-  ThreePointMsg three_point_msg;
-  three_point_msg.prev = last_goal_.pose.position;
-  three_point_msg.ctrl = current_goal_.pose.position;
-  three_point_msg.next = path_.front().pose.position;
-  double speed = distance(three_point_msg.prev, three_point_msg.next);
-  three_point_msg.duration =
-      std::max(1.0, speed / max_speed_) * three_point_speed_;
-  // three_point_msg.duration = 1.0;
-  three_point_msg.max_acc = risk;
-  three_point_msg.acc_per_err = risk;
-  three_point_msg_publisher_.publish(three_point_msg);
-
-  // mavros_msgs::AvoidanceTriplet avoidance_triplet;
-  // avoidance_triplet.prev = last_goal_.pose.position;
-  // avoidance_triplet.ctrl = current_goal_.pose.position;
-  // avoidance_triplet.next = path_.front().pose.position;
-  // avoidance_triplet.duration = std::max(1.0, speed / 3.0);
-  // // avoidance_triplet.duration = 1.0;
-  // avoidance_triplet.max_acc = risk;
-  // avoidance_triplet.acc_per_err = risk;
-  // avoidance_triplet_msg_publisher_.publish(avoidance_triplet);
 }
 
 }  // namespace global_planner
