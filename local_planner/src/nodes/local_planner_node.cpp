@@ -125,7 +125,6 @@ void LocalPlannerNode::readParams() {
   nh_.getParam("pointcloud_topics", camera_topics);
   initializeCameraSubscribers(camera_topics);
 
-  nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position = goal;
 }
 
@@ -269,15 +268,6 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_pose_ = newest_pose_;
   newest_pose_ = msg;
   position_received_ = true;
-
-#ifndef DISABLE_SIMULATION
-  // visualize drone in RVIZ
-  if (!world_path_.empty()) {
-    if (world_visualizer_->visualizeDrone(msg)) {
-      ROS_WARN("Failed to visualize drone in RViz");
-    }
-  }
-#endif
 }
 
 void LocalPlannerNode::velocityCallback(

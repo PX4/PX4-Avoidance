@@ -135,18 +135,6 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
-#ifndef DISABLE_SIMULATION
-  // visualize world in RVIZ
-  if (!world_path_.empty() && startup_) {
-    if (world_visualizer_->visualizeRVIZWorld(world_path_)) {
-      ROS_WARN("Failed to visualize Rviz world");
-    }
-    startup_ = false;
-  }
-#else
-  startup_ = false;
-#endif
-
   if (shouldPublishThreePoints()) {
     publishThreePointMsg();
   } else {
@@ -219,14 +207,6 @@ void PathHandlerNode::positionCallback(
       // }
     }
   }
-#ifndef DISABLE_SIMULATION
-  // visualize drone in RVIZ
-  if (!world_path_.empty()) {
-    if (world_visualizer_->visualizeDrone(pose_msg)) {
-      ROS_WARN("Failed to visualize drone in RViz");
-    }
-  }
-#endif
 }
 
 void PathHandlerNode::fillUnusedTrajectoryPoint(

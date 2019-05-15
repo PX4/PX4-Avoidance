@@ -44,6 +44,7 @@ class WorldVisualizer {
 
   ros::Timer loop_timer_;
 
+  ros::Subscriber pose_sub_;
   ros::Publisher world_pub_;
   ros::Publisher drone_pub_;
 
@@ -59,6 +60,11 @@ class WorldVisualizer {
   * @param      nh, nodehandle to initialize publishers
   **/
   void initializePublishers(ros::NodeHandle& nh);
+
+  /**
+  * @brief      callback for subscribing mav pose topic
+  **/
+  void positionCallback(const geometry_msgs::PoseStamped& msg);
 
   /**
   * @brief      parse the yaml file and publish world marker
