@@ -72,7 +72,9 @@ void PathHandlerNode::readParams() {
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
 }
 
-bool PathHandlerNode::isCloseToGoal() {  return distance(current_goal_, last_pos_) < 1.5; }
+bool PathHandlerNode::isCloseToGoal() {
+  return distance(current_goal_, last_pos_) < 1.5;
+}
 
 double PathHandlerNode::getRiskOfCurve(
     const std::vector<geometry_msgs::PoseStamped>& poses) {
