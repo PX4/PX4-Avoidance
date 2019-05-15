@@ -5,6 +5,11 @@
 namespace avoidance {
 
 WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
+
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
+      "/mavros/local_position/pose", 1, &WorldVisualizer::positionCallback,
+      this);
+
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
   loop_timer_ =
@@ -150,6 +155,15 @@ int WorldVisualizer::visualizeDrone(const geometry_msgs::PoseStamped& pose) {
   drone_pub_.publish(drone);
 
   return 0;
+}
+
+void WorldVisualizer::positionCallback(const geometry_msgs::PoseStamped& msg) {
+  // visualize drone in RVIZ
+  if (!world_path_.empty()) {
+    if (visualizeDrone(msg)) {
+      ROS_WARN("Failed to visualize drone in RViz");
+    }
+  }
 }
 
 // extraction operators

@@ -75,7 +75,6 @@ class LocalPlannerNode {
                    const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
-  std::string world_path_;
   std::atomic<bool> should_exit_{false};
 
   std::vector<cameraData> cameras_;
