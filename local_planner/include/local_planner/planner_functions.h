@@ -5,7 +5,7 @@
 #include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
-#include "histogram.h"
+#include "avoidance/histogram.h"
 
 #include <Eigen/Dense>
 

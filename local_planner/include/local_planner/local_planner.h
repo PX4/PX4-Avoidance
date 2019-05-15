@@ -6,7 +6,7 @@
 #include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
-#include "histogram.h"
+#include "avoidance/histogram.h"
 #include "planner_functions.h"
 
 #include <dynamic_reconfigure/server.h>

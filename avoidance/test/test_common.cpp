@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <limits>
-#include "../include/local_planner/histogram.h"
+#include "avoidance/histogram.h"
 #include "avoidance/common.h"
 
 using namespace avoidance;

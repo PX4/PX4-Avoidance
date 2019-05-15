@@ -3,7 +3,7 @@
 
 #include "box.h"
 #include "cost_parameters.h"
-#include "histogram.h"
+#include "avoidance/histogram.h"
 
 #include <Eigen/Dense>
 
