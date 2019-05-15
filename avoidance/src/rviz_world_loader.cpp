@@ -120,7 +120,7 @@ int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
   }
 
   world_pub_.publish(marker_array);
-  ROS_INFO("Successfully loaded rviz world");
+  ROS_INFO_ONCE("Successfully loaded rviz world");
   return 0;
 }
 
