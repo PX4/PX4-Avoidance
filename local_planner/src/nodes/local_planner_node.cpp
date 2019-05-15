@@ -337,13 +337,6 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE)
     calculateWaypoints(hover_);
 
-  if (!never_run_) {
-    for (size_t i = 0; i < cameras_.size(); ++i) {
-      // once the camera info have been set once, unsubscribe from topic
-      cameras_[i].camera_info_sub_.shutdown();
-    }
-  }
-
   position_received_ = false;
 
   // publish system status
@@ -564,6 +557,10 @@ void LocalPlannerNode::cameraInfoCallback(
       2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
       M_PI);
 
+  // once the camera info have been set once, unsubscribe from topic
+  cameras_[index].camera_info_sub_.shutdown();
+  ROS_INFO("[LocalPlannerNode] Received camera info from camera %d \n", index);
+
   // make sure to underestimate FOV to avoid blind spots!
   local_planner_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
   wp_generator_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
@@ -600,7 +597,6 @@ void LocalPlannerNode::threadFunction() {
 
     {
       std::lock_guard<std::mutex> guard(running_mutex_);
-      never_run_ = false;
       std::clock_t start_time_ = std::clock();
       local_planner_->runPlanner();
       visualizer_.visualizePlannerData(

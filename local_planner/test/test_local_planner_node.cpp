@@ -12,7 +12,6 @@ TEST(LocalPlannerNodeTests, failsafe) {
   bool hover = false;
 
   Node.position_received_ = true;
-  Node.never_run_ = false;
   Node.setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
 
   avoidance::LocalPlannerNodeConfig config =
