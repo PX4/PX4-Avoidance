@@ -17,6 +17,13 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(PCL 1.7 REQUIRED)
 
+if(DISABLE_SIMULATION)
+  message(STATUS "Building avoidance without Gazebo Simulation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+else()
+  message(STATUS "Building avoidance with Gazebo Simulation")
+  find_package(yaml-cpp REQUIRED)
+endif(DISABLE_SIMULATION)
 
 catkin_package(
   INCLUDE_DIRS include
@@ -44,6 +51,7 @@ include_directories(
 
 ## Declare a C++ library
 set(AVOIDANCE_CPP_FILES   "src/common.cpp"
+                          "src/histogram.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}"
@@ -75,8 +83,9 @@ install(DIRECTORY include/${PROJECT_NAME}/
 
 if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
-    catkin_add_gtest(${PROJECT_NAME}-test test/test_common.cpp
-	)
+    catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
+                                          test/test_common.cpp
+                    )
 
     if(TARGET ${PROJECT_NAME}-test)
       target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}

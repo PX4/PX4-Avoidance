@@ -24,14 +24,6 @@ find_package(PCL 1.7 REQUIRED)
 ################################################
 ## Gazebo Simulation
 ################################################
-# Disable yaml-cpp when no simulation is required
-if(DISABLE_SIMULATION)
-  message(STATUS "Building local planner without Gazebo Simulation")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
-else()
-  message(STATUS "Building local planner with Gazebo Simulation")
-  find_package(yaml-cpp REQUIRED)
-endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -139,7 +131,6 @@ include_directories(
 # )
 set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/waypoint_generator.cpp"
-                              "src/nodes/histogram.cpp"
                               "src/nodes/tree_node.cpp"
                               "src/nodes/box.cpp"
                               "src/nodes/star_planner.cpp"

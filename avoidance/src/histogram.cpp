@@ -1,4 +1,4 @@
-#include "local_planner/histogram.h"
+#include "avoidance/histogram.h"
 #include <stdexcept>
 
 namespace avoidance {
