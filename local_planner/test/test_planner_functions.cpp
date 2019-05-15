@@ -114,7 +114,8 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
-  std::cout << "mem point e: " << memory_point_polar.e << "z: " << memory_point_polar.z << std::endl;
+  std::cout << "mem point e: " << memory_point_polar.e
+            << "z: " << memory_point_polar.z << std::endl;
 
   FOV FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
   FOV_zero.h_fov_deg = 0.0f;
@@ -125,7 +126,7 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   FOV FOV_regular;
   FOV_regular.h_fov_deg = 85.0f;
   FOV_regular.v_fov_deg = 65.0f;
-  FOV_regular.yaw_deg = 90.0f; // in histogram frame!
+  FOV_regular.yaw_deg = 90.0f;  // in histogram frame!
   FOV_regular.pitch_deg = 1.0f;
 
   // WHEN: we filter the PointCloud with different values max_age

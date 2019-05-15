@@ -5,7 +5,7 @@
 
 using namespace avoidance;
 
-TEST(Common, pointInsideFOV){
+TEST(Common, pointInsideFOV) {
   // GIVEN: three points and a regular FOV
   FOV fov(34.0f, 12.0f, 90.0f, 60.0f);
   PolarPoint p_outside_yaw(-1.0f, 126.0f, 2.0f);
