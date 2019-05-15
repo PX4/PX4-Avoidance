@@ -17,6 +17,13 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(PCL 1.7 REQUIRED)
 
+if(DISABLE_SIMULATION)
+  message(STATUS "Building local planner without Gazebo Simulation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+else()
+  message(STATUS "Building local planner with Gazebo Simulation")
+  find_package(yaml-cpp REQUIRED)
+endif(DISABLE_SIMULATION)
 
 catkin_package(
   INCLUDE_DIRS include
