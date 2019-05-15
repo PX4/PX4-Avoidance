@@ -29,7 +29,6 @@ void processPointcloud(
   float fov_pitch_lower_boundary = fov.pitch_deg - fov.v_fov_deg / 2;
   float fov_pitch_upper_boundary = fov.pitch_deg - fov.v_fov_deg / 2;
 
-
   // counter to keep track of how many points lie in a given cell
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2),
                                            360 / (ALPHA_RES / 2));
@@ -43,15 +42,20 @@ void processPointcloud(
           distance = (position - toEigen(xyz)).norm();
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
-
             // Keep track of the FOV
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
-           fov_yaw_lower_boundary = std::min(fov_yaw_lower_boundary, p_pol.z);
-           fov_yaw_upper_boundary = std::max(fov_yaw_upper_boundary, p_pol.z);
-           fov_pitch_lower_boundary = std::min(fov_pitch_lower_boundary, p_pol.e);
-           fov_pitch_upper_boundary = std::max(fov_pitch_upper_boundary, p_pol.e);
+            // To get yaw in local frame instead of histogram frame, add 90
+            // degrees
+            fov_yaw_lower_boundary =
+                std::min(fov_yaw_lower_boundary, -p_pol.z + 90.f);
+            fov_yaw_upper_boundary =
+                std::max(fov_yaw_upper_boundary, -p_pol.z + 90.f);
+            fov_pitch_lower_boundary =
+                std::min(fov_pitch_lower_boundary, p_pol.e);
+            fov_pitch_upper_boundary =
+                std::max(fov_pitch_upper_boundary, p_pol.e);
 
-           // subsampling the cloud
+            // subsampling the cloud
 
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
@@ -65,9 +69,10 @@ void processPointcloud(
     }
   }
   // Update the FOV
-  fov.h_fov_deg = std::max(fov.h_fov_deg, fov_yaw_upper_boundary - fov_yaw_lower_boundary);
-  fov.v_fov_deg = std::max(fov.v_fov_deg, fov_pitch_upper_boundary - fov_pitch_lower_boundary);
-
+  fov.h_fov_deg =
+      std::max(fov.h_fov_deg, fov_yaw_upper_boundary - fov_yaw_lower_boundary);
+  fov.v_fov_deg = std::max(fov.v_fov_deg,
+                           fov_pitch_upper_boundary - fov_pitch_lower_boundary);
 
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {

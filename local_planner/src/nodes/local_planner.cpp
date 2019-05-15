@@ -85,7 +85,7 @@ void LocalPlanner::runPlanner() {
            static_cast<int>(original_cloud_vector_.size()));
 
   // calculate Field of View
-  fov_.yaw_deg = curr_yaw_histogram_frame_deg_;
+  fov_.yaw_deg = curr_yaw_fcu_frame_deg_;
   fov_.pitch_deg = curr_pitch_fcu_frame_deg_;
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
@@ -95,6 +95,7 @@ void LocalPlanner::runPlanner() {
   processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_,
                     position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing, min_num_points_per_cell_);
+  std::cout << "fov: " << fov_.h_fov_deg << std::endl;
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
