@@ -5,7 +5,6 @@
 namespace avoidance {
 
 WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
-
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
       "/mavros/local_position/pose", 1, &WorldVisualizer::positionCallback,
       this);

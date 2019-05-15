@@ -135,7 +135,6 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
-
   if (shouldPublishThreePoints()) {
     publishThreePointMsg();
   } else {

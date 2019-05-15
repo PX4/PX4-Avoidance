@@ -268,7 +268,6 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_pose_ = newest_pose_;
   newest_pose_ = msg;
   position_received_ = true;
-
 }
 
 void LocalPlannerNode::velocityCallback(
