@@ -114,8 +114,6 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
-  std::cout << "mem point e: " << memory_point_polar.e
-            << "z: " << memory_point_polar.z << std::endl;
 
   FOV FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
   FOV_zero.h_fov_deg = 0.0f;
