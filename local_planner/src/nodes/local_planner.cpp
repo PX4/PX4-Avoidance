@@ -95,7 +95,6 @@ void LocalPlanner::runPlanner() {
   processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_,
                     position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing, min_num_points_per_cell_);
-  std::cout << "fov: " << fov_.h_fov_deg << std::endl;
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();

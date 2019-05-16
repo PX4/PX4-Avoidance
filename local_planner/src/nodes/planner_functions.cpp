@@ -23,11 +23,13 @@ void processPointcloud(
   final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
 
   float distance;
-  // todo: wrapping
-  float fov_yaw_lower_boundary = fov.yaw_deg - fov.h_fov_deg / 2;
-  float fov_yaw_upper_boundary = fov.yaw_deg + fov.h_fov_deg / 2;
-  float fov_pitch_lower_boundary = fov.pitch_deg - fov.v_fov_deg / 2;
-  float fov_pitch_upper_boundary = fov.pitch_deg - fov.v_fov_deg / 2;
+
+  float fov_yaw_lower_boundary = fov.yaw_deg - fov.h_fov_deg / 2.0f;
+  float fov_yaw_upper_boundary = fov.yaw_deg + fov.h_fov_deg / 2.0f;
+  float fov_pitch_lower_boundary = fov.pitch_deg - fov.v_fov_deg / 2.0f;
+  float fov_pitch_upper_boundary = fov.pitch_deg + fov.v_fov_deg / 2.0f;
+  wrapAngleToPlusMinus180(fov_yaw_lower_boundary);
+  wrapAngleToPlusMinus180(fov_yaw_upper_boundary);
 
   // counter to keep track of how many points lie in a given cell
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2),
@@ -56,7 +58,6 @@ void processPointcloud(
                 std::max(fov_pitch_upper_boundary, p_pol.e);
 
             // subsampling the cloud
-
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
             if (histogram_points_counter(p_ind.y(), p_ind.x()) ==
@@ -68,11 +69,16 @@ void processPointcloud(
       }
     }
   }
-  // Update the FOV
-  fov.h_fov_deg =
-      std::max(fov.h_fov_deg, fov_yaw_upper_boundary - fov_yaw_lower_boundary);
-  fov.v_fov_deg = std::max(fov.v_fov_deg,
-                           fov_pitch_upper_boundary - fov_pitch_lower_boundary);
+
+  // Update the FOV, accounting for discontinuity. Also subtract a tolerance
+  // margin to avoid creating a blind spot due to latency and fast yaw movements
+  fov.h_fov_deg = std::max(
+      fov.h_fov_deg,
+      std::min(360.0f - (fov_yaw_upper_boundary - fov_yaw_lower_boundary),
+               fov_yaw_upper_boundary - fov_yaw_lower_boundary) -
+          15.0f);
+  fov.v_fov_deg = std::max(fov.v_fov_deg, fov_pitch_upper_boundary -
+                                              fov_pitch_lower_boundary - 15.0f);
 
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {
