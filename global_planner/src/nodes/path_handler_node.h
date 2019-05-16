@@ -18,7 +18,6 @@
 
 #include <global_planner/PathHandlerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
-#include <global_planner/ThreePointMsg.h>
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
 
@@ -50,8 +49,6 @@ class PathHandlerNode {
   // Publishers
   ros::Publisher mavros_waypoint_publisher_;
   ros::Publisher current_waypoint_publisher_;
-  ros::Publisher three_point_path_publisher_;
-  ros::Publisher three_point_msg_publisher_;
   ros::Publisher avoidance_triplet_msg_publisher_;
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_system_status_pub_;
@@ -73,12 +70,10 @@ class PathHandlerNode {
 
   double start_yaw_;
   // Parameters (Dynamic Reconfiguration)
-  bool three_point_mode_;
   bool ignore_path_messages_;
   bool startup_;
   double min_speed_;
   double max_speed_;
-  double three_point_speed_;
   double direct_goal_alt_;
   double speed_ = min_speed_;
   double spin_dt_;
@@ -90,7 +85,6 @@ class PathHandlerNode {
 
   // Methods
   void readParams();
-  bool shouldPublishThreePoints();
   bool isCloseToGoal();
   double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& poses);
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
@@ -112,7 +106,6 @@ class PathHandlerNode {
   void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory& obst_avoid,
                                         geometry_msgs::PoseStamped pose);
   void publishSetpoint();
-  void publishThreePointMsg();
   void publishSystemStatus();
 };
 
