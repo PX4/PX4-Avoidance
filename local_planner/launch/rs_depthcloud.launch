@@ -76,35 +76,9 @@ Processing enabled by this node:
   <arg name="align_depth"         default="false"/>
   <arg name="initial_reset"       default="true"/>
 
-  <!-- rgbd_launch specific arguments -->
-
-  <!--<arg name="depth_scale" value="0.25" description="scaling factor for image_proc/resize"/>-->
-
-  <!-- Arguments for remapping all device namespaces -->
-  <arg name="rgb"                             default="color" />
-  <arg name="ir"                              default="infra1" />
-  <arg name="depth"                           default="depth" />
-  <arg name="depth_registered_pub"            default="depth_registered" />
-  <arg name="depth_registered"                default="depth_registered" unless="$(arg align_depth)" />
-  <arg name="depth_registered"                default="aligned_depth_to_color" if="$(arg align_depth)" />
-  <arg name="depth_registered_filtered"       default="$(arg depth_registered)" />
-  <arg name="projector"                       default="projector" />
-
   <!-- Disable bond topics by default -->
   <arg name="bond"                            default="false" />
   <arg name="respawn"                         default="$(arg bond)" />
-
-  <!-- Processing Modules -->
-  <arg name="rgb_processing"                  default="false"/>
-  <arg name="debayer_processing"              default="false" />
-  <arg name="ir_processing"                   default="false"/>
-  <arg name="depth_processing"                default="true"/>
-  <arg name="depth_registered_processing"     default="false"/>
-  <arg name="disparity_processing"            default="false"/>
-  <arg name="disparity_registered_processing" default="false"/>
-  <arg name="hw_registered_processing"        default="$(arg align_depth)" />
-  <arg name="sw_registered_processing"        default="true" unless="$(arg align_depth)" />
-  <arg name="sw_registered_processing"        default="false" if="$(arg align_depth)" />
 
   <group ns="$(arg namespace)">
 
