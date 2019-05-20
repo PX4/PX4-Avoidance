@@ -21,7 +21,7 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
     : nh_(nh), nh_private_(nh_private), spin_dt_(0.1) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-
+  local_planner_->setDefaultPx4Parameters();
 #ifndef DISABLE_SIMULATION
   world_visualizer_.reset(new WorldVisualizer(nh_));
 #endif
