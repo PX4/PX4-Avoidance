@@ -68,6 +68,11 @@ void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   applyGoal();
 }
 
+void LocalPlanner::setFOV(float h_FOV_deg, float v_FOV_deg) {
+  fov_.h_fov_deg = h_FOV_deg;
+  fov_.v_fov_deg = v_FOV_deg;
+}
+
 Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
 
 void LocalPlanner::applyGoal() {
@@ -80,15 +85,14 @@ void LocalPlanner::runPlanner() {
            static_cast<int>(original_cloud_vector_.size()));
 
   // calculate Field of View
-  FOV_.z_idx_vec.clear();
-  calculateFOV(h_FOV_deg_, v_FOV_deg_, FOV_, curr_yaw_histogram_frame_deg_,
-               curr_pitch_deg_);
+  fov_.yaw_deg = curr_yaw_histogram_frame_deg_;
+  fov_.pitch_deg = curr_pitch_deg_;
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
   float elapsed_since_last_processing = static_cast<float>(
       (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, FOV_,
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_,
                     position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing, min_num_points_per_cell_);
   last_pointcloud_process_time_ = ros::Time::now();
@@ -167,7 +171,6 @@ void LocalPlanner::determineStrategy() {
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
-      star_planner_->setFOV(h_FOV_deg_, v_FOV_deg_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
@@ -192,43 +195,16 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
   msg.range_min = min_realsense_dist_;
   msg.range_max = histogram_box_.radius_;
-
-  // turn idxs 180 degress to point to local north instead of south
-  std::vector<int> z_FOV_idx_north;
-  z_FOV_idx_north.reserve(FOV_.z_idx_vec.size());
-
-  for (size_t i = 0; i < FOV_.z_idx_vec.size(); i++) {
-    int new_idx = FOV_.z_idx_vec[i] + GRID_LENGTH_Z / 2;
-
-    if (new_idx >= GRID_LENGTH_Z) {
-      new_idx = new_idx - GRID_LENGTH_Z;
-    }
-
-    z_FOV_idx_north.push_back(new_idx);
-  }
-
   msg.ranges.reserve(GRID_LENGTH_Z);
-  for (int idx = 0; idx < GRID_LENGTH_Z; idx++) {
-    float range;
 
-    if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) ==
-        z_FOV_idx_north.end()) {
-      range = UINT16_MAX;
-    } else {
-      int hist_idx = idx - GRID_LENGTH_Z / 2;
+  for (int i = 0; i < GRID_LENGTH_Z; ++i) {
+    // turn idxs 180 degress to point to local north instead of south
+    int j = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    float dist = hist.get_dist(0, j);
 
-      if (hist_idx < 0) {
-        hist_idx = hist_idx + GRID_LENGTH_Z;
-      }
-
-      if (hist.get_dist(0, hist_idx) == 0.0f) {
-        range = msg.range_max + 1.0f;
-      } else {
-        range = hist.get_dist(0, hist_idx);
-      }
-    }
-
-    msg.ranges.push_back(range);
+    // special case: distance of 0 denotes 'no obstacle in sight'
+    msg.ranges.push_back(
+        dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
   }
 
   distance_data_ = msg;

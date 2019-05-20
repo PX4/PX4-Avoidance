@@ -30,11 +30,6 @@ void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) {
   projected_last_wp_ = projected_last_wp;
 }
 
-void StarPlanner::setFOV(float h_FOV, float v_FOV) {
-  h_FOV_deg_ = h_FOV;
-  v_FOV_deg_ = v_FOV;
-}
-
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {
   position_ = pos;
   curr_yaw_histogram_frame_deg_ = curr_yaw;

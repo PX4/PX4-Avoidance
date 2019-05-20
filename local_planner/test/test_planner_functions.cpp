@@ -79,72 +79,6 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   }
 }
 
-TEST(PlannerFunctions, calculateFOV) {
-  // GIVEN: the horizontal and vertical Field of View, the vehicle yaw and pitc
-  float h_fov = 90.0f;
-  float v_fov = 45.0f;
-  float yaw_z_greater_grid_length =
-      270.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min >= GRID_LENGTH_Z
-  float yaw_z_max_greater_grid =
-      210.f;  // z_FOV_max >= GRID_LENGTH_Z && z_FOV_min < GRID_LENGTH_Z
-  float yaw_z_min_smaller_zero = -140.f;  // z_FOV_min < 0 && z_FOV_max >= 0
-  float yaw_z_smaller_zero = -235.f;      // z_FOV_max < 0 && z_FOV_min < 0
-  float pitch = 0.0f;
-
-  // WHEN: we calculate the Field of View
-  FOV_indices FOV_greater_grid_length;
-  FOV_indices FOV_max_greater_grid;
-  FOV_indices FOV_min_smaller_zero;
-  FOV_indices FOV_smaller_zero;
-
-  calculateFOV(h_fov, v_fov, FOV_greater_grid_length, yaw_z_greater_grid_length,
-               pitch);
-  calculateFOV(h_fov, v_fov, FOV_max_greater_grid, yaw_z_max_greater_grid,
-               pitch);
-  calculateFOV(h_fov, v_fov, FOV_min_smaller_zero, yaw_z_min_smaller_zero,
-               pitch);
-  calculateFOV(h_fov, v_fov, FOV_smaller_zero, yaw_z_smaller_zero, pitch);
-
-  // THEN: we expect polar histogram indexes that are in the Field of View
-  std::vector<int> output_z_greater_grid_length = {
-      7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22};
-  std::vector<int> output_z_max_greater_grid = {0, 1, 2,  3,  4,  5,  6,  7,
-                                                8, 9, 10, 11, 12, 57, 58, 59};
-  std::vector<int> output_z_min_smaller_zero = {0, 1, 2,  3,  4,  5,  6,  7,
-                                                8, 9, 10, 11, 12, 13, 14, 59};
-  std::vector<int> output_z_smaller_zero = {43, 44, 45, 46, 47, 48, 49, 50,
-                                            51, 52, 53, 54, 55, 56, 57, 58};
-
-  EXPECT_EQ(18, FOV_smaller_zero.e_idx_max);
-  EXPECT_EQ(11, FOV_smaller_zero.e_idx_min);
-
-  // vector sizes:
-  EXPECT_EQ(output_z_greater_grid_length.size(),
-            FOV_greater_grid_length.z_idx_vec.size());
-  EXPECT_EQ(output_z_max_greater_grid.size(), output_z_max_greater_grid.size());
-  EXPECT_EQ(output_z_min_smaller_zero.size(), output_z_min_smaller_zero.size());
-  EXPECT_EQ(output_z_smaller_zero.size(), output_z_smaller_zero.size());
-
-  for (size_t i = 0; i < FOV_greater_grid_length.z_idx_vec.size(); i++) {
-    EXPECT_EQ(output_z_greater_grid_length.at(i),
-              FOV_greater_grid_length.z_idx_vec.at(i));
-  }
-
-  for (size_t i = 0; i < FOV_max_greater_grid.z_idx_vec.size(); i++) {
-    EXPECT_EQ(output_z_max_greater_grid.at(i),
-              FOV_max_greater_grid.z_idx_vec.at(i));
-  }
-
-  for (size_t i = 0; i < FOV_min_smaller_zero.z_idx_vec.size(); i++) {
-    EXPECT_EQ(output_z_min_smaller_zero.at(i),
-              FOV_min_smaller_zero.z_idx_vec.at(i));
-  }
-
-  for (size_t i = 0; i < FOV_smaller_zero.z_idx_vec.size(); i++) {
-    EXPECT_EQ(output_z_smaller_zero.at(i), FOV_smaller_zero.z_idx_vec.at(i));
-  }
-}
-
 TEST(PlannerFunctionsTests, processPointcloud) {
   // GIVEN: two point clouds
   const Eigen::Vector3f position(1.5f, 1.0f, 4.5f);
@@ -174,40 +108,41 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2,
       processed_cloud3;
-  Eigen::Vector3f memory_point(-0.4f, 0.3f, -0.4f);
+  Eigen::Vector3f memory_point(1.4f, 0.0f, 0.0f);
   PolarPoint memory_point_polar =
       cartesianToPolar(position + memory_point, position);
-  processed_cloud1.push_back(toXYZI(position + memory_point, 5));
-  processed_cloud2.push_back(toXYZI(position + memory_point, 5));
-  processed_cloud3.push_back(toXYZI(position + memory_point, 5));
+  processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
+  processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
+  processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
 
-  FOV_indices FOV_zero;  // empty FOV, no remembered points will be forgotten
-                         // due to inside FOV
-  FOV_zero.e_idx_max = 0;
-  FOV_zero.e_idx_min = 0;
-  FOV_zero.z_idx_vec.push_back(0);
+  FOV FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
+  FOV_zero.h_fov_deg = 0.0f;
+  FOV_zero.v_fov_deg = 0.0f;
+  FOV_zero.yaw_deg = 1.0f;
+  FOV_zero.pitch_deg = 1.0f;
 
-  FOV_indices FOV_regular;
-  FOV_regular.e_idx_max = 10;
-  FOV_regular.e_idx_min = 6;
-  FOV_regular.z_idx_vec.push_back(21);
+  FOV FOV_regular;
+  FOV_regular.h_fov_deg = 85.0f;
+  FOV_regular.v_fov_deg = 65.0f;
+  FOV_regular.yaw_deg = 90.0f;  // in histogram frame!
+  FOV_regular.pitch_deg = 1.0f;
 
   // WHEN: we filter the PointCloud with different values max_age
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 0.f, 0.5f, 1);
+                    position, min_realsense_dist, 0.0f, 0.5f, 1);
 
   processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 10.f, .5f, 1);
+                    position, min_realsense_dist, 10.0f, .5f, 1);
 
   processPointcloud(processed_cloud3, complete_cloud, histogram_box,
-                    FOV_regular, position, min_realsense_dist, 10.f, 0.5f, 1);
+                    FOV_regular, position, min_realsense_dist, 10.0f, 0.5f, 1);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
-  EXPECT_EQ(processed_cloud1.size(), 6);
-  EXPECT_EQ(processed_cloud2.size(), 7);
+  EXPECT_EQ(6, processed_cloud1.size());
+  EXPECT_EQ(7, processed_cloud2.size());
   EXPECT_TRUE(pointInsideFOV(FOV_regular, memory_point_polar));
-  EXPECT_EQ(processed_cloud3.size(), 6);
+  EXPECT_EQ(6, processed_cloud3.size());
 }
 
 TEST(PlannerFunctions, testDirectionTree) {
