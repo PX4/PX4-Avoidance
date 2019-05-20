@@ -68,7 +68,10 @@ for camera in $CAMERA_CONFIGS; do
 
       <!-- launch node to throttle depth images for logging -->
       <node name="drop" pkg="topic_tools" type="drop" output="screen"
-        args="/$1/depth/image_rect_raw" 14 15">
+        args="/$1/depth/image_rect_raw" 29 30">
+      </node>
+      <node name="drop" pkg="topic_tools" type="drop" output="screen"
+        args="/$1/infra1/image_rect_raw" 29 30">
       </node>
 		EOM
 		
