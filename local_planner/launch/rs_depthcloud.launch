@@ -74,7 +74,8 @@ Processing enabled by this node:
   <arg name="enable_pointcloud"   default="false"/>
   <arg name="enable_sync"         default="true"/>
   <arg name="align_depth"         default="false"/>
-  
+  <arg name="initial_reset"       default="true"/>
+
   <!-- rgbd_launch specific arguments -->
 
   <!--<arg name="depth_scale" value="0.25" description="scaling factor for image_proc/resize"/>-->
@@ -141,6 +142,7 @@ Processing enabled by this node:
       <arg name="color_fps"                value="$(arg color_fps)"/>
       <arg name="gyro_fps"                 value="$(arg gyro_fps)"/>
       <arg name="accel_fps"                value="$(arg accel_fps)"/>
+      <arg name="initial_reset"            value="$(arg initial_reset)"/>
     </include>
 
 
