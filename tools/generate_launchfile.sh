@@ -52,7 +52,6 @@ for camera in $CAMERA_CONFIGS; do
 		fi
 
     # Append to the launch file
-    
     if  [[ $2 == "realsense" ]]; then
     REALSENSE_CAMERA_USED=1
     cat >>    local_planner/launch/avoidance.launch <<- EOM
@@ -66,23 +65,27 @@ for camera in $CAMERA_CONFIGS; do
 			       <arg name="enable_pointcloud"     value="false"/>
 			       <arg name="enable_fisheye"        value="false"/>
 			    </include>
-            
+
+      <!-- launch node to throttle depth images for logging -->
+      <node name="drop" pkg="topic_tools" type="drop" output="screen"
+        args="/$1/depth/image_rect_raw" 14 15">
+      </node>
 		EOM
 		
 		# Append to the realsense auto exposure toggling
 		echo "rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 0
 		rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 1
 		" >> local_planner/resource/realsense_params.sh
-		
+
 	elif  [[ $2 == "struct_core" ]]; then
-	
+
 	cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1"
 			       args="$4 $5 $6 $7 $8 $9 fcu $1_FLU 10"/>
-			    
+
 			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
 			    <node pkg="struct_core_ros" type="sc" name="$1"/>
-            
+
 		EOM
 	else
 	echo "Unknown camera type $2 in CAMERA_CONFIGS"
@@ -108,14 +111,14 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <param name="goal_z_param" value="4" />
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
-    
+
 EOM
 
 if  [[ $REALSENSE_CAMERA_USED == 1 ]]; then
 cat >>    local_planner/launch/avoidance.launch <<- EOM
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
     <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
-    
+
 EOM
 fi
 
