@@ -88,7 +88,7 @@ void processPointcloud(
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
         PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-        PolarPoint p_pol_fcu_frame(-p_pol.e, -p_pol.z+90.f, p_pol.r);
+        PolarPoint p_pol_fcu_frame(-p_pol.e, -p_pol.z + 90.f, p_pol.r);
 
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
 
