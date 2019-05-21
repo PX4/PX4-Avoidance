@@ -38,7 +38,7 @@ Processing enabled by this node:
 -->
 
 <launch>
-  <arg name="tf_prefix"           default=""/> 
+  <arg name="tf_prefix"           default=""/>
   <arg name="namespace"           default="camera"/>
   <arg name="manager"             default="realsense2_camera_manager"/>
 
@@ -71,7 +71,7 @@ Processing enabled by this node:
   <arg name="enable_pointcloud"   default="false"/>
   <arg name="enable_sync"         default="true"/>
   <arg name="align_depth"         default="false"/>
-  
+
   <!-- rgbd_launch specific arguments -->
 
   <!--<arg name="depth_scale" value="0.25" description="scaling factor for image_proc/resize"/>-->
@@ -140,9 +140,9 @@ Processing enabled by this node:
 
      <node pkg="nodelet" type="nodelet" name="points_xyz_sw_registered"
             args="load depth_image_proc/point_cloud_xyz $(arg manager) $(arg bond)" respawn="$(arg respawn)">
-        <remap from="camera_info"             to="$(arg depth)/camera_info" />
-        <remap from="image_rect" to="$(arg depth)/image_rect_raw" />
-        <remap from="points"     to="$(arg depth)/points" />
+        <remap from="camera_info"             to="depth/camera_info" />
+        <remap from="image_rect" to="depth/image_rect_raw" />
+        <remap from="points"     to="depth/points" />
       </node>
 
 
