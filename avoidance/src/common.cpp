@@ -9,10 +9,12 @@
 namespace avoidance {
 
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
+  // pitch angle must be counted negative: zero pitch is level, positive pitch
+  // is leaning down. Whereas a positive elevation angle is counted upwards
   return p_pol.z <= fov.yaw_deg + fov.h_fov_deg / 2.f &&
          p_pol.z >= fov.yaw_deg - fov.h_fov_deg / 2.f &&
-         p_pol.e <= fov.pitch_deg + fov.v_fov_deg / 2.f &&
-         p_pol.e >= fov.pitch_deg - fov.v_fov_deg / 2.f;
+         p_pol.e <= -fov.pitch_deg + fov.v_fov_deg / 2.f &&
+         p_pol.e >= -fov.pitch_deg - fov.v_fov_deg / 2.f;
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {

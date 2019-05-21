@@ -149,6 +149,9 @@ class LocalPlannerVisualization {
   void publishOfftrackPoints(Eigen::Vector3f& closest_pt,
                              Eigen::Vector3f& deg60_pt);
 
+  void publishFOV(const Eigen::Vector3f& drone_pos, const FOV& fov,
+                  const float max_range) const;
+
  private:
   ros::Publisher local_pointcloud_pub_;
   ros::Publisher pointcloud_size_pub_;
@@ -170,6 +173,7 @@ class LocalPlannerVisualization {
   ros::Publisher cost_image_pub_;
   ros::Publisher closest_point_pub_;
   ros::Publisher deg60_point_pub_;
+  ros::Publisher fov_pub_;
 
   int path_length_ = 0;
 };
