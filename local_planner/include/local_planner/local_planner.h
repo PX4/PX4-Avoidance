@@ -77,8 +77,6 @@ class LocalPlanner {
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
 
-  float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
-  float curr_pitch_fcu_frame_deg_;
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;

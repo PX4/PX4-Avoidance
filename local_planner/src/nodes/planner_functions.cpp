@@ -24,10 +24,10 @@ void processPointcloud(
 
   float distance;
 
-  float fov_yaw_lower_boundary = fov.yaw_deg - fov.h_fov_deg / 2.0f;
-  float fov_yaw_upper_boundary = fov.yaw_deg + fov.h_fov_deg / 2.0f;
-  float fov_pitch_lower_boundary = fov.pitch_deg - fov.v_fov_deg / 2.0f;
-  float fov_pitch_upper_boundary = fov.pitch_deg + fov.v_fov_deg / 2.0f;
+  float fov_yaw_lower_boundary = fov.azimuth_deg - fov.h_fov_deg / 2.0f;
+  float fov_yaw_upper_boundary = fov.azimuth_deg + fov.h_fov_deg / 2.0f;
+  float fov_pitch_lower_boundary = fov.elevation_deg - fov.v_fov_deg / 2.0f;
+  float fov_pitch_upper_boundary = fov.elevation_deg + fov.v_fov_deg / 2.0f;
   wrapAngleToPlusMinus180(fov_yaw_lower_boundary);
   wrapAngleToPlusMinus180(fov_yaw_upper_boundary);
 
@@ -48,14 +48,12 @@ void processPointcloud(
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
             // To get yaw in local frame instead of histogram frame, add 90
             // degrees
-            fov_yaw_lower_boundary =
-                std::min(fov_yaw_lower_boundary, -p_pol.z + 90.f);
-            fov_yaw_upper_boundary =
-                std::max(fov_yaw_upper_boundary, -p_pol.z + 90.f);
+            fov_yaw_lower_boundary = std::min(fov_yaw_lower_boundary, p_pol.z);
+            fov_yaw_upper_boundary = std::max(fov_yaw_upper_boundary, p_pol.z);
             fov_pitch_lower_boundary =
-                std::min(fov_pitch_lower_boundary, -p_pol.e);
+                std::min(fov_pitch_lower_boundary, p_pol.e);
             fov_pitch_upper_boundary =
-                std::max(fov_pitch_upper_boundary, -p_pol.e);
+                std::max(fov_pitch_upper_boundary, p_pol.e);
 
             // subsampling the cloud
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
@@ -88,7 +86,6 @@ void processPointcloud(
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
         PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-        PolarPoint p_pol_fcu_frame(-p_pol.e, -p_pol.z + 90.f, p_pol.r);
 
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
 
@@ -96,7 +93,7 @@ void processPointcloud(
         // complete_cloud, as well as outside FOV and 'young' enough
         if (histogram_points_counter(p_ind.y(), p_ind.x()) <
                 min_num_points_per_cell &&
-            xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol_fcu_frame)) {
+            xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 

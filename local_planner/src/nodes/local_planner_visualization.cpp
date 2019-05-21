@@ -93,14 +93,14 @@ void LocalPlannerVisualization::publishFOV(const Eigen::Vector3f& drone_pos,
                                            const float max_range) const {
   // pitch angle must be counted negative: zero pitch is level, positive pitch
   // is leaning down. Whereas a positive elevation angle is counted upwards
-  PolarPoint p1(-fov.pitch_deg - fov.v_fov_deg / 2.f,
-                -fov.yaw_deg + 90.0f + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p2(-fov.pitch_deg + fov.v_fov_deg / 2.f,
-                -fov.yaw_deg + 90.0f + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p3(-fov.pitch_deg + fov.v_fov_deg / 2.f,
-                -fov.yaw_deg + 90.0f - fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p4(-fov.pitch_deg - fov.v_fov_deg / 2.f,
-                -fov.yaw_deg + 90.0f - fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p1(fov.elevation_deg - fov.v_fov_deg / 2.f,
+                fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p2(fov.elevation_deg + fov.v_fov_deg / 2.f,
+                fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p3(fov.elevation_deg + fov.v_fov_deg / 2.f,
+                fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p4(fov.elevation_deg - fov.v_fov_deg / 2.f,
+                fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
 
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";

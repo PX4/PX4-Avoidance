@@ -16,11 +16,10 @@ LocalPlanner::~LocalPlanner() {}
 void LocalPlanner::setPose(const Eigen::Vector3f& pos,
                            const Eigen::Quaternionf& q) {
   position_ = pos;
-  curr_yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
-  curr_yaw_histogram_frame_deg_ = -curr_yaw_fcu_frame_deg_ + 90.0f;
-
-  curr_pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, curr_yaw_histogram_frame_deg_);
+  fov_.azimuth_deg = -getYawFromQuaternion(q) + 90.0f;
+  wrapAngleToPlusMinus180(fov_.azimuth_deg);
+  fov_.elevation_deg = -getPitchFromQuaternion(q);
+  star_planner_->setPose(position_, fov_.azimuth_deg);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -83,10 +82,6 @@ void LocalPlanner::applyGoal() {
 void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
            static_cast<int>(original_cloud_vector_.size()));
-
-  // calculate Field of View
-  fov_.yaw_deg = curr_yaw_fcu_frame_deg_;
-  fov_.pitch_deg = curr_pitch_fcu_frame_deg_;
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
@@ -165,9 +160,8 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_,
-                    curr_yaw_histogram_frame_deg_, last_sent_waypoint_,
-                    cost_params_, velocity_.norm() < 0.1f,
+      getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg,
+                    last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);

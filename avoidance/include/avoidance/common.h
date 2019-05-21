@@ -46,15 +46,16 @@ struct PolarPoint {
 
 /**
 * Struct defining the Field of View of the sensor. This is defined by
-* the current yaw and pitch (in local frame) and the horizontal and vertical
+* the current azimuth and elevation angles and the horizontal and vertical
 * field of view of the sensor
 */
 struct FOV {
-  FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
+  FOV()
+      : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
   FOV(float y, float p, float h, float v)
-      : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
-  float yaw_deg;
-  float pitch_deg;
+      : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
+  float azimuth_deg;
+  float elevation_deg;
   float h_fov_deg;
   float v_fov_deg;
 };
