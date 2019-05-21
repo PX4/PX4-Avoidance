@@ -189,6 +189,7 @@ class LocalPlanner {
   */
   float getHFOV() { return fov_.h_fov_deg; }
   float getVFOV() { return fov_.v_fov_deg; }
+  FOV getFOV() const { return fov_; }
 
   /**
   * @brief     getter method for current goal

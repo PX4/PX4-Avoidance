@@ -48,6 +48,7 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
       nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
   deg60_point_pub_ =
       nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
+  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 1);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(
@@ -81,6 +82,56 @@ void LocalPlannerVisualization::visualizePlannerData(
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_,
                     newest_waypoint_position, newest_adapted_waypoint_position,
                     newest_pose);
+
+  // publish the FOV
+  publishFOV(planner.getPosition(), planner.getFOV(),
+             planner.histogram_box_.radius_);
+}
+
+void LocalPlannerVisualization::publishFOV(const Eigen::Vector3f& drone_pos,
+                                           const FOV& fov,
+                                           const float max_range) const {
+  PolarPoint p1(fov.pitch_deg - fov.v_fov_deg / 2.f,
+                fov.yaw_deg + fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p2(fov.pitch_deg + fov.v_fov_deg / 2.f,
+                fov.yaw_deg + fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p3(fov.pitch_deg + fov.v_fov_deg / 2.f,
+                fov.yaw_deg - fov.h_fov_deg / 2.f, max_range);
+  PolarPoint p4(fov.pitch_deg - fov.v_fov_deg / 2.f,
+                fov.yaw_deg - fov.h_fov_deg / 2.f, max_range);
+
+  visualization_msgs::Marker m;
+  m.header.frame_id = "local_origin";
+  m.header.stamp = ros::Time::now();
+  m.id = 0;
+  m.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  m.action = visualization_msgs::Marker::ADD;
+  m.scale.x = 1.0;
+  m.scale.y = 1.0;
+  m.scale.z = 1.0;
+  m.color.a = 0.4;
+  m.color.r = 0.5;
+  m.color.g = 0.5;
+  m.color.b = 1.0;
+
+  // side 1
+  m.points.push_back(toPoint(drone_pos));
+  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
+  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
+  // side 2
+  m.points.push_back(toPoint(drone_pos));
+  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
+  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
+  // side 3
+  m.points.push_back(toPoint(drone_pos));
+  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
+  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
+  // side 4
+  m.points.push_back(toPoint(drone_pos));
+  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
+  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
+
+  fov_pub_.publish(m);
 }
 
 void LocalPlannerVisualization::publishOfftrackPoints(
