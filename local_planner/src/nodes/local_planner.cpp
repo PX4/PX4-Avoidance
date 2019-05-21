@@ -19,7 +19,7 @@ void LocalPlanner::setPose(const Eigen::Vector3f& pos,
   curr_yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   curr_yaw_histogram_frame_deg_ = -curr_yaw_fcu_frame_deg_ + 90.0f;
 
-  curr_pitch_deg_ = getPitchFromQuaternion(q);
+  curr_pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
   star_planner_->setPose(position_, curr_yaw_histogram_frame_deg_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
@@ -86,7 +86,7 @@ void LocalPlanner::runPlanner() {
 
   // calculate Field of View
   fov_.yaw_deg = curr_yaw_histogram_frame_deg_;
-  fov_.pitch_deg = curr_pitch_deg_;
+  fov_.pitch_deg = curr_pitch_fcu_frame_deg_;
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
