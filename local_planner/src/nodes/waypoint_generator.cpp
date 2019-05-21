@@ -232,18 +232,18 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 
   const float desired_yaw_velocity = 0.0f;
 
-  float yaw_diff = std::isfinite(desired_setpoint_yaw_rad)
-                       ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
-                       : 0.0f;
+  float yaw_diff =
+      wrapAngleToPlusMinusPI(std::isfinite(desired_setpoint_yaw_rad)
+                                 ? desired_setpoint_yaw_rad - setpoint_yaw_rad_
+                                 : 0.0f);
 
-  wrapAngleToPlusMinusPI(yaw_diff);
   const float p = yaw_diff * P_constant_xy;
   const float d =
       (desired_yaw_velocity - setpoint_yaw_velocity_) * D_constant_xy;
 
   setpoint_yaw_velocity_ += (p + d) * dt;
   setpoint_yaw_rad_ += setpoint_yaw_velocity_ * dt;
-  wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
+  setpoint_yaw_rad_ = wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
 }
 
 void WaypointGenerator::adaptSpeed() {

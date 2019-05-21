@@ -91,8 +91,6 @@ void LocalPlannerVisualization::visualizePlannerData(
 void LocalPlannerVisualization::publishFOV(const Eigen::Vector3f& drone_pos,
                                            const FOV& fov,
                                            const float max_range) const {
-  // pitch angle must be counted negative: zero pitch is level, positive pitch
-  // is leaning down. Whereas a positive elevation angle is counted upwards
   PolarPoint p1(fov.elevation_deg - fov.v_fov_deg / 2.f,
                 fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
   PolarPoint p2(fov.elevation_deg + fov.v_fov_deg / 2.f,

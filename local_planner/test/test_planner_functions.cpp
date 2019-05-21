@@ -118,14 +118,14 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   FOV FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
   FOV_zero.h_fov_deg = 0.0f;
   FOV_zero.v_fov_deg = 0.0f;
-  FOV_zero.yaw_deg = 1.0f;
-  FOV_zero.pitch_deg = 1.0f;
+  FOV_zero.azimuth_deg = 1.0f;
+  FOV_zero.elevation_deg = 1.0f;
 
   FOV FOV_regular;
   FOV_regular.h_fov_deg = 85.0f;
   FOV_regular.v_fov_deg = 65.0f;
-  FOV_regular.yaw_deg = 90.0f;  // in histogram frame!
-  FOV_regular.pitch_deg = 1.0f;
+  FOV_regular.azimuth_deg = 90.0f;  // in histogram frame!
+  FOV_regular.elevation_deg = 1.0f;
 
   // WHEN: we filter the PointCloud with different values max_age
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,

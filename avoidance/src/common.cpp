@@ -9,12 +9,12 @@
 namespace avoidance {
 
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
-  // pitch angle must be counted negative: zero pitch is level, positive pitch
-  // is leaning down. Whereas a positive elevation angle is counted upwards
-  return p_pol.z <= fov.azimuth_deg + fov.h_fov_deg / 2.f &&
-         p_pol.z >= fov.azimuth_deg - fov.h_fov_deg / 2.f &&
-         p_pol.e <= -fov.elevation_deg + fov.v_fov_deg / 2.f &&
-         p_pol.e >= -fov.elevation_deg - fov.v_fov_deg / 2.f;
+  return p_pol.z <=
+             wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
+         p_pol.z >=
+             wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
+         p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f &&
+         p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
@@ -83,8 +83,8 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
 
 void wrapPolar(PolarPoint& p_pol) {
   // first wrap the angles to +-180 degrees
-  wrapAngleToPlusMinus180(p_pol.e);
-  wrapAngleToPlusMinus180(p_pol.z);
+  p_pol.e = wrapAngleToPlusMinus180(p_pol.e);
+  p_pol.z = wrapAngleToPlusMinus180(p_pol.z);
 
   // elevation valid [-90,90)
   // when abs(elevation) > 90, wrap elevation angle
@@ -142,16 +142,16 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q) {
   return pitch * RAD_TO_DEG;
 }
 
-void wrapAngleToPlusMinusPI(float& angle) {
-  angle = angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
+float wrapAngleToPlusMinusPI(float angle) {
+  return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
 }
 
-void wrapAngleToPlusMinus180(float& angle) {
-  angle = angle - 360.f * std::floor(angle / 360.f + 0.5f);
+float wrapAngleToPlusMinus180(float angle) {
+  return angle - 360.f * std::floor(angle / 360.f + 0.5f);
 }
 
 double getAngularVelocity(float desired_yaw, float curr_yaw) {
-  wrapAngleToPlusMinusPI(desired_yaw);
+  desired_yaw = wrapAngleToPlusMinusPI(desired_yaw);
   float yaw_vel1 = desired_yaw - curr_yaw;
   float yaw_vel2;
   // finds the yaw vel for the other yaw direction

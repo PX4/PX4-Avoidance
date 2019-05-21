@@ -156,14 +156,16 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q);
 
 /**
 * @brief     wrappes the input angle in to plus minus PI space
-* @param[in, out] angle to be wrapped  [rad]
+* @param[in] angle to be wrapped  [rad]
+* @returns   wrapped angle [rad]
 **/
-void wrapAngleToPlusMinusPI(float& angle);
+float wrapAngleToPlusMinusPI(float angle);
 /**
 * @brief     wrappes the input angle in to plus minus 180 deg space
-* @param[in, out] angle to be wrapped  [deg]
+* @param[in] angle to be wrapped  [deg]
+* @returns   wrapped angle [deg]
 **/
-void wrapAngleToPlusMinus180(float& angle);
+float wrapAngleToPlusMinus180(float angle);
 /**
 * @brief     computes an angular velocity to reach the desired_yaw
 * @param[in] adesired_yaw  [rad]

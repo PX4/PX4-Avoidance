@@ -8,21 +8,21 @@ using namespace avoidance;
 TEST(Common, pointInsideFOV) {
   // GIVEN: three points and a regular FOV
   FOV fov(34.0f, 12.0f, 90.0f, 60.0f);
-  PolarPoint p_outside_yaw(-1.0f, 126.0f, 2.0f);
-  PolarPoint p_outside_pitch(-60.0f, 30.0f, 2.0f);
-  PolarPoint p_inside_pitch_sign(-41.0f, 0.0f, 2.0f);
+  PolarPoint p_outside_azimuth(-1.0f, 126.0f, 2.0f);
+  PolarPoint p_outside_elevation(-60.0f, 30.0f, 2.0f);
+  PolarPoint p_inside_elevation_sign(41.0f, 0.0f, 2.0f);
   PolarPoint p_inside_fov(5.0f, 25.0f, 2.0f);
 
   // WHEN: we check whether they are inside the FOV
-  bool outside_yaw = pointInsideFOV(fov, p_outside_yaw);
-  bool outside_pitch = pointInsideFOV(fov, p_outside_pitch);
-  bool inside_pitch_sign = pointInsideFOV(fov, p_inside_pitch_sign);
+  bool outside_azimuth = pointInsideFOV(fov, p_outside_azimuth);
+  bool outside_elevation = pointInsideFOV(fov, p_outside_elevation);
+  bool inside_elevation_sign = pointInsideFOV(fov, p_inside_elevation_sign);
   bool inside = pointInsideFOV(fov, p_inside_fov);
 
   // THEN: they should lie in the expected region
-  EXPECT_FALSE(outside_yaw);
-  EXPECT_FALSE(outside_pitch);
-  EXPECT_TRUE(inside_pitch_sign);
+  EXPECT_FALSE(outside_azimuth);
+  EXPECT_FALSE(outside_elevation);
+  EXPECT_TRUE(inside_elevation_sign);
   EXPECT_TRUE(inside);
 }
 
@@ -344,12 +344,12 @@ TEST(Common, wrapAngle) {
   float angle6 = std::numeric_limits<float>::infinity();
 
   // WHEN: it is wrapped to the space (-PI; PI] space
-  wrapAngleToPlusMinusPI(angle1);
-  wrapAngleToPlusMinusPI(angle2);
-  wrapAngleToPlusMinusPI(angle3);
-  wrapAngleToPlusMinusPI(angle4);
-  wrapAngleToPlusMinusPI(angle5);
-  wrapAngleToPlusMinusPI(angle6);
+  angle1 = wrapAngleToPlusMinusPI(angle1);
+  angle2 = wrapAngleToPlusMinusPI(angle2);
+  angle3 = wrapAngleToPlusMinusPI(angle3);
+  angle4 = wrapAngleToPlusMinusPI(angle4);
+  angle5 = wrapAngleToPlusMinusPI(angle5);
+  angle6 = wrapAngleToPlusMinusPI(angle6);
 
   // THEN: the output angles shoudl be ..
   EXPECT_FLOAT_EQ(0.f, angle1);

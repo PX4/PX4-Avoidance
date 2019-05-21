@@ -16,8 +16,10 @@ LocalPlanner::~LocalPlanner() {}
 void LocalPlanner::setPose(const Eigen::Vector3f& pos,
                            const Eigen::Quaternionf& q) {
   position_ = pos;
-  fov_.azimuth_deg = -getYawFromQuaternion(q) + 90.0f;
-  wrapAngleToPlusMinus180(fov_.azimuth_deg);
+
+  // Azimuth angle in histogram convention is different from FCU convention!
+  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
+  fov_.azimuth_deg = wrapAngleToPlusMinus180(-getYawFromQuaternion(q) + 90.0f);
   fov_.elevation_deg = -getPitchFromQuaternion(q);
   star_planner_->setPose(position_, fov_.azimuth_deg);
 
