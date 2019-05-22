@@ -21,7 +21,6 @@ The documentation contains information about how to setup and run the two planne
 # Table of Contents
 - [Getting Started](#getting-started)
   - [Installation](#installation)
-    - [Quick Start with Docker](#quick-start-with-docker)
     - [Installation for Ubuntu 16.04 and ROS Kinetic](#installation-for-ubuntu-16.04-and-ros-kinetic)
   - [Run the Avoidance Gazebo Simulation](#run-the-avoidance-gazebosimulation)
     - [Local Planner](#local-planner)
@@ -41,17 +40,9 @@ The documentation contains information about how to setup and run the two planne
 
 ## Installation
 
-### Quick Start with Docker
-
-A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation, as a demo. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up` from the right folder. Find the corresponding instructions [here](docker/demo).
-
-For __deployment__ instructions, check "[Deploying with Docker](docker#deploying-with-docker)".
-
-If you want to leverage docker in your __development__ environment, check the "[Developing with Docker](docker#developing-with-docker)" section.
-
 ### Installation for Ubuntu 16.04 and ROS Kinetic
 
-This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed. A corresponding docker container is defined [here](docker/ubuntu/Dockerfile) as reference.
+This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed.
 
 Note that in the following instructions, we assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`. Feel free to adapt this to your situation.
 
