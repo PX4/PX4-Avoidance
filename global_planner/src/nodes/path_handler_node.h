@@ -5,20 +5,18 @@
 #include <map>
 #include <vector>
 
+#include <ros/ros.h>
+
 #include <dynamic_reconfigure/server.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Vector3.h>
-
 #include <mavros_msgs/CompanionProcessStatus.h>
 #include <mavros_msgs/Trajectory.h>
 #include <nav_msgs/Path.h>
-#include <ros/ros.h>
 #include <tf/transform_datatypes.h>
 
 #include <global_planner/PathHandlerNodeConfig.h>
-#include <global_planner/PathWithRiskMsg.h>
-#include "global_planner/common.h"
 #include "global_planner/common_ros.h"
 
 #include <avoidance/common.h>
@@ -79,21 +77,18 @@ class PathHandlerNode {
   double spin_dt_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
-  std::map<tf::Vector3, double> path_risk_;
 
   tf::TransformListener listener_;
 
   // Methods
   void readParams();
   bool isCloseToGoal();
-  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& poses);
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
   // Callbacks
   void dynamicReconfigureCallback(global_planner::PathHandlerNodeConfig& config,
                                   uint32_t level);
   void receiveDirectGoal(const geometry_msgs::PoseWithCovarianceStamped& msg);
   void receivePath(const nav_msgs::Path& msg);
-  void receivePathWithRisk(const PathWithRiskMsg& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
 
   /**
@@ -102,9 +97,6 @@ class PathHandlerNode {
   void cmdLoopCallback(const ros::TimerEvent& event);
 
   // Publishers
-  void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-  void transformPoseToObstacleAvoidance(mavros_msgs::Trajectory& obst_avoid,
-                                        geometry_msgs::PoseStamped pose);
   void publishSetpoint();
   void publishSystemStatus();
 };

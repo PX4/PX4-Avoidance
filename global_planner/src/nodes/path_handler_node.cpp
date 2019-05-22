@@ -76,23 +76,10 @@ bool PathHandlerNode::isCloseToGoal() {
   return distance(current_goal_, last_pos_) < 1.5;
 }
 
-double PathHandlerNode::getRiskOfCurve(
-    const std::vector<geometry_msgs::PoseStamped>& poses) {
-  double risk = 0.0;
-  for (const auto& pose_msg : poses) {
-    tf::Vector3 point = toTfVector3(pose_msg.pose.position);
-    if (path_risk_.find(point) != path_risk_.end()) {
-      risk += path_risk_[point];
-    }
-  }
-  return risk;
-}
-
 void PathHandlerNode::setCurrentPath(
     const std::vector<geometry_msgs::PoseStamped>& poses) {
   speed_ = min_speed_;
   path_.clear();
-  path_risk_.clear();
 
   if (poses.size() < 2) {
     ROS_INFO("  Received empty path\n");
@@ -135,21 +122,6 @@ void PathHandlerNode::receiveDirectGoal(
 void PathHandlerNode::receivePath(const nav_msgs::Path& msg) {
   if (!ignore_path_messages_) {
     setCurrentPath(msg.poses);
-  }
-}
-
-void PathHandlerNode::receivePathWithRisk(const PathWithRiskMsg& msg) {
-  if (!ignore_path_messages_) {
-    setCurrentPath(msg.poses);
-    if (msg.poses.size() != msg.risks.size()) {
-      ROS_INFO("PathWithRiskMsg error: risks must be the same size as poses.");
-      throw std::invalid_argument(
-          "PathWithRiskMsg error: risks must be the same size as poses.");
-    }
-    for (int i = 0; i < msg.poses.size(); ++i) {
-      tf::Vector3 point = toTfVector3(msg.poses[i].pose.position);
-      path_risk_[point] = msg.risks[i];
-    }
   }
 }
 
