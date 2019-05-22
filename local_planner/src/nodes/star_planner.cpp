@@ -16,7 +16,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
-  max_path_length_ = static_cast<float>(config.max_path_length_);
+  max_path_length_ = static_cast<float>(config.box_radius_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 }
 
