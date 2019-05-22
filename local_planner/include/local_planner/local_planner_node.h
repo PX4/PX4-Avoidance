@@ -143,28 +143,6 @@ class LocalPlannerNode {
   void pointCloudTransformThread(int index);
 
   /**
-  * @brief     transforms position setpoints from ROS message to MavROS message
-  * @params[out] obst_avoid, position setpoint in MavROS message form
-  * @params[in] pose, position setpoint computed by the planner
-  **/
-  void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                 geometry_msgs::PoseStamped pose);
-  /**
-  * @brief      transforms velocity setpoints from ROS message to MavROS
-  *             message
-  * @param[out] obst_avoid, velocity setpoint in MavROS message form
-  * @param[in]  vel, velocity setpoint computd by the planner
-  **/
-  void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                     geometry_msgs::Twist vel);
-
-  /**
-  * @brief      fills MavROS trajectory messages with NAN
-  * @param      point, setpoint to be filled with NAN
-  **/
-  void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-
-  /**
   * @brief      calculates position and velocity setpoints and sends to the FCU
   * @param[in]  hover, true if the vehicle is loitering
   **/
