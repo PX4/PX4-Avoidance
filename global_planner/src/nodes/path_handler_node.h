@@ -25,6 +25,8 @@
 #include <avoidance/rviz_world_loader.h>
 #endif
 
+using namespace avoidance;
+
 namespace global_planner {
 
 class PathHandlerNode {
@@ -57,6 +59,8 @@ class PathHandlerNode {
   ros::Subscriber path_with_risk_sub_;
   ros::Subscriber ground_truth_sub_;
 
+  ros::Time start_time_;
+  ros::Time last_wp_time_;
   ros::Time t_status_sent_;
 
   // Parameters (Rosparam)
@@ -65,12 +69,15 @@ class PathHandlerNode {
   geometry_msgs::PoseStamped last_goal_;
   geometry_msgs::PoseStamped last_pos_;
 
+  MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
+
   dynamic_reconfigure::Server<global_planner::PathHandlerNodeConfig> server_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   double start_yaw_;
   // Parameters (Dynamic Reconfiguration)
   bool ignore_path_messages_;
+  bool position_received_;
   bool startup_;
   double min_speed_;
   double max_speed_;
@@ -93,6 +100,19 @@ class PathHandlerNode {
   void receivePath(const nav_msgs::Path& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
 
+    /**
+  * @brief      check healthiness of the avoidance system to trigger failsafe in
+  *             the FCU
+  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
+  *             published to the FCU
+  * @param[in]  since_start, time elapsed since staring the node
+  * @param[out] planner_is_healthy, true if the planner is running without
+  *errors
+  * @param[out] hover, true if the vehicle is hovering
+  **/
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
+                     bool& hover);
+
   /**
   * @brief     callaback for main loop
   **/
@@ -101,6 +121,8 @@ class PathHandlerNode {
   // Publishers
   void publishSetpoint();
   void publishSystemStatus();
+
+  void setSystemStatus(MAV_STATE state);
 };
 
 }  // namespace global_planner

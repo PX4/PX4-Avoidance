@@ -51,6 +51,8 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   world_visualizer_.reset(new WorldVisualizer(nh_));
 #endif
 
+   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
+
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
 
@@ -62,6 +64,8 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  start_time_ = ros::Time::now();
 }
 
 PathHandlerNode::~PathHandlerNode() {}
@@ -107,6 +111,13 @@ void PathHandlerNode::dynamicReconfigureCallback(
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 
   ros::Time now = ros::Time::now();
+  ros::Duration since_last_cloud = now - last_wp_time_;
+  ros::Duration since_start = now - start_time_;
+
+  bool planner_is_healthy_ = true;
+  bool hover_ = true;
+
+  checkFailsafe(since_last_cloud, since_start, hover_);
 
   publishSetpoint();
 
@@ -128,6 +139,7 @@ void PathHandlerNode::receivePath(const nav_msgs::Path& msg) {
   if (!ignore_path_messages_) {
     setCurrentPath(msg.poses);
   }
+  last_wp_time_ = ros::Time::now();
 }
 
 void PathHandlerNode::positionCallback(
@@ -135,6 +147,7 @@ void PathHandlerNode::positionCallback(
   listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin",
                           last_pos_);
 
+  position_received_ = true;
   // Check if we are close enough to current goal to get the next part of the
   // path
   if (path_.size() > 0 && isCloseToGoal()) {
@@ -197,10 +210,43 @@ void PathHandlerNode::publishSystemStatus() {
   mavros_msgs::CompanionProcessStatus status_msg;
   status_msg.header.stamp = ros::Time::now();
   status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  status_msg.state = static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE);
+  status_msg.state = (int)companion_state_;
 
   mavros_system_status_pub_.publish(status_msg);
   t_status_sent_ = ros::Time::now();
+}
+
+void PathHandlerNode::setSystemStatus(MAV_STATE state) {
+  companion_state_ = state;
+}
+
+void PathHandlerNode::checkFailsafe(ros::Duration since_last_cloud,
+                                     ros::Duration since_start,
+                                     bool& hover) {
+  ros::Duration timeout_termination;
+  ros::Duration timeout_critical;
+  ros::Duration timeout_startup;
+
+  if (since_last_cloud > timeout_termination &&
+      since_start > timeout_termination) {
+    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+  } else {
+    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
+      if (position_received_) {
+        hover = true;
+        setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
+        std::string not_received = "";
+      } else {
+        ROS_WARN(
+            "\033[1;33m Pointcloud timeout: No position received, no WP to "
+            "output.... \n \033[0m");
+      }
+    }
+    else {
+      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
+    }
+  }
 }
 
 }  // namespace global_planner
