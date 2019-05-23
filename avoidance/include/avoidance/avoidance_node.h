@@ -14,6 +14,18 @@ class AvoidanceNode {
  public:
   AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   ~AvoidanceNode();
+  /**
+  * @brief      check healthiness of the avoidance system to trigger failsafe in
+  *             the FCU
+  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
+  *             published to the FCU
+  * @param[in]  since_start, time elapsed since staring the node
+  * @param[out] planner_is_healthy, true if the planner is running without
+  *errors
+  * @param[out] hover, true if the vehicle is hovering
+  **/
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
+                     bool& hover);
 
 
  private:
@@ -45,18 +57,6 @@ class AvoidanceNode {
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
   void setSystemStatus(MAV_STATE state);
-  /**
-  * @brief      check healthiness of the avoidance system to trigger failsafe in
-  *             the FCU
-  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
-  *             published to the FCU
-  * @param[in]  since_start, time elapsed since staring the node
-  * @param[out] planner_is_healthy, true if the planner is running without
-  *errors
-  * @param[out] hover, true if the vehicle is hovering
-  **/
-  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& hover);
   
 };
 }

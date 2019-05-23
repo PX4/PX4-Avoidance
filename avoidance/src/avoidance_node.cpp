@@ -27,8 +27,14 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh,
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+  statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
+  statusloop_spinner_->start();
 
   position_received_ = true;
+
+  timeout_termination_ = 15;
+  timeout_critical_ = 0.5;
+  timeout_startup_ = 5.0;
 }
 
 AvoidanceNode::~AvoidanceNode() {
@@ -60,6 +66,7 @@ void AvoidanceNode::publishSystemStatus() {
 
 void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,
                                     ros::Duration since_start, bool& hover) {
+
   ros::Duration timeout_termination = ros::Duration(timeout_termination_);
   ros::Duration timeout_critical = ros::Duration(timeout_critical_);
   ros::Duration timeout_startup = ros::Duration(timeout_startup_);

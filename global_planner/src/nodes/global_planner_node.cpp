@@ -52,6 +52,14 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   actual_path_.header.frame_id = "/world";
   listener_.waitForTransform("/fcu", "/world", ros::Time(0),
                              ros::Duration(3.0));
+  ros::TimerOptions cmdlooptimer_options(
+      ros::Duration(cmdloop_dt_),
+      boost::bind(&GlabalPlannerNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
+
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() {}
@@ -309,6 +317,12 @@ void GlobalPlannerNode::depthCameraCallback(
     ROS_DEBUG("%s", ex.what());
     ROS_WARN("Transformation not available (/world to /camera_link");
   }
+}
+
+void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  
+  
+  avoidance_node_.checkFailsafe();
 }
 
 // Publish the position of goal
