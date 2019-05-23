@@ -14,120 +14,68 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 
-<!--
-A launch file, derived from rgbd_launch and customized for Realsense ROS driver,
-to publish XYZRGB point cloud like an OpenNI camera.
-
-To launch Realsense with software registeration (ROS Image Pipeline and rgbd_launch):
-    $ roslaunch realsense2_camera rs_rgbd.launch
-Processing enabled by ROS driver:
-    # depth rectification
-Processing enabled by this node:
-    # rgb rectification
-    # depth registeration
-    # pointcloud_xyzrgb generation
-
-To launch Realsense with hardware registeration (ROS Realsense depth alignment):
-    $ roslaunch realsense2_camera rs_rgbd.launch align_depth:=true
-Processing enabled by ROS driver:
-    # depth rectification
-    # depth registration
-Processing enabled by this node:
-    # rgb rectification
-    # pointcloud_xyzrgb generation
--->
-
 <launch>
   <arg name="tf_prefix"           default=""/>
   <arg name="namespace"           default="camera"/>
   <arg name="manager"             default="realsense2_camera_manager"/>
 
   <!-- Camera device specific arguments -->
-
   <arg name="serial_no"           default=""/>
   <arg name="json_file_path"      default="$(find local_planner)/resource/stereo_calib.json"/>
 
-  <arg name="fisheye_width"       default="480"/>
-  <arg name="fisheye_height"      default="270"/>
-  <arg name="enable_fisheye"      default="false"/>
+  <arg name="enable_depth"      value="true"/>
+  <arg name="enable_color"      value="false"/>
+  <arg name="enable_infra1"     value="true"/>
+  <arg name="enable_infra2"     value="false"/>
+  <arg name="enable_pointcloud" value="true"/>
+  <arg name="enable_sync"       value="false"/>
+  <arg name="align_depth"       value="false"/>
 
-  <arg name="depth_width"         default="640"/>
-  <arg name="depth_height"        default="480"/>
-  <arg name="enable_depth"        default="true"/>
+  <arg name="depth_width"       value="640"/>
+  <arg name="depth_height"      value="480"/>
+  <arg name="depth_fps"         value="15"/>
 
-  <arg name="enable_infra1"       default="true"/>
-  <arg name="enable_infra2"       default="false"/>
-  <arg name="infra_width"         default="640"/>
-  <arg name="infra_height"        default="480"/>
-  <arg name="infra_fps"           default="15"/>
+  <arg name="color_width"       value="640"/>
+  <arg name="color_height"      value="480"/>
+  <arg name="color_fps"         value="15"/>
 
-  <arg name="color_width"         default="640"/>
-  <arg name="color_height"        default="480"/>
-  <arg name="enable_color"        default="true"/>
+  <arg name="infra_fps"         value="15"/>
 
-  <arg name="fisheye_fps"         default="30"/>
-  <arg name="depth_fps"           default="30"/>
-  <arg name="color_fps"           default="30"/>
-  <arg name="gyro_fps"            default="1000"/>
-  <arg name="accel_fps"           default="1000"/>
+  <arg name="pointcloud_texture_stream" value="RS2_STREAM_ANY"/>
+  <arg name="pointcloud_texture_index"  value="0"/>
 
-  <arg name="enable_pointcloud"   default="false"/>
-  <arg name="enable_sync"         default="true"/>
-  <arg name="align_depth"         default="false"/>
-  <arg name="initial_reset"       default="true"/>
+  <arg name="initial_reset"             default="false"/>
 
-  <!-- Disable bond topics by default -->
-  <arg name="bond"                            default="true" />
-  <arg name="respawn"                         default="$(arg bond)" />
+   <group ns="$(arg namespace)">
+     <!-- Launch the camera device nodelet-->
+     <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
+       <arg name="tf_prefix"                  value="$(arg tf_prefix)"/>
+       <arg name="manager"                  value="$(arg manager)"/>
+       <arg name="serial_no"                value="$(arg serial_no)"/>
+       <arg name="json_file_path"           value="$(arg json_file_path)"/>
 
-  <group ns="$(arg namespace)">
+       <arg name="enable_pointcloud"        value="$(arg enable_pointcloud)"/>
+       <arg name="enable_sync"              value="$(arg enable_sync)"/>
+       <arg name="align_depth"              value="$(arg align_depth)"/>
+       <arg name="pointcloud_texture_stream" value="$(arg pointcloud_texture_stream)"/>
+       <arg name="pointcloud_texture_index"  value="$(arg pointcloud_texture_index)"/>
+       <arg name="depth_width"              value="$(arg depth_width)"/>
+       <arg name="depth_height"             value="$(arg depth_height)"/>
+       <arg name="enable_depth"             value="$(arg enable_depth)"/>
 
-    <!-- Launch the camera device nodelet-->
-    <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
-      <arg name="tf_prefix"                  value="$(arg tf_prefix)"/>
-      <arg name="manager"                  value="$(arg manager)"/>
-      <arg name="serial_no"                value="$(arg serial_no)"/>
-      <arg name="json_file_path"           value="$(arg json_file_path)"/>
+       <arg name="color_width"              value="$(arg color_width)"/>
+       <arg name="color_height"             value="$(arg color_height)"/>
+       <arg name="enable_color"             value="$(arg enable_color)"/>
 
-      <arg name="enable_pointcloud"        value="$(arg enable_pointcloud)"/>
-      <arg name="enable_sync"              value="$(arg enable_sync)"/>
-      <arg name="align_depth"              value="$(arg align_depth)"/>
+       <arg name="enable_infra1"            value="$(arg enable_infra1)"/>
+       <arg name="enable_infra2"            value="$(arg enable_infra2)"/>
 
-      <arg name="fisheye_width"            value="$(arg fisheye_width)"/>
-      <arg name="fisheye_height"           value="$(arg fisheye_height)"/>
-      <arg name="enable_fisheye"           value="$(arg enable_fisheye)"/>
+       <arg name="depth_fps"                value="$(arg depth_fps)"/>
+       <arg name="color_fps"                value="$(arg color_fps)"/>
+       <arg name="infra_fps"                value="$(arg infra_fps)"/>
 
-      <arg name="depth_width"              value="$(arg depth_width)"/>
-      <arg name="depth_height"             value="$(arg depth_height)"/>
-      <arg name="enable_depth"             value="$(arg enable_depth)"/>
-
-      <arg name="color_width"              value="$(arg color_width)"/>
-      <arg name="color_height"             value="$(arg color_height)"/>
-      <arg name="enable_color"             value="$(arg enable_color)"/>
-
-      <arg name="enable_infra1"            value="$(arg enable_infra1)"/>
-      <arg name="enable_infra2"            value="$(arg enable_infra2)"/>
-      <arg name="infra_width"              value="$(arg infra_width)"/>
-      <arg name="infra_height"             value="$(arg infra_height)"/>
-      <arg name="infra_fps"                value="$(arg infra_fps)"/>
-
-      <arg name="fisheye_fps"              value="$(arg fisheye_fps)"/>
-      <arg name="depth_fps"                value="$(arg depth_fps)"/>
-      <arg name="color_fps"                value="$(arg color_fps)"/>
-      <arg name="gyro_fps"                 value="$(arg gyro_fps)"/>
-      <arg name="accel_fps"                value="$(arg accel_fps)"/>
-      <arg name="initial_reset"            value="$(arg initial_reset)"/>
-    </include>
-
-
-     <node pkg="nodelet" type="nodelet" name="points_xyz_sw_registered"
-            args="load depth_image_proc/point_cloud_xyz $(arg manager) $(arg bond)" respawn="$(arg respawn)">
-        <remap from="camera_info"             to="depth/camera_info" />
-        <remap from="image_rect" to="depth/image_rect_raw" />
-        <remap from="points"     to="depth/points" />
-      </node>
-
-
-  </group>
+       <arg name="initial_reset"            value="$(arg initial_reset)"/>
+     </include>
+</group>
 
 </launch>
