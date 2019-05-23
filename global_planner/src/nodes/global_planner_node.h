@@ -27,6 +27,7 @@
 #include <octomap_msgs/Octomap.h>
 #include <octomap_msgs/conversions.h>
 
+#include "avoidance/avoidance_node.h"
 #include "global_planner/PathWithRiskMsg.h"
 #include "global_planner/analysis.h"
 #include "global_planner/cell.h"
@@ -86,6 +87,8 @@ class GlobalPlannerNode {
   ros::Publisher global_temp_goal_pub_;
 
   tf::TransformListener listener_;
+
+  avoidance::AvoidanceNode avoidance_node_;
 
   void readParams();
 

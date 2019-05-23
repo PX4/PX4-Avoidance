@@ -4,7 +4,8 @@ namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private):
   nh_(nh),
-  nh_private_(nh_private) {
+  nh_private_(nh_private),
+  avoidance_node_(nh, nh_private) {
  
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
