@@ -51,6 +51,8 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   world_visualizer_.reset(new WorldVisualizer(nh_));
 #endif
 
+  setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
+
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
 
@@ -62,6 +64,8 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  start_time_ = ros::Time::now();
 }
 
 PathHandlerNode::~PathHandlerNode() {}
@@ -76,23 +80,10 @@ bool PathHandlerNode::isCloseToGoal() {
   return distance(current_goal_, last_pos_) < 1.5;
 }
 
-double PathHandlerNode::getRiskOfCurve(
-    const std::vector<geometry_msgs::PoseStamped>& poses) {
-  double risk = 0.0;
-  for (const auto& pose_msg : poses) {
-    tf::Vector3 point = toTfVector3(pose_msg.pose.position);
-    if (path_risk_.find(point) != path_risk_.end()) {
-      risk += path_risk_[point];
-    }
-  }
-  return risk;
-}
-
 void PathHandlerNode::setCurrentPath(
     const std::vector<geometry_msgs::PoseStamped>& poses) {
   speed_ = min_speed_;
   path_.clear();
-  path_risk_.clear();
 
   if (poses.size() < 2) {
     ROS_INFO("  Received empty path\n");
@@ -112,13 +103,26 @@ void PathHandlerNode::dynamicReconfigureCallback(
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   direct_goal_alt_ = config.direct_goal_alt_;
+  timeout_startup_ = config.timeout_startup_;
+  timeout_critical_ = config.timeout_critical_;
+  timeout_termination_ = config.timeout_termination_;
 
   // Reset speed_
   speed_ = min_speed_;
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  hover_ = false;
+
+  ros::Time now = ros::Time::now();
+  ros::Duration since_last_cloud = now - last_wp_time_;
+  ros::Duration since_start = now - start_time_;
+
+  checkFailsafe(since_last_cloud, since_start, hover_);
+
   publishSetpoint();
+
+  if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 }
 
 void PathHandlerNode::receiveDirectGoal(
@@ -138,25 +142,13 @@ void PathHandlerNode::receivePath(const nav_msgs::Path& msg) {
   }
 }
 
-void PathHandlerNode::receivePathWithRisk(const PathWithRiskMsg& msg) {
-  if (!ignore_path_messages_) {
-    setCurrentPath(msg.poses);
-    if (msg.poses.size() != msg.risks.size()) {
-      ROS_INFO("PathWithRiskMsg error: risks must be the same size as poses.");
-      throw std::invalid_argument(
-          "PathWithRiskMsg error: risks must be the same size as poses.");
-    }
-    for (int i = 0; i < msg.poses.size(); ++i) {
-      tf::Vector3 point = toTfVector3(msg.poses[i].pose.position);
-      path_risk_[point] = msg.risks[i];
-    }
-  }
-}
-
 void PathHandlerNode::positionCallback(
     const geometry_msgs::PoseStamped& pose_msg) {
   listener_.transformPose("world", ros::Time(0), pose_msg, "local_origin",
                           last_pos_);
+
+  position_received_ = true;
+  last_wp_time_ = ros::Time::now();
 
   // Check if we are close enough to current goal to get the next part of the
   // path
@@ -188,47 +180,6 @@ void PathHandlerNode::positionCallback(
   }
 }
 
-void PathHandlerNode::fillUnusedTrajectoryPoint(
-    mavros_msgs::PositionTarget& point) {
-  point.position.x = NAN;
-  point.position.y = NAN;
-  point.position.z = NAN;
-  point.velocity.x = NAN;
-  point.velocity.y = NAN;
-  point.velocity.z = NAN;
-  point.acceleration_or_force.x = NAN;
-  point.acceleration_or_force.y = NAN;
-  point.acceleration_or_force.z = NAN;
-  point.yaw = NAN;
-  point.yaw_rate = NAN;
-}
-
-void PathHandlerNode::transformPoseToObstacleAvoidance(
-    mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose) {
-  obst_avoid.header = pose.header;
-  obst_avoid.type = 0;
-  obst_avoid.point_1.position.x = pose.pose.position.x;
-  obst_avoid.point_1.position.y = pose.pose.position.y;
-  obst_avoid.point_1.position.z = pose.pose.position.z;
-  obst_avoid.point_1.velocity.x = NAN;
-  obst_avoid.point_1.velocity.y = NAN;
-  obst_avoid.point_1.velocity.z = NAN;
-  obst_avoid.point_1.acceleration_or_force.x = NAN;
-  obst_avoid.point_1.acceleration_or_force.y = NAN;
-  obst_avoid.point_1.acceleration_or_force.z = NAN;
-  obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
-  obst_avoid.point_1.yaw_rate = NAN;
-
-  fillUnusedTrajectoryPoint(obst_avoid.point_2);
-  fillUnusedTrajectoryPoint(obst_avoid.point_3);
-  fillUnusedTrajectoryPoint(obst_avoid.point_4);
-  fillUnusedTrajectoryPoint(obst_avoid.point_5);
-
-  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
-
-  obst_avoid.point_valid = {true, false, false, false, false};
-}
-
 void PathHandlerNode::publishSetpoint() {
   // Vector pointing from current position to the current goal
   tf::Vector3 vec = toTfVector3(
@@ -252,9 +203,8 @@ void PathHandlerNode::publishSetpoint() {
   // Publish setpoint to Mavros
   mavros_waypoint_publisher_.publish(setpoint);
   mavros_msgs::Trajectory obst_free_path = {};
-  transformPoseToObstacleAvoidance(obst_free_path, setpoint);
+  transformPoseToTrajectory(obst_free_path, setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
-  publishSystemStatus();
 }
 
 // Publish companion process status
@@ -262,8 +212,41 @@ void PathHandlerNode::publishSystemStatus() {
   mavros_msgs::CompanionProcessStatus status_msg;
   status_msg.header.stamp = ros::Time::now();
   status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  status_msg.state = static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE);
+  status_msg.state = (int)companion_state_;
+
   mavros_system_status_pub_.publish(status_msg);
+  t_status_sent_ = ros::Time::now();
+}
+
+void PathHandlerNode::setSystemStatus(MAV_STATE state) {
+  companion_state_ = state;
+}
+
+void PathHandlerNode::checkFailsafe(ros::Duration since_last_cloud,
+                                    ros::Duration since_start, bool& hover) {
+  ros::Duration timeout_termination = ros::Duration(timeout_termination_);
+  ros::Duration timeout_critical = ros::Duration(timeout_critical_);
+  ros::Duration timeout_startup = ros::Duration(timeout_startup_);
+
+  if (since_last_cloud > timeout_termination &&
+      since_start > timeout_termination) {
+    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+  } else {
+    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
+      if (position_received_) {
+        hover = true;
+        setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
+        std::string not_received = "";
+      } else {
+        ROS_WARN(
+            "\033[1;33m Pointcloud timeout: No position received, no WP to "
+            "output.... \n \033[0m");
+      }
+    } else {
+      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
+    }
+  }
 }
 
 }  // namespace global_planner

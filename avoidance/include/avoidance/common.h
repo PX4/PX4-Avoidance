@@ -1,14 +1,16 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <pcl/point_types.h>
+#include <Eigen/Core>
+#include <Eigen/Dense>
+
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Vector3Stamped.h>
-#include <Eigen/Core>
-#include <Eigen/Dense>
-
-#include <pcl/point_types.h>
+#include <mavros_msgs/Trajectory.h>
+#include <tf/transform_listener.h>
 
 namespace avoidance {
 
@@ -185,6 +187,27 @@ geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
                              const Eigen::Vector3f& a);
 geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p,
                                          const Eigen::Quaternionf& q);
+/**
+* @brief     transforms position setpoints from ROS message to MavROS message
+* @params[out] obst_avoid, position setpoint in MavROS message form
+* @params[in] pose, position setpoint computed by the planner
+**/
+void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
+                               geometry_msgs::PoseStamped pose);
+/**
+* @brief      transforms velocity setpoints from ROS message to MavROS
+*             message
+* @param[out] obst_avoid, velocity setpoint in MavROS message form
+* @param[in]  vel, velocity setpoint computd by the planner
+**/
+void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
+                                   geometry_msgs::Twist vel);
+
+/**
+* @brief      fills MavROS trajectory messages with NAN
+* @param      point, setpoint to be filled with NAN
+**/
+void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 }
 
 #endif  // COMMON_H
