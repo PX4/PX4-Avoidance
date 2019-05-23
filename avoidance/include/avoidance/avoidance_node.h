@@ -35,11 +35,28 @@ class AvoidanceNode {
   MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
 
   double cmdloop_dt_, statusloop_dt_;
+  double timeout_termination_;
+  double timeout_critical_;
+  double timeout_startup_;
+
+  bool position_received_;
 
   void cmdLoopCallback(const ros::TimerEvent& event);
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
   void setSystemStatus(MAV_STATE state);
+  /**
+  * @brief      check healthiness of the avoidance system to trigger failsafe in
+  *             the FCU
+  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
+  *             published to the FCU
+  * @param[in]  since_start, time elapsed since staring the node
+  * @param[out] planner_is_healthy, true if the planner is running without
+  *errors
+  * @param[out] hover, true if the vehicle is hovering
+  **/
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
+                     bool& hover);
   
 };
 }

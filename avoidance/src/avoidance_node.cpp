@@ -23,9 +23,12 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh,
       &statusloop_queue_);
   statusloop_timer_ = nh_.createTimer(statuslooptimer_options);
 
+  setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  position_received_ = true;
 }
 
 AvoidanceNode::~AvoidanceNode() {
@@ -33,13 +36,11 @@ AvoidanceNode::~AvoidanceNode() {
 
 void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event){
 
-
 }
 
 void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event){
   
   publishSystemStatus();
-
 }
 
 void AvoidanceNode::setSystemStatus(MAV_STATE state) {
@@ -57,4 +58,30 @@ void AvoidanceNode::publishSystemStatus() {
   t_status_sent_ = ros::Time::now();
 }
 
+void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,
+                                    ros::Duration since_start, bool& hover) {
+  ros::Duration timeout_termination = ros::Duration(timeout_termination_);
+  ros::Duration timeout_critical = ros::Duration(timeout_critical_);
+  ros::Duration timeout_startup = ros::Duration(timeout_startup_);
+
+  if (since_last_cloud > timeout_termination &&
+      since_start > timeout_termination) {
+    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+  } else {
+    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
+      if (position_received_) {
+        hover = true;
+        setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
+        std::string not_received = "";
+      } else {
+        ROS_WARN(
+            "\033[1;33m Pointcloud timeout: No position received, no WP to "
+            "output.... \n \033[0m");
+      }
+    } else {
+      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
+    }
+  }
+}
 }
