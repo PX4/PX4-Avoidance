@@ -33,7 +33,7 @@ limitations under the License.
 
   <arg name="depth_width"       value="640"/>
   <arg name="depth_height"      value="480"/>
-  <arg name="depth_fps"         value="15"/>
+  <arg name="depth_fps"         default="15"/>
 
   <arg name="color_width"       value="640"/>
   <arg name="color_height"      value="480"/>
