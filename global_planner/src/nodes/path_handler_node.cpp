@@ -105,7 +105,12 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+
+  ros::Time now = ros::Time::now();
+
   publishSetpoint();
+
+  if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 }
 
 void PathHandlerNode::receiveDirectGoal(
@@ -185,7 +190,6 @@ void PathHandlerNode::publishSetpoint() {
   mavros_msgs::Trajectory obst_free_path = {};
   transformPoseToTrajectory(obst_free_path, setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
-  publishSystemStatus();
 }
 
 // Publish companion process status
@@ -194,7 +198,9 @@ void PathHandlerNode::publishSystemStatus() {
   status_msg.header.stamp = ros::Time::now();
   status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
   status_msg.state = static_cast<int>(MAV_STATE::MAV_STATE_ACTIVE);
+
   mavros_system_status_pub_.publish(status_msg);
+  t_status_sent_ = ros::Time::now();
 }
 
 }  // namespace global_planner

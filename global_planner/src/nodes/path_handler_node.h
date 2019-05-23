@@ -57,6 +57,8 @@ class PathHandlerNode {
   ros::Subscriber path_with_risk_sub_;
   ros::Subscriber ground_truth_sub_;
 
+  ros::Time t_status_sent_;
+
   // Parameters (Rosparam)
   geometry_msgs::Point start_pos_;
   geometry_msgs::PoseStamped current_goal_;
