@@ -1,4 +1,4 @@
-#include "global_planner_node.h"
+#include "global_planner/global_planner_node.h"
 
 namespace global_planner {
 
@@ -13,6 +13,10 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
       global_planner::GlobalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
+
+#ifndef DISABLE_SIMULATION
+  world_visualizer_.reset(new avoidance::WorldVisualizer(nh_));
+#endif
 
   // Read Ros parameters
   readParams();

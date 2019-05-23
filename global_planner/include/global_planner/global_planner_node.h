@@ -37,6 +37,10 @@
 #include "global_planner/search_tools.h"
 #include "global_planner/visitor.h"
 
+#ifndef DISABLE_SIMULATION
+#include <avoidance/rviz_world_loader.h>
+#endif
+
 namespace global_planner {
 
 class GlobalPlannerNode {
@@ -97,7 +101,9 @@ class GlobalPlannerNode {
   double simplify_margin_;
 
   avoidance::AvoidanceNode avoidance_node_;
-
+#ifndef DISABLE_SIMULATION
+  std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
+#endif
   void readParams();
 
   void setNewGoal(const GoalCell& goal);

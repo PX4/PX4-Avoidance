@@ -37,18 +37,12 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   // avoidance_triplet_msg_publisher_ =
   // nh_.advertise<mavros_msgs::AvoidanceTriplet>("/mavros/avoidance_triplet",
   // 10);
-  nh_.param<std::string>("world_name", world_path_, "");
 
   // Initialize goal
   current_goal_.header.frame_id = "/world";
   current_goal_.pose.position = start_pos_;
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
-
-#ifndef DISABLE_SIMULATION
-  world_visualizer_.reset(new WorldVisualizer(nh_));
-#endif
-
 
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));

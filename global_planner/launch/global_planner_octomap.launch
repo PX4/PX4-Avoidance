@@ -12,6 +12,7 @@
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />
         <param name="start_pos_z" value="$(arg start_pos_z)" />
+        <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
         <remap from="/camera/depth/points" to="$(arg point_cloud_topic)" />
     </node>
 
@@ -21,7 +22,6 @@
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />
         <param name="start_pos_z" value="$(arg start_pos_z)" />
-        <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
     </node>
 
     <!-- OctoMap Server -->
