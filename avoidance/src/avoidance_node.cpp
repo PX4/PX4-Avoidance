@@ -61,7 +61,6 @@ void AvoidanceNode::publishSystemStatus() {
   status_msg.state = (int)companion_state_;
 
   mavros_system_status_pub_.publish(status_msg);
-  t_status_sent_ = ros::Time::now();
 }
 
 void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,

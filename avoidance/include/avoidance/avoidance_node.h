@@ -35,10 +35,6 @@ class AvoidanceNode {
 
   ros::Publisher mavros_system_status_pub_;
 
-  ros::Time start_time_;
-  ros::Time last_wp_time_;
-  ros::Time t_status_sent_;
-
   ros::Timer cmdloop_timer_, statusloop_timer_;
   ros::CallbackQueue cmdloop_queue_, statusloop_queue_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
