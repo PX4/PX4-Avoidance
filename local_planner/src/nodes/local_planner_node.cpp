@@ -666,7 +666,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
 
     if (tf_listener_->canTransform(
             "/local_origin", cameras_[index].newest_cloud_msg_.header.frame_id,
-            ros::Time(0))) {
+            cameras_[index].newest_cloud_msg_.header.stamp)) {
       try {
         pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
         // transform message to pcl type
