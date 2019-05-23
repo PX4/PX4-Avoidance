@@ -104,16 +104,16 @@ class PathHandlerNode {
   void receivePath(const nav_msgs::Path& msg);
   void positionCallback(const geometry_msgs::PoseStamped& pose_msg);
 
-    /**
-  * @brief      check healthiness of the avoidance system to trigger failsafe in
-  *             the FCU
-  * @param[in]  since_last_cloud, time elapsed since the last waypoint was
-  *             published to the FCU
-  * @param[in]  since_start, time elapsed since staring the node
-  * @param[out] planner_is_healthy, true if the planner is running without
-  *errors
-  * @param[out] hover, true if the vehicle is hovering
-  **/
+  /**
+* @brief      check healthiness of the avoidance system to trigger failsafe in
+*             the FCU
+* @param[in]  since_last_cloud, time elapsed since the last waypoint was
+*             published to the FCU
+* @param[in]  since_start, time elapsed since staring the node
+* @param[out] planner_is_healthy, true if the planner is running without
+*errors
+* @param[out] hover, true if the vehicle is hovering
+**/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& hover);
 

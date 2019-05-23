@@ -51,7 +51,7 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   world_visualizer_.reset(new WorldVisualizer(nh_));
 #endif
 
-   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
+  setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
@@ -112,7 +112,6 @@ void PathHandlerNode::dynamicReconfigureCallback(
 }
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
-
   hover_ = false;
 
   ros::Time now = ros::Time::now();
@@ -224,8 +223,7 @@ void PathHandlerNode::setSystemStatus(MAV_STATE state) {
 }
 
 void PathHandlerNode::checkFailsafe(ros::Duration since_last_cloud,
-                                     ros::Duration since_start,
-                                     bool& hover) {
+                                    ros::Duration since_start, bool& hover) {
   ros::Duration timeout_termination = ros::Duration(timeout_termination_);
   ros::Duration timeout_critical = ros::Duration(timeout_critical_);
   ros::Duration timeout_startup = ros::Duration(timeout_startup_);
@@ -245,8 +243,7 @@ void PathHandlerNode::checkFailsafe(ros::Duration since_last_cloud,
             "\033[1;33m Pointcloud timeout: No position received, no WP to "
             "output.... \n \033[0m");
       }
-    }
-    else {
+    } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
     }
   }

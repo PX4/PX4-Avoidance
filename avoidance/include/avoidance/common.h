@@ -208,7 +208,6 @@ void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
 * @param      point, setpoint to be filled with NAN
 **/
 void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-
 }
 
 #endif  // COMMON_H
