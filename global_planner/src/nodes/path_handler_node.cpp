@@ -113,12 +113,11 @@ void PathHandlerNode::dynamicReconfigureCallback(
 
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 
+  hover_ = false;
+
   ros::Time now = ros::Time::now();
   ros::Duration since_last_cloud = now - last_wp_time_;
   ros::Duration since_start = now - start_time_;
-
-  bool planner_is_healthy_ = true;
-  bool hover_ = true;
 
   checkFailsafe(since_last_cloud, since_start, hover_);
 
@@ -142,7 +141,6 @@ void PathHandlerNode::receivePath(const nav_msgs::Path& msg) {
   if (!ignore_path_messages_) {
     setCurrentPath(msg.poses);
   }
-  last_wp_time_ = ros::Time::now();
 }
 
 void PathHandlerNode::positionCallback(
@@ -151,6 +149,8 @@ void PathHandlerNode::positionCallback(
                           last_pos_);
 
   position_received_ = true;
+  last_wp_time_ = ros::Time::now();
+
   // Check if we are close enough to current goal to get the next part of the
   // path
   if (path_.size() > 0 && isCloseToGoal()) {

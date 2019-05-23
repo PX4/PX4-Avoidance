@@ -79,6 +79,7 @@ class PathHandlerNode {
   bool ignore_path_messages_;
   bool position_received_;
   bool startup_;
+  bool hover_;
   double min_speed_;
   double max_speed_;
   double direct_goal_alt_;
