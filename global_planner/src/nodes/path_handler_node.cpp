@@ -121,8 +121,6 @@ void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   checkFailsafe(since_last_cloud, since_start, hover_);
 
   publishSetpoint();
-
-  if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 }
 
 void PathHandlerNode::receiveDirectGoal(
@@ -205,17 +203,6 @@ void PathHandlerNode::publishSetpoint() {
   mavros_msgs::Trajectory obst_free_path = {};
   transformPoseToTrajectory(obst_free_path, setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
-}
-
-// Publish companion process status
-void PathHandlerNode::publishSystemStatus() {
-  mavros_msgs::CompanionProcessStatus status_msg;
-  status_msg.header.stamp = ros::Time::now();
-  status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  status_msg.state = (int)companion_state_;
-
-  mavros_system_status_pub_.publish(status_msg);
-  t_status_sent_ = ros::Time::now();
 }
 
 void PathHandlerNode::setSystemStatus(MAV_STATE state) {
