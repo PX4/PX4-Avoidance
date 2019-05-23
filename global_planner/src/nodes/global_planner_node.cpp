@@ -2,9 +2,10 @@
 
 namespace global_planner {
 
-GlobalPlannerNode::GlobalPlannerNode() {
-  nh_ = ros::NodeHandle("~");
-
+GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private):
+  nh_(nh),
+  nh_private_(nh_private) {
+ 
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
       global_planner::GlobalPlannerNodeConfig>::CallbackType f;
@@ -389,7 +390,11 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
 
 int main(int argc, char** argv) {
   ros::init(argc, argv, "global_planner_node");
-  global_planner::GlobalPlannerNode global_planner_node;
+
+  ros::NodeHandle nh("~");
+  ros::NodeHandle nh_private("");
+
+  global_planner::GlobalPlannerNode global_planner_node(nh, nh_private);
 
   // Read waypoints from file, if any
   ros::V_string args;
