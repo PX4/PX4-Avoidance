@@ -84,6 +84,9 @@ class PathHandlerNode {
   double direct_goal_alt_;
   double speed_ = min_speed_;
   double spin_dt_;
+  double timeout_startup_;
+  double timeout_critical_;
+  double timeout_termination_;
 
   std::vector<geometry_msgs::PoseStamped> path_;
 

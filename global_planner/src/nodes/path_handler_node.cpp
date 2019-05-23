@@ -103,6 +103,9 @@ void PathHandlerNode::dynamicReconfigureCallback(
   min_speed_ = config.min_speed_;
   max_speed_ = config.max_speed_;
   direct_goal_alt_ = config.direct_goal_alt_;
+  timeout_startup_ = config.timeout_startup_;
+  timeout_critical_ = config.timeout_critical_;
+  timeout_termination_ = config.timeout_termination_;
 
   // Reset speed_
   speed_ = min_speed_;
@@ -223,9 +226,9 @@ void PathHandlerNode::setSystemStatus(MAV_STATE state) {
 void PathHandlerNode::checkFailsafe(ros::Duration since_last_cloud,
                                      ros::Duration since_start,
                                      bool& hover) {
-  ros::Duration timeout_termination;
-  ros::Duration timeout_critical;
-  ros::Duration timeout_startup;
+  ros::Duration timeout_termination = ros::Duration(timeout_termination_);
+  ros::Duration timeout_critical = ros::Duration(timeout_critical_);
+  ros::Duration timeout_startup = ros::Duration(timeout_startup_);
 
   if (since_last_cloud > timeout_termination &&
       since_start > timeout_termination) {
