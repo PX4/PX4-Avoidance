@@ -5,7 +5,8 @@ namespace global_planner {
 GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private):
   nh_(nh),
   nh_private_(nh_private),
-  avoidance_node_(nh, nh_private) {
+  avoidance_node_(nh, nh_private),
+  cmdloop_dt_(0.1) {
  
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
@@ -54,12 +55,14 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
                              ros::Duration(3.0));
   ros::TimerOptions cmdlooptimer_options(
       ros::Duration(cmdloop_dt_),
-      boost::bind(&GlabalPlannerNode::cmdLoopCallback, this, _1),
+      boost::bind(&GlobalPlannerNode::cmdLoopCallback, this, _1),
       &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  start_time_ = ros::Time::now();
 }
 
 GlobalPlannerNode::~GlobalPlannerNode() {}
@@ -320,9 +323,17 @@ void GlobalPlannerNode::depthCameraCallback(
 }
 
 void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+  hover_ = false;
+
+  // Check if all information was received
+  ros::Time now = ros::Time::now();
+  last_wp_time_ = ros::Time::now();
+
+  ros::Duration since_last_cloud = now - last_wp_time_;
+  ros::Duration since_start = now - start_time_;
   
-  
-  avoidance_node_.checkFailsafe();
+  avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
+
 }
 
 // Publish the position of goal

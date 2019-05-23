@@ -51,20 +51,6 @@ class GlobalPlannerNode {
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
-  
-  dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
-
-  nav_msgs::Path actual_path_;
-
-  int num_octomap_msg_ = 0;
-  int num_pos_msg_ = 0;
-  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
-
-  // Dynamic Reconfiguration
-  double clicked_goal_alt_;
-  double clicked_goal_radius_;
-  int simplify_iterations_;
-  double simplify_margin_;
 
   // Subscribers
   ros::Subscriber octomap_sub_;
@@ -86,7 +72,29 @@ class GlobalPlannerNode {
   ros::Publisher global_goal_pub_;
   ros::Publisher global_temp_goal_pub_;
 
-  tf::TransformListener listener_;
+  ros::Time start_time_;
+  ros::Time last_wp_time_;
+
+  ros::Timer cmdloop_timer_;
+  ros::CallbackQueue cmdloop_queue_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
+  tf::TransformListener listener_;  
+  dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
+
+  nav_msgs::Path actual_path_;
+
+  int num_octomap_msg_ = 0;
+  int num_pos_msg_ = 0;
+  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
+  double cmdloop_dt_;
+
+  // Dynamic Reconfiguration
+  double clicked_goal_alt_;
+  double clicked_goal_radius_;
+  bool hover_;
+  int simplify_iterations_;
+  double simplify_margin_;
 
   avoidance::AvoidanceNode avoidance_node_;
 
@@ -107,6 +115,7 @@ class GlobalPlannerNode {
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
+  void cmdLoopCallback(const ros::TimerEvent& event);
   void publishGoal(const GoalCell& goal);
   void publishPath();
   void publishExploredCells();
