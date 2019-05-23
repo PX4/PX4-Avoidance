@@ -188,47 +188,6 @@ void PathHandlerNode::positionCallback(
   }
 }
 
-void PathHandlerNode::fillUnusedTrajectoryPoint(
-    mavros_msgs::PositionTarget& point) {
-  point.position.x = NAN;
-  point.position.y = NAN;
-  point.position.z = NAN;
-  point.velocity.x = NAN;
-  point.velocity.y = NAN;
-  point.velocity.z = NAN;
-  point.acceleration_or_force.x = NAN;
-  point.acceleration_or_force.y = NAN;
-  point.acceleration_or_force.z = NAN;
-  point.yaw = NAN;
-  point.yaw_rate = NAN;
-}
-
-void PathHandlerNode::transformPoseToObstacleAvoidance(
-    mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose) {
-  obst_avoid.header = pose.header;
-  obst_avoid.type = 0;
-  obst_avoid.point_1.position.x = pose.pose.position.x;
-  obst_avoid.point_1.position.y = pose.pose.position.y;
-  obst_avoid.point_1.position.z = pose.pose.position.z;
-  obst_avoid.point_1.velocity.x = NAN;
-  obst_avoid.point_1.velocity.y = NAN;
-  obst_avoid.point_1.velocity.z = NAN;
-  obst_avoid.point_1.acceleration_or_force.x = NAN;
-  obst_avoid.point_1.acceleration_or_force.y = NAN;
-  obst_avoid.point_1.acceleration_or_force.z = NAN;
-  obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
-  obst_avoid.point_1.yaw_rate = NAN;
-
-  fillUnusedTrajectoryPoint(obst_avoid.point_2);
-  fillUnusedTrajectoryPoint(obst_avoid.point_3);
-  fillUnusedTrajectoryPoint(obst_avoid.point_4);
-  fillUnusedTrajectoryPoint(obst_avoid.point_5);
-
-  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
-
-  obst_avoid.point_valid = {true, false, false, false, false};
-}
-
 void PathHandlerNode::publishSetpoint() {
   // Vector pointing from current position to the current goal
   tf::Vector3 vec = toTfVector3(
@@ -252,7 +211,7 @@ void PathHandlerNode::publishSetpoint() {
   // Publish setpoint to Mavros
   mavros_waypoint_publisher_.publish(setpoint);
   mavros_msgs::Trajectory obst_free_path = {};
-  transformPoseToObstacleAvoidance(obst_free_path, setpoint);
+  transformPoseToTrajectory(obst_free_path, setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
   publishSystemStatus();
 }
