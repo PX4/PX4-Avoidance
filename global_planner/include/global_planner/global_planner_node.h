@@ -80,8 +80,11 @@ class GlobalPlannerNode {
   ros::Time last_wp_time_;
 
   ros::Timer cmdloop_timer_;
+  ros::Timer plannerloop_timer_;
   ros::CallbackQueue cmdloop_queue_;
+  ros::CallbackQueue plannerloop_queue_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
 
   tf::TransformListener listener_;  
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
@@ -92,6 +95,7 @@ class GlobalPlannerNode {
   int num_pos_msg_ = 0;
   std::vector<geometry_msgs::PoseStamped> last_clicked_points;
   double cmdloop_dt_;
+  double plannerloop_dt_;
 
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
@@ -122,6 +126,7 @@ class GlobalPlannerNode {
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
   void cmdLoopCallback(const ros::TimerEvent& event);
+  void plannerLoopCallback(const ros::TimerEvent& event);
   void publishGoal(const GoalCell& goal);
   void publishPath();
   void publishExploredCells();

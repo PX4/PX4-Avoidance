@@ -6,7 +6,8 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   nh_(nh),
   nh_private_(nh_private),
   avoidance_node_(nh, nh_private),
-  cmdloop_dt_(0.1) {
+  cmdloop_dt_(0.1),
+  plannerloop_dt_(1.0) {
  
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
@@ -65,6 +66,16 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  ros::TimerOptions plannerlooptimer_options(
+      ros::Duration(plannerloop_dt_),
+      boost::bind(&GlobalPlannerNode::plannerLoopCallback, this, _1),
+      &plannerloop_queue_);
+  plannerloop_timer_ = nh_.createTimer(plannerlooptimer_options);
+
+  plannerloop_spinner_.reset(new ros::AsyncSpinner(1, &plannerloop_queue_));
+  plannerloop_spinner_->start();
+
 
   start_time_ = ros::Time::now();
 }
@@ -197,26 +208,6 @@ void GlobalPlannerNode::positionCallback(
   global_planner_.setPose(rot_msg);
 
   // Check if a new goal is needed
-  bool is_in_goal =
-      global_planner_.goal_pos_.withinPositionRadius(global_planner_.curr_pos_);
-  if (is_in_goal || global_planner_.goal_is_blocked_) {
-    popNextGoal();
-  }
-
-  // If the current cell is blocked, try finding a path again
-  if (global_planner_.current_cell_blocked_) {
-    planPath();
-  }
-
-  // Print and publish info
-  if (is_in_goal && !waypoints_.empty()) {
-    ROS_INFO("Reached current goal %s, %d goals left\n\n",
-             global_planner_.goal_pos_.asString().c_str(),
-             (int)waypoints_.size());
-    ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f",
-             pathLength(actual_path_),
-             pathEnergy(actual_path_, global_planner_.up_cost_));
-  }
   if (num_pos_msg_++ % 10 == 0) {
     // Keep track of and publish the actual travel trajectory
     // ROS_INFO("Travelled path extended");
@@ -338,6 +329,29 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
 
+}
+
+void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
+  bool is_in_goal =
+      global_planner_.goal_pos_.withinPositionRadius(global_planner_.curr_pos_);
+  if (is_in_goal || global_planner_.goal_is_blocked_) {
+    popNextGoal();
+  }
+
+  // If the current cell is blocked, try finding a path again
+  if (global_planner_.current_cell_blocked_) {
+    planPath();
+  }
+
+  // Print and publish info
+  if (is_in_goal && !waypoints_.empty()) {
+    ROS_INFO("Reached current goal %s, %d goals left\n\n",
+             global_planner_.goal_pos_.asString().c_str(),
+             (int)waypoints_.size());
+    ROS_INFO("Actual travel distance: %2.2f \t Actual energy usage: %2.2f",
+             pathLength(actual_path_),
+             pathEnergy(actual_path_, global_planner_.up_cost_));
+  }
 }
 
 // Publish the position of goal
