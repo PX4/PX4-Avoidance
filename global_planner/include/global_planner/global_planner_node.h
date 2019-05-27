@@ -66,6 +66,7 @@ class GlobalPlannerNode {
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber depth_camera_sub_;
   ros::Subscriber fcu_input_sub_;
+  ros::Subscriber path_sub_;
 
   // Publishers
   ros::Publisher global_path_pub_;
@@ -75,6 +76,9 @@ class GlobalPlannerNode {
   ros::Publisher explored_cells_pub_;
   ros::Publisher global_goal_pub_;
   ros::Publisher global_temp_goal_pub_;
+  ros::Publisher mavros_obstacle_free_path_pub_;
+  ros::Publisher mavros_waypoint_publisher_;
+  ros::Publisher current_waypoint_publisher_;
 
   ros::Time start_time_;
   ros::Time last_wp_time_;
@@ -90,12 +94,22 @@ class GlobalPlannerNode {
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
 
   nav_msgs::Path actual_path_;
+  geometry_msgs::Point start_pos_;
+  geometry_msgs::PoseStamped current_goal_;
+  geometry_msgs::PoseStamped last_goal_;
+  geometry_msgs::PoseStamped last_pos_;
+
+  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
+  std::vector<geometry_msgs::PoseStamped> path_;
 
   int num_octomap_msg_ = 0;
   int num_pos_msg_ = 0;
-  std::vector<geometry_msgs::PoseStamped> last_clicked_points;
   double cmdloop_dt_;
   double plannerloop_dt_;
+  double min_speed_;
+  double speed_ = min_speed_;
+  double start_yaw_;
+  bool position_received_;
 
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
@@ -109,12 +123,13 @@ class GlobalPlannerNode {
   std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
 #endif
   void readParams();
-
+  void receivePath(const nav_msgs::Path& msg);
   void setNewGoal(const GoalCell& goal);
   void popNextGoal();
   void planPath();
   void setIntermediateGoal();
-
+  bool isCloseToGoal();
+  void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
   void dynamicReconfigureCallback(
       global_planner::GlobalPlannerNodeConfig& config, uint32_t level);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);
@@ -130,7 +145,7 @@ class GlobalPlannerNode {
   void publishGoal(const GoalCell& goal);
   void publishPath();
   void publishExploredCells();
-
+  void publishSetpoint();
   void printPointInfo(double x, double y, double z);
 };
 
