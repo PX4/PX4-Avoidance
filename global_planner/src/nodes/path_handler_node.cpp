@@ -17,8 +17,6 @@ PathHandlerNode::PathHandlerNode() : spin_dt_(0.1) {
   readParams();
 
   // Subscribe to topics
-  direct_goal_sub_ = nh_.subscribe("/initialpose", 1,
-                                   &PathHandlerNode::receiveDirectGoal, this);
   path_sub_ = nh_.subscribe("/global_temp_path", 1,
                             &PathHandlerNode::receivePath, this);
   path_with_risk_sub_ =
@@ -105,17 +103,6 @@ void PathHandlerNode::dynamicReconfigureCallback(
 void PathHandlerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 
   publishSetpoint();
-}
-
-void PathHandlerNode::receiveDirectGoal(
-    const geometry_msgs::PoseWithCovarianceStamped& msg) {
-  // Receive a goal without planning
-  current_goal_.pose = msg.pose.pose;
-  current_goal_.pose.position.z = direct_goal_alt_;  // Direct goal is 2D
-  current_goal_.header = msg.header;
-  std::vector<geometry_msgs::PoseStamped> path_with_direct_goal{
-      current_goal_, current_goal_, current_goal_};
-  setCurrentPath(path_with_direct_goal);
 }
 
 void PathHandlerNode::receivePath(const nav_msgs::Path& msg) {
