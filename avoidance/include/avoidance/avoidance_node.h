@@ -1,12 +1,11 @@
 #ifndef AVOIDANCE_AVOIDANCE_NODE_H
 #define AVOIDANCE_AVOIDANCE_NODE_H
 
-#include "ros/ros.h"
 #include "ros/callback_queue.h"
+#include "ros/ros.h"
 
 #include "avoidance/common.h"
 #include "mavros_msgs/CompanionProcessStatus.h"
-
 
 namespace avoidance {
 
@@ -27,9 +26,7 @@ class AvoidanceNode {
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& hover);
 
-
  private:
-
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
@@ -53,7 +50,6 @@ class AvoidanceNode {
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
   void setSystemStatus(MAV_STATE state);
-  
 };
 }
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H

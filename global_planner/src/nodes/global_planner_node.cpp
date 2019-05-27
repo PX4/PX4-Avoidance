@@ -2,13 +2,13 @@
 
 namespace global_planner {
 
-GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private):
-  nh_(nh),
-  nh_private_(nh_private),
-  avoidance_node_(nh, nh_private),
-  cmdloop_dt_(0.1),
-  plannerloop_dt_(1.0) {
- 
+GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
+                                     const ros::NodeHandle& nh_private)
+    : nh_(nh),
+      nh_private_(nh_private),
+      avoidance_node_(nh, nh_private),
+      cmdloop_dt_(0.1),
+      plannerloop_dt_(1.0) {
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
       global_planner::GlobalPlannerNodeConfig>::CallbackType f;
@@ -69,7 +69,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   listener_.waitForTransform("/local_origin", "/world", ros::Time(0),
                              ros::Duration(3.0));
 
-
   ros::TimerOptions cmdlooptimer_options(
       ros::Duration(cmdloop_dt_),
       boost::bind(&GlobalPlannerNode::cmdLoopCallback, this, _1),
@@ -105,7 +104,8 @@ void GlobalPlannerNode::readParams() {
   nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
   nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
-  global_planner_.goal_pos_ = GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
+  global_planner_.goal_pos_ =
+      GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
 }
 
 // Sets a new goal, plans a path to it and publishes some info
@@ -253,8 +253,6 @@ void GlobalPlannerNode::positionCallback(
       path_.erase(path_.begin());
     }
   }
-
-
 }
 
 void GlobalPlannerNode::clickedPointCallback(
@@ -377,7 +375,6 @@ void GlobalPlannerNode::setCurrentPath(
   }
 }
 
-
 void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
 
@@ -387,7 +384,7 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 
   ros::Duration since_last_cloud = now - last_wp_time_;
   ros::Duration since_start = now - start_time_;
-  
+
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
   publishSetpoint();
 }

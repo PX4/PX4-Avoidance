@@ -3,18 +3,15 @@
 namespace avoidance {
 
 AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh,
-                                   const ros::NodeHandle& nh_private)
+                             const ros::NodeHandle& nh_private)
     : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
-
-
   mavros_system_status_pub_ =
       nh_.advertise<mavros_msgs::CompanionProcessStatus>(
           "/mavros/companion_process/status", 1);
 
   ros::TimerOptions cmdlooptimer_options(
       ros::Duration(cmdloop_dt_),
-      boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1),
-      &cmdloop_queue_);
+      boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
 
   ros::TimerOptions statuslooptimer_options(
@@ -37,15 +34,11 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh,
   timeout_startup_ = 5.0;
 }
 
-AvoidanceNode::~AvoidanceNode() {
-}
+AvoidanceNode::~AvoidanceNode() {}
 
-void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event){
+void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event) {}
 
-}
-
-void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event){
-  
+void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event) {
   publishSystemStatus();
 }
 
@@ -64,8 +57,7 @@ void AvoidanceNode::publishSystemStatus() {
 }
 
 void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,
-                                    ros::Duration since_start, bool& hover) {
-
+                                  ros::Duration since_start, bool& hover) {
   ros::Duration timeout_termination = ros::Duration(timeout_termination_);
   ros::Duration timeout_critical = ros::Duration(timeout_critical_);
   ros::Duration timeout_startup = ros::Duration(timeout_startup_);

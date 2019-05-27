@@ -49,7 +49,8 @@ class GlobalPlannerNode {
   GlobalPlanner global_planner_;
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros
                                      // mission or intermediate goals
-  GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
+  GlobalPlannerNode(const ros::NodeHandle& nh,
+                    const ros::NodeHandle& nh_private);
   ~GlobalPlannerNode();
 
  private:
@@ -90,7 +91,7 @@ class GlobalPlannerNode {
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
   std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
 
-  tf::TransformListener listener_;  
+  tf::TransformListener listener_;
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
 
   nav_msgs::Path actual_path_;
