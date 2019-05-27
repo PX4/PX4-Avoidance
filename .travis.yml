@@ -73,6 +73,6 @@ script:
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
   - ./check_code_format.sh
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
-  - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner --no-deps -v -i --catkin-make-args tests
+  - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done
   - (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && exit $status

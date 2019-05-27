@@ -3,10 +3,12 @@ PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and
 
   * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
   * *global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
+  * *safe_landing_planner* is a local planner to find safe area to land
 
-The two algorithms are standalone and they are not meant to be used together.
+The three algorithms are standalone and they are not meant to be used together.
 
 The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
+The *safe_landing_planner* classifies the terrain underneath the vehicle based on the mean and standard deviation of the z coordinate of pointcloud points. The pointcloud from a downwards facing sensor is binned into a 2D grid based on the xy point coordinates. For each bin, the mean and standard deviation of z coordinate of the points are calculated and they are used to locate flat areas where it is safe to land.
 
 > **Note** The development team is right now focused on the *local_planner*.
 
@@ -25,6 +27,7 @@ The documentation contains information about how to setup and run the two planne
   - [Run the Avoidance Gazebo Simulation](#run-the-avoidance-gazebosimulation)
     - [Local Planner](#local-planner)
     - [Global Planner](#global-planner)
+    - [Safe Landing Planner](#safe-landing-planner)
   - [Run on Hardware](#run-on-hardware)
     - [Prerequisite](#prerequisite)
     - [Local Planner](#local-planner)
@@ -271,7 +274,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    roslaunch local_planner local_planner_realsense.launch
    ```
 
-You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOAD, run:
+You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOARD, run:
 
 ```bash
 # In another terminal
@@ -286,6 +289,18 @@ Then the drone will start moving towards the goal. The default x, y goal positio
 
 For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
+### Safe Landing Planner
+
+This section shows how to start the *safe_landing_planner* and use it to land safely in mission or auto land mode. To run the node:
+
+```bash
+roslaunch landing_site_detection landing_site_detection.launch
+```
+
+You will see an unarmed vehicle on the ground. Open [QGroundControl](http://qgroundcontrol.com/), either plan a mission with the last item of type *Land* or fly around the world in Position Control, click the *Land* button on the left side where you wish to land.
+At the land position, the vehicle will start to descend towards the ground until it is at `loiter_height` from the ground/obstacle. Then it will start loitering to evaluate the ground underneeth.
+If the ground is flat, the vehicle will continue landing. Otherwise it will evaluate the close by terrain in a squared spiral pattern until it finds a good enough ground to land on.
+
 # Run on Hardware
 
 ## Prerequisite
@@ -298,7 +313,7 @@ The officially supported camera is Intel Realsense D435. We recommend using Firm
 
 > **Tip:** Be careful when attaching the camera with a USB3 cable. USB3 might might interfere with GPS and other signals. If possible, always use USB2 cables.
 
-Other tested camera models are: Intel Realsense D415 and R200.
+Other tested camera models are: Intel Realsense D415 and R200, Occipital Structure Core.
 
 #### Generating Point-clouds from Depth-maps
 
@@ -328,6 +343,17 @@ Parameters to set through QGC:
 * Other Required Components for Intel Realsense:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
   - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
+* Other Required Components for Occipital Structure Core:
+  - Download the [Structure SDK](https://structure.io/developers). Create the `build` directory and build the SDK
+  ```bash
+  mkdir build
+  cd build
+  cmake ..
+  make
+  ```
+  - Clone the [ROS wrapper](https://github.com/Auterion/struct_core_ros) in the `catkin_ws`
+  - Copy the shared object `Libraries/Structure/Linux/x86_64/libStructure.so` from the SDK into `/usr/local/lib/`
+  - Copy the headers from `Libraries/Structure/Headers/` in the SDK to the ROS wrapper include directory `~/catkin_ws/src/struct_core_ros/include`
 
 Tested models:
 - local planner: Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone)
@@ -339,15 +365,17 @@ The global planner has been so far tested on a Odroid companion computer by the 
 
 ## Local Planner
 
-Once the catkin workspace has been built, to run the planner with a Realsense D435 camera you can generate the launch file using the script *generate_launchfile.sh*
+Once the catkin workspace has been built, to run the planner with a Realsense D435 or Occipital Structure Core camera you can generate the launch file using the script *generate_launchfile.sh*
 
-1. `export CAMERA_CONFIGS="camera_namespace, realsense_serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.  
+1. `export CAMERA_CONFIGS="camera_namespace, camera_type, serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where  `camera_type` is either `realsense` or `struct_core_ros`, `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.  
 2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
 3. `export VEHICLE_CONFIG=/path/to/params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
 
+Changing the serial number and `DEPTH_CAMERA_FRAME_RATE` don't have any effect on the Structure Core.
+
 For example:
 ```bash
-export CAMERA_CONFIGS="camera_main,819612070807,0.3,0.32,-0.11,0,0,0"
+export CAMERA_CONFIGS="camera_main,realsense,819612070807,0.3,0.32,-0.11,0,0,0"
 export DEPTH_CAMERA_FRAME_RATE=30
 export VEHICLE_CONFIG=~/catkin_ws/src/avoidance/local_planner/cfg/params_vehicle_1.yaml
 ./tools/generate_launchfile.sh
@@ -365,6 +393,24 @@ If you would like to read debug statements on the console, please change `custom
 ```bash
 log4j.logger.ros.local_planner=DEBUG
 ```
+
+## Safe Landing Planner
+
+Once the catkin workspace has been built, to run the planner with a Realsense D435 and Occipital Structure Core, you can generate the launch file using the script *generate_launchfile.sh*. The script works the same as described in the section above for the Local Planner. For example:
+
+```bash
+export CAMERA_CONFIGS="camera_main,struct_core,819612070807,0.3,0.32,-0.11,0,0,0"
+export VEHICLE_CONFIG_SLP=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/slpn_structure_core.yaml
+export VEHICLE_CONFIG_WPG=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/wpgn_structure_core.yaml
+./safe_landing_planner/tools/generate_launchfile.sh
+roslaunch safe_landing_planner safe_landing_planner_launch.launch
+```
+
+In the `cfg/` folder there are camera specific configurations for the algorithm nodes. These parameters can be loaded by specifying the file in the `VEHICLE_CONFIG_SLP` and `VEHICLE_CONFIG_WPG` system variable for the safe_landing_planner_node and for the waypoint_generator_node respectively.
+
+The size of the squared shape patch of terrain below the vehicle that is evaluated by the algorithm can be changed to suit different vehicle sizes with the WaypointGeneratorNode parameter `smoothing_land_cell`. The algorithm behavior will also be affected by the height at which the decision to land or not is taken (`loiter_height` parameter in WaypointGeneratorNode) and by the size of neighborhood filter smoothing (`smoothing_size` in LandingSiteDetectionNode).
+
+For different cameras you might also need to tune the thresholds on the number of points in each bin, standard deviation and mean.
 
 # Troubleshooting
 

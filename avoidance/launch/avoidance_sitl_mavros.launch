@@ -1,14 +1,13 @@
 <launch>
     <arg name="world_path" default="$(find avoidance)/sim/worlds/outdoor_village_3.world" />
-    <arg name="headless" default="false"/>
     <arg name="gui" default="false"/>
     <arg name="ns" default="/"/>
     <arg name="model" default="iris_depth_camera"/>
-    <arg name="build" default="px4_sitl_default"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
+    <arg name="vehicle" default="iris_obs_avoid"/>
 
     <param name="use_sim_time" value="true" />
 
@@ -17,7 +16,7 @@
 
     <!-- Launch PX4 SITL -->
     <include file="$(find px4)/launch/px4.launch">
-        <arg name="vehicle" default="iris_obs_avoid"/>
+        <arg name="vehicle" value="$(arg vehicle)"/>
     </include>
 
     <!-- Launch MavROS -->
@@ -35,14 +34,13 @@
 
     <!-- Launch Gazebo -->
     <include file="$(find gazebo_ros)/launch/empty_world.launch">
-        <arg name="headless" value="$(arg headless)"/>
         <arg name="gui" value="$(arg gui)"/>
         <arg name="world_name" value="$(arg world_path)" />
     </include>
 
     <!-- Spawn vehicle model -->
     <node name="spawn_model" pkg="gazebo_ros" type="spawn_model" output="screen"
-          args="-sdf -database $(arg model) -model iris">
+          args="-sdf -database $(arg model) -model $(arg vehicle)">
     </node>
 
 </launch>

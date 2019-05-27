@@ -183,6 +183,7 @@ geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3);
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
 pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity);
 pcl::PointXYZI toXYZI(float x, float y, float z, float intensity);
+pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity);
 geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
                              const Eigen::Vector3f& a);
 geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p,
