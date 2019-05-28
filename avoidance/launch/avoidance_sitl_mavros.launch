@@ -11,8 +11,9 @@
     <arg name="tgt_component" default="1" />
 
     <param name="use_sim_time" value="true" />
-    <env name="GAZEBO_MODEL_PATH" value="${GAZEBO_MODEL_PATH}:$(find avoidance)/sim/models"/>
-    <env name="GAZEBO_RESOURCE_PATH" value="${GAZEBO_RESOURCE_PATH}:$(find avoidance)/sim/models"/>
+
+    <env name="GAZEBO_MODEL_PATH" value="$(env GAZEBO_MODEL_PATH):$(find avoidance)/sim/models"/>
+    <env name="GAZEBO_RESOURCE_PATH" value="$(env GAZEBO_RESOURCE_PATH):$(find avoidance)/sim/models"/>
 
     <!-- Launch rqt_reconfigure -->
     <node pkg="rqt_reconfigure" type="rqt_reconfigure" output="screen" name="rqt_reconfigure" />
