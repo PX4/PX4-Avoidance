@@ -41,8 +41,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
   fcu_input_sub_ =
       nh_.subscribe("/mavros/trajectory/desired", 1,
                     &GlobalPlannerNode::fcuInputGoalCallback, this);
-  path_sub_ = nh_.subscribe("/global_temp_path", 1,
-                            &GlobalPlannerNode::receivePath, this);
 
   // Publishers
   global_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_path", 10);
@@ -355,10 +353,6 @@ void GlobalPlannerNode::depthCameraCallback(
   }
 }
 
-void GlobalPlannerNode::receivePath(const nav_msgs::Path& msg) {
-  setCurrentPath(msg.poses);
-}
-
 void GlobalPlannerNode::setCurrentPath(
     const std::vector<geometry_msgs::PoseStamped>& poses) {
   path_.clear();
@@ -431,6 +425,7 @@ void GlobalPlannerNode::publishPath() {
   PathWithRiskMsg risk_msg = global_planner_.getPathWithRiskMsg();
   // Always publish as temporary to remove any obsolete temporary path
   global_temp_path_pub_.publish(path_msg);
+  setCurrentPath(path_msg.poses);
   if (!global_planner_.goal_pos_.is_temporary_) {
     global_path_pub_.publish(path_msg);
   }
@@ -440,6 +435,7 @@ void GlobalPlannerNode::publishPath() {
                                   simplify_iterations_, simplify_margin_);
   auto simple_path_msg = global_planner_.getPathMsg(simple_path);
   global_temp_path_pub_.publish(simple_path_msg);
+  setCurrentPath(simple_path_msg.poses);
   smooth_path_pub_.publish(smoothPath(simple_path_msg));
 }
 
