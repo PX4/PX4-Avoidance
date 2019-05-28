@@ -45,23 +45,23 @@ for camera in $CAMERA_CONFIGS; do
 		echo "Invalid camera configuration $camera"
 	else
 		echo "Adding camera $1 of type $2 with serial number $3"
-		if [[ $camera_topics == "" ]]; then
-			camera_topics="/$1/depth/points"
-		else
-			camera_topics="$camera_topics,/$1/depth/points"
-		fi
 
     # Append to the launch file
     if  [[ $2 == "realsense" ]]; then
     REALSENSE_CAMERA_USED=1
+    if [[ $camera_topics == "" ]]; then
+			camera_topics="/$1/depth/color/points"
+		else
+			camera_topics="$camera_topics,/$1/depth/color/points"
+		fi
 
     cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
-			 args="$3 $4 $5 $6 $7 $8 fcu $1_link 10"/>
+			 args="$4 $5 $6 $7 $8 $9 fcu $1_link 10"/>
 			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
-				<arg name="serial_no"             value="$2"/>
+				<arg name="serial_no"             value="$3"/>
 				<arg name="depth_fps"             value="$DEPTH_CAMERA_FRAME_RATE"/>
 			</include>
 
@@ -80,6 +80,11 @@ for camera in $CAMERA_CONFIGS; do
 		" >> local_planner/resource/realsense_params.sh
 
 	elif  [[ $2 == "struct_core" ]]; then
+    if [[ $camera_topics == "" ]]; then
+      camera_topics="/$1/depth/points"
+    else
+      camera_topics="$camera_topics,/$1/depth/points"
+    fi
 
 	cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1"
