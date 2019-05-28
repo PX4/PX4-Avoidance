@@ -46,9 +46,9 @@ for camera in $CAMERA_CONFIGS; do
 	else
 		echo "Adding camera $1 of type $2 with serial number $3"
 		if [[ $camera_topics == "" ]]; then
-			camera_topics="/$1/depth/color/points"
+			camera_topics="/$1/depth/points"
 		else
-			camera_topics="$camera_topics,/$1/depth/color/points"
+			camera_topics="$camera_topics,/$1/depth/points"
 		fi
 
     # Append to the launch file

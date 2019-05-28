@@ -43,6 +43,7 @@ limitations under the License.
 
   <arg name="pointcloud_texture_stream" value="RS2_STREAM_ANY"/>
   <arg name="pointcloud_texture_index"  value="0"/>
+  <arg name="allow_no_texture_points"   value="true"/>
 
   <arg name="initial_reset"             default="false"/>
 
@@ -59,6 +60,7 @@ limitations under the License.
        <arg name="align_depth"              value="$(arg align_depth)"/>
        <arg name="pointcloud_texture_stream" value="$(arg pointcloud_texture_stream)"/>
        <arg name="pointcloud_texture_index"  value="$(arg pointcloud_texture_index)"/>
+       <arg name="allow_no_texture_points"   value="$(arg allow_no_texture_points)"/>
        <arg name="depth_width"              value="$(arg depth_width)"/>
        <arg name="depth_height"             value="$(arg depth_height)"/>
        <arg name="enable_depth"             value="$(arg enable_depth)"/>
@@ -75,6 +77,7 @@ limitations under the License.
        <arg name="infra_fps"                value="$(arg infra_fps)"/>
 
        <arg name="initial_reset"            value="$(arg initial_reset)"/>
+       <remap from="$(arg tf_prefix)/depth/color/points" to="$(arg tf_prefix)/depth/points"/>
      </include>
 </group>
 
