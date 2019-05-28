@@ -61,6 +61,8 @@ struct FOV {
 };
 
 #define M_PI_F 3.14159265358979323846f
+#define WARN_UNUSED __attribute__((warn_unused_result))
+
 const float DEG_TO_RAD = M_PI_F / 180.f;
 const float RAD_TO_DEG = 180.0f / M_PI_F;
 
@@ -159,13 +161,13 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q);
 * @param[in] angle to be wrapped  [rad]
 * @returns   wrapped angle [rad]
 **/
-float wrapAngleToPlusMinusPI(float angle);
+float WARN_UNUSED wrapAngleToPlusMinusPI(float angle);
 /**
 * @brief     wrappes the input angle in to plus minus 180 deg space
 * @param[in] angle to be wrapped  [deg]
 * @returns   wrapped angle [deg]
 **/
-float wrapAngleToPlusMinus180(float angle);
+float WARN_UNUSED wrapAngleToPlusMinus180(float angle);
 /**
 * @brief     computes an angular velocity to reach the desired_yaw
 * @param[in] adesired_yaw  [rad]
