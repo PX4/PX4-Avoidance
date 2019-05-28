@@ -77,7 +77,6 @@ limitations under the License.
        <arg name="infra_fps"                value="$(arg infra_fps)"/>
 
        <arg name="initial_reset"            value="$(arg initial_reset)"/>
-       <remap from="$(arg tf_prefix)/depth/color/points" to="$(arg tf_prefix)/depth/points"/>
      </include>
 </group>
 
