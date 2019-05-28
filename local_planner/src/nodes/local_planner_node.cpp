@@ -564,8 +564,9 @@ void LocalPlannerNode::cameraInfoCallback(
       2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
       M_PI);
 
-  local_planner_->setFOV(h_fov, v_fov);
-  wp_generator_->setFOV(h_fov, v_fov);
+  // make sure to underestimate FOV to avoid blind spots!
+  local_planner_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
+  wp_generator_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(

@@ -46,20 +46,23 @@ struct PolarPoint {
 
 /**
 * Struct defining the Field of View of the sensor. This is defined by
-* the current yaw and pitch (in local frame) and the horizontal and vertical
+* the current azimuth and elevation angles and the horizontal and vertical
 * field of view of the sensor
 */
 struct FOV {
-  FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
+  FOV()
+      : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
   FOV(float y, float p, float h, float v)
-      : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
-  float yaw_deg;
-  float pitch_deg;
+      : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
+  float azimuth_deg;
+  float elevation_deg;
   float h_fov_deg;
   float v_fov_deg;
 };
 
 #define M_PI_F 3.14159265358979323846f
+#define WARN_UNUSED __attribute__((warn_unused_result))
+
 const float DEG_TO_RAD = M_PI_F / 180.f;
 const float RAD_TO_DEG = 180.0f / M_PI_F;
 
@@ -155,14 +158,16 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q);
 
 /**
 * @brief     wrappes the input angle in to plus minus PI space
-* @param[in, out] angle to be wrapped  [rad]
+* @param[in] angle to be wrapped  [rad]
+* @returns   wrapped angle [rad]
 **/
-void wrapAngleToPlusMinusPI(float& angle);
+float WARN_UNUSED wrapAngleToPlusMinusPI(float angle);
 /**
 * @brief     wrappes the input angle in to plus minus 180 deg space
-* @param[in, out] angle to be wrapped  [deg]
+* @param[in] angle to be wrapped  [deg]
+* @returns   wrapped angle [deg]
 **/
-void wrapAngleToPlusMinus180(float& angle);
+float WARN_UNUSED wrapAngleToPlusMinus180(float angle);
 /**
 * @brief     computes an angular velocity to reach the desired_yaw
 * @param[in] adesired_yaw  [rad]
