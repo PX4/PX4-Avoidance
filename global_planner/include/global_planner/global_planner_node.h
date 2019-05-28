@@ -67,10 +67,8 @@ class GlobalPlannerNode {
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber depth_camera_sub_;
   ros::Subscriber fcu_input_sub_;
-  ros::Subscriber path_sub_;
 
   // Publishers
-  ros::Publisher global_path_pub_;
   ros::Publisher global_temp_path_pub_;
   ros::Publisher smooth_path_pub_;
   ros::Publisher actual_path_pub_;

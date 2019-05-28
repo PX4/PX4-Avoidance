@@ -43,7 +43,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
                     &GlobalPlannerNode::fcuInputGoalCallback, this);
 
   // Publishers
-  global_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_path", 10);
   global_temp_path_pub_ =
       nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
   actual_path_pub_ = nh_.advertise<nav_msgs::Path>("/actual_path", 10);
@@ -426,9 +425,6 @@ void GlobalPlannerNode::publishPath() {
   // Always publish as temporary to remove any obsolete temporary path
   global_temp_path_pub_.publish(path_msg);
   setCurrentPath(path_msg.poses);
-  if (!global_planner_.goal_pos_.is_temporary_) {
-    global_path_pub_.publish(path_msg);
-  }
   smooth_path_pub_.publish(smoothPath(path_msg));
 
   auto simple_path = simplifyPath(&global_planner_, global_planner_.curr_path_,
