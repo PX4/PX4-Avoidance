@@ -35,6 +35,7 @@ if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
 fi
 
+REALSENSE_CAMERA_USED=0
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
 for camera in $CAMERA_CONFIGS; do
@@ -53,7 +54,7 @@ for camera in $CAMERA_CONFIGS; do
     # Append to the launch file
     
     if  [[ $2 == "realsense" ]]; then
-    
+    REALSENSE_CAMERA_USED=1
     cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1"
 			       args="$4 $5 $6 $7 $8 $9 fcu $1_link 10"/>
@@ -65,9 +66,6 @@ for camera in $CAMERA_CONFIGS; do
 			       <arg name="enable_pointcloud"     value="false"/>
 			       <arg name="enable_fisheye"        value="false"/>
 			    </include>
-			
-			    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
-			    <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
             
 		EOM
 		
@@ -110,7 +108,18 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <param name="goal_z_param" value="4" />
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
+    
+EOM
 
+if  [[ $REALSENSE_CAMERA_USED == 1 ]]; then
+cat >>    local_planner/launch/avoidance.launch <<- EOM
+    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
+    <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
+    
+EOM
+fi
+
+cat >> local_planner/launch/avoidance.launch <<- EOM
 </launch>
 EOM
 
