@@ -309,8 +309,6 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
     ROS_INFO("  Path is bad, planning a new path \n");
     if (global_planner_.goal_pos_.is_temporary_) {
       popNextGoal();  // Throw away temporary goal
-    } else {
-      planPath();  // Plan a whole new path
     }
   }
 }
