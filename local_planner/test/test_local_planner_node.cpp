@@ -9,11 +9,9 @@ TEST(LocalPlannerNodeTests, failsafe) {
   ros::NodeHandle nh("~");
   ros::NodeHandle nh_private("");
   LocalPlannerNode Node(nh, nh_private, false);
-  bool planner_is_healthy = true;
   bool hover = false;
 
   Node.position_received_ = true;
-  Node.never_run_ = false;
   Node.setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
 
   avoidance::LocalPlannerNodeConfig config =
@@ -26,29 +24,23 @@ TEST(LocalPlannerNodeTests, failsafe) {
   int critical_n_iter = std::ceil(config.timeout_termination_ / time_increment);
 
   for (int i = 0; i < active_n_iter; i++) {
-    Node.checkFailsafe(since_last_cloud, since_start, planner_is_healthy,
-                       hover);
+    Node.checkFailsafe(since_last_cloud, since_start, hover);
     since_last_cloud = since_last_cloud + ros::Duration(time_increment);
     since_start = since_start + ros::Duration(time_increment);
-    EXPECT_TRUE(planner_is_healthy);
     EXPECT_EQ(Node.getSystemStatus(), MAV_STATE::MAV_STATE_ACTIVE);
   }
 
   for (int i = active_n_iter; i < critical_n_iter; i++) {
-    Node.checkFailsafe(since_last_cloud, since_start, planner_is_healthy,
-                       hover);
+    Node.checkFailsafe(since_last_cloud, since_start, hover);
     since_last_cloud = since_last_cloud + ros::Duration(time_increment);
     since_start = since_start + ros::Duration(time_increment);
-    EXPECT_TRUE(planner_is_healthy);
     EXPECT_EQ(Node.getSystemStatus(), MAV_STATE::MAV_STATE_CRITICAL);
   }
 
   for (int i = critical_n_iter; i < 91; i++) {
-    Node.checkFailsafe(since_last_cloud, since_start, planner_is_healthy,
-                       hover);
+    Node.checkFailsafe(since_last_cloud, since_start, hover);
     since_last_cloud = since_last_cloud + ros::Duration(time_increment);
     since_start = since_start + ros::Duration(time_increment);
-    EXPECT_FALSE(planner_is_healthy);
     EXPECT_EQ(Node.getSystemStatus(), MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
   }
 }
