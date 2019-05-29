@@ -570,9 +570,6 @@ void GlobalPlanner::stop() {
   setPath({curr_pos_});
 }
 
-void GlobalPlanner::setRobotRadius(double radius){
-  robot_radius_ = radius;
-}
-
+void GlobalPlanner::setRobotRadius(double radius) { robot_radius_ = radius; }
 
 }  // namespace global_planner

@@ -72,11 +72,12 @@ Cell Cell::getNeighborFromYaw(double yaw) const {
 // Returns the neighbors of the Cell whose risk influences the Cell
 std::vector<Cell> Cell::getFlowNeighbors(int radius) const {
   std::vector<Cell> cells;
-  for(int x = -radius; x < radius; x++){
-    for(int y = -radius; x < radius; x++){
-      for(int z = -radius; x < radius; x++){
-        cells.push_back(Cell(std::tuple<int, int, int>(xIndex() + x, yIndex() + y, zIndex() + z)));
-      }   
+  for (int x = -radius; x < radius; x++) {
+    for (int y = -radius; x < radius; x++) {
+      for (int z = -radius; x < radius; x++) {
+        cells.push_back(Cell(std::tuple<int, int, int>(
+            xIndex() + x, yIndex() + y, zIndex() + z)));
+      }
     }
   }
   return cells;
