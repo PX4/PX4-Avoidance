@@ -107,6 +107,9 @@ void GlobalPlannerNode::readParams() {
   initializeCameraSubscribers(camera_topics);
   global_planner_.goal_pos_ =
       GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
+  double robot_radius;
+  nh_.param<double>("robot_radius", robot_radius, 0.5);
+  global_planner_.setRobotRadius(robot_radius);
 }
 
 void GlobalPlannerNode::initializeCameraSubscribers(

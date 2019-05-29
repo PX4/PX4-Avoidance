@@ -42,7 +42,7 @@ class Cell {
   double angle() const;
 
   Cell getNeighborFromYaw(double yaw) const;
-  std::vector<Cell> getFlowNeighbors() const;
+  std::vector<Cell> getFlowNeighbors(int radius) const;
   std::vector<Cell> getDiagonalNeighbors() const;
   std::vector<Cell> getNeighbors() const;
 
