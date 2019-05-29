@@ -123,7 +123,6 @@ void GlobalPlannerNode::popNextGoal() {
     // Goal is blocked but there is no other goal in waypoints_, just stop
     ROS_INFO("  STOP  ");
     global_planner_.stop();
-    publishPath();
   }
 }
 
@@ -136,10 +135,6 @@ void GlobalPlannerNode::planPath() {
   }
 
   bool found_path = global_planner_.getGlobalPath();
-
-  // Publish even though no path is found
-  publishExploredCells();
-  publishPath();
 
   if (!found_path) {
     // TODO: popNextGoal(), instead of checking if goal_is_blocked in
@@ -298,7 +293,6 @@ void GlobalPlannerNode::laserSensorCallback(const sensor_msgs::LaserScan& msg) {
         // Don't complain about crashing on take-off
         ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", range);
         global_planner_.goBack();
-        publishPath();
       }
     }
   }
@@ -400,6 +394,9 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
              pathLength(actual_path_),
              pathEnergy(actual_path_, global_planner_.up_cost_));
   }
+
+  publishPath();
+  publishExploredCells();
 }
 
 // Publish the position of goal
@@ -473,7 +470,6 @@ void GlobalPlannerNode::publishExploredCells() {
 // Prints information about the point, mostly the risk of the containing cell
 void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
   // Update explored cells
-  publishExploredCells();
   printPointStats(&global_planner_, x, y, z);
 }
 
