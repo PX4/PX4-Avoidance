@@ -192,7 +192,7 @@ double GlobalPlanner::getRisk(const Cell& cell) {
   }
 
   double risk = getSingleCellRisk(cell);
-  int radius = int(robot_radius_ / octree_resolution_);
+  int radius = static_cast<int>(std::ceil(robot_radius_ / octree_resolution_));
   for (const Cell& neighbor : cell.getFlowNeighbors(radius)) {
     risk += neighbor_risk_flow_ * getSingleCellRisk(neighbor);
   }
