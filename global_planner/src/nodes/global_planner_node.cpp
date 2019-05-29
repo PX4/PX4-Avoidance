@@ -110,7 +110,6 @@ void GlobalPlannerNode::setNewGoal(const GoalCell& goal) {
   ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
   global_planner_.setGoal(goal);
   publishGoal(goal);
-  planPath();
 }
 
 // Sets the next waypoint to be the current goal
@@ -390,9 +389,7 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
   }
 
   // If the current cell is blocked, try finding a path again
-  if (global_planner_.current_cell_blocked_) {
-    planPath();
-  }
+  planPath();
 
   // Print and publish info
   if (is_in_goal && !waypoints_.empty()) {
