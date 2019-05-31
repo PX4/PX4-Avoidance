@@ -29,6 +29,10 @@ class SafeLandingPlannerTests : public ::testing::Test {
     Eigen::Vector3f pos(4.2f, 3.9f, 5.f);
     q = Eigen::Quaternionf(1.f, 0.f, 0.f, 0.f);
     safe_landing_planner.setPose(pos, q);
+
+    safe_landing_planner::SafeLandingPlannerNodeConfig config =
+        safe_landing_planner::SafeLandingPlannerNodeConfig::__getDefault__();
+    safe_landing_planner.dynamicReconfigureSetParams(config, 1);
   }
   void TearDown() override {}
 };
@@ -40,6 +44,7 @@ TEST_F(SafeLandingPlannerTests, flat_center) {
   config.smoothing_size = -1;
   config.n_points_threshold = 20;
   config.cell_size = 1;
+  config.alpha = 0.0;
 
   safe_landing_planner.dynamicReconfigureSetParams(config, 1);
 

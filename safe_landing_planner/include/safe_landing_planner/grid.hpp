@@ -31,6 +31,7 @@ public:
     variance_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
     counter_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
     land_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
+    reset();
   }
 
   void setMean(Eigen::Vector2i &idx, float value) {

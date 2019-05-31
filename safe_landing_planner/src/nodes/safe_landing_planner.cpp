@@ -3,6 +3,12 @@
 
 namespace avoidance {
 
+SafeLandingPlanner::SafeLandingPlanner() {
+  rqt_param_config_ =
+      safe_landing_planner::SafeLandingPlannerNodeConfig::__getDefault__();
+  ;
+}
+
 void SafeLandingPlanner::runSafeLandingPlanner() {
   if (size_update_) {
     grid_.grid_size_ = grid_size_;
