@@ -1,6 +1,0 @@
-<launch>
-    <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
-        <arg name="point_cloud_topic" value="/omi_cam/point_cloud" />
-        <param name="start_pos_z" value="2.5" />
-    </include>
-</launch>
