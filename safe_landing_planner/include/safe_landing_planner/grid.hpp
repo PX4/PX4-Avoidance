@@ -33,13 +33,13 @@ public:
     reset();
   }
 
-  void setMean(Eigen::Vector2i &idx, float value) {
+  void setMean(const Eigen::Vector2i &idx, float value) {
     mean_(idx.x(), idx.y()) = value;
   }
-  void setVariance(Eigen::Vector2i &idx, float value) {
+  void setVariance(const Eigen::Vector2i &idx, float value) {
     variance_(idx.x(), idx.y()) = value;
   }
-  void increaseCounter(Eigen::Vector2i &idx) {
+  void increaseCounter(const Eigen::Vector2i &idx) {
     counter_(idx.x(), idx.y()) = counter_(idx.x(), idx.y()) + 1;
   }
 
@@ -47,15 +47,15 @@ public:
   Eigen::MatrixXf getVariance() const { return variance_;}
   Eigen::MatrixXi getCounter() const { return counter_;}
 
-  float getMean(Eigen::Vector2i &idx) {return mean_(idx.x(), idx.y());}
-  float getVariance(Eigen::Vector2i &idx) {return variance_(idx.x(), idx.y());}
-  int getCounter(Eigen::Vector2i &idx) {return counter_(idx.x(), idx.y()); }
+  float getMean(const Eigen::Vector2i &idx) {return mean_(idx.x(), idx.y());}
+  float getVariance(const Eigen::Vector2i &idx) {return variance_(idx.x(), idx.y());}
+  int getCounter(const Eigen::Vector2i &idx) {return counter_(idx.x(), idx.y()); }
   int getRowColSize() const {return grid_row_col_size_; }
   float getGridSize() const {return grid_size_; }
   float getCellSize() const {return cell_size_; }
 
 
-  void setFilterLimits(Eigen::Vector3f &pos) {
+  void setFilterLimits(const Eigen::Vector3f &pos) {
     corner_min_.x() = pos.x() - grid_size_ / 2.f;
     corner_min_.y() = pos.y() - grid_size_ / 2.f;
     corner_max_.x() = pos.x() + grid_size_ / 2.f;
