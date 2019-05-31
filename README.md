@@ -180,10 +180,10 @@ You should now be ready to run the simulation using local or global planner.
 This section shows how to start the *global_planner* and use it for avoidance in offboard mode.
 
 ```bash
-roslaunch global_planner global_planner_sitl_mavros.launch
+roslaunch global_planner global_planner_stereo.launch
 ```
 
-You should now see the drone unarmed on the ground, and the octomap should show 2 red arrows and the visible world, as pictured below.
+You should now see the drone unarmed on the ground in a forest environment as pictured below.
 
 ![Screenshot showing gazebo and rviz](docs/simulation_screenshot.png)
 
@@ -202,12 +202,6 @@ From the command line, you can also make Gazebo follow the drone, if you want.
 ```bash
 gz camera --camera-name=gzclient_camera --follow=iris
 ```
-
-During the simulation, the ROS node *"/path_handler_node"* continuously publishes positions to the topic *"/mavros/setpoint_position/local"*.
-
-The graph of the ROS nodes is shown below:
-
-![Graph showing the ROS nodes and their links](docs/rqt_graph.png)
 
 One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
