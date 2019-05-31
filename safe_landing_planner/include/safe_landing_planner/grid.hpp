@@ -6,13 +6,11 @@
 namespace avoidance {
 
 class Grid {
-public:
-  Grid(const float grid_size, const float cell_size) :
-    grid_size_(grid_size),
-    cell_size_(cell_size)
-    {
-      resize(grid_size_, cell_size_);
-    }
+ public:
+  Grid(const float grid_size, const float cell_size)
+      : grid_size_(grid_size), cell_size_(cell_size) {
+    resize(grid_size_, cell_size_);
+  }
   ~Grid() = default;
 
   void reset() {
@@ -43,17 +41,20 @@ public:
     counter_(idx.x(), idx.y()) = counter_(idx.x(), idx.y()) + 1;
   }
 
-  Eigen::MatrixXf getMean() const { return mean_;}
-  Eigen::MatrixXf getVariance() const { return variance_;}
-  Eigen::MatrixXi getCounter() const { return counter_;}
+  Eigen::MatrixXf getMean() const { return mean_; }
+  Eigen::MatrixXf getVariance() const { return variance_; }
+  Eigen::MatrixXi getCounter() const { return counter_; }
 
-  float getMean(const Eigen::Vector2i &idx) {return mean_(idx.x(), idx.y());}
-  float getVariance(const Eigen::Vector2i &idx) {return variance_(idx.x(), idx.y());}
-  int getCounter(const Eigen::Vector2i &idx) {return counter_(idx.x(), idx.y()); }
-  int getRowColSize() const {return grid_row_col_size_; }
-  float getGridSize() const {return grid_size_; }
-  float getCellSize() const {return cell_size_; }
-
+  float getMean(const Eigen::Vector2i &idx) { return mean_(idx.x(), idx.y()); }
+  float getVariance(const Eigen::Vector2i &idx) {
+    return variance_(idx.x(), idx.y());
+  }
+  int getCounter(const Eigen::Vector2i &idx) {
+    return counter_(idx.x(), idx.y());
+  }
+  int getRowColSize() const { return grid_row_col_size_; }
+  float getGridSize() const { return grid_size_; }
+  float getCellSize() const { return cell_size_; }
 
   void setFilterLimits(const Eigen::Vector3f &pos) {
     corner_min_.x() = pos.x() - grid_size_ / 2.f;
@@ -68,14 +69,14 @@ public:
   }
 
   void combine(const Grid &prev_grid, float alpha) {
-    mean_ =  alpha * prev_grid.mean_ + (1.f - alpha) * mean_;
-    variance_ =  alpha * prev_grid.variance_ + (1.f - alpha) * variance_;
+    mean_ = alpha * prev_grid.mean_ + (1.f - alpha) * mean_;
+    variance_ = alpha * prev_grid.variance_ + (1.f - alpha) * variance_;
   }
 
   Eigen::MatrixXi land_;
   Eigen::MatrixXf mean_;
 
-private:
+ private:
   Eigen::Vector2f corner_min_;
   Eigen::Vector2f corner_max_;
   Eigen::MatrixXf variance_;
@@ -85,5 +86,4 @@ private:
   float cell_size_;
   int grid_row_col_size_;
 };
-
 }

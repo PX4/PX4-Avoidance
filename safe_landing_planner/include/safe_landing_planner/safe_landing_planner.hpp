@@ -13,7 +13,7 @@
 namespace avoidance {
 
 class SafeLandingPlanner {
-public:
+ public:
   SafeLandingPlanner() = default;
   ~SafeLandingPlanner() = default;
 
@@ -39,20 +39,22 @@ public:
   * @param     config, struct containing all the parameters
   * @param     level, bitmask to group together reconfigurable parameters
   **/
-  void dynamicReconfigureSetParams(const safe_landing_planner::SafeLandingPlannerNodeConfig& config, uint32_t level);
+  void dynamicReconfigureSetParams(
+      const safe_landing_planner::SafeLandingPlannerNodeConfig& config,
+      uint32_t level);
 
   /**
-  * @brief based on counter, standard devuation and mean, it decides if a cell is landable
+  * @brief based on counter, standard devuation and mean, it decides if a cell
+  *is landable
   **/
   void isLandingPossible();
 
-  Eigen::Vector2i getPositionIndex() const {return pos_index_; };
-  Grid getPreviousGrid() const {return previous_grid_; };
-  Grid getGrid() const {return grid_; };
-  int getSmoothingSize() const {return smoothing_size_;};
+  Eigen::Vector2i getPositionIndex() const { return pos_index_; };
+  Grid getPreviousGrid() const { return previous_grid_; };
+  Grid getGrid() const { return grid_; };
+  int getSmoothingSize() const { return smoothing_size_; };
 
-protected:
-
+ protected:
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector2i pos_index_ = Eigen::Vector2i(-1, -1);
 
@@ -73,7 +75,8 @@ protected:
   Grid previous_grid_ = Grid(10.f, 1.f);
 
   /**
-  * @brief process the pointcloud and calculate mean and variance for points in the grid
+  * @brief process the pointcloud and calculate mean and variance for points in
+  *the grid
   **/
   void processPointcloud();
 
@@ -100,9 +103,8 @@ protected:
   * @param[in] seq, number of data points already in the bin
   * @returns bin mean and variance
   **/
-  std::pair<float, float> computeOnlineMeanVariance(float prev_mean, float prev_variance, float new_value, float seq);
-
-
+  std::pair<float, float> computeOnlineMeanVariance(float prev_mean,
+                                                    float prev_variance,
+                                                    float new_value, float seq);
 };
-
 }

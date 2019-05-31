@@ -70,7 +70,8 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
                 range_min;
       float red, green, blue;
       float max_aa = 1.f;
-      std::tie(cell.color.r, cell.color.g, cell.color.b) = HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
+      std::tie(cell.color.r, cell.color.g, cell.color.b) =
+          HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
 
       marker_array.markers.push_back(cell);
       cell.id += 1;
@@ -78,10 +79,10 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
   }
   mean_pub_.publish(marker_array);
 }
-std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(std::tuple<float, float, float> hsv) {
-
+std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(
+    std::tuple<float, float, float> hsv) {
   std::tuple<float, float, float> rgb;
-  float fC = std::get<2>(hsv) * std::get<1>(hsv); //fV * fS;  // Chroma
+  float fC = std::get<2>(hsv) * std::get<1>(hsv);  // fV * fS;  // Chroma
   float fHPrime = fmod(std::get<0>(hsv) / 60.0, 6);
   float fX = fC * (1 - fabs(fmod(fHPrime, 2) - 1));
   float fM = std::get<2>(hsv) - fC;
@@ -164,7 +165,8 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
                  (variance_max_value - variance_min_value)) +
                 range_min;
 
-      std::tie(cell.color.r, cell.color.g, cell.color.b) = HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
+      std::tie(cell.color.r, cell.color.g, cell.color.b) =
+          HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
 
       marker_array.markers.push_back(cell);
       cell.id += 1;
