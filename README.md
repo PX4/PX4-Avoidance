@@ -344,7 +344,7 @@ Parameters to set through QGC:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
   - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
 * Other Required Components for Occipital Structure Core:
-  - Download the [Structure SDK](https://structure.io/developers). Create the `build` directory and build the SDK
+  - Download the [Structure SDK](https://structure.io/developers). The version tested with this package is `0.7.1`. Create the `build` directory and build the SDK
   ```bash
   mkdir build
   cd build

@@ -54,7 +54,7 @@ public:
 protected:
 
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
-  Eigen::Vector2i pos_index_ = Eigen::Vector2i(NAN, NAN);
+  Eigen::Vector2i pos_index_ = Eigen::Vector2i(-1, -1);
 
   float n_points_thr_ = 1.f;
   float std_dev_thr_ = 0.1f;
