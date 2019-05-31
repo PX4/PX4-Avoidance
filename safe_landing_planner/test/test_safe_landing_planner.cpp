@@ -60,7 +60,6 @@ TEST_F(SafeLandingPlannerTests, flat_center) {
   std::uniform_real_distribution<float> uniform_distribution_3_6(3.f, 6.f);
   std::uniform_real_distribution<float> uniform_distribution_6_9(6.f, 9.f);
 
-
   for (int i = 0; i < 1000; ++i) {
     float x = uniform_distribution_0_9(generator);
     float y = uniform_distribution_0_3(generator);
@@ -101,9 +100,11 @@ TEST_F(SafeLandingPlannerTests, flat_center) {
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10; j++) {
       if (i >= 3 && i <= 5 && j >= 3 && j <= 5) {
-        ASSERT_TRUE(safe_landing_planner.test_getGrid().land_(i, j)) << i << " " << j;
+        ASSERT_TRUE(safe_landing_planner.test_getGrid().land_(i, j)) << i << " "
+                                                                     << j;
       } else {
-        ASSERT_FALSE(safe_landing_planner.test_getGrid().land_(i, j)) << i << " " << j;
+        ASSERT_FALSE(safe_landing_planner.test_getGrid().land_(i, j))
+            << i << " " << j;
       }
     }
   }

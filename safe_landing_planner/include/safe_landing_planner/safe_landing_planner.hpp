@@ -14,7 +14,7 @@ namespace avoidance {
 
 class SafeLandingPlanner {
 public:
-  SafeLandingPlanner();
+  SafeLandingPlanner() = default;
   ~SafeLandingPlanner() = default;
 
   pcl::PointCloud<pcl::PointXYZ> cloud_;

@@ -3,22 +3,11 @@
 
 namespace avoidance {
 
-SafeLandingPlanner::SafeLandingPlanner() {
-  rqt_param_config_ =
-      safe_landing_planner::SafeLandingPlannerNodeConfig::__getDefault__();
-}
-
 void SafeLandingPlanner::runSafeLandingPlanner() {
   if (size_update_) {
-    grid_.grid_size_ = grid_size_;
-    grid_.cell_size_ = cell_size_;
-    previous_grid_.grid_size_ = grid_size_;
-    previous_grid_.cell_size_ = cell_size_;
+    grid_.resize(grid_size_, cell_size_);
+    previous_grid_.resize(grid_size_, cell_size_);
     n_lines_padding_ = smoothing_size_;
-    grid_.reset();
-    previous_grid_.reset();
-    grid_.resize();
-    previous_grid_.resize();
     size_update_ = false;
   }
   grid_.setFilterLimits(position_);
@@ -59,7 +48,7 @@ void SafeLandingPlanner::processPointcloud() {
 }
 
 void SafeLandingPlanner::combineGrid() {
-  int size = static_cast<int>(std::ceil(grid_.grid_size_ / grid_.cell_size_));
+  int size = grid_.getRowColSize();
   for (int i = 0; i < size; i++) {
     for (int j = 0; j < size; j++) {
       Eigen::Vector2i grid_index = Eigen::Vector2i(i, j);
@@ -75,7 +64,7 @@ void SafeLandingPlanner::combineGrid() {
 }
 
 void SafeLandingPlanner::isLandingPossible() {
-  int size = static_cast<int>(std::ceil(grid_.grid_size_ / grid_.cell_size_));
+  int size = grid_.getRowColSize();
   // decide if it's possible to land in each cell based on variance and numeber
   // of points
   for (int i = 0; i < size; i++) {
@@ -158,8 +147,8 @@ Eigen::Vector2i SafeLandingPlanner::computeGridIndexes(float x, float y) {
   Eigen::Vector2f grid_min, grid_max;
   grid_.getGridLimits(grid_min, grid_max);
   Eigen::Vector2i idx(
-      static_cast<int>(std::floor((x - grid_min.x()) / grid_.cell_size_)),
-      static_cast<int>(std::floor((y - grid_min.y()) / grid_.cell_size_)));
+      static_cast<int>(std::floor((x - grid_min.x()) / grid_.getCellSize())),
+      static_cast<int>(std::floor((y - grid_min.y()) / grid_.getCellSize())));
   return idx;
 }
 
@@ -198,11 +187,10 @@ void SafeLandingPlanner::dynamicReconfigureSetParams(
   alpha_ = static_cast<float>(config.alpha);
   timeout_critical_ = config.timeout_critical;
   timeout_termination_ = config.timeout_termination;
-  if ((rqt_param_config_.grid_size != grid_size_) ||
-      (rqt_param_config_.cell_size != cell_size_) ||
-      (rqt_param_config_.smoothing_size != smoothing_size_)) {
+  if ((grid_.getGridSize() != grid_size_) ||
+      (grid_.getCellSize() != cell_size_) ||
+      (n_lines_padding_ != smoothing_size_)) {
     size_update_ = true;
   }
-  rqt_param_config_ = config;
 }
 }

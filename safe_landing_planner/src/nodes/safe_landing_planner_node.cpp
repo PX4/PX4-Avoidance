@@ -156,8 +156,8 @@ void SafeLandingPlannerNode::publishSerialGrid() {
   safe_landing_planner::LSDGridMsg grid;
   grid.header.frame_id = "local_origin";
   grid.header.seq = grid_seq;
-  grid.grid_size = prev_grid.grid_size_;
-  grid.cell_size = prev_grid.cell_size_;
+  grid.grid_size = prev_grid.getGridSize();
+  grid.cell_size = prev_grid.getCellSize();
 
   grid.mean.layout.dim.push_back(std_msgs::MultiArrayDimension());
   grid.mean.layout.dim.push_back(std_msgs::MultiArrayDimension());
@@ -207,10 +207,8 @@ void SafeLandingPlannerNode::publishSerialGrid() {
   grid.counter.layout.dim[1].stride = counter.rows();
   grid.counter.layout.data_offset = 0;
 
-  for (size_t i = 0; i < std::ceil(prev_grid.grid_size_ / prev_grid.cell_size_);
-       i++) {
-    for (size_t j = 0;
-         j < std::ceil(prev_grid.grid_size_ / prev_grid.cell_size_); j++) {
+  for (size_t i = 0; i < prev_grid.getRowColSize(); i++) {
+    for (size_t j = 0; j < prev_grid.getRowColSize(); j++) {
       grid.mean.data.push_back(prev_grid.mean_(i, j));
       grid.land.data.push_back(prev_grid.land_(i, j));
       grid.std_dev.data.push_back(sqrtf(variance(i, j)));

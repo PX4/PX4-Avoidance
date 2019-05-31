@@ -9,13 +9,9 @@ class Grid {
 public:
   Grid(const float grid_size, const float cell_size) :
     grid_size_(grid_size),
-    cell_size_(cell_size),
-    mean_(static_cast<int>(std::ceil(grid_size/cell_size)), static_cast<int>(std::ceil(grid_size/cell_size))),
-    variance_(static_cast<int>(std::ceil(grid_size/cell_size)), static_cast<int>(std::ceil(grid_size/cell_size))),
-    counter_(static_cast<int>(std::ceil(grid_size/cell_size)), static_cast<int>(std::ceil(grid_size/cell_size))),
-    land_(static_cast<int>(std::ceil(grid_size/cell_size)), static_cast<int>(std::ceil(grid_size/cell_size)))
+    cell_size_(cell_size)
     {
-      reset();
+      resize(grid_size_, cell_size_);
     }
   ~Grid() = default;
 
@@ -26,11 +22,14 @@ public:
     land_.fill(0);
   }
 
-  void resize() {
-    mean_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
-    variance_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
-    counter_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
-    land_.resize(static_cast<int>(std::ceil(grid_size_/cell_size_)), static_cast<int>(std::ceil(grid_size_/cell_size_)));
+  void resize(float grid_size, float cell_size) {
+    grid_size_ = grid_size;
+    cell_size_ = cell_size;
+    grid_row_col_size_ = static_cast<int>(std::ceil(grid_size_ / cell_size_));
+    mean_.resize(grid_row_col_size_, grid_row_col_size_);
+    variance_.resize(grid_row_col_size_, grid_row_col_size_);
+    counter_.resize(grid_row_col_size_, grid_row_col_size_);
+    land_.resize(grid_row_col_size_, grid_row_col_size_);
     reset();
   }
 
@@ -51,6 +50,10 @@ public:
   float getMean(Eigen::Vector2i &idx) {return mean_(idx.x(), idx.y());}
   float getVariance(Eigen::Vector2i &idx) {return variance_(idx.x(), idx.y());}
   int getCounter(Eigen::Vector2i &idx) {return counter_(idx.x(), idx.y()); }
+  int getRowColSize() const {return grid_row_col_size_; }
+  float getGridSize() const {return grid_size_; }
+  float getCellSize() const {return cell_size_; }
+
 
   void setFilterLimits(Eigen::Vector3f &pos) {
     corner_min_.x() = pos.x() - grid_size_ / 2.f;
@@ -64,8 +67,6 @@ public:
     max = corner_max_;
   }
 
-  float grid_size_;
-  float cell_size_;
   Eigen::MatrixXi land_;
   Eigen::MatrixXf mean_;
 
@@ -74,6 +75,10 @@ private:
   Eigen::Vector2f corner_max_;
   Eigen::MatrixXf variance_;
   Eigen::MatrixXi counter_;
+
+  float grid_size_;
+  float cell_size_;
+  int grid_row_col_size_;
 };
 
 }

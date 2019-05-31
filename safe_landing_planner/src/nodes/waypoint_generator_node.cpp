@@ -137,11 +137,9 @@ void WaypointGeneratorNode::stateCallback(const mavros_msgs::State &msg) {
 void WaypointGeneratorNode::gridCallback(
     const safe_landing_planner::LSDGridMsg &msg) {
   grid_lsd_seq_ = msg.header.seq;
-  if (grid_lsd_.grid_size_ != msg.grid_size ||
-      grid_lsd_.cell_size_ != msg.cell_size) {
-    grid_lsd_.grid_size_ = msg.grid_size;
-    grid_lsd_.cell_size_ = msg.cell_size;
-    grid_lsd_.resize();
+  if (grid_lsd_.getGridSize() != msg.grid_size ||
+      grid_lsd_.getCellSize() != msg.cell_size) {
+    grid_lsd_.resize(msg.grid_size, msg.cell_size);
   }
 
   for (int i = 0; i < msg.mean.layout.dim[0].size; i++) {
@@ -308,7 +306,7 @@ void WaypointGeneratorNode::calculateWaypoint() {
         }
         float offset_exploration_setpoint =
             factor_exploration_ * 2.f *
-            static_cast<float>(smoothing_land_cell_) * grid_lsd_.cell_size_;
+            static_cast<float>(smoothing_land_cell_) * grid_lsd_.getCellSize();
         n_explored_pattern_++;
         if (n_explored_pattern_ == exploration_pattern.size()) {
           n_explored_pattern_ = 0;
@@ -413,6 +411,7 @@ void WaypointGeneratorNode::fillUnusedTrajectorySetpoints(
 void WaypointGeneratorNode::landingAreaVisualization() {
   visualization_msgs::MarkerArray marker_array;
 
+  float cell_size = grid_lsd_.getCellSize();
   visualization_msgs::Marker cell;
   cell.header.frame_id = "local_origin";
   cell.header.stamp = ros::Time::now();
@@ -423,8 +422,8 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   cell.pose.orientation.y = 0.0;
   cell.pose.orientation.z = 0.0;
   cell.pose.orientation.w = 1.0;
-  cell.scale.x = grid_lsd_.cell_size_;
-  cell.scale.y = grid_lsd_.cell_size_;
+  cell.scale.x = cell_size;
+  cell.scale.y = cell_size;
   cell.scale.z = 1.0;
   cell.color.a = 0.5;
   cell.scale.z = 0.1;
@@ -439,18 +438,16 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   float range_min = 0.f;
   int counter = 0;
 
-  for (size_t i = 0; i < std::ceil(grid_lsd_.grid_size_ / grid_lsd_.cell_size_);
-       i++) {
-    for (size_t j = 0;
-         j < std::ceil(grid_lsd_.grid_size_ / grid_lsd_.cell_size_); j++) {
+  for (size_t i = 0; i < grid_lsd_.getRowColSize(); i++) {
+    for (size_t j = 0; j < grid_lsd_.getRowColSize(); j++) {
       if (i >= (offset - smoothing_land_cell_) &&
           i < (offset + smoothing_land_cell_) &&
           j >= (offset - smoothing_land_cell_) &&
           j < (offset + smoothing_land_cell_)) {
-        cell.pose.position.x = (i * grid_lsd_.cell_size_) + grid_min.x() +
-                               (grid_lsd_.cell_size_ / 2.f);
-        cell.pose.position.y = (j * grid_lsd_.cell_size_) + grid_min.y() +
-                               (grid_lsd_.cell_size_ / 2.f);
+        cell.pose.position.x =
+            (i * cell_size) + grid_min.x() + (cell_size / 2.f);
+        cell.pose.position.y =
+            (j * cell_size) + grid_min.y() + (cell_size / 2.f);
         cell.pose.position.z = 1.0;
         if (can_land_hysteresis_[counter] > can_land_thr_) {
           cell.color.r = 0.0;

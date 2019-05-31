@@ -32,6 +32,7 @@ void SafeLandingPlannerVisualization::visualizeSafeLandingPlanner(
 void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
   visualization_msgs::MarkerArray marker_array;
 
+  float cell_size = grid.getCellSize();
   visualization_msgs::Marker cell;
   cell.header.frame_id = "local_origin";
   cell.header.stamp = ros::Time::now();
@@ -42,8 +43,8 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
   cell.pose.orientation.y = 0.0;
   cell.pose.orientation.z = 0.0;
   cell.pose.orientation.w = 1.0;
-  cell.scale.x = grid.cell_size_;
-  cell.scale.y = grid.cell_size_;
+  cell.scale.x = cell_size;
+  cell.scale.y = cell_size;
   cell.scale.z = 0.1;
   cell.color.a = 0.5;
   cell.color.r = 0.0;
@@ -58,12 +59,10 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
 
   Eigen::MatrixXf mean = grid.getMean();
 
-  for (size_t i = 0; i < std::ceil(grid.grid_size_ / grid.cell_size_); i++) {
-    for (size_t j = 0; j < std::ceil(grid.grid_size_ / grid.cell_size_); j++) {
-      cell.pose.position.x =
-          (i * grid.cell_size_) + grid_min.x() + (grid.cell_size_ / 2.f);
-      cell.pose.position.y =
-          (j * grid.cell_size_) + grid_min.y() + (grid.cell_size_ / 2.f);
+  for (size_t i = 0; i < grid.getRowColSize(); i++) {
+    for (size_t j = 0; j < grid.getRowColSize(); j++) {
+      cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
+      cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
       cell.pose.position.z = 0.0;
 
       float h = ((range_max - range_min) * (mean(i, j) - variance_min_value) /
@@ -130,6 +129,7 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
     const Grid& grid) {
   visualization_msgs::MarkerArray marker_array;
 
+  float cell_size = grid.getCellSize();
   visualization_msgs::Marker cell;
   cell.header.frame_id = "local_origin";
   cell.header.stamp = ros::Time::now();
@@ -140,8 +140,8 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
   cell.pose.orientation.y = 0.0;
   cell.pose.orientation.z = 0.0;
   cell.pose.orientation.w = 1.0;
-  cell.scale.x = grid.cell_size_;
-  cell.scale.y = grid.cell_size_;
+  cell.scale.x = cell_size;
+  cell.scale.y = cell_size;
   cell.scale.z = 0.1;
   cell.color.a = 0.5;
 
@@ -155,12 +155,10 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
   float range_max = 360.f;
   float range_min = 0.f;
 
-  for (size_t i = 0; i < std::ceil(grid.grid_size_ / grid.cell_size_); i++) {
-    for (size_t j = 0; j < std::ceil(grid.grid_size_ / grid.cell_size_); j++) {
-      cell.pose.position.x =
-          (i * grid.cell_size_) + grid_min.x() + (grid.cell_size_ / 2.f);
-      cell.pose.position.y =
-          (j * grid.cell_size_) + grid_min.y() + (grid.cell_size_ / 2.f);
+  for (size_t i = 0; i < grid.getRowColSize(); i++) {
+    for (size_t j = 0; j < grid.getRowColSize(); j++) {
+      cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
+      cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
       cell.pose.position.z = 0.0;
 
       float h = ((range_max - range_min) *
@@ -186,6 +184,7 @@ void SafeLandingPlannerVisualization::publishGrid(
     float smoothing_size) const {
   visualization_msgs::MarkerArray marker_array;
 
+  float cell_size = grid.getCellSize();
   visualization_msgs::Marker cell;
   cell.header.frame_id = "local_origin";
   cell.header.stamp = ros::Time::now();
@@ -196,20 +195,18 @@ void SafeLandingPlannerVisualization::publishGrid(
   cell.pose.orientation.y = 0.0;
   cell.pose.orientation.z = 0.0;
   cell.pose.orientation.w = 1.0;
-  cell.scale.x = grid.cell_size_;
-  cell.scale.y = grid.cell_size_;
+  cell.scale.x = cell_size;
+  cell.scale.y = cell_size;
   cell.scale.z = 0.1;
   cell.color.a = 0.5;
   Eigen::Vector2f grid_min, grid_max;
   grid.getGridLimits(grid_min, grid_max);
   int offset = grid.land_.rows() / 2;
 
-  for (size_t i = 0; i < std::ceil(grid.grid_size_ / grid.cell_size_); i++) {
-    for (size_t j = 0; j < std::ceil(grid.grid_size_ / grid.cell_size_); j++) {
-      cell.pose.position.x =
-          (i * grid.cell_size_) + grid_min.x() + (grid.cell_size_ / 2.f);
-      cell.pose.position.y =
-          (j * grid.cell_size_) + grid_min.y() + (grid.cell_size_ / 2.f);
+  for (size_t i = 0; i < grid.getRowColSize(); i++) {
+    for (size_t j = 0; j < grid.getRowColSize(); j++) {
+      cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
+      cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
       cell.pose.position.z = 0.0;
       if (grid.land_(i, j)) {
         cell.color.r = 0.0;
