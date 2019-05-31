@@ -172,6 +172,10 @@ In the following section we guide you trough installing and running a Gazebo sim
    ```bash
    export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
    ```
+1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
+```bash
+echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
+```
 
 You should now be ready to run the simulation using local or global planner.
 
