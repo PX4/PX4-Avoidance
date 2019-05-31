@@ -27,7 +27,7 @@ limitations under the License.
   <arg name="enable_color"      value="false"/>
   <arg name="enable_infra1"     value="true"/>
   <arg name="enable_infra2"     value="false"/>
-  <arg name="enable_pointcloud" value="true"/>
+  <arg name="enable_pointcloud" value="false"/>
   <arg name="enable_sync"       value="false"/>
   <arg name="align_depth"       value="false"/>
 
@@ -40,10 +40,6 @@ limitations under the License.
   <arg name="color_fps"         value="15"/>
 
   <arg name="infra_fps"         value="15"/>
-
-  <arg name="pointcloud_texture_stream" value="RS2_STREAM_ANY"/>
-  <arg name="pointcloud_texture_index"  value="0"/>
-  <arg name="allow_no_texture_points"   value="true"/>
 
   <arg name="initial_reset"             default="false"/>
 
@@ -58,9 +54,6 @@ limitations under the License.
        <arg name="enable_pointcloud"        value="$(arg enable_pointcloud)"/>
        <arg name="enable_sync"              value="$(arg enable_sync)"/>
        <arg name="align_depth"              value="$(arg align_depth)"/>
-       <arg name="pointcloud_texture_stream" value="$(arg pointcloud_texture_stream)"/>
-       <arg name="pointcloud_texture_index"  value="$(arg pointcloud_texture_index)"/>
-       <arg name="allow_no_texture_points"   value="$(arg allow_no_texture_points)"/>
        <arg name="depth_width"              value="$(arg depth_width)"/>
        <arg name="depth_height"             value="$(arg depth_height)"/>
        <arg name="enable_depth"             value="$(arg enable_depth)"/>
@@ -78,6 +71,14 @@ limitations under the License.
 
        <arg name="initial_reset"            value="$(arg initial_reset)"/>
      </include>
+
+      <node pkg="nodelet" type="nodelet" name="points_xyz_sw_registered"
+            args="load depth_image_proc/point_cloud_xyz $(arg manager) true" respawn="true">
+        <remap from="camera_info"             to="depth/camera_info" />
+        <remap from="image_rect" to="depth/image_rect_raw" />
+        <remap from="points"     to="depth/points" />
+      </node>
+
 </group>
 
 </launch>
