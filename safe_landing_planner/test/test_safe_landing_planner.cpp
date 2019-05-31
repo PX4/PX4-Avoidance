@@ -23,6 +23,7 @@ class SafeLandingPlannerTests : public ::testing::Test {
  public:
   TestSafeLanding safe_landing_planner;
   Eigen::Quaternionf q;
+  unsigned seed = 10;
 
   void SetUp() override {
     ros::Time::init();
@@ -49,95 +50,60 @@ TEST_F(SafeLandingPlannerTests, flat_center) {
   safe_landing_planner.dynamicReconfigureSetParams(config, 1);
 
   // create pointcloud with 3x3m flat area in the center
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator(seed);
   std::normal_distribution<float> distribution(0.0f, 1.0f);
 
   Eigen::Vector3f pos(5.f, 5.f, 5.f);
   safe_landing_planner.setPose(pos, q);
+  std::uniform_real_distribution<float> uniform_distribution_0_9(.0f, 9.f);
+  std::uniform_real_distribution<float> uniform_distribution_0_3(.0f, 3.f);
+  std::uniform_real_distribution<float> uniform_distribution_3_6(3.f, 6.f);
+  std::uniform_real_distribution<float> uniform_distribution_6_9(6.f, 9.f);
+
 
   for (int i = 0; i < 1000; ++i) {
-    float min = 0.f;
-    float max = 9.f;
-    float x = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
-    min = 0.f;
-    max = 3.f;
-    float y = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
+    float x = uniform_distribution_0_9(generator);
+    float y = uniform_distribution_0_3(generator);
     safe_landing_planner.cloud_.push_back(
         pcl::PointXYZ(x, y, distribution(generator)));
   }
 
   for (int i = 0; i < 1000; ++i) {
-    float min = 0.f;
-    float max = 9.f;
-    float x = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
-    min = 6.f;
-    max = 9.f;
-    float y = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
+    float x = uniform_distribution_0_9(generator);
+    float y = uniform_distribution_6_9(generator);
     safe_landing_planner.cloud_.push_back(
         pcl::PointXYZ(x, y, distribution(generator)));
   }
 
   for (int i = 0; i < 500; ++i) {
-    float min = 0.f;
-    float max = 3.f;
-    float x = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
-    min = 3.f;
-    max = 6.f;
-    float y = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
+    float x = uniform_distribution_0_3(generator);
+    float y = uniform_distribution_3_6(generator);
     safe_landing_planner.cloud_.push_back(
         pcl::PointXYZ(x, y, distribution(generator)));
   }
 
   for (int i = 0; i < 500; ++i) {
-    float min = 6.f;
-    float max = 9.f;
-    float x = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
-    min = 3.f;
-    max = 6.f;
-    float y = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
+    float x = uniform_distribution_6_9(generator);
+    float y = uniform_distribution_3_6(generator);
     safe_landing_planner.cloud_.push_back(
         pcl::PointXYZ(x, y, distribution(generator)));
   }
 
   std::normal_distribution<float> distribution_flat(0.0f, 0.1f);
   for (int i = 0; i < 500; ++i) {
-    float min = 3.f;
-    float max = 6.f;
-    float x = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
-    float y = min +
-              static_cast<float>(rand()) /
-                  (static_cast<float>(RAND_MAX / (max - min)));
+    float x = uniform_distribution_3_6(generator);
+    float y = uniform_distribution_3_6(generator);
     safe_landing_planner.cloud_.push_back(
         pcl::PointXYZ(x, y, distribution_flat(generator)));
   }
-
   safe_landing_planner.runSafeLandingPlanner();
 
   for (size_t i = 0; i < 10; i++) {
     for (size_t j = 0; j < 10; j++) {
       if (i >= 3 && i <= 5 && j >= 3 && j <= 5) {
-        ASSERT_TRUE(safe_landing_planner.test_getGrid().land_(i, j));
+        ASSERT_TRUE(safe_landing_planner.test_getGrid().land_(i, j)) << i << " " << j;
       } else {
-        ASSERT_FALSE(safe_landing_planner.test_getGrid().land_(i, j));
+        ASSERT_FALSE(safe_landing_planner.test_getGrid().land_(i, j)) << i << " " << j;
       }
     }
   }
@@ -154,7 +120,6 @@ TEST_F(SafeLandingPlannerTests, flat_bottom_half) {
   safe_landing_planner.dynamicReconfigureSetParams(config, 1);
 
   // create pointcloud with 3x3m flat area on the right side
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator(seed);
   std::normal_distribution<float> distribution(2.0f, 1.5f);
 
@@ -329,7 +294,6 @@ TEST_F(SafeLandingPlannerTests, mean) {
 
   safe_landing_planner.dynamicReconfigureSetParams(config, 1);
 
-  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator(seed);
   std::normal_distribution<float> distribution_flat_ground(0.0f, 0.05f);
   for (int i = 0; i < 2000; ++i) {
