@@ -67,6 +67,11 @@ public:
     max = corner_max_;
   }
 
+  void combine(const Grid &prev_grid, float alpha) {
+    mean_ =  alpha * prev_grid.mean_ + (1.f - alpha) * mean_;
+    variance_ =  alpha * prev_grid.variance_ + (1.f - alpha) * variance_;
+  }
+
   Eigen::MatrixXi land_;
   Eigen::MatrixXf mean_;
 

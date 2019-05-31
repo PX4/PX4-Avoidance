@@ -16,6 +16,7 @@ using namespace avoidance;
 class TestSafeLanding : public ::SafeLandingPlanner {
  public:
   Grid& test_getGrid() { return grid_; }
+  Grid& test_getPrevGrid() { return previous_grid_; }
   float& test_getCounterThreshold() { return n_points_thr_; }
 };
 
@@ -369,4 +370,31 @@ TEST_F(SafeLandingPlannerTests, test_mean_variance) {
   ASSERT_NEAR(mean, safe_landing_planner.test_getGrid().getMean(p0), 0.001f);
   ASSERT_NEAR(variance, safe_landing_planner.test_getGrid().getVariance(p0),
               0.001f);
+}
+
+TEST_F(SafeLandingPlannerTests, test_combine) {
+  safe_landing_planner::SafeLandingPlannerNodeConfig config =
+      safe_landing_planner::SafeLandingPlannerNodeConfig::__getDefault__();
+  config.grid_size = 3;
+  config.cell_size = 1;
+  config.alpha = 0.9;
+
+  safe_landing_planner.dynamicReconfigureSetParams(config, 1);
+  Eigen::Vector2i x = Eigen::Vector2i(0,0);
+  safe_landing_planner.test_getGrid().setMean(x, 1.f);
+  safe_landing_planner.test_getPrevGrid().setMean(x, 1.5f);
+
+  Eigen::Vector2i y = Eigen::Vector2i(0,1);
+  safe_landing_planner.test_getGrid().setMean(y, 3.21f);
+  safe_landing_planner.test_getPrevGrid().setMean(y, 5.15f);
+
+  Eigen::Vector2i z = Eigen::Vector2i(0,2);
+  safe_landing_planner.test_getGrid().setMean(z, 1.75f);
+  safe_landing_planner.test_getPrevGrid().setMean(z, 1.89f);
+
+  safe_landing_planner.test_getGrid().combine(safe_landing_planner.test_getPrevGrid(), 0.9);
+  ASSERT_NEAR(0.9f * 1.5f + 0.1f * 1.f, safe_landing_planner.test_getGrid().getMean(x), 0.001f);
+  ASSERT_NEAR(0.9f * 5.15f + 0.1f * 3.21f, safe_landing_planner.test_getGrid().getMean(y), 0.001f);
+  ASSERT_NEAR(0.9f * 1.89f + 0.1f * 1.75f, safe_landing_planner.test_getGrid().getMean(z), 0.001f);
+
 }

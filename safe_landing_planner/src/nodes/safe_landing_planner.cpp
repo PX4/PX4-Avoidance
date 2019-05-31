@@ -12,7 +12,8 @@ void SafeLandingPlanner::runSafeLandingPlanner() {
   }
   grid_.setFilterLimits(position_);
   processPointcloud();
-  combineGrid();
+  // low pass filter on grid mean and variance
+  grid_.combine(previous_grid_, alpha_);
   isLandingPossible();
 }
 
@@ -27,9 +28,8 @@ void SafeLandingPlanner::processPointcloud() {
     if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
       // check if point is inside the grid
       if (isInsideGrid(xyz.x, xyz.y)) {
-        Eigen::Vector2i grid_index = Eigen::Vector2i(NAN, NAN);
         // calculate the cell indexes to which the points maps to
-        grid_index = computeGridIndexes(xyz.x, xyz.y);
+        Eigen::Vector2i grid_index = computeGridIndexes(xyz.x, xyz.y);
         float prev_mean = grid_.getMean(grid_index);
         float prev_variance = grid_.getVariance(grid_index);
         grid_.increaseCounter(grid_index);
@@ -43,22 +43,6 @@ void SafeLandingPlanner::processPointcloud() {
         visualization_cloud_.points.push_back(avoidance::toXYZI(
             xyz, grid_index.x() * (grid_size_ / cell_size_) + grid_index.y()));
       }
-    }
-  }
-}
-
-void SafeLandingPlanner::combineGrid() {
-  int size = grid_.getRowColSize();
-  for (int i = 0; i < size; i++) {
-    for (int j = 0; j < size; j++) {
-      Eigen::Vector2i grid_index = Eigen::Vector2i(i, j);
-      float new_mean = alpha_ * previous_grid_.getMean(grid_index) +
-                       (1.f - alpha_) * grid_.getMean(grid_index);
-      float new_variance = alpha_ * previous_grid_.getVariance(grid_index) +
-                           (1.f - alpha_) * grid_.getVariance(grid_index);
-
-      grid_.setMean(grid_index, new_mean);
-      grid_.setVariance(grid_index, new_variance);
     }
   }
 }

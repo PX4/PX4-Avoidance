@@ -46,7 +46,6 @@ public:
   **/
   void isLandingPossible();
 
-
   Eigen::Vector2i getPositionIndex() const {return pos_index_; };
   Grid getPreviousGrid() const {return previous_grid_; };
   Grid getGrid() const {return grid_; };
@@ -103,10 +102,7 @@ protected:
   **/
   std::pair<float, float> computeOnlineMeanVariance(float prev_mean, float prev_variance, float new_value, float seq);
 
-  /**
-  * @brief combines the previous and current grid means and variances with a filter
-  **/
-  void combineGrid();
+
 };
 
 }
