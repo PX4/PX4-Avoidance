@@ -294,7 +294,7 @@ For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a missi
 This section shows how to start the *safe_landing_planner* and use it to land safely in mission or auto land mode. To run the node:
 
 ```bash
-roslaunch landing_site_detection landing_site_detection.launch
+roslaunch safe_landing_planner safe_landing_planner.launch
 ```
 
 You will see an unarmed vehicle on the ground. Open [QGroundControl](http://qgroundcontrol.com/), either plan a mission with the last item of type *Land* or fly around the world in Position Control, click the *Land* button on the left side where you wish to land.

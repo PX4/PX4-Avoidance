@@ -310,54 +310,6 @@ TEST_F(SafeLandingPlannerTests, binning_12_4) {
                   safe_landing_planner.test_getGrid().getVariance(p2));
 }
 
-TEST_F(SafeLandingPlannerTests, smoothing) {
-  safe_landing_planner.test_getGrid().land_.fill(0);
-  safe_landing_planner::SafeLandingPlannerNodeConfig config =
-      safe_landing_planner::SafeLandingPlannerNodeConfig::__getDefault__();
-
-  config.smoothing_size = 2;
-  config.n_points_threshold = 0;
-  config.cell_size = 1;
-
-  safe_landing_planner.dynamicReconfigureSetParams(config, 1);
-  safe_landing_planner.runSafeLandingPlanner();
-
-  safe_landing_planner.test_getGrid().reset();
-
-  for (int i = 0; i < safe_landing_planner.test_getGrid().land_.rows(); i++) {
-    for (int j = 0; j < safe_landing_planner.test_getGrid().land_.cols(); j++) {
-      Eigen::Vector2i p(i, j);
-      safe_landing_planner.test_getGrid().setVariance(p, 1.f);
-      safe_landing_planner.test_getGrid().increaseCounter(p);
-    }
-  }
-
-  Eigen::Vector2i p(2, 3);
-  safe_landing_planner.test_getGrid().setVariance(p, 0.001f);
-  safe_landing_planner.test_getGrid().increaseCounter(p);
-  Eigen::Vector2i p1(2, 4);
-  safe_landing_planner.test_getGrid().setVariance(p1, 0.001f);
-  safe_landing_planner.test_getGrid().increaseCounter(p1);
-  Eigen::Vector2i p2(2, 5);
-  safe_landing_planner.test_getGrid().setVariance(p2, 0.001f);
-  safe_landing_planner.test_getGrid().increaseCounter(p2);
-  Eigen::Vector2i p3(9, 9);
-  safe_landing_planner.test_getGrid().setVariance(p3, 0.001f);
-  safe_landing_planner.test_getGrid().increaseCounter(p3);
-
-  safe_landing_planner.isLandingPossible();
-
-  for (int i = 0; i < safe_landing_planner.test_getGrid().land_.rows(); i++) {
-    for (int j = 0; j < safe_landing_planner.test_getGrid().land_.cols(); j++) {
-      if (i >= 3 && i <= 5 && j >= 0 && j <= 4) {
-        ASSERT_TRUE(safe_landing_planner.test_getGrid().land_(j, i));
-      } else {
-        ASSERT_FALSE(safe_landing_planner.test_getGrid().land_(j, i));
-      }
-    }
-  }
-}
-
 TEST_F(SafeLandingPlannerTests, mean) {
   Eigen::Vector3f pos(5.f, 5.f, 5.f);
   safe_landing_planner.setPose(pos, q);
