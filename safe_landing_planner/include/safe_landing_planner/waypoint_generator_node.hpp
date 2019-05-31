@@ -157,7 +157,7 @@ namespace avoidance {
     *            or sent back because no intervention is needed
     * @returns   true, overwtite setpoints
     **/
-    void updateLSDState();
+    void updateSLPState();
 
     /**
     * @brief     publishes the computed waypoints to the FCU

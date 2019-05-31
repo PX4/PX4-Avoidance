@@ -157,7 +157,7 @@ void WaypointGeneratorNode::gridCallback(
 }
 
 void WaypointGeneratorNode::calculateWaypoint() {
-  updateLSDState();
+  updateSLPState();
 
   switch (lsd_state_) {
     case LSDState::goTo: {
@@ -341,7 +341,7 @@ void WaypointGeneratorNode::calculateWaypoint() {
   }
 }
 
-void WaypointGeneratorNode::updateLSDState() {
+void WaypointGeneratorNode::updateSLPState() {
   if (update_smoothing_size_) {
     can_land_hysteresis_.resize((smoothing_land_cell_ * 2) *
                                 (smoothing_land_cell_ * 2));
