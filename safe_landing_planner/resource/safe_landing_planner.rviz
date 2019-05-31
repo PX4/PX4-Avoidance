@@ -128,8 +128,8 @@ Visualization Manager:
       Value: false
     - Class: rviz/MarkerArray
       Enabled: false
-      Marker Topic: /grid_variance
-      Name: Variance
+      Marker Topic: /grid_std_dev
+      Name: Standard Deviation
       Namespaces:
         {}
       Queue Size: 100

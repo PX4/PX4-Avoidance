@@ -63,14 +63,10 @@ private:
 
   /**
   * @brief converts from HSV to RGB color space
-  * @param[out] fR Red component, range: [0, 1]
-  * @param[out] fG Green component, range: [0, 1]
-  * @param[out] fB Blue component, range: [0, 1]
-  * @param[in] fH Hue component, range: [0, 360]
-  * @param[in] fS Hue component, range: [0, 1]
-  * @param[in] fV Hue component, range: [0, 1]
+  * @param[in] hsv, Hue in range [0, 360], Saturation and Value in range [0, 1]
+  * @return[out] rgb, Red Blue Green, each elemnt in range [0, 1]
   */
-  void HSVtoRGB(float& fR, float& fG, float& fB, float& fH, float& fS, float& fV);
+  std::tuple<float, float, float> HSVtoRGB(std::tuple<float, float, float> hsv);
 
 };
 
