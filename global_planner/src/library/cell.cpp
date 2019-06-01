@@ -73,9 +73,11 @@ Cell Cell::getNeighborFromYaw(double yaw) const {
 std::vector<Cell> Cell::getFlowNeighbors(int radius) const {
   std::vector<Cell> cells;
   for (int x = -radius; x <= radius; x++) {
-    int y_radius = static_cast<int>(std::ceil(std::sqrt(std::pow(double(radius), 2) - std::pow(double(x),2))));
+    int y_radius = static_cast<int>(std::ceil(
+        std::sqrt(std::pow(double(radius), 2) - std::pow(double(x), 2))));
     for (int y = -y_radius; y <= y_radius; y++) {
-      int z_radius = static_cast<int>(std::ceil(std::sqrt(std::pow(double(y_radius), 2) - std::pow(double(y),2))));
+      int z_radius = static_cast<int>(std::ceil(
+          std::sqrt(std::pow(double(y_radius), 2) - std::pow(double(y), 2))));
       for (int z = -z_radius; z <= z_radius; z++) {
         cells.push_back(Cell(std::tuple<int, int, int>(
             xIndex() + x, yIndex() + y, zIndex() + z)));
