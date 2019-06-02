@@ -1,0 +1,58 @@
+# This is a sample config file for a real vehicle
+!!python/object/new:dynamic_reconfigure.encoding.Config
+dictitems:
+  adapt_cost_params_: true
+  box_radius_: 12.0
+  children_per_node_: 50
+  goal_cost_param_: 10.0
+  goal_z_param: 3.0
+  groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+    dictitems:
+      adapt_cost_params_: true
+      box_radius_: 12.0
+      children_per_node_: 50
+      goal_cost_param_: 10.0
+      goal_z_param: 3.0
+      groups: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      heading_cost_param_: 0.5
+      id: 0
+      max_path_length_: 3.0
+      max_point_age_s_: 20.0
+      min_num_points_per_cell_: 25 # Tune to your sensor requirements!
+      min_realsense_dist_: 0.2
+      n_expanded_nodes_: 10
+      name: Default
+      no_progress_slope_: -0.0007
+      parameters: !!python/object/new:dynamic_reconfigure.encoding.Config
+        state: []
+      parent: 0
+      smooth_cost_param_: 1.5
+      smoothing_margin_degrees_: 40.0
+      smoothing_speed_xy_: 10.0
+      smoothing_speed_z_: 3.0
+      state: true
+      timeout_critical_: 0.5
+      timeout_termination_: 15.0
+      tree_discount_factor_: 0.8
+      tree_node_distance_: 1.0
+      type: ''
+      use_vel_setpoints_: false
+    state: []
+  heading_cost_param_: 0.5
+  max_path_length_: 3.0
+  max_point_age_s_: 20.0
+  min_num_points_per_cell_: 25 # Tune to your sensor requirements!
+  min_realsense_dist_: 0.2
+  n_expanded_nodes_: 10
+  no_progress_slope_: -0.0007
+  smooth_cost_param_: 1.5
+  smoothing_margin_degrees_: 40.0
+  smoothing_speed_xy_: 10.0
+  smoothing_speed_z_: 3.0
+  timeout_critical_: 0.5
+  timeout_termination_: 15.0
+  tree_discount_factor_: 0.8
+  tree_node_distance_: 1.0
+  use_vel_setpoints_: false
+state: []

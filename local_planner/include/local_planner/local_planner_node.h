@@ -6,7 +6,7 @@
 
 #ifndef DISABLE_SIMULATION
 // include simulation
-#include "local_planner/rviz_world_loader.h"
+#include "avoidance/rviz_world_loader.h"
 #endif
 
 #include <geometry_msgs/Point.h>
@@ -36,6 +36,7 @@
 #include <Eigen/Core>
 #include <boost/bind.hpp>
 
+#include <avoidance/common.h>
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
@@ -68,35 +69,12 @@ struct cameraData {
   bool transformed_;
 };
 
-enum class MAV_STATE {
-  MAV_STATE_UNINIT,
-  MAV_STATE_BOOT,
-  MAV_STATE_CALIBRATIN,
-  MAV_STATE_STANDBY,
-  MAV_STATE_ACTIVE,
-  MAV_STATE_CRITICAL,
-  MAV_STATE_EMERGENCY,
-  MAV_STATE_POWEROFF,
-  MAV_STATE_FLIGHT_TERMINATION,
-};
-
-enum class NavigationState {
-  mission,
-  auto_takeoff,
-  auto_land,
-  auto_rtl,
-  auto_rtgs,
-  offboard,
-  none,
-};
-
 class LocalPlannerNode {
  public:
   LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
                    const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
-  std::string world_path_;
   std::atomic<bool> should_exit_{false};
 
   std::vector<cameraData> cameras_;
@@ -110,7 +88,7 @@ class LocalPlannerNode {
   LocalPlannerVisualization visualizer_;
 
 #ifndef DISABLE_SIMULATION
-  WorldVisualizer world_visualizer_;
+  std::unique_ptr<WorldVisualizer> world_visualizer_;
 #endif
 
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
@@ -118,7 +96,6 @@ class LocalPlannerNode {
 
   std::mutex data_ready_mutex_;
   std::condition_variable data_ready_cv_;
-  bool never_run_ = true;
   bool position_received_ = false;
 
   /**
@@ -165,28 +142,6 @@ class LocalPlannerNode {
   void pointCloudTransformThread(int index);
 
   /**
-  * @brief     transforms position setpoints from ROS message to MavROS message
-  * @params[out] obst_avoid, position setpoint in MavROS message form
-  * @params[in] pose, position setpoint computed by the planner
-  **/
-  void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                 geometry_msgs::PoseStamped pose);
-  /**
-  * @brief      transforms velocity setpoints from ROS message to MavROS
-  *             message
-  * @param[out] obst_avoid, velocity setpoint in MavROS message form
-  * @param[in]  vel, velocity setpoint computd by the planner
-  **/
-  void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                     geometry_msgs::Twist vel);
-
-  /**
-  * @brief      fills MavROS trajectory messages with NAN
-  * @param      point, setpoint to be filled with NAN
-  **/
-  void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-
-  /**
   * @brief      calculates position and velocity setpoints and sends to the FCU
   * @param[in]  hover, true if the vehicle is loitering
   **/
@@ -219,7 +174,7 @@ class LocalPlannerNode {
   * @param[out] hover, true if the vehicle is hovering
   **/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& planner_is_healthy, bool& hover);
+                     bool& hover);
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
@@ -287,7 +242,6 @@ class LocalPlannerNode {
   bool data_ready_ = false;
   bool hover_;
   bool planner_is_healthy_;
-  bool startup_;
   bool position_not_received_error_sent_ = false;
   bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;

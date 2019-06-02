@@ -1,0 +1,28 @@
+<launch>
+  <arg name="model" default="iris_stereo_camera"/>
+  <arg name="world_file_name"    default="simple_obstacle" />
+  <arg name="world_path" default="$(find avoidance)/sim/worlds/$(arg world_file_name).world" />
+  <arg name="pointcloud_topics" default="[/stereo/points2]"/>
+
+  <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
+  <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
+          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
+
+  <!-- Launch PX4 and mavros -->
+  <include file="$(find avoidance)/launch/avoidance_sitl_mavros.launch" >
+    <arg name="model" value="iris_stereo_camera" />
+    <arg name="world_path" value="$(arg world_path)" />
+  </include>
+
+  <!-- Launch stereo_image_proc node which runs OpenCV's block matching  -->
+  <node ns="stereo" pkg="stereo_image_proc" type="stereo_image_proc" name="stereo_image_proc">
+    <param name="stereo_algorithm" type="double" value="1.0" />
+    <param name="correlation_window_size" type="double" value="19.0" />
+    <param name="disparity_range" type="double" value="32.0" />
+    <param name="uniqueness_ratio" type="double" value="40.0" />
+    <param name="speckle_size" type="double" value="1000.0" />
+    <param name="speckle_range" type="double" value="2.0" />
+  </node>
+
+</launch>
+

@@ -1,6 +1,6 @@
 #include "local_planner/local_planner.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 #include "local_planner/star_planner.h"
 #include "local_planner/tree_node.h"
 
@@ -16,11 +16,12 @@ LocalPlanner::~LocalPlanner() {}
 void LocalPlanner::setPose(const Eigen::Vector3f& pos,
                            const Eigen::Quaternionf& q) {
   position_ = pos;
-  curr_yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
-  curr_yaw_histogram_frame_deg_ = -curr_yaw_fcu_frame_deg_ + 90.0f;
 
-  curr_pitch_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, curr_yaw_histogram_frame_deg_);
+  // Azimuth angle in histogram convention is different from FCU convention!
+  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
+  fov_.azimuth_deg = wrapAngleToPlusMinus180(-getYawFromQuaternion(q) + 90.0f);
+  fov_.elevation_deg = -getPitchFromQuaternion(q);
+  star_planner_->setPose(position_, fov_.azimuth_deg);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -36,8 +37,10 @@ void LocalPlanner::dynamicReconfigureSetParams(
   cost_params_.heading_cost_param = config.heading_cost_param_;
   cost_params_.smooth_cost_param = config.smooth_cost_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
+  min_num_points_per_cell_ = config.min_num_points_per_cell_;
   no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
+  timeout_startup_ = config.timeout_startup_;
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
@@ -66,6 +69,11 @@ void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   applyGoal();
 }
 
+void LocalPlanner::setFOV(float h_FOV_deg, float v_FOV_deg) {
+  fov_.h_fov_deg = h_FOV_deg;
+  fov_.v_fov_deg = v_FOV_deg;
+}
+
 Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
 
 void LocalPlanner::applyGoal() {
@@ -77,18 +85,13 @@ void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
            static_cast<int>(original_cloud_vector_.size()));
 
-  // calculate Field of View
-  FOV_.z_idx_vec.clear();
-  calculateFOV(h_FOV_deg_, v_FOV_deg_, FOV_, curr_yaw_histogram_frame_deg_,
-               curr_pitch_deg_);
-
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
   float elapsed_since_last_processing = static_cast<float>(
       (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, FOV_,
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_,
                     position_, min_realsense_dist_, max_point_age_s_,
-                    elapsed_since_last_processing);
+                    elapsed_since_last_processing, min_num_points_per_cell_);
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -118,8 +121,9 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
   // fill image data
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      float dist = histogram.get_dist(e, z);
       float depth_val =
-          255.f * histogram.get_dist(e, z) / histogram_box_.radius_;
+          dist > 0.01f ? 255.f - 255.f * dist / histogram_box_.radius_ : 0.f;
       histogram_image_data_.push_back(
           (int)std::max(0.0f, std::min(255.f, depth_val)));
     }
@@ -158,13 +162,11 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_,
-                    curr_yaw_histogram_frame_deg_, last_sent_waypoint_,
-                    cost_params_, velocity_.norm() < 0.1f,
+      getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg,
+                    last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
-      star_planner_->setFOV(h_FOV_deg_, v_FOV_deg_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
@@ -189,43 +191,16 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
   msg.range_min = min_realsense_dist_;
   msg.range_max = histogram_box_.radius_;
-
-  // turn idxs 180 degress to point to local north instead of south
-  std::vector<int> z_FOV_idx_north;
-  z_FOV_idx_north.reserve(FOV_.z_idx_vec.size());
-
-  for (size_t i = 0; i < FOV_.z_idx_vec.size(); i++) {
-    int new_idx = FOV_.z_idx_vec[i] + GRID_LENGTH_Z / 2;
-
-    if (new_idx >= GRID_LENGTH_Z) {
-      new_idx = new_idx - GRID_LENGTH_Z;
-    }
-
-    z_FOV_idx_north.push_back(new_idx);
-  }
-
   msg.ranges.reserve(GRID_LENGTH_Z);
-  for (int idx = 0; idx < GRID_LENGTH_Z; idx++) {
-    float range;
 
-    if (std::find(z_FOV_idx_north.begin(), z_FOV_idx_north.end(), idx) ==
-        z_FOV_idx_north.end()) {
-      range = UINT16_MAX;
-    } else {
-      int hist_idx = idx - GRID_LENGTH_Z / 2;
+  for (int i = 0; i < GRID_LENGTH_Z; ++i) {
+    // turn idxs 180 degress to point to local north instead of south
+    int j = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    float dist = hist.get_dist(0, j);
 
-      if (hist_idx < 0) {
-        hist_idx = hist_idx + GRID_LENGTH_Z;
-      }
-
-      if (hist.get_dist(0, hist_idx) == 0.0f) {
-        range = msg.range_max + 1.0f;
-      } else {
-        range = hist.get_dist(0, hist_idx);
-      }
-    }
-
-    msg.ranges.push_back(range);
+    // special case: distance of 0 denotes 'no obstacle in sight'
+    msg.ranges.push_back(
+        dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
   }
 
   distance_data_ = msg;

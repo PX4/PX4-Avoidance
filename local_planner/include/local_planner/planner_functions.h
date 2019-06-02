@@ -1,11 +1,11 @@
 #ifndef LOCAL_PLANNER_FUNCTIONS_H
 #define LOCAL_PLANNER_FUNCTIONS_H
 
+#include "avoidance/common.h"
+#include "avoidance/histogram.h"
 #include "box.h"
 #include "candidate_direction.h"
-#include "common.h"
 #include "cost_parameters.h"
-#include "histogram.h"
 
 #include <Eigen/Dense>
 
@@ -17,49 +17,27 @@
 
 namespace avoidance {
 
-struct FOV_indices {
-  std::vector<int> z_idx_vec;
-  int e_idx_min;
-  int e_idx_max;
-};
-
 /**
 * @brief      crops and subsamples the incomming data, then combines it with
 *             the data from the last timestep
 * @param      final_cloud, processed data to be used for planning
 * @param[in]  complete_cloud, array of pointclouds from the sensors
 * @param[in]  histogram_box, geometry definition of the bounding box
-* @param[in]  FOV, histogram indices currently lying inside the FOV
+* @param[in]  FOV, struct defining current field of view
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 * @param[in]  max_age, maximum age (compute cycles) to keep data
 * @param[in]  elapsed, time elapsed since last processing [s]
+* @param[in]  min_num_points_per_cell, number of points from which on they will
+*             be kept, less points are discarded as noise (careful: 0 is not
+*             a valid input here)
 **/
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, const FOV_indices& FOV, const Eigen::Vector3f& position,
-    float min_realsense_dist, int max_age, float elapsed_s);
-
-/**
-* @brief      calculates the histogram cells within the Field of View
-* @param[in]  h_FOV, horizontal Field of View [rad]
-* @param[in]  v_FOV, vertical Field of View [rad]
-* @param[out] FOV, indices lying inside the current FOV
-* @param[in]  yaw, vehicle yaw [rad]
-* @param[in]  pitch, vehicle pitch [rad]
-* @note       azimuth angle is wrapped, elevation is not
-**/
-void calculateFOV(float h_FOV, float v_fov, FOV_indices& FOV,
-                  float yaw_fcu_frame, float pitch_fcu_frame);
-
-/**
-* @brief      determines whether point is inside FOV
-* @param[in]  FOV, indices lying inside the current FOV
-* @param[in]  point_idx, histogram indices of the point
-* @return     whether point is inside the FOV
-**/
-bool pointInsideFOV(const FOV_indices& FOV, const PolarPoint& p_pol);
+    Box histogram_box, FOV& fov, const Eigen::Vector3f& position,
+    float min_realsense_dist, int max_age, float elapsed_s,
+    int min_num_points_per_cell);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around

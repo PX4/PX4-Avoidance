@@ -1,6 +1,6 @@
 #include "local_planner/planner_functions.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 
 #include <ros/console.h>
 
@@ -13,8 +13,9 @@ namespace avoidance {
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, const FOV_indices& FOV, const Eigen::Vector3f& position,
-    float min_realsense_dist, int max_age, float elapsed_s) {
+    Box histogram_box, FOV& fov, const Eigen::Vector3f& position,
+    float min_realsense_dist, int max_age, float elapsed_s,
+    int min_num_points_per_cell) {
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
   final_cloud.points.clear();
@@ -23,10 +24,17 @@ void processPointcloud(
 
   float distance;
 
-  // double resolution histogram for subsampling
-  // the distance layer will show whether the cell is already
-  // occupied by a point
-  Histogram high_res_histogram = Histogram(ALPHA_RES / 2);
+  float fov_azimuth_lower_boundary =
+      wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.0f);
+  float fov_azimuth_upper_boundary =
+      wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.0f);
+  float fov_elevation_lower_boundary = fov.elevation_deg - fov.v_fov_deg / 2.0f;
+  float fov_elevation_upper_boundary = fov.elevation_deg + fov.v_fov_deg / 2.0f;
+
+  // counter to keep track of how many points lie in a given cell
+  Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2),
+                                           360 / (ALPHA_RES / 2));
+  histogram_points_counter.fill(0);
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
@@ -36,18 +44,41 @@ void processPointcloud(
           distance = (position - toEigen(xyz)).norm();
           if (distance > min_realsense_dist &&
               distance < histogram_box.radius_) {
-            // subsampling the cloud
+            // Keep track of the FOV
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
+            fov_azimuth_lower_boundary =
+                std::min(fov_azimuth_lower_boundary, p_pol.z);
+            fov_azimuth_upper_boundary =
+                std::max(fov_azimuth_upper_boundary, p_pol.z);
+            fov_elevation_lower_boundary =
+                std::min(fov_elevation_lower_boundary, p_pol.e);
+            fov_elevation_upper_boundary =
+                std::max(fov_elevation_upper_boundary, p_pol.e);
+
+            // subsampling the cloud
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-            if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0) {
+            histogram_points_counter(p_ind.y(), p_ind.x())++;
+            if (histogram_points_counter(p_ind.y(), p_ind.x()) ==
+                min_num_points_per_cell) {
               final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
-              high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
             }
           }
         }
       }
     }
   }
+
+  // Update the FOV, accounting for discontinuity. Also subtract a tolerance
+  // margin to avoid creating a blind spot due to latency and fast yaw movements
+  fov.h_fov_deg = std::max(
+      fov.h_fov_deg,
+      std::min(
+          360.0f - (fov_azimuth_upper_boundary - fov_azimuth_lower_boundary),
+          fov_azimuth_upper_boundary - fov_azimuth_lower_boundary) -
+          15.0f);
+  fov.v_fov_deg =
+      std::max(fov.v_fov_deg, fov_elevation_upper_boundary -
+                                  fov_elevation_lower_boundary - 15.0f);
 
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {
@@ -57,12 +88,20 @@ void processPointcloud(
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
         PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
+
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
-        if (high_res_histogram.get_dist(p_ind.y(), p_ind.x()) == 0 &&
-            xyzi.intensity < max_age && !pointInsideFOV(FOV, p_pol)) {
+
+        // only remember point if it's in a cell not previously populated by
+        // complete_cloud, as well as outside FOV and 'young' enough
+        if (histogram_points_counter(p_ind.y(), p_ind.x()) <
+                min_num_points_per_cell &&
+            xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
-          high_res_histogram.set_dist(p_ind.y(), p_ind.x(), 1);
+
+          // to indicate that this cell now has a point
+          histogram_points_counter(p_ind.y(), p_ind.x()) =
+              min_num_points_per_cell;
         }
       }
     }
@@ -72,45 +111,6 @@ void processPointcloud(
   final_cloud.header.frame_id = complete_cloud[0].header.frame_id;
   final_cloud.height = 1;
   final_cloud.width = final_cloud.points.size();
-}
-
-// Calculate FOV. Azimuth angle is wrapped, elevation is not!
-void calculateFOV(float h_fov, float v_fov, FOV_indices& FOV,
-                  float yaw_deg_histogram_frame, float pitch_deg) {
-  PolarPoint max_angle(pitch_deg + v_fov / 2.0f,
-                       yaw_deg_histogram_frame + h_fov / 2.0f, 1.f);
-  PolarPoint min_angle(pitch_deg - v_fov / 2.0f,
-                       yaw_deg_histogram_frame - h_fov / 2.0f, 1.f);
-  Eigen::Vector2i max_ind = polarToHistogramIndex(max_angle, ALPHA_RES);
-  Eigen::Vector2i min_ind = polarToHistogramIndex(min_angle, ALPHA_RES);
-
-  FOV.e_idx_max = max_ind.y();
-  FOV.e_idx_min = min_ind.y();
-
-  // indices not wrapped
-  if (max_ind.x() > min_ind.x()) {
-    for (int i = min_ind.x(); i <= max_ind.x(); i++) {
-      FOV.z_idx_vec.push_back(i);
-    }
-  }
-
-  // indices wrapped
-  if (min_ind.x() > max_ind.x()) {
-    for (int i = 0; i <= max_ind.x(); i++) {
-      FOV.z_idx_vec.push_back(i);
-    }
-    for (int i = min_ind.x(); i < GRID_LENGTH_Z; i++) {
-      FOV.z_idx_vec.push_back(i);
-    }
-  }
-}
-
-bool pointInsideFOV(const FOV_indices& FOV, const PolarPoint& p_pol) {
-  Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
-  bool inside_FOV_z = std::find(FOV.z_idx_vec.begin(), FOV.z_idx_vec.end(),
-                                p_ind.x()) != FOV.z_idx_vec.end();
-  bool inside_FOV_e = p_ind.y() > FOV.e_idx_min && p_ind.y() < FOV.e_idx_max;
-  return inside_FOV_z && inside_FOV_e;
 }
 
 // Generate new histogram from pointcloud

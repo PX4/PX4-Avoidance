@@ -17,23 +17,18 @@ find_package(catkin REQUIRED COMPONENTS
   mavros_extras
   mavros_msgs
   mavlink
+  avoidance
 )
 find_package(PCL 1.7 REQUIRED)
 
-
-
+if(DISABLE_SIMULATION)
+  message(STATUS "Building avoidance without Gazebo Simulation")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
+endif()
 
 ################################################
 ## Gazebo Simulation
 ################################################
-# Disable yaml-cpp when no simulation is required
-if(DISABLE_SIMULATION)
-  message(STATUS "Building local planner without Gazebo Simulation")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
-else()
-  message(STATUS "Building local planner with Gazebo Simulation")
-  find_package(yaml-cpp REQUIRED)
-endif(DISABLE_SIMULATION)
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -111,7 +106,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs mav_msgs sensor_msgs message_runtime tf
+  CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs sensor_msgs message_runtime tf avoidance
 #  DEPENDS system_lib
 )
 
@@ -141,20 +136,15 @@ include_directories(
 # )
 set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/waypoint_generator.cpp"
-                              "src/nodes/histogram.cpp"
                               "src/nodes/tree_node.cpp"
                               "src/nodes/box.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
-                              "src/nodes/common.cpp"
                               "src/nodes/local_planner_node.cpp"
                               "src/nodes/local_planner_visualization.cpp"
                               "src/utils/trajectory_simulator.cpp"
 )
-if(NOT DISABLE_SIMULATION)
-  set(LOCAL_PLANNER_CPP_FILES "${LOCAL_PLANNER_CPP_FILES}"
-                              "src/nodes/rviz_world_loader.cpp")
-endif()
+
 add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
 
 
@@ -224,7 +214,6 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_example.cpp
-                                          test/test_common.cpp
                                           test/test_local_planner.cpp
                                           test/test_planner_functions.cpp
                                           test/test_star_planner.cpp

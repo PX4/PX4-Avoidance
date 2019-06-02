@@ -1,9 +1,9 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
+#include "avoidance/histogram.h"
 #include "box.h"
 #include "cost_parameters.h"
-#include "histogram.h"
 
 #include <Eigen/Dense>
 
@@ -21,9 +21,6 @@ namespace avoidance {
 class TreeNode;
 
 class StarPlanner {
-  float h_FOV_deg_ = 59.0f;
-  float v_FOV_deg_ = 46.0f;
-
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
@@ -76,13 +73,6 @@ class StarPlanner {
   * @param[in] projected_last_wp, last waypoint projected out to goal distance
   **/
   void setLastDirection(const Eigen::Vector3f& projected_last_wp);
-
-  /**
-  * @brief     setter method for Fielf of View
-  * @param[in] h_FOV, horizontal Field of View [deg]
-  * @param[in] v_FOV, vertical Field of View [deg]
-  **/
-  void setFOV(float h_FOV, float v_FOV);
 
   /**
   * @brief     setter method for star_planner pointcloud

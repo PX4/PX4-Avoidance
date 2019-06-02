@@ -1,8 +1,8 @@
 #include <gtest/gtest.h>
 
-#include "../include/local_planner/common.h"
 #include "../include/local_planner/star_planner.h"
 #include "../include/local_planner/tree_node.h"
+#include "avoidance/common.h"
 
 using namespace avoidance;
 
@@ -48,7 +48,6 @@ class StarPlannerTests : public ::testing::Test {
     costParameters cost_params;
 
     star_planner.setParams(cost_params);
-    star_planner.setFOV(270.0f, 45.0f);
     star_planner.setPointcloud(cloud);
     star_planner.setPose(position, 0.0f);
     star_planner.setGoal(goal);

@@ -1,6 +1,6 @@
 #include "local_planner/star_planner.h"
 
-#include "local_planner/common.h"
+#include "avoidance/common.h"
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
 
@@ -28,11 +28,6 @@ void StarPlanner::setParams(costParameters cost_params) {
 
 void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) {
   projected_last_wp_ = projected_last_wp;
-}
-
-void StarPlanner::setFOV(float h_FOV, float v_FOV) {
-  h_FOV_deg_ = h_FOV;
-  v_FOV_deg_ = v_FOV;
 }
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw) {

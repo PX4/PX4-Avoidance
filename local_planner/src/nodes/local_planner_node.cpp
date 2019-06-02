@@ -22,6 +22,10 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
+#ifndef DISABLE_SIMULATION
+  world_visualizer_.reset(new WorldVisualizer(nh_));
+#endif
+
   readParams();
 
   tf_listener_ = new tf::TransformListener(
@@ -73,9 +77,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
-#ifndef DISABLE_SIMULATION
-  world_visualizer_.initializePublishers(nh_);
-#endif
 
   // pass initial goal into local planner
   local_planner_->applyGoal();
@@ -86,7 +87,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
 
   hover_ = false;
   planner_is_healthy_ = true;
-  startup_ = true;
   callPx4Params_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
@@ -125,7 +125,6 @@ void LocalPlannerNode::readParams() {
   nh_.getParam("pointcloud_topics", camera_topics);
   initializeCameraSubscribers(camera_topics);
 
-  nh_.param<std::string>("world_name", world_path_, "");
   goal_msg_.pose.position = goal;
 }
 
@@ -269,15 +268,6 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_pose_ = newest_pose_;
   newest_pose_ = msg;
   position_received_ = true;
-
-#ifndef DISABLE_SIMULATION
-  // visualize drone in RVIZ
-  if (!world_path_.empty()) {
-    if (world_visualizer_.visualizeDrone(msg)) {
-      ROS_WARN("Failed to visualize drone in RViz");
-    }
-  }
-#endif
 }
 
 void LocalPlannerNode::velocityCallback(
@@ -307,19 +297,6 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
 
 void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
-
-#ifdef DISABLE_SIMULATION
-  startup_ = false;
-#else
-  // visualize world in RVIZ
-  if (!world_path_.empty() && startup_) {
-    if (world_visualizer_.visualizeRVIZWorld(world_path_)) {
-      ROS_WARN("Failed to visualize Rviz world");
-    }
-    startup_ = false;
-  }
-
-#endif
 
   // Process callbacks & wait for a position update
   ros::Time start_query_position = ros::Time::now();
@@ -351,21 +328,14 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   ros::Duration since_last_cloud = now - last_wp_time_;
   ros::Duration since_start = now - start_time_;
 
-  checkFailsafe(since_last_cloud, since_start, planner_is_healthy_, hover_);
+  checkFailsafe(since_last_cloud, since_start, hover_);
 
   // If planner is not running, update planner info and get last results
   updatePlanner();
 
   // send waypoint
-  if (!never_run_ && planner_is_healthy_) {
+  if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE)
     calculateWaypoints(hover_);
-    if (!hover_) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
-  } else {
-    for (size_t i = 0; i < cameras_.size(); ++i) {
-      // once the camera info have been set once, unsubscribe from topic
-      cameras_[i].camera_info_sub_.shutdown();
-    }
-  }
 
   position_received_ = false;
 
@@ -580,80 +550,20 @@ void LocalPlannerNode::cameraInfoCallback(
   // v_fov = 2 * atan (image_height / (2 * focal_length_y))
   // Assumption: if there are n cameras the total horizonal field of view is n
   // times the horizontal field of view of a single camera
-  local_planner_->h_FOV_deg_ = static_cast<float>(
+  float h_fov = static_cast<float>(
       static_cast<double>(cameras_.size()) * 2.0 *
       atan(static_cast<double>(msg->width) / (2.0 * msg->K[0])) * 180.0 / M_PI);
-  local_planner_->v_FOV_deg_ = static_cast<float>(
+  float v_fov = static_cast<float>(
       2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
       M_PI);
-  wp_generator_->setFOV(local_planner_->h_FOV_deg_, local_planner_->v_FOV_deg_);
-}
 
-void LocalPlannerNode::fillUnusedTrajectoryPoint(
-    mavros_msgs::PositionTarget& point) {
-  point.position.x = NAN;
-  point.position.y = NAN;
-  point.position.z = NAN;
-  point.velocity.x = NAN;
-  point.velocity.y = NAN;
-  point.velocity.z = NAN;
-  point.acceleration_or_force.x = NAN;
-  point.acceleration_or_force.y = NAN;
-  point.acceleration_or_force.z = NAN;
-  point.yaw = NAN;
-  point.yaw_rate = NAN;
-}
+  // once the camera info have been set once, unsubscribe from topic
+  cameras_[index].camera_info_sub_.shutdown();
+  ROS_INFO("[LocalPlannerNode] Received camera info from camera %d \n", index);
 
-void LocalPlannerNode::transformPoseToTrajectory(
-    mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose) {
-  obst_avoid.header = pose.header;
-  obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
-  obst_avoid.point_1.position.x = pose.pose.position.x;
-  obst_avoid.point_1.position.y = pose.pose.position.y;
-  obst_avoid.point_1.position.z = pose.pose.position.z;
-  obst_avoid.point_1.velocity.x = NAN;
-  obst_avoid.point_1.velocity.y = NAN;
-  obst_avoid.point_1.velocity.z = NAN;
-  obst_avoid.point_1.acceleration_or_force.x = NAN;
-  obst_avoid.point_1.acceleration_or_force.y = NAN;
-  obst_avoid.point_1.acceleration_or_force.z = NAN;
-  obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
-  obst_avoid.point_1.yaw_rate = NAN;
-
-  fillUnusedTrajectoryPoint(obst_avoid.point_2);
-  fillUnusedTrajectoryPoint(obst_avoid.point_3);
-  fillUnusedTrajectoryPoint(obst_avoid.point_4);
-  fillUnusedTrajectoryPoint(obst_avoid.point_5);
-
-  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
-
-  obst_avoid.point_valid = {true, false, false, false, false};
-}
-
-void LocalPlannerNode::transformVelocityToTrajectory(
-    mavros_msgs::Trajectory& obst_avoid, geometry_msgs::Twist vel) {
-  obst_avoid.header.stamp = ros::Time::now();
-  obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
-  obst_avoid.point_1.position.x = NAN;
-  obst_avoid.point_1.position.y = NAN;
-  obst_avoid.point_1.position.z = NAN;
-  obst_avoid.point_1.velocity.x = vel.linear.x;
-  obst_avoid.point_1.velocity.y = vel.linear.y;
-  obst_avoid.point_1.velocity.z = vel.linear.z;
-  obst_avoid.point_1.acceleration_or_force.x = NAN;
-  obst_avoid.point_1.acceleration_or_force.y = NAN;
-  obst_avoid.point_1.acceleration_or_force.z = NAN;
-  obst_avoid.point_1.yaw = NAN;
-  obst_avoid.point_1.yaw_rate = -vel.angular.z;
-
-  fillUnusedTrajectoryPoint(obst_avoid.point_2);
-  fillUnusedTrajectoryPoint(obst_avoid.point_3);
-  fillUnusedTrajectoryPoint(obst_avoid.point_4);
-  fillUnusedTrajectoryPoint(obst_avoid.point_5);
-
-  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
-
-  obst_avoid.point_valid = {true, false, false, false, false};
+  // make sure to underestimate FOV to avoid blind spots!
+  local_planner_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
+  wp_generator_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(
@@ -666,7 +576,8 @@ void LocalPlannerNode::dynamicReconfigureCallback(
 }
 
 void LocalPlannerNode::publishLaserScan() const {
-  if (local_planner_->px4_.param_mpc_col_prev_d > 0) {
+  // inverted logic to make sure values like NAN default to sending the message
+  if (!(local_planner_->px4_.param_mpc_col_prev_d < 0)) {
     sensor_msgs::LaserScan distance_data_to_fcu;
     local_planner_->getObstacleDistanceData(distance_data_to_fcu);
     mavros_obstacle_distance_pub_.publish(distance_data_to_fcu);
@@ -686,7 +597,6 @@ void LocalPlannerNode::threadFunction() {
 
     {
       std::lock_guard<std::mutex> guard(running_mutex_);
-      never_run_ = false;
       std::clock_t start_time_ = std::clock();
       local_planner_->runPlanner();
       visualizer_.visualizePlannerData(
@@ -702,22 +612,20 @@ void LocalPlannerNode::threadFunction() {
 }
 
 void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
-                                     ros::Duration since_start,
-                                     bool& planner_is_healthy, bool& hover) {
+                                     ros::Duration since_start, bool& hover) {
   ros::Duration timeout_termination =
       ros::Duration(local_planner_->timeout_termination_);
   ros::Duration timeout_critical =
       ros::Duration(local_planner_->timeout_critical_);
+  ros::Duration timeout_startup =
+      ros::Duration(local_planner_->timeout_startup_);
 
   if (since_last_cloud > timeout_termination &&
       since_start > timeout_termination) {
-    if (planner_is_healthy) {
-      planner_is_healthy = false;
-      setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-      ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
-    }
+    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
   } else {
-    if (since_last_cloud > timeout_critical && since_start > timeout_critical) {
+    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
       if (position_received_) {
         hover = true;
         setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
@@ -741,6 +649,8 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
             "\033[1;33m Pointcloud timeout: No position received, no WP to "
             "output.... \n \033[0m");
       }
+    } else {
+      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
     }
   }
 }

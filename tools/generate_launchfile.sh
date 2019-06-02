@@ -1,16 +1,12 @@
 #!/bin/bash
+
 cat > local_planner/launch/avoidance.launch <<- EOM
 <launch>
-    <arg name="mavros_transformation" default="0" />
     <arg name="ns" default="/"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
     <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
     <arg name="tgt_system" default="1" />
     <arg name="tgt_component" default="1" />
-
-    <!-- Launch static tf publisher -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_90_deg"
-          args="0 0 0 \$(arg mavros_transformation) 0 0 world local_origin 10"/>
 
     <!-- Launch MavROS -->
     <group ns="\$(arg ns)">
@@ -39,46 +35,70 @@ if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
 fi
 
+REALSENSE_CAMERA_USED=0
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
 for camera in $CAMERA_CONFIGS; do
 	IFS="," #Inside each camera configuration, the parameters are comma-separated
 	set $camera
-	if [[ $# != 8 ]]; then
+	if [[ $# != 9 ]]; then
 		echo "Invalid camera configuration $camera"
 	else
-		echo "Adding camera $1 with serial number $2"
-		if [[ $camera_topics == "" ]]; then
+		echo "Adding camera $1 of type $2 with serial number $3"
+    if [[ $camera_topics == "" ]]; then
 			camera_topics="/$1/depth/points"
 		else
 			camera_topics="$camera_topics,/$1/depth/points"
 		fi
 
     # Append to the launch file
+    if  [[ $2 == "realsense" ]]; then
+    REALSENSE_CAMERA_USED=1
+
     cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
-			 args="$3 $4 $5 $6 $7 $8 fcu $1_link 10"/>
+			 args="$4 $5 $6 $7 $8 $9 fcu $1_link 10"/>
 			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
-				<arg name="serial_no"             value="$2"/>
+				<arg name="serial_no"             value="$3"/>
 				<arg name="depth_fps"             value="$DEPTH_CAMERA_FRAME_RATE"/>
-				<arg name="enable_pointcloud"     value="false"/>
-				<arg name="enable_fisheye"        value="false"/>
 			</include>
+
+      <!-- launch node to throttle depth images for logging -->
+      <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
+        args="/$1/depth/image_rect_raw 29 30">
+      </node>
+      <node name="drop_$1_ir" pkg="topic_tools" type="drop" output="screen"
+        args="/$1/infra1/image_rect_raw 29 30">
+      </node>
 		EOM
 
-    # Append to the realsense auto exposure toggling
-    echo "rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 0
-rosrun dynamic_reconfigure dynparam set /$1/realsense2_camera_manager rs435_depth_enable_auto_exposure 1
-" >> local_planner/resource/realsense_params.sh
+		# Append to the realsense auto exposure toggling
+		echo "rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 0
+		rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 1
+		" >> local_planner/resource/realsense_params.sh
 
+	elif  [[ $2 == "struct_core" ]]; then
+	   cat >>    local_planner/launch/avoidance.launch <<- EOM
+			    <node pkg="tf" type="static_transform_publisher" name="tf_$1"
+			       args="$4 $5 $6 $7 $8 $9 fcu $1_FLU 10"/>
+
+			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
+			    <node pkg="struct_core_ros" type="sc" name="$1">
+			       <param name="serial_number" type="str" value="$3" />
+			    </node>
+
+		EOM
+	else
+	echo "Unknown camera type $2 in CAMERA_CONFIGS"
+	fi
 	fi
 done
 
 if [ ! -z $VEHICLE_CONFIG ]; then
 cat >> local_planner/launch/avoidance.launch <<- EOM
-  <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node \$(find local_planner)/cfg/$VEHICLE_CONFIG.yaml" />
+    <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node $VEHICLE_CONFIG" />
 EOM
 echo "Adding vehicle paramters: $VEHICLE_CONFIG"
 fi
@@ -95,9 +115,17 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
 
+EOM
+
+if  [[ $REALSENSE_CAMERA_USED == 1 ]]; then
+cat >>    local_planner/launch/avoidance.launch <<- EOM
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
     <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
 
+EOM
+fi
+
+cat >> local_planner/launch/avoidance.launch <<- EOM
 </launch>
 EOM
 

@@ -2,11 +2,11 @@
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
 #include <sensor_msgs/image_encodings.h>
+#include "avoidance/histogram.h"
 #include "avoidance_output.h"
 #include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
-#include "histogram.h"
 #include "planner_functions.h"
 
 #include <dynamic_reconfigure/server.h>
@@ -75,10 +75,8 @@ class LocalPlanner {
   int tree_age_ = 0;
   int children_per_node_;
   int n_expanded_nodes_;
+  int min_num_points_per_cell_ = 3;
 
-  float curr_yaw_fcu_frame_deg_, curr_yaw_histogram_frame_deg_;
-  float curr_pitch_deg_;  // for pitch angles the histogram frame matches the
-                          // fcu frame
   ros::Time integral_time_old_;
   float no_progress_slope_;
   float new_yaw_;
@@ -86,7 +84,7 @@ class LocalPlanner {
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
 
-  FOV_indices FOV_;
+  FOV fov_;
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
@@ -138,8 +136,6 @@ class LocalPlanner {
   void generateHistogramImage(Histogram& histogram);
 
  public:
-  float h_FOV_deg_ = 59.0f;
-  float v_FOV_deg_ = 46.0f;
   Box histogram_box_;
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
@@ -148,6 +144,7 @@ class LocalPlanner {
   bool smooth_waypoints_ = true;
   bool disable_rise_to_goal_altitude_ = false;
 
+  double timeout_startup_;
   double timeout_critical_;
   double timeout_termination_;
   double starting_height_ = 0.0;
@@ -177,6 +174,20 @@ class LocalPlanner {
   * @param[in] mgs, goal message coming from the FCU
   **/
   void setGoal(const Eigen::Vector3f& goal);
+  /**
+  * @brief     setter method for field of view
+  * @param[in] horizontal angle in degrees of the sensor data
+  * @param[in] vertical angle in degrees of the sensor data
+  */
+  void setFOV(float h_FOV_deg, float v_FOV_deg);
+
+  /**
+  * @brief     Getters for the FOV
+  */
+  float getHFOV() { return fov_.h_fov_deg; }
+  float getVFOV() { return fov_.v_fov_deg; }
+  FOV getFOV() const { return fov_; }
+
   /**
   * @brief     getter method for current goal
   * @returns   position of the goal

@@ -21,7 +21,6 @@ The documentation contains information about how to setup and run the two planne
 # Table of Contents
 - [Getting Started](#getting-started)
   - [Installation](#installation)
-    - [Quick Start with Docker](#quick-start-with-docker)
     - [Installation for Ubuntu 16.04 and ROS Kinetic](#installation-for-ubuntu-16.04-and-ros-kinetic)
   - [Run the Avoidance Gazebo Simulation](#run-the-avoidance-gazebosimulation)
     - [Local Planner](#local-planner)
@@ -41,17 +40,9 @@ The documentation contains information about how to setup and run the two planne
 
 ## Installation
 
-### Quick Start with Docker
-
-A ROS container based on Ubuntu 16.04 has been created and can be used to quickly try the simulation, as a demo. Running it is as simple as installing docker and docker-compose, and running `$ docker-compose up` from the right folder. Find the corresponding instructions [here](docker/demo).
-
-For __deployment__ instructions, check "[Deploying with Docker](docker#deploying-with-docker)".
-
-If you want to leverage docker in your __development__ environment, check the "[Developing with Docker](docker#developing-with-docker)" section.
-
 ### Installation for Ubuntu 16.04 and ROS Kinetic
 
-This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed. A corresponding docker container is defined [here](docker/ubuntu/Dockerfile) as reference.
+This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed.
 
 Note that in the following instructions, we assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`. Feel free to adapt this to your situation.
 
@@ -174,9 +165,6 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    # Setup some more Gazebo-related environment variables
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
-
-   # Add the models from the avoidance module to GAZEBO_MODEL_PATH
-   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/sim/models
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
@@ -192,10 +180,10 @@ You should now be ready to run the simulation using local or global planner.
 This section shows how to start the *global_planner* and use it for avoidance in offboard mode.
 
 ```bash
-roslaunch global_planner global_planner_sitl_mavros.launch
+roslaunch global_planner global_planner_stereo.launch
 ```
 
-You should now see the drone unarmed on the ground, and the octomap should show 2 red arrows and the visible world, as pictured below.
+You should now see the drone unarmed on the ground in a forest environment as pictured below.
 
 ![Screenshot showing gazebo and rviz](docs/simulation_screenshot.png)
 
@@ -214,12 +202,6 @@ From the command line, you can also make Gazebo follow the drone, if you want.
 ```bash
 gz camera --camera-name=gzclient_camera --follow=iris
 ```
-
-During the simulation, the ROS node *"/path_handler_node"* continuously publishes positions to the topic *"/mavros/setpoint_position/local"*.
-
-The graph of the ROS nodes is shown below:
-
-![Graph showing the ROS nodes and their links](docs/rqt_graph.png)
 
 One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
@@ -352,7 +334,7 @@ Once the catkin workspace has been built, to run the planner with a Realsense D4
 
 1. `export CAMERA_CONFIGS="camera_namespace, realsense_serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.  
 2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
-3. `export VEHICLE_CONFIG=params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
+3. `export VEHICLE_CONFIG=/path/to/params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
 
 For example:
 ```bash
