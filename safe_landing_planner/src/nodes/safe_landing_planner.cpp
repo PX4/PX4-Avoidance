@@ -10,7 +10,6 @@ void SafeLandingPlanner::runSafeLandingPlanner() {
     n_lines_padding_ = smoothing_size_;
     size_update_ = false;
   }
-  grid_.setFilterLimits(position_);
   processPointcloud();
   // low pass filter on grid mean and variance
   grid_.combine(previous_grid_, alpha_);
@@ -18,7 +17,8 @@ void SafeLandingPlanner::runSafeLandingPlanner() {
 }
 
 void SafeLandingPlanner::processPointcloud() {
-  previous_grid_ = grid_;
+  std::swap(previous_grid_, grid_);
+  grid_.setFilterLimits(position_);
   grid_seq_ += 1;
   grid_.reset();
   visualization_cloud_.header = cloud_.header;
