@@ -111,13 +111,6 @@ class LocalPlannerNode {
   void updatePlanner();
 
   /**
-  * @brief     checks if the transformation from the camera frame to
-  *            local_origin is available at the pointcloud timestamp
-  * @returns   true, if the transformation is available
-  **/
-  bool canUpdatePlannerInfo();
-
-  /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
   *            vehicle position, velocity, state, and distance to ground, goal,
   *            setpoint sent to the FCU

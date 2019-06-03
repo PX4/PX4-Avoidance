@@ -208,20 +208,6 @@ void LocalPlannerNode::updatePlanner() {
   }
 }
 
-bool LocalPlannerNode::canUpdatePlannerInfo() {
-  // Check if we have a transformation available at the time of the current
-  // point cloud
-  size_t missing_transforms = 0;
-  for (size_t i = 0; i < cameras_.size(); ++i) {
-    if (!tf_listener_->canTransform(
-            "/local_origin", cameras_[i].newest_cloud_msg_.header.frame_id,
-            ros::Time(0))) {
-      missing_transforms++;
-    }
-  }
-
-  return missing_transforms == 0;
-}
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_->original_cloud_vector_.clear();
@@ -632,13 +618,15 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
         std::string not_received = "";
         for (size_t i = 0; i < cameras_.size(); i++) {
           if (!cameras_[i].received_) {
-            not_received.append(" , no cloud received on topic ");
+            not_received.append(", no cloud received on topic ");
+            not_received.append(cameras_[i].topic_);
+          }
+          if (!cameras_[i].transformed_) {
+            not_received.append(", missing tf on topic ");
             not_received.append(cameras_[i].topic_);
           }
         }
-        if (!canUpdatePlannerInfo()) {
-          not_received.append(" , missing transforms ");
-        }
+
         ROS_WARN(
             "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
             "\n "
