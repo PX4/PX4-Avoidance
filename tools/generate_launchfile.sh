@@ -62,15 +62,17 @@ for camera in $CAMERA_CONFIGS; do
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
 				<arg name="serial_no"             value="$3"/>
-				<arg name="depth_fps"             value="$DEPTH_CAMERA_FRAME_RATE"/>
 			</include>
 
       <!-- launch node to throttle depth images for logging -->
       <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
-        args="/$1/depth/image_rect_raw 29 30">
+        args="/$1/depth/image_rect_raw 59 60">
       </node>
       <node name="drop_$1_ir" pkg="topic_tools" type="drop" output="screen"
-        args="/$1/infra1/image_rect_raw 29 30">
+        args="/$1/infra1/image_rect_raw 59 60">
+      </node>
+      <node name="drop_$1_depth_pc" pkg="topic_tools" type="drop" output="screen"
+        args="/$1/depth/image_rect_raw 1 2 /$1/depth/image_rect_raw_drop_pc">
       </node>
 		EOM
 
@@ -100,7 +102,7 @@ if [ ! -z $VEHICLE_CONFIG ]; then
 cat >> local_planner/launch/avoidance.launch <<- EOM
     <node name="dynparam" pkg="dynamic_reconfigure" type="dynparam" args="load local_planner_node $VEHICLE_CONFIG" />
 EOM
-echo "Adding vehicle paramters: $VEHICLE_CONFIG"
+echo "Adding vehicle parameters: $VEHICLE_CONFIG"
 fi
 
 cat >> local_planner/launch/avoidance.launch <<- EOM
@@ -128,6 +130,3 @@ fi
 cat >> local_planner/launch/avoidance.launch <<- EOM
 </launch>
 EOM
-
-# Set the frame rate in the JSON file as well
-sed -i '/stream-fps/c\    \"stream-fps\": \"'$DEPTH_CAMERA_FRAME_RATE'\",' local_planner/resource/stereo_calib.json

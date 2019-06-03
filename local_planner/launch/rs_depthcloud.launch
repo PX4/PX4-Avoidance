@@ -33,13 +33,13 @@ limitations under the License.
 
   <arg name="depth_width"       value="640"/>
   <arg name="depth_height"      value="480"/>
-  <arg name="depth_fps"         default="15"/>
+  <arg name="depth_fps"         default="30"/>
 
   <arg name="color_width"       value="640"/>
   <arg name="color_height"      value="480"/>
   <arg name="color_fps"         value="15"/>
 
-  <arg name="infra_fps"         value="15"/>
+  <arg name="infra_fps"         value="30"/>
 
   <arg name="initial_reset"             default="false"/>
 
@@ -75,7 +75,7 @@ limitations under the License.
       <node pkg="nodelet" type="nodelet" name="points_xyz_sw_registered"
             args="load depth_image_proc/point_cloud_xyz $(arg manager) true" respawn="true">
         <remap from="camera_info"             to="depth/camera_info" />
-        <remap from="image_rect" to="depth/image_rect_raw" />
+        <remap from="image_rect" to="depth/image_rect_raw_drop_pc" />
         <remap from="points"     to="depth/points" />
       </node>
 
