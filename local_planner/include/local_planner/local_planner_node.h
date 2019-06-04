@@ -57,10 +57,8 @@ struct cameraData {
   ros::Subscriber camera_info_sub_;
   sensor_msgs::PointCloud2 newest_cloud_msg_;
 
-  std::unique_ptr<std::mutex> trans_ready_mutex_;
-  std::unique_ptr<std::condition_variable> trans_ready_cv_;
-
-  std::unique_ptr<std::mutex> cloud_ready_mutex_;
+  std::unique_ptr<std::mutex> cloud_msg_mutex_;
+  std::unique_ptr<std::mutex> transformed_cloud_mutex_;
   std::unique_ptr<std::condition_variable> cloud_ready_cv_;
   std::thread transform_thread_;
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
