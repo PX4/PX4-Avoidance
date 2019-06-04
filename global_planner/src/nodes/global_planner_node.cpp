@@ -380,7 +380,6 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
     popNextGoal();
   }
 
-  // If the current cell is blocked, try finding a path again
   planPath();
 
   // Print and publish info
