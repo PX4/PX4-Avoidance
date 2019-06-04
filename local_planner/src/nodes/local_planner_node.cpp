@@ -209,7 +209,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_->original_cloud_vector_.clear();
   for (size_t i = 0; i < cameras_.size(); ++i) {
-    std::lock_guard<std::mutex> cloud_msg_lock(
+    std::lock_guard<std::mutex> transformed_cloud_guard(
         *(cameras_[i].transformed_cloud_mutex_));
     try {
       local_planner_->original_cloud_vector_.push_back(
@@ -646,35 +646,40 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           *(cameras_[index].cloud_msg_mutex_));
       cameras_[index].cloud_ready_cv_->wait(cloud_msg_lock);
     }
+    while (cameras_[index].transformed_ == false) {
+      if (should_exit_) break;
 
-    if (should_exit_) break;
+      std::lock_guard<std::mutex> cloud_msg_lock(
+          *(cameras_[index].cloud_msg_mutex_));
+      if (tf_listener_->canTransform(
+              "/local_origin",
+              cameras_[index].newest_cloud_msg_.header.frame_id,
+              cameras_[index].newest_cloud_msg_.header.stamp)) {
+        try {
+          pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
+          // transform message to pcl type
+          pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
 
-    std::lock_guard<std::mutex> cloud_msg_lock(
-        *(cameras_[index].cloud_msg_mutex_));
-    if (tf_listener_->canTransform(
-            "/local_origin", cameras_[index].newest_cloud_msg_.header.frame_id,
-            cameras_[index].newest_cloud_msg_.header.stamp)) {
-      try {
-        pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-        // transform message to pcl type
-        pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
+          // remove nan padding
+          std::vector<int> dummy_index;
+          dummy_index.reserve(pcl_cloud.points.size());
+          pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
 
-        // remove nan padding
-        std::vector<int> dummy_index;
-        dummy_index.reserve(pcl_cloud.points.size());
-        pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
+          // transform cloud to /local_origin frame
+          pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
+                                       *tf_listener_);
 
-        // transform cloud to /local_origin frame
-        pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
-                                     *tf_listener_);
-
-        std::lock_guard<std::mutex> transformed_cloud_guard(
-            *(cameras_[index].transformed_cloud_mutex_));
-        cameras_[index].transformed_ = true;
-        cameras_[index].pcl_cloud = std::move(pcl_cloud);
-      } catch (tf::TransformException& ex) {
-        ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
-                  ex.what());
+          std::lock_guard<std::mutex> transformed_cloud_guard(
+              *(cameras_[index].transformed_cloud_mutex_));
+          cameras_[index].transformed_ = true;
+          cameras_[index].pcl_cloud = std::move(pcl_cloud);
+        } catch (tf::TransformException& ex) {
+          ROS_ERROR(
+              "Received an exception trying to transform a pointcloud: %s",
+              ex.what());
+        }
+      } else {
+        ros::Duration(0.001).sleep();
       }
     }
   }
