@@ -18,7 +18,6 @@ cat > local_planner/launch/avoidance.launch <<- EOM
             <arg name="gcs_url" value="\$(arg gcs_url)" />
             <arg name="tgt_system" value="\$(arg tgt_system)" />
             <arg name="tgt_component" value="\$(arg tgt_component)" />
-            <arg name="required" value="true" />
         </include>
     </group>
 
