@@ -12,7 +12,7 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <dynamic_reconfigure/server.h>
-#include <safe_landing_planner/LSDGridMsg.h>
+#include <safe_landing_planner/SLPGridMsg.h>
 #include <safe_landing_planner/WaypointGeneratorNodeConfig.h>
 #include "grid.hpp"
 
@@ -26,7 +26,7 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
     Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f),
     Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
 
-enum class LSDState {
+enum class SLPState {
   goTo,
   loiter,
   land,
@@ -71,7 +71,7 @@ class WaypointGeneratorNode {
   bool explorarion_is_active_ = false;
   int smoothing_land_cell_ = 2;
   int start_seq_landing_decision_ = 0;
-  int grid_lsd_seq_ = 0;
+  int grid_slp_seq_ = 0;
   int n_explored_pattern_ = -1;
 
   ros::Subscriber pose_sub_;
@@ -98,9 +98,9 @@ class WaypointGeneratorNode {
   Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
 
   std::vector<float> can_land_hysteresis_;
-  Grid grid_lsd_ = Grid(10.f, 1.f);
-  LSDState lsd_state_ = LSDState::goTo;
-  LSDState prev_lsd_state_ = LSDState::goTo;
+  Grid grid_slp_ = Grid(10.f, 1.f);
+  SLPState slp_state_ = SLPState::goTo;
+  SLPState prev_slp_state_ = SLPState::goTo;
 
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>
       server_;
@@ -142,7 +142,7 @@ class WaypointGeneratorNode {
   * @brief     callaback with the grid calculated by the safe_landing_planner
   * @param[in] msg, grid
   **/
-  void gridCallback(const safe_landing_planner::LSDGridMsg& msg);
+  void gridCallback(const safe_landing_planner::SLPGridMsg& msg);
 
   /**
   * @brief     callaback with the vehicle state
