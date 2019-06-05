@@ -305,8 +305,8 @@ void WaypointGeneratorNode::calculateWaypoint() {
           exploration_anchor_ = loiter_position_;
           explorarion_is_active_ = true;
         }
-        float offset_exploration_setpoint = spiral_width_ *
-            factor_exploration_ * 2.f *
+        float offset_exploration_setpoint =
+            spiral_width_ * factor_exploration_ * 2.f *
             static_cast<float>(smoothing_land_cell_) * grid_slp_.getCellSize();
         n_explored_pattern_++;
         if (n_explored_pattern_ == exploration_pattern.size()) {
