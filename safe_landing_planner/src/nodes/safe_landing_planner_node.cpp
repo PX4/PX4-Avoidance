@@ -1,6 +1,6 @@
 #include "safe_landing_planner/safe_landing_planner_node.hpp"
 
-#include <safe_landing_planner/LSDGridMsg.h>
+#include <safe_landing_planner/SLPGridMsg.h>
 
 namespace avoidance {
 
@@ -34,7 +34,7 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
   mavros_system_status_pub_ =
       nh_.advertise<mavros_msgs::CompanionProcessStatus>(
           "/mavros/companion_process/status", 1);
-  grid_pub_ = nh_.advertise<safe_landing_planner::LSDGridMsg>("/grid_lsd", 1);
+  grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/grid_slp", 1);
 
   start_time_ = ros::Time::now();
 }
@@ -145,7 +145,7 @@ void SafeLandingPlannerNode::publishSystemStatus() {
 void SafeLandingPlannerNode::publishSerialGrid() {
   static int grid_seq = 0;
   Grid prev_grid = safe_landing_planner_->getPreviousGrid();
-  safe_landing_planner::LSDGridMsg grid;
+  safe_landing_planner::SLPGridMsg grid;
   grid.header.frame_id = "local_origin";
   grid.header.seq = grid_seq;
   grid.grid_size = prev_grid.getGridSize();
