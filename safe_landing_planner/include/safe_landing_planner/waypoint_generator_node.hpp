@@ -60,6 +60,7 @@ class WaypointGeneratorNode {
   float loiter_height_ = 4.f;
   float factor_exploration_ = 1.f;
   float vertical_range_error_ = 1.f;
+  float spiral_width_ = 2.f;
   bool grid_received_ = false;
   bool is_land_waypoint_ = false;
   bool decision_taken_ = false;

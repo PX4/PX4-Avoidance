@@ -24,6 +24,9 @@
     <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node" output="screen" >
     </node>
 
+    <node name="dynparam_slpn" pkg="dynamic_reconfigure" type="dynparam" args="load safe_landing_planner_node $(find safe_landing_planner)/cfg/slpn.yaml" />
+    <node name="dynparam_wpgn" pkg="dynamic_reconfigure" type="dynparam" args="load waypoint_generator_node $(find safe_landing_planner)/cfg/wpgn.yaml" />
+
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find safe_landing_planner)/resource/safe_landing_planner.rviz" />
 
 </launch>
