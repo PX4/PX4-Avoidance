@@ -17,6 +17,9 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <tf/transform_listener.h>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 #include "safe_landing_planner.hpp"
 #include "safe_landing_planner_visualization.hpp"
@@ -35,13 +38,26 @@ class SafeLandingPlannerNode {
 #endif
 
   std::atomic<bool> should_exit_{false};
+
+  std::thread worker_;
+
   /**
   * @brief spins node
   **/
   void startNode();
 
+  /**
+  * @brief     threads for transforming pointclouds
+  **/
+  void pointCloudTransformThread();
+
  private:
   ros::Timer cmdloop_timer_;
+
+  std::unique_ptr<std::mutex> cloud_msg_mutex_;
+  std::unique_ptr<std::mutex> transformed_cloud_mutex_;
+  std::unique_ptr<std::condition_variable> cloud_ready_cv_;
+  sensor_msgs::PointCloud2 newest_cloud_msg_;
 
   ros::NodeHandle nh_;
 

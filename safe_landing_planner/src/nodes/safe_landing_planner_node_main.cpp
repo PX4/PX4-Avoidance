@@ -11,5 +11,6 @@ int main(int argc, char **argv) {
     ros::spin();
   }
 
+  NodeSLP.worker_.join();
   return 0;
 }
