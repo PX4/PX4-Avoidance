@@ -79,7 +79,7 @@ std::vector<Cell> Cell::getFlowNeighbors(int radius) const {
   for (int x = -radius; x <= radius; x++) {
     int y_radius = ceilDistance(radius, x);
     for (int y = -y_radius; y <= y_radius; y++) {
-      int z_radius = ceilDistance(radius, y);
+      int z_radius = ceilDistance(y_radius, y);
       for (int z = -z_radius; z <= z_radius; z++) {
         cells.push_back(Cell(std::tuple<int, int, int>(
             xIndex() + x, yIndex() + y, zIndex() + z)));
