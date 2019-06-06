@@ -19,7 +19,7 @@
         args="0 0 0 -1.58 0 -1.58 fcu camera_link 100"/>
 
     <!-- Global Planner -->
-    <node name="global_planner_node" pkg="avoidance_global_planner" type="global_planner_node" output="screen" args=""  />
+    <node name="avoidance_global_planner_node" pkg="avoidance_global_planner" type="avoidance_global_planner_node" output="screen" args=""  />
     <!-- <node name="path_handler_node" pkg="avoidance_global_planner" type="path_handler_node" output="screen" /> -->
     <node name="mock_data_node" pkg="avoidance_global_planner" type="mock_data_node" output="screen" />
 

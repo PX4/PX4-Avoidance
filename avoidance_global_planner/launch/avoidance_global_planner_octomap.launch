@@ -6,7 +6,7 @@
     <arg name="start_pos_z" default="3.5" />
 
     <!-- Global Planner -->
-    <node name="global_planner_node" pkg="avoidance_global_planner" type="global_planner_node" output="screen"
+    <node name="avoidance_global_planner_node" pkg="avoidance_global_planner" type="avoidance_global_planner_node" output="screen"
           args="$(find avoidance_global_planner)/resource/random_goals"  >
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />

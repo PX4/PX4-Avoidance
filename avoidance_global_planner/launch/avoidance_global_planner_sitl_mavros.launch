@@ -27,7 +27,7 @@
     </include>
 
     <!-- Global planner -->
-    <include file="$(find avoidance_global_planner)/launch/global_planner_octomap.launch" >
+    <include file="$(find avoidance_global_planner)/launch/avoidance_global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
         <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />

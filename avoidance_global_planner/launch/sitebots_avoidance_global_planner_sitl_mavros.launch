@@ -27,7 +27,7 @@
     </include>
 
     <!-- Global planner -->
-    <include file="$(find avoidance_global_planner)/launch/sitebots_global_planner_octomap.launch" >
+    <include file="$(find avoidance_global_planner)/launch/sitebots_avoidance_global_planner_octomap.launch" >
         <arg name="use_three_point_msg" default="false"/>
         <arg name="point_cloud_topic" value="$(arg point_cloud_topic)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />
@@ -51,5 +51,5 @@
 
     <!-- RViz -->
     <node pkg="rviz" type="rviz" output="screen" name="rviz" respawn="true"
-          args="-d $(find avoidance_global_planner)/resource/sitebots_global_planner.rviz" />
+          args="-d $(find avoidance_global_planner)/resource/sitebots_avoidance_global_planner.rviz" />
 </launch>
