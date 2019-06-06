@@ -257,6 +257,7 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
         }
       } else {
         cloud_msg_lock.reset();
+        ROS_INFO("[SLPN] No transformation available!");
         ros::Duration(0.001).sleep();
       }
     }

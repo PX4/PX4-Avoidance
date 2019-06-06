@@ -43,14 +43,14 @@ void WaypointGeneratorNode::startNode() {
 
 void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
   ros::Time start_query_position = ros::Time::now();
-  while (!grid_received_ && ros::ok()) {
+  while (!position_received_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
   }
 
   calculateWaypoint();
   landingAreaVisualization();
   goalVisualization();
-  grid_received_ = false;
+  position_received_ = false;
 
   return;
 }
@@ -82,6 +82,7 @@ void WaypointGeneratorNode::positionCallback(
   tf::Matrix3x3 mat(q);
   mat.getRPY(roll, pitch, yaw);
   yaw_ = static_cast<float>(yaw);
+  position_received_ = true;
   ROS_INFO("[WGN] Current position %f %f %f", msg.pose.position.x,
            msg.pose.position.y, msg.pose.position.z);
 }
@@ -154,7 +155,7 @@ void WaypointGeneratorNode::gridCallback(
   pos_index_.y() = static_cast<int>(msg.curr_pos_index.y);
 
   grid_slp_.setFilterLimits(position_);
-  grid_received_ = true;
+
 }
 
 void WaypointGeneratorNode::calculateWaypoint() {
