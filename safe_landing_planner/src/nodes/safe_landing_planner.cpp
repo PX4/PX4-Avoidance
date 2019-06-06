@@ -23,7 +23,7 @@ void SafeLandingPlanner::processPointcloud() {
   grid_.reset();
   visualization_cloud_.header = cloud_.header;
   visualization_cloud_.points.clear();
-  ROS_INFO("Input cloud size %lu ", cloud_.points.size());
+  ROS_INFO("[SLP] Input cloud size %lu ", cloud_.points.size());
   for (const pcl::PointXYZ& xyz : cloud_) {
     if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
       // check if point is inside the grid
@@ -45,6 +45,7 @@ void SafeLandingPlanner::processPointcloud() {
       }
     }
   }
+  ROS_INFO("[SLP] Grid cloud size %lu ", visualization_cloud_.points.size());
 }
 
 void SafeLandingPlanner::isLandingPossible() {
