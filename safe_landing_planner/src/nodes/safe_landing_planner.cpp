@@ -67,7 +67,9 @@ void SafeLandingPlanner::isLandingPossible() {
   if (n_lines_padding_ > 0) {
     Eigen::MatrixXi land_padded(size + 2 * n_lines_padding_,
                                 size + 2 * n_lines_padding_);
+    Eigen::MatrixXi land_accumulator(size + 2 * n_lines_padding_, size + 2 * n_lines_padding_);
     land_padded.fill(0);
+    land_accumulator.fill(0);
     Eigen::MatrixXf mean_padded(size + 2 * n_lines_padding_,
                                 size + 2 * n_lines_padding_);
     mean_padded.fill(0.f);
@@ -87,6 +89,7 @@ void SafeLandingPlanner::isLandingPossible() {
            j++) {
         for (int k = -n_lines_padding_; k <= n_lines_padding_; k++) {
           for (int t = -n_lines_padding_; t <= n_lines_padding_; t++) {
+            land_accumulator(i, j) += land_padded(i + k, j + t);
             float mean_diff =
                 std::abs(mean_padded(i, j) - mean_padded(i + k, j + t));
             if (mean_diff > mean_diff_thr_) {
@@ -97,6 +100,10 @@ void SafeLandingPlanner::isLandingPossible() {
       }
     }
 
+    // threshold each cell based on the number of landable cells in the neighborhood
+    land_accumulator = (land_accumulator.array() <= min_n_land_cells_).select(0, land_accumulator);
+    land_accumulator = (land_accumulator.array() > min_n_land_cells_).select(1, land_accumulator);
+
     // threshold each cell based on the number of cells in the neighborhood with
     // mean value difference greater than mean_diff_thr_
     mean_accumulator = (mean_accumulator.array() <= max_n_mean_diff_cells_)
@@ -105,11 +112,11 @@ void SafeLandingPlanner::isLandingPossible() {
                            .select(0, mean_accumulator);
 
     // logical AND between mean_accumulator and land_accumulator
-    land_padded = mean_accumulator.cwiseProduct(land_padded);
+    land_accumulator = mean_accumulator.cwiseProduct(land_accumulator);
 
     // copy back into grid.land_
     grid_.land_.block(0, 0, grid_.land_.rows(), grid_.land_.cols()) =
-        land_padded.block(n_lines_padding_, n_lines_padding_,
+        land_accumulator.block(n_lines_padding_, n_lines_padding_,
                           grid_.land_.rows(), grid_.land_.cols());
   }
   pos_index_ = computeGridIndexes(position_.x(), position_.y());
@@ -171,6 +178,7 @@ void SafeLandingPlanner::dynamicReconfigureSetParams(
   alpha_ = static_cast<float>(config.alpha);
   timeout_critical_ = config.timeout_critical;
   timeout_termination_ = config.timeout_termination;
+  min_n_land_cells_ = config.min_n_land_cells;
   if ((grid_.getGridSize() != grid_size_) ||
       (grid_.getCellSize() != cell_size_) ||
       (n_lines_padding_ != smoothing_size_)) {
