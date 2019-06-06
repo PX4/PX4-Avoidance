@@ -1,0 +1,177 @@
+# Common configuration for PX4 autopilot
+#
+# node:
+startup_px4_usb_quirk: true
+
+# --- system plugins ---
+
+# sys_status & sys_time connection options
+conn:
+  heartbeat_rate: 1.0    # send hertbeat rate in Hertz
+  timeout: 10.0          # hertbeat timeout in seconds
+  timesync_rate: 10.0    # TIMESYNC rate in Hertz (feature disabled if 0.0)
+  system_time_rate: 1.0  # send system time to FCU rate in Hertz (disabled if 0.0)
+
+# sys_status
+sys:
+  min_voltage: 10.0   # diagnostics min voltage
+  disable_diag: false # disable all sys_status diagnostics, except heartbeat
+
+# sys_time
+time:
+  time_ref_source: "fcu"  # time_reference source
+  timesync_avg_alpha: 0.6 # timesync averaging factor
+
+# --- mavros plugins (alphabetical order) ---
+
+# 3dr_radio
+tdr_radio:
+  low_rssi: 40  # raw rssi lower level for diagnostics
+
+# actuator_control
+# None
+
+# command
+cmd:
+  use_comp_id_system_control: false # quirk for some old FCUs
+
+# dummy
+# None
+
+# ftp
+# None
+
+# global_position
+global_position:
+  frame_id: "fcu"           # pose and fix frame_id
+  rot_covariance: 99999.0   # covariance for attitude?
+  tf:
+    send: false               # send TF?
+    frame_id: "local_origin"  # TF frame_id
+    child_frame_id: "fcu_utm" # TF child_frame_id
+
+# imu_pub
+imu:
+  frame_id: "fcu"
+  # need find actual values
+  linear_acceleration_stdev: 0.0003
+  angular_velocity_stdev: !degrees 0.02
+  orientation_stdev: 1.0
+  magnetic_stdev: 0.0
+
+# local_position
+local_position:
+  frame_id: "local_origin"
+  tf:
+    send: true
+    frame_id: "local_origin"
+    child_frame_id: "fcu"
+    send_fcu: false
+
+# param
+# None, used for FCU params
+
+# rc_io
+# None
+
+# safety_area
+safety_area:
+  p1: {x:  1.0, y:  1.0, z:  1.0}
+  p2: {x: -1.0, y: -1.0, z: -1.0}
+
+# setpoint_accel
+setpoint_accel:
+  send_force: false
+
+# setpoint_attitude
+setpoint_attitude:
+  reverse_throttle: false   # allow reversed throttle
+  tf:
+    listen: false           # enable tf listener (disable topic subscribers)
+    frame_id: "local_origin"
+    child_frame_id: "attitude"
+    rate_limit: 10.0
+
+# setpoint_position
+setpoint_position:
+  tf:
+    listen: false           # enable tf listener (disable topic subscribers)
+    frame_id: "local_origin"
+    child_frame_id: "setpoint"
+    rate_limit: 50.0
+
+# setpoint_velocity
+# None
+
+# vfr_hud
+# None
+
+# waypoint
+mission:
+  pull_after_gcs: true  # update mission if gcs updates
+
+# --- mavros extras plugins (same order) ---
+
+# distance_sensor (PX4 only)
+distance_sensor:
+  hrlv_ez4_pub:
+    id: 0
+    frame_id: "hrlv_ez4_sonar"
+    orientation: ROLL_180 # RPY:{180.0, 0.0, 0.0}
+    field_of_view: 0.0  # XXX TODO
+    send_tf: true
+    sensor_position: {x:  0.0, y:  0.0, z:  -0.1}
+  lidarlite_pub:
+    id: 1
+    frame_id: "lidarlite_laser"
+    orientation: ROLL_180
+    field_of_view: 0.0  # XXX TODO
+    send_tf: true
+    sensor_position: {x:  0.0, y:  0.0, z:  -0.1}
+  sonar_1_sub:
+    subscriber: true
+    id: 2
+    orientation: ROLL_180
+  laser_1_sub:
+    subscriber: true
+    id: 3
+    orientation: ROLL_180
+
+## Currently available orientations:
+#    Check http://wiki.ros.org/mavros/Enumerations
+##
+
+# image_pub
+image:
+  frame_id: "px4flow"
+
+# mocap_pose_estimate
+mocap:
+  # select mocap source
+  use_tf: true   # ~mocap/tf
+  use_pose: false  # ~mocap/pose
+
+# px4flow
+px4flow:
+  frame_id: "px4flow"
+  ranger_fov: !degrees 0.0  # XXX TODO
+  ranger_min_range: 0.3     # meters
+  ranger_max_range: 5.0     # meters
+
+# vision_pose_estimate
+vision_pose:
+  tf:
+    listen: false           # enable tf listener (disable topic subscribers)
+    frame_id: "local_origin"
+    child_frame_id: "vision"
+    rate_limit: 10.0
+
+# vision_speed_estimate
+vision_speed:
+  listen_twist: false
+
+# vibration
+vibration:
+  frame_id: "vibration"
+
+# vim:set ts=2 sw=2 et:
