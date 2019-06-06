@@ -1,0 +1,48 @@
+<launch>
+    <arg name="ns" default="/"/>
+    <arg name="fcu_url" default="udp://:14540@localhost:14557"/>
+    <arg name="gcs_url" default="" />   <!-- GCS link is provided by SITL -->
+    <arg name="tgt_system" default="1" />
+    <arg name="tgt_component" default="1" />
+
+    <!-- Launch MavROS -->
+    <group ns="$(arg ns)">
+        <include file="$(find mavros)/launch/node.launch">
+            <arg name="pluginlists_yaml" value="$(find mavros)/launch/px4_pluginlists.yaml" />
+            <!-- Need to change the config file to get the tf topic and get local position in terms of local origin -->
+            <arg name="config_yaml" value="$(find local_planner)/resource/px4_config.yaml" />
+            <arg name="fcu_url" value="$(arg fcu_url)" />
+            <arg name="gcs_url" value="$(arg gcs_url)" />
+            <arg name="tgt_system" value="$(arg tgt_system)" />
+            <arg name="tgt_component" value="$(arg tgt_component)" />
+        </include>
+    </group>
+
+    <!-- Launch cameras -->
+    <node pkg="tf" type="static_transform_publisher" name="tf_camera_main"
+       args="0.3 0.32 -0.11 0 0 0 fcu camera_main_FLU 10"/>
+
+    <rosparam command="load" file="$(find struct_core_ros)/launch/sc.yaml"/>
+    <node pkg="struct_core_ros" type="sc" name="camera_main"/>
+
+          <!-- launch node to throttle depth images for logging -->
+          <node name="drop_sc_depth" pkg="topic_tools" type="drop" output="screen"
+             args="/sc/depth/image_rect 29 30 /sc/depth/image_rect_drop">
+          </node>
+
+
+    <!-- Launch avoidance -->
+    <arg name="pointcloud_topics" default="/camera_main/depth/points"/>
+
+    <node name="safe_landing_planner_node" pkg="safe_landing_planner" type="safe_landing_planner_node" output="screen" >
+      <param name="pointcloud_topics" value="$(arg pointcloud_topics)" />
+    </node>
+
+    <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node" output="screen" >
+    </node>
+
+    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
+    <node name="set_RS_param" pkg="safe_landing_planner" type="realsense_params.sh" />
+
+</launch>
+
