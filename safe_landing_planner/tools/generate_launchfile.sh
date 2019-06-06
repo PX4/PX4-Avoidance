@@ -82,6 +82,12 @@ for camera in $CAMERA_CONFIGS; do
 			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
 			    <node pkg="struct_core_ros" type="sc" name="$1"/>
 
+          <!-- launch node to throttle depth images for logging -->
+          <node name="drop_sc_depth" pkg="topic_tools" type="drop" output="screen"
+             args="/sc/depth/image_rect 29 30 /sc/depth/image_rect_drop">
+          </node>
+
+
 		EOM
 	else
 	echo "Unknown camera type $2 in CAMERA_CONFIGS"
