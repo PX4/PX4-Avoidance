@@ -11,7 +11,7 @@ RUN apt-get update && \
 
 RUN mkdir -p ${CATKIN_WS}/src
 
-COPY global_planner ${AVOIDANCE_DIR}
+COPY avoidance_global_planner ${AVOIDANCE_DIR}
 COPY docker/components/global-planner-node/launch ${WORKSPACE_DIR}/launch
 
 COPY docker/components/global-planner-node/entrypoint.sh ${WORKSPACE_DIR}/entrypoint.sh

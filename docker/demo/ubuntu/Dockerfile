@@ -63,7 +63,7 @@ RUN apt-get update && \
                        ros-kinetic-octomap-*
 
 # Prepare and build avoidance
-COPY global_planner ${AVOIDANCE_DIR}
+COPY avoidance_global_planner ${AVOIDANCE_DIR}
 COPY sim/models ${MODELS_DIR}
 COPY sim/worlds ${WORLDS_DIR}
 
@@ -99,5 +99,5 @@ CMD ["/bin/bash", "-c", " \
     source ${CATKIN_WS}/devel/setup.bash && \
     export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:${FIRMWARE_DIR} && \
     . ${FIRMWARE_DIR}/Tools/setup_gazebo.bash ${FIRMWARE_DIR} ${FIRMWARE_DIR}/build/posix_sitl_default && \
-    roslaunch global_planner global_planner_sitl_mavros.launch world_path:=${WORLDS_DIR}/test_city_2.world \
+    roslaunch avoidance_global_planner global_planner_sitl_mavros.launch world_path:=${WORLDS_DIR}/test_city_2.world \
 "]

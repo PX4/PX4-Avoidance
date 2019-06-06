@@ -69,15 +69,15 @@ Find instructions [here](demo).
 
 ## Deploying with Docker
 
-Deployment configurations are located in "global_planner/global-planner-prod".
+Deployment configurations are located in "avoidance_global_planner/global-planner-prod".
 
 The global planner can be deployed in two flavours: `debug` and `release`. They are currently the same, but in the future, the `debug` flavour will allow debugging from a remote machine (i.e. one will be able to run rviz on a computer while the containers are running on the drone).
 
-Find instructions to run the `release` flavour [here](global_planner/global-planner-prod/global-planner-prod-release).
+Find instructions to run the `release` flavour [here](avoidance_global_planner/global-planner-prod/global-planner-prod-release).
 
 ## Developing with Docker
 
-Development configurations are located in "global_planner/global-planner-dev".
+Development configurations are located in "avoidance_global_planner/global-planner-dev".
 
 In order to develop in good conditions, it is always nice to compile the code on the host. But installing the whole simulation on your host requires that you install everything, including Gazebo and a whole lot of ROS packages. Setting up the right environment might be troublesome if you happen to not be developing on Ubuntu 16.04. Turns out that if you only work on the avoidance node, chances are that you don't need to modify anything in Gazebo or Mavros. In this case, you could just run Gazebo and Mavros on docker containers, and connect your avoidance node directly from the host. For this reason, different containers have been created (they are defined in [components](components)):
 
@@ -86,4 +86,4 @@ In order to develop in good conditions, it is always nice to compile the code on
 * `mavros-avoidance` is based on `mavros` and obviously runs mavros.
 * `avoidance-node` runs the actual avoidance system, composed of different nodes (including the octomap one).
 
-You will find [here](global_planner/global-planner-dev) instructions on how to run the global_planner containers in dev mode.
+You will find [here](avoidance_global_planner/global-planner-dev) instructions on how to run the avoidance_global_planner containers in dev mode.

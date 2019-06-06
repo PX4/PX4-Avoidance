@@ -1,0 +1,4 @@
+<launch>
+  <node pkg="avoidance_global_planner" name="avoidance_global_planner" type="avoidance_node" output="screen">
+  </node>
+</launch>

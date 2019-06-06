@@ -2,11 +2,11 @@
 PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance. This repository contains two different implementations:
 
   * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
-  * *global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
+  * *avoidance_global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
 
 The two algorithms are standalone and they are not meant to be used together.
 
-The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
+The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1yjDtxRrIntr5Mdaj9CCB4IFJn0Iy2-bR). On the other hand, the *avoidance_global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/open?id=1hhMLoXQuEM4ppdvDik8r6JY3RwGi5nzw).
 
 > **Note** The development team is right now focused on the *local_planner*.
 
@@ -189,10 +189,10 @@ You should now be ready to run the simulation using local or global planner.
 
 ### Global Planner
 
-This section shows how to start the *global_planner* and use it for avoidance in offboard mode.
+This section shows how to start the *avoidance_global_planner* and use it for avoidance in offboard mode.
 
 ```bash
-roslaunch global_planner global_planner_sitl_mavros.launch
+roslaunch avoidance_global_planner global_planner_sitl_mavros.launch
 ```
 
 You should now see the drone unarmed on the ground, and the octomap should show 2 red arrows and the visible world, as pictured below.

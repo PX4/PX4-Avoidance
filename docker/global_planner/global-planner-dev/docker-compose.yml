@@ -18,7 +18,7 @@ services:
             service: sitl-avoidance-gui
         depends_on:
             - sitl-avoidance-server
-        command: /root/resource/global_planner.rviz
+        command: /root/resource/avoidance_global_planner.rviz
     global-planner-node:
         extends:
             file: ../../components/components.yml
