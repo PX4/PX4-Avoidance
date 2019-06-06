@@ -156,7 +156,7 @@ void WaypointGeneratorNode::gridCallback(
 
   grid_slp_.setFilterLimits(position_);
 
-  ROS_INFO("[WPGN] Recived a new grid");
+  ROS_INFO("[WPGN] Recived a new grid, seq n %d ", grid_slp_seq_);
 
 }
 

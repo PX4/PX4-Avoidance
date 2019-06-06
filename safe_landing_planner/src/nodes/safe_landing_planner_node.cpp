@@ -83,8 +83,10 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
   while (!cloud_transformed_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     ros::Duration since_query = ros::Time::now() - start_query_position;
+    ROS_INFO("cloud_transformed_ not transformed ");
     if (since_query >
         ros::Duration(safe_landing_planner_->timeout_termination_)) {
+      ROS_INFO("More than timeout_termination_ since last transformed cloud");
       status_msg_.state =
           static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       publishSystemStatus();
@@ -107,12 +109,13 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
 
     safe_landing_planner_->runSafeLandingPlanner();
     cloud_transformed_ = false;
+    last_algo_time_ = ros::Time::now();
   }
+  ROS_INFO("completed runSafeLandingPlanner");
   visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()),
                                           current_pose_.pose.position,
                                           previous_pose_.pose.position);
   publishSerialGrid();
-  last_algo_time_ = ros::Time::now();
 
   if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 
@@ -130,6 +133,7 @@ void SafeLandingPlannerNode::checkFailsafe(ros::Duration since_last_algo,
       since_start > timeout_termination) {
     status_msg_.state =
         static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    ROS_INFO("more than timeout_termination_ since last runSLP");
   } else if (since_last_algo > timeout_critical &&
              since_start > timeout_critical) {
     status_msg_.state =
