@@ -101,15 +101,18 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
       avoidance::toEigen(current_pose_.pose.position),
       avoidance::toEigen(current_pose_.pose.orientation));
 
-  std::lock_guard<std::mutex> transformed_cloud_guard(
-      *(transformed_cloud_mutex_));
-  safe_landing_planner_->runSafeLandingPlanner();
+  {
+    std::lock_guard<std::mutex> transformed_cloud_guard(
+        *(transformed_cloud_mutex_));
+
+    safe_landing_planner_->runSafeLandingPlanner();
+    cloud_transformed_ = false;
+  }
   visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()),
                                           current_pose_.pose.position,
                                           previous_pose_.pose.position);
   publishSerialGrid();
   last_algo_time_ = ros::Time::now();
-  cloud_transformed_ = false;
 
   if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 
@@ -224,7 +227,8 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
     while (cloud_transformed_ == false) {
       if (should_exit_) break;
 
-      std::lock_guard<std::mutex> cloud_msg_lock(*(cloud_msg_mutex_));
+      std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(
+          new std::lock_guard<std::mutex>(*(cloud_msg_mutex_)));
       if (tf_listener_.canTransform("/local_origin",
                                     newest_cloud_msg_.header.frame_id,
                                     newest_cloud_msg_.header.stamp)) {
@@ -232,7 +236,7 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
           pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
           // transform message to pcl type
           pcl::fromROSMsg(newest_cloud_msg_, pcl_cloud);
-
+          cloud_msg_lock.reset();
           // remove nan padding
           std::vector<int> dummy_index;
           dummy_index.reserve(pcl_cloud.points.size());
@@ -252,6 +256,7 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
               ex.what());
         }
       } else {
+        cloud_msg_lock.reset();
         ros::Duration(0.001).sleep();
       }
     }
