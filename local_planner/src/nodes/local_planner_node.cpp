@@ -649,8 +649,9 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
     while (cameras_[index].transformed_ == false) {
       if (should_exit_) break;
 
-      std::lock_guard<std::mutex> cloud_msg_lock(
-          *(cameras_[index].cloud_msg_mutex_));
+      std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(
+          new std::lock_guard<std::mutex>(*(cameras_[index].cloud_msg_mutex_)));
+
       if (tf_listener_->canTransform(
               "/local_origin",
               cameras_[index].newest_cloud_msg_.header.frame_id,
@@ -659,6 +660,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
           // transform message to pcl type
           pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
+          cloud_msg_lock.reset();
 
           // remove nan padding
           std::vector<int> dummy_index;
@@ -679,6 +681,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
               ex.what());
         }
       } else {
+        cloud_msg_lock.reset();
         ros::Duration(0.001).sleep();
       }
     }
