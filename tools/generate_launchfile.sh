@@ -89,6 +89,11 @@ for camera in $CAMERA_CONFIGS; do
 			    <node pkg="struct_core_ros" type="sc" name="$1" required="true">
 			       <param name="serial_number" type="str" value="$3" />
 			    </node>
+			    
+			    <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
+			       args="/$1/depth/image_rect 29 30">
+			       <remap from="/$1/depth/image_rect_drop" to="/$1/depth/image_rect_raw_drop"/>
+			    </node>
 
 		EOM
 	else
