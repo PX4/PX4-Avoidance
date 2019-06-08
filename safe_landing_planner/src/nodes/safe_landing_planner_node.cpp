@@ -50,16 +50,19 @@ void SafeLandingPlannerNode::positionCallback(
   previous_pose_ = current_pose_;
   current_pose_ = msg;
   position_received_ = true;
+  ROS_INFO("New vehicle position received");
 }
 
 void SafeLandingPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2 &msg) {
   std::lock_guard<std::mutex> lck(*(cloud_msg_mutex_));
   newest_cloud_msg_ = msg;  // FIXME: avoid a copy
+  ROS_INFO("Received new pointcloud");
 
   std::lock_guard<std::mutex> transformed_cloud_guard(
       *(transformed_cloud_mutex_));
   cloud_transformed_ = false;
+  ROS_INFO("pointCloudCallback cloud_transformed_ %d", cloud_transformed_);
   cloud_ready_cv_->notify_one();
 }
 
@@ -111,7 +114,7 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
     cloud_transformed_ = false;
     last_algo_time_ = ros::Time::now();
   }
-  ROS_INFO("completed runSafeLandingPlanner");
+  ROS_INFO("completed runSafeLandingPlanner, cloud_transformed_ %d ", cloud_transformed_);
   visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()),
                                           current_pose_.pose.position,
                                           previous_pose_.pose.position);
@@ -226,6 +229,7 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
   while (!should_exit_) {
     {
       std::unique_lock<std::mutex> cloud_msg_lock(*(cloud_msg_mutex_));
+      ROS_INFO("pointCloudTransformThread before wait for new cloud");
       cloud_ready_cv_->wait(cloud_msg_lock);
     }
     while (cloud_transformed_ == false) {
