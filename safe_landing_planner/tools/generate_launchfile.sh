@@ -80,7 +80,7 @@ for camera in $CAMERA_CONFIGS; do
 			       args="$4 $5 $6 $7 $8 $9 fcu $1_FLU 10"/>
 
 			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
-			    <node pkg="struct_core_ros" type="sc" name="$1"/>
+			    <node pkg="struct_core_ros" type="sc" name="$1" output="screen" />
 
           <!-- launch node to throttle depth images for logging -->
           <node name="drop_sc_depth" pkg="topic_tools" type="drop" output="screen"
