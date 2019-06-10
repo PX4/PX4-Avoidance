@@ -57,7 +57,7 @@ void SafeLandingPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2 &msg) {
   std::lock_guard<std::mutex> lck(*(cloud_msg_mutex_));
   newest_cloud_msg_ = msg;  // FIXME: avoid a copy
-  ROS_INFO("Received new pointcloud");
+  ROS_INFO("Received new pointcloud of size %d", newest_cloud_msg_.width);
 
   std::lock_guard<std::mutex> transformed_cloud_guard(
       *(transformed_cloud_mutex_));
