@@ -54,12 +54,11 @@ void SafeLandingPlannerNode::positionCallback(
 
 void SafeLandingPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2 &msg) {
-  std::lock_guard<std::mutex> lck(*(cloud_msg_mutex_));
-  newest_cloud_msg_ = msg;  // FIXME: avoid a copy
+  {
+    std::lock_guard<std::mutex> lck(*(cloud_msg_mutex_));
+    newest_cloud_msg_ = msg;  // FIXME: avoid a copy
+  }
 
-  std::lock_guard<std::mutex> transformed_cloud_guard(
-      *(transformed_cloud_mutex_));
-  cloud_transformed_ = false;
   cloud_ready_cv_->notify_one();
 }
 
@@ -71,9 +70,13 @@ void SafeLandingPlannerNode::startNode() {
   transformed_cloud_mutex_.reset(new std::mutex);
   cloud_ready_cv_.reset(new std::condition_variable);
 
-  cmdloop_timer_ = nh_.createTimer(
+  ros::TimerOptions timer_options(
       ros::Duration(spin_dt_),
-      boost::bind(&SafeLandingPlannerNode::cmdLoopCallback, this, _1));
+      boost::bind(&SafeLandingPlannerNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
 }
 
 void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
