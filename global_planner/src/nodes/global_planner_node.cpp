@@ -58,7 +58,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
   current_waypoint_publisher_ =
       nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_in", 10);
- 
+
   actual_path_.header.frame_id = "/world";
   listener_.waitForTransform("/fcu", "/world", ros::Time(0),
                              ros::Duration(3.0));
@@ -109,17 +109,15 @@ void GlobalPlannerNode::readParams() {
       GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
 }
 
-void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics){
+void GlobalPlannerNode::initializeCameraSubscribers(
+    std::vector<std::string>& camera_topics) {
   cameras_.resize(camera_topics.size());
 
-  for(size_t i = 0; i < camera_topics.size(); i++){
+  for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].pointcloud_sub_ = nh_.subscribe(
-        camera_topics[i], 1,
-        &GlobalPlannerNode::depthCameraCallback, this);
+        camera_topics[i], 1, &GlobalPlannerNode::depthCameraCallback, this);
   }
-
 }
-
 
 // Sets a new goal, plans a path to it and publishes some info
 void GlobalPlannerNode::setNewGoal(const GoalCell& goal) {
