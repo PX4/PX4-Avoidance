@@ -57,6 +57,9 @@ class SafeLandingPlannerNode {
   std::unique_ptr<std::mutex> cloud_msg_mutex_;
   std::unique_ptr<std::mutex> transformed_cloud_mutex_;
   std::unique_ptr<std::condition_variable> cloud_ready_cv_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  ros::CallbackQueue cmdloop_queue_;
+
   sensor_msgs::PointCloud2 newest_cloud_msg_;
 
   ros::NodeHandle nh_;

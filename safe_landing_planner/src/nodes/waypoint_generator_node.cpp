@@ -36,9 +36,13 @@ WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh)
 }
 
 void WaypointGeneratorNode::startNode() {
-  cmdloop_timer_ = nh_.createTimer(
+  ros::TimerOptions timer_options(
       ros::Duration(spin_dt_),
-      boost::bind(&WaypointGeneratorNode::cmdLoopCallback, this, _1));
+      boost::bind(&WaypointGeneratorNode::cmdLoopCallback, this, _1),
+      &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(timer_options);
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
 }
 
 void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
@@ -505,7 +509,7 @@ int main(int argc, char **argv) {
   WaypointGeneratorNode NodeWG(nh);
   NodeWG.startNode();
   while (ros::ok()) {
-    ros::spin();
+    ros::Duration(1.0).sleep();
   }
 
   return 0;

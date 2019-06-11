@@ -6,6 +6,7 @@
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
 #include <mavros_msgs/WaypointList.h>
+#include <ros/callback_queue.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Int64MultiArray.h>
 #include <visualization_msgs/Marker.h>
@@ -48,6 +49,7 @@ class WaypointGeneratorNode {
 
   ros::Timer cmdloop_timer_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  ros::CallbackQueue cmdloop_queue_;
 
   double spin_dt_ = 0.1;
   float yaw_setpoint_ = NAN;
