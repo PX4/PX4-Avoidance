@@ -43,6 +43,10 @@
 
 namespace global_planner {
 
+struct cameraData {
+  ros::Subscriber pointcloud_sub_;
+};
+
 class GlobalPlannerNode {
  public:
   // TODO: Deque instead of vector
@@ -65,7 +69,6 @@ class GlobalPlannerNode {
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber move_base_simple_sub_;
   ros::Subscriber laser_sensor_sub_;
-  ros::Subscriber depth_camera_sub_;
   ros::Subscriber fcu_input_sub_;
 
   // Publishers
@@ -78,6 +81,7 @@ class GlobalPlannerNode {
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_waypoint_publisher_;
   ros::Publisher current_waypoint_publisher_;
+  ros::Publisher pointcloud_pub_;
 
   ros::Time start_time_;
   ros::Time last_wp_time_;
@@ -100,6 +104,7 @@ class GlobalPlannerNode {
 
   std::vector<geometry_msgs::PoseStamped> last_clicked_points;
   std::vector<geometry_msgs::PoseStamped> path_;
+  std::vector<cameraData> cameras_;
 
   int num_octomap_msg_ = 0;
   int num_pos_msg_ = 0;
@@ -122,6 +127,7 @@ class GlobalPlannerNode {
   std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
 #endif
   void readParams();
+  void initializeCameraSubscribers(std::vector<std::string>& camera_topics);
   void receivePath(const nav_msgs::Path& msg);
   void setNewGoal(const GoalCell& goal);
   void popNextGoal();
