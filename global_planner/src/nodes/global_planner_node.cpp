@@ -36,8 +36,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
                     &GlobalPlannerNode::moveBaseSimpleCallback, this);
   laser_sensor_sub_ =
       nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
-  depth_camera_sub_ = nh_.subscribe(
-      "/camera/depth/points", 1, &GlobalPlannerNode::depthCameraCallback, this);
   fcu_input_sub_ =
       nh_.subscribe("/mavros/trajectory/desired", 1,
                     &GlobalPlannerNode::fcuInputGoalCallback, this);
@@ -59,6 +57,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
       "/mavros/trajectory/generated", 10);
   current_waypoint_publisher_ =
       nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
+  pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_in", 10);
 
   actual_path_.header.frame_id = "/world";
   listener_.waitForTransform("/fcu", "/world", ros::Time(0),
@@ -98,11 +97,26 @@ GlobalPlannerNode::~GlobalPlannerNode() {}
 
 // Read Ros parameters
 void GlobalPlannerNode::readParams() {
+  std::vector<std::string> camera_topics;
+
   nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
   nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
+  nh_.getParam("pointcloud_topics", camera_topics);
+
+  initializeCameraSubscribers(camera_topics);
   global_planner_.goal_pos_ =
       GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
+}
+
+void GlobalPlannerNode::initializeCameraSubscribers(
+    std::vector<std::string>& camera_topics) {
+  cameras_.resize(camera_topics.size());
+
+  for (size_t i = 0; i < camera_topics.size(); i++) {
+    cameras_[i].pointcloud_sub_ = nh_.subscribe(
+        camera_topics[i], 1, &GlobalPlannerNode::depthCameraCallback, this);
+  }
 }
 
 // Sets a new goal, plans a path to it and publishes some info
@@ -337,6 +351,7 @@ void GlobalPlannerNode::depthCameraCallback(
         global_planner_.occupied_.insert(occupied_cell);
       }
     }
+    pointcloud_pub_.publish(msg);
   } catch (tf::TransformException const& ex) {
     ROS_DEBUG("%s", ex.what());
     ROS_WARN("Transformation not available (/world to /camera_link");

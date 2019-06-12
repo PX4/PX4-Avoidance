@@ -1,5 +1,5 @@
 <launch>
-    <arg name="point_cloud_topic" default="/camera/depth/points"/>
+    <arg name="pointcloud_topics" default="[/camera/depth/points]"/>
     <arg name="start_pos_x" default="0.5" />
     <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
@@ -12,7 +12,7 @@
         <param name="start_pos_y" value="$(arg start_pos_y)" />
         <param name="start_pos_z" value="$(arg start_pos_z)" />
         <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
-        <remap from="/camera/depth/points" to="$(arg point_cloud_topic)" />
+        <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
     </node>
 
     <!-- OctoMap Server -->
@@ -35,6 +35,6 @@
         <param name="height_map" value="false" />
         <param name="publish_free_space" value="false" />
         <!-- data source to integrate (PointCloud2) -->
-        <remap from="cloud_in" to="$(arg point_cloud_topic)" />
+        <!-- <remap from="cloud_in" to="$(arg point_cloud_topic)" /> -->
     </node>
 </launch>
