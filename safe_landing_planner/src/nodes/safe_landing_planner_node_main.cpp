@@ -7,9 +7,7 @@ int main(int argc, char **argv) {
   SafeLandingPlannerNode NodeSLP(nh);
   NodeSLP.startNode();
 
-  while (ros::ok()) {
-    ros::spin();
-  }
+  NodeSLP.worker_.join();
 
   return 0;
 }

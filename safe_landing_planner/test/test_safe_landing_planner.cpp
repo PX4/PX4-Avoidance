@@ -45,6 +45,7 @@ TEST_F(SafeLandingPlannerTests, flat_center) {
 
   config.smoothing_size = -1;
   config.n_points_threshold = 20;
+  config.min_n_land_cells = 20;
   config.cell_size = 1;
   config.alpha = 0.0;
 
@@ -117,6 +118,7 @@ TEST_F(SafeLandingPlannerTests, flat_bottom_half) {
 
   config.smoothing_size = -2;
   config.n_points_threshold = 4;
+  config.min_n_land_cells = 4;
   config.cell_size = 1;
 
   safe_landing_planner.dynamicReconfigureSetParams(config, 1);
@@ -291,6 +293,7 @@ TEST_F(SafeLandingPlannerTests, mean) {
 
   config.smoothing_size = 1;
   config.n_points_threshold = 1;
+  config.min_n_land_cells = 1;
   config.cell_size = 1;
   config.max_n_mean_diff_cells = 1;
 

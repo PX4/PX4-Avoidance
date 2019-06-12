@@ -68,6 +68,7 @@ class SafeLandingPlanner {
   int max_n_mean_diff_cells_ = 2;
   int grid_seq_ = 0;
   int smoothing_size_ = 1;
+  int min_n_land_cells_ = 9;
   bool size_update_ = false;
 
   safe_landing_planner::SafeLandingPlannerNodeConfig rqt_param_config_;

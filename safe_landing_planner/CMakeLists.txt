@@ -25,7 +25,7 @@ if(DISABLE_SIMULATION)
 endif()
 
 ## Generate messages in the 'msg' folder
-add_message_files(FILES LSDGridMsg.msg)
+add_message_files(FILES SLPGridMsg.msg)
 generate_messages(
   DEPENDENCIES
   std_msgs
