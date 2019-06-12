@@ -13,7 +13,6 @@
         <param name="start_pos_z" value="$(arg start_pos_z)" />
         <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
         <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
-        <!-- <remap from="/camera/depth/points" to="$(arg point_cloud_topic)" /> -->
     </node>
 
     <!-- OctoMap Server -->

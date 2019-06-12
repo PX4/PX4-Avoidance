@@ -9,8 +9,6 @@
     <!-- Ros transformation -->
     <node pkg="tf" type="static_transform_publisher" name="tf_local_origin"
           args="0 0 0 0 0 0 world local_origin 10"/>
-    <node pkg="tf" type="static_transform_publisher" name="tf_camera"
-          args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
   <!-- Launch PX4 and mavros -->
   <include file="$(find avoidance)/launch/avoidance_sitl_stereo.launch" >
