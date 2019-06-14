@@ -309,6 +309,9 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   // calculate maximum speed given the sensor range and vehicle parameters
   // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r
+  // u = initial velocity, a = max acceleration
+  // s = stopping distance under constant acceleration
+  // j = maximum jerk, r = maximum range sensor distance
   float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
   float a = 1;
   float b = 2 * -px4_.param_mpc_acc_hor * accel_ramp_time;
