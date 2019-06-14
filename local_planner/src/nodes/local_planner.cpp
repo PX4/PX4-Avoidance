@@ -305,9 +305,22 @@ void LocalPlanner::getObstacleDistanceData(
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
   out.waypoint_type = waypoint_type_;
-
   out.obstacle_ahead = !polar_histogram_.isEmpty();
-  out.cruise_velocity = px4_.param_mpc_xy_cruise;
+
+  // calculate maximum speed given the sensor range and vehicle parameters
+  // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r
+  // u = initial velocity, a = max acceleration
+  // s = stopping distance under constant acceleration
+  // j = maximum jerk, r = maximum range sensor distance
+  float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
+  float a = 1;
+  float b = 2 * -px4_.param_mpc_acc_hor * accel_ramp_time;
+  float c = 2 * -px4_.param_mpc_acc_hor * histogram_box_.radius_;
+  float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
+
+  float max_speed = std::min(px4_.param_mpc_xy_cruise, limited_speed);
+
+  out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
 
   out.take_off_pose = take_off_pose_;
