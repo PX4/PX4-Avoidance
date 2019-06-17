@@ -149,6 +149,11 @@ class GlobalPlanner {
   bool getGlobalPath();
   void goBack();
   void stop();
+  void setRobotRadius(double radius);
+
+ private:
+  double robot_radius_;
+  double octree_resolution_;
 };
 
 }  // namespace global_planner

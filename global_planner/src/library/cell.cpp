@@ -70,14 +70,24 @@ Cell Cell::getNeighborFromYaw(double yaw) const {
 }
 
 // Returns the neighbors of the Cell whose risk influences the Cell
-std::vector<Cell> Cell::getFlowNeighbors() const {
-  return std::vector<Cell>{
-      Cell(std::tuple<int, int, int>(xIndex() + 1, yIndex(), zIndex())),
-      Cell(std::tuple<int, int, int>(xIndex() - 1, yIndex(), zIndex())),
-      Cell(std::tuple<int, int, int>(xIndex(), yIndex() + 1, zIndex())),
-      Cell(std::tuple<int, int, int>(xIndex(), yIndex() - 1, zIndex())),
-      Cell(std::tuple<int, int, int>(xIndex(), yIndex(), zIndex() + 1)),
-      Cell(std::tuple<int, int, int>(xIndex(), yIndex(), zIndex() - 1))};
+std::vector<Cell> Cell::getFlowNeighbors(int radius) const {
+  std::vector<Cell> cells;
+  auto ceilDistance = [](int radius, int x, int y) {
+    auto sqr = [](int i) { return double(i * i); };
+    return static_cast<int>(
+        std::ceil(std::sqrt(sqr(radius) - sqr(x) - sqr(y))));
+  };
+  for (int x = -radius; x <= radius; x++) {
+    int y_radius = ceilDistance(radius, x, 0);
+    for (int y = -y_radius; y <= y_radius; y++) {
+      int z_radius = ceilDistance(radius, x, y);
+      for (int z = -z_radius; z <= z_radius; z++) {
+        cells.push_back(Cell(std::tuple<int, int, int>(
+            xIndex() + x, yIndex() + y, zIndex() + z)));
+      }
+    }
+  }
+  return cells;
 }
 
 // Returns the neighbors of the Cell that are diagonal to the cell in the

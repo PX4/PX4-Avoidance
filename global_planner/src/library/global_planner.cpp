@@ -71,6 +71,7 @@ bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap& msg) {
     delete octree_;
   }
   octree_ = dynamic_cast<octomap::OcTree*>(tree);
+  octree_resolution_ = octree_->getResolution();
 
   // Check if the risk of the current path has increased
   if (!curr_path_.empty()) {
@@ -191,7 +192,8 @@ double GlobalPlanner::getRisk(const Cell& cell) {
   }
 
   double risk = getSingleCellRisk(cell);
-  for (const Cell& neighbor : cell.getFlowNeighbors()) {
+  int radius = static_cast<int>(std::ceil(robot_radius_ / octree_resolution_));
+  for (const Cell& neighbor : cell.getFlowNeighbors(radius)) {
     risk += neighbor_risk_flow_ * getSingleCellRisk(neighbor);
   }
 
@@ -567,5 +569,7 @@ void GlobalPlanner::stop() {
   setGoal(GoalCell(curr_pos_));
   setPath({curr_pos_});
 }
+
+void GlobalPlanner::setRobotRadius(double radius) { robot_radius_ = radius; }
 
 }  // namespace global_planner
