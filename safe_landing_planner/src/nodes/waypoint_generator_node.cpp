@@ -221,7 +221,7 @@ void WaypointGeneratorNode::calculateWaypoint() {
            loiter_height_) < 0.f
               ? 1.f
               : -1.f;
-      velocity_setpoint_.z() = direction * 0.5f;
+      velocity_setpoint_.z() = direction * 0.7f;
       publishTrajectorySetpoints(goal_, velocity_setpoint_, yaw_setpoint_,
                                  yaw_speed_setpoint_);
       ROS_INFO("\033[1;35m [WGN] altitudeChange %f %f %f - %f %f %f \033[0m",
@@ -336,7 +336,7 @@ void WaypointGeneratorNode::calculateWaypoint() {
     case SLPState::land:
       loiter_position_.z() = NAN;
       vel_sp = nan_setpoint;
-      vel_sp.z() = -0.5f;
+      vel_sp.z() = -0.7f;
       publishTrajectorySetpoints(loiter_position_, vel_sp, loiter_yaw_, NAN);
       ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
                loiter_position_.x(), loiter_position_.y(),
