@@ -83,16 +83,16 @@ for camera in $CAMERA_CONFIGS; do
 	elif  [[ $2 == "struct_core" ]]; then
 	   cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
-			       args="$4 $5 $6 $7 $8 $9 fcu $1_FLU 10"/>
-
-			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
-			    <node pkg="struct_core_ros" type="sc" name="$1" required="true">
-			       <param name="serial_number" type="str" value="$3" />
-			    </node>
+			       args="$4 $5 $6 $7 $8 $9 fcu map 10"/>
+			       
+			    <include file="\$(find structure_core_ros_driver)/launch/sc.launch">
+			       <arg name="required"              value="true"/>
+			       <arg name="serial_number"         value="$3"/>
+			    </include>
 			    
 			    <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
-			       args="/$1/depth/image_rect 29 30">
-			       <remap from="/$1/depth/image_rect_drop" to="/$1/depth/image_rect_raw_drop"/>
+			       args="/$1/depth/image 29 30">
+			       <remap from="/$1/depth/image_drop" to="/$1/depth/image_rect_raw_drop"/>
 			    </node>
 
 		EOM
