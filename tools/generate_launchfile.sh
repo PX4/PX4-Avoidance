@@ -87,6 +87,7 @@ for camera in $CAMERA_CONFIGS; do
 			       
 			    <include file="\$(find structure_core_ros_driver)/launch/sc.launch">
 			       <arg name="required"              value="true"/>
+			       <arg name="depth_apply_correction"              value="true"/>
 			       <arg name="serial_number"         value="$3"/>
 			    </include>
 			    
