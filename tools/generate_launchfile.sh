@@ -95,6 +95,10 @@ for camera in $CAMERA_CONFIGS; do
 			       args="/$1/depth/image 29 30">
 			       <remap from="/$1/depth/image_drop" to="/$1/depth/image_rect_raw_drop"/>
 			    </node>
+			    
+			    <node name="drop_$1_rgb" pkg="topic_tools" type="drop" output="screen"
+			       args="/$1/rgb/image 29 30">
+			    </node>
 
 		EOM
 	else
