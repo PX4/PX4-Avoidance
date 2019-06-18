@@ -86,6 +86,7 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_common.cpp
+                                          test/test_usm.cpp
                     )
 
     if(TARGET ${PROJECT_NAME}-test)
