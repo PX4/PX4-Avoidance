@@ -544,8 +544,8 @@ void LocalPlannerNode::cameraInfoCallback(
   ROS_INFO("[LocalPlannerNode] Received camera info from camera %d \n", index);
 
   // make sure to underestimate FOV to avoid blind spots!
-  local_planner_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
-  wp_generator_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
+  local_planner_->setFOV(h_fov - 7.0f, v_fov - 7.0f);
+  wp_generator_->setFOV(h_fov - 7.0f, v_fov - 7.0f);
 }
 
 void LocalPlannerNode::dynamicReconfigureCallback(
