@@ -8,7 +8,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh,
       nh_private_(nh_private),
       avoidance_node_(nh, nh_private),
       cmdloop_dt_(0.1),
-      plannerloop_dt_(1.0) {
+      plannerloop_dt_(2.0) {
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<
       global_planner::GlobalPlannerNodeConfig>::CallbackType f;
