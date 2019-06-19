@@ -99,6 +99,8 @@ for camera in $CAMERA_CONFIGS; do
 			    <node name="drop_$1_rgb" pkg="topic_tools" type="drop" output="screen"
 			       args="/$1/rgb/image 29 30">
 			    </node>
+			    
+			    <node name="toggle_$1_params" pkg="local_planner" type="sc_params.sh" />
 
 		EOM
 	else
