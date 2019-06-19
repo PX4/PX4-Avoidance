@@ -109,6 +109,11 @@ EOM
 echo "Adding vehicle paramters: $VEHICLE_CONFIG_WPG"
 fi
 
+cat >> launch/safe_landing_planner_launch.launch <<- EOM
+  <!-- Monitor cpu temperature -->
+  <node name="libsensors_monitor" pkg="libsensors_monitor" type="libsensors_monitor"/>
+EOM
+
 
 cat >> launch/safe_landing_planner_launch.launch <<- EOM
     <!-- Launch avoidance -->
