@@ -126,6 +126,11 @@ EOM
 fi
 
 cat >> local_planner/launch/avoidance.launch <<- EOM
+  <!-- Monitor cpu temperature -->
+  <node name="libsensors_monitor" pkg="libsensors_monitor" type="libsensors_monitor"/>
+EOM
+
+cat >> local_planner/launch/avoidance.launch <<- EOM
 </launch>
 EOM
 
