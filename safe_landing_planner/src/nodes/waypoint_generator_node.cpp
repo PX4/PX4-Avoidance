@@ -4,11 +4,33 @@
 #include "safe_landing_planner/safe_landing_planner.hpp"
 #include "tf/transform_datatypes.h"
 
+namespace {
+using avoidance::SLPState;
+std::string toString(SLPState state) {
+  std::string state_str = "unknown";
+  switch (state) {
+    case SLPState::goTo:
+      state_str = "GOTO";
+      break;
+    case SLPState::altitudeChange:
+      state_str = "ALTITUDE CHANGE";
+      break;
+    case SLPState::loiter:
+      state_str = "LOITER";
+      break;
+    case SLPState::land:
+      state_str = "LAND";
+      break;
+  }
+  return state_str;
+}
+}
+
 namespace avoidance {
 const Eigen::Vector3f nan_setpoint = Eigen::Vector3f(NAN, NAN, NAN);
 
 WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh)
-    : nh_(nh), spin_dt_(0.1) {
+    : usm::StateMachine<SLPState>(SLPState::goTo), nh_(nh), spin_dt_(0.1) {
   dynamic_reconfigure::Server<
       safe_landing_planner::WaypointGeneratorNodeConfig>::CallbackType f;
   f = boost::bind(&WaypointGeneratorNode::dynamicReconfigureCallback, this, _1,
@@ -47,7 +69,6 @@ void WaypointGeneratorNode::startNode() {
 }
 
 void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
-  ros::Time start_query_position = ros::Time::now();
   while (!grid_received_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
   }
@@ -123,16 +144,13 @@ void WaypointGeneratorNode::missionCallback(
 }
 
 void WaypointGeneratorNode::stateCallback(const mavros_msgs::State &msg) {
-  if (msg.mode == "AUTO.TAKEOFF") {
-    slp_state_ = SLPState::goTo;
-    is_land_waypoint_ = false;
-  } else if (msg.mode == "AUTO.LAND") {
+  if (msg.mode == "AUTO.LAND") {
     is_land_waypoint_ = true;
   } else if (msg.mode == "AUTO.MISSION") {
     // is_land_waypoint_ is set trought the mission item type
   } else {
     is_land_waypoint_ = false;
-    slp_state_ = SLPState::goTo;
+    trigger_reset_ = true;
   }
 
   if (msg.armed == false) {
@@ -162,7 +180,7 @@ void WaypointGeneratorNode::gridCallback(
   grid_received_ = true;
 }
 
-void WaypointGeneratorNode::runGoTo() {
+usm::Transition WaypointGeneratorNode::runGoTo() {
   decision_taken_ = false;
   if (explorarion_is_active_) {
     landing_radius_ = 0.5f;
@@ -190,21 +208,18 @@ void WaypointGeneratorNode::runGoTo() {
             << std::endl;
   if (is_within_landing_radius_ && !in_land_vertical_range_ &&
       is_land_waypoint_ && !std::isfinite(velocity_setpoint_.z())) {
-    prev_slp_state_ = SLPState::goTo;
-    slp_state_ = SLPState::altitudeChange;
-    ROS_INFO("\033[1;35m [WGN] Update to altitudeChange State \033[0m");
+    return usm::NEXT1;
   }
 
   if (is_within_landing_radius_ && in_land_vertical_range_ &&
       is_land_waypoint_) {
     start_seq_landing_decision_ = grid_slp_seq_;
-    prev_slp_state_ = SLPState::goTo;
-    slp_state_ = SLPState::loiter;
-    ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
+    return usm::NEXT2;
   }
+  return usm::REPEAT;
 }
 
-void WaypointGeneratorNode::runAltitudeChange() {
+usm::Transition WaypointGeneratorNode::runAltitudeChange() {
   if (prev_slp_state_ != SLPState::altitudeChange) {
     yaw_setpoint_ = yaw_;
   }
@@ -238,13 +253,12 @@ void WaypointGeneratorNode::runAltitudeChange() {
   if (is_within_landing_radius_ && in_land_vertical_range_ &&
       is_land_waypoint_) {
     start_seq_landing_decision_ = grid_slp_seq_;
-    prev_slp_state_ = SLPState::altitudeChange;
-    slp_state_ = SLPState::loiter;
-    ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
+    return usm::NEXT1;
   }
+  return usm::REPEAT;
 }
 
-void WaypointGeneratorNode::runLoiter() {
+usm::Transition WaypointGeneratorNode::runLoiter() {
   if (prev_slp_state_ != SLPState::loiter) {
     loiter_position_ = position_;
     loiter_yaw_ = yaw_;
@@ -289,11 +303,8 @@ void WaypointGeneratorNode::runLoiter() {
            loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
 
   if (decision_taken_ && can_land_) {
-    ROS_INFO("\033[1;36m [WGN] Update to Land State \033[0m");
-    slp_state_ = SLPState::land;
-  }
-
-  if (decision_taken_ && !can_land_) {
+    return usm::NEXT1;
+  } else if (decision_taken_ && !can_land_) {
     if (!explorarion_is_active_) {
       exploration_anchor_ = loiter_position_;
       explorarion_is_active_ = true;
@@ -315,41 +326,65 @@ void WaypointGeneratorNode::runLoiter() {
                                 exploration_pattern[n_explored_pattern_].y(),
                         exploration_anchor_.z());
     velocity_setpoint_ = nan_setpoint;
-    slp_state_ = SLPState::goTo;
-    ROS_INFO("\033[1;32m [WGN] Update to goTo State \033[0m");
+    return usm::NEXT2;
   }
+  return usm::REPEAT;
 }
 
-void WaypointGeneratorNode::runLand() {
+usm::Transition WaypointGeneratorNode::runLand() {
   loiter_position_.z() = NAN;
   vel_sp = nan_setpoint;
   vel_sp.z() = -0.5f;
   publishTrajectorySetpoints(loiter_position_, vel_sp, loiter_yaw_, NAN);
   ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
            loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
-  slp_state_ = SLPState::land;
+  return usm::REPEAT;
+}
+
+usm::Transition WaypointGeneratorNode::runCurrentState(SLPState currentState) {
+  if (trigger_reset_) {
+    trigger_reset_ = false;
+    return usm::ERROR;
+  }
+
+  switch (currentState) {
+    case SLPState::goTo:
+      return runGoTo();
+
+    case SLPState::altitudeChange:
+      return runAltitudeChange();
+
+    case SLPState::loiter:
+      return runLoiter();
+
+    case SLPState::land:
+      return runLand();
+  }
 }
 
 void WaypointGeneratorNode::calculateWaypoint() {
   updateSLPState();
+  iterateOnce();
 
-  switch (slp_state_) {
-    case SLPState::goTo:
-      runGoTo();
-      break;
-
-    case SLPState::altitudeChange:
-      runAltitudeChange();
-      break;
-
-    case SLPState::loiter:
-      runLoiter();
-      break;
-
-    case SLPState::land:
-      runLand();
-      break;
+  if (getState() != prev_slp_state_) {
+    std::string state_str = toString(getState());
+    ROS_INFO("\033[1;36m [WGN] Update to %s state \033[0m", state_str.c_str());
   }
+}
+
+SLPState WaypointGeneratorNode::chooseNextState(SLPState currentState,
+                                                usm::Transition transition) {
+  prev_slp_state_ = currentState;
+  USM_TABLE(currentState, SLPState::goTo,
+            USM_STATE(transition, SLPState::goTo,
+                      USM_MAP(usm::NEXT1, SLPState::altitudeChange);
+                      USM_MAP(usm::NEXT2, SLPState::loiter));
+            USM_STATE(transition, SLPState::altitudeChange,
+                      USM_MAP(usm::NEXT1, SLPState::loiter));
+            USM_STATE(transition, SLPState::loiter,
+                      USM_MAP(usm::NEXT1, SLPState::land);
+                      USM_MAP(usm::NEXT2, SLPState::goTo));
+            USM_STATE(transition, SLPState::land, ));
 }
 
 void WaypointGeneratorNode::updateSLPState() {
@@ -366,7 +401,7 @@ void WaypointGeneratorNode::updateSLPState() {
     can_land_hysteresis_.reserve((smoothing_land_cell_ * 2) *
                                  (smoothing_land_cell_ * 2));
     std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
-    slp_state_ = SLPState::goTo;
+    trigger_reset_ = true;
     explorarion_is_active_ = false;
     n_explored_pattern_ = -1;
     factor_exploration_ = 1.f;
@@ -457,10 +492,6 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   Eigen::Vector2f grid_min, grid_max;
   grid_slp_.getGridLimits(grid_min, grid_max);
   int offset = grid_slp_.land_.rows() / 2;
-  float hysteresis_max_value = 1.0f;
-  float hysteresis_min_value = 0.0f;
-  float range_max = 360.f;
-  float range_min = 0.f;
   int counter = 0;
 
   for (size_t i = 0; i < grid_slp_.getRowColSize(); i++) {
