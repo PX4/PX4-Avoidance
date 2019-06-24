@@ -56,9 +56,10 @@ for camera in $CAMERA_CONFIGS; do
     REALSENSE_CAMERA_USED=1
 
     cat >> local_planner/launch/avoidance.launch <<- EOM
-			<node pkg="tf" type="static_transform_publisher" name="tf_$1"
+			<node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
 			 args="$4 $5 $6 $7 $8 $9 fcu $1_link 10"/>
 			<include file="\$(find local_planner)/launch/rs_depthcloud.launch">
+				<arg name="required"              value="true"/>
 				<arg name="namespace"             value="$1" />
 				<arg name="tf_prefix"             value="$1" />
 				<arg name="serial_no"             value="$3"/>
@@ -81,12 +82,17 @@ for camera in $CAMERA_CONFIGS; do
 
 	elif  [[ $2 == "struct_core" ]]; then
 	   cat >>    local_planner/launch/avoidance.launch <<- EOM
-			    <node pkg="tf" type="static_transform_publisher" name="tf_$1"
+			    <node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
 			       args="$4 $5 $6 $7 $8 $9 fcu $1_FLU 10"/>
 
 			    <rosparam command="load" file="\$(find struct_core_ros)/launch/sc.yaml"/>
-			    <node pkg="struct_core_ros" type="sc" name="$1">
+			    <node pkg="struct_core_ros" type="sc" name="$1" required="true">
 			       <param name="serial_number" type="str" value="$3" />
+			    </node>
+			    
+			    <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
+			       args="/$1/depth/image_rect 29 30">
+			       <remap from="/$1/depth/image_rect_drop" to="/$1/depth/image_rect_raw_drop"/>
 			    </node>
 
 		EOM
@@ -108,7 +114,7 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
     <env name="ROSCONSOLE_CONFIG_FILE" value="\$(find local_planner)/resource/custom_rosconsole.conf"/>
     <arg name="pointcloud_topics" default="[$camera_topics]"/>
 
-    <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" >
+    <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen" required="true" >
       <param name="goal_x_param" value="0" />
       <param name="goal_y_param" value="0"/>
       <param name="goal_z_param" value="4" />
