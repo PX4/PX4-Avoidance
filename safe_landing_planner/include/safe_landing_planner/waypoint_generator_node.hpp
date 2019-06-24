@@ -165,6 +165,11 @@ class WaypointGeneratorNode {
   **/
   void updateSLPState();
 
+  void runGoTo();
+  void runLoiter();
+  void runLand();
+  void runAltitudeChange();
+
   /**
   * @brief     publishes the computed waypoints to the FCU
   * @param[in] pos_sp, position setpoint
