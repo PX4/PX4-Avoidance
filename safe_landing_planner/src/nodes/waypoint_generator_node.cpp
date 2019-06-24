@@ -1,4 +1,5 @@
 #include "safe_landing_planner/waypoint_generator_node.hpp"
+
 #include "avoidance/common.h"
 #include "safe_landing_planner/safe_landing_planner.hpp"
 #include "tf/transform_datatypes.h"
@@ -161,187 +162,192 @@ void WaypointGeneratorNode::gridCallback(
   grid_received_ = true;
 }
 
+void WaypointGeneratorNode::runGoTo() {
+  decision_taken_ = false;
+  if (explorarion_is_active_) {
+    landing_radius_ = 0.5f;
+    yaw_setpoint_ = avoidance::nextYaw(position_, goal_);
+  }
+  publishTrajectorySetpoints(goal_, velocity_setpoint_, yaw_setpoint_,
+                             yaw_speed_setpoint_);
+  ROS_INFO("\033[1;32m [WGN] goTo %f %f %f - %f %f %f \033[0m\n", goal_.x(),
+           goal_.y(), goal_.z(), velocity_setpoint_.x(), velocity_setpoint_.y(),
+           velocity_setpoint_.z());
+
+  is_within_landing_radius_ =
+      (goal_.topRows<2>() - position_.topRows<2>()).norm() < landing_radius_;
+  in_land_vertical_range_ =
+      fabsf(fabsf(position_.z() -
+                  grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+            loiter_height_) < vertical_range_error_;
+  ROS_INFO(
+      "[WGN] Landing Radius: xy  %f, z %f ",
+      (goal_.topRows<2>() - position_.topRows<2>()).norm(),
+      fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
+  std::cout << fabsf(fabsf(position_.z() -
+                           grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+                     loiter_height_)
+            << std::endl;
+  if (is_within_landing_radius_ && !in_land_vertical_range_ &&
+      is_land_waypoint_ && !std::isfinite(velocity_setpoint_.z())) {
+    prev_slp_state_ = SLPState::goTo;
+    slp_state_ = SLPState::altitudeChange;
+    ROS_INFO("\033[1;35m [WGN] Update to altitudeChange State \033[0m");
+  }
+
+  if (is_within_landing_radius_ && in_land_vertical_range_ &&
+      is_land_waypoint_) {
+    start_seq_landing_decision_ = grid_slp_seq_;
+    prev_slp_state_ = SLPState::goTo;
+    slp_state_ = SLPState::loiter;
+    ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
+  }
+}
+
+void WaypointGeneratorNode::runAltitudeChange() {
+  if (prev_slp_state_ != SLPState::altitudeChange) {
+    yaw_setpoint_ = yaw_;
+  }
+  goal_.z() = NAN;
+  float direction =
+      (fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+       loiter_height_) < 0.f
+          ? 1.f
+          : -1.f;
+  velocity_setpoint_.z() = direction * 0.5f;
+  publishTrajectorySetpoints(goal_, velocity_setpoint_, yaw_setpoint_,
+                             yaw_speed_setpoint_);
+  ROS_INFO("\033[1;35m [WGN] altitudeChange %f %f %f - %f %f %f \033[0m",
+           goal_.x(), goal_.y(), goal_.z(), velocity_setpoint_.x(),
+           velocity_setpoint_.y(), velocity_setpoint_.z());
+
+  if (explorarion_is_active_) {
+    landing_radius_ = 0.5f;
+  }
+  is_within_landing_radius_ =
+      (goal_.topRows<2>() - position_.topRows<2>()).norm() < landing_radius_;
+  in_land_vertical_range_ =
+      fabsf(fabsf(position_.z() -
+                  grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+            loiter_height_) < vertical_range_error_;
+  ROS_INFO(
+      "[WGN] Landing Radius: xy  %f, z %f ",
+      (goal_.topRows<2>() - position_.topRows<2>()).norm(),
+      fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
+
+  if (is_within_landing_radius_ && in_land_vertical_range_ &&
+      is_land_waypoint_) {
+    start_seq_landing_decision_ = grid_slp_seq_;
+    prev_slp_state_ = SLPState::altitudeChange;
+    slp_state_ = SLPState::loiter;
+    ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
+  }
+}
+
+void WaypointGeneratorNode::runLoiter() {
+  if (prev_slp_state_ != SLPState::loiter) {
+    loiter_position_ = position_;
+    loiter_yaw_ = yaw_;
+  }
+
+  int offset_center = grid_slp_.land_.rows() / 2;
+
+  for (int i = offset_center - smoothing_land_cell_;
+       i < offset_center + smoothing_land_cell_; i++) {
+    for (int j = offset_center - smoothing_land_cell_;
+         j < offset_center + smoothing_land_cell_; j++) {
+      int index = (smoothing_land_cell_ * 2) *
+                      (i - offset_center + smoothing_land_cell_) +
+                  (j - offset_center + smoothing_land_cell_);
+      float cell_land_value = static_cast<float>(grid_slp_.land_(i, j));
+      float can_land_hysteresis_prev = can_land_hysteresis_[index];
+      can_land_hysteresis_[index] =
+          (beta_ * can_land_hysteresis_prev) + (1.f - beta_) * cell_land_value;
+    }
+  }
+
+  if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
+    decision_taken_ = true;
+    int land_counter = 0;
+    for (int i = 0; i < can_land_hysteresis_.size(); i++) {
+      std::cout << can_land_hysteresis_[i] << " ";
+      if (can_land_hysteresis_[i] > can_land_thr_) {
+        land_counter++;
+      }
+      can_land_ = (can_land_ && (can_land_hysteresis_[i] > can_land_thr_));
+      if (can_land_ == 0 && land_counter == can_land_hysteresis_.size()) {
+        can_land_ = 1;
+        decision_taken_ = false;
+        in_land_vertical_range_ = false;
+        ROS_INFO("[WGN] Decision changed from can't land to can land!");
+      }
+    }
+  }
+
+  publishTrajectorySetpoints(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
+  ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan \033[0m\n",
+           loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
+
+  if (decision_taken_ && can_land_) {
+    ROS_INFO("\033[1;36m [WGN] Update to Land State \033[0m");
+    slp_state_ = SLPState::land;
+  }
+
+  if (decision_taken_ && !can_land_) {
+    if (!explorarion_is_active_) {
+      exploration_anchor_ = loiter_position_;
+      explorarion_is_active_ = true;
+    }
+    float offset_exploration_setpoint =
+        spiral_width_ * factor_exploration_ * 2.f *
+        static_cast<float>(smoothing_land_cell_) * grid_slp_.getCellSize();
+    n_explored_pattern_++;
+    if (n_explored_pattern_ == exploration_pattern.size()) {
+      n_explored_pattern_ = 0;
+      factor_exploration_ += 1.f;
+    }
+    goal_ =
+        Eigen::Vector3f(exploration_anchor_.x() +
+                            offset_exploration_setpoint *
+                                exploration_pattern[n_explored_pattern_].x(),
+                        exploration_anchor_.y() +
+                            offset_exploration_setpoint *
+                                exploration_pattern[n_explored_pattern_].y(),
+                        exploration_anchor_.z());
+    velocity_setpoint_ = nan_setpoint;
+    slp_state_ = SLPState::goTo;
+    ROS_INFO("\033[1;32m [WGN] Update to goTo State \033[0m");
+  }
+}
+
+void WaypointGeneratorNode::runLand() {
+  loiter_position_.z() = NAN;
+  vel_sp = nan_setpoint;
+  vel_sp.z() = -0.5f;
+  publishTrajectorySetpoints(loiter_position_, vel_sp, loiter_yaw_, NAN);
+  ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
+           loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
+  slp_state_ = SLPState::land;
+}
+
 void WaypointGeneratorNode::calculateWaypoint() {
   updateSLPState();
 
   switch (slp_state_) {
-    case SLPState::goTo: {
-      decision_taken_ = false;
-      if (explorarion_is_active_) {
-        landing_radius_ = 0.5f;
-        yaw_setpoint_ = avoidance::nextYaw(position_, goal_);
-      }
-      publishTrajectorySetpoints(goal_, velocity_setpoint_, yaw_setpoint_,
-                                 yaw_speed_setpoint_);
-      ROS_INFO("\033[1;32m [WGN] goTo %f %f %f - %f %f %f \033[0m\n", goal_.x(),
-               goal_.y(), goal_.z(), velocity_setpoint_.x(),
-               velocity_setpoint_.y(), velocity_setpoint_.z());
-
-      is_within_landing_radius_ =
-          (goal_.topRows<2>() - position_.topRows<2>()).norm() <
-          landing_radius_;
-      in_land_vertical_range_ =
-          fabsf(fabsf(position_.z() -
-                      grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-                loiter_height_) < vertical_range_error_;
-      ROS_INFO("[WGN] Landing Radius: xy  %f, z %f ",
-               (goal_.topRows<2>() - position_.topRows<2>()).norm(),
-               fabsf(position_.z() -
-                     grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
-      std::cout << fabsf(
-                       fabsf(position_.z() -
-                             grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-                       loiter_height_)
-                << std::endl;
-      if (is_within_landing_radius_ && !in_land_vertical_range_ &&
-          is_land_waypoint_ && !std::isfinite(velocity_setpoint_.z())) {
-        prev_slp_state_ = SLPState::goTo;
-        slp_state_ = SLPState::altitudeChange;
-        ROS_INFO("\033[1;35m [WGN] Update to altitudeChange State \033[0m");
-      }
-
-      if (is_within_landing_radius_ && in_land_vertical_range_ &&
-          is_land_waypoint_) {
-        start_seq_landing_decision_ = grid_slp_seq_;
-        prev_slp_state_ = SLPState::goTo;
-        slp_state_ = SLPState::loiter;
-        ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
-      }
+    case SLPState::goTo:
+      runGoTo();
       break;
-    }
 
-    case SLPState::altitudeChange: {
-      if (prev_slp_state_ != SLPState::altitudeChange) {
-        yaw_setpoint_ = yaw_;
-      }
-      goal_.z() = NAN;
-      float direction =
-          (fabsf(position_.z() -
-                 grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-           loiter_height_) < 0.f
-              ? 1.f
-              : -1.f;
-      velocity_setpoint_.z() = direction * 0.5f;
-      publishTrajectorySetpoints(goal_, velocity_setpoint_, yaw_setpoint_,
-                                 yaw_speed_setpoint_);
-      ROS_INFO("\033[1;35m [WGN] altitudeChange %f %f %f - %f %f %f \033[0m",
-               goal_.x(), goal_.y(), goal_.z(), velocity_setpoint_.x(),
-               velocity_setpoint_.y(), velocity_setpoint_.z());
-
-      if (explorarion_is_active_) {
-        landing_radius_ = 0.5f;
-      }
-      is_within_landing_radius_ =
-          (goal_.topRows<2>() - position_.topRows<2>()).norm() <
-          landing_radius_;
-      in_land_vertical_range_ =
-          fabsf(fabsf(position_.z() -
-                      grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-                loiter_height_) < vertical_range_error_;
-      ROS_INFO("[WGN] Landing Radius: xy  %f, z %f ",
-               (goal_.topRows<2>() - position_.topRows<2>()).norm(),
-               fabsf(position_.z() -
-                     grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
-
-      if (is_within_landing_radius_ && in_land_vertical_range_ &&
-          is_land_waypoint_) {
-        start_seq_landing_decision_ = grid_slp_seq_;
-        prev_slp_state_ = SLPState::altitudeChange;
-        slp_state_ = SLPState::loiter;
-        ROS_INFO("\033[1;34m [WGN] Update to Loiter State \033[0m");
-      }
+    case SLPState::altitudeChange:
+      runAltitudeChange();
       break;
-    }
 
-    case SLPState::loiter: {
-      if (prev_slp_state_ != SLPState::loiter) {
-        loiter_position_ = position_;
-        loiter_yaw_ = yaw_;
-      }
-
-      int offset_center = grid_slp_.land_.rows() / 2;
-
-      for (int i = offset_center - smoothing_land_cell_;
-           i < offset_center + smoothing_land_cell_; i++) {
-        for (int j = offset_center - smoothing_land_cell_;
-             j < offset_center + smoothing_land_cell_; j++) {
-          int index = (smoothing_land_cell_ * 2) *
-                          (i - offset_center + smoothing_land_cell_) +
-                      (j - offset_center + smoothing_land_cell_);
-          float cell_land_value = static_cast<float>(grid_slp_.land_(i, j));
-          float can_land_hysteresis_prev = can_land_hysteresis_[index];
-          can_land_hysteresis_[index] = (beta_ * can_land_hysteresis_prev) +
-                                        (1.f - beta_) * cell_land_value;
-        }
-      }
-
-      if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
-        decision_taken_ = true;
-        int land_counter = 0;
-        for (int i = 0; i < can_land_hysteresis_.size(); i++) {
-          std::cout << can_land_hysteresis_[i] << " ";
-          if (can_land_hysteresis_[i] > can_land_thr_) {
-            land_counter++;
-          }
-          can_land_ = (can_land_ && (can_land_hysteresis_[i] > can_land_thr_));
-          if (can_land_ == 0 && land_counter == can_land_hysteresis_.size()) {
-            can_land_ = 1;
-            decision_taken_ = false;
-            in_land_vertical_range_ = false;
-            ROS_INFO("[WGN] Decision changed from can't land to can land!");
-          }
-        }
-      }
-
-      publishTrajectorySetpoints(loiter_position_, nan_setpoint, loiter_yaw_,
-                                 NAN);
-      ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan \033[0m\n",
-               loiter_position_.x(), loiter_position_.y(),
-               loiter_position_.z());
-
-      if (decision_taken_ && can_land_) {
-        ROS_INFO("\033[1;36m [WGN] Update to Land State \033[0m");
-        slp_state_ = SLPState::land;
-      }
-
-      if (decision_taken_ && !can_land_) {
-        if (!explorarion_is_active_) {
-          exploration_anchor_ = loiter_position_;
-          explorarion_is_active_ = true;
-        }
-        float offset_exploration_setpoint =
-            spiral_width_ * factor_exploration_ * 2.f *
-            static_cast<float>(smoothing_land_cell_) * grid_slp_.getCellSize();
-        n_explored_pattern_++;
-        if (n_explored_pattern_ == exploration_pattern.size()) {
-          n_explored_pattern_ = 0;
-          factor_exploration_ += 1.f;
-        }
-        goal_ = Eigen::Vector3f(
-            exploration_anchor_.x() +
-                offset_exploration_setpoint *
-                    exploration_pattern[n_explored_pattern_].x(),
-            exploration_anchor_.y() +
-                offset_exploration_setpoint *
-                    exploration_pattern[n_explored_pattern_].y(),
-            exploration_anchor_.z());
-        velocity_setpoint_ = nan_setpoint;
-        slp_state_ = SLPState::goTo;
-        ROS_INFO("\033[1;32m [WGN] Update to goTo State \033[0m");
-      }
-
+    case SLPState::loiter:
+      runLoiter();
       break;
-    }
 
     case SLPState::land:
-      loiter_position_.z() = NAN;
-      vel_sp = nan_setpoint;
-      vel_sp.z() = -0.5f;
-      publishTrajectorySetpoints(loiter_position_, vel_sp, loiter_yaw_, NAN);
-      ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
-               loiter_position_.x(), loiter_position_.y(),
-               loiter_position_.z());
-      slp_state_ = SLPState::land;
+      runLand();
       break;
   }
 }
