@@ -17,6 +17,8 @@
 #include <safe_landing_planner/WaypointGeneratorNodeConfig.h>
 #include "grid.hpp"
 
+#include <avoidance/usm.h>
+
 #include <Eigen/Dense>
 
 namespace avoidance {
@@ -34,7 +36,7 @@ enum class SLPState {
   altitudeChange,
 };
 
-class WaypointGeneratorNode {
+class WaypointGeneratorNode final : public usm::StateMachine<SLPState> {
  public:
   WaypointGeneratorNode(const ros::NodeHandle& nh);
   ~WaypointGeneratorNode() = default;
@@ -44,7 +46,7 @@ class WaypointGeneratorNode {
   **/
   void startNode();
 
- private:
+ protected:
   ros::NodeHandle nh_;
 
   ros::Timer cmdloop_timer_;
@@ -101,11 +103,22 @@ class WaypointGeneratorNode {
 
   std::vector<float> can_land_hysteresis_;
   Grid grid_slp_ = Grid(10.f, 1.f);
-  SLPState slp_state_ = SLPState::goTo;
   SLPState prev_slp_state_ = SLPState::goTo;
+  bool trigger_reset_ = false;
 
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>
       server_;
+
+  /**
+  * @brief iterate the statemachine
+  */
+  usm::Transition runCurrentState(SLPState currentState) override;
+
+  /**
+  * @brief the setup of the statemachine
+  */
+  SLPState chooseNextState(SLPState currentState,
+                           usm::Transition transition) override;
 
   /**
   * @brief main loop callback
@@ -165,10 +178,10 @@ class WaypointGeneratorNode {
   **/
   void updateSLPState();
 
-  void runGoTo();
-  void runLoiter();
-  void runLand();
-  void runAltitudeChange();
+  usm::Transition runGoTo();
+  usm::Transition runLoiter();
+  usm::Transition runLand();
+  usm::Transition runAltitudeChange();
 
   /**
   * @brief     publishes the computed waypoints to the FCU
