@@ -87,8 +87,11 @@ for camera in $CAMERA_CONFIGS; do
 			       
 			    <include file="\$(find structure_core_ros_driver)/launch/sc.launch">
 			       <arg name="required"              value="true"/>
-			       <arg name="depth_apply_correction"              value="true"/>
 			       <arg name="serial_number"         value="$3"/>
+			       <arg name="infrared_enable"       value="false" />
+			       <arg name="depth_enable"          value="true" />
+			       <arg name="depth_framerate"       value="$DEPTH_CAMERA_FRAME_RATE" />
+			       <arg name="depth_apply_correction_before_stream"              value="true"/>
 			    </include>
 			    
 			    <node name="drop_$1_depth" pkg="topic_tools" type="drop" output="screen"
