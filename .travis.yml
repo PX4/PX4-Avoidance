@@ -71,7 +71,8 @@ script:
   # Check for clang format
   - cd src/avoidance
   - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-  - ./check_code_format.sh
+  - pushd tools && ./check_code_format.sh && popd
+  - pushd tools && ./check_state_machine_diagrams.sh && popd
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done
