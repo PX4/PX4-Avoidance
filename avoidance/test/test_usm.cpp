@@ -2,43 +2,41 @@
 
 #include <avoidance/usm.h>
 
-#include <assert.h>
 #include <iostream>
 
 using namespace usm;
 
 /*
- * Copyright (c) 2019 Julian Kent. All rights reserved.
- *
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- *
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
- * * Neither the name of libgnc nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- *
- *
+* Copyright (c) 2019 Julian Kent. All rights reserved.
+*
+* All rights reserved.
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* * Redistributions of source code must retain the above copyright notice, this
+*   list of conditions and the following disclaimer.
+*
+* * Redistributions in binary form must reproduce the above copyright notice,
+*   this list of conditions and the following disclaimer in the documentation
+*   and/or other materials provided with the distribution.
+*
+* * Neither the name of libgnc nor the names of its
+*   contributors may be used to endorse or promote products derived from
+*   this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*
+*
 */
 
 /*
@@ -148,106 +146,106 @@ class TestStateMachine final : public StateMachine<TestStates> {
 
 TEST(StateMachine, runPathA) {
   TestStateMachine m;
-  assert(m.getState() == START);
+  ASSERT_EQ(m.getState(), START);
 
-  assert(!m.start_called);
+  ASSERT_FALSE(m.start_called);
   m.iterateOnce();
-  assert(m.start_called);
-  assert(m.getState() == PATH_A_1);
+  ASSERT_TRUE(m.start_called);
+  ASSERT_EQ(m.getState(), PATH_A_1);
 
-  assert(!m.a1_called);
+  ASSERT_FALSE(m.a1_called);
   m.iterateOnce();
-  assert(m.a1_called);
-  assert(m.getState() == PATH_A_2);
+  ASSERT_TRUE(m.a1_called);
+  ASSERT_EQ(m.getState(), PATH_A_2);
 
-  assert(!m.a2_called);
+  ASSERT_FALSE(m.a2_called);
   m.iterateOnce();
-  assert(m.a2_called);
-  assert(m.getState() == END);
+  ASSERT_TRUE(m.a2_called);
+  ASSERT_EQ(m.getState(), END);
 
-  assert(!m.end_called);
+  ASSERT_FALSE(m.end_called);
   m.iterateOnce();
-  assert(m.end_called);
+  ASSERT_TRUE(m.end_called);
 }
 
 TEST(StateMachine, runPathB) {
   TestStateMachine m;
   m.path_a = false;
-  assert(m.getState() == START);
+  ASSERT_EQ(m.getState(), START);
 
-  assert(!m.start_called);
+  ASSERT_FALSE(m.start_called);
   m.iterateOnce();
-  assert(m.start_called);
-  assert(m.getState() == PATH_B_1);
+  ASSERT_TRUE(m.start_called);
+  ASSERT_EQ(m.getState(), PATH_B_1);
 
-  assert(!m.b1_called);
+  ASSERT_FALSE(m.b1_called);
   m.iterateOnce();
-  assert(m.b1_called);
-  assert(m.getState() == PATH_B_2);
+  ASSERT_TRUE(m.b1_called);
+  ASSERT_EQ(m.getState(), PATH_B_2);
 
-  assert(!m.b2_called);
+  ASSERT_FALSE(m.b2_called);
   m.iterateOnce();
-  assert(m.b2_called);
-  assert(m.getState() == PATH_B_3);
+  ASSERT_TRUE(m.b2_called);
+  ASSERT_EQ(m.getState(), PATH_B_3);
 
-  assert(!m.b3_called);
+  ASSERT_FALSE(m.b3_called);
   m.iterateOnce();
-  assert(m.b3_called);
-  assert(m.getState() == END);
+  ASSERT_TRUE(m.b3_called);
+  ASSERT_EQ(m.getState(), END);
 
-  assert(!m.end_called);
+  ASSERT_FALSE(m.end_called);
   m.iterateOnce();
-  assert(m.end_called);
+  ASSERT_TRUE(m.end_called);
 }
 
 TEST(StateMachine, enterDefaultError) {
   TestStateMachine m;
-  assert(m.getState() == START);
+  ASSERT_EQ(m.getState(), START);
 
-  assert(!m.start_called);
+  ASSERT_FALSE(m.start_called);
   m.iterateOnce();
-  assert(m.start_called);
-  assert(m.getState() == PATH_A_1);
+  ASSERT_TRUE(m.start_called);
+  ASSERT_EQ(m.getState(), PATH_A_1);
 
-  assert(!m.a1_called);
+  ASSERT_FALSE(m.a1_called);
   m.iterateOnce();
-  assert(m.a1_called);
-  assert(m.getState() == PATH_A_2);
+  ASSERT_TRUE(m.a1_called);
+  ASSERT_EQ(m.getState(), PATH_A_2);
 
   m.trigger_error_once = true;
   m.iterateOnce();
-  assert(m.getState() == CLEANUP);
+  ASSERT_EQ(m.getState(), CLEANUP);
 
-  assert(!m.cleanup_called);
+  ASSERT_FALSE(m.cleanup_called);
   m.iterateOnce();
-  assert(m.cleanup_called);
-  assert(m.getState() == END);
+  ASSERT_TRUE(m.cleanup_called);
+  ASSERT_EQ(m.getState(), END);
 
-  assert(!m.end_called);
+  ASSERT_FALSE(m.end_called);
   m.iterateOnce();
-  assert(m.end_called);
+  ASSERT_TRUE(m.end_called);
 }
 
 TEST(StateMachine, enterCustomError) {
   TestStateMachine m;
-  assert(m.getState() == START);
+  ASSERT_EQ(m.getState(), START);
 
-  assert(!m.start_called);
+  ASSERT_FALSE(m.start_called);
   m.iterateOnce();
-  assert(m.start_called);
-  assert(m.getState() == PATH_A_1);
+  ASSERT_TRUE(m.start_called);
+  ASSERT_EQ(m.getState(), PATH_A_1);
 
   m.trigger_error_once = true;
   m.iterateOnce();
-  assert(m.getState() == PATH_B_3);
+  ASSERT_EQ(m.getState(), PATH_B_3);
 
-  assert(!m.b3_called);
+  ASSERT_FALSE(m.b3_called);
   m.iterateOnce();
-  assert(m.b3_called);
-  assert(m.getState() == END);
+  ASSERT_TRUE(m.b3_called);
+  ASSERT_EQ(m.getState(), END);
 
-  assert(!m.end_called);
+  ASSERT_FALSE(m.end_called);
   m.iterateOnce();
-  assert(m.end_called);
-  assert(m.getState() == END);
+  ASSERT_TRUE(m.end_called);
+  ASSERT_EQ(m.getState(), END);
 }
