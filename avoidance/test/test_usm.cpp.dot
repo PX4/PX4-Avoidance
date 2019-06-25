@@ -1,0 +1,17 @@
+digraph {
+    "START" -> "PATH_A_1" [label="NEXT1", style="solid", weight=1]
+    "START" -> "PATH_B_1" [label="NEXT2", style="solid", weight=1]
+    "START" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+    "PATH_A_1" -> "PATH_A_2" [label="NEXT1", style="solid", weight=1]
+    "PATH_A_1" -> "PATH_B_3" [label="ERROR", style="solid", weight=1]
+    "PATH_A_2" -> "END" [label="NEXT1", style="solid", weight=1]
+    "PATH_A_2" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+    "PATH_B_1" -> "PATH_B_2" [label="NEXT1", style="solid", weight=1]
+    "PATH_B_1" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+    "PATH_B_2" -> "PATH_B_3" [label="NEXT1", style="solid", weight=1]
+    "PATH_B_2" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+    "PATH_B_3" -> "END" [label="NEXT1", style="solid", weight=1]
+    "PATH_B_3" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+    "CLEANUP" -> "END" [label="NEXT1", style="solid", weight=1]
+    "CLEANUP" -> "CLEANUP" [label="ERROR", style="dotted", weight=0.1]
+}
