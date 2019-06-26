@@ -104,11 +104,6 @@ class WaypointGeneratorNode final {
   void stateCallback(const mavros_msgs::State& msg);
 
   /**
-  * @brief     computes the setpoints to be sent to the FCU
-  **/
-  void calculateWaypoint();
-
-  /**
   * @brief     publishes the computed waypoints to the FCU
   * @param[in] pos_sp, position setpoint
   * @param[in] vel_sp, velocity setpoint
