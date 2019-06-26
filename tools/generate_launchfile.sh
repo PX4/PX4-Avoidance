@@ -25,15 +25,9 @@ cat > local_planner/launch/avoidance.launch <<- EOM
 EOM
 
 # Fix the on/of script for realsense auto-exposure
-cat > local_planner/resource/realsense_params.sh <<- EOM
+cat > local_planner/resource/rqt_param_toggle.sh <<- EOM
 #!/bin/bash
-# Disable and enable auto-exposure for all cameras as it does not work at startup
-EOM
-
-# Fix the on/of script for struct core depth mode
-cat > local_planner/resource/sc_params.sh <<- EOM
-#!/bin/bash
-# Switch depth mode at startup such that cameras start streaming
+# Toggle or set rqt parameters
 EOM
 
 # Set the frame rate to 15 if it is undefined
@@ -41,8 +35,6 @@ if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
 fi
 
-realsense_camera_used=0
-structcore_camera_used=0
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
 for camera in $CAMERA_CONFIGS; do
@@ -60,7 +52,6 @@ for camera in $CAMERA_CONFIGS; do
 
     # Append to the launch file
     if  [[ $2 == "realsense" ]]; then
-    realsense_camera_used=1
 
     cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
@@ -83,12 +74,12 @@ for camera in $CAMERA_CONFIGS; do
 		EOM
 
 		# Append to the realsense auto exposure toggling
-		echo "rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 0
+		echo "
+		rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 0
 		rosrun dynamic_reconfigure dynparam set /$1/stereo_module enable_auto_exposure 1
-		" >> local_planner/resource/realsense_params.sh
+		" >> local_planner/resource/rqt_param_toggle.sh
 
 	elif  [[ $2 == "struct_core" ]]; then
-	structcore_camera_used=1
 	   cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
 			       args="$4 $5 $6 $7 $8 $9 fcu $1_map 10"/>
@@ -116,7 +107,7 @@ for camera in $CAMERA_CONFIGS; do
 		
 		# Append to the struct core depth mode toggling
 		echo "rosrun dynamic_reconfigure dynparam set /$1_node depth_range_mode 3
-		" >> local_planner/resource/sc_params.sh
+		" >> local_planner/resource/rqt_param_toggle.sh
 	else
 	echo "Unknown camera type $2 in CAMERA_CONFIGS"
 	fi
@@ -141,22 +132,11 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
       <param name="goal_z_param" value="4" />
       <rosparam param="pointcloud_topics" subst_value="True">\$(arg pointcloud_topics)</rosparam>
     </node>
+    
+    <!-- set or toggle rqt parameters -->
+    <node name="rqt_param_toggle" pkg="local_planner" type="rqt_param_toggle.sh" />
 
 EOM
-
-if  [[ $realsense_camera_used == 1 ]]; then
-cat >>    local_planner/launch/avoidance.launch <<- EOM
-    <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
-    <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
-
-EOM
-elif [[ $structcore_camera_used == 1 ]]; then
-cat >>    local_planner/launch/avoidance.launch <<- EOM
-    <!-- toggle depth preset of SC cameras, as it does not work on startup -->
-    <node name="set_SC_param" pkg="local_planner" type="sc_params.sh" />
-
-EOM
-fi
 
 cat >> local_planner/launch/avoidance.launch <<- EOM
 </launch>
