@@ -338,4 +338,38 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point) {
   point.yaw = NAN;
   point.yaw_rate = NAN;
 }
+
+// This function is a refactor of the original in the pcl library
+void removeNaNFromPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
+  // Filter out NANs and keep track of outermost points for FOV
+  size_t j = 0;
+  float h_max = -9999.f, v_max = -9999.f, h_min = 9999.f, v_min = 9999.f;
+  for (size_t i = 0; i < cloud.points.size(); ++i) {
+    if (!std::isfinite(cloud.points[i].x) ||
+        !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
+      continue;
+    cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
+    h_max = std::max(h_max, cloud.points[i].x / cloud.points[i].z);
+    v_max = std::max(v_max, cloud.points[i].y / cloud.points[i].z);
+    h_min = std::min(h_min, cloud.points[i].x / cloud.points[i].z);
+    v_min = std::min(v_min, cloud.points[i].y / cloud.points[i].z);
+    j++;
+  }
+  if (j != cloud.points.size()) {
+    // Resize to the correct size
+    cloud.points.resize(j);
+  }
+
+  cloud.height = 1;
+  cloud.width = static_cast<uint32_t>(j);
+
+  // Removing bad points => dense (note: 'dense' doesn't mean 'organized')
+  cloud.is_dense = true;
+  fov.h_fov_deg =
+      std::max(fov.h_fov_deg,
+               RAD_TO_DEG * static_cast<float>(atan(h_max) - atan(h_min)));
+  fov.v_fov_deg =
+      std::max(fov.v_fov_deg,
+               RAD_TO_DEG * static_cast<float>(atan(v_max) - atan(v_min)));
+}
 }

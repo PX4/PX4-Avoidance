@@ -1,6 +1,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <Eigen/Core>
 #include <Eigen/Dense>
@@ -214,6 +215,16 @@ void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
 * @param      point, setpoint to be filled with NAN
 **/
 void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-}
+
+/**
+* @brief           This is a refactored version of the PCL library function to
+*                  remove NAN values from the point cloud and compute the FOV
+* @note            It operates in-place and iterates through the cloud once
+* @param[in, out]  cloud The point cloud to be filtered in the camera frame
+* @param[in, out]  fov of the camera
+**/
+void removeNaNFromPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov);
+
+}  // namespace avoidance
 
 #endif  // COMMON_H

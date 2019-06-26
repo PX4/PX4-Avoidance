@@ -132,12 +132,6 @@ void LocalPlannerNode::initializeCameraSubscribers(
     std::vector<std::string>& camera_topics) {
   cameras_.resize(camera_topics.size());
 
-  // create sting containing the topic with the camera info from
-  // the pointcloud topic
-  std::string s;
-  s.reserve(50);
-  std::vector<std::string> camera_info(camera_topics.size(), s);
-
   for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].cloud_msg_mutex_.reset(new std::mutex);
     cameras_[i].transformed_cloud_mutex_.reset(new std::mutex);
@@ -149,19 +143,6 @@ void LocalPlannerNode::initializeCameraSubscribers(
         boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
     cameras_[i].received_ = false;
-
-    // get each namespace in the pointcloud topic and construct the camera_info
-    // topic
-    std::vector<std::string> name_space;
-    boost::split(name_space, camera_topics[i], [](char c) { return c == '/'; });
-    for (int k = 0, name_spaces = name_space.size() - 1; k < name_spaces; ++k) {
-      camera_info[i].append(name_space[k]);
-      camera_info[i].append("/");
-    }
-    camera_info[i].append("camera_info");
-    cameras_[i].camera_info_sub_ = nh_.subscribe<sensor_msgs::CameraInfo>(
-        camera_info[i], 1,
-        boost::bind(&LocalPlannerNode::cameraInfoCallback, this, _1, i));
     cameras_[i].transform_thread_ =
         std::thread(&LocalPlannerNode::pointCloudTransformThread, this, i);
   }
@@ -208,6 +189,7 @@ void LocalPlannerNode::updatePlanner() {
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_->original_cloud_vector_.clear();
+  float h_fov = 0.f, v_fov = 0.f;
   for (size_t i = 0; i < cameras_.size(); ++i) {
     std::lock_guard<std::mutex> transformed_cloud_guard(
         *(cameras_[i].transformed_cloud_mutex_));
@@ -215,11 +197,18 @@ void LocalPlannerNode::updatePlannerInfo() {
       local_planner_->original_cloud_vector_.push_back(
           std::move(cameras_[i].pcl_cloud));
       cameras_[i].transformed_ = false;
+
+      // Warning: Implicit assumption that the cameras are perfectly aligned
+      // with no overlapping of FOV or blind spots!
+      h_fov += cameras_[i].fov_camera_frame_.h_fov_deg;
+      v_fov += cameras_[i].fov_camera_frame_.v_fov_deg;
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
     }
   }
+  local_planner_->setFOV(h_fov, v_fov);
+  wp_generator_->setFOV(h_fov, v_fov);
 
   // update position
   local_planner_->setPose(toEigen(newest_pose_.pose.position),
@@ -529,30 +518,6 @@ void LocalPlannerNode::pointCloudCallback(
   cameras_[index].cloud_ready_cv_->notify_one();
 }
 
-void LocalPlannerNode::cameraInfoCallback(
-    const sensor_msgs::CameraInfo::ConstPtr& msg, int index) {
-  // calculate the horizontal and vertical field of view from the image size and
-  // focal length:
-  // h_fov = 2 * atan (image_width / (2 * focal_length_x))
-  // v_fov = 2 * atan (image_height / (2 * focal_length_y))
-  // Assumption: if there are n cameras the total horizonal field of view is n
-  // times the horizontal field of view of a single camera
-  float h_fov = static_cast<float>(
-      static_cast<double>(cameras_.size()) * 2.0 *
-      atan(static_cast<double>(msg->width) / (2.0 * msg->K[0])) * 180.0 / M_PI);
-  float v_fov = static_cast<float>(
-      2.0 * atan(static_cast<double>(msg->height) / (2.0 * msg->K[4])) * 180.0 /
-      M_PI);
-
-  // once the camera info have been set once, unsubscribe from topic
-  cameras_[index].camera_info_sub_.shutdown();
-  ROS_INFO("[LocalPlannerNode] Received camera info from camera %d \n", index);
-
-  // make sure to underestimate FOV to avoid blind spots!
-  local_planner_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
-  wp_generator_->setFOV(h_fov - 15.0f, v_fov - 15.0f);
-}
-
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
@@ -667,10 +632,8 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
           cloud_msg_lock.reset();
 
-          // remove nan padding
-          std::vector<int> dummy_index;
-          dummy_index.reserve(pcl_cloud.points.size());
-          pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
+          // remove nan padding and compute fov
+          removeNaNFromPointCloud(pcl_cloud, cameras_[index].fov_camera_frame_);
 
           // transform cloud to /local_origin frame
           pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,

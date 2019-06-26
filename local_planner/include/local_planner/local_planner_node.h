@@ -54,8 +54,9 @@ class WaypointGenerator;
 struct cameraData {
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
-  ros::Subscriber camera_info_sub_;
   sensor_msgs::PointCloud2 newest_cloud_msg_;
+
+  FOV fov_camera_frame_;
 
   std::unique_ptr<std::mutex> cloud_msg_mutex_;
   std::unique_ptr<std::mutex> transformed_cloud_mutex_;
