@@ -22,11 +22,14 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
 
   float distance;
 
+<<<<<<< b31d149a7433a261f6365c32bb02f12fd1727330
   float fov_azimuth_lower_boundary = wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.0f);
   float fov_azimuth_upper_boundary = wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.0f);
   float fov_elevation_lower_boundary = fov.elevation_deg - fov.v_fov_deg / 2.0f;
   float fov_elevation_upper_boundary = fov.elevation_deg + fov.v_fov_deg / 2.0f;
 
+=======
+>>>>>>> Compute FOV in camera frame
   // counter to keep track of how many points lie in a given cell
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2), 360 / (ALPHA_RES / 2));
   histogram_points_counter.fill(0);
@@ -37,6 +40,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
           distance = (position - toEigen(xyz)).norm();
+<<<<<<< b31d149a7433a261f6365c32bb02f12fd1727330
           if (distance > min_realsense_dist && distance < histogram_box.radius_) {
             // Keep track of the FOV
             PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
@@ -45,7 +49,12 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
             fov_elevation_lower_boundary = std::min(fov_elevation_lower_boundary, p_pol.e);
             fov_elevation_upper_boundary = std::max(fov_elevation_upper_boundary, p_pol.e);
 
+=======
+          if (distance > min_realsense_dist &&
+              distance < histogram_box.radius_) {
+>>>>>>> Compute FOV in camera frame
             // subsampling the cloud
+            PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
             if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
@@ -57,6 +66,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     }
   }
 
+<<<<<<< b31d149a7433a261f6365c32bb02f12fd1727330
   // Update the FOV, accounting for discontinuity. Also subtract a tolerance
   // margin to avoid creating a blind spot due to latency and fast yaw movements
   fov.h_fov_deg = std::max(fov.h_fov_deg, std::min(360.0f - (fov_azimuth_upper_boundary - fov_azimuth_lower_boundary),
@@ -64,6 +74,8 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                                               15.0f);
   fov.v_fov_deg = std::max(fov.v_fov_deg, fov_elevation_upper_boundary - fov_elevation_lower_boundary - 15.0f);
 
+=======
+>>>>>>> Compute FOV in camera frame
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {
     // adding older points if not expired and space is free according to new
