@@ -252,6 +252,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 
 void WaypointGenerator::adaptSpeed() {
   speed_ = planner_info_.cruise_velocity;
+  ROS_INFO("adaptSpeed speed_ %f", speed_);
 
   // If the goal is so close, that the speed-adapted way point would overreach
   float goal_dist = (goal_ - position_).norm();
@@ -280,6 +281,7 @@ void WaypointGenerator::adaptSpeed() {
     Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
     pose_to_wp *= std::min(speed_, goal_dist);
+    ROS_INFO("adaptSpeed speed_ %f goal_dist %f ", speed_, goal_dist);
 
     heading_at_goal_rad_ = NAN;
     output_.adapted_goto_position = position_ + pose_to_wp;
