@@ -12,7 +12,7 @@ namespace avoidance {
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 void WaypointGenerator::calculateWaypoint() {
-  ROS_DEBUG(
+  ROS_INFO(
       "\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, "
       "%f].\033[0m",
       position_.x(), position_.y(), position_.z());
@@ -28,7 +28,7 @@ void WaypointGenerator::calculateWaypoint() {
         hover_position_ = position_;
       }
       output_.goto_position = hover_position_;
-      ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(),
+      ROS_INFO("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(),
                 output_.goto_position.y(), output_.goto_position.z());
       getPathMsg();
       break;
@@ -45,11 +45,11 @@ void WaypointGenerator::calculateWaypoint() {
       if (tree_available &&
           (planner_info_.obstacle_ahead || dist_goal > 4.0f) &&
           since_last_path < ros::Duration(5)) {
-        ROS_DEBUG("[WG] Use calculated tree\n");
+        ROS_INFO("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
         output_.goto_position = polarToCartesian(p_pol, position_);
       } else {
-        ROS_DEBUG("[WG] No valid tree, going straight");
+        ROS_INFO("[WG] No valid tree, going straight");
         output_.waypoint_type = direct;
 
         // calculate the vehicle position on the line between the previous and
@@ -83,14 +83,14 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case direct: {
-      ROS_DEBUG("[WG] No obstacle ahead, going straight");
+      ROS_INFO("[WG] No obstacle ahead, going straight");
       goStraight();
       getPathMsg();
       break;
     }
 
     case reachHeight: {
-      ROS_DEBUG("[WG] Reaching height first");
+      ROS_INFO("[WG] Reaching height first");
       reachGoalAltitudeFirst();
       getPathMsg();
       break;
@@ -135,7 +135,7 @@ void WaypointGenerator::goStraight() {
   Eigen::Vector3f dir = (goal_ - position_).normalized();
   output_.goto_position = position_ + dir;
 
-  ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].",
+  ROS_INFO("[WG] Going straight to selected waypoint: [%f, %f, %f].",
             output_.goto_position.x(), output_.goto_position.y(),
             output_.goto_position.z());
 }
@@ -205,7 +205,7 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
   output_.smoothed_goto_position = smoothed_goto_location_;
 
-  ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
+  ROS_INFO("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f",
             output_.smoothed_goto_position.x(),
             output_.smoothed_goto_position.y(),
             output_.smoothed_goto_position.z(), dt);
@@ -301,7 +301,7 @@ void WaypointGenerator::getPathMsg() {
   adaptSpeed();
   smoothWaypoint(dt);
 
-  ROS_DEBUG(
+  ROS_INFO(
       "[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(),
       output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z());
   createPoseMsg(output_.position_wp, output_.orientation_wp,
