@@ -221,16 +221,16 @@ if(CATKIN_ENABLE_TESTING)
                                           test/test_trajectory_simulator.cpp
                                           test/test_waypoint_generator.cpp)
 
-  catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
+    catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
                                         test/test_local_planner_node.cpp)
     if(TARGET ${PROJECT_NAME}-test)
-      target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
+        target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
     endif()
 
-  if(TARGET ${PROJECT_NAME}-test-roscore)
-      target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
+    if(TARGET ${PROJECT_NAME}-test-roscore)
+        target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
     endif()
