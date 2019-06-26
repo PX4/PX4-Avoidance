@@ -30,12 +30,19 @@ cat > local_planner/resource/realsense_params.sh <<- EOM
 # Disable and enable auto-exposure for all cameras as it does not work at startup
 EOM
 
+# Fix the on/of script for struct core depth mode
+cat > local_planner/resource/sc_params.sh <<- EOM
+#!/bin/bash
+# Switch depth mode at startup such that cameras start streaming
+EOM
+
 # Set the frame rate to 15 if it is undefined
 if [ -z $DEPTH_CAMERA_FRAME_RATE ]; then
   DEPTH_CAMERA_FRAME_RATE=15
 fi
 
-REALSENSE_CAMERA_USED=0
+realsense_camera_used=0
+structcore_camera_used=0
 # The CAMERA_CONFIGS string has semi-colon separated camera configurations
 IFS=";"
 for camera in $CAMERA_CONFIGS; do
@@ -53,7 +60,7 @@ for camera in $CAMERA_CONFIGS; do
 
     # Append to the launch file
     if  [[ $2 == "realsense" ]]; then
-    REALSENSE_CAMERA_USED=1
+    realsense_camera_used=1
 
     cat >> local_planner/launch/avoidance.launch <<- EOM
 			<node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
@@ -81,11 +88,13 @@ for camera in $CAMERA_CONFIGS; do
 		" >> local_planner/resource/realsense_params.sh
 
 	elif  [[ $2 == "struct_core" ]]; then
+	structcore_camera_used=1
 	   cat >>    local_planner/launch/avoidance.launch <<- EOM
 			    <node pkg="tf" type="static_transform_publisher" name="tf_$1" required="true"
-			       args="$4 $5 $6 $7 $8 $9 fcu map 10"/>
+			       args="$4 $5 $6 $7 $8 $9 fcu $1_map 10"/>
 			       
 			    <include file="\$(find structure_core_ros_driver)/launch/sc.launch">
+			       <arg name="name"                  value="$1"/>
 			       <arg name="required"              value="true"/>
 			       <arg name="serial_number"         value="$3"/>
 			       <arg name="infrared_enable"       value="false" />
@@ -102,10 +111,12 @@ for camera in $CAMERA_CONFIGS; do
 			    <node name="drop_$1_rgb" pkg="topic_tools" type="drop" output="screen"
 			       args="/$1/rgb/image 29 30">
 			    </node>
-			    
-			    <node name="toggle_$1_params" pkg="local_planner" type="sc_params.sh" />
 
 		EOM
+		
+		# Append to the struct core depth mode toggling
+		echo "rosrun dynamic_reconfigure dynparam set /$1_node depth_range_mode 3
+		" >> local_planner/resource/sc_params.sh
 	else
 	echo "Unknown camera type $2 in CAMERA_CONFIGS"
 	fi
@@ -133,10 +144,16 @@ cat >> local_planner/launch/avoidance.launch <<- EOM
 
 EOM
 
-if  [[ $REALSENSE_CAMERA_USED == 1 ]]; then
+if  [[ $realsense_camera_used == 1 ]]; then
 cat >>    local_planner/launch/avoidance.launch <<- EOM
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
     <node name="set_RS_param" pkg="local_planner" type="realsense_params.sh" />
+
+EOM
+elif [[ $structcore_camera_used == 1 ]]; then
+cat >>    local_planner/launch/avoidance.launch <<- EOM
+    <!-- toggle depth preset of SC cameras, as it does not work on startup -->
+    <node name="set_SC_param" pkg="local_planner" type="sc_params.sh" />
 
 EOM
 fi
