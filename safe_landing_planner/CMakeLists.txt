@@ -134,6 +134,7 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_safe_landing_planner.cpp
+                                          test/test_waypoint_generator.cpp
                                           test/test_grid.cpp
                                         )
 

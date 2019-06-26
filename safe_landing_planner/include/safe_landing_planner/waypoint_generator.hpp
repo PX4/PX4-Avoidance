@@ -23,9 +23,15 @@ enum class SLPState {
 };
 std::string toString(SLPState state);  // for logging
 
-class WaypointGenerator final : public usm::StateMachine<SLPState> {
+class WaypointGenerator : public usm::StateMachine<SLPState> {
+public:
   WaypointGenerator();
-  ~WaypointGenerator() = default;
+  virtual ~WaypointGenerator() = default;
+
+  /**
+  * @brief     computes the setpoints to be sent to the FCU
+  **/
+  void calculateWaypoint();
 
  protected:
   // config
@@ -61,7 +67,7 @@ class WaypointGenerator final : public usm::StateMachine<SLPState> {
   Eigen::Vector3f loiter_position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f exploration_anchor_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f vel_sp = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector2i pos_index_ = Eigen::Vector2i(NAN, NAN);
+  Eigen::Vector2i pos_index_ = Eigen::Vector2i::Zero();
 
   Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
   Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
@@ -74,10 +80,7 @@ class WaypointGenerator final : public usm::StateMachine<SLPState> {
                      float yaw_speed_sp)>
       publishTrajectorySetpoints_;
 
-  /**
-  * @brief     computes the setpoints to be sent to the FCU
-  **/
-  void calculateWaypoint();
+
 
   /**
   * @brief     decides if the desired setpoints received from the FCU should be
@@ -90,13 +93,13 @@ class WaypointGenerator final : public usm::StateMachine<SLPState> {
   /**
   * @brief iterate the statemachine
   */
-  usm::Transition runCurrentState(SLPState currentState) override;
+  usm::Transition runCurrentState(SLPState currentState) override final;
 
   /**
   * @brief the setup of the statemachine
   */
   SLPState chooseNextState(SLPState currentState,
-                           usm::Transition transition) override;
+                           usm::Transition transition) override final;
 
   usm::Transition runGoTo();
   usm::Transition runLoiter();
