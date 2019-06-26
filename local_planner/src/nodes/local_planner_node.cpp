@@ -633,7 +633,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           cloud_msg_lock.reset();
 
           // remove nan padding and compute fov
-          removeNaNFromPointCloud(pcl_cloud, cameras_[index].fov_camera_frame_);
+          removeNaNAndGetFOV(pcl_cloud, cameras_[index].fov_camera_frame_);
 
           // transform cloud to /local_origin frame
           pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,

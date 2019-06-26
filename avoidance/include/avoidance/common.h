@@ -217,13 +217,16 @@ void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
 void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 
 /**
-* @brief           This is a refactored version of the PCL library function to
-*                  remove NAN values from the point cloud and compute the FOV
+* @brief           This is a refactored version of the PCL library function
+*                  "removeNaNFromPointCloud" to remove NAN values from the
+*                  point cloud and compute the FOV
 * @note            It operates in-place and iterates through the cloud once
 * @param[in, out]  cloud The point cloud to be filtered in the camera frame
 * @param[in, out]  fov of the camera
+* @note            the FOV is only adjusted if the current cloud indicates a
+*                  bigger FOV than previously thought
 **/
-void removeNaNFromPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov);
+void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov);
 
 }  // namespace avoidance
 

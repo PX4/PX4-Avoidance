@@ -340,7 +340,7 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point) {
 }
 
 // This function is a refactor of the original in the pcl library
-void removeNaNFromPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
+void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
   // Filter out NANs and keep track of outermost points for FOV
   size_t j = 0;
   float h_max = -9999.f, v_max = -9999.f, h_min = 9999.f, v_min = 9999.f;
