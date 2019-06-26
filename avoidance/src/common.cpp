@@ -326,10 +326,18 @@ void removeNaNFromPointCloud(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
         !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
       continue;
     cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
-    h_max = std::max(h_max, cloud.points[i].x / cloud.points[i].z);
-    v_max = std::max(v_max, cloud.points[i].y / cloud.points[i].z);
-    h_min = std::min(h_min, cloud.points[i].x / cloud.points[i].z);
-    v_min = std::min(v_min, cloud.points[i].y / cloud.points[i].z);
+    h_max = h_max * cloud.points[i].z > cloud.points[i].x
+                ? h_max
+                : cloud.points[i].x / cloud.points[i].z;
+    v_max = v_max * cloud.points[i].z > cloud.points[i].y
+                ? v_max
+                : cloud.points[i].y / cloud.points[i].z;
+    h_min = h_min * cloud.points[i].z < cloud.points[i].x
+                ? h_min
+                : cloud.points[i].x / cloud.points[i].z;
+    v_min = v_min * cloud.points[i].z < cloud.points[i].y
+                ? v_min
+                : cloud.points[i].y / cloud.points[i].z;
     j++;
   }
   if (j != cloud.points.size()) {
