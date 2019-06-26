@@ -495,7 +495,8 @@ void LocalPlannerNode::checkPx4Parameters() {
     request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
     request_param("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
 
-    if (!std::isfinite(local_planner_->px4_.param_mpc_xy_cruise) || !std::isfinite(local_planner_->px4_.param_mpc_col_prev_d)) {
+    if (!std::isfinite(local_planner_->px4_.param_mpc_xy_cruise) ||
+        !std::isfinite(local_planner_->px4_.param_mpc_col_prev_d)) {
       std::this_thread::sleep_for(std::chrono::seconds(5));
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(30));
