@@ -455,11 +455,13 @@ TEST(Common, removeNaNAndGetFOV) {
 
   // WHEN: we filter these clouds
   FOV fov_no_nan, fov_with_nan;
+  FOV fov_larger(0.f, 0.f, 95.f, 95.f);
   removeNaNAndGetFOV(pc_no_nan, fov_no_nan);
   removeNaNAndGetFOV(pc_with_nan, fov_with_nan);
+  removeNaNAndGetFOV(pc_with_nan, fov_larger);
 
   // THEN: we expect the clouds to not contain NANs, be dense and reflect
-  // the FOV given by the cloud
+  // the FOV given by the cloud unless the previous FOV was bigger
   EXPECT_EQ(pc_no_nan.size(), pc_with_nan.size());
   EXPECT_TRUE(pc_no_nan.is_dense);
   EXPECT_TRUE(pc_with_nan.is_dense);
@@ -467,4 +469,6 @@ TEST(Common, removeNaNAndGetFOV) {
   EXPECT_NEAR(90.f, fov_no_nan.v_fov_deg, 1.f);
   EXPECT_NEAR(90.f, fov_with_nan.h_fov_deg, 1.f);
   EXPECT_NEAR(90.f, fov_with_nan.v_fov_deg, 1.f);
+  EXPECT_FLOAT_EQ(95.f, fov_larger.h_fov_deg);
+  EXPECT_FLOAT_EQ(95.f, fov_larger.v_fov_deg);
 }
