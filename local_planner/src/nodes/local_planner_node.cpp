@@ -170,8 +170,9 @@ void LocalPlannerNode::updatePlannerInfo() {
 
       // Warning: Implicit assumption that the cameras are perfectly aligned
       // with no overlapping of FOV or blind spots!
+      // vertically the FOV is averaged
       h_fov += cameras_[i].fov_camera_frame_.h_fov_deg;
-      v_fov += cameras_[i].fov_camera_frame_.v_fov_deg;
+      v_fov += cameras_[i].fov_camera_frame_.v_fov_deg / cameras_.size();
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
     }
