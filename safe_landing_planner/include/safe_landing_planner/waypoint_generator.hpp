@@ -46,7 +46,6 @@ class WaypointGenerator final : public usm::StateMachine<SLPState> {
   bool trigger_reset_ = false;
   SLPState prev_slp_state_ = SLPState::goTo;
 
-
   bool is_land_waypoint_ = false;
   bool decision_taken_ = false;
   bool can_land_ = true;
@@ -107,6 +106,6 @@ class WaypointGenerator final : public usm::StateMachine<SLPState> {
   bool withinLandingRadius();
   bool inVerticalRange();
 
-  friend class WaypointGeneratorNode; //TODO make an API and get rid of this
+  friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
 }

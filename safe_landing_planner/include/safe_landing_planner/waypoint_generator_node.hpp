@@ -20,9 +20,7 @@
 
 namespace avoidance {
 
-
-
-class WaypointGeneratorNode final{
+class WaypointGeneratorNode final {
  public:
   WaypointGeneratorNode(const ros::NodeHandle& nh);
   ~WaypointGeneratorNode() = default;
@@ -110,8 +108,6 @@ class WaypointGeneratorNode final{
   **/
   void calculateWaypoint();
 
-
-
   /**
   * @brief     publishes the computed waypoints to the FCU
   * @param[in] pos_sp, position setpoint
@@ -138,6 +134,5 @@ class WaypointGeneratorNode final{
   * @brief     visualize goal in Rviz
   **/
   void goalVisualization();
-
 };
 }
