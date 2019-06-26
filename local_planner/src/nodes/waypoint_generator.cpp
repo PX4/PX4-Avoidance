@@ -156,6 +156,8 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
   goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
   goal_.y() = position_.y();
 
+  ROS_INFO("reachGoalAltitudeFirst %f %f %f ", goal_.x(), goal_.y(), goal_.z());
+
   // Only move the setpoint if drone is in the air
   if (is_airborne_) {
     // Ascend/Descend to goal altitude
@@ -165,6 +167,8 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
       output_.goto_position.z() -= 1.0f;
     }
   }
+
+  ROS_INFO("is_airborne_ %d goto_position %f %f %f ", is_airborne_, output_.goto_position.x(), output_.goto_position.y(), output_.goto_position.z());
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {

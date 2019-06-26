@@ -339,6 +339,7 @@ MAV_STATE LocalPlannerNode::getSystemStatus() { return companion_state_; }
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
+  printf("armed %d nav_state_ %d is_airbone %d \n", armed_, nav_state_, is_airborne);
 
   wp_generator_->updateState(
       toEigen(newest_pose_.pose.position),
