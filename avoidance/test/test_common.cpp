@@ -435,3 +435,33 @@ TEST(Common, wrapPolar) {
   EXPECT_FLOAT_EQ(40.f, p_pol_6.e);
   EXPECT_FLOAT_EQ(-120.f, p_pol_6.z);
 }
+
+TEST(Common, removeNaNFromPointCloud) {
+  // GIVEN: two point clouds, one including NANs, one without
+  pcl::PointCloud<pcl::PointXYZ> pc_no_nan, pc_with_nan;
+  for (float x = -40.f; x < 40.f; x += 1.f) {
+    for (float y = -40.f; y < 40.f; y += 1.f) {
+      pcl::PointXYZ p(x, y, 40.f);
+      pc_no_nan.push_back(p);
+      pc_with_nan.push_back(p);
+      pc_with_nan.push_back(pcl::PointXYZ(NAN, x, y));  // garbage point
+    }
+  }
+  pc_with_nan.is_dense = false;
+  pc_no_nan.is_dense = true;
+
+  // WHEN: we filter these clouds
+  FOV fov_no_nan, fov_with_nan;
+  removeNaNFromPointCloud(pc_no_nan, fov_no_nan);
+  removeNaNFromPointCloud(pc_with_nan, fov_with_nan);
+
+  // THEN: we expect the clouds to not contain NANs, be dense and reflect
+  // the FOV given by the cloud
+  EXPECT_EQ(pc_no_nan.size(), pc_with_nan.size());
+  EXPECT_TRUE(pc_no_nan.is_dense);
+  EXPECT_TRUE(pc_with_nan.is_dense);
+  EXPECT_NEAR(90.f, fov_no_nan.h_fov_deg, 1.f);
+  EXPECT_NEAR(90.f, fov_no_nan.v_fov_deg, 1.f);
+  EXPECT_NEAR(90.f, fov_with_nan.h_fov_deg, 1.f);
+  EXPECT_NEAR(90.f, fov_with_nan.v_fov_deg, 1.f);
+}
