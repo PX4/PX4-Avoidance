@@ -73,10 +73,10 @@
         </limit>
       </axis>
     </joint>
-    
-    
+
+
   <model name="left_camera">
-    <pose>0.05 0.05 -0.03 0 0 1.57</pose>
+    <pose>0.05 0.05 -0.03 0 0 1.0472</pose>
     <link name="link">
       <inertial>
         <pose>0.01 0.025 0.025 0 0 0</pose>
@@ -145,9 +145,9 @@
         </limit>
       </axis>
     </joint>
-    
+
   <model name="right_camera">
-    <pose>0.05 -0.05 -0.03 0 0 -1.57</pose>
+    <pose>0.05 -0.05 -0.03 0 0 -1.0472</pose>
     <link name="link">
       <inertial>
         <pose>0.01 0.025 0.025 0 0 0</pose>
