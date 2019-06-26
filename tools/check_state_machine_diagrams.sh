@@ -2,7 +2,7 @@
 
 # Generate the existing state machine diagrams again
 python generate_flow_diagram.py ../avoidance/test/test_usm.cpp
-python generate_flow_diagram.py ../safe_landing_planner/src/nodes/waypoint_generator_node.cpp
+python generate_flow_diagram.py ../safe_landing_planner/src/nodes/waypoint_generator.cpp
 
 # Print the diff with the remote branch (empty if no diff)
 git --no-pager diff -U0 --color
