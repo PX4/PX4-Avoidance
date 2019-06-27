@@ -24,7 +24,7 @@ enum class SLPState {
 std::string toString(SLPState state);  // for logging
 
 class WaypointGenerator : public usm::StateMachine<SLPState> {
-public:
+ public:
   WaypointGenerator();
   virtual ~WaypointGenerator() = default;
 
@@ -79,8 +79,6 @@ public:
                      const Eigen::Vector3f& vel_sp, float yaw_sp,
                      float yaw_speed_sp)>
       publishTrajectorySetpoints_;
-
-
 
   /**
   * @brief     decides if the desired setpoints received from the FCU should be
