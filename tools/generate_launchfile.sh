@@ -90,6 +90,7 @@ for camera in $CAMERA_CONFIGS; do
 			       <arg name="serial_number"         value="$3"/>
 			       <arg name="infrared_enable"       value="false" />
 			       <arg name="depth_enable"          value="true" />
+			       <arg name="frame_sync_enabled"    value="false" />
 			       <arg name="depth_framerate"       value="$DEPTH_CAMERA_FRAME_RATE" />
 			       <arg name="depth_apply_correction_before_stream"              value="true"/>
 			    </include>
