@@ -5,7 +5,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
-#include <mavros_msgs/WaypointList.h>
 #include <ros/callback_queue.h>
 #include <std_msgs/Float64MultiArray.h>
 #include <std_msgs/Int64MultiArray.h>
@@ -43,7 +42,6 @@ class WaypointGeneratorNode final {
 
   ros::Subscriber pose_sub_;
   ros::Subscriber trajectory_sub_;
-  ros::Subscriber mission_sub_;
 
   ros::Subscriber grid_sub_;
   ros::Subscriber pos_index_sub_;
@@ -85,12 +83,6 @@ class WaypointGeneratorNode final {
   * @param[in] msg, current and next position goals
   **/
   void trajectoryCallback(const mavros_msgs::Trajectory& msg);
-
-  /**
-  * @brief     callaback with the list of FCU Mission Items
-  * @param[in] msg, list of mission items
-  **/
-  void missionCallback(const mavros_msgs::WaypointList& msg);
 
   /**
   * @brief     callaback with the grid calculated by the safe_landing_planner
