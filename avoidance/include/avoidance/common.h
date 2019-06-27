@@ -51,12 +51,11 @@ struct PolarPoint {
 * field of view of the sensor
 */
 struct FOV {
-  FOV()
-      : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
+  FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
   FOV(float y, float p, float h, float v)
-      : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
-  float azimuth_deg;
-  float elevation_deg;
+      : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
+  float yaw_deg;
+  float pitch_deg;
   float h_fov_deg;
   float v_fov_deg;
 };
@@ -69,11 +68,25 @@ const float RAD_TO_DEG = 180.0f / M_PI_F;
 
 /**
 * @brief      determines whether point is inside FOV
-* @param[in]  FOV, struct defining current field of view
+* @param[in]  vector of FOV structs defining current field of view
 * @param[in]  p_pol, polar representation of the point in question
 * @return     whether point is inside the FOV
 **/
+bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
+
+/**
+* @brief     function returning a scale value depending on where a polar point
+*            is relative to the field of view
+* @param[in] vector of FOV structs defining the field of view
+* @param[in] polar point in the fcu frame pointing in the direction we wish to
+*            go
+* @returns   a scale [0, 1] depending on whether the point in question can be
+*            seen from here
+* @TODO:     currently this is binary depending on whether its inside or outside
+*            in the near future I want to scale this correctly
+**/
+float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol);
 
 /**
 * @brief     calculates the distance between two polar points
@@ -84,15 +97,33 @@ bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 
 /**
-* @brief     Convertes a polar point to a cartesian point and add it to a
-*cartesian position
-* @param[in] p_pol polar point to be converted to cartesian point
-* @param[in] pos given cartesian position, from which to convert the polar point
+* @brief     Converts a polar point in histogram convention to a cartesian point
+*            and add it to a cartesian position
+* @param[in] polar point in histogram convention to be converted
+* @param[in] cartesian position, from which to convert the polar point
 * @returns   point in cartesian CS
+* @warning   The histogram convention means zero-azimuth is the positive y axis
+*            with increasing azimuth in CW direction, while the elevation angle
+*            increases for "upward looking" (contrary to pitch in FCU!)
 **/
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const Eigen::Vector3f& pos);
+Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
+                                          const Eigen::Vector3f& pos);
+
+/**
+* @brief     Converts a polar point in fcu convention to a cartesian point and
+*            add it to a cartesian position
+* @param[in] polar point to be converted to cartesian point
+* @param[in] given cartesian position, from which to convert the polar point
+* @returns   point in cartesian coordinates
+* @warning   The returned point is computed assuming the FCU convention on the
+*            incoming polar point. This means the pitch is positive for forward
+*            pitching of a quadrotor and the yaw is positive for CCW yaw motion
+**/
+Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol,
+                                    const Eigen::Vector3f& pos);
+
 float indexAngleDifference(float a, float b);
+
 /**
 * @brief     compute point in the histogram to a polar point
 * @param[in] e evelation index in the histogram
@@ -104,7 +135,8 @@ float indexAngleDifference(float a, float b);
 PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 
 /**
-* @brief     Compute a cartesian point to polar CS
+* @brief     Compute polar vector in histogram convention between two cartesian
+*            points
 * @param[in] position Position of the location to which to compute the bearing
 *            angles to.
 * @param[in] origin Origin from which to compute the bearing vectors.
@@ -114,11 +146,25 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 * @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180]
 *            and elevation angle degrees (-90, 90]
 **/
+PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos,
+                                     const Eigen::Vector3f& origin);
+PolarPoint cartesianToPolarHistogram(float x, float y, float z,
+                                     const Eigen::Vector3f& pos);
 
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
-                            const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolar(float x, float y, float z,
-                            const Eigen::Vector3f& pos);
+/**
+* @brief     Compute the polar vector in FCU convention between two cartesian
+*            points
+* @param[in] endpoint of the polar vector
+* @param[in] origin of the polar vector
+* @returns   polar point in FCU convention that points from the given origin to
+*            the given point
+* @warning   the output adheres to the FCU convention: positive yaw is measured
+*            CCW from the positive x-axis, and positve pitch is measured CCW
+*            from the positve x-axis. (Positive pitch is pitching forward)
+**/
+PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
+                               const Eigen::Vector3f& origin);
+
 /**
 * @brief     compute polar point to histogram index
 * @param[in] p_pol with elevation, azimuth angle and radius
@@ -136,6 +182,7 @@ Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res);
 *            azimuth angle [-180,180)
 **/
 void wrapPolar(PolarPoint& p_pol);
+
 /**
 * @brief     Compute the yaw angle between current position and point
 * @returns   angle between two points in rad

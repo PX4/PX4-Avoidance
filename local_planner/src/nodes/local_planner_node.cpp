@@ -189,7 +189,6 @@ void LocalPlannerNode::updatePlanner() {
 void LocalPlannerNode::updatePlannerInfo() {
   // update the point cloud
   local_planner_->original_cloud_vector_.clear();
-  float h_fov = 0.f, v_fov = 0.f;
   for (size_t i = 0; i < cameras_.size(); ++i) {
     std::lock_guard<std::mutex> transformed_cloud_guard(
         *(cameras_[i].transformed_cloud_mutex_));
@@ -197,19 +196,13 @@ void LocalPlannerNode::updatePlannerInfo() {
       local_planner_->original_cloud_vector_.push_back(
           std::move(cameras_[i].pcl_cloud));
       cameras_[i].transformed_ = false;
-
-      // Warning: Implicit assumption that the cameras are perfectly aligned
-      // with no overlapping of FOV or blind spots!
-      // vertically the FOV is averaged
-      h_fov += cameras_[i].fov_camera_frame_.h_fov_deg;
-      v_fov += cameras_[i].fov_camera_frame_.v_fov_deg / cameras_.size();
+      local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
+      wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
     }
   }
-  local_planner_->setFOV(h_fov, v_fov);
-  wp_generator_->setFOV(h_fov, v_fov);
 
   // update position
   local_planner_->setPose(toEigen(newest_pose_.pose.position),
@@ -634,7 +627,21 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           cloud_msg_lock.reset();
 
           // remove nan padding and compute fov
-          removeNaNAndGetFOV(pcl_cloud, cameras_[index].fov_camera_frame_);
+          removeNaNAndGetFOV(pcl_cloud, cameras_[index].fov_fcu_frame_);
+
+          // Assume camera axis is defined as +z (CV convention)!
+          // So we transform the z unit vector into FCU frame and compute
+          // yaw and pitch for this field of view. Note that in the FCU frame
+          // positive pitch is downward, zero-yaw is forward and positive-yaw
+          // is turning CCW!
+          pcl::PointCloud<pcl::PointXYZ> fake_pc;
+          fake_pc.push_back(pcl::PointXYZ(0.f, 0.f, 1.f));
+          fake_pc.header.frame_id = pcl_cloud.header.frame_id;
+          pcl_ros::transformPointCloud("fcu", fake_pc, fake_pc, *tf_listener_);
+          cameras_[index].fov_fcu_frame_.yaw_deg =
+              atan2(fake_pc[0].y, fake_pc[0].x) * RAD_TO_DEG;
+          cameras_[index].fov_fcu_frame_.pitch_deg =
+              atan2(-fake_pc[0].z, fake_pc[0].x) * RAD_TO_DEG;
 
           // transform cloud to /local_origin frame
           pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,

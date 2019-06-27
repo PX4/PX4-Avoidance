@@ -35,7 +35,8 @@ namespace avoidance {
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, FOV& fov, const Eigen::Vector3f& position,
+    Box histogram_box, const std::vector<FOV>& fov, float yaw_fcu_frame_deg,
+    float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s,
     int min_num_points_per_cell);
 
@@ -73,7 +74,7 @@ void compressHistogramElevation(Histogram& new_hist,
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame_deg,
+                   const float yaw_fcu_frame_deg,
                    const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed,
                    const float smoothing_margin_degrees,
@@ -123,7 +124,7 @@ void getBestCandidatesFromCostMatrix(
 **/
 void costFunction(float e_angle, float z_angle, float obstacle_distance,
                   const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float yaw_angle_histogram_frame_deg,
+                  float yaw_fcu_frame_deg,
                   const Eigen::Vector3f& last_sent_waypoint,
                   costParameters cost_params, float& distance_cost,
                   float& other_costs);
