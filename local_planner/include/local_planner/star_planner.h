@@ -82,10 +82,10 @@ class StarPlanner {
 
   /**
   * @brief     setter method for vehicle position
-  * @param[in] pos, vehicle current position and orientation
-  * @param[in] curr_yaw, vehicle current yaw
+  * @param[in] vehicle current position
+  * @param[in] current yaw of the vehicle in FCU frame convention
   **/
-  void setPose(const Eigen::Vector3f& pos, float curr_yaw);
+  void setPose(const Eigen::Vector3f& pos, float curr_yaw_fcu_frame_deg);
 
   /**
   * @brief     setter method for current goal

@@ -8,17 +8,43 @@
 
 namespace avoidance {
 
+bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol) {
+  bool retval = false;
+  for (auto fov : fov_vec) {
+    retval |= pointInsideFOV(fov, p_pol);
+  }
+  return retval;
+}
+
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
   return p_pol.z <= wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
          p_pol.z >= wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
          p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f && p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
+=======
+  return p_pol.z <=
+             wrapAngleToPlusMinus180(fov.yaw_deg + fov.h_fov_deg / 2.f) &&
+         p_pol.z >=
+             wrapAngleToPlusMinus180(fov.yaw_deg - fov.h_fov_deg / 2.f) &&
+         p_pol.e <= fov.pitch_deg + fov.v_fov_deg / 2.f &&
+         p_pol.e >= fov.pitch_deg - fov.v_fov_deg / 2.f;
+}
+
+float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol) {
+  return pointInsideFOV(fov, p_pol) ? 1.f : 0.f;  // todo: scale properly
+>>>>>>> Allow discontinuous FOV
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
   return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
 
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
 Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos) {
+=======
+Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
+                                          const Eigen::Vector3f& pos) {
+>>>>>>> Allow discontinuous FOV
   Eigen::Vector3f p;
   p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
   p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
@@ -26,6 +52,21 @@ Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f&
 
   return p;
 }
+
+Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol,
+                                    const Eigen::Vector3f& pos) {
+  Eigen::Vector3f p;
+  p.x() = pos.x() +
+          p_pol.r * std::sin((90.0f - p_pol.e) * DEG_TO_RAD) *
+              std::cos(p_pol.z * DEG_TO_RAD);
+  p.y() = pos.y() +
+          p_pol.r * std::sin((90.0f - p_pol.e) * DEG_TO_RAD) *
+              std::sin(p_pol.z * DEG_TO_RAD);
+  p.z() = pos.z() + p_pol.r * std::cos((90.0f - p_pol.e) * DEG_TO_RAD);
+
+  return p;
+}
+
 float indexAngleDifference(float a, float b) {
   return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)), std::abs(a - b + 360.f));
 }
@@ -36,16 +77,34 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
   return p_pol;
 }
 
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
 PolarPoint cartesianToPolar(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin) {
   return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
 }
 PolarPoint cartesianToPolar(float x, float y, float z, const Eigen::Vector3f& pos) {
+=======
+PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos,
+                                     const Eigen::Vector3f& origin) {
+  return cartesianToPolarHistogram(pos.x(), pos.y(), pos.z(), origin);
+}
+PolarPoint cartesianToPolarHistogram(float x, float y, float z,
+                                     const Eigen::Vector3f& pos) {
+>>>>>>> Allow discontinuous FOV
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
   p_pol.z = std::atan2(x - pos.x(), y - pos.y()) * RAD_TO_DEG;  //(-180. +180]
   p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) + (z - pos.z()) * (z - pos.z()));
   return p_pol;
+}
+
+PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
+                               const Eigen::Vector3f& origin) {
+  PolarPoint p = cartesianToPolarHistogram(pos, origin);
+  p.z = -p.z + 90.0f;
+  p.e = -p.e;
+  wrapPolar(p);
+  return p;
 }
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {

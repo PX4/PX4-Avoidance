@@ -88,16 +88,16 @@ TEST(Common, azimuthAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0f, 0.0f, 0.0f);
 
   // WHEN: calculating the azimuth angle between the two points
-  float angle_right = cartesianToPolar(point_right, origin).z;
-  float angle_up = cartesianToPolar(point_up, origin).z;
-  float angle_left = cartesianToPolar(point_left, origin).z;
-  float angle_down = cartesianToPolar(point_down, origin).z;
-  float angle_undetermined = cartesianToPolar(origin, origin).z;
-  float angle_q1 = cartesianToPolar(point_q1, origin).z;
-  float angle_q2 = cartesianToPolar(point_q2, origin).z;
-  float angle_q3 = cartesianToPolar(point_q3, origin).z;
-  float angle_q4 = cartesianToPolar(point_q4, origin).z;
-  float angle_non_zero_origin = cartesianToPolar(point_q1, point_q2).z;
+  float angle_right = cartesianToPolarHistogram(point_right, origin).z;
+  float angle_up = cartesianToPolarHistogram(point_up, origin).z;
+  float angle_left = cartesianToPolarHistogram(point_left, origin).z;
+  float angle_down = cartesianToPolarHistogram(point_down, origin).z;
+  float angle_undetermined = cartesianToPolarHistogram(origin, origin).z;
+  float angle_q1 = cartesianToPolarHistogram(point_q1, origin).z;
+  float angle_q2 = cartesianToPolarHistogram(point_q2, origin).z;
+  float angle_q3 = cartesianToPolarHistogram(point_q3, origin).z;
+  float angle_q4 = cartesianToPolarHistogram(point_q4, origin).z;
+  float angle_non_zero_origin = cartesianToPolarHistogram(point_q1, point_q2).z;
 
   // THEN:  angle should be ..
   EXPECT_FLOAT_EQ(90.f, angle_right);
@@ -126,17 +126,18 @@ TEST(Common, elevationAnglefromCartesian) {
   const Eigen::Vector3f origin(0.0f, 0.0f, 0.0f);
 
   // WHEN: we get the elevation angle between the two points
-  const float angle_front = cartesianToPolar(point_front, origin).e;
-  const float angle_up = cartesianToPolar(point_up, origin).e;
-  const float angle_behind = cartesianToPolar(point_behind, origin).e;
-  const float angle_down = cartesianToPolar(point_down, origin).e;
-  const float angle_undetermined = cartesianToPolar(origin, origin).e;
-  const float angle_q1 = cartesianToPolar(point_q1, origin).e;
-  const float angle_30 = cartesianToPolar(point_30, origin).e;
-  const float angle_q2 = cartesianToPolar(point_q2, origin).e;
-  const float angle_q3 = cartesianToPolar(point_q3, origin).e;
-  const float angle_q4 = cartesianToPolar(point_q4, origin).e;
-  const float angle_non_zero_origin = cartesianToPolar(point_q4, point_q2).e;
+  const float angle_front = cartesianToPolarHistogram(point_front, origin).e;
+  const float angle_up = cartesianToPolarHistogram(point_up, origin).e;
+  const float angle_behind = cartesianToPolarHistogram(point_behind, origin).e;
+  const float angle_down = cartesianToPolarHistogram(point_down, origin).e;
+  const float angle_undetermined = cartesianToPolarHistogram(origin, origin).e;
+  const float angle_q1 = cartesianToPolarHistogram(point_q1, origin).e;
+  const float angle_30 = cartesianToPolarHistogram(point_30, origin).e;
+  const float angle_q2 = cartesianToPolarHistogram(point_q2, origin).e;
+  const float angle_q3 = cartesianToPolarHistogram(point_q3, origin).e;
+  const float angle_q4 = cartesianToPolarHistogram(point_q4, origin).e;
+  const float angle_non_zero_origin =
+      cartesianToPolarHistogram(point_q4, point_q2).e;
 
   // THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
@@ -201,7 +202,7 @@ TEST(Common, polarToHistogramIndex) {
   EXPECT_EQ(29, index_9.x());
 }
 
-TEST(Common, polarToCartesian) {
+TEST(Common, polarHistogramToCartesian) {
   // GIVEN: the elevation angle, azimuth angle, a radius and the position
   std::vector<float> e = {-90.f, -90.f, 90.f, 0.f, 45.f};    //[-90, 90]
   std::vector<float> z = {-180.f, -90.f, 179.f, 0.f, 45.f};  //[-180, 180]
@@ -223,12 +224,12 @@ TEST(Common, polarToCartesian) {
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[3], radius[0]);
-    pos_out.push_back(polarToCartesian(p_pol, pos));
+    pos_out.push_back(polarHistogramToCartesian(p_pol, pos));
   }
 
   for (int i = 0; i < n; i++) {
     PolarPoint p_pol(e[i], z[i], radius[1]);
-    pos_out.push_back(polarToCartesian(p_pol, pos));
+    pos_out.push_back(polarHistogramToCartesian(p_pol, pos));
   }
 
   // THEN: the cartesian coordinates are
@@ -270,9 +271,9 @@ TEST(Common, PolarToCatesianToPolar) {
   for (float e = -90.f; e <= 90.f; e = e + 3.f) {
     for (float z = -180.f; z <= 180.f; z = z + 6.f) {
       PolarPoint p_pol(e, z, radius);
-      Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
+      Eigen::Vector3f p_cartesian = polarHistogramToCartesian(p_pol, pos);
 
-      PolarPoint p_pol_new = cartesianToPolar(p_cartesian, pos);
+      PolarPoint p_pol_new = cartesianToPolarHistogram(p_cartesian, pos);
 
       // THEN: the resulting polar positions are expected to be the same as
       // before the conversion
@@ -293,7 +294,7 @@ TEST(Common, PolarToCatesianToPolar) {
   }
 }
 
-TEST(Common, cartesianTopolarToCartesian) {
+TEST(Common, cartesianTopolarHistogramToCartesian) {
   // GIVEN: a current position
   Eigen::Vector3f pos(0.81f, 5.17f, 3.84f);
 
@@ -303,9 +304,9 @@ TEST(Common, cartesianTopolarToCartesian) {
     for (float y = -5.f; y <= 5.f; y = y + 0.6f) {
       for (float z = -5.f; z <= 5.f; z = z + 0.4f) {
         Eigen::Vector3f origin(x, y, z);
-        PolarPoint p_pol = cartesianToPolar(origin, pos);
+        PolarPoint p_pol = cartesianToPolarHistogram(origin, pos);
         // p_pol.r = (origin - pos).norm();
-        Eigen::Vector3f p_cartesian = polarToCartesian(p_pol, pos);
+        Eigen::Vector3f p_cartesian = polarHistogramToCartesian(p_pol, pos);
 
         // THEN: the resulting cartesian positions are expected to be the same
         // as

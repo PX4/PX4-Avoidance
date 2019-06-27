@@ -32,10 +32,20 @@ namespace avoidance {
 *             be kept, less points are discarded as noise (careful: 0 is not
 *             a valid input here)
 **/
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, Box histogram_box, FOV& fov,
                        const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
                        int min_num_points_per_cell);
+=======
+void processPointcloud(
+    pcl::PointCloud<pcl::PointXYZI>& final_cloud,
+    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
+    Box histogram_box, const std::vector<FOV>& fov, float yaw_fcu_frame_deg,
+    float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
+    float min_realsense_dist, int max_age, float elapsed_s,
+    int min_num_points_per_cell);
+>>>>>>> Allow discontinuous FOV
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
@@ -67,10 +77,21 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[out] cost_matrix
 * @param[out] image of the cost matrix for visualization
 **/
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const float yaw_angle_histogram_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
                    costParameters cost_params, bool only_yawed, const float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
+=======
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position,
+                   const float yaw_fcu_frame_deg,
+                   const Eigen::Vector3f& last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed,
+                   const float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data);
+>>>>>>> Allow discontinuous FOV
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -111,9 +132,17 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[out] distance_cost, cost component due to proximity to obstacles
 * @param[out] other_costs, cost component due to goal and smoothness
 **/
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
 void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
                   const Eigen::Vector3f& position, const float yaw_angle_histogram_frame_deg,
                   const Eigen::Vector3f& last_sent_waypoint, costParameters cost_params, float& distance_cost,
+=======
+void costFunction(float e_angle, float z_angle, float obstacle_distance,
+                  const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                  float yaw_fcu_frame_deg,
+                  const Eigen::Vector3f& last_sent_waypoint,
+                  costParameters cost_params, float& distance_cost,
+>>>>>>> Allow discontinuous FOV
                   float& other_costs);
 
 /**

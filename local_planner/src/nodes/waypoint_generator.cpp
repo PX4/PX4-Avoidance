@@ -43,7 +43,7 @@ void WaypointGenerator::calculateWaypoint() {
       if (tree_available && (planner_info_.obstacle_ahead || dist_goal > 4.0f) && since_last_path < ros::Duration(5)) {
         ROS_DEBUG("[WG] Use calculated tree\n");
         p_pol.r = 1.0;
-        output_.goto_position = polarToCartesian(p_pol, position_);
+        output_.goto_position = polarHistogramToCartesian(p_pol, position_);
       } else {
         ROS_DEBUG("[WG] No valid tree, going straight");
         output_.waypoint_type = direct;
@@ -91,9 +91,12 @@ void WaypointGenerator::calculateWaypoint() {
   last_wp_type_ = planner_info_.waypoint_type;
 }
 
-void WaypointGenerator::setFOV(float h_FOV, float v_FOV) {
-  h_FOV_deg_ = h_FOV;
-  v_FOV_deg_ = v_FOV;
+void WaypointGenerator::setFOV(int i, const FOV& fov) {
+  if (i < fov_fcu_frame_.size()) {
+    fov_fcu_frame_[i] = fov;
+  } else {
+    fov_fcu_frame_.push_back(fov);
+  }
 }
 
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
@@ -104,6 +107,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   goal_ = goal;
   prev_goal_ = prev_goal;
   curr_yaw_rad_ = getYawFromQuaternion(q) * DEG_TO_RAD;
+  curr_pitch_deg_ = getPitchFromQuaternion(q);
 
   if (stay) {
     planner_info_.waypoint_type = hover;
@@ -237,10 +241,19 @@ void WaypointGenerator::adaptSpeed() {
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
     if (output_.waypoint_type != reachHeight) {
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
       float angle_diff_deg = std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_rad_) * 180.f / M_PI_F;
       angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
       angle_diff_deg = std::min(h_FOV_deg_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
       speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_deg_);
+=======
+      PolarPoint p_pol_fcu =
+          cartesianToPolarFCU(output_.goto_position, position_);
+      p_pol_fcu.e -= curr_pitch_deg_;
+      p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;
+      wrapPolar(p_pol_fcu);
+      speed_ *= scaleToFOV(fov_fcu_frame_, p_pol_fcu);
+>>>>>>> Allow discontinuous FOV
     }
 
     // Scale the pose_to_wp by the speed

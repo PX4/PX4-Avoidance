@@ -15,12 +15,9 @@ LocalPlanner::~LocalPlanner() {}
 // update UAV pose
 void LocalPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q) {
   position_ = pos;
-
-  // Azimuth angle in histogram convention is different from FCU convention!
-  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
-  fov_.azimuth_deg = wrapAngleToPlusMinus180(-getYawFromQuaternion(q) + 90.0f);
-  fov_.elevation_deg = -getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, fov_.azimuth_deg);
+  yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
+  pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
+  star_planner_->setPose(position_, yaw_fcu_frame_deg_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -65,9 +62,12 @@ void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   applyGoal();
 }
 
-void LocalPlanner::setFOV(float h_FOV_deg, float v_FOV_deg) {
-  fov_.h_fov_deg = h_FOV_deg;
-  fov_.v_fov_deg = v_FOV_deg;
+void LocalPlanner::setFOV(int i, const FOV& fov) {
+  if (i < fov_fcu_frame_.size()) {
+    fov_fcu_frame_[i] = fov;
+  } else {
+    fov_fcu_frame_.push_back(fov);
+  }
 }
 
 Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
@@ -83,9 +83,18 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
   float elapsed_since_last_processing = static_cast<float>((ros::Time::now() - last_pointcloud_process_time_).toSec());
   processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_, position_, min_realsense_dist_,
                     max_point_age_s_, elapsed_since_last_processing, min_num_points_per_cell_);
+=======
+  float elapsed_since_last_processing = static_cast<float>(
+      (ros::Time::now() - last_pointcloud_process_time_).toSec());
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
+                    fov_fcu_frame_, yaw_fcu_frame_deg_, pitch_fcu_frame_deg_,
+                    position_, min_realsense_dist_, max_point_age_s_,
+                    elapsed_since_last_processing, min_num_points_per_cell_);
+>>>>>>> Allow discontinuous FOV
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -153,16 +162,28 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
       getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg, last_sent_waypoint_, cost_params_,
                     velocity_.norm() < 0.1f, smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+=======
+      getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_,
+                    last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
+                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+>>>>>>> Allow discontinuous FOV
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
-      PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
+      PolarPoint last_wp_pol =
+          cartesianToPolarHistogram(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
+<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
       Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position_);
+=======
+      Eigen::Vector3f projected_last_wp =
+          polarHistogramToCartesian(last_wp_pol, position_);
+>>>>>>> Allow discontinuous FOV
       star_planner_->setLastDirection(projected_last_wp);
 
       // build search tree
