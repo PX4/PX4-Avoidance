@@ -6,7 +6,7 @@ using namespace avoidance;
 
 class WaypointGeneratorTests : public WaypointGenerator,
                                public ::testing::Test {
-public:
+ public:
   Eigen::Vector3f published_position = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f published_velocity = Eigen::Vector3f(NAN, NAN, NAN);
   float published_yaw = NAN;
@@ -61,5 +61,4 @@ TEST_F(WaypointGeneratorTests, goto_to_altitudechange) {
   // AND: there should be a reasonable published position/velocity
   ASSERT_EQ((published_position - goal_).norm(), 0);
   ASSERT_TRUE(published_velocity.array().isNaN().all());
-
 }
