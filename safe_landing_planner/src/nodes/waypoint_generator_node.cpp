@@ -101,11 +101,13 @@ void WaypointGeneratorNode::trajectoryCallback(
     const mavros_msgs::Trajectory &msg) {
   bool update =
       ((avoidance::toEigen(msg.point_2.position) - goal_visualization_).norm() >
-       0.01) || waypointGenerator_.goal_.topRows<2>().array().hasNaN();
+       0.01) ||
+      waypointGenerator_.goal_.topRows<2>().array().hasNaN();
 
   if (update && msg.point_valid[0] == true) {
     waypointGenerator_.goal_ = avoidance::toEigen(msg.point_1.position);
-    waypointGenerator_.velocity_setpoint_ = avoidance::toEigen(msg.point_1.velocity);
+    waypointGenerator_.velocity_setpoint_ =
+        avoidance::toEigen(msg.point_1.velocity);
 
     ROS_INFO_STREAM("\033[1;33m [WGN] Set New goal from FCU "
                     << waypointGenerator_.goal_.transpose()
