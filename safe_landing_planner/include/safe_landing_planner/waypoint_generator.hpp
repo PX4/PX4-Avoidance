@@ -6,6 +6,7 @@
 #include <Eigen/Dense>
 
 #include <functional>
+#include <vector>
 
 namespace avoidance {
 

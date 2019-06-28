@@ -101,15 +101,15 @@ void WaypointGeneratorNode::trajectoryCallback(
     const mavros_msgs::Trajectory &msg) {
   bool update =
       ((avoidance::toEigen(msg.point_2.position) - goal_visualization_).norm() >
-       0.01) ||
-      waypointGenerator_.goal_.array().hasNaN();
+       0.01) || waypointGenerator_.goal_.topRows<2>().array().hasNaN();
 
   if (update && msg.point_valid[0] == true) {
     waypointGenerator_.goal_ = avoidance::toEigen(msg.point_1.position);
+    waypointGenerator_.velocity_setpoint_ = avoidance::toEigen(msg.point_1.velocity);
 
     ROS_INFO_STREAM("\033[1;33m [WGN] Set New goal from FCU "
                     << waypointGenerator_.goal_.transpose()
-                    << " %f %f %f - nan nan nan \033[0m");
+                    << " - nan nan nan \033[0m");
   }
   if (msg.point_valid[1] == true) {
     goal_visualization_ = avoidance::toEigen(msg.point_2.position);
@@ -140,6 +140,7 @@ void WaypointGeneratorNode::stateCallback(const mavros_msgs::State &msg) {
 
   if (msg.armed == false) {
     waypointGenerator_.is_land_waypoint_ = false;
+    waypointGenerator_.trigger_reset_ = true;
   }
 }
 

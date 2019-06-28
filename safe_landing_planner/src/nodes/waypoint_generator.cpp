@@ -58,7 +58,6 @@ void WaypointGenerator::updateSLPState() {
     can_land_hysteresis_.reserve((smoothing_land_cell_ * 2) *
                                  (smoothing_land_cell_ * 2));
     std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
-    trigger_reset_ = true;
     explorarion_is_active_ = false;
     n_explored_pattern_ = -1;
     factor_exploration_ = 1.f;
