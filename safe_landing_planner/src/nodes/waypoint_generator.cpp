@@ -45,7 +45,7 @@ void WaypointGenerator::calculateWaypoint() {
 }
 
 void WaypointGenerator::updateSLPState() {
-  if (update_smoothing_size_) {
+  if (update_smoothing_size_ || can_land_hysteresis_.size() == 0) {
     can_land_hysteresis_.resize((smoothing_land_cell_ * 2) *
                                 (smoothing_land_cell_ * 2));
     std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
@@ -172,7 +172,6 @@ usm::Transition WaypointGenerator::runLoiter() {
   }
 
   int offset_center = grid_slp_.land_.rows() / 2;
-
   for (int i = offset_center - smoothing_land_cell_;
        i < offset_center + smoothing_land_cell_; i++) {
     for (int j = offset_center - smoothing_land_cell_;
@@ -197,7 +196,6 @@ usm::Transition WaypointGenerator::runLoiter() {
       can_land_ = (can_land_ && (can_land_hysteresis_[i] > can_land_thr_));
       if (can_land_ == 0 && land_counter == can_land_hysteresis_.size()) {
         can_land_ = 1;
-        decision_taken_ = false;
         ROS_INFO("[WGN] Decision changed from can't land to can land!");
       }
     }
