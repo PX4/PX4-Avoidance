@@ -119,7 +119,7 @@ usm::Transition WaypointGenerator::runGoTo() {
       (goal_.topRows<2>() - position_.topRows<2>()).norm(),
       fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
 
-  if (withinLandingRadius() && !inVerticalRange() && is_land_waypoint_ ) {
+  if (withinLandingRadius() && !inVerticalRange() && is_land_waypoint_) {
     return usm::NEXT1;
   }
 
@@ -247,6 +247,13 @@ bool WaypointGenerator::withinLandingRadius() {
 }
 
 bool WaypointGenerator::inVerticalRange() {
+  // std::cout << "pos->terrain " << std::abs(position_.z() -
+  // grid_slp_.mean_(pos_index_.x(), pos_index_.y())) << " diff to loiter height
+  // " << std::abs(std::abs(position_.z() -
+  //                          grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+  //                          loiter_height_) << " max error " <<
+  //                          vertical_range_error_ << std::endl;
+
   return std::abs(std::abs(position_.z() -
                            grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
                   loiter_height_) < vertical_range_error_;
