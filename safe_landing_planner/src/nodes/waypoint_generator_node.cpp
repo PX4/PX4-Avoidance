@@ -124,6 +124,7 @@ void WaypointGeneratorNode::missionCallback(
     const mavros_msgs::WaypointList &msg) {
   waypointGenerator_.is_land_waypoint_ = false;
   for (auto waypoint : msg.waypoints) {
+    std::cout << "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! " << waypoint.is_current << " " << waypoint.command << std::endl;
     if (waypoint.is_current && waypoint.command == 21) {
       waypointGenerator_.is_land_waypoint_ = true;
     }

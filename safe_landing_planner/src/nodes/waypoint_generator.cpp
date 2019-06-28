@@ -247,15 +247,33 @@ bool WaypointGenerator::withinLandingRadius() {
 }
 
 bool WaypointGenerator::inVerticalRange() {
-  // std::cout << "pos->terrain " << std::abs(position_.z() -
-  // grid_slp_.mean_(pos_index_.x(), pos_index_.y())) << " diff to loiter height
-  // " << std::abs(std::abs(position_.z() -
-  //                          grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-  //                          loiter_height_) << " max error " <<
-  //                          vertical_range_error_ << std::endl;
 
-  return std::abs(std::abs(position_.z() -
-                           grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-                  loiter_height_) < vertical_range_error_;
+  std::vector<float> altitude_landing_area((smoothing_land_cell_ * 2) *
+                              (smoothing_land_cell_ * 2));
+
+  int offset_center = grid_slp_.land_.rows() / 2;
+  for (int i = offset_center - smoothing_land_cell_;
+       i < offset_center + smoothing_land_cell_; i++) {
+    for (int j = offset_center - smoothing_land_cell_;
+         j < offset_center + smoothing_land_cell_; j++) {
+      int index = (smoothing_land_cell_ * 2) *
+                      (i - offset_center + smoothing_land_cell_) +
+                  (j - offset_center + smoothing_land_cell_);
+      altitude_landing_area[index] = std::abs(position_.z() - grid_slp_.mean_(i, j));
+    }
+  }
+
+  // std::cout << "offset_center " << offset_center << " smoothing_land_cell_ " << smoothing_land_cell_ << std::endl;
+  // std::cout << grid_slp_.mean_.block(offset_center - smoothing_land_cell_, offset_center - smoothing_land_cell_,
+  // offset_center + smoothing_land_cell_, offset_center + smoothing_land_cell_) << std::endl;
+
+  std::sort(altitude_landing_area.begin(), altitude_landing_area.end());
+  int index = static_cast<int>(std::round(80.f / 100.f * altitude_landing_area.size()));
+  for (size_t i = 0; i < altitude_landing_area.size(); i++) {
+  std::cout << altitude_landing_area[i] << " " ;
+  }
+  std::cout << "\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! 80perc " << altitude_landing_area[index] << std::endl;
+
+  return std::abs(altitude_landing_area[index] - loiter_height_) < vertical_range_error_;
 }
 }
