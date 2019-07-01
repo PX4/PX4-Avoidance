@@ -181,8 +181,11 @@ usm::Transition WaypointGenerator::runLoiter() {
       float can_land_hysteresis_prev = can_land_hysteresis_[index];
       can_land_hysteresis_[index] =
           (beta_ * can_land_hysteresis_prev) + (1.f - beta_) * cell_land_value;
+      std::cout << can_land_hysteresis_[index] << " ";
     }
+    std::cout << "\n";
   }
+  std::cout << "\n";
 
   if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
     decision_taken_ = true;
