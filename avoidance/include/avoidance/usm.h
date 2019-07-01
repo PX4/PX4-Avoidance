@@ -37,7 +37,7 @@
 
 namespace usm {
 
-enum Transition { REPEAT, NEXT1, NEXT2, NEXT3, NEXT4, ERROR };
+enum class Transition { REPEAT, NEXT1, NEXT2, NEXT3, NEXT4, ERROR };
 
 template <typename StateEnum>
 class StateMachine {
@@ -95,5 +95,4 @@ return error
 
 #define USM_MAP(transition, next_state) \
             case transition: return next_state
-
 // clang-format on
