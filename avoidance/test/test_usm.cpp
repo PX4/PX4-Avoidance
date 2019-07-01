@@ -96,15 +96,15 @@ class TestStateMachine final : public StateMachine<TestStates> {
                              Transition transition) override {
     // clang-format off
     USM_TABLE(currentState, CLEANUP,
-      USM_STATE(transition, START,    USM_MAP(NEXT1, PATH_A_1);
-                                      USM_MAP(NEXT2, PATH_B_1));
-      USM_STATE(transition, PATH_A_1, USM_MAP(NEXT1, PATH_A_2);
-                                      USM_MAP(ERROR, PATH_B_3));
-      USM_STATE(transition, PATH_A_2, USM_MAP(NEXT1, END));
-      USM_STATE(transition, PATH_B_1, USM_MAP(NEXT1, PATH_B_2));
-      USM_STATE(transition, PATH_B_2, USM_MAP(NEXT1, PATH_B_3));
-      USM_STATE(transition, PATH_B_3, USM_MAP(NEXT1, END));
-      USM_STATE(transition, CLEANUP,  USM_MAP(NEXT1, END))
+      USM_STATE(transition, START,    USM_MAP(Transition::NEXT1, PATH_A_1);
+                                      USM_MAP(Transition::NEXT2, PATH_B_1));
+      USM_STATE(transition, PATH_A_1, USM_MAP(Transition::NEXT1, PATH_A_2);
+                                      USM_MAP(Transition::ERROR, PATH_B_3));
+      USM_STATE(transition, PATH_A_2, USM_MAP(Transition::NEXT1, END));
+      USM_STATE(transition, PATH_B_1, USM_MAP(Transition::NEXT1, PATH_B_2));
+      USM_STATE(transition, PATH_B_2, USM_MAP(Transition::NEXT1, PATH_B_3));
+      USM_STATE(transition, PATH_B_3, USM_MAP(Transition::NEXT1, END));
+      USM_STATE(transition, CLEANUP,  USM_MAP(Transition::NEXT1, END))
     );
     // clang-format on
   }
@@ -112,7 +112,7 @@ class TestStateMachine final : public StateMachine<TestStates> {
  private:
   Transition start() {
     start_called = true;
-    return path_a ? Transition::NEXT1 : NEXT2;
+    return path_a ? Transition::NEXT1 : Transition::NEXT2;
   }
   Transition a1() {
     a1_called = true;

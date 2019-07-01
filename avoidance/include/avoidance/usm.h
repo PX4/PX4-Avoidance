@@ -66,7 +66,8 @@ StateMachine<StateEnum>::StateMachine(StateEnum startingState)
 template <typename StateEnum>
 void StateMachine<StateEnum>::iterateOnce() {
   Transition t = runCurrentState(m_currentState);
-  if (t != REPEAT) m_currentState = chooseNextState(m_currentState, t);
+  if (t != Transition::REPEAT)
+    m_currentState = chooseNextState(m_currentState, t);
 }
 
 template <typename StateEnum>

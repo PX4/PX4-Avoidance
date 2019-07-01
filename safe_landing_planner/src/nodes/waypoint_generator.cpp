@@ -72,20 +72,20 @@ SLPState WaypointGenerator::chooseNextState(SLPState currentState,
   prev_slp_state_ = currentState;
   USM_TABLE(currentState, SLPState::goTo,
             USM_STATE(transition, SLPState::goTo,
-                      USM_MAP(usm::NEXT1, SLPState::altitudeChange);
-                      USM_MAP(usm::NEXT2, SLPState::loiter));
+                      USM_MAP(usm::Transition::NEXT1, SLPState::altitudeChange);
+                      USM_MAP(usm::Transition::NEXT2, SLPState::loiter));
             USM_STATE(transition, SLPState::altitudeChange,
-                      USM_MAP(usm::NEXT1, SLPState::loiter));
+                      USM_MAP(usm::Transition::NEXT1, SLPState::loiter));
             USM_STATE(transition, SLPState::loiter,
-                      USM_MAP(usm::NEXT1, SLPState::land);
-                      USM_MAP(usm::NEXT2, SLPState::goTo));
+                      USM_MAP(usm::Transition::NEXT1, SLPState::land);
+                      USM_MAP(usm::Transition::NEXT2, SLPState::goTo));
             USM_STATE(transition, SLPState::land, ));
 }
 
 usm::Transition WaypointGenerator::runCurrentState(SLPState currentState) {
   if (trigger_reset_) {
     trigger_reset_ = false;
-    return usm::ERROR;
+    return usm::Transition::ERROR;
   }
 
   switch (currentState) {
@@ -120,14 +120,14 @@ usm::Transition WaypointGenerator::runGoTo() {
       fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
 
   if (withinLandingRadius() && !inVerticalRange() && is_land_waypoint_) {
-    return usm::NEXT1;
+    return usm::Transition::NEXT1;
   }
 
   if (withinLandingRadius() && inVerticalRange() && is_land_waypoint_) {
     start_seq_landing_decision_ = grid_slp_seq_;
-    return usm::NEXT2;
+    return usm::Transition::NEXT2;
   }
-  return usm::REPEAT;
+  return usm::Transition::REPEAT;
 }
 
 usm::Transition WaypointGenerator::runAltitudeChange() {
@@ -158,9 +158,9 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
 
   if (withinLandingRadius() && inVerticalRange() && is_land_waypoint_) {
     start_seq_landing_decision_ = grid_slp_seq_;
-    return usm::NEXT1;
+    return usm::Transition::NEXT1;
   }
-  return usm::REPEAT;
+  return usm::Transition::REPEAT;
 }
 
 usm::Transition WaypointGenerator::runLoiter() {
@@ -204,7 +204,7 @@ usm::Transition WaypointGenerator::runLoiter() {
            loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
 
   if (decision_taken_ && can_land_) {
-    return usm::NEXT1;
+    return usm::Transition::NEXT1;
   } else if (decision_taken_ && !can_land_) {
     if (!explorarion_is_active_) {
       exploration_anchor_ = loiter_position_;
@@ -227,9 +227,9 @@ usm::Transition WaypointGenerator::runLoiter() {
                                 exploration_pattern[n_explored_pattern_].y(),
                         exploration_anchor_.z());
     velocity_setpoint_ = nan_setpoint;
-    return usm::NEXT2;
+    return usm::Transition::NEXT2;
   }
-  return usm::REPEAT;
+  return usm::Transition::REPEAT;
 }
 
 usm::Transition WaypointGenerator::runLand() {
@@ -239,7 +239,7 @@ usm::Transition WaypointGenerator::runLand() {
   publishTrajectorySetpoints_(loiter_position_, vel_sp, loiter_yaw_, NAN);
   ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
            loiter_position_.x(), loiter_position_.y(), loiter_position_.z());
-  return usm::REPEAT;
+  return usm::Transition::REPEAT;
 }
 
 bool WaypointGenerator::withinLandingRadius() {
