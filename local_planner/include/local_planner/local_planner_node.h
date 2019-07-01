@@ -240,6 +240,7 @@ class LocalPlannerNode {
   double spin_dt_;
   int path_length_ = 0;
   std::vector<float> algo_time;
+  float pointcloud_delay_ = 0;
 
   boost::recursive_mutex config_mutex_;
 
