@@ -549,6 +549,7 @@ void LocalPlannerNode::pointCloudCallback(
     const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
   std::lock_guard<std::mutex> lck(*(cameras_[index].cloud_msg_mutex_));
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
+  cameras_[index].newest_cloud_msg_.header.stamp += ros::Duration(pointcloud_delay_);
   cameras_[index].received_ = true;
   if (!cameras_[index].transform_registered_) {
     tf_buffer_.registerTransform(msg->header.frame_id, "/local_origin");
@@ -584,6 +585,7 @@ void LocalPlannerNode::cameraInfoCallback(
 void LocalPlannerNode::dynamicReconfigureCallback(
     avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
+  pointcloud_delay_ = static_cast<float>(config.pointcloud_delay_);
   local_planner_->dynamicReconfigureSetParams(config, level);
   wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_,
                                    config.smoothing_speed_z_);
