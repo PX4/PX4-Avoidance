@@ -25,7 +25,56 @@ bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
          p_pol.e >= fov.pitch_deg - fov.v_fov_deg / 2.f;
 }
 
+bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
+                  int& idx) {
+  bool retval = false;
+  idx = -1;
+  for (int i = 0; i < fov_vec.size(); ++i) {
+    if (pointInsideFOV(fov_vec[i], p_pol)) {
+      if (retval) {  // if it's been found before, return false!
+        idx = -1;
+        return false;
+      }
+      idx = i;
+      retval = true;
+    }
+  }
+  return retval;
+}
+
+bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
+                   int& idx) {
+  idx = -1;
+  bool retval = false;
+  if (isInWhichFOV(fov_vec, p_pol, idx)) {
+    PolarPoint just_outside = p_pol;
+    // todo: check for pitch!
+    if (wrapAngleToPlusMinus180(p_pol.z - fov_vec[idx].yaw_deg) >
+        0.0f) {  // to the right
+      just_outside.z = wrapAngleToPlusMinus180(
+          fov_vec[idx].yaw_deg + fov_vec[idx].h_fov_deg / 2.0f + 1.0f);
+    } else {  // to the left
+      just_outside.z = wrapAngleToPlusMinus180(
+          fov_vec[idx].yaw_deg - fov_vec[idx].h_fov_deg / 2.0f - 1.0f);
+    }
+
+    retval = !pointInsideFOV(fov_vec, just_outside);
+    if (!retval) {
+      idx = -1;
+    }
+  }
+  return retval;
+}
+
 float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol) {
+  int i;
+  if (isOnEdgeOfFOV(fov, p_pol, i)) {
+    float angle_diff_deg = std::abs(fov[i].yaw_deg - p_pol.z);
+    angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
+    angle_diff_deg =
+        std::min(fov[i].h_fov_deg / 2.0f, angle_diff_deg);  // Clamp at h_FOV/2
+    return 1.0f - 2.0f * angle_diff_deg / fov[i].h_fov_deg;
+  }
   return pointInsideFOV(fov, p_pol) ? 1.f : 0.f;  // todo: scale properly
 }
 
