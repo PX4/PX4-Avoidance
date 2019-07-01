@@ -102,6 +102,7 @@ usm::Transition WaypointGenerator::runCurrentState(SLPState currentState) {
       return runLand();
   }
 }
+
 usm::Transition WaypointGenerator::runGoTo() {
   decision_taken_ = false;
   if (explorarion_is_active_) {
@@ -113,11 +114,11 @@ usm::Transition WaypointGenerator::runGoTo() {
   ROS_INFO("\033[1;32m [WGN] goTo %f %f %f - %f %f %f \033[0m\n", goal_.x(),
            goal_.y(), goal_.z(), velocity_setpoint_.x(), velocity_setpoint_.y(),
            velocity_setpoint_.z());
+  altitude_landing_area_percentile_ = landingAreaHeightPercentile(80.f);
 
-  ROS_INFO(
-      "[WGN] Landing Radius: xy  %f, z %f ",
-      (goal_.topRows<2>() - position_.topRows<2>()).norm(),
-      fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
+  ROS_INFO("[WGN] Landing Radius: xy  %f, z %f ",
+           (goal_.topRows<2>() - position_.topRows<2>()).norm(),
+           fabsf(position_.z() - altitude_landing_area_percentile_));
 
   if (withinLandingRadius() && !inVerticalRange() && is_land_waypoint_) {
     return usm::Transition::NEXT1;
@@ -135,11 +136,11 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
     yaw_setpoint_ = yaw_;
   }
   goal_.z() = NAN;
-  float direction =
-      (fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-       loiter_height_) < 0.f
-          ? 1.f
-          : -1.f;
+  altitude_landing_area_percentile_ = landingAreaHeightPercentile(80.f);
+  float direction = (fabsf(position_.z() - altitude_landing_area_percentile_) -
+                     loiter_height_) < 0.f
+                        ? 1.f
+                        : -1.f;
   velocity_setpoint_.z() = direction * 0.5f;
   publishTrajectorySetpoints_(goal_, velocity_setpoint_, yaw_setpoint_,
                               yaw_speed_setpoint_);
@@ -151,10 +152,9 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
     landing_radius_ = 0.5f;
   }
 
-  ROS_INFO(
-      "[WGN] Landing Radius: xy  %f, z %f ",
-      (goal_.topRows<2>() - position_.topRows<2>()).norm(),
-      fabsf(position_.z() - grid_slp_.mean_(pos_index_.x(), pos_index_.y())));
+  ROS_INFO("[WGN] Landing Radius: xy  %f, z %f ",
+           (goal_.topRows<2>() - position_.topRows<2>()).norm(),
+           fabsf(position_.z() - altitude_landing_area_percentile_));
 
   if (withinLandingRadius() && inVerticalRange() && is_land_waypoint_) {
     start_seq_landing_decision_ = grid_slp_seq_;
@@ -250,8 +250,28 @@ bool WaypointGenerator::withinLandingRadius() {
 }
 
 bool WaypointGenerator::inVerticalRange() {
-  return std::abs(std::abs(position_.z() -
-                           grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
+  return std::abs(std::abs(position_.z() - altitude_landing_area_percentile_) -
                   loiter_height_) < vertical_range_error_;
+}
+
+float WaypointGenerator::landingAreaHeightPercentile(float percentile) {
+  std::vector<float> altitude_landing_area(can_land_hysteresis_.size());
+
+  int offset_center = grid_slp_.land_.rows() / 2;
+  for (int i = offset_center - smoothing_land_cell_;
+       i <= offset_center + smoothing_land_cell_; i++) {
+    for (int j = offset_center - smoothing_land_cell_;
+         j <= offset_center + smoothing_land_cell_; j++) {
+      int index = (smoothing_land_cell_ * 2 + 1) *
+                      (i - offset_center + smoothing_land_cell_) +
+                  (j - offset_center + smoothing_land_cell_);
+      altitude_landing_area[index] = grid_slp_.mean_(i, j);
+    }
+  }
+
+  std::sort(altitude_landing_area.begin(), altitude_landing_area.end());
+  int index = static_cast<int>(
+      std::round(percentile / 100.f * altitude_landing_area.size()));
+  return altitude_landing_area[index];
 }
 }

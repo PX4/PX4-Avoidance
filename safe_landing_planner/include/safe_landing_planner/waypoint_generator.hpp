@@ -47,6 +47,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   float factor_exploration_ = 1.f;
   float vertical_range_error_ = 1.f;
   float spiral_width_ = 2.f;
+  float altitude_landing_area_percentile_ = -1.f;
   int smoothing_land_cell_ = 2;
 
   // state
@@ -107,6 +108,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
 
   bool withinLandingRadius();
   bool inVerticalRange();
+  float landingAreaHeightPercentile(float percentile);
 
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
