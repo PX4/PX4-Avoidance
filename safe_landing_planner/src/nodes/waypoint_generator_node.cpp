@@ -256,8 +256,8 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   int slc = waypointGenerator_.smoothing_land_cell_;
   for (size_t i = 0; i < waypointGenerator_.grid_slp_.getRowColSize(); i++) {
     for (size_t j = 0; j < waypointGenerator_.grid_slp_.getRowColSize(); j++) {
-      if (i >= (offset - slc) && i < (offset + slc) && j >= (offset - slc) &&
-          j < (offset + slc)) {
+      if (i >= (offset - slc) && i <= (offset + slc) && j >= (offset - slc) &&
+          j <= (offset + slc)) {
         cell.pose.position.x =
             (i * cell_size) + grid_min.x() + (cell_size / 2.f);
         cell.pose.position.y =

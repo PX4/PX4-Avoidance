@@ -46,8 +46,8 @@ void WaypointGenerator::calculateWaypoint() {
 
 void WaypointGenerator::updateSLPState() {
   if (update_smoothing_size_ || can_land_hysteresis_.size() == 0) {
-    can_land_hysteresis_.resize((smoothing_land_cell_ * 2) *
-                                (smoothing_land_cell_ * 2));
+    can_land_hysteresis_.resize((smoothing_land_cell_ * 2 + 1) *
+                                (smoothing_land_cell_ * 2 + 1));
     std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
     update_smoothing_size_ = false;
   }
@@ -55,8 +55,8 @@ void WaypointGenerator::updateSLPState() {
   if (!is_land_waypoint_) {
     decision_taken_ = false;
     can_land_ = true;
-    can_land_hysteresis_.reserve((smoothing_land_cell_ * 2) *
-                                 (smoothing_land_cell_ * 2));
+    can_land_hysteresis_.reserve((smoothing_land_cell_ * 2 + 1) *
+                                 (smoothing_land_cell_ * 2 + 1));
     std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
     explorarion_is_active_ = false;
     n_explored_pattern_ = -1;
@@ -171,10 +171,10 @@ usm::Transition WaypointGenerator::runLoiter() {
 
   int offset_center = grid_slp_.land_.rows() / 2;
   for (int i = offset_center - smoothing_land_cell_;
-       i < offset_center + smoothing_land_cell_; i++) {
+       i <= offset_center + smoothing_land_cell_; i++) {
     for (int j = offset_center - smoothing_land_cell_;
-         j < offset_center + smoothing_land_cell_; j++) {
-      int index = (smoothing_land_cell_ * 2) *
+         j <= offset_center + smoothing_land_cell_; j++) {
+      int index = (smoothing_land_cell_ * 2 + 1) *
                       (i - offset_center + smoothing_land_cell_) +
                   (j - offset_center + smoothing_land_cell_);
       float cell_land_value = static_cast<float>(grid_slp_.land_(i, j));
@@ -250,13 +250,6 @@ bool WaypointGenerator::withinLandingRadius() {
 }
 
 bool WaypointGenerator::inVerticalRange() {
-  // std::cout << "pos->terrain " << std::abs(position_.z() -
-  // grid_slp_.mean_(pos_index_.x(), pos_index_.y())) << " diff to loiter height
-  // " << std::abs(std::abs(position_.z() -
-  //                          grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
-  //                          loiter_height_) << " max error " <<
-  //                          vertical_range_error_ << std::endl;
-
   return std::abs(std::abs(position_.z() -
                            grid_slp_.mean_(pos_index_.x(), pos_index_.y())) -
                   loiter_height_) < vertical_range_error_;
