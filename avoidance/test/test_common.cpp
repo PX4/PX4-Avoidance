@@ -470,3 +470,164 @@ TEST(Common, removeNaNAndGetFOV) {
   EXPECT_FLOAT_EQ(95.f, fov_larger.h_fov_deg);
   EXPECT_FLOAT_EQ(95.f, fov_larger.v_fov_deg);
 }
+
+TEST(Common, isInWhichFOV) {
+  // GIVEN: a three-camera setup with two overlapping FOV and one alone
+  /**
+            cam 3                     cam1    cam 2
+                                             |--|--\
+          |---|---|                |-----|-----|
+  |--------------------------------------|------------------------------------|
+  -180                             -30   0     +30                          +180
+  **/
+  std::vector<FOV> fov;
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
+                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
+
+  // WHEN: we sample points inside, outside and in the overlapping region
+  int idx_inside_camera_1, idx_inside_camera_2, idx_inside_camera_3,
+      idx_outside, idx_overlap = 0;
+  bool retval_inside_1, retval_inside_2, retval_inside_3, retval_outside,
+      retval_overlap = false;
+  PolarPoint sample_inside_1(0.0f, -25.0f, 1.0f);
+  PolarPoint sample_inside_2(0.0f, 36.0f, 1.0f);
+  PolarPoint sample_inside_3(0.0f, -90.0f, 1.0f);
+  PolarPoint sample_outside(0.0f, 150.0f, 1.0f);
+  PolarPoint sample_overlap(0.0f, 29.0f, 1.0f);
+  retval_inside_1 = isInWhichFOV(fov, sample_inside_1, idx_inside_camera_1);
+  retval_inside_2 = isInWhichFOV(fov, sample_inside_2, idx_inside_camera_2);
+  retval_inside_3 = isInWhichFOV(fov, sample_inside_3, idx_inside_camera_3);
+  retval_outside = isInWhichFOV(fov, sample_outside, idx_outside);
+  retval_overlap = isInWhichFOV(fov, sample_overlap, idx_overlap);
+
+  // THEN: we expect the output to be giving us the corresponding camera
+  EXPECT_TRUE(retval_inside_1);
+  EXPECT_TRUE(retval_inside_2);
+  EXPECT_TRUE(retval_inside_3);
+  EXPECT_FALSE(retval_outside);
+  EXPECT_FALSE(retval_overlap);
+  EXPECT_EQ(0, idx_inside_camera_1);
+  EXPECT_EQ(1, idx_inside_camera_2);
+  EXPECT_EQ(2, idx_inside_camera_3);
+  EXPECT_EQ(-1, idx_outside);
+  EXPECT_EQ(-1, idx_overlap);
+}
+
+TEST(Common, isOnEdgeOfFOV) {
+  // GIVEN: a three-camera setup with two overlapping FOV and one alone
+  /**
+            cam 3                     cam1    cam 2
+                                             |--|--\
+          |---|---|                |-----|-----|
+  |--------------------------------------|------------------------------------|
+  -180                             -30   0     +30                          +180
+  **/
+  std::vector<FOV> fov;
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
+                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
+
+  // WHEN: we sample points outside, inside but on edge, inside but not on edge,
+  // inside in overlapping region
+  bool left_cam_1, right_cam_1, left_cam_2, right_cam_2, left_cam_3,
+      right_cam_3, overlap, outside = false;
+  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2,
+      idx_left_cam_3, idx_right_cam_3, idx_overlap, idx_outside;
+  PolarPoint sample_left_cam_1(0.0f, -25.0f, 1.0f);
+  PolarPoint sample_right_cam_1(0.0f, 0.2f, 1.0f);
+  PolarPoint sample_left_cam_2(0.0f, 34.0f, 1.0f);
+  PolarPoint sample_right_cam_2(0.0f, 40.0f, 1.0f);
+  PolarPoint sample_left_cam_3(0.0f, -105.0f, 1.0f);
+  PolarPoint sample_right_cam_3(0.0f, -92.0f, 1.0f);
+  PolarPoint sample_overlap(0.0f, 8.0f, 1.0f);
+  PolarPoint sample_outside(0.0f, 50.0f, 1.0f);
+
+  left_cam_1 = isOnEdgeOfFOV(fov, sample_left_cam_1, idx_left_cam_1);
+  right_cam_1 = isOnEdgeOfFOV(fov, sample_right_cam_1, idx_right_cam_1);
+  left_cam_2 = isOnEdgeOfFOV(fov, sample_left_cam_2, idx_left_cam_2);
+  right_cam_2 = isOnEdgeOfFOV(fov, sample_right_cam_2, idx_right_cam_2);
+  left_cam_3 = isOnEdgeOfFOV(fov, sample_left_cam_3, idx_left_cam_3);
+  right_cam_3 = isOnEdgeOfFOV(fov, sample_right_cam_3, idx_right_cam_3);
+  overlap = isOnEdgeOfFOV(fov, sample_overlap, idx_overlap);
+  outside = isOnEdgeOfFOV(fov, sample_outside, idx_outside);
+
+  // THEN: we expect the output to reflect that
+  EXPECT_TRUE(left_cam_1);
+  EXPECT_FALSE(right_cam_1);
+  EXPECT_FALSE(left_cam_2);
+  EXPECT_TRUE(right_cam_2);
+  EXPECT_TRUE(left_cam_3);
+  EXPECT_TRUE(right_cam_3);
+  EXPECT_FALSE(overlap);
+  EXPECT_FALSE(outside);
+  EXPECT_EQ(0, idx_left_cam_1);    // because 0 is the index
+  EXPECT_EQ(-1, idx_right_cam_1);  // because not on edge
+  EXPECT_EQ(-1, idx_left_cam_2);   // because not on edge
+  EXPECT_EQ(1, idx_right_cam_2);   // because 1 is the index
+  EXPECT_EQ(2, idx_left_cam_3);
+  EXPECT_EQ(2, idx_right_cam_3);
+  EXPECT_EQ(-1, idx_overlap);  // because not on edge
+  EXPECT_EQ(-1, idx_outside);  // because not on edge
+}
+
+TEST(Common, scaleToFOV) {
+  // GIVEN: a three-camera setup with two overlapping FOV and one alone
+  /**
+            cam 3                     cam1    cam 2
+                                             |--|--\
+          |---|---|                |-----|-----|
+  |--------------------------------------|------------------------------------|
+  -180                             -30   0     +30                          +180
+  **/
+  std::vector<FOV> fov;
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
+                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
+
+  // WHEN: we sample points outside, inside but on edge, inside but not on edge,
+  // inside in overlapping region
+  float left_cam_1, left_2_cam_1, right_cam_1, left_cam_2, right_cam_2,
+      left_cam_3, right_cam_3, overlap, outside = false;
+  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2,
+      idx_left_cam_3, idx_right_cam_3, idx_overlap, idx_outside;
+  PolarPoint sample_left_cam_1(0.0f, -25.0f, 1.0f);
+  PolarPoint sample2_left_cam_1(0.0f, -26.0f, 1.0f);
+  PolarPoint sample_right_cam_1(0.0f, 0.2f, 1.0f);
+  PolarPoint sample_left_cam_2(0.0f, 34.0f, 1.0f);
+  PolarPoint sample_right_cam_2(0.0f, 40.0f, 1.0f);
+  PolarPoint sample_left_cam_3(0.0f, -105.0f, 1.0f);
+  PolarPoint sample_right_cam_3(0.0f, -92.0f, 1.0f);
+  PolarPoint sample_overlap(0.0f, 8.0f, 1.0f);
+  PolarPoint sample_outside(0.0f, 50.0f, 1.0f);
+
+  left_cam_1 = scaleToFOV(fov, sample_left_cam_1);
+  left_2_cam_1 = scaleToFOV(fov, sample2_left_cam_1);
+  right_cam_1 = scaleToFOV(fov, sample_right_cam_1);
+  left_cam_2 = scaleToFOV(fov, sample_left_cam_2);
+  right_cam_2 = scaleToFOV(fov, sample_right_cam_2);
+  left_cam_3 = scaleToFOV(fov, sample_left_cam_3);
+  right_cam_3 = scaleToFOV(fov, sample_right_cam_3);
+  overlap = scaleToFOV(fov, sample_overlap);
+  outside = scaleToFOV(fov, sample_outside);
+
+  // THEN: we expect the output to reflect that
+  EXPECT_LT(0.0f, left_cam_1);
+  EXPECT_GT(1.0f, left_cam_1);
+  EXPECT_LT(0.0f, left_2_cam_1);
+  EXPECT_GT(1.0f, left_2_cam_1);
+  EXPECT_GT(left_cam_1, left_2_cam_1);  // sample 2 is farther away from center
+  EXPECT_FLOAT_EQ(1.0f, right_cam_1);
+  EXPECT_FLOAT_EQ(1.0f, left_cam_2);
+  EXPECT_GT(1.0f, right_cam_2);
+  EXPECT_LT(0.0f, right_cam_2);
+  EXPECT_LT(0.0f, left_cam_3);
+  EXPECT_GT(1.0f, left_cam_3);
+  EXPECT_LT(0.0f, right_cam_3);
+  EXPECT_GT(1.0f, right_cam_3);
+  EXPECT_FLOAT_EQ(1.0f, overlap);
+  EXPECT_FLOAT_EQ(0.0f, outside);
+}
