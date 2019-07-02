@@ -99,12 +99,8 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2, processed_cloud3;
   Eigen::Vector3f memory_point(1.4f, 0.0f, 0.0f);
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  PolarPoint memory_point_polar = cartesianToPolar(position + memory_point, position);
-=======
   PolarPoint memory_point_polar =
       cartesianToPolarFCU(position + memory_point, position);
->>>>>>> Allow discontinuous FOV
   processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
@@ -117,16 +113,6 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   FOV_regular.push_back(FOV(0.0f, 1.0f, 85.0f, 65.0f));
 
   // WHEN: we filter the PointCloud with different values max_age
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 0.0f, 0.5f,
-                    1);
-
-  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 10.0f, .5f,
-                    1);
-
-  processPointcloud(processed_cloud3, complete_cloud, histogram_box, FOV_regular, position, min_realsense_dist, 10.0f,
-                    0.5f, 1);
-=======
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,
                     0.0f, 0.0f, position, min_realsense_dist, 0.0f, 0.5f, 1);
 
@@ -137,7 +123,6 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   processPointcloud(processed_cloud3, complete_cloud, histogram_box,
                     FOV_regular, 0.0f, 0.0f, position, min_realsense_dist,
                     10.0f, 0.5f, 1);
->>>>>>> Allow discontinuous FOV
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points

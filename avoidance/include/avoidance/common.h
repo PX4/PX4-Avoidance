@@ -51,18 +51,11 @@ struct PolarPoint {
 * field of view of the sensor
 */
 struct FOV {
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  FOV() : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
-  FOV(float y, float p, float h, float v) : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
-  float azimuth_deg;
-  float elevation_deg;
-=======
   FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
   FOV(float y, float p, float h, float v)
       : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
   float yaw_deg;
   float pitch_deg;
->>>>>>> Allow discontinuous FOV
   float h_fov_deg;
   float v_fov_deg;
 };
@@ -81,34 +74,6 @@ const float RAD_TO_DEG = 180.0f / M_PI_F;
 **/
 bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
-
-/**
-* @brief      compute in which FOV the current point lies
-* @param[in]  vector of FOV defining the field of view of the drone
-* @param[in]  polar point of the current orienation in question
-* @param[out] index pointing to the camera in the FOV struct which contains the
-*             current point
-* @returns    boolean value if the point in question is in exactly one FOV
-* @warning    This function returns false and sets the index to -1 if there is
-*             no or more than one camera which sees the current point
-**/
-bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                  int& idx);
-
-/**
-* @brief      determine whether the given point lies on the edge of the field
-*             of view or between two adjacent cameras
-* @param[in]  vector of FOV defining the field of view of the drone
-* @param[in]  polar point of the current orientation in question
-* @param[out] index of the camera in the FOV vector, indicating which FOV edge
-*             it is on, if any. -1 if none
-* @returns    boolean indicating whether the current point is on the edge of the
-*             field of view
-* @warning    This function returns false and sets the index to -1 if the point
-*             is not on the edge of the fov
-**/
-bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                   int& idx);
 
 /**
 * @brief     function returning a scale value depending on where a polar point
@@ -154,13 +119,9 @@ Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
 *            incoming polar point. This means the pitch is positive for forward
 *            pitching of a quadrotor and the yaw is positive for CCW yaw motion
 **/
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos);
-=======
 Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol,
                                     const Eigen::Vector3f& pos);
 
->>>>>>> Allow discontinuous FOV
 float indexAngleDifference(float a, float b);
 
 /**
@@ -204,11 +165,6 @@ PolarPoint cartesianToPolarHistogram(float x, float y, float z,
 PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
                                const Eigen::Vector3f& origin);
 
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolar(float x, float y, float z, const Eigen::Vector3f& pos);
-=======
->>>>>>> Allow discontinuous FOV
 /**
 * @brief     compute polar point to histogram index
 * @param[in] p_pol with elevation, azimuth angle and radius

@@ -241,19 +241,12 @@ void WaypointGenerator::adaptSpeed() {
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
     if (output_.waypoint_type != reachHeight) {
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-      float angle_diff_deg = std::abs(nextYaw(position_, output_.goto_position) - curr_yaw_rad_) * 180.f / M_PI_F;
-      angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
-      angle_diff_deg = std::min(h_FOV_deg_ / 2, angle_diff_deg);  // Clamp at h_FOV/2
-      speed_ *= (1.0f - 2 * angle_diff_deg / h_FOV_deg_);
-=======
       PolarPoint p_pol_fcu =
           cartesianToPolarFCU(output_.goto_position, position_);
       p_pol_fcu.e -= curr_pitch_deg_;
       p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;
       wrapPolar(p_pol_fcu);
       speed_ *= scaleToFOV(fov_fcu_frame_, p_pol_fcu);
->>>>>>> Allow discontinuous FOV
     }
 
     // Scale the pose_to_wp by the speed

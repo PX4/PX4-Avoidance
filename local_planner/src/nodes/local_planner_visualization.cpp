@@ -63,50 +63,6 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
                     newest_adapted_waypoint_position, newest_pose);
 
   // publish the FOV
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  publishFOV(planner.getPosition(), planner.getFOV(), planner.histogram_box_.radius_);
-}
-
-void LocalPlannerVisualization::publishFOV(const Eigen::Vector3f& drone_pos, const FOV& fov,
-                                           const float max_range) const {
-  PolarPoint p1(fov.elevation_deg - fov.v_fov_deg / 2.f, fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p2(fov.elevation_deg + fov.v_fov_deg / 2.f, fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p3(fov.elevation_deg + fov.v_fov_deg / 2.f, fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p4(fov.elevation_deg - fov.v_fov_deg / 2.f, fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
-
-  visualization_msgs::Marker m;
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.id = 0;
-  m.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  m.action = visualization_msgs::Marker::ADD;
-  m.scale.x = 1.0;
-  m.scale.y = 1.0;
-  m.scale.z = 1.0;
-  m.color.a = 0.4;
-  m.color.r = 0.5;
-  m.color.g = 0.5;
-  m.color.b = 1.0;
-
-  // side 1
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
-  // side 2
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
-  // side 3
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
-  // side 4
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
-
-  fov_pub_.publish(m);
-=======
   publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
 }
 
@@ -156,7 +112,6 @@ void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec,
 
     fov_pub_.publish(m);
   }
->>>>>>> Allow discontinuous FOV
 }
 
 void LocalPlannerVisualization::publishOfftrackPoints(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
@@ -370,13 +325,6 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 
   // current setpoint
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  PolarPoint waypoint_pol = cartesianToPolar(toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
-  Eigen::Vector2i waypoint_index = polarToHistogramIndex(waypoint_pol, ALPHA_RES);
-  PolarPoint adapted_waypoint_pol =
-      cartesianToPolar(toEigen(newest_adapted_waypoint_position), toEigen(newest_pose.pose.position));
-  Eigen::Vector2i adapted_waypoint_index = polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
-=======
   PolarPoint waypoint_pol = cartesianToPolarHistogram(
       toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
   Eigen::Vector2i waypoint_index =
@@ -386,7 +334,6 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
                                 toEigen(newest_pose.pose.position));
   Eigen::Vector2i adapted_waypoint_index =
       polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
->>>>>>> Allow discontinuous FOV
 
   // color in the image
   if (cost_img.data.size() == 3 * GRID_LENGTH_E * GRID_LENGTH_Z) {

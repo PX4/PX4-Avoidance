@@ -135,11 +135,7 @@ class LocalPlannerVisualization {
   **/
   void publishOfftrackPoints(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  void publishFOV(const Eigen::Vector3f& drone_pos, const FOV& fov, const float max_range) const;
-=======
   void publishFOV(const std::vector<FOV>& fov, const float max_range) const;
->>>>>>> Allow discontinuous FOV
 
  private:
   ros::Publisher local_pointcloud_pub_;

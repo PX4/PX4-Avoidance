@@ -83,18 +83,12 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  float elapsed_since_last_processing = static_cast<float>((ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_, position_, min_realsense_dist_,
-                    max_point_age_s_, elapsed_since_last_processing, min_num_points_per_cell_);
-=======
   float elapsed_since_last_processing = static_cast<float>(
       (ros::Time::now() - last_pointcloud_process_time_).toSec());
   processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
                     fov_fcu_frame_, yaw_fcu_frame_deg_, pitch_fcu_frame_deg_,
                     position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing, min_num_points_per_cell_);
->>>>>>> Allow discontinuous FOV
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -162,14 +156,9 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-      getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg, last_sent_waypoint_, cost_params_,
-                    velocity_.norm() < 0.1f, smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
-=======
       getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_,
                     last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
->>>>>>> Allow discontinuous FOV
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
@@ -178,12 +167,8 @@ void LocalPlanner::determineStrategy() {
       PolarPoint last_wp_pol =
           cartesianToPolarHistogram(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-      Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position_);
-=======
       Eigen::Vector3f projected_last_wp =
           polarHistogramToCartesian(last_wp_pol, position_);
->>>>>>> Allow discontinuous FOV
       star_planner_->setLastDirection(projected_last_wp);
 
       // build search tree

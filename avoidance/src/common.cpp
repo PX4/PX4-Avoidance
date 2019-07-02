@@ -17,11 +17,6 @@ bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol) {
 }
 
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-  return p_pol.z <= wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
-         p_pol.z >= wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
-         p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f && p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
-=======
   return p_pol.z <=
              wrapAngleToPlusMinus180(fov.yaw_deg + fov.h_fov_deg / 2.f) &&
          p_pol.z >=
@@ -30,70 +25,16 @@ bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
          p_pol.e >= fov.pitch_deg - fov.v_fov_deg / 2.f;
 }
 
-bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                  int& idx) {
-  bool retval = false;
-  idx = -1;
-  for (int i = 0; i < fov_vec.size(); ++i) {
-    if (pointInsideFOV(fov_vec[i], p_pol)) {
-      if (retval) {  // if it's been found before, return false!
-        idx = -1;
-        return false;
-      }
-      idx = i;
-      retval = true;
-    }
-  }
-  return retval;
-}
-
-bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                   int& idx) {
-  idx = -1;
-  bool retval = false;
-  if (isInWhichFOV(fov_vec, p_pol, idx)) {
-    PolarPoint just_outside = p_pol;
-    // todo: check for pitch!
-    if (wrapAngleToPlusMinus180(p_pol.z - fov_vec[idx].yaw_deg) >
-        0.0f) {  // to the right
-      just_outside.z = wrapAngleToPlusMinus180(
-          fov_vec[idx].yaw_deg + fov_vec[idx].h_fov_deg / 2.0f + 1.0f);
-    } else {  // to the left
-      just_outside.z = wrapAngleToPlusMinus180(
-          fov_vec[idx].yaw_deg - fov_vec[idx].h_fov_deg / 2.0f - 1.0f);
-    }
-
-    retval = !pointInsideFOV(fov_vec, just_outside);
-    if (!retval) {
-      idx = -1;
-    }
-  }
-  return retval;
-}
-
 float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol) {
-  int i;
-  if (isOnEdgeOfFOV(fov, p_pol, i)) {
-    float angle_diff_deg = std::abs(fov[i].yaw_deg - p_pol.z);
-    angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
-    angle_diff_deg =
-        std::min(fov[i].h_fov_deg / 2.0f, angle_diff_deg);  // Clamp at h_FOV/2
-    return 1.0f - 2.0f * angle_diff_deg / fov[i].h_fov_deg;
-  }
   return pointInsideFOV(fov, p_pol) ? 1.f : 0.f;  // todo: scale properly
->>>>>>> Allow discontinuous FOV
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
   return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
 
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos) {
-=======
 Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
                                           const Eigen::Vector3f& pos) {
->>>>>>> Allow discontinuous FOV
   Eigen::Vector3f p;
   p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
   p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
@@ -126,19 +67,12 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
   return p_pol;
 }
 
-<<<<<<< 6b3cc5fb383f725bb12842eed2d619fc5de0d1f4
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin) {
-  return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
-}
-PolarPoint cartesianToPolar(float x, float y, float z, const Eigen::Vector3f& pos) {
-=======
 PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos,
                                      const Eigen::Vector3f& origin) {
   return cartesianToPolarHistogram(pos.x(), pos.y(), pos.z(), origin);
 }
 PolarPoint cartesianToPolarHistogram(float x, float y, float z,
                                      const Eigen::Vector3f& pos) {
->>>>>>> Allow discontinuous FOV
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
