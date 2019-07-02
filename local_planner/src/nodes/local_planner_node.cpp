@@ -638,10 +638,21 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           fake_pc.push_back(pcl::PointXYZ(0.f, 0.f, 1.f));
           fake_pc.header.frame_id = pcl_cloud.header.frame_id;
           pcl_ros::transformPointCloud("fcu", fake_pc, fake_pc, *tf_listener_);
-          cameras_[index].fov_fcu_frame_.yaw_deg =
-              atan2(fake_pc[0].y, fake_pc[0].x) * RAD_TO_DEG;
-          cameras_[index].fov_fcu_frame_.pitch_deg =
-              atan2(-fake_pc[0].z, fake_pc[0].x) * RAD_TO_DEG;
+
+          if (fake_pc[0].x * fake_pc[0].x + fake_pc[0].y * fake_pc[0].y >
+              0.01f) {
+            cameras_[index].fov_fcu_frame_.yaw_deg =
+                atan2(fake_pc[0].y, fake_pc[0].x) * RAD_TO_DEG;
+          } else {
+            cameras_[index].fov_fcu_frame_.yaw_deg = 0.0f;
+          }
+          if (fake_pc[0].x * fake_pc[0].x + fake_pc[0].z * fake_pc[0].z >
+              0.01f) {
+            cameras_[index].fov_fcu_frame_.pitch_deg =
+                atan2(-fake_pc[0].z, fake_pc[0].x) * RAD_TO_DEG;
+          } else {
+            cameras_[index].fov_fcu_frame_.pitch_deg = 0.0f;
+          }
 
           // transform cloud to /local_origin frame
           pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,

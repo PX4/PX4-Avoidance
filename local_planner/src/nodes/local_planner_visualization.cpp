@@ -48,7 +48,7 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
       nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
   deg60_point_pub_ =
       nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
-  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 1);
+  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(
