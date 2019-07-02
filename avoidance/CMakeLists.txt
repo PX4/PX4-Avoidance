@@ -87,6 +87,7 @@ if(CATKIN_ENABLE_TESTING)
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_common.cpp
                                           test/test_usm.cpp
+                                          test/test_transform_buffer.cpp
                     )
 
     if(TARGET ${PROJECT_NAME}-test)
