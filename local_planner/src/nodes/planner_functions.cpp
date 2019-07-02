@@ -121,10 +121,12 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
   }
 }
 
-void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed, const float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position, float yaw_fcu_frame_deg,
+                   const Eigen::Vector3f& last_sent_waypoint,
+                   costParameters cost_params, bool only_yawed,
+                   float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
