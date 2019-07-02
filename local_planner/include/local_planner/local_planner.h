@@ -86,7 +86,7 @@ class LocalPlanner {
 
   FOV fov_;
 
-  waypoint_choice waypoint_type_;
+  waypoint_choice waypoint_type_ = hover;
   ros::Time last_path_time_;
   ros::Time last_pointcloud_process_time_;
 
