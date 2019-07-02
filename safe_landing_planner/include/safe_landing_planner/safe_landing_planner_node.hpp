@@ -66,6 +66,7 @@ class SafeLandingPlannerNode {
 
   ros::Publisher mavros_system_status_pub_;
   ros::Publisher grid_pub_;
+  ros::Publisher raw_grid_pub_;
 
   ros::Subscriber pose_sub_;
   ros::Subscriber pointcloud_sub_;
@@ -85,6 +86,8 @@ class SafeLandingPlannerNode {
   bool position_received_ = false;
   bool cloud_transformed_ = false;
   double spin_dt_ = 0.1;
+  int grid_seq_ = 0;
+  int raw_grid_seq_ = 0;
 
   dynamic_reconfigure::Server<
       safe_landing_planner::SafeLandingPlannerNodeConfig>
@@ -134,6 +137,6 @@ class SafeLandingPlannerNode {
   * @brief      publishes the computed grid fot the waypoint_generator_node to
   *use
   **/
-  void publishSerialGrid();
+  void publishSerialGrid(const Grid &prev_grid, ros::Publisher publisher, int &sequence_number);
 };
 }

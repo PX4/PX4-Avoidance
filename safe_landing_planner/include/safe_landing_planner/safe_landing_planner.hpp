@@ -52,6 +52,7 @@ class SafeLandingPlanner {
   Eigen::Vector2i getPositionIndex() const { return pos_index_; };
   Grid getPreviousGrid() const { return previous_grid_; };
   Grid getGrid() const { return grid_; };
+  Grid getRawGrid() const { return raw_grid_; };
   int getSmoothingSize() const { return smoothing_size_; };
 
  protected:
@@ -74,6 +75,8 @@ class SafeLandingPlanner {
   safe_landing_planner::SafeLandingPlannerNodeConfig rqt_param_config_;
   Grid grid_ = Grid(10.f, 1.f);
   Grid previous_grid_ = Grid(10.f, 1.f);
+  Grid raw_grid_ = Grid(10.f, 1.f);
+
 
   /**
   * @brief process the pointcloud and calculate mean and variance for points in

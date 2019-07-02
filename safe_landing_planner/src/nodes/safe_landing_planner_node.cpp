@@ -35,6 +35,7 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
       nh_.advertise<mavros_msgs::CompanionProcessStatus>(
           "/mavros/companion_process/status", 1);
   grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/grid_slp", 1);
+  raw_grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/raw_grid_slp", 1);
 
   start_time_ = ros::Time::now();
 }
@@ -114,7 +115,9 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
   visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()),
                                           current_pose_.pose.position,
                                           previous_pose_.pose.position);
-  publishSerialGrid();
+  publishSerialGrid(safe_landing_planner_->getPreviousGrid(), grid_pub_, grid_seq_);
+  publishSerialGrid(safe_landing_planner_->getRawGrid(), raw_grid_pub_, raw_grid_seq_);
+
   last_algo_time_ = ros::Time::now();
 
   if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
@@ -148,12 +151,10 @@ void SafeLandingPlannerNode::publishSystemStatus() {
   t_status_sent_ = ros::Time::now();
 }
 
-void SafeLandingPlannerNode::publishSerialGrid() {
-  static int grid_seq = 0;
-  Grid prev_grid = safe_landing_planner_->getPreviousGrid();
+void SafeLandingPlannerNode::publishSerialGrid(const Grid &prev_grid, ros::Publisher publisher, int &sequence_number) {
   safe_landing_planner::SLPGridMsg grid;
   grid.header.frame_id = "local_origin";
-  grid.header.seq = grid_seq;
+  grid.header.seq = sequence_number;
   grid.grid_size = prev_grid.getGridSize();
   grid.cell_size = prev_grid.getCellSize();
 
@@ -217,8 +218,8 @@ void SafeLandingPlannerNode::publishSerialGrid() {
   grid.curr_pos_index.x = static_cast<float>(pos_index.x());
   grid.curr_pos_index.y = static_cast<float>(pos_index.y());
 
-  grid_pub_.publish(grid);
-  grid_seq++;
+  publisher.publish(grid);
+  sequence_number++;
 }
 
 void SafeLandingPlannerNode::pointCloudTransformThread() {

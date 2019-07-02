@@ -7,6 +7,7 @@ void SafeLandingPlanner::runSafeLandingPlanner() {
   if (size_update_) {
     grid_.resize(grid_size_, cell_size_);
     previous_grid_.resize(grid_size_, cell_size_);
+    raw_grid_.resize(grid_size_, cell_size_);
     n_lines_padding_ = smoothing_size_;
     size_update_ = false;
   }
@@ -45,6 +46,7 @@ void SafeLandingPlanner::processPointcloud() {
       }
     }
   }
+  raw_grid_ = grid_;
 }
 
 void SafeLandingPlanner::isLandingPossible() {
