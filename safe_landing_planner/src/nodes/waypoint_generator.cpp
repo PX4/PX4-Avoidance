@@ -11,16 +11,16 @@ using avoidance::SLPState;
 std::string toString(SLPState state) {
   std::string state_str = "unknown";
   switch (state) {
-    case SLPState::goTo:
+    case SLPState::GOTO:
       state_str = "GOTO";
       break;
-    case SLPState::altitudeChange:
+    case SLPState::ALTITUDE_CHANGE:
       state_str = "ALTITUDE CHANGE";
       break;
-    case SLPState::loiter:
+    case SLPState::LOITER:
       state_str = "LOITER";
       break;
-    case SLPState::land:
+    case SLPState::LAND:
       state_str = "LAND";
       break;
   }
@@ -28,7 +28,7 @@ std::string toString(SLPState state) {
 }
 
 WaypointGenerator::WaypointGenerator()
-    : usm::StateMachine<SLPState>(SLPState::goTo),
+    : usm::StateMachine<SLPState>(SLPState::GOTO),
       publishTrajectorySetpoints_([](const Eigen::Vector3f&,
                                      const Eigen::Vector3f&, float, float) {
         ROS_ERROR("publishTrajectorySetpoints_ not set in WaypointGenerator");
@@ -70,35 +70,36 @@ void WaypointGenerator::updateSLPState() {
 SLPState WaypointGenerator::chooseNextState(SLPState currentState,
                                             usm::Transition transition) {
   prev_slp_state_ = currentState;
-  USM_TABLE(currentState, SLPState::goTo,
-            USM_STATE(transition, SLPState::goTo,
-                      USM_MAP(usm::Transition::NEXT1, SLPState::altitudeChange);
-                      USM_MAP(usm::Transition::NEXT2, SLPState::loiter));
-            USM_STATE(transition, SLPState::altitudeChange,
-                      USM_MAP(usm::Transition::NEXT1, SLPState::loiter));
-            USM_STATE(transition, SLPState::loiter,
-                      USM_MAP(usm::Transition::NEXT1, SLPState::land);
-                      USM_MAP(usm::Transition::NEXT2, SLPState::goTo));
-            USM_STATE(transition, SLPState::land, ));
+  USM_TABLE(
+      currentState, SLPState::GOTO,
+      USM_STATE(transition, SLPState::GOTO,
+                USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
+                USM_MAP(usm::Transition::NEXT2, SLPState::LOITER));
+      USM_STATE(transition, SLPState::ALTITUDE_CHANGE,
+                USM_MAP(usm::Transition::NEXT1, SLPState::LOITER));
+      USM_STATE(transition, SLPState::LOITER,
+                USM_MAP(usm::Transition::NEXT1, SLPState::LAND);
+                USM_MAP(usm::Transition::NEXT2, SLPState::GOTO));
+      USM_STATE(transition, SLPState::LAND, ));
 }
 
-usm::Transition WaypointGenerator::runCurrentState(SLPState currentState) {
+usm::Transition WaypointGenerator::runCurrentState() {
   if (trigger_reset_) {
     trigger_reset_ = false;
     return usm::Transition::ERROR;
   }
 
-  switch (currentState) {
-    case SLPState::goTo:
+  switch (getState()) {
+    case SLPState::GOTO:
       return runGoTo();
 
-    case SLPState::altitudeChange:
+    case SLPState::ALTITUDE_CHANGE:
       return runAltitudeChange();
 
-    case SLPState::loiter:
+    case SLPState::LOITER:
       return runLoiter();
 
-    case SLPState::land:
+    case SLPState::LAND:
       return runLand();
   }
 }
@@ -132,7 +133,7 @@ usm::Transition WaypointGenerator::runGoTo() {
 }
 
 usm::Transition WaypointGenerator::runAltitudeChange() {
-  if (prev_slp_state_ != SLPState::altitudeChange) {
+  if (prev_slp_state_ != SLPState::ALTITUDE_CHANGE) {
     yaw_setpoint_ = yaw_;
   }
   goal_.z() = NAN;
@@ -164,7 +165,7 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
 }
 
 usm::Transition WaypointGenerator::runLoiter() {
-  if (prev_slp_state_ != SLPState::loiter) {
+  if (prev_slp_state_ != SLPState::LOITER) {
     loiter_position_ = position_;
     loiter_yaw_ = yaw_;
   }

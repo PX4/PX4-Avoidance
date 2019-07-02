@@ -15,7 +15,7 @@
 *   this list of conditions and the following disclaimer in the documentation
 *   and/or other materials provided with the distribution.
 *
-* * Neither the name of libgnc nor the names of its
+* * Neither the name of usm nor the names of its
 *   contributors may be used to endorse or promote products derived from
 *   this software without specific prior written permission.
 *
@@ -48,8 +48,7 @@ class StateMachine {
   StateEnum getState();
 
  protected:
-  virtual Transition runCurrentState(
-      StateEnum currentState) = 0;  // a big switch
+  virtual Transition runCurrentState() = 0;  // implement using a big switch
   virtual StateEnum chooseNextState(
       StateEnum currentState, Transition transition) = 0;  // nested switches
 
@@ -65,7 +64,7 @@ StateMachine<StateEnum>::StateMachine(StateEnum startingState)
 
 template <typename StateEnum>
 void StateMachine<StateEnum>::iterateOnce() {
-  Transition t = runCurrentState(m_currentState);
+  Transition t = runCurrentState();
   if (t != Transition::REPEAT)
     m_currentState = chooseNextState(m_currentState, t);
 }

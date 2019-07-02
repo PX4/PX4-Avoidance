@@ -16,12 +16,7 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
     Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f),
     Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
 
-enum class SLPState {
-  goTo,
-  loiter,
-  land,
-  altitudeChange,
-};
+enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE };
 std::string toString(SLPState state);  // for logging
 
 class WaypointGenerator : public usm::StateMachine<SLPState> {
@@ -52,7 +47,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
 
   // state
   bool trigger_reset_ = false;
-  SLPState prev_slp_state_ = SLPState::goTo;
+  SLPState prev_slp_state_ = SLPState::GOTO;
 
   bool is_land_waypoint_ = false;
   bool decision_taken_ = false;
@@ -84,8 +79,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
 
   /**
   * @brief     decides if the desired setpoints received from the FCU should be
-  *overwritten
-  *            or sent back because no intervention is needed
+  *            overwritten or sent back because no intervention is needed
   * @returns   true, overwtite setpoints
   **/
   void updateSLPState();
@@ -93,7 +87,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   /**
   * @brief iterate the statemachine
   */
-  usm::Transition runCurrentState(SLPState currentState) override final;
+  usm::Transition runCurrentState() override final;
 
   /**
   * @brief the setup of the statemachine

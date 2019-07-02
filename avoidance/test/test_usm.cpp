@@ -72,14 +72,14 @@ class TestStateMachine final : public StateMachine<TestStates> {
   bool cleanup_called = false;
 
  protected:
-  Transition runCurrentState(TestStates currentState) override {
+  Transition runCurrentState() override {
     if (trigger_error_once) {
       trigger_error_once = false;
       return Transition::ERROR;
     }
 
     // clang-format off
-    switch(currentState) {
+    switch(getState()) {
         case START: return start();
         case PATH_A_1: return a1();
         case PATH_A_2: return a2();
