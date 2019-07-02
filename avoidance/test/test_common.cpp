@@ -478,7 +478,7 @@ TEST(Common, isInWhichFOV) {
   // GIVEN: a three-camera setup with two overlapping FOV and one alone
   /**
             cam 3                     cam1    cam 2
-                                             |--|--\
+                                             |--|--|
           |---|---|                |-----|-----|
   |--------------------------------------|------------------------------------|
   -180                             -30   0     +30                          +180
@@ -522,7 +522,7 @@ TEST(Common, isOnEdgeOfFOV) {
   // GIVEN: a three-camera setup with two overlapping FOV and one alone
   /**
             cam 3                     cam1    cam 2
-                                             |--|--\
+                                             |--|--|
           |---|---|                |-----|-----|
   |--------------------------------------|------------------------------------|
   -180                             -30   0     +30                          +180
@@ -580,7 +580,7 @@ TEST(Common, scaleToFOV) {
   // GIVEN: a three-camera setup with two overlapping FOV and one alone
   /**
             cam 3                     cam1    cam 2
-                                             |--|--\
+                                             |--|--|
           |---|---|                |-----|-----|
   |--------------------------------------|------------------------------------|
   -180                             -30   0     +30                          +180

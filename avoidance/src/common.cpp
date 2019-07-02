@@ -9,11 +9,12 @@
 namespace avoidance {
 
 bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol) {
-  bool retval = false;
   for (auto fov : fov_vec) {
-    retval |= pointInsideFOV(fov, p_pol);
+    if (pointInsideFOV(fov, p_pol)) {
+      return true;
+    }
   }
-  return retval;
+  return false;
 }
 
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
@@ -75,7 +76,7 @@ float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol) {
         std::min(fov[i].h_fov_deg / 2.0f, angle_diff_deg);  // Clamp at h_FOV/2
     return 1.0f - 2.0f * angle_diff_deg / fov[i].h_fov_deg;
   }
-  return pointInsideFOV(fov, p_pol) ? 1.f : 0.f;  // todo: scale properly
+  return pointInsideFOV(fov, p_pol) ? 1.f : 0.f;
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
@@ -434,18 +435,19 @@ void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
         !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
       continue;
     cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
-    h_max = h_max * cloud.points[i].z > cloud.points[i].x
-                ? h_max
-                : cloud.points[i].x / cloud.points[i].z;
-    v_max = v_max * cloud.points[i].z > cloud.points[i].y
-                ? v_max
-                : cloud.points[i].y / cloud.points[i].z;
-    h_min = h_min * cloud.points[i].z < cloud.points[i].x
-                ? h_min
-                : cloud.points[i].x / cloud.points[i].z;
-    v_min = v_min * cloud.points[i].z < cloud.points[i].y
-                ? v_min
-                : cloud.points[i].y / cloud.points[i].z;
+
+    if (h_max * cloud.points[i].z < cloud.points[i].x)
+      h_max = cloud.points[i].x / cloud.points[i].z;
+
+    if (v_max * cloud.points[i].z < cloud.points[i].y)
+      v_max = cloud.points[i].y / cloud.points[i].z;
+
+    if (h_min * cloud.points[i].z > cloud.points[i].x)
+      h_min = cloud.points[i].x / cloud.points[i].z;
+
+    if (v_min * cloud.points[i].z > cloud.points[i].y)
+      v_min = cloud.points[i].y / cloud.points[i].z;
+
     j++;
   }
   if (j != cloud.points.size()) {
