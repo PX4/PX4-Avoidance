@@ -69,6 +69,7 @@ class SafeLandingPlannerNode {
 
   ros::Subscriber pose_sub_;
   ros::Subscriber pointcloud_sub_;
+  ros::Subscriber raw_grid_sub_;
 
   tf::TransformListener tf_listener_;
 
@@ -89,6 +90,7 @@ class SafeLandingPlannerNode {
   dynamic_reconfigure::Server<
       safe_landing_planner::SafeLandingPlannerNodeConfig>
       server_;
+  safe_landing_planner::SafeLandingPlannerNodeConfig rqt_param_config_;
 
   /**
   * @brief main loop callback
@@ -115,6 +117,7 @@ class SafeLandingPlannerNode {
       safe_landing_planner::SafeLandingPlannerNodeConfig& config,
       uint32_t level);
 
+  void rawGridCallback(const safe_landing_planner::SLPGridMsg& msg);
   /**
   * @brif     sends out a status to the FCU which will be received as a
   *heartbeat

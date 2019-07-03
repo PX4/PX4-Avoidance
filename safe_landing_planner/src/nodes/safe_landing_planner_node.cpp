@@ -1,7 +1,5 @@
 #include "safe_landing_planner/safe_landing_planner_node.hpp"
 
-#include <safe_landing_planner/SLPGridMsg.h>
-
 namespace avoidance {
 
 const Eigen::Vector3f nan_setpoint = Eigen::Vector3f(NAN, NAN, NAN);
@@ -18,6 +16,7 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
 
   std::string camera_topic;
   nh_.getParam("pointcloud_topics", camera_topic);
+  nh_.param<bool>("play_rosbag", safe_landing_planner_->play_rosbag_, false);
 
   dynamic_reconfigure::Server<
       safe_landing_planner::SafeLandingPlannerNodeConfig>::CallbackType f;
@@ -36,12 +35,19 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
           "/mavros/companion_process/status", 1);
   grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/grid_slp", 1);
 
+  if (safe_landing_planner_->play_rosbag_) {
+    raw_grid_sub_ = nh_.subscribe<const safe_landing_planner::SLPGridMsg &>(
+        "/raw_grid_slp", 1, &SafeLandingPlannerNode::rawGridCallback, this);
+    pointcloud_sub_.shutdown();
+  }
+
   start_time_ = ros::Time::now();
 }
 
 void SafeLandingPlannerNode::dynamicReconfigureCallback(
     safe_landing_planner::SafeLandingPlannerNodeConfig &config,
     uint32_t level) {
+  rqt_param_config_ = config;
   safe_landing_planner_->dynamicReconfigureSetParams(config, level);
 }
 
@@ -60,6 +66,14 @@ void SafeLandingPlannerNode::pointCloudCallback(
   }
 
   cloud_ready_cv_->notify_one();
+}
+
+void SafeLandingPlannerNode::rawGridCallback(
+    const safe_landing_planner::SLPGridMsg &msg) {
+  std::lock_guard<std::mutex> transformed_cloud_guard(
+      *(transformed_cloud_mutex_));
+  safe_landing_planner_->raw_grid_ = std::move(msg);
+  cloud_transformed_ = true;
 }
 
 void SafeLandingPlannerNode::startNode() {
@@ -111,9 +125,9 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
     safe_landing_planner_->runSafeLandingPlanner();
     cloud_transformed_ = false;
   }
-  visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()),
-                                          current_pose_.pose.position,
-                                          previous_pose_.pose.position);
+  visualizer_.visualizeSafeLandingPlanner(
+      *(safe_landing_planner_.get()), current_pose_.pose.position,
+      previous_pose_.pose.position, rqt_param_config_);
   publishSerialGrid();
   last_algo_time_ = ros::Time::now();
 
