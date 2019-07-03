@@ -18,7 +18,7 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(10) {
+    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -524,7 +524,7 @@ void LocalPlannerNode::transformBufferThread() {
         }
       }
     }
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 }
 
