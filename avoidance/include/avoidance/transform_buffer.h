@@ -124,13 +124,24 @@ class TransformBuffer {
             "already been dropped from buffer");
         return false;
       } else {
+        ros::Time last_sample_time = iterator->second.back().stamp_;
         for (std::deque<tf::StampedTransform>::const_reverse_iterator it =
                  iterator->second.rbegin();
              it != iterator->second.rend(); ++it) {
-          if (it->stamp_ <= time) {
-            transform = *it;
-            return true;
+          if (it->stamp_ < time) {
+            ros::Duration dt = time - it->stamp_;
+            ros::Duration sample_time = last_sample_time - it->stamp_;
+
+            if (dt.toNSec() <= 0.5 * sample_time.toNSec()) {
+              transform = *it;
+              return true;
+            } else {
+              it--;
+              transform = *it;
+              return true;
+            }
           }
+          last_sample_time = it->stamp_;
         }
       }
     }
