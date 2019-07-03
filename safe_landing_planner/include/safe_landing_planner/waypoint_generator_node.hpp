@@ -15,26 +15,12 @@
 #include <dynamic_reconfigure/server.h>
 #include <safe_landing_planner/SLPGridMsg.h>
 #include <safe_landing_planner/WaypointGeneratorNodeConfig.h>
-#include "grid.hpp"
 
-#include <Eigen/Dense>
+#include <safe_landing_planner/waypoint_generator.hpp>
 
 namespace avoidance {
 
-const std::vector<Eigen::Vector2f> exploration_pattern = {
-    Eigen::Vector2f(1.f, 0.f),  Eigen::Vector2f(1.f, 1.f),
-    Eigen::Vector2f(0.f, 1.f),  Eigen::Vector2f(-1.f, 1.f),
-    Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f),
-    Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
-
-enum class SLPState {
-  goTo,
-  loiter,
-  land,
-  altitudeChange,
-};
-
-class WaypointGeneratorNode {
+class WaypointGeneratorNode final {
  public:
   WaypointGeneratorNode(const ros::NodeHandle& nh);
   ~WaypointGeneratorNode() = default;
@@ -44,37 +30,14 @@ class WaypointGeneratorNode {
   **/
   void startNode();
 
- private:
+ protected:
+  WaypointGenerator waypointGenerator_;
+
   ros::NodeHandle nh_;
 
   ros::Timer cmdloop_timer_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
   ros::CallbackQueue cmdloop_queue_;
-
-  double spin_dt_ = 0.1;
-  float yaw_setpoint_ = NAN;
-  float yaw_speed_setpoint_ = NAN;
-  float loiter_yaw_ = NAN;
-  float yaw_ = NAN;
-  float beta_ = 0.9f;
-  float landing_radius_ = 2.f;
-  float can_land_thr_ = 0.4f;
-  float loiter_height_ = 4.f;
-  float factor_exploration_ = 1.f;
-  float vertical_range_error_ = 1.f;
-  float spiral_width_ = 2.f;
-  bool grid_received_ = false;
-  bool is_land_waypoint_ = false;
-  bool decision_taken_ = false;
-  bool can_land_ = true;
-  bool in_land_vertical_range_ = false;
-  bool is_within_landing_radius_ = false;
-  bool update_smoothing_size_ = false;
-  bool explorarion_is_active_ = false;
-  int smoothing_land_cell_ = 2;
-  int start_seq_landing_decision_ = 0;
-  int grid_slp_seq_ = 0;
-  int n_explored_pattern_ = -1;
 
   ros::Subscriber pose_sub_;
   ros::Subscriber trajectory_sub_;
@@ -88,21 +51,9 @@ class WaypointGeneratorNode {
   ros::Publisher land_hysteresis_pub_;
   ros::Publisher marker_goal_pub_;
 
-  Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  bool grid_received_ = false;
+  double spin_dt_ = 0.1;
   Eigen::Vector3f goal_visualization_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f velocity_setpoint_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f loiter_position_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f exploration_anchor_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f vel_sp = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector2i pos_index_ = Eigen::Vector2i(NAN, NAN);
-  Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
-  Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
-
-  std::vector<float> can_land_hysteresis_;
-  Grid grid_slp_ = Grid(10.f, 1.f);
-  SLPState slp_state_ = SLPState::goTo;
-  SLPState prev_slp_state_ = SLPState::goTo;
 
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>
       server_;
@@ -151,19 +102,6 @@ class WaypointGeneratorNode {
   * @param[in] msg, FCU vehicle state
   **/
   void stateCallback(const mavros_msgs::State& msg);
-
-  /**
-  * @brief     computes the setpoints to be sent to the FCU
-  **/
-  void calculateWaypoint();
-
-  /**
-  * @brief     decides if the desired setpoints received from the FCU should be
-  *overwritten
-  *            or sent back because no intervention is needed
-  * @returns   true, overwtite setpoints
-  **/
-  void updateSLPState();
 
   /**
   * @brief     publishes the computed waypoints to the FCU

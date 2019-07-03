@@ -92,6 +92,7 @@ include_directories(
 # )
 set(SAFE_LANDING_PLANNER_CPP_FILES     "src/nodes/safe_landing_planner_node.cpp"
                                        "src/nodes/safe_landing_planner.cpp"
+                                       "src/nodes/waypoint_generator.cpp"
                                        "src/nodes/waypoint_generator_node.cpp"
                                        "src/nodes/safe_landing_planner_visualization.cpp"
 )
@@ -133,20 +134,15 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_safe_landing_planner.cpp
+                                          test/test_waypoint_generator.cpp
                                           test/test_grid.cpp
                                         )
 
     if(TARGET ${PROJECT_NAME}-test)
-      target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
-                                                 ${catkin_LIBRARIES}
-                                                 )
+        target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
+                                                   ${catkin_LIBRARIES}
+                              )
     endif()
-
-  #if(TARGET ${PROJECT_NAME}-test-roscore)
-  #    target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
-  #                                               ${catkin_LIBRARIES}
-  #                                               )
-  #  endif()
 
     ## Add folders to be run by python nosetests
     # catkin_add_nosetests(test)
