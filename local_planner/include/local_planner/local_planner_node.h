@@ -10,6 +10,7 @@
 #endif
 
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PointStamped.h>
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/Altitude.h>
