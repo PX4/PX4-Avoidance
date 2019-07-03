@@ -598,22 +598,23 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           // yaw and pitch for this field of view. Note that in the FCU frame
           // positive pitch is downward, zero-yaw is forward and positive-yaw
           // is turning CCW!
-          pcl::PointCloud<pcl::PointXYZ> fake_pc;
-          fake_pc.push_back(pcl::PointXYZ(0.f, 0.f, 1.f));
-          fake_pc.header.frame_id = pcl_cloud.header.frame_id;
-          pcl_ros::transformPointCloud("fcu", fake_pc, fake_pc, *tf_listener_);
+          geometry_msgs::PointStamped p, p_fcu;
+          p.header.frame_id = pcl_cloud.header.frame_id;
+          p.header.stamp = ros::Time(0);
+          p.point = toPoint(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
+          tf_listener_->transformPoint("fcu", p, p_fcu);
 
-          if (fake_pc[0].x * fake_pc[0].x + fake_pc[0].y * fake_pc[0].y >
+          if (p_fcu.point.x * p_fcu.point.x + p_fcu.point.y * p_fcu.point.y >
               0.01f) {
             cameras_[index].fov_fcu_frame_.yaw_deg =
-                atan2(fake_pc[0].y, fake_pc[0].x) * RAD_TO_DEG;
+                atan2(p_fcu.point.y, p_fcu.point.x) * RAD_TO_DEG;
           } else {
             cameras_[index].fov_fcu_frame_.yaw_deg = 0.0f;
           }
-          if (fake_pc[0].x * fake_pc[0].x + fake_pc[0].z * fake_pc[0].z >
+          if (p_fcu.point.x * p_fcu.point.x + p_fcu.point.z * p_fcu.point.z >
               0.01f) {
             cameras_[index].fov_fcu_frame_.pitch_deg =
-                atan2(-fake_pc[0].z, fake_pc[0].x) * RAD_TO_DEG;
+                atan2(-p_fcu.point.z, p_fcu.point.x) * RAD_TO_DEG;
           } else {
             cameras_[index].fov_fcu_frame_.pitch_deg = 0.0f;
           }
