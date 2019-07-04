@@ -8,13 +8,13 @@
 #include <functional>
 #include <vector>
 
+#include "avoidance/common.h"
+
 namespace avoidance {
 
 const std::vector<Eigen::Vector2f> exploration_pattern = {
     Eigen::Vector2f(1.f, 0.f),  Eigen::Vector2f(1.f, 1.f),   Eigen::Vector2f(0.f, 1.f),  Eigen::Vector2f(-1.f, 1.f),
     Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f), Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
-
-const float LAND_SPEED = 0.7f;  // TODO: replace with Firmware parameter
 
 enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE };
 std::string toString(SLPState state);  // for logging
@@ -73,6 +73,8 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   // outside world link
   std::function<void(const Eigen::Vector3f& pos_sp, const Eigen::Vector3f& vel_sp, float yaw_sp, float yaw_speed_sp)>
       publishTrajectorySetpoints_;
+
+  avoidance::ModelParameters px4_;  // PX4 Firmware paramters
 
   /**
   * @brief     update the waypoint generator state based on the vehicle status

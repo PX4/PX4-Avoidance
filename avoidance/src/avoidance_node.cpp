@@ -5,6 +5,8 @@ namespace avoidance {
 AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
     : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
   mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
+  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
+  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
   ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
                                          boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
@@ -21,7 +23,10 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& n
   statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
   statusloop_spinner_->start();
 
+  worker_ = std::thread(&AvoidanceNode::checkPx4Parameters, this);
+
   position_received_ = true;
+  should_exit_ = false;
 
   timeout_termination_ = 15;
   timeout_critical_ = 0.5;
@@ -67,6 +72,69 @@ void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration 
       }
     } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
+    }
+  }
+}
+
+void AvoidanceNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
+  // collect all px4_ parameters needed for model based trajectory planning
+  // when adding new parameter to the struct ModelParameters,
+  // add new else if case with correct value type
+  auto parse_param_f = [&msg](const std::string& name, float& val) -> bool {
+    if (msg.param_id == name) {
+      ROS_INFO("parameter %s is set from  %f to %f \n", name.c_str(), val, msg.value.real);
+      val = msg.value.real;
+      return true;
+    }
+    return false;
+  };
+
+  auto parse_param_i = [&msg](const std::string& name, int& val) -> bool {
+    if (msg.param_id == name) {
+      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val, msg.value.integer);
+      val = msg.value.integer;
+      return true;
+    }
+    return false;
+  };
+
+  // clang-format off
+  parse_param_f("MPC_ACC_DOWN_MAX", px4_.param_mpc_acc_down_max) ||
+  parse_param_f("MPC_ACC_HOR", px4_.param_mpc_acc_hor) ||
+  parse_param_f("MPC_ACC_UP_MAX", px4_.param_acc_up_max) ||
+  parse_param_i("MPC_AUTO_MODE", px4_.param_mpc_auto_mode) ||
+  parse_param_f("MPC_JERK_MIN", px4_.param_mpc_jerk_min) ||
+  parse_param_f("MPC_JERK_MAX", px4_.param_mpc_jerk_max) ||
+  parse_param_f("MPC_LAND_SPEED", px4_.param_mpc_land_speed) ||
+  parse_param_f("MPC_TKO_SPEED", px4_.param_mpc_tko_speed) ||
+  parse_param_f("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise) ||
+  parse_param_f("MPC_Z_VEL_MAX_DN", px4_.param_mpc_vel_max_dn) ||
+  parse_param_f("MPC_Z_VEL_MAX_UP", px4_.param_mpc_z_vel_max_up) ||
+  parse_param_f("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d) ||
+  parse_param_f("NAV_ACC_RAD", px4_.param_nav_acc_rad);
+  // clang-format on
+}
+
+void AvoidanceNode::checkPx4Parameters() {
+  auto& client = get_px4_param_client_;
+  auto request_param = [&client](const std::string& name, float& val) {
+    mavros_msgs::ParamGet req;
+    req.request.param_id = name;
+    if (client.call(req) && req.response.success) {
+      val = req.response.value.real;
+    }
+  };
+  while (!should_exit_) {
+    request_param("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise);
+    request_param("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d);
+    request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
+    request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
+
+    if (!std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_mpc_col_prev_d) ||
+        !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad)) {
+      std::this_thread::sleep_for(std::chrono::seconds(5));
+    } else {
+      std::this_thread::sleep_for(std::chrono::seconds(30));
     }
   }
 }

@@ -58,6 +58,7 @@ void WaypointGenerator::updateSLPState() {
     explorarion_is_active_ = false;
     n_explored_pattern_ = -1;
     factor_exploration_ = 1.f;
+    landing_radius_ = px4_.param_nav_acc_rad;
     ROS_INFO("[WGN] Not a land waypoint");
   }
 
@@ -129,7 +130,7 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
   goal_.z() = NAN;
   altitude_landing_area_percentile_ = landingAreaHeightPercentile(80.f);
   float direction = (fabsf(position_.z() - altitude_landing_area_percentile_) - loiter_height_) < 0.f ? 1.f : -1.f;
-  velocity_setpoint_.z() = direction * LAND_SPEED;
+  velocity_setpoint_.z() = direction * px4_.param_mpc_land_speed;
   publishTrajectorySetpoints_(goal_, velocity_setpoint_, yaw_setpoint_, yaw_speed_setpoint_);
   ROS_INFO("\033[1;35m [WGN] altitudeChange %f %f %f - %f %f %f \033[0m", goal_.x(), goal_.y(), goal_.z(),
            velocity_setpoint_.x(), velocity_setpoint_.y(), velocity_setpoint_.z());
@@ -214,10 +215,10 @@ usm::Transition WaypointGenerator::runLoiter() {
 usm::Transition WaypointGenerator::runLand() {
   loiter_position_.z() = NAN;
   Eigen::Vector3f vel_sp = nan_setpoint;
-  vel_sp.z() = -LAND_SPEED;
+  vel_sp.z() = -px4_.param_mpc_land_speed;
   publishTrajectorySetpoints_(loiter_position_, vel_sp, loiter_yaw_, NAN);
-  ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n", loiter_position_.x(), loiter_position_.y(),
-           loiter_position_.z());
+  ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan %f \033[0m\n", loiter_position_.x(), loiter_position_.y(),
+           loiter_position_.z(), vel_sp.z());
   return usm::Transition::REPEAT;
 }
 
