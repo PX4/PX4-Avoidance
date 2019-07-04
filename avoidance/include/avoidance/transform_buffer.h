@@ -169,13 +169,13 @@ protected:
             "already been dropped from buffer");
         return false;
       } else {
+        const tf::StampedTransform* previous = &iterator->second.back();
         for (std::deque<tf::StampedTransform>::const_reverse_iterator it =
-                 iterator->second.rbegin();
+                 ++iterator->second.rbegin();
              it != iterator->second.rend(); ++it) {
           if (it->stamp_ <= time) {
             const tf::StampedTransform& tf_earlier = *it;
-            it--;
-            const tf::StampedTransform& tf_later = *it;
+            const tf::StampedTransform& tf_later = *previous;
             transform.stamp_ = time;
             if (interpolateTransform(tf_earlier, tf_later, transform)) {
               return true;
@@ -184,6 +184,7 @@ protected:
               return false;
             }
           }
+          previous = &(*it);
         }
       }
     }

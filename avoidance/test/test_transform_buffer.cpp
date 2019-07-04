@@ -63,53 +63,55 @@ TEST_F(TransformBufferTests, insertAndGetTransform) {
   // time1 should get time1
   EXPECT_TRUE(getTransform(source_frame, target_frame, time1,
                                      retrieved_transform));
-//  EXPECT_EQ(retrieved_transform.stamp_, time1);
-//
-//  // time2 should get time2
-//  EXPECT_TRUE(getTransform(source_frame, target_frame, time2,
-//                                     retrieved_transform));
-//  EXPECT_EQ(retrieved_transform.stamp_, time2);
-//
-//  // time3 should get time3
-//  EXPECT_TRUE(getTransform(source_frame, target_frame, time3,
-//                                     retrieved_transform));
-//  EXPECT_EQ(retrieved_transform.stamp_, time3);
-//
-//  // close to time2 should get time2
-//  EXPECT_TRUE(getTransform(source_frame, target_frame, time_between,
-//                                     retrieved_transform));
-//  EXPECT_EQ(retrieved_transform.stamp_, time2);
-//
-//  // outside of the buffer should not give a transform
-//  EXPECT_FALSE(getTransform(source_frame, target_frame, time_before,
-//                                      retrieved_transform));
-//  EXPECT_FALSE(getTransform(source_frame, target_frame, time_after,
-//                                      retrieved_transform));
+ EXPECT_EQ(retrieved_transform.stamp_, time1);
+
+ // time2 should get time2
+ EXPECT_TRUE(getTransform(source_frame, target_frame, time2,
+                                    retrieved_transform));
+ EXPECT_EQ(retrieved_transform.stamp_, time2);
+
+ // time3 should get time3
+ EXPECT_TRUE(getTransform(source_frame, target_frame, time3,
+                                    retrieved_transform));
+ EXPECT_EQ(retrieved_transform.stamp_, time3);
+
+ // in between should give the timestamp of what we ask for
+ EXPECT_TRUE(getTransform(source_frame, target_frame, time_between,
+                                    retrieved_transform));
+ EXPECT_EQ(retrieved_transform.stamp_, time_between);
+
+ // outside of the buffer should not give a transform
+ EXPECT_FALSE(getTransform(source_frame, target_frame, time_before,
+                                     retrieved_transform));
+ EXPECT_FALSE(getTransform(source_frame, target_frame, time_after,
+                                     retrieved_transform));
 }
 
-//TEST_F(TransformBufferTests, interpolateTransform) {
-//  // GIVEN: a transform Buffer and source/target frames
-//  std::string source_frame = "frame1";
-//  std::string target_frame = "frame2";
-//
-//  ros::Time::init();
-//  ros::Time time1 = ros::Time::now();
-//  ros::Time time_half = time1 - ros::Duration(1);
-//  ros::Time time2 = time1 - ros::Duration(2);
-//
-//
-//  tf::StampedTransform transform1, transform2, retrieved_transform;
-//  transform1.stamp_ = time1;
-//  transform2.stamp_ = time2;
-//  retrieved_transform.stamp_ = time_half;
-//  tf::Vector3 translation1 = {0, 0, 0};
-//  tf::Vector3 translation2 = {0, 0, 2};
-//  tf::Vector3 translation_half = {0, 0, 1};
-//
-//  transform1.setOrigin(translation1);
-//  transform2.setOrigin(translation2);
-//
-//  EXPECT_TRUE(interpolateTransform(transform1, transform2, retrieved_transform));
-//  EXPECT_EQ(retrieved_transform.getOrigin(), translation_half);
-//
-//}
+TEST_F(TransformBufferTests, interpolateTransform) {
+ // GIVEN: a transform Buffer and source/target frames
+ std::string source_frame = "frame1";
+ std::string target_frame = "frame2";
+
+ ros::Time::init();
+ ros::Time time1 = ros::Time::now();
+ ros::Time time_half = time1 + ros::Duration(1);
+ ros::Time time2 = time1 + ros::Duration(2);
+
+
+ tf::StampedTransform transform1, transform2, retrieved_transform;
+ transform1.stamp_ = time1;
+ transform2.stamp_ = time2;
+ retrieved_transform.stamp_ = time_half;
+ tf::Vector3 translation1 = {0, 0, 0};
+ tf::Vector3 translation2 = {0, 0, 2};
+ tf::Vector3 translation_half = {0, 0, 1};
+ transform1.setIdentity();
+ transform2.setIdentity();
+
+ transform1.setOrigin(translation1);
+ transform2.setOrigin(translation2);
+
+ ASSERT_TRUE(interpolateTransform(transform1, transform2, retrieved_transform));
+ EXPECT_EQ(retrieved_transform.getOrigin(), translation_half);
+
+}
