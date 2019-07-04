@@ -55,8 +55,7 @@ class WaypointGeneratorNode final {
   double spin_dt_ = 0.1;
   Eigen::Vector3f goal_visualization_ = Eigen::Vector3f::Zero();
 
-  dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>
-      server_;
+  dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig> server_;
 
   /**
   * @brief main loop callback
@@ -69,9 +68,7 @@ class WaypointGeneratorNode final {
   * @param     config, struct containing all the parameters
   * @param     level, bitmask to group together reconfigurable parameters
   **/
-  void dynamicReconfigureCallback(
-      safe_landing_planner::WaypointGeneratorNodeConfig& config,
-      uint32_t level);
+  void dynamicReconfigureCallback(safe_landing_planner::WaypointGeneratorNodeConfig& config, uint32_t level);
 
   /**
   * @brif callback for vehicle position and orientation
@@ -110,8 +107,7 @@ class WaypointGeneratorNode final {
   * @param[in] yaw_sp, yaw setpoint
   * @param[in] yaw_speed_sp, yaw speed setpoint
   **/
-  void publishTrajectorySetpoints(const Eigen::Vector3f& pos_sp,
-                                  const Eigen::Vector3f& vel_sp, float yaw_sp,
+  void publishTrajectorySetpoints(const Eigen::Vector3f& pos_sp, const Eigen::Vector3f& vel_sp, float yaw_sp,
                                   float yaw_speed_sp);
 
   /**

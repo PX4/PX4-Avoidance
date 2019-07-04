@@ -3,10 +3,7 @@
 
 namespace avoidance {
 Histogram::Histogram(const int res)
-    : resolution_{res},
-      z_dim_{360 / resolution_},
-      e_dim_{180 / resolution_},
-      dist_(e_dim_, z_dim_) {
+    : resolution_{res}, z_dim_{360 / resolution_}, e_dim_{180 / resolution_}, dist_(e_dim_, z_dim_) {
   setZero();
 }
 

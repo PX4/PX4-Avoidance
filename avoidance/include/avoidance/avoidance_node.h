@@ -23,8 +23,7 @@ class AvoidanceNode {
   *errors
   * @param[out] hover, true if the vehicle is hovering
   **/
-  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& hover);
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
  private:
   ros::NodeHandle nh_;

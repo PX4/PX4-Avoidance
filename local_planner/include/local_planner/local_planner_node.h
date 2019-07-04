@@ -69,8 +69,7 @@ struct cameraData {
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-                   const bool tf_spin_thread = true);
+  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private, const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   std::atomic<bool> should_exit_{false};
@@ -164,8 +163,7 @@ class LocalPlannerNode {
   *errors
   * @param[out] hover, true if the vehicle is hovering
   **/
-  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& hover);
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
@@ -248,8 +246,7 @@ class LocalPlannerNode {
   * @param     config, struct with all the parameters
   * @param     level, bitmsak to group together reconfigurable parameters
   **/
-  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config,
-                                  uint32_t level);
+  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 
   /**
   * @brief     subscribes to all the camera topics and camera info
@@ -268,15 +265,13 @@ class LocalPlannerNode {
   * @param[in] msg, pointcloud message
   * @param[in] index, pointcloud instance number
   **/
-  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg,
-                          int index);
+  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index);
   /**
   * @brief     callaback for camera information
   * @param[in] msg, camera information message
   * @param[in] index, camera info instace number
   **/
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg,
-                          int index);
+  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg, int index);
 
   /**
   * @brief     callaback for vehicle velocity

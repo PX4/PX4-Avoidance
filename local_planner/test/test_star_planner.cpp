@@ -24,8 +24,7 @@ class StarPlannerTests : public ::testing::Test {
   void SetUp() override {
     ros::Time::init();
 
-    avoidance::LocalPlannerNodeConfig config =
-        avoidance::LocalPlannerNodeConfig::__getDefault__();
+    avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
     config.children_per_node_ = 2;
     config.n_expanded_nodes_ = 10;
     star_planner.dynamicReconfigureSetStarParams(config, 1);
@@ -40,8 +39,7 @@ class StarPlannerTests : public ::testing::Test {
 
     pcl::PointCloud<pcl::PointXYZI> cloud;
     for (float x = obstacle_min_x; x < obstacle_max_x; x += 0.05f) {
-      for (float z = goal.z() - obstacle_half_height;
-           z < goal.z() + obstacle_half_height; z += 0.05f) {
+      for (float z = goal.z() - obstacle_half_height; z < goal.z() + obstacle_half_height; z += 0.05f) {
         cloud.push_back(toXYZI(x, obstacle_y, z, 0));
       }
     }
@@ -67,11 +65,9 @@ TEST_F(StarPlannerTests, buildTree) {
     for (auto node : star_planner.tree_) {
       // THEN: we expect each tree node position not to be close to the obstacle
       Eigen::Vector3f n = node.getPosition();
-      bool node_inside_obstacle =
-          n.x() > obstacle_min_x && n.x() < obstacle_max_x &&
-          n.y() > obstacle_y - 0.1f && n.y() < obstacle_y + 0.1f &&
-          n.z() > 4.0f - obstacle_half_height &&
-          n.z() < 4.0f + obstacle_half_height;
+      bool node_inside_obstacle = n.x() > obstacle_min_x && n.x() < obstacle_max_x && n.y() > obstacle_y - 0.1f &&
+                                  n.y() < obstacle_y + 0.1f && n.z() > 4.0f - obstacle_half_height &&
+                                  n.z() < 4.0f + obstacle_half_height;
       EXPECT_FALSE(node_inside_obstacle);
     }
 

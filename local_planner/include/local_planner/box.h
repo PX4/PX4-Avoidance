@@ -26,8 +26,7 @@ class Box {
   * @returns   true, if the point is within the bounding box
   **/
   inline bool isPointWithinBox(const float& x, const float& y, const float& z) {
-    return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ &&
-           z > zmin_;
+    return x < xmax_ && x > xmin_ && y < ymax_ && y > ymin_ && z < zmax_ && z > zmin_;
   }
 
   float radius_;

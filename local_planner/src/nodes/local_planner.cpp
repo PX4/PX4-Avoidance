@@ -13,8 +13,7 @@ LocalPlanner::LocalPlanner() : star_planner_(new StarPlanner()) {}
 LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
-void LocalPlanner::setPose(const Eigen::Vector3f& pos,
-                           const Eigen::Quaternionf& q) {
+void LocalPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q) {
   position_ = pos;
 
   // Azimuth angle in histogram convention is different from FCU convention!
@@ -30,8 +29,7 @@ void LocalPlanner::setPose(const Eigen::Vector3f& pos,
 }
 
 // set parameters changed by dynamic rconfigure
-void LocalPlanner::dynamicReconfigureSetParams(
-    avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   cost_params_.goal_cost_param = config.goal_cost_param_;
   cost_params_.heading_cost_param = config.heading_cost_param_;
@@ -45,8 +43,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
   timeout_termination_ = config.timeout_termination_;
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  smoothing_margin_degrees_ =
-      static_cast<float>(config.smoothing_margin_degrees_);
+  smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -64,8 +61,7 @@ void LocalPlanner::dynamicReconfigureSetParams(
 
 void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
-  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(),
-           goal_.z());
+  ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(), goal_.z());
   applyGoal();
 }
 
@@ -87,11 +83,9 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-  float elapsed_since_last_processing = static_cast<float>(
-      (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_,
-                    position_, min_realsense_dist_, max_point_age_s_,
-                    elapsed_since_last_processing, min_num_points_per_cell_);
+  float elapsed_since_last_processing = static_cast<float>((ros::Time::now() - last_pointcloud_process_time_).toSec());
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_, position_, min_realsense_dist_,
+                    max_point_age_s_, elapsed_since_last_processing, min_num_points_per_cell_);
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -122,10 +116,8 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       float dist = histogram.get_dist(e, z);
-      float depth_val =
-          dist > 0.01f ? 255.f - 255.f * dist / histogram_box_.radius_ : 0.f;
-      histogram_image_data_.push_back(
-          (int)std::max(0.0f, std::min(255.f, depth_val)));
+      float depth_val = dist > 0.01f ? 255.f - 255.f * dist / histogram_box_.radius_ : 0.f;
+      histogram_image_data_.push_back((int)std::max(0.0f, std::min(255.f, depth_val)));
     }
   }
 }
@@ -143,8 +135,7 @@ void LocalPlanner::determineStrategy() {
 
   if (!reach_altitude_) {
     starting_height_ = std::max(goal_.z() - 0.5f, take_off_pose_.z() + 1.0f);
-    ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m",
-             starting_height_);
+    ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
     waypoint_type_ = reachHeight;
 
     if (position_.z() > starting_height_) {
@@ -162,9 +153,8 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg,
-                    last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
-                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+      getCostMatrix(polar_histogram_, goal_, position_, fov_.azimuth_deg, last_sent_waypoint_, cost_params_,
+                    velocity_.norm() < 0.1f, smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
@@ -172,8 +162,7 @@ void LocalPlanner::determineStrategy() {
       // set last chosen direction for smoothing
       PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
-      Eigen::Vector3f projected_last_wp =
-          polarToCartesian(last_wp_pol, position_);
+      Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position_);
       star_planner_->setLastDirection(projected_last_wp);
 
       // build search tree
@@ -199,8 +188,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     float dist = hist.get_dist(0, j);
 
     // special case: distance of 0 denotes 'no obstacle in sight'
-    msg.ranges.push_back(
-        dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
+    msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
   }
 
   distance_data_ = msg;
@@ -224,8 +212,7 @@ void LocalPlanner::evaluateProgressRate() {
     float goal_dist_old = (position_old_ - goal_).norm();
 
     ros::Time time = ros::Time::now();
-    float time_diff_sec =
-        static_cast<float>((time - integral_time_old_).toSec());
+    float time_diff_sec = static_cast<float>((time - integral_time_old_).toSec());
     float incline = (goal_dist - goal_dist_old) / time_diff_sec;
     integral_time_old_ = time;
 
@@ -242,15 +229,13 @@ void LocalPlanner::evaluateProgressRate() {
     }
     float avg_incline = sum_incline / static_cast<float>(n_incline);
 
-    if (avg_incline > no_progress_slope_ &&
-        goal_dist_incline_.size() == dist_incline_window_size_) {
+    if (avg_incline > no_progress_slope_ && goal_dist_incline_.size() == dist_incline_window_size_) {
       if (cost_params_.height_change_cost_param_adapted > 0.75f) {
         cost_params_.height_change_cost_param_adapted -= 0.02f;
       }
     }
     if (avg_incline < no_progress_slope_) {
-      if (cost_params_.height_change_cost_param_adapted <
-          cost_params_.height_change_cost_param - 0.03f) {
+      if (cost_params_.height_change_cost_param_adapted < cost_params_.height_change_cost_param - 0.03f) {
         cost_params_.height_change_cost_param_adapted += 0.03f;
       }
     }
@@ -259,20 +244,15 @@ void LocalPlanner::evaluateProgressRate() {
         "%f .\033[0m",
         avg_incline, cost_params_.height_change_cost_param_adapted);
   } else {
-    cost_params_.height_change_cost_param_adapted =
-        cost_params_.height_change_cost_param;
+    cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
   }
 }
 
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
-const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const {
-  return final_cloud_;
-}
+const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const { return final_cloud_; }
 
-void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) {
-  velocity_ = vel;
-}
+void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) { velocity_ = vel; }
 
 void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_auto_mode = 1;
@@ -289,16 +269,14 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_col_prev_d = 4.f;
 }
 
-void LocalPlanner::getTree(
-    std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-    std::vector<Eigen::Vector3f>& path_node_positions) const {
+void LocalPlanner::getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
+                           std::vector<Eigen::Vector3f>& path_node_positions) const {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
   path_node_positions = star_planner_->path_node_positions_;
 }
 
-void LocalPlanner::getObstacleDistanceData(
-    sensor_msgs::LaserScan& obstacle_distance) {
+void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_distance) {
   obstacle_distance = distance_data_;
 }
 

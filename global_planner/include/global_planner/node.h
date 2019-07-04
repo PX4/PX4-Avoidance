@@ -33,16 +33,10 @@ class Node {
 
 bool operator==(const Node& lhs, const Node& rhs) { return lhs.isEqual(rhs); }
 bool operator<(const Node& lhs, const Node& rhs) { return lhs.isSmaller(rhs); }
-bool operator!=(const Node& lhs, const Node& rhs) {
-  return !operator==(lhs, rhs);
-}
+bool operator!=(const Node& lhs, const Node& rhs) { return !operator==(lhs, rhs); }
 bool operator>(const Node& lhs, const Node& rhs) { return operator<(rhs, lhs); }
-bool operator<=(const Node& lhs, const Node& rhs) {
-  return !operator>(lhs, rhs);
-}
-bool operator>=(const Node& lhs, const Node& rhs) {
-  return !operator<(lhs, rhs);
-}
+bool operator<=(const Node& lhs, const Node& rhs) { return !operator>(lhs, rhs); }
+bool operator>=(const Node& lhs, const Node& rhs) { return !operator<(lhs, rhs); }
 
 typedef std::shared_ptr<Node> NodePtr;
 typedef std::pair<Node, double> NodeDistancePair;
@@ -50,14 +44,9 @@ typedef std::pair<NodePtr, double> PointerNodeDistancePair;
 
 class CompareDist {
  public:
-  bool operator()(const CellDistancePair& n1, const CellDistancePair& n2) {
-    return n1.second > n2.second;
-  }
-  bool operator()(const NodeDistancePair& n1, const NodeDistancePair& n2) {
-    return n1.second > n2.second;
-  }
-  bool operator()(const PointerNodeDistancePair& n1,
-                  const PointerNodeDistancePair& n2) {
+  bool operator()(const CellDistancePair& n1, const CellDistancePair& n2) { return n1.second > n2.second; }
+  bool operator()(const NodeDistancePair& n1, const NodeDistancePair& n2) { return n1.second > n2.second; }
+  bool operator()(const PointerNodeDistancePair& n1, const PointerNodeDistancePair& n2) {
     return n1.second > n2.second;
   }
 };
@@ -66,17 +55,14 @@ class CompareDist {
 class NodeWithoutSmooth : public Node {
  public:
   NodeWithoutSmooth() = default;
-  NodeWithoutSmooth(const Cell& cell, const Cell& parent)
-      : Node(cell, parent) {}
+  NodeWithoutSmooth(const Cell& cell, const Cell& parent) : Node(cell, parent) {}
   ~NodeWithoutSmooth() = default;
 
   bool isEqual(const Node& other) const { return cell_ == other.cell_; }
 
   std::size_t hash() const { return std::hash<global_planner::Cell>()(cell_); }
 
-  NodePtr nextNode(const Cell& nextCell) const {
-    return NodePtr(new NodeWithoutSmooth(nextCell, cell_));
-  }
+  NodePtr nextNode(const Cell& nextCell) const { return NodePtr(new NodeWithoutSmooth(nextCell, cell_)); }
 
   double getRotation(const Node& other) const { return 0.0; }
 };
@@ -90,9 +76,7 @@ class SpeedNode : public Node {
   SpeedNode(const Cell& cell, const Cell& parent) : Node(cell, parent) {}
   ~SpeedNode() = default;
 
-  NodePtr nextNode(const Cell& nextCell) const {
-    return NodePtr(new SpeedNode(nextCell, cell_));
-  }
+  NodePtr nextNode(const Cell& nextCell) const { return NodePtr(new SpeedNode(nextCell, cell_)); }
 
   std::vector<NodePtr> getNeighbors() const {
     std::vector<NodePtr> neighbors;
@@ -109,14 +93,11 @@ class SpeedNode : public Node {
 };
 
 struct HashNodePtr {
-  std::size_t operator()(const std::shared_ptr<Node>& node_ptr) const {
-    return node_ptr->hash();
-  }
+  std::size_t operator()(const std::shared_ptr<Node>& node_ptr) const { return node_ptr->hash(); }
 };
 
 struct EqualsNodePtr {
-  std::size_t operator()(const std::shared_ptr<Node>& node_ptr1,
-                         const std::shared_ptr<Node>& node_ptr2) const {
+  std::size_t operator()(const std::shared_ptr<Node>& node_ptr1, const std::shared_ptr<Node>& node_ptr2) const {
     return node_ptr1->isEqual(*node_ptr2);
   }
 };
@@ -127,16 +108,12 @@ namespace std {
 
 template <>
 struct hash<global_planner::Node> {
-  std::size_t operator()(const global_planner::Node& node) const {
-    return node.hash();
-  }
+  std::size_t operator()(const global_planner::Node& node) const { return node.hash(); }
 };
 
 template <>
 struct hash<global_planner::NodeWithoutSmooth> {
-  std::size_t operator()(const global_planner::NodeWithoutSmooth& node) const {
-    return node.hash();
-  }
+  std::size_t operator()(const global_planner::NodeWithoutSmooth& node) const { return node.hash(); }
 };
 
 }  // namespace std

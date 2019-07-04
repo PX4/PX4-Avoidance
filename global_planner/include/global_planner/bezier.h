@@ -21,8 +21,7 @@ T quadraticBezierAcc(T p0, T p1, T p2, double duration = 1.0) {
 
 // Returns a quadratic Bezier-curve starting in p0 and and ending in p2
 template <typename P>
-std::vector<P> threePointBezier(const P& p0, const P& p1, const P& p2,
-                                int num_steps = 10) {
+std::vector<P> threePointBezier(const P& p0, const P& p1, const P& p2, int num_steps = 10) {
   std::vector<P> curve;
   for (int i = 0; i <= num_steps; ++i) {
     double t = ((double)i) / num_steps;
@@ -43,9 +42,8 @@ nav_msgs::Path threePointBezier(const Path& path, int num_steps = 10) {
     return path;
   }
   auto new_path = path;
-  auto new_points = threePointBezier(
-      new_path.poses[0].pose.position, new_path.poses[1].pose.position,
-      new_path.poses[2].pose.position, num_steps);
+  auto new_points = threePointBezier(new_path.poses[0].pose.position, new_path.poses[1].pose.position,
+                                     new_path.poses[2].pose.position, num_steps);
   new_path.poses.clear();
   for (auto point : new_points) {
     auto new_pose = path.poses[0];
@@ -56,8 +54,7 @@ nav_msgs::Path threePointBezier(const Path& path, int num_steps = 10) {
 }
 
 template <typename P, typename BezierMsg>
-void fillBezierMsg(BezierMsg& msg, const P& p0, const P& p1, const P& p2,
-                   double duration) {
+void fillBezierMsg(BezierMsg& msg, const P& p0, const P& p1, const P& p2, double duration) {
   msg.prev = p0;
   msg.ctrl = p1;
   msg.next = p2;
@@ -69,8 +66,7 @@ void fillBezierMsg(BezierMsg& msg, const P& p0, const P& p1, const P& p2,
 // The second is maintaining max_vel
 // The third is decelerating and halting at end
 template <typename P, typename BezierMsg>
-void bezierFromTwoPoints(const P& start, const P& end, double acc,
-                         double max_vel, std::vector<BezierMsg>& msgs) {
+void bezierFromTwoPoints(const P& start, const P& end, double acc, double max_vel, std::vector<BezierMsg>& msgs) {
   double total_dist = distance(start, end);
 
   // The duration and distance needed to accerlerate to max_vel
@@ -89,8 +85,7 @@ void bezierFromTwoPoints(const P& start, const P& end, double acc,
   // Fill the messages
   BezierMsg acc_msg, max_vel_msg, decel_msg;
   fillBezierMsg(acc_msg, start, start, max_vel_point, acc_duration);
-  fillBezierMsg(max_vel_msg, max_vel_point, middle, decel_point,
-                max_vel_duration);
+  fillBezierMsg(max_vel_msg, max_vel_point, middle, decel_point, max_vel_duration);
   fillBezierMsg(decel_msg, decel_point, end, end, acc_duration);
   msgs = {acc_msg, max_vel_msg, decel_msg};
 }
@@ -98,8 +93,7 @@ void bezierFromTwoPoints(const P& start, const P& end, double acc,
 // Puts the control point between start and end such that the acceleration
 // and the duration matches the speeds
 template <typename P, typename BezierMsg>
-void bezierFromTwoSpeeds(const P& start, const P& end, double start_speed,
-                         double end_speed, BezierMsg& msg) {
+void bezierFromTwoSpeeds(const P& start, const P& end, double start_speed, double end_speed, BezierMsg& msg) {
   double avg_speed = (start_speed + end_speed) / 2.0;
   double distance = distance(start, end);
   double duration = distance / avg_speed;
@@ -117,8 +111,7 @@ double getDuration(const P& p0, const P& p1, double acc) {
 }
 
 template <typename P>
-double getAccelerationMagnitude(const P& p0, const P& p1, const P& p2,
-                                double duration) {
+double getAccelerationMagnitude(const P& p0, const P& p1, const P& p2, double duration) {
   double dx = quadraticBezierAcc(p0.x, p1.x, p2.x);
   double dy = quadraticBezierAcc(p0.y, p1.y, p2.y);
   double dz = quadraticBezierAcc(p0.z, p1.z, p2.z);
@@ -126,9 +119,7 @@ double getAccelerationMagnitude(const P& p0, const P& p1, const P& p2,
 }
 
 template <typename BezierMsg>
-nav_msgs::Path pathToTriplets(const nav_msgs::Path& path,
-                              std::vector<BezierMsg> triplets,
-                              std::vector<double> speed) {
+nav_msgs::Path pathToTriplets(const nav_msgs::Path& path, std::vector<BezierMsg> triplets, std::vector<double> speed) {
   if (path.poses.size() < 3) {
     return path;
   }

@@ -48,9 +48,8 @@ class StateMachine {
   StateEnum getState();
 
  protected:
-  virtual Transition runCurrentState() = 0;  // implement using a big switch
-  virtual StateEnum chooseNextState(
-      StateEnum currentState, Transition transition) = 0;  // nested switches
+  virtual Transition runCurrentState() = 0;                                              // implement using a big switch
+  virtual StateEnum chooseNextState(StateEnum currentState, Transition transition) = 0;  // nested switches
 
  private:
   StateEnum m_currentState;
@@ -59,14 +58,12 @@ class StateMachine {
 /*---------------IMPLEMENTATION------------------*/
 
 template <typename StateEnum>
-StateMachine<StateEnum>::StateMachine(StateEnum startingState)
-    : m_currentState(startingState) {}
+StateMachine<StateEnum>::StateMachine(StateEnum startingState) : m_currentState(startingState) {}
 
 template <typename StateEnum>
 void StateMachine<StateEnum>::iterateOnce() {
   Transition t = runCurrentState();
-  if (t != Transition::REPEAT)
-    m_currentState = chooseNextState(m_currentState, t);
+  if (t != Transition::REPEAT) m_currentState = chooseNextState(m_currentState, t);
 }
 
 template <typename StateEnum>

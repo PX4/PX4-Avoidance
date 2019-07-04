@@ -44,16 +44,7 @@ using namespace usm;
  * and a transition table. Use this as an example for your use case!
  */
 
-enum TestStates {
-  START,
-  PATH_A_1,
-  PATH_A_2,
-  END,
-  PATH_B_1,
-  PATH_B_2,
-  PATH_B_3,
-  CLEANUP
-};
+enum TestStates { START, PATH_A_1, PATH_A_2, END, PATH_B_1, PATH_B_2, PATH_B_3, CLEANUP };
 
 class TestStateMachine final : public StateMachine<TestStates> {
  public:
@@ -92,8 +83,7 @@ class TestStateMachine final : public StateMachine<TestStates> {
     // clang-format on
   }
 
-  TestStates chooseNextState(TestStates currentState,
-                             Transition transition) override {
+  TestStates chooseNextState(TestStates currentState, Transition transition) override {
     // clang-format off
     USM_TABLE(currentState, CLEANUP,
       USM_STATE(transition, START,    USM_MAP(Transition::NEXT1, PATH_A_1);

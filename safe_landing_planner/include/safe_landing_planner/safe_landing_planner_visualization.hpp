@@ -24,10 +24,9 @@ class SafeLandingPlannerVisualization {
   * @param[in] last_pos, previous vehicle position
   * @param[in] config, dynamic reconfigure parameters
   **/
-  void visualizeSafeLandingPlanner(
-      const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
-      const geometry_msgs::Point& last_pos,
-      safe_landing_planner::SafeLandingPlannerNodeConfig& config);
+  void visualizeSafeLandingPlanner(const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
+                                   const geometry_msgs::Point& last_pos,
+                                   safe_landing_planner::SafeLandingPlannerNodeConfig& config);
 
  private:
   ros::Publisher local_pointcloud_pub_;
@@ -44,8 +43,7 @@ class SafeLandingPlannerVisualization {
   * @params[in]  pos, location of the drone at the last timestep
   * @params[in]  last_pos, location of the drone at the previous timestep
   **/
-  void publishPaths(const geometry_msgs::Point& pos,
-                    const geometry_msgs::Point& last_pos);
+  void publishPaths(const geometry_msgs::Point& pos, const geometry_msgs::Point& last_pos);
 
   /**
   * @brief       Visualization of the boolean land grid
@@ -53,8 +51,7 @@ class SafeLandingPlannerVisualization {
   * @params[in]  pos, vehicle position
   * @param[in]   smoothing_size, kernel size on cell land hysteresis
   **/
-  void publishGrid(const Grid& grid, const geometry_msgs::Point& pos,
-                   float smoothing_size) const;
+  void publishGrid(const Grid& grid, const geometry_msgs::Point& pos, float smoothing_size) const;
 
   /**
   * @brief      Visualization of the mean values grid

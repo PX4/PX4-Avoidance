@@ -21,8 +21,7 @@ class LocalPlannerTests : public ::testing::Test {
     ros::Time::init();
 
     planner.setDefaultPx4Parameters();
-    avoidance::LocalPlannerNodeConfig config =
-        avoidance::LocalPlannerNodeConfig::__getDefault__();
+    avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
     planner.dynamicReconfigureSetParams(config, 1);
     planner.setFOV(59.0f, 46.0f);
 
@@ -88,14 +87,13 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
-  int idx_lower_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
-  int idx_upper_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i &&
-        i <= idx_upper_obstacle_boundary_bin)
+    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -111,8 +109,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
   float node_min_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin();
-       it != output.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x() > distance) break;
     if (node.y() > node_max_y) node_max_y = node.y();
@@ -144,14 +141,13 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
-  int idx_lower_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
-  int idx_upper_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i &&
-        i <= idx_upper_obstacle_boundary_bin)
+    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -166,8 +162,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin();
-       it != output.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x() > distance) break;
     if (node.y() > node_max_y) node_max_y = node.y();
@@ -196,14 +191,13 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
-  int idx_lower_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
-  int idx_upper_obstacle_boundary_bin = static_cast<int>(
-      (M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
+  int idx_lower_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
+  int idx_upper_obstacle_boundary_bin =
+      static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i &&
-        i <= idx_upper_obstacle_boundary_bin)
+    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
     else
       EXPECT_GT(scan.ranges[i], scan.range_max);
@@ -218,8 +212,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_min_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin();
-       it != output.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
     auto node = *it;
     if (node.x() > distance) break;
     if (node.y() < node_min_y) node_min_y = node.y();

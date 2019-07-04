@@ -174,12 +174,9 @@ TEST(Common, polarToHistogramIndex) {
   const Eigen::Vector2i index_4 = polarToHistogramIndex(p_pol_2, resolution_2);
   const Eigen::Vector2i index_5 = polarToHistogramIndex(p_pol_3, resolution_2);
   const Eigen::Vector2i index_6 = polarToHistogramIndex(p_pol_4, resolution_2);
-  const Eigen::Vector2i index_7 =
-      polarToHistogramIndex(p_pol_5, resolution_1);  // wrapped
-  const Eigen::Vector2i index_8 =
-      polarToHistogramIndex(p_pol_6, resolution_2);  // wrapped
-  const Eigen::Vector2i index_9 =
-      polarToHistogramIndex(p_pol_7, resolution_2);  // wrapped
+  const Eigen::Vector2i index_7 = polarToHistogramIndex(p_pol_5, resolution_1);  // wrapped
+  const Eigen::Vector2i index_8 = polarToHistogramIndex(p_pol_6, resolution_2);  // wrapped
+  const Eigen::Vector2i index_9 = polarToHistogramIndex(p_pol_7, resolution_2);  // wrapped
 
   // THEN: the  histogram index should be ..
   // elevation angle
@@ -402,9 +399,9 @@ TEST(Common, wrapPolar) {
   // GIVEN: some polar points with elevation and azimuth angles which need to be
   // wrapped
   float rad = 1.0f;
-  PolarPoint p_pol_1(110.f, 0.f, rad);   // wrap  elevation with jump in azimuth
-  PolarPoint p_pol_2(0.f, 200.f, rad);   // wrap azimuth
-  PolarPoint p_pol_3(-180.f, 0.f, rad);  // wrap elevation with jump in azimuth
+  PolarPoint p_pol_1(110.f, 0.f, rad);    // wrap  elevation with jump in azimuth
+  PolarPoint p_pol_2(0.f, 200.f, rad);    // wrap azimuth
+  PolarPoint p_pol_3(-180.f, 0.f, rad);   // wrap elevation with jump in azimuth
   PolarPoint p_pol_4(0.f, -1230.f, rad);  // wrap azimuth multiple times
   // wrap elevation, no change in azimuth
   PolarPoint p_pol_5(-330.f, 140.f, rad);
