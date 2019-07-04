@@ -32,11 +32,16 @@ class AvoidanceNode {
 
   ModelParameters getPX4Parameters() const { return px4_; }
   float getMissionItemSpeed() const { return mission_item_speed_; }
+  MAV_STATE getSystemStatus();
+
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
   **/
   void checkPx4Parameters();
+
+  void setSystemStatus(MAV_STATE state);
+
 
  private:
   ros::NodeHandle nh_;
@@ -73,7 +78,7 @@ class AvoidanceNode {
   void cmdLoopCallback(const ros::TimerEvent& event);
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
-  void setSystemStatus(MAV_STATE state);
+
   /**
   * @brief     callaback with the list of FCU parameters
   * @param[in] msg, list of paramters
