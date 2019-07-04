@@ -465,39 +465,9 @@ void LocalPlannerNode::threadFunction() {
   }
 }
 
-void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
-  ros::Duration timeout_termination = ros::Duration(local_planner_->timeout_termination_);
-  ros::Duration timeout_critical = ros::Duration(local_planner_->timeout_critical_);
-  ros::Duration timeout_startup = ros::Duration(local_planner_->timeout_startup_);
-
-  if (since_last_cloud > timeout_termination && since_start > timeout_termination) {
-    setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
-  } else {
-    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
-      if (position_received_) {
-        hover = true;
-        setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
-        std::string not_received = "";
-        for (size_t i = 0; i < cameras_.size(); i++) {
-          if (!cameras_[i].received_) {
-            not_received.append(", no cloud received on topic ");
-            not_received.append(cameras_[i].topic_);
-          }
-          if (!cameras_[i].transformed_) {
-            not_received.append(", missing tf on topic ");
-            not_received.append(cameras_[i].topic_);
-          }
-        }
-
-        ROS_WARN("\033[1;33m Pointcloud timeout %s (Hovering at current position) \n \033[0m", not_received.c_str());
-      } else {
-        ROS_WARN("\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
-      }
-    } else {
-      if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
-    }
-  }
+void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
+                                     ros::Duration since_start, bool& hover) {
+  avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover);
 }
 
 void LocalPlannerNode::pointCloudTransformThread(int index) {
