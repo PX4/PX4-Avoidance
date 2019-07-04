@@ -147,6 +147,11 @@ PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
   return p;
 }
 
+PolarPoint cartesianToPolarFCU(const pcl::PointXYZ& p) {
+  return cartesianToPolarFCU(Eigen::Vector3f(p.x, p.y, p.z),
+                             Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+}
+
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
   Eigen::Vector2i ev2(0, 0);
   PolarPoint p_wrapped = p_pol;
@@ -426,27 +431,49 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point) {
 }
 
 // This function is a refactor of the original in the pcl library
-void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
+pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(
+    pcl::PointCloud<pcl::PointXYZ>& cloud) {
   // Filter out NANs and keep track of outermost points for FOV
   size_t j = 0;
-  float h_max = -9999.f, v_max = -9999.f, h_min = 9999.f, v_min = 9999.f;
+  float x_max = -9999.f, y_max = -9999.f, z_max = -9999.f, x_min = 9999.f,
+        y_min = 9999.f, z_min = 9999.f;
+  int i_x_max = -1, i_x_min = -1, i_y_max = -1, i_y_min = -1, i_z_max = -1,
+      i_z_min = -1;
   for (size_t i = 0; i < cloud.points.size(); ++i) {
     if (!std::isfinite(cloud.points[i].x) ||
         !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
       continue;
     cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
 
-    if (h_max * cloud.points[i].z < cloud.points[i].x)
-      h_max = cloud.points[i].x / cloud.points[i].z;
+    if (cloud.points[j].x > x_max) {
+      x_max = cloud.points[j].x;
+      i_x_max = j;
+    }
 
-    if (v_max * cloud.points[i].z < cloud.points[i].y)
-      v_max = cloud.points[i].y / cloud.points[i].z;
+    if (cloud.points[j].y > y_max) {
+      y_max = cloud.points[j].y;
+      i_y_max = j;
+    }
 
-    if (h_min * cloud.points[i].z > cloud.points[i].x)
-      h_min = cloud.points[i].x / cloud.points[i].z;
+    if (cloud.points[j].z > z_max) {
+      z_max = cloud.points[j].z;
+      i_z_max = j;
+    }
 
-    if (v_min * cloud.points[i].z > cloud.points[i].y)
-      v_min = cloud.points[i].y / cloud.points[i].z;
+    if (cloud.points[j].x < x_min) {
+      x_min = cloud.points[j].x;
+      i_x_min = j;
+    }
+
+    if (cloud.points[j].y < y_min) {
+      y_min = cloud.points[j].y;
+      i_y_min = j;
+    }
+
+    if (cloud.points[j].z < z_min) {
+      z_min = cloud.points[j].z;
+      i_z_min = j;
+    }
 
     j++;
   }
@@ -460,11 +487,53 @@ void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov) {
 
   // Removing bad points => dense (note: 'dense' doesn't mean 'organized')
   cloud.is_dense = true;
-  fov.h_fov_deg =
-      std::max(fov.h_fov_deg,
-               RAD_TO_DEG * static_cast<float>(atan(h_max) - atan(h_min)));
-  fov.v_fov_deg =
-      std::max(fov.v_fov_deg,
-               RAD_TO_DEG * static_cast<float>(atan(v_max) - atan(v_min)));
+  pcl::PointCloud<pcl::PointXYZ> maxima;
+  maxima.header.frame_id = cloud.header.frame_id;
+  if (i_x_max >= 0) maxima.push_back(cloud.points[i_x_max]);
+  if (i_y_max >= 0) maxima.push_back(cloud.points[i_y_max]);
+  if (i_z_max >= 0) maxima.push_back(cloud.points[i_z_max]);
+  if (i_x_min >= 0) maxima.push_back(cloud.points[i_x_min]);
+  if (i_y_min >= 0) maxima.push_back(cloud.points[i_y_min]);
+  if (i_z_min >= 0) maxima.push_back(cloud.points[i_z_min]);
+
+  return maxima;
 }
+
+void updateFOVFromMaxima(FOV& fov,
+                         const pcl::PointCloud<pcl::PointXYZ>& maxima) {
+  float h_min = 9999.f, h_max = -9999.f, v_min = 9999.f, v_max = -9999.f;
+
+  for (auto p : maxima) {
+    PolarPoint p_pol_fcu = cartesianToPolarFCU(p);
+    p_pol_fcu.z += 180.0f;  // move azimuth to [0, 360]
+    p_pol_fcu.e += 90.0f;   // move elevation to [0, 180]
+    h_min = std::min(p_pol_fcu.z, h_min);
+    h_max = std::max(p_pol_fcu.z, h_max);
+    v_min = std::min(p_pol_fcu.e, v_min);
+    v_max = std::max(p_pol_fcu.e, v_max);
+  }
+
+  float h_diff = std::min(h_max - h_min, 360.0f - h_max + h_min);
+  float v_diff = std::min(v_max - v_min, 360.0f - v_max + v_min);
+
+  if (h_diff > fov.h_fov_deg) {
+    fov.h_fov_deg = h_diff;
+
+    // Note: the wrapping here assumes the FOV < 180 degrees!
+    if (h_diff >= h_max - h_min) {
+      fov.yaw_deg = wrapAngleToPlusMinus180(
+          (h_max + h_min) / 2.0 - 180.0f);  // center of camera in [-180, 180]
+    } else {
+      fov.yaw_deg = wrapAngleToPlusMinus180((h_max + h_min) / 2.0);
+    }
+  }
+
+  // Note: no wrapping in elevation! If the camera sees the zenith or nadir,
+  // we are in trouble anyways! (aka. horizontal FOV = 360 degrees)
+  if (v_diff > fov.v_fov_deg) {
+    fov.v_fov_deg = v_diff;
+    fov.pitch_deg = (v_max + v_min) / 2.0f - 90.0f;
+  }
 }
+
+}  // namespace avoidance

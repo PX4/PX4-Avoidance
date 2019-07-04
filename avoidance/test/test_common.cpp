@@ -440,12 +440,12 @@ TEST(Common, wrapPolar) {
   EXPECT_FLOAT_EQ(-120.f, p_pol_6.z);
 }
 
-TEST(Common, removeNaNAndGetFOV) {
+TEST(Common, removeNaNAndGetMaxima) {
   // GIVEN: two point clouds, one including NANs, one without
   pcl::PointCloud<pcl::PointXYZ> pc_no_nan, pc_with_nan;
-  for (float x = -40.f; x < 40.f; x += 1.f) {
-    for (float y = -40.f; y < 40.f; y += 1.f) {
-      pcl::PointXYZ p(x, y, 40.f);
+  for (float x = -40.f; x <= 40.f; x += 1.f) {
+    for (float y = -30.f; y <= 30.f; y += 1.f) {
+      pcl::PointXYZ p(x, y, 15.f);
       pc_no_nan.push_back(p);
       pc_with_nan.push_back(p);
       pc_with_nan.push_back(pcl::PointXYZ(NAN, x, y));  // garbage point
@@ -455,23 +455,47 @@ TEST(Common, removeNaNAndGetFOV) {
   pc_no_nan.is_dense = true;
 
   // WHEN: we filter these clouds
-  FOV fov_no_nan, fov_with_nan;
-  FOV fov_larger(0.f, 0.f, 95.f, 95.f);
-  removeNaNAndGetFOV(pc_no_nan, fov_no_nan);
-  removeNaNAndGetFOV(pc_with_nan, fov_with_nan);
-  removeNaNAndGetFOV(pc_with_nan, fov_larger);
+  pcl::PointCloud<pcl::PointXYZ> maxima_no_nan, maxima_with_nan;
+  maxima_no_nan = removeNaNAndGetMaxima(pc_no_nan);
+  maxima_with_nan = removeNaNAndGetMaxima(pc_with_nan);
 
   // THEN: we expect the clouds to not contain NANs, be dense and reflect
-  // the FOV given by the cloud unless the previous FOV was bigger
+  // the maxima and minima
   EXPECT_EQ(pc_no_nan.size(), pc_with_nan.size());
   EXPECT_TRUE(pc_no_nan.is_dense);
   EXPECT_TRUE(pc_with_nan.is_dense);
-  EXPECT_NEAR(90.f, fov_no_nan.h_fov_deg, 1.f);
-  EXPECT_NEAR(90.f, fov_no_nan.v_fov_deg, 1.f);
-  EXPECT_NEAR(90.f, fov_with_nan.h_fov_deg, 1.f);
-  EXPECT_NEAR(90.f, fov_with_nan.v_fov_deg, 1.f);
-  EXPECT_FLOAT_EQ(95.f, fov_larger.h_fov_deg);
-  EXPECT_FLOAT_EQ(95.f, fov_larger.v_fov_deg);
+  float min_x = 999.f, min_y = 999.f, min_z = 999.f, max_x = -999.f,
+        max_y = -999.f, max_z = -999.f;
+
+  for (auto p : maxima_no_nan) {
+    min_x = std::min(p.x, min_x);
+    min_y = std::min(p.y, min_y);
+    min_z = std::min(p.z, min_z);
+    max_x = std::max(p.x, max_x);
+    max_y = std::max(p.y, max_y);
+    max_z = std::max(p.z, max_z);
+  }
+  EXPECT_NEAR(-40.f, min_x, 1.0f);
+  EXPECT_NEAR(-30.f, min_y, 1.0f);
+  EXPECT_NEAR(15.f, min_z, 1.0f);
+  EXPECT_NEAR(40.f, max_x, 1.0f);
+  EXPECT_NEAR(30.f, max_y, 1.0f);
+  EXPECT_NEAR(15.f, max_z, 1.0f);
+
+  for (auto p : maxima_with_nan) {
+    min_x = std::min(p.x, min_x);
+    min_y = std::min(p.y, min_y);
+    min_z = std::min(p.z, min_z);
+    max_x = std::max(p.x, max_x);
+    max_y = std::max(p.y, max_y);
+    max_z = std::max(p.z, max_z);
+  }
+  EXPECT_NEAR(-40.f, min_x, 1.0f);
+  EXPECT_NEAR(-30.f, min_y, 1.0f);
+  EXPECT_NEAR(15.f, min_z, 1.0f);
+  EXPECT_NEAR(40.f, max_x, 1.0f);
+  EXPECT_NEAR(30.f, max_y, 1.0f);
+  EXPECT_NEAR(15.f, min_z, 1.0f);
 }
 
 TEST(Common, isInWhichFOV) {
@@ -633,4 +657,88 @@ TEST(Common, scaleToFOV) {
   EXPECT_GT(1.0f, right_cam_3);
   EXPECT_FLOAT_EQ(1.0f, overlap);
   EXPECT_FLOAT_EQ(0.0f, outside);
+}
+
+TEST(Common, updateFOVFromMaxima) {
+  // GIVEN: different point clouds indicating various FOV
+  pcl::PointCloud<pcl::PointXYZ> front_h60_v45, right_h90_v30, back_h78_v45,
+      front_elevated, empty, one, zenith, nadir;
+  FOV fov_front_h60_v45, fov_right_h90_v30, fov_back_h78_v45,
+      fov_front_elevated, fov_empty, fov_one, fov_zenith, fov_nadir;
+  front_h60_v45.push_back(pcl::PointXYZ(1.0f, 0.57735026f, 0.47829262f));
+  front_h60_v45.push_back(pcl::PointXYZ(1.0f, -0.57735026f, -0.47829262f));
+  right_h90_v30.push_back(pcl::PointXYZ(1.0f, -1.0f, -0.37893738196));
+  right_h90_v30.push_back(pcl::PointXYZ(-1.0f, -1.0f, 0.37893738196));
+  back_h78_v45.push_back(pcl::PointXYZ(-1.0f, -0.80978403319f, 0.5329932637f));
+  back_h78_v45.push_back(pcl::PointXYZ(-1.0f, 0.80978403319f, -0.5329932637f));
+  front_elevated.push_back(pcl::PointXYZ(1.0f, 1.0f, 1.0f));
+  front_elevated.push_back(pcl::PointXYZ(1.0f, -1.0f, 2.0f));
+  one.push_back(pcl::PointXYZ(1.0f, 1.0f, 1.0f));
+  zenith.push_back(pcl::PointXYZ(1.0f, 1.0f, 3.0f));
+  zenith.push_back(pcl::PointXYZ(1.0f, -1.0f, 3.0f));
+  zenith.push_back(pcl::PointXYZ(-1.0f, 1.0f, 3.0f));
+  zenith.push_back(pcl::PointXYZ(-1.0f, -1.0f, 3.0f));
+  nadir.push_back(pcl::PointXYZ(1.0f, 1.0f, -3.0f));
+  nadir.push_back(pcl::PointXYZ(1.0f, -1.0f, -3.0f));
+  nadir.push_back(pcl::PointXYZ(-1.0f, 1.0f, -3.0f));
+  nadir.push_back(pcl::PointXYZ(-1.0f, -1.0f, -3.0f));
+
+  // WHEN: we call the updateFOVFromMaxima
+  updateFOVFromMaxima(fov_front_h60_v45, front_h60_v45);
+
+  // WHEN: we make subsequent calls with smaller or empty point clouds
+  updateFOVFromMaxima(fov_front_h60_v45, empty);
+
+  // WHEN: we test different fov point clouds
+  updateFOVFromMaxima(fov_right_h90_v30, right_h90_v30);
+  updateFOVFromMaxima(fov_back_h78_v45, back_h78_v45);
+  EXPECT_NO_THROW(updateFOVFromMaxima(fov_empty, empty));
+  updateFOVFromMaxima(fov_front_elevated, front_elevated);
+  EXPECT_NO_THROW(updateFOVFromMaxima(fov_one, one));
+  EXPECT_NO_THROW(updateFOVFromMaxima(fov_zenith, zenith));
+  EXPECT_NO_THROW(updateFOVFromMaxima(fov_nadir, nadir));
+
+  // THEN: we expect the corresponding field of view
+  EXPECT_NEAR(60.0f, fov_front_h60_v45.h_fov_deg, 1.0f);
+  EXPECT_NEAR(45.0f, fov_front_h60_v45.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_front_h60_v45.yaw_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_front_h60_v45.pitch_deg, 1.0f);
+
+  EXPECT_NEAR(90.0f, fov_right_h90_v30.h_fov_deg, 1.0f);
+  EXPECT_NEAR(30.0f, fov_right_h90_v30.v_fov_deg, 1.0f);
+  EXPECT_NEAR(-90.0f, fov_right_h90_v30.yaw_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_right_h90_v30.pitch_deg, 1.0f);
+
+  // THEN: the backward-looking can have yaw of + or - 180
+  EXPECT_NEAR(78.0f, fov_back_h78_v45.h_fov_deg, 1.0f);
+  EXPECT_NEAR(45.0f, fov_back_h78_v45.v_fov_deg, 1.0f);
+  EXPECT_TRUE(180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON ||
+              -180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON);
+  EXPECT_NEAR(0.0f, fov_back_h78_v45.pitch_deg, 1.0f);
+
+  EXPECT_NEAR(0.0f, fov_empty.h_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_empty.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_empty.yaw_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_empty.pitch_deg, 1.0f);
+
+  EXPECT_NEAR(90.0f, fov_front_elevated.h_fov_deg, 1.0f);
+  EXPECT_NEAR(19.47121f, fov_front_elevated.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_front_elevated.yaw_deg, 1.0f);
+  EXPECT_NEAR(-45.0f, fov_front_elevated.pitch_deg, 1.0f);
+
+  EXPECT_NEAR(0.0f, fov_one.h_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_one.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_one.yaw_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_one.pitch_deg, 1.0f);
+/** these can currently not work, as long as it doesn't throw
+  EXPECT_NEAR(360.0f, fov_zenith.h_fov_deg, 1.0f);
+  EXPECT_NEAR(36.8698976f, fov_zenith.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_zenith.yaw_deg, 1.0f);
+  EXPECT_NEAR(90.0f, fov_zenith.pitch_deg, 1.0f);
+
+  EXPECT_NEAR(360.0f, fov_nadir.h_fov_deg, 1.0f);
+  EXPECT_NEAR(36.8698976f, fov_nadir.v_fov_deg, 1.0f);
+  EXPECT_NEAR(0.0f, fov_nadir.yaw_deg, 1.0f);
+  EXPECT_NEAR(-90.0f, fov_nadir.pitch_deg, 1.0f);
+  **/
 }
