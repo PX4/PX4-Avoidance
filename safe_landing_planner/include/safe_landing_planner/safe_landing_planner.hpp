@@ -6,6 +6,7 @@
 #include <pcl/point_types.h>
 
 #include <dynamic_reconfigure/server.h>
+#include <safe_landing_planner/SLPGridMsg.h>
 #include <safe_landing_planner/SafeLandingPlannerNodeConfig.h>
 
 #include "grid.hpp"
@@ -54,6 +55,10 @@ class SafeLandingPlanner {
   Grid getGrid() const { return grid_; };
   int getSmoothingSize() const { return smoothing_size_; };
 
+  safe_landing_planner::SLPGridMsg raw_grid_;
+
+  bool play_rosbag_ = false;
+
  protected:
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector2i pos_index_ = Eigen::Vector2i(-1, -1);
@@ -71,7 +76,6 @@ class SafeLandingPlanner {
   int min_n_land_cells_ = 9;
   bool size_update_ = false;
 
-  safe_landing_planner::SafeLandingPlannerNodeConfig rqt_param_config_;
   Grid grid_ = Grid(10.f, 1.f);
   Grid previous_grid_ = Grid(10.f, 1.f);
 
@@ -107,5 +111,10 @@ class SafeLandingPlanner {
   std::pair<float, float> computeOnlineMeanVariance(float prev_mean,
                                                     float prev_variance,
                                                     float new_value, float seq);
+  /**
+  * @brief process the grid coming from a rosbag and map it to the datatypes
+  * such that the algorithm can be run again
+  **/
+  void processRawGrid();
 };
 }

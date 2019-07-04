@@ -16,6 +16,8 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
     Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f),
     Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
 
+const float LAND_SPEED = 0.7f;  // TODO: replace with Firmware parameter
+
 enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE };
 std::string toString(SLPState state);  // for logging
 
@@ -63,7 +65,6 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Eigen::Vector3f velocity_setpoint_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f loiter_position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f exploration_anchor_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f vel_sp = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector2i pos_index_ = Eigen::Vector2i::Zero();
 
   Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
@@ -78,9 +79,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
       publishTrajectorySetpoints_;
 
   /**
-  * @brief     decides if the desired setpoints received from the FCU should be
-  *            overwritten or sent back because no intervention is needed
-  * @returns   true, overwtite setpoints
+  * @brief     update the waypoint generator state based on the vehicle status
   **/
   void updateSLPState();
 
@@ -99,9 +98,25 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   usm::Transition runLoiter();
   usm::Transition runLand();
   usm::Transition runAltitudeChange();
-
+  /**
+  * @brief     checks if the vehicle is within the xy acceptance radius of a
+  *            waypoint
+  * @returns   true, if the vehicle is within the xy acceptance radius of the
+  *            landing waypoint
+  **/
   bool withinLandingRadius();
+  /**
+  * @brief     checks if the vehicle is within the z acceptance to the loiter
+  *            height from the ground under it
+  * @returns   true, if the vehicle is within the z acceptance to the loiter
+  *            height
+  **/
   bool inVerticalRange();
+  /**
+  * @brief      compute the percentile height of the landing area
+  * @params[in] percentile, percentile be computed
+  * @returns    height of the landing area
+  **/
   float landingAreaHeightPercentile(float percentile);
 
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this

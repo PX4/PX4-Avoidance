@@ -22,17 +22,19 @@ class SafeLandingPlannerVisualization {
   * @param[in] planner, SafeLandingPlanner class
   * @param[in] pos, current vehicle position
   * @param[in] last_pos, previous vehicle position
+  * @param[in] config, dynamic reconfigure parameters
   **/
-  void visualizeSafeLandingPlanner(const SafeLandingPlanner& planner,
-                                   const geometry_msgs::Point& pos,
-                                   const geometry_msgs::Point& last_pos);
+  void visualizeSafeLandingPlanner(
+      const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
+      const geometry_msgs::Point& last_pos,
+      safe_landing_planner::SafeLandingPlannerNodeConfig& config);
 
  private:
   ros::Publisher local_pointcloud_pub_;
   ros::Publisher grid_pub_;
   ros::Publisher path_actual_pub_;
-  ros::Publisher mean_pub_;
-  ros::Publisher std_dev_pub_;
+  ros::Publisher mean_std_dev_pub_;
+  ros::Publisher counter_pub_;
 
   int path_length_ = 0;
 
@@ -57,14 +59,16 @@ class SafeLandingPlannerVisualization {
   /**
   * @brief      Visualization of the mean values grid
   * @params[in] grid, grid data structure
+  * @params[in] std_dev_threshold, maximum standard deviation cell value to land
   **/
-  void publishMean(const Grid& grid);
+  void publishMeanStdDev(const Grid& grid, float std_dev_threshold);
 
   /**
   * @brief      Visualization of the standard deviation values grid
   * @params[in]  grid, grid data structure
+  * @params[in]  n_points_threshold, minimum number of points per cell parameter
   **/
-  void publishStandardDeviation(const Grid& grid);
+  void publishCounter(const Grid& grid, float n_points_threshold);
 
   /**
   * @brief converts from HSV to RGB color space

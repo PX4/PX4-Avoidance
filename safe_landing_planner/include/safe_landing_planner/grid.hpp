@@ -40,6 +40,9 @@ class Grid {
   void increaseCounter(const Eigen::Vector2i &idx) {
     counter_(idx.x(), idx.y()) = counter_(idx.x(), idx.y()) + 1;
   }
+  void setCounter(const Eigen::Vector2i &idx, int value) {
+    counter_(idx.x(), idx.y()) = value;
+  }
 
   Eigen::MatrixXf getMean() const { return mean_; }
   Eigen::MatrixXf getVariance() const { return variance_; }

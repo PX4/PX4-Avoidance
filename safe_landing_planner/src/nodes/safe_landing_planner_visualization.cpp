@@ -14,22 +14,27 @@ void SafeLandingPlannerVisualization::initializePublishers(
   path_actual_pub_ =
       nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
   grid_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid", 1);
-  mean_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid_mean", 1);
-  std_dev_pub_ =
-      nh.advertise<visualization_msgs::MarkerArray>("/grid_std_dev", 1);
+  mean_std_dev_pub_ =
+      nh.advertise<visualization_msgs::MarkerArray>("/grid_mean_std_dev", 1);
+  counter_pub_ =
+      nh.advertise<visualization_msgs::MarkerArray>("/grid_counter", 1);
 }
 
 void SafeLandingPlannerVisualization::visualizeSafeLandingPlanner(
     const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
-    const geometry_msgs::Point& last_pos) {
+    const geometry_msgs::Point& last_pos,
+    safe_landing_planner::SafeLandingPlannerNodeConfig& config) {
   local_pointcloud_pub_.publish(planner.visualization_cloud_);
   publishGrid(planner.getGrid(), pos, planner.getSmoothingSize());
-  publishMean(planner.getGrid());
-  publishStandardDeviation(planner.getGrid());
+  publishMeanStdDev(planner.getGrid(),
+                    static_cast<float>(config.std_dev_threshold));
+  publishCounter(planner.getGrid(),
+                 static_cast<float>(config.n_points_threshold));
   publishPaths(pos, last_pos);
 }
 
-void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
+void SafeLandingPlannerVisualization::publishMeanStdDev(
+    const Grid& grid, float std_dev_threshold) {
   visualization_msgs::MarkerArray marker_array;
 
   float cell_size = grid.getCellSize();
@@ -52,20 +57,22 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
   Eigen::Vector2f grid_min, grid_max;
   grid.getGridLimits(grid_min, grid_max);
 
-  float variance_max_value = 10.0f;
-  float variance_min_value = -1.0f;
+  float variance_max_value = std_dev_threshold;
+  float variance_min_value = 0.0f;
   float range_max = 360.f;
   float range_min = 0.f;
 
   Eigen::MatrixXf mean = grid.getMean();
+  Eigen::MatrixXf variance = grid.getVariance();
 
   for (size_t i = 0; i < grid.getRowColSize(); i++) {
     for (size_t j = 0; j < grid.getRowColSize(); j++) {
       cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
       cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
-      cell.pose.position.z = 0.0;
+      cell.pose.position.z = mean(i, j);
 
-      float h = ((range_max - range_min) * (mean(i, j) - variance_min_value) /
+      float h = ((range_max - range_min) *
+                 (sqrtf(variance(i, j)) - variance_min_value) /
                  (variance_max_value - variance_min_value)) +
                 range_min;
       float red, green, blue;
@@ -73,11 +80,17 @@ void SafeLandingPlannerVisualization::publishMean(const Grid& grid) {
       std::tie(cell.color.r, cell.color.g, cell.color.b) =
           HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
 
+      if (sqrtf(variance(i, j)) > variance_max_value) {
+        cell.color.r = 0.0;
+        cell.color.g = 0.0;
+        cell.color.b = 0.0;
+      }
+
       marker_array.markers.push_back(cell);
       cell.id += 1;
     }
   }
-  mean_pub_.publish(marker_array);
+  mean_std_dev_pub_.publish(marker_array);
 }
 std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(
     std::tuple<float, float, float> hsv) {
@@ -124,8 +137,8 @@ std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(
   return rgb;
 }
 
-void SafeLandingPlannerVisualization::publishStandardDeviation(
-    const Grid& grid) {
+void SafeLandingPlannerVisualization::publishCounter(const Grid& grid,
+                                                     float n_points_threshold) {
   visualization_msgs::MarkerArray marker_array;
 
   float cell_size = grid.getCellSize();
@@ -147,10 +160,10 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
   Eigen::Vector2f grid_min, grid_max;
   grid.getGridLimits(grid_min, grid_max);
 
-  Eigen::MatrixXf variance = grid.getVariance();
+  Eigen::MatrixXi counter = grid.getCounter();
 
-  float variance_max_value = 1.0f;
-  float variance_min_value = 0.0f;
+  float counter_max_value = 400.0f;
+  float counter_min_value = n_points_threshold;
   float range_max = 360.f;
   float range_min = 0.f;
 
@@ -161,8 +174,8 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
       cell.pose.position.z = 0.0;
 
       float h = ((range_max - range_min) *
-                 (sqrtf(variance(i, j)) - variance_min_value) /
-                 (variance_max_value - variance_min_value)) +
+                 (static_cast<float>(counter(i, j)) - counter_min_value) /
+                 (counter_max_value - counter_min_value)) +
                 range_min;
 
       std::tie(cell.color.r, cell.color.g, cell.color.b) =
@@ -172,7 +185,7 @@ void SafeLandingPlannerVisualization::publishStandardDeviation(
       cell.id += 1;
     }
   }
-  std_dev_pub_.publish(marker_array);
+  counter_pub_.publish(marker_array);
 }
 
 void SafeLandingPlannerVisualization::publishGrid(

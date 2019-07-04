@@ -10,7 +10,12 @@ void SafeLandingPlanner::runSafeLandingPlanner() {
     n_lines_padding_ = smoothing_size_;
     size_update_ = false;
   }
-  processPointcloud();
+  if (!play_rosbag_) {
+    processPointcloud();
+  } else {
+    processRawGrid();
+  }
+
   // low pass filter on grid mean and variance
   grid_.combine(previous_grid_, alpha_);
   isLandingPossible();
@@ -43,6 +48,35 @@ void SafeLandingPlanner::processPointcloud() {
         visualization_cloud_.points.push_back(avoidance::toXYZI(
             xyz, grid_index.x() * (grid_size_ / cell_size_) + grid_index.y()));
       }
+    }
+  }
+}
+
+void SafeLandingPlanner::processRawGrid() {
+  grid_seq_ = raw_grid_.header.seq;
+  std::swap(previous_grid_, grid_);
+  grid_.reset();
+  grid_.setFilterLimits(position_);
+
+  if (grid_.getGridSize() != raw_grid_.grid_size ||
+      grid_.getCellSize() != raw_grid_.cell_size) {
+    grid_.resize(raw_grid_.grid_size, raw_grid_.cell_size);
+  }
+
+  for (int i = 0; i < raw_grid_.mean.layout.dim[0].size; i++) {
+    for (int j = 0; j < raw_grid_.mean.layout.dim[1].size; j++) {
+      Eigen::Vector2i grid_index = Eigen::Vector2i(i, j);
+      grid_.setMean(
+          grid_index,
+          raw_grid_.mean.data[raw_grid_.mean.layout.dim[1].size * i + j]);
+      grid_.setVariance(
+          grid_index,
+          powf(raw_grid_.std_dev
+                   .data[raw_grid_.std_dev.layout.dim[1].size * i + j],
+               2));
+      grid_.setCounter(
+          grid_index,
+          raw_grid_.counter.data[raw_grid_.counter.layout.dim[1].size * i + j]);
     }
   }
 }
