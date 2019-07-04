@@ -508,7 +508,7 @@ void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
     // listen to tf topic
     std::ofstream myfile1("/data/tf_buffer_thread", std::ofstream::app);
-    myfile1 <<"thread loop: \t"<< ros::Time::now();
+    myfile1 << ros::Time::now();
 
     for (auto const& frame_pair : tf_buffer_.registered_transforms_) {
       tf::StampedTransform transform;

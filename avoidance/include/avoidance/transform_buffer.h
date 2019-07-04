@@ -136,14 +136,14 @@ class TransformBuffer {
             if (dt.toNSec() <= 0.5 * sample_time.toNSec()) {
               transform = *it;
               std::ofstream myfile1("/data/tf_delay", std::ofstream::app);
-              myfile1 <<"case 1: \t"<< dt.toNSec()<<"\t"<< it->stamp_<<"\t"<<time << "\n";
+              myfile1 << dt.toNSec()<<"\t"<< it->stamp_<<"\t"<<time <<"\t"<<1<< "\n";
               myfile1.close();
               return true;
             } else {
               it--;
               transform = *it;
               std::ofstream myfile1("/data/tf_delay", std::ofstream::app);
-              myfile1 <<"case 2: \t" << (it->stamp_ - time).toNSec()<<"\t"<< it->stamp_<<"\t"<<time << "\n";
+              myfile1 << (it->stamp_ - time).toNSec()<<"\t"<< it->stamp_<<"\t"<<time <<"\t"<<2<< "\n";
               myfile1.close();
               return true;
             }
