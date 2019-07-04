@@ -90,6 +90,14 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
   callPx4Params_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
+
+
+  time_t t = time(0);
+  struct tm * now = localtime(&t);
+  std::string buffer(80, '\0');
+  strftime(&buffer[0], buffer.size(), "%F-%H-%M", now);
+  log_name_ = buffer;
+  tf_buffer_.log_name_ = log_name_;
 }
 
 LocalPlannerNode::~LocalPlannerNode() {
@@ -507,7 +515,7 @@ void LocalPlannerNode::checkPx4Parameters() {
 void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
     // listen to tf topic
-    std::ofstream myfile1("/data/tf_buffer_thread", std::ofstream::app);
+    std::ofstream myfile1(("/data/tf_buffer" + log_name_).c_str(), std::ofstream::app);
     myfile1 << ros::Time::now();
 
     for (auto const& frame_pair : tf_buffer_.registered_transforms_) {

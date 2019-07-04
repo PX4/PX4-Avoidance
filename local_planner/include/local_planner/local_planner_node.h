@@ -237,6 +237,7 @@ class LocalPlannerNode {
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
   TransformBuffer tf_buffer_;
+  std::string log_name_;
 
   bool armed_ = false;
   bool data_ready_ = false;

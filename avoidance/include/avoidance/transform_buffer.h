@@ -22,6 +22,7 @@ class TransformBuffer {
   }
 
  public:
+  std::string log_name_;
   std::vector<std::pair<std::string, std::string>> registered_transforms_;
   TransformBuffer(float buffer_size_s)
       : buffer_size_(ros::Duration(buffer_size_s)) {
@@ -132,17 +133,16 @@ class TransformBuffer {
           if (it->stamp_ <= time) {
             ros::Duration dt = time - it->stamp_;
             ros::Duration sample_time = last_sample_time - it->stamp_;
+            std::ofstream myfile1(("/data/tf_delay" + log_name_).c_str(), std::ofstream::app);
 
             if (dt.toNSec() <= 0.5 * sample_time.toNSec()) {
               transform = *it;
-              std::ofstream myfile1("/data/tf_delay", std::ofstream::app);
               myfile1 << dt.toNSec()<<"\t"<< it->stamp_<<"\t"<<time <<"\t"<<1<< "\n";
               myfile1.close();
               return true;
             } else {
               it--;
               transform = *it;
-              std::ofstream myfile1("/data/tf_delay", std::ofstream::app);
               myfile1 << (it->stamp_ - time).toNSec()<<"\t"<< it->stamp_<<"\t"<<time <<"\t"<<2<< "\n";
               myfile1.close();
               return true;
