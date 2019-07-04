@@ -82,4 +82,5 @@ void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,
     }
   }
 }
-}
+
+}  // namespace avoidance

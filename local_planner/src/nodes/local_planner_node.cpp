@@ -196,8 +196,6 @@ void LocalPlannerNode::updatePlannerInfo() {
       local_planner_->original_cloud_vector_.push_back(
           std::move(cameras_[i].pcl_cloud));
       cameras_[i].transformed_ = false;
-      local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
-      wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
     } catch (tf::TransformException& ex) {
       ROS_ERROR("Received an exception trying to transform a pointcloud: %s",
                 ex.what());
@@ -627,10 +625,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
           cloud_msg_lock.reset();
 
           // remove nan padding and compute fov
-          pcl::PointCloud<pcl::PointXYZ> maxima =
-              removeNaNAndGetMaxima(pcl_cloud);
-          pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
-          updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
+          removeNaNAndUpdateFOV(pcl_cloud);
 
           // transform cloud to /local_origin frame
           pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
@@ -652,4 +647,41 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
     }
   }
 }
+
+// This function is a refactor of the original in the pcl library
+void LocalPlannerNode::removeNaNAndUpdateFOV(
+    pcl::PointCloud<pcl::PointXYZ>& cloud) {
+  // Filter out NANs and keep track of outermost points for FOV
+  size_t j = 0;
+  geometry_msgs::PointStamped p, p_fcu;
+  p.header.frame_id = cloud.header.frame_id;
+  p.header.stamp = ros::Time(0);
+
+  for (size_t i = 0; i < cloud.points.size(); ++i) {
+    if (!std::isfinite(cloud.points[i].x) ||
+        !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
+      continue;
+    cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
+
+    p.point = toPoint(Eigen::Vector3f(cloud.points[i].x, cloud.points[i].y,
+                                      cloud.points[i].z));
+    tf_listener_->transformPoint("fcu", p, p_fcu);
+    local_planner_->updateFOV(p_fcu.point.x, p_fcu.point.y, p_fcu.point.z);
+    wp_generator_->updateFOV(p_fcu.point.x, p_fcu.point.y, p_fcu.point.z);
+
+    j++;
+  }
+  if (j != cloud.points.size()) {
+    // Resize to the correct size
+    cloud.points.resize(j);
+  }
+
+  cloud.height = 1;
+  cloud.width = static_cast<uint32_t>(j);
+
+  // Removing bad points => dense (note: 'dense' doesn't mean 'organized')
+  cloud.is_dense = true;
+  return;
 }
+
+}  // namespace avoidance

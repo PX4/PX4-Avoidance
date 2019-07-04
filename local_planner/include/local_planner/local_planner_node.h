@@ -57,8 +57,6 @@ struct cameraData {
   ros::Subscriber pointcloud_sub_;
   sensor_msgs::PointCloud2 newest_cloud_msg_;
 
-  FOV fov_fcu_frame_;
-
   std::unique_ptr<std::mutex> cloud_msg_mutex_;
   std::unique_ptr<std::mutex> transformed_cloud_mutex_;
   std::unique_ptr<std::condition_variable> cloud_ready_cv_;
@@ -336,6 +334,15 @@ class LocalPlannerNode {
   * @brief     sends out emulated LaserScan data to the flight controller
   **/
   void publishLaserScan() const;
+
+  /**
+  * @brief           This is a refactored version of the PCL library function
+  *                  "removeNaNFromPointCloud" to remove NAN values from the
+  *                  point cloud and update the field of view
+  * @note            It operates in-place and iterates through the cloud once
+  * @param[in, out]  cloud The point cloud to be filtered in the camera frame
+  */
+  void removeNaNAndUpdateFOV(pcl::PointCloud<pcl::PointXYZ>& cloud);
 };
 }
 #endif  // LOCAL_PLANNER_LOCAL_PLANNER_NODE_H

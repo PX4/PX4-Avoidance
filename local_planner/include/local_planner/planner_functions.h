@@ -2,16 +2,15 @@
 #define LOCAL_PLANNER_FUNCTIONS_H
 
 #include "avoidance/common.h"
+#include "avoidance/fov.h"
 #include "avoidance/histogram.h"
 #include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 
-#include <Eigen/Dense>
-
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-
+#include <Eigen/Dense>
 #include <queue>
 #include <vector>
 
@@ -23,7 +22,7 @@ namespace avoidance {
 * @param      final_cloud, processed data to be used for planning
 * @param[in]  complete_cloud, array of pointclouds from the sensors
 * @param[in]  histogram_box, geometry definition of the bounding box
-* @param[in]  FOV, struct defining current field of view
+* @param[in]  FOV, object defining current field of view
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
 * @param[in]  max_age, maximum age (compute cycles) to keep data
@@ -35,7 +34,7 @@ namespace avoidance {
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, const std::vector<FOV>& fov, float yaw_fcu_frame_deg,
+    Box histogram_box, const FOV& fov, float yaw_fcu_frame_deg,
     float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s,
     int min_num_points_per_cell);

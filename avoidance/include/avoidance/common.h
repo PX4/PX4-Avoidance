@@ -15,6 +15,9 @@
 
 namespace avoidance {
 
+class LocalPlanner;
+class WaypointGenerator;
+
 enum class MAV_STATE {
   MAV_STATE_UNINIT,
   MAV_STATE_BOOT,
@@ -45,76 +48,11 @@ struct PolarPoint {
   float r;
 };
 
-/**
-* Struct defining the Field of View of the sensor. This is defined by
-* the current azimuth and elevation angles and the horizontal and vertical
-* field of view of the sensor
-*/
-struct FOV {
-  FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
-  FOV(float y, float p, float h, float v)
-      : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
-  float yaw_deg;
-  float pitch_deg;
-  float h_fov_deg;
-  float v_fov_deg;
-};
-
 #define M_PI_F 3.14159265358979323846f
 #define WARN_UNUSED __attribute__((warn_unused_result))
 
 const float DEG_TO_RAD = M_PI_F / 180.f;
 const float RAD_TO_DEG = 180.0f / M_PI_F;
-
-/**
-* @brief      determines whether point is inside FOV
-* @param[in]  vector of FOV structs defining current field of view
-* @param[in]  p_pol, polar representation of the point in question
-* @return     whether point is inside the FOV
-**/
-bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
-bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
-
-/**
-* @brief      compute in which FOV the current point lies
-* @param[in]  vector of FOV defining the field of view of the drone
-* @param[in]  polar point of the current orienation in question
-* @param[out] index pointing to the camera in the FOV struct which contains the
-*             current point
-* @returns    boolean value if the point in question is in exactly one FOV
-* @warning    This function returns false and sets the index to -1 if there is
-*             no or more than one camera which sees the current point
-**/
-bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                  int& idx);
-
-/**
-* @brief      determine whether the given point lies on the edge of the field
-*             of view or between two adjacent cameras
-* @param[in]  vector of FOV defining the field of view of the drone
-* @param[in]  polar point of the current orientation in question
-* @param[out] index of the camera in the FOV vector, indicating which FOV edge
-*             it is on, if any. -1 if none
-* @returns    boolean indicating whether the current point is on the edge of the
-*             field of view
-* @warning    This function returns false and sets the index to -1 if the point
-*             is not on the edge of the fov
-**/
-bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol,
-                   int& idx);
-
-/**
-* @brief     function returning a scale value depending on where a polar point
-*            is relative to the field of view
-* @param[in] vector of FOV structs defining the field of view
-* @param[in] polar point in the fcu frame pointing in the direction we wish to
-*            go
-* @returns   a scale [0, 1] depending on whether the point in question can be
-*            seen from here
-* @TODO:     currently this is binary depending on whether its inside or outside
-*            in the near future I want to scale this correctly
-**/
-float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol);
 
 /**
 * @brief     calculates the distance between two polar points
@@ -194,7 +132,7 @@ PolarPoint cartesianToPolarHistogram(float x, float y, float z,
 **/
 PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
                                const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolarFCU(const pcl::PointXYZ& p);
+PolarPoint cartesianToPolarFCU(float x, float y, float z);
 
 /**
 * @brief     compute polar point to histogram index
@@ -293,29 +231,6 @@ void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
 * @param      point, setpoint to be filled with NAN
 **/
 void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
-
-/**
-* @brief           This is a refactored version of the PCL library function
-*                  "removeNaNFromPointCloud" to remove NAN values from the
-*                  point cloud and compute the FOV
-* @note            It operates in-place and iterates through the cloud once
-* @param[in, out]  cloud The point cloud to be filtered in the camera frame
-* @returns         a cloud containing the eight corners of the box containing
-*                  all the points, in the same frame as the given point cloud
-**/
-pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(
-    pcl::PointCloud<pcl::PointXYZ>& cloud);
-
-/**
-* @brief           Compute the FOV given a box of 8 points defining a box
-* @param[in]       FOV to be updated
-* @param[in]       point cloud containing 8 points which define a cube that
-*                  contains all the points in a point cloud in the FCU frame
-* @note            the FOV is only adjusted if the current cloud indicates a
-*                  bigger FOV than previously thought
-**/
-void updateFOVFromMaxima(FOV& fov,
-                         const pcl::PointCloud<pcl::PointXYZ>& maxima);
 
 }  // namespace avoidance
 

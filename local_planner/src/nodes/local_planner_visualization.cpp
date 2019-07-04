@@ -87,9 +87,10 @@ void LocalPlannerVisualization::visualizePlannerData(
   publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
 }
 
-void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec,
+void LocalPlannerVisualization::publishFOV(const FOV& fov_vec,
                                            const float max_range) const {
   Eigen::Vector3f drone_pos = Eigen::Vector3f(0.f, 0.f, 0.f);
+  /** visualizing the matrix will be a biaaatch
   for (int i = 0; i < fov_vec.size(); ++i) {
     PolarPoint p1(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f,
                   fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f, max_range);
@@ -133,6 +134,7 @@ void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec,
 
     fov_pub_.publish(m);
   }
+  */
 }
 
 void LocalPlannerVisualization::publishOfftrackPoints(

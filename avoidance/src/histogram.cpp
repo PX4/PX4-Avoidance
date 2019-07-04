@@ -65,4 +65,5 @@ bool Histogram::isEmpty() const {
   }
   return counter == 0;
 }
-}
+
+}  // namespace avoidance

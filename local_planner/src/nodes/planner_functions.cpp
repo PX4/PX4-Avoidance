@@ -1,7 +1,5 @@
 #include "local_planner/planner_functions.h"
 
-#include "avoidance/common.h"
-
 #include <ros/console.h>
 
 #include <numeric>
@@ -13,7 +11,7 @@ namespace avoidance {
 void processPointcloud(
     pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, const std::vector<FOV>& fov, float yaw_fcu_frame_deg,
+    Box histogram_box, const FOV& fov, float yaw_fcu_frame_deg,
     float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
     float min_realsense_dist, int max_age, float elapsed_s,
     int min_num_points_per_cell) {
@@ -72,7 +70,8 @@ void processPointcloud(
         // complete_cloud, as well as outside FOV and 'young' enough
         if (histogram_points_counter(p_ind.y(), p_ind.x()) <
                 min_num_points_per_cell &&
-            xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol_fcu)) {
+            xyzi.intensity < max_age &&
+            !fov.isVisible(p_pol_fcu.z, p_pol_fcu.z)) {
           final_cloud.points.push_back(
               toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 

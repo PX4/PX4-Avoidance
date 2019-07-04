@@ -86,7 +86,7 @@ class LocalPlanner {
   float yaw_fcu_frame_deg_ = 0.0f;
   float pitch_fcu_frame_deg_ = 0.0f;
 
-  std::vector<FOV> fov_fcu_frame_;
+  FOV fov_fcu_frame_ = FOV(GRID_LENGTH_Z, GRID_LENGTH_E);
 
   waypoint_choice waypoint_type_;
   ros::Time last_path_time_;
@@ -179,22 +179,17 @@ class LocalPlanner {
   void setGoal(const Eigen::Vector3f& goal);
 
   /**
-  * @brief     setter method for field of view
-  * @param[in] index of the camera
-  * @param[in] field of view structure of the camera
-  */
-  void setFOV(int i, const FOV& fov);
+  * @brief     Update the horizontal and vertical Field of View based on a point
+  * @param[in] x coordinate of the point in fcu frame
+  * @param[in] y coordinate of the point in fcu frame
+  * @param[in] z coordinate of the point in fcu frame
+  **/
+  void updateFOV(float x, float y, float z);
 
   /**
-  * @brief     Getters for the FOV
+  * @brief     Getter for the FOV
   */
-  float getHFOV(int i) {
-    return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f;
-  }
-  float getVFOV(int i) {
-    return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f;
-  }
-  const std::vector<FOV>& getFOV() const { return fov_fcu_frame_; }
+  const FOV& getFOV() const { return fov_fcu_frame_; }
 
   /**
   * @brief     getter method for current goal

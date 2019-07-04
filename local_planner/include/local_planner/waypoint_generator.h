@@ -2,8 +2,12 @@
 #define WAYPOINT_GENERATOR_H
 
 #include "avoidance/common.h"
+#include "avoidance/fov.h"
+#include "avoidance/histogram.h"  // only for GRID_LENGTH_E & Z
 #include "avoidance_output.h"
 
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 #include <Eigen/Dense>
 
 #include <ros/time.h>
@@ -51,7 +55,7 @@ class WaypointGenerator {
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
   float speed_ = 1.0f;
-  std::vector<FOV> fov_fcu_frame_;
+  FOV fov_fcu_frame_ = FOV(GRID_LENGTH_Z, GRID_LENGTH_E);
 
   Eigen::Vector3f hover_position_;
 
@@ -62,24 +66,29 @@ class WaypointGenerator {
   *            waypoint_choice
   **/
   void calculateWaypoint();
+
   /**
   * @brief     computes waypoints when there isn't any obstacle
   **/
   void goStraight();
+
   /**
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
+
   /**
   * @brief     checks if the goal altitude has been reached. If not, it computes
   *            waypoints to climb to the goal altitude
   **/
   void reachGoalAltitudeFirst();
+
   /**
   * @brief     smooths waypoints with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
   **/
   void smoothWaypoint(float dt);
+
   /**
   * @brief     set next yaw, smoothed with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
@@ -90,6 +99,7 @@ class WaypointGenerator {
   *            the goal, and waypoint lying with the FOV
   **/
   void adaptSpeed();
+
   /**
   * @brief     adjust waypoints based on new velocity calculation, proximity to
   *            goal, smoothing, climing to goal height. Compute waypoint
@@ -105,18 +115,21 @@ class WaypointGenerator {
   *            results
   **/
   waypointResult getWaypoints();
+
   /**
   * @brief     update WaypointGenerator with the latest results of the planning
   *            algorithm
   * @param[in] input, local_planner algorithm result
   **/
   void setPlannerInfo(const avoidanceOutput& input);
+
   /**
-  * @brief set horizontal and vertical Field of View based on camera matrix
-  * @param[in] index of the camera
-  * @param[in] FOV structures defining the FOV of the specific camera
+  * @brief     Update the horizontal and vertical Field of View based on a point
+  * @param[in] x coordinate of the point in fcu frame
+  * @param[in] y coordinate of the point in fcu frame
+  * @param[in] z coordinate of the point in fcu frame
   **/
-  void setFOV(int i, const FOV& fov);
+  void updateFOV(float x, float y, float z);
 
   /**
   * @brief update with FCU vehice states

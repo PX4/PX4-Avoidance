@@ -52,6 +52,7 @@ include_directories(
 ## Declare a C++ library
 set(AVOIDANCE_CPP_FILES   "src/common.cpp"
                           "src/histogram.cpp"
+                          "src/fov.cpp"
                           "src/avoidance_node.cpp"
 )
 if(NOT DISABLE_SIMULATION)
@@ -86,6 +87,8 @@ if(CATKIN_ENABLE_TESTING)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_common.cpp
+                                          test/test_histogram.cpp
+                                          test/test_fov.cpp
                     )
 
     if(TARGET ${PROJECT_NAME}-test)

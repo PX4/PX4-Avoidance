@@ -44,3 +44,34 @@ TEST(LocalPlannerNodeTests, failsafe) {
     EXPECT_EQ(Node.getSystemStatus(), MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
   }
 }
+
+TEST(LocalPlannerNodeTests, removeNaNAndUpdateFOV) {
+  ros::Time::init();
+  ros::NodeHandle nh("~");
+  ros::NodeHandle nh_private("");
+  LocalPlannerNode Node(nh, nh_private, false);
+  bool hover = false;
+
+  // GIVEN: two point clouds, one including NANs, one without
+  pcl::PointCloud<pcl::PointXYZ> pc_no_nan, pc_with_nan;
+  for (float x = -40.f; x <= 40.f; x += 1.f) {
+    for (float y = -30.f; y <= 30.f; y += 1.f) {
+      pcl::PointXYZ p(x, y, 15.f);
+      pc_no_nan.push_back(p);
+      pc_with_nan.push_back(p);
+      pc_with_nan.push_back(pcl::PointXYZ(NAN, x, y));  // garbage point
+    }
+  }
+  pc_with_nan.is_dense = false;
+  pc_no_nan.is_dense = true;
+
+  // WHEN: we filter these clouds
+  // Node.removeNaNAndUpdateFOV(pc_no_nan);
+  // Node.removeNaNAndUpdateFOV(pc_with_nan);
+
+  // THEN: we expect the clouds to not contain NANs, be dense and reflect
+  // the extrema and minima
+  EXPECT_EQ(pc_no_nan.size(), pc_with_nan.size());
+  EXPECT_TRUE(pc_no_nan.is_dense);
+  EXPECT_TRUE(pc_with_nan.is_dense);
+}

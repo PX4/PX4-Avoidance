@@ -188,4 +188,5 @@ void operator>>(const YAML::Node& node, world_object& item) {
   node["orientation"] >> item.orientation;
   node["scale"] >> item.scale;
 }
-}
+
+}  // namespace avoidance

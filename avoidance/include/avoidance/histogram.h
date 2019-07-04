@@ -94,7 +94,20 @@ class Histogram {
   * @returns   whether histogram is empty
   **/
   bool isEmpty() const;
+
+  /**
+  * @brief      get the horizontal size of the histogram
+  * @returns    the integer number of horizontal cells in the histogram
+  **/
+  int getZDim() { return z_dim_; }
+
+  /**
+  * @brief       get the vertical size of the histogram
+  * @returns     the integer number of vertical cells in the histogram
+  **/
+  int getEDim() { return e_dim_; }
 };
-}
+
+}  // namespace avoidance
 
 #endif  // HISTOGRAM_H

@@ -99,12 +99,8 @@ void WaypointGenerator::calculateWaypoint() {
   last_wp_type_ = planner_info_.waypoint_type;
 }
 
-void WaypointGenerator::setFOV(int i, const FOV& fov) {
-  if (i < fov_fcu_frame_.size()) {
-    fov_fcu_frame_[i] = fov;
-  } else {
-    fov_fcu_frame_.push_back(fov);
-  }
+void WaypointGenerator::updateFOV(float x, float y, float z) {
+  fov_fcu_frame_.updateWithPoint(x, y, z);
 }
 
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose,
@@ -271,7 +267,7 @@ void WaypointGenerator::adaptSpeed() {
       p_pol_fcu.e -= curr_pitch_deg_;
       p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;
       wrapPolar(p_pol_fcu);
-      speed_ *= scaleToFOV(fov_fcu_frame_, p_pol_fcu);
+      speed_ *= fov_fcu_frame_.scaleToFOV(p_pol_fcu.z, p_pol_fcu.z);
     }
 
     // Scale the pose_to_wp by the speed

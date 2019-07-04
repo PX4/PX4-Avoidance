@@ -78,6 +78,7 @@ class WorldVisualizer {
   **/
   int visualizeDrone(const geometry_msgs::PoseStamped& pose);
 };
-}
+
+}  // namespace avoidance
 
 #endif  // RVIZ_WORLD_H

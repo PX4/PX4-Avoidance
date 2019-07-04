@@ -51,5 +51,6 @@ class AvoidanceNode {
   void publishSystemStatus();
   void setSystemStatus(MAV_STATE state);
 };
-}
+
+}  // namespace avoidance
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H

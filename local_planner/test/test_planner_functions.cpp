@@ -115,12 +115,15 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
 
-  std::vector<FOV>
-      FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
-  FOV_zero.push_back(FOV(1.0f, 1.0f, 0.0f, 0.0f));
-
-  std::vector<FOV> FOV_regular;
-  FOV_regular.push_back(FOV(0.0f, 1.0f, 85.0f, 65.0f));
+  FOV FOV_zero(
+      60, 30);  // zero FOV means all pts are outside FOV, and thus remembered
+  FOV FOV_regular(60, 30);
+  FOV_regular.updateWithPoint(1.0, 0.0, 0.0);
+  FOV_regular.updateWithPoint(1.0, 1.0, 0.0);
+  FOV_regular.updateWithPoint(1.0, -1.0, 0.0);
+  FOV_regular.updateWithPoint(1.0, 0.0, 1.0);
+  FOV_regular.updateWithPoint(1.0, 1.0, 1.0);
+  FOV_regular.updateWithPoint(1.0, -1.0, 1.0);
 
   // WHEN: we filter the PointCloud with different values max_age
   processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,
@@ -138,7 +141,8 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   // the second cloud should contain 7 points
   EXPECT_EQ(6, processed_cloud1.size());
   EXPECT_EQ(7, processed_cloud2.size());
-  EXPECT_TRUE(pointInsideFOV(FOV_regular, memory_point_polar));
+  EXPECT_TRUE(
+      FOV_regular.isVisible(memory_point_polar.z, memory_point_polar.e));
   EXPECT_EQ(6, processed_cloud3.size());
 }
 

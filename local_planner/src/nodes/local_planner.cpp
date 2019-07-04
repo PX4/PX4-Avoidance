@@ -66,12 +66,8 @@ void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   applyGoal();
 }
 
-void LocalPlanner::setFOV(int i, const FOV& fov) {
-  if (i < fov_fcu_frame_.size()) {
-    fov_fcu_frame_[i] = fov;
-  } else {
-    fov_fcu_frame_.push_back(fov);
-  }
+void LocalPlanner::updateFOV(float x, float y, float z) {
+  fov_fcu_frame_.updateWithPoint(x, y, z);
 }
 
 Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
