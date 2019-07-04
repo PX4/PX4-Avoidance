@@ -9,55 +9,42 @@
 namespace avoidance {
 
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
-  return p_pol.z <=
-             wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
-         p_pol.z >=
-             wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
-         p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f &&
-         p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
+  return p_pol.z <= wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
+         p_pol.z >= wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
+         p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f && p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
   return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
 
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const Eigen::Vector3f& pos) {
+Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos) {
   Eigen::Vector3f p;
-  p.x() =
-      pos.x() +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
-  p.y() =
-      pos.y() +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+  p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
   p.z() = pos.z() + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
 float indexAngleDifference(float a, float b) {
-  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
-                  std::abs(a - b + 360.f));
+  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)), std::abs(a - b + 360.f));
 }
 
 PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
   // ALPHA_RES%2=0 as per definition, see histogram.h
-  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90),
-                   static_cast<float>(z * res + res / 2 - 180), radius);
+  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90), static_cast<float>(z * res + res / 2 - 180), radius);
   return p_pol;
 }
 
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
-                            const Eigen::Vector3f& origin) {
+PolarPoint cartesianToPolar(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin) {
   return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
 }
-PolarPoint cartesianToPolar(float x, float y, float z,
-                            const Eigen::Vector3f& pos) {
+PolarPoint cartesianToPolar(float x, float y, float z, const Eigen::Vector3f& pos) {
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
   p_pol.z = std::atan2(x - pos.x(), y - pos.y()) * RAD_TO_DEG;  //(-180. +180]
-  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
-                 (z - pos.z()) * (z - pos.z()));
+  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) + (z - pos.z()) * (z - pos.z()));
   return p_pol;
 }
 
@@ -114,12 +101,10 @@ float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
   return atan2(dy, dx);
 }
 
-void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
-                   const Eigen::Vector3f& in_waypt, float yaw) {
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw) {
   out_waypt = in_waypt;
   float roll = 0.0f, pitch = 0.0f;
-  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) *
-          Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
           Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
@@ -142,13 +127,9 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q) {
   return pitch * RAD_TO_DEG;
 }
 
-float wrapAngleToPlusMinusPI(float angle) {
-  return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
-}
+float wrapAngleToPlusMinusPI(float angle) { return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f); }
 
-float wrapAngleToPlusMinus180(float angle) {
-  return angle - 360.f * std::floor(angle / 360.f + 0.5f);
-}
+float wrapAngleToPlusMinus180(float angle) { return angle - 360.f * std::floor(angle / 360.f + 0.5f); }
 
 double getAngularVelocity(float desired_yaw, float curr_yaw) {
   desired_yaw = wrapAngleToPlusMinusPI(desired_yaw);
@@ -255,16 +236,14 @@ pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity) {
   return p;
 }
 
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
-                             const Eigen::Vector3f& a) {
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a) {
   geometry_msgs::Twist gmt;
   gmt.linear = toVector3(l);
   gmt.angular = toVector3(a);
   return gmt;
 }
 
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
-                                         const Eigen::Quaternionf& eq) {
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
   geometry_msgs::PoseStamped gmps;
   gmps.header.stamp = ros::Time::now();
   gmps.header.frame_id = "/local_origin";
@@ -273,8 +252,7 @@ geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
   return gmps;
 }
 
-void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                               geometry_msgs::PoseStamped pose) {
+void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose) {
   obst_avoid.header = pose.header;
   obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = pose.pose.position.x;
@@ -299,8 +277,7 @@ void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
   obst_avoid.point_valid = {true, false, false, false, false};
 }
 
-void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                   geometry_msgs::Twist vel) {
+void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::Twist vel) {
   obst_avoid.header.stamp = ros::Time::now();
   obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = NAN;

@@ -101,8 +101,7 @@ class StarPlanner {
   /**
   * @brief     setter method for server paramters
   **/
-  void dynamicReconfigureSetStarParams(
-      const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
+  void dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 };
 }
 #endif  // STAR_PLANNER_H

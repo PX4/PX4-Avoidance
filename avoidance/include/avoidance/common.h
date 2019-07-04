@@ -50,10 +50,8 @@ struct PolarPoint {
 * field of view of the sensor
 */
 struct FOV {
-  FOV()
-      : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
-  FOV(float y, float p, float h, float v)
-      : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
+  FOV() : azimuth_deg(0.f), elevation_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
+  FOV(float y, float p, float h, float v) : azimuth_deg(y), elevation_deg(p), h_fov_deg(h), v_fov_deg(v){};
   float azimuth_deg;
   float elevation_deg;
   float h_fov_deg;
@@ -89,8 +87,7 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 * @param[in] pos given cartesian position, from which to convert the polar point
 * @returns   point in cartesian CS
 **/
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const Eigen::Vector3f& pos);
+Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos);
 float indexAngleDifference(float a, float b);
 /**
 * @brief     compute point in the histogram to a polar point
@@ -114,10 +111,8 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 *            and elevation angle degrees (-90, 90]
 **/
 
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
-                            const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolar(float x, float y, float z,
-                            const Eigen::Vector3f& pos);
+PolarPoint cartesianToPolar(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin);
+PolarPoint cartesianToPolar(float x, float y, float z, const Eigen::Vector3f& pos);
 /**
 * @brief     compute polar point to histogram index
 * @param[in] p_pol with elevation, azimuth angle and radius
@@ -141,8 +136,7 @@ void wrapPolar(PolarPoint& p_pol);
 **/
 float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v);
 
-void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
-                   const Eigen::Vector3f& in_waypt, float yaw);
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw);
 
 /**
 * @brief     Compute the yaw angle from a quaternion
@@ -189,25 +183,21 @@ pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
 pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity);
 pcl::PointXYZI toXYZI(float x, float y, float z, float intensity);
 pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity);
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
-                             const Eigen::Vector3f& a);
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p,
-                                         const Eigen::Quaternionf& q);
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a);
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p, const Eigen::Quaternionf& q);
 /**
 * @brief     transforms position setpoints from ROS message to MavROS message
 * @params[out] obst_avoid, position setpoint in MavROS message form
 * @params[in] pose, position setpoint computed by the planner
 **/
-void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                               geometry_msgs::PoseStamped pose);
+void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose);
 /**
 * @brief      transforms velocity setpoints from ROS message to MavROS
 *             message
 * @param[out] obst_avoid, velocity setpoint in MavROS message form
 * @param[in]  vel, velocity setpoint computd by the planner
 **/
-void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                   geometry_msgs::Twist vel);
+void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::Twist vel);
 
 /**
 * @brief      fills MavROS trajectory messages with NAN

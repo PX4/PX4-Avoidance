@@ -4,8 +4,7 @@ namespace avoidance {
 
 const Eigen::Vector3f nan_setpoint = Eigen::Vector3f(NAN, NAN, NAN);
 
-SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
-    : nh_(nh), spin_dt_(0.1) {
+SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh) : nh_(nh), spin_dt_(0.1) {
   safe_landing_planner_.reset(new SafeLandingPlanner());
 
 #ifndef DISABLE_SIMULATION
@@ -18,21 +17,16 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
   nh_.getParam("pointcloud_topics", camera_topic);
   nh_.param<bool>("play_rosbag", safe_landing_planner_->play_rosbag_, false);
 
-  dynamic_reconfigure::Server<
-      safe_landing_planner::SafeLandingPlannerNodeConfig>::CallbackType f;
-  f = boost::bind(&SafeLandingPlannerNode::dynamicReconfigureCallback, this, _1,
-                  _2);
+  dynamic_reconfigure::Server<safe_landing_planner::SafeLandingPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&SafeLandingPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>(
-      "/mavros/local_position/pose", 1,
-      &SafeLandingPlannerNode::positionCallback, this);
-  pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2 &>(
-      camera_topic, 1, &SafeLandingPlannerNode::pointCloudCallback, this);
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("/mavros/local_position/pose", 1,
+                                                                &SafeLandingPlannerNode::positionCallback, this);
+  pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2 &>(camera_topic, 1,
+                                                                    &SafeLandingPlannerNode::pointCloudCallback, this);
 
-  mavros_system_status_pub_ =
-      nh_.advertise<mavros_msgs::CompanionProcessStatus>(
-          "/mavros/companion_process/status", 1);
+  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
   grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/grid_slp", 1);
 
   if (safe_landing_planner_->play_rosbag_) {
@@ -44,22 +38,19 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh)
   start_time_ = ros::Time::now();
 }
 
-void SafeLandingPlannerNode::dynamicReconfigureCallback(
-    safe_landing_planner::SafeLandingPlannerNodeConfig &config,
-    uint32_t level) {
+void SafeLandingPlannerNode::dynamicReconfigureCallback(safe_landing_planner::SafeLandingPlannerNodeConfig &config,
+                                                        uint32_t level) {
   rqt_param_config_ = config;
   safe_landing_planner_->dynamicReconfigureSetParams(config, level);
 }
 
-void SafeLandingPlannerNode::positionCallback(
-    const geometry_msgs::PoseStamped &msg) {
+void SafeLandingPlannerNode::positionCallback(const geometry_msgs::PoseStamped &msg) {
   previous_pose_ = current_pose_;
   current_pose_ = msg;
   position_received_ = true;
 }
 
-void SafeLandingPlannerNode::pointCloudCallback(
-    const sensor_msgs::PointCloud2 &msg) {
+void SafeLandingPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2 &msg) {
   {
     std::lock_guard<std::mutex> lck(*(cloud_msg_mutex_));
     newest_cloud_msg_ = msg;  // FIXME: avoid a copy
@@ -68,26 +59,21 @@ void SafeLandingPlannerNode::pointCloudCallback(
   cloud_ready_cv_->notify_one();
 }
 
-void SafeLandingPlannerNode::rawGridCallback(
-    const safe_landing_planner::SLPGridMsg &msg) {
-  std::lock_guard<std::mutex> transformed_cloud_guard(
-      *(transformed_cloud_mutex_));
+void SafeLandingPlannerNode::rawGridCallback(const safe_landing_planner::SLPGridMsg &msg) {
+  std::lock_guard<std::mutex> transformed_cloud_guard(*(transformed_cloud_mutex_));
   safe_landing_planner_->raw_grid_ = std::move(msg);
   cloud_transformed_ = true;
 }
 
 void SafeLandingPlannerNode::startNode() {
   // initialize thread
-  worker_ =
-      std::thread(&SafeLandingPlannerNode::pointCloudTransformThread, this);
+  worker_ = std::thread(&SafeLandingPlannerNode::pointCloudTransformThread, this);
   cloud_msg_mutex_.reset(new std::mutex);
   transformed_cloud_mutex_.reset(new std::mutex);
   cloud_ready_cv_.reset(new std::condition_variable);
 
-  ros::TimerOptions timer_options(
-      ros::Duration(spin_dt_),
-      boost::bind(&SafeLandingPlannerNode::cmdLoopCallback, this, _1),
-      &cmdloop_queue_);
+  ros::TimerOptions timer_options(ros::Duration(spin_dt_),
+                                  boost::bind(&SafeLandingPlannerNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(timer_options);
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
@@ -100,10 +86,8 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
   while (!cloud_transformed_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     ros::Duration since_query = ros::Time::now() - start_query_position;
-    if (since_query >
-        ros::Duration(safe_landing_planner_->timeout_termination_)) {
-      status_msg_.state =
-          static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+    if (since_query > ros::Duration(safe_landing_planner_->timeout_termination_)) {
+      status_msg_.state = static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       publishSystemStatus();
     }
   }
@@ -114,20 +98,17 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
   ros::Duration since_start = now - start_time_;
   checkFailsafe(since_last_algo, since_start);
 
-  safe_landing_planner_->setPose(
-      avoidance::toEigen(current_pose_.pose.position),
-      avoidance::toEigen(current_pose_.pose.orientation));
+  safe_landing_planner_->setPose(avoidance::toEigen(current_pose_.pose.position),
+                                 avoidance::toEigen(current_pose_.pose.orientation));
 
   {
-    std::lock_guard<std::mutex> transformed_cloud_guard(
-        *(transformed_cloud_mutex_));
+    std::lock_guard<std::mutex> transformed_cloud_guard(*(transformed_cloud_mutex_));
 
     safe_landing_planner_->runSafeLandingPlanner();
     cloud_transformed_ = false;
   }
-  visualizer_.visualizeSafeLandingPlanner(
-      *(safe_landing_planner_.get()), current_pose_.pose.position,
-      previous_pose_.pose.position, rqt_param_config_);
+  visualizer_.visualizeSafeLandingPlanner(*(safe_landing_planner_.get()), current_pose_.pose.position,
+                                          previous_pose_.pose.position, rqt_param_config_);
   publishSerialGrid();
   last_algo_time_ = ros::Time::now();
 
@@ -136,28 +117,20 @@ void SafeLandingPlannerNode::cmdLoopCallback(const ros::TimerEvent &event) {
   return;
 }
 
-void SafeLandingPlannerNode::checkFailsafe(ros::Duration since_last_algo,
-                                           ros::Duration since_start) {
-  ros::Duration timeout_termination =
-      ros::Duration(safe_landing_planner_->timeout_termination_);
-  ros::Duration timeout_critical =
-      ros::Duration(safe_landing_planner_->timeout_critical_);
+void SafeLandingPlannerNode::checkFailsafe(ros::Duration since_last_algo, ros::Duration since_start) {
+  ros::Duration timeout_termination = ros::Duration(safe_landing_planner_->timeout_termination_);
+  ros::Duration timeout_critical = ros::Duration(safe_landing_planner_->timeout_critical_);
 
-  if (since_last_algo > timeout_termination &&
-      since_start > timeout_termination) {
-    status_msg_.state =
-        static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-  } else if (since_last_algo > timeout_critical &&
-             since_start > timeout_critical) {
-    status_msg_.state =
-        static_cast<int>(avoidance::MAV_STATE::MAV_STATE_CRITICAL);
+  if (since_last_algo > timeout_termination && since_start > timeout_termination) {
+    status_msg_.state = static_cast<int>(avoidance::MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
+  } else if (since_last_algo > timeout_critical && since_start > timeout_critical) {
+    status_msg_.state = static_cast<int>(avoidance::MAV_STATE::MAV_STATE_CRITICAL);
   }
 }
 
 void SafeLandingPlannerNode::publishSystemStatus() {
   status_msg_.header.stamp = ros::Time::now();
-  status_msg_.component =
-      196;  // MAV_COMPONENT_ID_AVOIDANCE we need to add a new component
+  status_msg_.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE we need to add a new component
   mavros_system_status_pub_.publish(status_msg_);
   t_status_sent_ = ros::Time::now();
 }
@@ -175,8 +148,7 @@ void SafeLandingPlannerNode::publishSerialGrid() {
   grid.mean.layout.dim.push_back(std_msgs::MultiArrayDimension());
   grid.mean.layout.dim[0].label = "height";
   grid.mean.layout.dim[0].size = prev_grid.mean_.cols();
-  grid.mean.layout.dim[0].stride =
-      prev_grid.mean_.rows() * prev_grid.mean_.cols();
+  grid.mean.layout.dim[0].stride = prev_grid.mean_.rows() * prev_grid.mean_.cols();
 
   grid.mean.layout.dim[1].label = "width";
   grid.mean.layout.dim[1].size = prev_grid.mean_.rows();
@@ -187,8 +159,7 @@ void SafeLandingPlannerNode::publishSerialGrid() {
   grid.land.layout.dim.push_back(std_msgs::MultiArrayDimension());
   grid.land.layout.dim[0].label = "height";
   grid.land.layout.dim[0].size = prev_grid.land_.cols();
-  grid.land.layout.dim[0].stride =
-      prev_grid.land_.rows() * prev_grid.land_.cols();
+  grid.land.layout.dim[0].stride = prev_grid.land_.rows() * prev_grid.land_.cols();
 
   grid.land.layout.dim[1].label = "width";
   grid.land.layout.dim[1].size = prev_grid.land_.rows();
@@ -244,10 +215,8 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
     while (cloud_transformed_ == false) {
       if (should_exit_) break;
 
-      std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(
-          new std::lock_guard<std::mutex>(*(cloud_msg_mutex_)));
-      if (tf_listener_.canTransform("/local_origin",
-                                    newest_cloud_msg_.header.frame_id,
+      std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(new std::lock_guard<std::mutex>(*(cloud_msg_mutex_)));
+      if (tf_listener_.canTransform("/local_origin", newest_cloud_msg_.header.frame_id,
                                     newest_cloud_msg_.header.stamp)) {
         try {
           pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
@@ -260,17 +229,13 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
           pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
 
           // transform cloud to /local_origin frame
-          pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud,
-                                       tf_listener_);
+          pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud, tf_listener_);
 
-          std::lock_guard<std::mutex> transformed_cloud_guard(
-              *(transformed_cloud_mutex_));
+          std::lock_guard<std::mutex> transformed_cloud_guard(*(transformed_cloud_mutex_));
           cloud_transformed_ = true;
           safe_landing_planner_->cloud_ = std::move(pcl_cloud);
         } catch (tf::TransformException &ex) {
-          ROS_ERROR(
-              "Received an exception trying to transform a pointcloud: %s",
-              ex.what());
+          ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
         }
       } else {
         cloud_msg_lock.reset();

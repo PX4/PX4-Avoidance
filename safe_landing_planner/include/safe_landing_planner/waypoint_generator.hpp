@@ -11,10 +11,8 @@
 namespace avoidance {
 
 const std::vector<Eigen::Vector2f> exploration_pattern = {
-    Eigen::Vector2f(1.f, 0.f),  Eigen::Vector2f(1.f, 1.f),
-    Eigen::Vector2f(0.f, 1.f),  Eigen::Vector2f(-1.f, 1.f),
-    Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f),
-    Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
+    Eigen::Vector2f(1.f, 0.f),  Eigen::Vector2f(1.f, 1.f),   Eigen::Vector2f(0.f, 1.f),  Eigen::Vector2f(-1.f, 1.f),
+    Eigen::Vector2f(-1.f, 0.f), Eigen::Vector2f(-1.f, -1.f), Eigen::Vector2f(0.f, -1.f), Eigen::Vector2f(1.f, -1.f)};
 
 const float LAND_SPEED = 0.7f;  // TODO: replace with Firmware parameter
 
@@ -73,9 +71,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Grid grid_slp_ = Grid(10.f, 1.f);
 
   // outside world link
-  std::function<void(const Eigen::Vector3f& pos_sp,
-                     const Eigen::Vector3f& vel_sp, float yaw_sp,
-                     float yaw_speed_sp)>
+  std::function<void(const Eigen::Vector3f& pos_sp, const Eigen::Vector3f& vel_sp, float yaw_sp, float yaw_speed_sp)>
       publishTrajectorySetpoints_;
 
   /**
@@ -91,8 +87,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   /**
   * @brief the setup of the statemachine
   */
-  SLPState chooseNextState(SLPState currentState,
-                           usm::Transition transition) override final;
+  SLPState chooseNextState(SLPState currentState, usm::Transition transition) override final;
 
   usm::Transition runGoTo();
   usm::Transition runLoiter();

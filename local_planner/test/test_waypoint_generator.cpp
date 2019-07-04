@@ -5,8 +5,7 @@
 
 using namespace avoidance;
 
-class WaypointGeneratorTests : public ::testing::Test,
-                               public WaypointGenerator {
+class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator {
  public:
   avoidanceOutput avoidance_output;
   Eigen::Vector3f position;
@@ -126,8 +125,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // THEN: we expect the smoothed goto position to be between the drone
     // and the adapted goto position in z
     EXPECT_LT(position.z(), result.smoothed_goto_position.z());
-    EXPECT_GT(result.adapted_goto_position.z(),
-              result.smoothed_goto_position.z());
+    EXPECT_GT(result.adapted_goto_position.z(), result.smoothed_goto_position.z());
 
     // THEN: we expect the smoothed goto position to be the position waypoint,
     // since smoothing was enabled
@@ -137,8 +135,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
 
     // THEN: we expect the z component of the waypoint to move closer to goal.z
     float goto_to_goal = std::abs(goal.z() - result.goto_position.z());
-    float adapted_to_goal =
-        std::abs(goal.z() - result.adapted_goto_position.z());
+    float adapted_to_goal = std::abs(goal.z() - result.adapted_goto_position.z());
     float pos_sp_to_goal = std::abs(goal.z() - result.position_wp.z());
     ASSERT_LT(goto_to_goal, goto_to_goal_prev);
     ASSERT_LT(adapted_to_goal, adapted_to_goal_prev);
@@ -156,8 +153,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // THEN: we expect the angle between the position and velocity waypoint to
     // be small
     float angle_pos_vel_sp =
-        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(),
-                   pos_to_pos_sp.dot(result.linear_velocity_wp));
+        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(), pos_to_pos_sp.dot(result.linear_velocity_wp));
     EXPECT_NEAR(0.0, angle_pos_vel_sp, 1.0);
   }
 }
@@ -195,8 +191,7 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
     // THEN: we expect the angle between the position and velocity waypoint to
     // be small
     float angle_pos_vel_sp =
-        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(),
-                   pos_to_pos_sp.dot(result.linear_velocity_wp));
+        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(), pos_to_pos_sp.dot(result.linear_velocity_wp));
     EXPECT_NEAR(0.0, angle_pos_vel_sp, 1.0);
 
     // calculate new vehicle position
@@ -281,14 +276,12 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
     Eigen::Vector3f pos_to_pos_sp = (result.position_wp - position) * 0.5f;
 
     float angle_pos_vel_sp =
-        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(),
-                   pos_to_pos_sp.dot(result.linear_velocity_wp));
+        std::atan2(pos_to_pos_sp.cross(result.linear_velocity_wp).norm(), pos_to_pos_sp.dot(result.linear_velocity_wp));
     EXPECT_NEAR(0.0, angle_pos_vel_sp, 1.0);
 
     // calculate new vehicle position
-    Eigen::Vector3f new_pos =
-        position + 1.5f * pos_to_pos_sp;  // the 1.5 coefficient makes sure to
-                                          // progress trough the tree nodes
+    Eigen::Vector3f new_pos = position + 1.5f * pos_to_pos_sp;  // the 1.5 coefficient makes sure to
+                                                                // progress trough the tree nodes
     position = new_pos;
   }
 }

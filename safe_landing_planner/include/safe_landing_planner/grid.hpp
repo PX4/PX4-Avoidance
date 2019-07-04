@@ -7,8 +7,7 @@ namespace avoidance {
 
 class Grid {
  public:
-  Grid(const float grid_size, const float cell_size)
-      : grid_size_(grid_size), cell_size_(cell_size) {
+  Grid(const float grid_size, const float cell_size) : grid_size_(grid_size), cell_size_(cell_size) {
     resize(grid_size_, cell_size_);
   }
   ~Grid() = default;
@@ -31,30 +30,18 @@ class Grid {
     reset();
   }
 
-  void setMean(const Eigen::Vector2i &idx, float value) {
-    mean_(idx.x(), idx.y()) = value;
-  }
-  void setVariance(const Eigen::Vector2i &idx, float value) {
-    variance_(idx.x(), idx.y()) = value;
-  }
-  void increaseCounter(const Eigen::Vector2i &idx) {
-    counter_(idx.x(), idx.y()) = counter_(idx.x(), idx.y()) + 1;
-  }
-  void setCounter(const Eigen::Vector2i &idx, int value) {
-    counter_(idx.x(), idx.y()) = value;
-  }
+  void setMean(const Eigen::Vector2i &idx, float value) { mean_(idx.x(), idx.y()) = value; }
+  void setVariance(const Eigen::Vector2i &idx, float value) { variance_(idx.x(), idx.y()) = value; }
+  void increaseCounter(const Eigen::Vector2i &idx) { counter_(idx.x(), idx.y()) = counter_(idx.x(), idx.y()) + 1; }
+  void setCounter(const Eigen::Vector2i &idx, int value) { counter_(idx.x(), idx.y()) = value; }
 
   Eigen::MatrixXf getMean() const { return mean_; }
   Eigen::MatrixXf getVariance() const { return variance_; }
   Eigen::MatrixXi getCounter() const { return counter_; }
 
   float getMean(const Eigen::Vector2i &idx) { return mean_(idx.x(), idx.y()); }
-  float getVariance(const Eigen::Vector2i &idx) {
-    return variance_(idx.x(), idx.y());
-  }
-  int getCounter(const Eigen::Vector2i &idx) {
-    return counter_(idx.x(), idx.y());
-  }
+  float getVariance(const Eigen::Vector2i &idx) { return variance_(idx.x(), idx.y()); }
+  int getCounter(const Eigen::Vector2i &idx) { return counter_(idx.x(), idx.y()); }
   int getRowColSize() const { return grid_row_col_size_; }
   float getGridSize() const { return grid_size_; }
   float getCellSize() const { return cell_size_; }

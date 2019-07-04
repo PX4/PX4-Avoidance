@@ -17,8 +17,7 @@ TEST(PlannerFunctions, generateNewHistogramEmpty) {
   location.pose.position.z = 0;
 
   // WHEN: we build a histogram
-  generateNewHistogram(histogram_output, empty_cloud,
-                       toEigen(location.pose.position));
+  generateNewHistogram(histogram_output, empty_cloud, toEigen(location.pose.position));
 
   // THEN: the histogram should be all zeros
   for (int e = 0; e < GRID_LENGTH_E; e++) {
@@ -34,10 +33,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   Eigen::Vector3f location(0.0f, 0.0f, 0.0f);
   float distance = 1.0f;
 
-  std::vector<float> e_angle_filled = {-89.9f, -30.0f, 0.0f,
-                                       20.0f,  40.0f,  89.9f};
-  std::vector<float> z_angle_filled = {-180.0f, -50.0f, 0.0f,
-                                       59.0f,   100.0f, 175.0f};
+  std::vector<float> e_angle_filled = {-89.9f, -30.0f, 0.0f, 20.0f, 40.0f, 89.9f};
+  std::vector<float> z_angle_filled = {-180.0f, -50.0f, 0.0f, 59.0f, 100.0f, 175.0f};
   std::vector<Eigen::Vector3f> middle_of_cell;
   std::vector<int> e_index, z_index;
 
@@ -66,10 +63,8 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
 
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
-      bool e_found =
-          std::find(e_index.begin(), e_index.end(), e) != e_index.end();
-      bool z_found =
-          std::find(z_index.begin(), z_index.end(), z) != z_index.end();
+      bool e_found = std::find(e_index.begin(), e_index.end(), e) != e_index.end();
+      bool z_found = std::find(z_index.begin(), z_index.end(), z) != z_index.end();
       if (e_found && z_found) {
         EXPECT_NEAR(histogram_output.get_dist(e, z), 1.f, 0.01);
       } else {
@@ -91,13 +86,9 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
   pcl::PointCloud<pcl::PointXYZ> p2;
-  p2.push_back(toXYZ(
-      position + Eigen::Vector3f(1.0f, 5.0f, 1.0f)));  // > histogram_box.radius
-  p2.push_back(
-      toXYZ(position +
-            Eigen::Vector3f(100.0f, 5.0f, 1.0f)));  // > histogram_box.radius
-  p2.push_back(toXYZ(
-      position + Eigen::Vector3f(0.1f, 0.05f, 0.05f)));  // < min_realsense_dist
+  p2.push_back(toXYZ(position + Eigen::Vector3f(1.0f, 5.0f, 1.0f)));    // > histogram_box.radius
+  p2.push_back(toXYZ(position + Eigen::Vector3f(100.0f, 5.0f, 1.0f)));  // > histogram_box.radius
+  p2.push_back(toXYZ(position + Eigen::Vector3f(0.1f, 0.05f, 0.05f)));  // < min_realsense_dist
 
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
   complete_cloud.push_back(p1);
@@ -106,11 +97,9 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
-  pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2,
-      processed_cloud3;
+  pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2, processed_cloud3;
   Eigen::Vector3f memory_point(1.4f, 0.0f, 0.0f);
-  PolarPoint memory_point_polar =
-      cartesianToPolar(position + memory_point, position);
+  PolarPoint memory_point_polar = cartesianToPolar(position + memory_point, position);
   processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
@@ -128,14 +117,14 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   FOV_regular.elevation_deg = 1.0f;
 
   // WHEN: we filter the PointCloud with different values max_age
-  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 0.0f, 0.5f, 1);
+  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 0.0f, 0.5f,
+                    1);
 
-  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero,
-                    position, min_realsense_dist, 10.0f, .5f, 1);
+  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 10.0f, .5f,
+                    1);
 
-  processPointcloud(processed_cloud3, complete_cloud, histogram_box,
-                    FOV_regular, position, min_realsense_dist, 10.0f, 0.5f, 1);
+  processPointcloud(processed_cloud3, complete_cloud, histogram_box, FOV_regular, position, min_realsense_dist, 10.0f,
+                    0.5f, 1);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
@@ -207,19 +196,13 @@ TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
   ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
 
   bool middle_part_correct =
-      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),
-                          matrix.cols()) == matrix;
+      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
   bool col_0_correct = matrix_padded.col(0) == matrix_padded.col(GRID_LENGTH_Z);
-  bool col_1_correct =
-      matrix_padded.col(1) == matrix_padded.col(GRID_LENGTH_Z + 1);
-  bool col_2_correct =
-      matrix_padded.col(2) == matrix_padded.col(GRID_LENGTH_Z + 2);
-  bool col_63_correct =
-      matrix_padded.col(GRID_LENGTH_Z + 3) == matrix_padded.col(3);
-  bool col_64_correct =
-      matrix_padded.col(GRID_LENGTH_Z + 4) == matrix_padded.col(4);
-  bool col_65_correct =
-      matrix_padded.col(GRID_LENGTH_Z + 5) == matrix_padded.col(5);
+  bool col_1_correct = matrix_padded.col(1) == matrix_padded.col(GRID_LENGTH_Z + 1);
+  bool col_2_correct = matrix_padded.col(2) == matrix_padded.col(GRID_LENGTH_Z + 2);
+  bool col_63_correct = matrix_padded.col(GRID_LENGTH_Z + 3) == matrix_padded.col(3);
+  bool col_64_correct = matrix_padded.col(GRID_LENGTH_Z + 4) == matrix_padded.col(4);
+  bool col_65_correct = matrix_padded.col(GRID_LENGTH_Z + 5) == matrix_padded.col(5);
 
   EXPECT_TRUE(middle_part_correct);
   EXPECT_TRUE(col_0_correct);
@@ -264,20 +247,16 @@ TEST(PlannerFunctions, padPolarMatrixElevationWrapping) {
   ASSERT_EQ(GRID_LENGTH_Z + 2 * n_lines_padding, matrix_padded.cols());
 
   bool middle_part_correct =
-      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(),
-                          matrix.cols()) == matrix;
+      matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) == matrix;
   bool val_1 = matrix_padded(1, half_z + n_lines_padding) == 1;
   bool val_2 = matrix_padded(1, half_z + n_lines_padding + 1) == 2;
   bool val_3 = matrix_padded(0, half_z + n_lines_padding) == 3;
   bool val_4 = matrix_padded(1, 2) == 4;
   bool val_5 = matrix_padded(0, 3) == 5;
   bool val_6 = matrix_padded(1, half_z - 1 + n_lines_padding) == 6;
-  bool val_7 = matrix_padded(last_e + 1 + n_lines_padding,
-                             half_z + n_lines_padding) == 7;
-  bool val_8 = matrix_padded(last_e + 2 + n_lines_padding,
-                             GRID_LENGTH_Z + n_lines_padding - 1) == 8;
-  bool val_9 = matrix_padded(last_e + 1 + n_lines_padding,
-                             half_z - 1 + n_lines_padding) == 9;
+  bool val_7 = matrix_padded(last_e + 1 + n_lines_padding, half_z + n_lines_padding) == 7;
+  bool val_8 = matrix_padded(last_e + 2 + n_lines_padding, GRID_LENGTH_Z + n_lines_padding - 1) == 8;
+  bool val_9 = matrix_padded(last_e + 1 + n_lines_padding, half_z - 1 + n_lines_padding) == 9;
 
   EXPECT_TRUE(middle_part_correct);
   EXPECT_TRUE(val_1);
@@ -399,9 +378,8 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
 
   // WHEN: we calculate the cost matrix from the input data
   std::vector<uint8_t> cost_image_data;
-  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint,
-                cost_params, false, smoothing_radius, cost_matrix,
-                cost_image_data);
+  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint, cost_params, false, smoothing_radius,
+                cost_matrix, cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolar(goal, position);
@@ -424,36 +402,31 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
 
   // check that rows farther away have bigger cost. Leave out direct neighbor
   // rows as the center might be split over cells
-  bool row1 = (matrix_padded.row(best_index_padded_e + 2).array() >
-               matrix_padded.row(best_index_padded_e + 1).array())
-                  .all();
-  bool row2 = (matrix_padded.row(best_index_padded_e + 3).array() >
-               matrix_padded.row(best_index_padded_e + 2).array())
-                  .all();
-  bool row3 = (matrix_padded.row(best_index_padded_e - 2).array() >
-               matrix_padded.row(best_index_padded_e).array() - 1)
-                  .all();
-  bool row4 = (matrix_padded.row(best_index_padded_e - 3).array() >
-               matrix_padded.row(best_index_padded_e).array() - 2)
-                  .all();
+  bool row1 =
+      (matrix_padded.row(best_index_padded_e + 2).array() > matrix_padded.row(best_index_padded_e + 1).array()).all();
+  bool row2 =
+      (matrix_padded.row(best_index_padded_e + 3).array() > matrix_padded.row(best_index_padded_e + 2).array()).all();
+  bool row3 =
+      (matrix_padded.row(best_index_padded_e - 2).array() > matrix_padded.row(best_index_padded_e).array() - 1).all();
+  bool row4 =
+      (matrix_padded.row(best_index_padded_e - 3).array() > matrix_padded.row(best_index_padded_e).array() - 2).all();
 
   // check that columns farther away have bigger cost. Leave out direct neighbor
   // rows as the center might be split over cells
-  Eigen::MatrixXf matrix_padded2 =
-      matrix_padded.block(3, 3, cost_matrix.rows(),
-                          cost_matrix.cols());  // cut off padded top part
-  bool col1 = (matrix_padded2.col(best_index_padded_z + 10).array() >
-               matrix_padded2.col(best_index_padded_z + 1).array())
-                  .all();
-  bool col2 = (matrix_padded2.col(best_index_padded_z + 20).array() >
-               matrix_padded2.col(best_index_padded_z + 10).array())
-                  .all();
-  bool col3 = (matrix_padded2.col(best_index_padded_z - 10).array() >
-               matrix_padded2.col(best_index_padded_z).array() - 1)
-                  .all();
-  bool col4 = (matrix_padded2.col(best_index_padded_z - 20).array() >
-               matrix_padded2.col(best_index_padded_z).array() - 10)
-                  .all();
+  Eigen::MatrixXf matrix_padded2 = matrix_padded.block(3, 3, cost_matrix.rows(),
+                                                       cost_matrix.cols());  // cut off padded top part
+  bool col1 =
+      (matrix_padded2.col(best_index_padded_z + 10).array() > matrix_padded2.col(best_index_padded_z + 1).array())
+          .all();
+  bool col2 =
+      (matrix_padded2.col(best_index_padded_z + 20).array() > matrix_padded2.col(best_index_padded_z + 10).array())
+          .all();
+  bool col3 =
+      (matrix_padded2.col(best_index_padded_z - 10).array() > matrix_padded2.col(best_index_padded_z).array() - 1)
+          .all();
+  bool col4 =
+      (matrix_padded2.col(best_index_padded_z - 20).array() > matrix_padded2.col(best_index_padded_z).array() - 10)
+          .all();
 
   EXPECT_TRUE(col1);
   EXPECT_TRUE(col2);
@@ -485,12 +458,10 @@ TEST(PlannerFunctions, CostfunctionGoalCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different goals
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_1,
-               position, heading, last_sent_waypoint, cost_params,
-               distance_cost_1, other_costs_1);
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_2,
-               position, heading, last_sent_waypoint, cost_params,
-               distance_cost_2, other_costs_2);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_1, position, heading, last_sent_waypoint,
+               cost_params, distance_cost_1, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_2, position, heading, last_sent_waypoint,
+               cost_params, distance_cost_2, other_costs_2);
 
   // THEN: The cost in the case where the goal is in the cell direction should
   // be lower
@@ -518,15 +489,12 @@ TEST(PlannerFunctions, CostfunctionDistanceCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different obstacle distance
-  costFunction(candidate_1.y(), candidate_1.x(), distance_1, goal, position,
-               heading, last_sent_waypoint, cost_params, distance_cost_1,
-               other_costs);
-  costFunction(candidate_1.y(), candidate_1.x(), distance_2, goal, position,
-               heading, last_sent_waypoint, cost_params, distance_cost_2,
-               other_costs);
-  costFunction(candidate_1.y(), candidate_1.x(), distance_3, goal, position,
-               heading, last_sent_waypoint, cost_params, distance_cost_3,
-               other_costs);
+  costFunction(candidate_1.y(), candidate_1.x(), distance_1, goal, position, heading, last_sent_waypoint, cost_params,
+               distance_cost_1, other_costs);
+  costFunction(candidate_1.y(), candidate_1.x(), distance_2, goal, position, heading, last_sent_waypoint, cost_params,
+               distance_cost_2, other_costs);
+  costFunction(candidate_1.y(), candidate_1.x(), distance_3, goal, position, heading, last_sent_waypoint, cost_params,
+               distance_cost_3, other_costs);
 
   // THEN: The distance cost for no obstacle should be zero and the distance
   // cost for the closer obstacle should be bigger
@@ -555,12 +523,10 @@ TEST(PlannerFunctions, CostfunctionHeadingCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different initial headings
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
-               position, heading_1, last_sent_waypoint, cost_params,
-               distance_cost, other_costs_1);
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
-               position, heading_2, last_sent_waypoint, cost_params,
-               distance_cost, other_costs_2);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, heading_1, last_sent_waypoint,
+               cost_params, distance_cost, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, heading_2, last_sent_waypoint,
+               cost_params, distance_cost, other_costs_2);
 
   // THEN: The cost in the case where the initial heading is closer to the
   // candidate should be lower
@@ -587,12 +553,10 @@ TEST(PlannerFunctions, CostfunctionSmoothingCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different last waypoints
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
-               position, heading, last_sent_waypoint_1, cost_params,
-               distance_cost, other_costs_1);
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal,
-               position, heading, last_sent_waypoint_2, cost_params,
-               distance_cost, other_costs_2);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, heading, last_sent_waypoint_1,
+               cost_params, distance_cost, other_costs_1);
+  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, heading, last_sent_waypoint_2,
+               cost_params, distance_cost, other_costs_2);
 
   // THEN: The cost in the case where the last waypoint is closer to the
   // candidate should be lower
@@ -637,11 +601,9 @@ TEST(Histogram, HistogramUpsampleCorrectUsage) {
   // resolution histogram into four cells
   for (int i = 0; i < GRID_LENGTH_E; ++i) {
     for (int j = 0; j < GRID_LENGTH_Z; ++j) {
-      if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) ||
-          (i == 1 && j == 1)) {
+      if ((i == 0 && j == 0) || (i == 1 && j == 0) || (i == 0 && j == 1) || (i == 1 && j == 1)) {
         EXPECT_FLOAT_EQ(1.3, histogram.get_dist(i, j));
-      } else if ((i == 2 && j == 2) || (i == 2 && j == 3) ||
-                 (i == 3 && j == 2) || (i == 3 && j == 3)) {
+      } else if ((i == 2 && j == 2) || (i == 2 && j == 3) || (i == 3 && j == 2) || (i == 3 && j == 3)) {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));
       } else {
         EXPECT_FLOAT_EQ(0.0, histogram.get_dist(i, j));

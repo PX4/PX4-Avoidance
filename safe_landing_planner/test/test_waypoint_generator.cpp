@@ -4,8 +4,7 @@
 
 using namespace avoidance;
 
-class WaypointGeneratorTests : public WaypointGenerator,
-                               public ::testing::Test {
+class WaypointGeneratorTests : public WaypointGenerator, public ::testing::Test {
  public:
   Eigen::Vector3f published_position = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f published_velocity = Eigen::Vector3f(NAN, NAN, NAN);
@@ -15,9 +14,8 @@ class WaypointGeneratorTests : public WaypointGenerator,
   void SetUp() override {
     grid_slp_.resize(40, 1);
     pos_index_ << 30, 30;
-    publishTrajectorySetpoints_ = [this](const Eigen::Vector3f &pos_sp,
-                                         const Eigen::Vector3f &vel_sp,
-                                         float yaw_sp, float yaw_speed_sp) {
+    publishTrajectorySetpoints_ = [this](const Eigen::Vector3f &pos_sp, const Eigen::Vector3f &vel_sp, float yaw_sp,
+                                         float yaw_speed_sp) {
       published_position = pos_sp;
       published_velocity = vel_sp;
       published_yaw = yaw_sp;
@@ -102,10 +100,7 @@ TEST_F(WaypointGeneratorTests, altitudechange_transitions) {
 
     // AND: published position should be (x, y, nan) and velocity (nan, nan, z)
     ASSERT_TRUE(std::isnan(published_position.z()));
-    ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(),
-                              published_position.y() - goal_.y())
-                  .norm(),
-              0);
+    ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(), published_position.y() - goal_.y()).norm(), 0);
     ASSERT_TRUE(std::isnan(published_velocity.x()));
     ASSERT_TRUE(std::isnan(published_velocity.y()));
     ASSERT_FALSE(std::isnan(published_velocity.z()));
@@ -120,10 +115,7 @@ TEST_F(WaypointGeneratorTests, altitudechange_transitions) {
 
   // AND: published position should be (x, y, nan) and velocity (nan, nan, z)
   ASSERT_TRUE(std::isnan(published_position.z()));
-  ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(),
-                            published_position.y() - goal_.y())
-                .norm(),
-            0);
+  ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(), published_position.y() - goal_.y()).norm(), 0);
   ASSERT_TRUE(std::isnan(published_velocity.x()));
   ASSERT_TRUE(std::isnan(published_velocity.y()));
   ASSERT_FALSE(std::isnan(published_velocity.z()));
@@ -154,8 +146,7 @@ TEST_F(WaypointGeneratorTests, loiter_to_land) {
 
   // WHEN: the data shows that landing is possible
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(),
-            can_land_thr_ + 1);
+  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
   calculateWaypoint();
 
   // THEN: the state should switch to land, the position setpoint should
@@ -213,8 +204,7 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
   ASSERT_EQ(SLPState::LOITER, getState());
 
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(),
-            can_land_thr_ + 1);
+  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
   calculateWaypoint();
 
   ASSERT_EQ(SLPState::LAND, getState());
@@ -227,10 +217,7 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
     ASSERT_EQ(SLPState::LAND, getState());
     // AND: published position should be (x, y, nan) and velocity (nan, nan, z)
     ASSERT_TRUE(std::isnan(published_position.z()));
-    ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(),
-                              published_position.y() - goal_.y())
-                  .norm(),
-              0);
+    ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(), published_position.y() - goal_.y()).norm(), 0);
     ASSERT_TRUE(std::isnan(published_velocity.x()));
     ASSERT_TRUE(std::isnan(published_velocity.y()));
     ASSERT_FALSE(std::isnan(published_velocity.z()));
@@ -242,10 +229,7 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
   ASSERT_EQ(SLPState::GOTO, getState());
   // AND: published position should be (x, y, nan) and velocity (nan, nan, z)
   ASSERT_TRUE(std::isnan(published_position.z()));
-  ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(),
-                            published_position.y() - goal_.y())
-                .norm(),
-            0);
+  ASSERT_EQ(Eigen::Vector2f(published_position.x() - goal_.x(), published_position.y() - goal_.y()).norm(), 0);
   ASSERT_TRUE(std::isnan(published_velocity.x()));
   ASSERT_TRUE(std::isnan(published_velocity.y()));
   ASSERT_FALSE(std::isnan(published_velocity.z()));

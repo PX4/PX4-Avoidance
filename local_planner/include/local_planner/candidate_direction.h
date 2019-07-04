@@ -7,8 +7,7 @@ struct candidateDirection {
   float elevation_angle;
   float azimuth_angle;
 
-  candidateDirection(float c, float e, float z)
-      : cost(c), elevation_angle(e), azimuth_angle(z){};
+  candidateDirection(float c, float e, float z) : cost(c), elevation_angle(e), azimuth_angle(z){};
 
   bool operator<(const candidateDirection& y) const { return cost < y.cost; }
 

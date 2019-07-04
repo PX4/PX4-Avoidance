@@ -52,35 +52,21 @@ class Cell {
   std::tuple<int, int, int> tpl_;
 };
 
-inline bool operator==(const Cell& lhs, const Cell& rhs) {
-  return lhs.tpl_ == rhs.tpl_;
-}
-inline bool operator!=(const Cell& lhs, const Cell& rhs) {
-  return !operator==(lhs, rhs);
-}
-inline bool operator<(const Cell& lhs, const Cell& rhs) {
-  return lhs.tpl_ < rhs.tpl_;
-}
-inline bool operator>(const Cell& lhs, const Cell& rhs) {
-  return operator<(rhs, lhs);
-}
-inline bool operator<=(const Cell& lhs, const Cell& rhs) {
-  return !operator>(lhs, rhs);
-}
-inline bool operator>=(const Cell& lhs, const Cell& rhs) {
-  return !operator<(lhs, rhs);
-}
+inline bool operator==(const Cell& lhs, const Cell& rhs) { return lhs.tpl_ == rhs.tpl_; }
+inline bool operator!=(const Cell& lhs, const Cell& rhs) { return !operator==(lhs, rhs); }
+inline bool operator<(const Cell& lhs, const Cell& rhs) { return lhs.tpl_ < rhs.tpl_; }
+inline bool operator>(const Cell& lhs, const Cell& rhs) { return operator<(rhs, lhs); }
+inline bool operator<=(const Cell& lhs, const Cell& rhs) { return !operator>(lhs, rhs); }
+inline bool operator>=(const Cell& lhs, const Cell& rhs) { return !operator<(lhs, rhs); }
 
 inline Cell operator+(const Cell& lhs, const Cell& rhs) {
-  Cell res(std::tuple<int, int, int>(lhs.xIndex() + rhs.xIndex(),
-                                     lhs.yIndex() + rhs.yIndex(),
-                                     lhs.zIndex() + rhs.zIndex()));
+  Cell res(
+      std::tuple<int, int, int>(lhs.xIndex() + rhs.xIndex(), lhs.yIndex() + rhs.yIndex(), lhs.zIndex() + rhs.zIndex()));
   return res;
 }
 inline Cell operator-(const Cell& lhs, const Cell& rhs) {
-  Cell res(std::tuple<int, int, int>(lhs.xIndex() - rhs.xIndex(),
-                                     lhs.yIndex() - rhs.yIndex(),
-                                     lhs.zIndex() - rhs.zIndex()));
+  Cell res(
+      std::tuple<int, int, int>(lhs.xIndex() - rhs.xIndex(), lhs.yIndex() - rhs.yIndex(), lhs.zIndex() - rhs.zIndex()));
   return res;
 }
 
@@ -93,8 +79,7 @@ class GoalCell : public Cell {
   GoalCell(Cell cell, double radius = 1.0, bool is_temporary = false)
       : Cell(cell), radius_(radius), is_temporary_(is_temporary) {}
 
-  GoalCell(double x, double y, double z, double radius = 1.0,
-           bool is_temporary = false)
+  GoalCell(double x, double y, double z, double radius = 1.0, bool is_temporary = false)
       : Cell(x, y, z), radius_(radius), is_temporary_(is_temporary) {}
 
   bool withinPlanRadius(Cell cell) const {
@@ -117,8 +102,7 @@ namespace std {
 template <>
 struct hash<global_planner::Cell> {
   std::size_t operator()(const global_planner::Cell& cell) const {
-    return (std::get<0>(cell.tpl_) << 20) ^ (std::get<1>(cell.tpl_) << 10) ^
-           std::get<2>(cell.tpl_);
+    return (std::get<0>(cell.tpl_) << 20) ^ (std::get<1>(cell.tpl_) << 10) ^ std::get<2>(cell.tpl_);
     // return (std::get<0>(cell.tpl_) * 18397) + (std::get<1>(cell.tpl_) *
     // 20483) + (std::get<2>(cell.tpl_) * 29303);
   }
