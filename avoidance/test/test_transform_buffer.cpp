@@ -34,7 +34,7 @@ TEST(TransformBuffer, insertAndGetTransform) {
   ros::Time time1 = ros::Time::now();
   ros::Time time2 = time1 - ros::Duration(2);
   ros::Time time3 = time1 - ros::Duration(4);
-  ros::Time time_between = time1 - ros::Duration(1);
+  ros::Time time_between = time1 - ros::Duration(1.5);
   ros::Time time_before = time1 - ros::Duration(6);
   ros::Time time_after = time1 + ros::Duration(1);
 
@@ -51,16 +51,28 @@ TEST(TransformBuffer, insertAndGetTransform) {
 
   // THEN: the buffer should have this transform registered
   EXPECT_TRUE(tf_buffer.isRegistered(source_frame, target_frame));
+
+  // time1 should get time1
   EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time1,
                                      retrieved_transform));
-  // EXPECT_LT(retrieved_transform.stamp_, time1 + ros::Duration(0.001));
-  // EXPECT_GT(retrieved_transform.stamp_, time1 - ros::Duration(0.001));
+  EXPECT_EQ(retrieved_transform.stamp_, time1);
+
+  // time2 should get time2
   EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time2,
                                      retrieved_transform));
+  EXPECT_EQ(retrieved_transform.stamp_, time2);
+
+  // time3 should get time3
   EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time3,
                                      retrieved_transform));
+  EXPECT_EQ(retrieved_transform.stamp_, time3);
+
+  // close to time2 should get time2
   EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time_between,
                                      retrieved_transform));
+  EXPECT_EQ(retrieved_transform.stamp_, time2);
+
+  // outside of the buffer should not give a transform
   EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_before,
                                       retrieved_transform));
   EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_after,

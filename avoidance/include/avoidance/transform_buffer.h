@@ -128,7 +128,7 @@ class TransformBuffer {
         for (std::deque<tf::StampedTransform>::const_reverse_iterator it =
                  iterator->second.rbegin();
              it != iterator->second.rend(); ++it) {
-          if (it->stamp_ < time) {
+          if (it->stamp_ <= time) {
             ros::Duration dt = time - it->stamp_;
             ros::Duration sample_time = last_sample_time - it->stamp_;
 
