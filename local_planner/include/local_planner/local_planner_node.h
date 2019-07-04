@@ -36,6 +36,7 @@
 #include <boost/bind.hpp>
 
 #include <avoidance/common.h>
+#include "avoidance/avoidance_node.h"
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include "avoidance/avoidance_node.h"
@@ -221,7 +222,6 @@ class LocalPlannerNode {
   bool new_goal_ = false;
 
   NavigationState nav_state_ = NavigationState::none;
-  MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
