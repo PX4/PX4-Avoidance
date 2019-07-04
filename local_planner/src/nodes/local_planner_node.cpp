@@ -18,7 +18,7 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1) {
+    : nh_(nh), nh_private_(nh_private),  avoidance_node_(nh, nh_private), spin_dt_(0.1) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -69,9 +69,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
       "/mavros/trajectory/generated", 10);
   mavros_obstacle_distance_pub_ =
       nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
-  mavros_system_status_pub_ =
-      nh_.advertise<mavros_msgs::CompanionProcessStatus>(
-          "/mavros/companion_process/status", 1);
   get_px4_param_client_ =
       nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
@@ -291,7 +288,6 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
     ros::Duration since_query = ros::Time::now() - start_query_position;
     if (since_query > ros::Duration(local_planner_->timeout_termination_)) {
       setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-      publishSystemStatus();
       if (!position_not_received_error_sent_) {
         // clang-format off
         ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
@@ -320,22 +316,19 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   updatePlanner();
 
   // send waypoint
-  if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE)
+  if (avoidance_node_.getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE)
     calculateWaypoints(hover_);
 
   position_received_ = false;
-
-  // publish system status
-  if (now - t_status_sent_ > ros::Duration(0.2)) publishSystemStatus();
 
   return;
 }
 
 void LocalPlannerNode::setSystemStatus(MAV_STATE state) {
-  companion_state_ = state;
+  avoidance_node_.setSystemStatus(state);
 }
 
-MAV_STATE LocalPlannerNode::getSystemStatus() { return companion_state_; }
+MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_.getSystemStatus(); }
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
@@ -386,17 +379,6 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
         toPoseStamped(result.position_wp, result.orientation_wp));
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
-}
-
-void LocalPlannerNode::publishSystemStatus() {
-  mavros_msgs::CompanionProcessStatus msg;
-
-  msg.header.stamp = ros::Time::now();
-  msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  msg.state = (int)companion_state_;
-
-  mavros_system_status_pub_.publish(msg);
-  t_status_sent_ = ros::Time::now();
 }
 
 void LocalPlannerNode::clickedPointCallback(

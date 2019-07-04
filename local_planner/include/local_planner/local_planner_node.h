@@ -37,6 +37,7 @@
 #include <boost/bind.hpp>
 
 #include <avoidance/common.h>
+#include "avoidance/avoidance_node.h"
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
@@ -84,6 +85,7 @@ class LocalPlannerNode {
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   LocalPlannerVisualization visualizer_;
+  avoidance::AvoidanceNode avoidance_node_;
 
 #ifndef DISABLE_SIMULATION
   std::unique_ptr<WorldVisualizer> world_visualizer_;
@@ -224,7 +226,6 @@ class LocalPlannerNode {
   bool new_goal_ = false;
 
   NavigationState nav_state_ = NavigationState::none;
-  MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;

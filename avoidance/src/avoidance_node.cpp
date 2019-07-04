@@ -46,6 +46,10 @@ void AvoidanceNode::setSystemStatus(MAV_STATE state) {
   companion_state_ = state;
 }
 
+MAV_STATE AvoidanceNode::getSystemStatus(){
+  return companion_state_;
+}
+
 // Publish companion process status
 void AvoidanceNode::publishSystemStatus() {
   mavros_msgs::CompanionProcessStatus status_msg;

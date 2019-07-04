@@ -25,6 +25,8 @@ class AvoidanceNode {
   **/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
                      bool& hover);
+  void setSystemStatus(MAV_STATE state);
+  MAV_STATE getSystemStatus();
 
  private:
   ros::NodeHandle nh_;
@@ -49,7 +51,6 @@ class AvoidanceNode {
   void cmdLoopCallback(const ros::TimerEvent& event);
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
-  void setSystemStatus(MAV_STATE state);
 };
 }
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H
