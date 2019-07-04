@@ -18,7 +18,10 @@ namespace avoidance {
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh,
                                    const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private),  avoidance_node_(nh, nh_private), spin_dt_(0.1) {
+    : nh_(nh),
+      nh_private_(nh_private),
+      avoidance_node_(nh, nh_private),
+      spin_dt_(0.1) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -328,7 +331,9 @@ void LocalPlannerNode::setSystemStatus(MAV_STATE state) {
   avoidance_node_.setSystemStatus(state);
 }
 
-MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_.getSystemStatus(); }
+MAV_STATE LocalPlannerNode::getSystemStatus() {
+  return avoidance_node_.getSystemStatus();
+}
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);

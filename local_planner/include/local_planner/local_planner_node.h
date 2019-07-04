@@ -37,9 +37,9 @@
 #include <boost/bind.hpp>
 
 #include <avoidance/common.h>
-#include "avoidance/avoidance_node.h"
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
+#include "avoidance/avoidance_node.h"
 
 #include <atomic>
 #include <condition_variable>
