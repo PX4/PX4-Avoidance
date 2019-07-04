@@ -22,6 +22,7 @@ class SafeLandingPlannerVisualization {
   * @param[in] planner, SafeLandingPlanner class
   * @param[in] pos, current vehicle position
   * @param[in] last_pos, previous vehicle position
+  * @param[in] config, dynamic reconfigure parameters
   **/
   void visualizeSafeLandingPlanner(
       const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
@@ -58,12 +59,14 @@ class SafeLandingPlannerVisualization {
   /**
   * @brief      Visualization of the mean values grid
   * @params[in] grid, grid data structure
+  * @params[in] std_dev_threshold, maximum standard deviation cell value to land
   **/
   void publishMeanStdDev(const Grid& grid, float std_dev_threshold);
 
   /**
   * @brief      Visualization of the standard deviation values grid
   * @params[in]  grid, grid data structure
+  * @params[in]  n_points_threshold, minimum number of points per cell parameter
   **/
   void publishCounter(const Grid& grid, float n_points_threshold);
 

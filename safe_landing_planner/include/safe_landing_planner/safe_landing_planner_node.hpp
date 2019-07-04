@@ -116,7 +116,10 @@ class SafeLandingPlannerNode {
   void dynamicReconfigureCallback(
       safe_landing_planner::SafeLandingPlannerNodeConfig& config,
       uint32_t level);
-
+  /**
+  * @brief     callaback for grid coming from rosbag
+  * @param     msg, SLPGridMsg message
+  **/
   void rawGridCallback(const safe_landing_planner::SLPGridMsg& msg);
   /**
   * @brif     sends out a status to the FCU which will be received as a

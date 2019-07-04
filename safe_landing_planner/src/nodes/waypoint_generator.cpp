@@ -116,6 +116,7 @@ usm::Transition WaypointGenerator::runGoTo() {
            goal_.y(), goal_.z(), velocity_setpoint_.x(), velocity_setpoint_.y(),
            velocity_setpoint_.z());
   altitude_landing_area_percentile_ = landingAreaHeightPercentile(80.f);
+  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
 
   ROS_INFO("[WGN] Landing Radius: xy  %f, z %f ",
            (goal_.topRows<2>() - position_.topRows<2>()).norm(),
@@ -142,7 +143,7 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
                      loiter_height_) < 0.f
                         ? 1.f
                         : -1.f;
-  velocity_setpoint_.z() = direction * 0.5f;
+  velocity_setpoint_.z() = direction * LAND_SPEED;
   publishTrajectorySetpoints_(goal_, velocity_setpoint_, yaw_setpoint_,
                               yaw_speed_setpoint_);
   ROS_INFO("\033[1;35m [WGN] altitudeChange %f %f %f - %f %f %f \033[0m",
@@ -238,8 +239,8 @@ usm::Transition WaypointGenerator::runLoiter() {
 
 usm::Transition WaypointGenerator::runLand() {
   loiter_position_.z() = NAN;
-  vel_sp = nan_setpoint;
-  vel_sp.z() = -0.5f;
+  Eigen::Vector3f vel_sp = nan_setpoint;
+  vel_sp.z() = -LAND_SPEED;
   publishTrajectorySetpoints_(loiter_position_, vel_sp, loiter_yaw_, NAN);
   ROS_INFO("\033[1;36m [WGN] Land %f %f %f - nan nan nan \033[0m\n",
            loiter_position_.x(), loiter_position_.y(), loiter_position_.z());

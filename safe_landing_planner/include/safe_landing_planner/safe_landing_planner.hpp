@@ -111,7 +111,10 @@ class SafeLandingPlanner {
   std::pair<float, float> computeOnlineMeanVariance(float prev_mean,
                                                     float prev_variance,
                                                     float new_value, float seq);
-
+  /**
+  * @brief process the grid coming from a rosbag and map it to the datatypes
+  * such that the algorithm can be run again
+  **/
   void processRawGrid();
 };
 }
