@@ -591,33 +591,10 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
         cloud_msg_lock.reset();
 
           // remove nan padding and compute fov
-          removeNaNAndGetFOV(pcl_cloud, cameras_[index].fov_fcu_frame_);
-
-          // Assume camera axis is defined as +z (CV convention)!
-          // So we transform the z unit vector into FCU frame and compute
-          // yaw and pitch for this field of view. Note that in the FCU frame
-          // positive pitch is downward, zero-yaw is forward and positive-yaw
-          // is turning CCW!
-          geometry_msgs::PointStamped p, p_fcu;
-          p.header.frame_id = pcl_cloud.header.frame_id;
-          p.header.stamp = ros::Time(0);
-          p.point = toPoint(Eigen::Vector3f(0.0f, 0.0f, 1.0f));
-          tf_listener_->transformPoint("fcu", p, p_fcu);
-
-          if (p_fcu.point.x * p_fcu.point.x + p_fcu.point.y * p_fcu.point.y >
-              0.01f) {
-            cameras_[index].fov_fcu_frame_.yaw_deg =
-                atan2(p_fcu.point.y, p_fcu.point.x) * RAD_TO_DEG;
-          } else {
-            cameras_[index].fov_fcu_frame_.yaw_deg = 0.0f;
-          }
-          if (p_fcu.point.x * p_fcu.point.x + p_fcu.point.z * p_fcu.point.z >
-              0.01f) {
-            cameras_[index].fov_fcu_frame_.pitch_deg =
-                atan2(-p_fcu.point.z, p_fcu.point.x) * RAD_TO_DEG;
-          } else {
-            cameras_[index].fov_fcu_frame_.pitch_deg = 0.0f;
-          }
+          pcl::PointCloud<pcl::PointXYZ> maxima =
+              removeNaNAndGetMaxima(pcl_cloud);
+          pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
+          updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
 
         // transform cloud to /local_origin frame
         pcl_ros::transformPointCloud(pcl_cloud, pcl_cloud, transform);

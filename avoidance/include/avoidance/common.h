@@ -161,9 +161,12 @@ PolarPoint cartesianToPolarHistogram(float x, float y, float z,
 * @warning   the output adheres to the FCU convention: positive yaw is measured
 *            CCW from the positive x-axis, and positve pitch is measured CCW
 *            from the positve x-axis. (Positive pitch is pitching forward)
+* @note      An overloaded function taking a pcl::PointXYZ assumes the origin
+*            (0, 0, 0)
 **/
 PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
                                const Eigen::Vector3f& origin);
+PolarPoint cartesianToPolarFCU(const pcl::PointXYZ& p);
 
 /**
 * @brief     compute polar point to histogram index
@@ -264,11 +267,22 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 *                  point cloud and compute the FOV
 * @note            It operates in-place and iterates through the cloud once
 * @param[in, out]  cloud The point cloud to be filtered in the camera frame
-* @param[in, out]  fov of the camera
+* @returns         a cloud containing the eight corners of the box containing
+*                  all the points, in the same frame as the given point cloud
+**/
+pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(
+    pcl::PointCloud<pcl::PointXYZ>& cloud);
+
+/**
+* @brief           Compute the FOV given a box of 8 points defining a box
+* @param[in]       FOV to be updated
+* @param[in]       point cloud containing 8 points which define a cube that
+*                  contains all the points in a point cloud in the FCU frame
 * @note            the FOV is only adjusted if the current cloud indicates a
 *                  bigger FOV than previously thought
 **/
-void removeNaNAndGetFOV(pcl::PointCloud<pcl::PointXYZ>& cloud, FOV& fov);
+void updateFOVFromMaxima(FOV& fov,
+                         const pcl::PointCloud<pcl::PointXYZ>& maxima);
 
 }  // namespace avoidance
 
