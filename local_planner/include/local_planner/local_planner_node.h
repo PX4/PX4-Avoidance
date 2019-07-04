@@ -46,6 +46,7 @@
 #include <mutex>
 #include <string>
 #include <thread>
+#include <fstream>
 
 namespace avoidance {
 

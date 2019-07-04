@@ -507,9 +507,11 @@ void LocalPlannerNode::checkPx4Parameters() {
 void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
     // listen to tf topic
+    std::ofstream myfile1("/data/tf_buffer_thread", std::ofstream::app);
+    myfile1 <<"thread loop: \t"<< ros::Time::now();
+
     for (auto const& frame_pair : tf_buffer_.registered_transforms_) {
       tf::StampedTransform transform;
-
       if (tf_listener_->canTransform(frame_pair.second, frame_pair.first,
                                      ros::Time(0))) {
         try {
@@ -517,6 +519,7 @@ void LocalPlannerNode::transformBufferThread() {
                                         ros::Time(0), transform);
           tf_buffer_.insertTransform(frame_pair.first, frame_pair.second,
                                      transform);
+          myfile1 <<" \t"<< transform.stamp_;
         } catch (tf::TransformException& ex) {
           ROS_ERROR(
               "Received an exception trying to transform a pointcloud: %s",
@@ -524,6 +527,8 @@ void LocalPlannerNode::transformBufferThread() {
         }
       }
     }
+    myfile1 <<" \n";
+    myfile1.close();
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
 }
