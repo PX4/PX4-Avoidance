@@ -31,7 +31,7 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   cost_image_pub_ = nh.advertise<sensor_msgs::Image>("/cost_image", 1);
   closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
   deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
-  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 1);
+  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
@@ -66,18 +66,17 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
   publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
 }
 
-void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec,
-                                           const float max_range) const {
+void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, const float max_range) const {
   Eigen::Vector3f drone_pos = Eigen::Vector3f(0.f, 0.f, 0.f);
   for (int i = 0; i < fov_vec.size(); ++i) {
-    PolarPoint p1(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f,
-                  fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f, max_range);
-    PolarPoint p2(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f,
-                  fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f, max_range);
-    PolarPoint p3(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f,
-                  fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f, max_range);
-    PolarPoint p4(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f,
-                  fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f, max_range);
+    PolarPoint p1(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p2(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p3(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p4(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
 
     visualization_msgs::Marker m;
     m.header.frame_id = "fcu";
@@ -325,15 +324,12 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 
   // current setpoint
-  PolarPoint waypoint_pol = cartesianToPolarHistogram(
-      toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
-  Eigen::Vector2i waypoint_index =
-      polarToHistogramIndex(waypoint_pol, ALPHA_RES);
+  PolarPoint waypoint_pol =
+      cartesianToPolarHistogram(toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
+  Eigen::Vector2i waypoint_index = polarToHistogramIndex(waypoint_pol, ALPHA_RES);
   PolarPoint adapted_waypoint_pol =
-      cartesianToPolarHistogram(toEigen(newest_adapted_waypoint_position),
-                                toEigen(newest_pose.pose.position));
-  Eigen::Vector2i adapted_waypoint_index =
-      polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
+      cartesianToPolarHistogram(toEigen(newest_adapted_waypoint_position), toEigen(newest_pose.pose.position));
+  Eigen::Vector2i adapted_waypoint_index = polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
 
   // color in the image
   if (cost_img.data.size() == 3 * GRID_LENGTH_E * GRID_LENGTH_Z) {

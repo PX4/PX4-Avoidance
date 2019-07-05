@@ -241,8 +241,7 @@ void WaypointGenerator::adaptSpeed() {
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
     if (output_.waypoint_type != reachHeight) {
-      PolarPoint p_pol_fcu =
-          cartesianToPolarFCU(output_.goto_position, position_);
+      PolarPoint p_pol_fcu = cartesianToPolarFCU(output_.goto_position, position_);
       p_pol_fcu.e -= curr_pitch_deg_;
       p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;
       wrapPolar(p_pol_fcu);

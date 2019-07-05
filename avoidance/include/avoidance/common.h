@@ -52,8 +52,7 @@ struct PolarPoint {
 */
 struct FOV {
   FOV() : yaw_deg(0.f), pitch_deg(0.f), h_fov_deg(0.f), v_fov_deg(0.f){};
-  FOV(float y, float p, float h, float v)
-      : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
+  FOV(float y, float p, float h, float v) : yaw_deg(y), pitch_deg(p), h_fov_deg(h), v_fov_deg(v){};
   float yaw_deg;
   float pitch_deg;
   float h_fov_deg;
@@ -74,6 +73,32 @@ const float RAD_TO_DEG = 180.0f / M_PI_F;
 **/
 bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
+
+/**
+* @brief      compute in which FOV the current point lies
+* @param[in]  vector of FOV defining the field of view of the drone
+* @param[in]  polar point of the current orienation in question
+* @param[out] index pointing to the camera in the FOV struct which contains the
+*             current point
+* @returns    boolean value if the point in question is in exactly one FOV
+* @warning    This function returns false and sets the index to -1 if there is
+*             no or more than one camera which sees the current point
+**/
+bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int& idx);
+
+/**
+* @brief      determine whether the given point lies on the edge of the field
+*             of view or between two adjacent cameras
+* @param[in]  vector of FOV defining the field of view of the drone
+* @param[in]  polar point of the current orientation in question
+* @param[out] index of the camera in the FOV vector, indicating which FOV edge
+*             it is on, if any. -1 if none
+* @returns    boolean indicating whether the current point is on the edge of the
+*             field of view
+* @warning    This function returns false and sets the index to -1 if the point
+*             is not on the edge of the fov
+**/
+bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int& idx);
 
 /**
 * @brief     function returning a scale value depending on where a polar point
@@ -106,8 +131,7 @@ float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2);
 *            with increasing azimuth in CW direction, while the elevation angle
 *            increases for "upward looking" (contrary to pitch in FCU!)
 **/
-Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
-                                          const Eigen::Vector3f& pos);
+Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos);
 
 /**
 * @brief     Converts a polar point in fcu convention to a cartesian point and
@@ -119,8 +143,7 @@ Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol,
 *            incoming polar point. This means the pitch is positive for forward
 *            pitching of a quadrotor and the yaw is positive for CCW yaw motion
 **/
-Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol,
-                                    const Eigen::Vector3f& pos);
+Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos);
 
 float indexAngleDifference(float a, float b);
 
@@ -146,10 +169,8 @@ PolarPoint histogramIndexToPolar(int e, int z, int res, float radius);
 * @returns   azimuth Angle in float degrees from the positive y-axis (-180, 180]
 *            and elevation angle degrees (-90, 90]
 **/
-PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos,
-                                     const Eigen::Vector3f& origin);
-PolarPoint cartesianToPolarHistogram(float x, float y, float z,
-                                     const Eigen::Vector3f& pos);
+PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin);
+PolarPoint cartesianToPolarHistogram(float x, float y, float z, const Eigen::Vector3f& pos);
 
 /**
 * @brief     Compute the polar vector in FCU convention between two cartesian
@@ -164,8 +185,7 @@ PolarPoint cartesianToPolarHistogram(float x, float y, float z,
 * @note      An overloaded function taking a pcl::PointXYZ assumes the origin
 *            (0, 0, 0)
 **/
-PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos,
-                               const Eigen::Vector3f& origin);
+PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin);
 PolarPoint cartesianToPolarFCU(const pcl::PointXYZ& p);
 
 /**
@@ -270,8 +290,7 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point);
 * @returns         a cloud containing the eight corners of the box containing
 *                  all the points, in the same frame as the given point cloud
 **/
-pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(
-    pcl::PointCloud<pcl::PointXYZ>& cloud);
+pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(pcl::PointCloud<pcl::PointXYZ>& cloud);
 
 /**
 * @brief           Compute the FOV given a box of 8 points defining a box
@@ -281,8 +300,7 @@ pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(
 * @note            the FOV is only adjusted if the current cloud indicates a
 *                  bigger FOV than previously thought
 **/
-void updateFOVFromMaxima(FOV& fov,
-                         const pcl::PointCloud<pcl::PointXYZ>& maxima);
+void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima);
 
 }  // namespace avoidance
 

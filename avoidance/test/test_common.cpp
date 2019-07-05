@@ -136,8 +136,7 @@ TEST(Common, elevationAnglefromCartesian) {
   const float angle_q2 = cartesianToPolarHistogram(point_q2, origin).e;
   const float angle_q3 = cartesianToPolarHistogram(point_q3, origin).e;
   const float angle_q4 = cartesianToPolarHistogram(point_q4, origin).e;
-  const float angle_non_zero_origin =
-      cartesianToPolarHistogram(point_q4, point_q2).e;
+  const float angle_non_zero_origin = cartesianToPolarHistogram(point_q4, point_q2).e;
 
   // THEN: angle should be ..
   EXPECT_FLOAT_EQ(0.f, angle_front);
@@ -461,8 +460,7 @@ TEST(Common, removeNaNAndGetMaxima) {
   EXPECT_EQ(pc_no_nan.size(), pc_with_nan.size());
   EXPECT_TRUE(pc_no_nan.is_dense);
   EXPECT_TRUE(pc_with_nan.is_dense);
-  float min_x = 999.f, min_y = 999.f, min_z = 999.f, max_x = -999.f,
-        max_y = -999.f, max_z = -999.f;
+  float min_x = 999.f, min_y = 999.f, min_z = 999.f, max_x = -999.f, max_y = -999.f, max_z = -999.f;
 
   for (auto p : maxima_no_nan) {
     min_x = std::min(p.x, min_x);
@@ -505,16 +503,13 @@ TEST(Common, isInWhichFOV) {
   -180                             -30   0     +30                          +180
   **/
   std::vector<FOV> fov;
-  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
-  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
-                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));     // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f, 30.0f));   // camera two: right-facing with overlaps with 1
   fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
 
   // WHEN: we sample points inside, outside and in the overlapping region
-  int idx_inside_camera_1, idx_inside_camera_2, idx_inside_camera_3,
-      idx_outside, idx_overlap = 0;
-  bool retval_inside_1, retval_inside_2, retval_inside_3, retval_outside,
-      retval_overlap = false;
+  int idx_inside_camera_1, idx_inside_camera_2, idx_inside_camera_3, idx_outside, idx_overlap = 0;
+  bool retval_inside_1, retval_inside_2, retval_inside_3, retval_outside, retval_overlap = false;
   PolarPoint sample_inside_1(0.0f, -25.0f, 1.0f);
   PolarPoint sample_inside_2(0.0f, 36.0f, 1.0f);
   PolarPoint sample_inside_3(0.0f, -90.0f, 1.0f);
@@ -549,17 +544,15 @@ TEST(Common, isOnEdgeOfFOV) {
   -180                             -30   0     +30                          +180
   **/
   std::vector<FOV> fov;
-  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
-  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
-                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));     // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f, 30.0f));   // camera two: right-facing with overlaps with 1
   fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
 
   // WHEN: we sample points outside, inside but on edge, inside but not on edge,
   // inside in overlapping region
-  bool left_cam_1, right_cam_1, left_cam_2, right_cam_2, left_cam_3,
-      right_cam_3, overlap, outside = false;
-  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2,
-      idx_left_cam_3, idx_right_cam_3, idx_overlap, idx_outside;
+  bool left_cam_1, right_cam_1, left_cam_2, right_cam_2, left_cam_3, right_cam_3, overlap, outside = false;
+  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2, idx_left_cam_3, idx_right_cam_3, idx_overlap,
+      idx_outside;
   PolarPoint sample_left_cam_1(0.0f, -25.0f, 1.0f);
   PolarPoint sample_right_cam_1(0.0f, 0.2f, 1.0f);
   PolarPoint sample_left_cam_2(0.0f, 34.0f, 1.0f);
@@ -607,17 +600,16 @@ TEST(Common, scaleToFOV) {
   -180                             -30   0     +30                          +180
   **/
   std::vector<FOV> fov;
-  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));  // camera one: forward-facing
-  fov.push_back(FOV(35.0f, -1.0f, 15.0f,
-                    30.0f));  // camera two: right-facing with overlaps with 1
+  fov.push_back(FOV(0.0f, 0.0f, 60.0f, 40.0f));     // camera one: forward-facing
+  fov.push_back(FOV(35.0f, -1.0f, 15.0f, 30.0f));   // camera two: right-facing with overlaps with 1
   fov.push_back(FOV(-100.0f, 3.0f, 20.0f, 30.0f));  // camera three: left facing
 
   // WHEN: we sample points outside, inside but on edge, inside but not on edge,
   // inside in overlapping region
-  float left_cam_1, left_2_cam_1, right_cam_1, left_cam_2, right_cam_2,
-      left_cam_3, right_cam_3, overlap, outside = false;
-  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2,
-      idx_left_cam_3, idx_right_cam_3, idx_overlap, idx_outside;
+  float left_cam_1, left_2_cam_1, right_cam_1, left_cam_2, right_cam_2, left_cam_3, right_cam_3, overlap,
+      outside = false;
+  int idx_left_cam_1, idx_right_cam_1, idx_left_cam_2, idx_right_cam_2, idx_left_cam_3, idx_right_cam_3, idx_overlap,
+      idx_outside;
   PolarPoint sample_left_cam_1(0.0f, -25.0f, 1.0f);
   PolarPoint sample2_left_cam_1(0.0f, -26.0f, 1.0f);
   PolarPoint sample_right_cam_1(0.0f, 0.2f, 1.0f);
@@ -658,10 +650,9 @@ TEST(Common, scaleToFOV) {
 
 TEST(Common, updateFOVFromMaxima) {
   // GIVEN: different point clouds indicating various FOV
-  pcl::PointCloud<pcl::PointXYZ> front_h60_v45, right_h90_v30, back_h78_v45,
-      front_elevated, empty, one, zenith, nadir;
-  FOV fov_front_h60_v45, fov_right_h90_v30, fov_back_h78_v45,
-      fov_front_elevated, fov_empty, fov_one, fov_zenith, fov_nadir;
+  pcl::PointCloud<pcl::PointXYZ> front_h60_v45, right_h90_v30, back_h78_v45, front_elevated, empty, one, zenith, nadir;
+  FOV fov_front_h60_v45, fov_right_h90_v30, fov_back_h78_v45, fov_front_elevated, fov_empty, fov_one, fov_zenith,
+      fov_nadir;
   front_h60_v45.push_back(pcl::PointXYZ(1.0f, 0.57735026f, 0.47829262f));
   front_h60_v45.push_back(pcl::PointXYZ(1.0f, -0.57735026f, -0.47829262f));
   right_h90_v30.push_back(pcl::PointXYZ(1.0f, -1.0f, -0.37893738196));
@@ -709,8 +700,7 @@ TEST(Common, updateFOVFromMaxima) {
   // THEN: the backward-looking can have yaw of + or - 180
   EXPECT_NEAR(78.0f, fov_back_h78_v45.h_fov_deg, 1.0f);
   EXPECT_NEAR(45.0f, fov_back_h78_v45.v_fov_deg, 1.0f);
-  EXPECT_TRUE(180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON ||
-              -180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON);
+  EXPECT_TRUE(180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON || -180.0f - fov_back_h78_v45.yaw_deg <= FLT_EPSILON);
   EXPECT_NEAR(0.0f, fov_back_h78_v45.pitch_deg, 1.0f);
 
   EXPECT_NEAR(0.0f, fov_empty.h_fov_deg, 1.0f);
@@ -727,15 +717,15 @@ TEST(Common, updateFOVFromMaxima) {
   EXPECT_NEAR(0.0f, fov_one.v_fov_deg, 1.0f);
   EXPECT_NEAR(0.0f, fov_one.yaw_deg, 1.0f);
   EXPECT_NEAR(0.0f, fov_one.pitch_deg, 1.0f);
-/** these can currently not work, as long as it doesn't throw
-  EXPECT_NEAR(360.0f, fov_zenith.h_fov_deg, 1.0f);
-  EXPECT_NEAR(36.8698976f, fov_zenith.v_fov_deg, 1.0f);
-  EXPECT_NEAR(0.0f, fov_zenith.yaw_deg, 1.0f);
-  EXPECT_NEAR(90.0f, fov_zenith.pitch_deg, 1.0f);
+  /** these can currently not work, as long as it doesn't throw
+    EXPECT_NEAR(360.0f, fov_zenith.h_fov_deg, 1.0f);
+    EXPECT_NEAR(36.8698976f, fov_zenith.v_fov_deg, 1.0f);
+    EXPECT_NEAR(0.0f, fov_zenith.yaw_deg, 1.0f);
+    EXPECT_NEAR(90.0f, fov_zenith.pitch_deg, 1.0f);
 
-  EXPECT_NEAR(360.0f, fov_nadir.h_fov_deg, 1.0f);
-  EXPECT_NEAR(36.8698976f, fov_nadir.v_fov_deg, 1.0f);
-  EXPECT_NEAR(0.0f, fov_nadir.yaw_deg, 1.0f);
-  EXPECT_NEAR(-90.0f, fov_nadir.pitch_deg, 1.0f);
-  **/
+    EXPECT_NEAR(360.0f, fov_nadir.h_fov_deg, 1.0f);
+    EXPECT_NEAR(36.8698976f, fov_nadir.v_fov_deg, 1.0f);
+    EXPECT_NEAR(0.0f, fov_nadir.yaw_deg, 1.0f);
+    EXPECT_NEAR(-90.0f, fov_nadir.pitch_deg, 1.0f);
+    **/
 }

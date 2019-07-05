@@ -83,11 +83,9 @@ void LocalPlanner::runPlanner() {
 
   histogram_box_.setBoxLimits(position_, ground_distance_);
 
-  float elapsed_since_last_processing = static_cast<float>(
-      (ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_,
-                    fov_fcu_frame_, yaw_fcu_frame_deg_, pitch_fcu_frame_deg_,
-                    position_, min_realsense_dist_, max_point_age_s_,
+  float elapsed_since_last_processing = static_cast<float>((ros::Time::now() - last_pointcloud_process_time_).toSec());
+  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_fcu_frame_, yaw_fcu_frame_deg_,
+                    pitch_fcu_frame_deg_, position_, min_realsense_dist_, max_point_age_s_,
                     elapsed_since_last_processing, min_num_points_per_cell_);
   last_pointcloud_process_time_ = ros::Time::now();
 
@@ -156,19 +154,16 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_,
-                    last_sent_waypoint_, cost_params_, velocity_.norm() < 0.1f,
-                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+      getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_, last_sent_waypoint_, cost_params_,
+                    velocity_.norm() < 0.1f, smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
 
       // set last chosen direction for smoothing
-      PolarPoint last_wp_pol =
-          cartesianToPolarHistogram(last_sent_waypoint_, position_);
+      PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
-      Eigen::Vector3f projected_last_wp =
-          polarHistogramToCartesian(last_wp_pol, position_);
+      Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position_);
       star_planner_->setLastDirection(projected_last_wp);
 
       // build search tree

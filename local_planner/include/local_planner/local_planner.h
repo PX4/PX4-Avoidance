@@ -188,12 +188,8 @@ class LocalPlanner {
   /**
   * @brief     Getters for the FOV
   */
-  float getHFOV(int i) {
-    return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f;
-  }
-  float getVFOV(int i) {
-    return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f;
-  }
+  float getHFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f; }
+  float getVFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f; }
   const std::vector<FOV>& getFOV() const { return fov_fcu_frame_; }
 
   /**

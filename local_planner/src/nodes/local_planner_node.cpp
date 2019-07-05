@@ -116,8 +116,7 @@ void LocalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& cam
         camera_topics[i], 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
     cameras_[i].received_ = false;
-    cameras_[i].transform_thread_ =
-        std::thread(&LocalPlannerNode::pointCloudTransformThread, this, i);
+    cameras_[i].transform_thread_ = std::thread(&LocalPlannerNode::pointCloudTransformThread, this, i);
   }
 }
 
@@ -486,8 +485,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
   cameras_[index].cloud_ready_cv_->notify_one();
 }
 
-void LocalPlannerNode::dynamicReconfigureCallback(
-    avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_->dynamicReconfigureSetParams(config, level);
   wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_, config.smoothing_speed_z_);
@@ -591,8 +589,7 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
         cloud_msg_lock.reset();
 
           // remove nan padding and compute fov
-          pcl::PointCloud<pcl::PointXYZ> maxima =
-              removeNaNAndGetMaxima(pcl_cloud);
+          pcl::PointCloud<pcl::PointXYZ> maxima = removeNaNAndGetMaxima(pcl_cloud);
           pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
           updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
 

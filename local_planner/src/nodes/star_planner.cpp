@@ -24,11 +24,9 @@ void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_pa
 
 void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) { projected_last_wp_ = projected_last_wp; }
 
-void StarPlanner::setPose(const Eigen::Vector3f& pos,
-                          float curr_yaw_fcu_frame_deg) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw_fcu_frame_deg) {
   position_ = pos;
-  curr_yaw_histogram_frame_deg_ =
-      wrapAngleToPlusMinus180(-curr_yaw_fcu_frame_deg + 90.0f);
+  curr_yaw_histogram_frame_deg_ = wrapAngleToPlusMinus180(-curr_yaw_fcu_frame_deg + 90.0f);
 }
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
@@ -116,8 +114,7 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     float yaw_fcu_frame_deg = wrapAngleToPlusMinus180(-tree_[origin].yaw_ + 90);
-    getCostMatrix(histogram, goal_, origin_position, yaw_fcu_frame_deg,
-                  projected_last_wp_, cost_params_, false,
+    getCostMatrix(histogram, goal_, origin_position, yaw_fcu_frame_deg, projected_last_wp_, cost_params_, false,
                   smoothing_margin_degrees_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
@@ -132,8 +129,7 @@ void StarPlanner::buildLookAheadTree() {
         PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle, tree_node_distance_);
 
         // check if another close node has been added
-        Eigen::Vector3f node_location =
-            polarHistogramToCartesian(p_pol, origin_position);
+        Eigen::Vector3f node_location = polarHistogramToCartesian(p_pol, origin_position);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
