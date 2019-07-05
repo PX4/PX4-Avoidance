@@ -292,7 +292,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   // j = maximum jerk, r = maximum range sensor distance
   float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
   float a = 1;
-  float b = 2 * -px4_.param_mpc_acc_hor * accel_ramp_time;
+  float b = 2 * px4_.param_mpc_acc_hor * accel_ramp_time;
   float c = 2 * -px4_.param_mpc_acc_hor * histogram_box_.radius_;
   float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
 
