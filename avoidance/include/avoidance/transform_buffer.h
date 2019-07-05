@@ -11,8 +11,7 @@
 namespace avoidance {
 
 class TransformBuffer {
-
-protected:
+ protected:
   std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
   std::unique_ptr<std::mutex> mutex_;
   ros::Duration buffer_size_;
@@ -69,8 +68,6 @@ protected:
     }
   }
 
-
-
  public:
   std::vector<std::pair<std::string, std::string>> registered_transforms_;
 
@@ -106,7 +103,7 @@ protected:
   * @param[in] target_frame
   * @param[in] transform
   **/
-  inline void insertTransform(const std::string& source_frame,
+  inline bool insertTransform(const std::string& source_frame,
                               const std::string& target_frame,
                               tf::StampedTransform transform) {
     std::lock_guard<std::mutex> lck(*mutex_);
@@ -115,13 +112,12 @@ protected:
     if (iterator == buffer_.end()) {
       ROS_ERROR("TF cannot be written to buffer, unregistered transform");
     } else {
-
       // check if this is a new transform
       bool new_tf = false;
-      if(iterator->second.size() == 0){
-    	  new_tf = true;
-      }else if(iterator->second.back().stamp_ != transform.stamp_){
-    	  new_tf = true;
+      if (iterator->second.size() == 0) {
+        new_tf = true;
+      } else if (iterator->second.back().stamp_ < transform.stamp_) {
+        new_tf = true;
       }
 
       if (new_tf) {
@@ -130,8 +126,10 @@ protected:
                buffer_size_) {
           iterator->second.pop_front();
         }
+        return true;
       }
     }
+    return false;
   }
 
   /**
