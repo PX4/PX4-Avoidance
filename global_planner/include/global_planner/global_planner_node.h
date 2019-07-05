@@ -53,8 +53,7 @@ class GlobalPlannerNode {
   GlobalPlanner global_planner_;
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros
                                      // mission or intermediate goals
-  GlobalPlannerNode(const ros::NodeHandle& nh,
-                    const ros::NodeHandle& nh_private);
+  GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   ~GlobalPlannerNode();
 
  private:
@@ -135,8 +134,7 @@ class GlobalPlannerNode {
   void setIntermediateGoal();
   bool isCloseToGoal();
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
-  void dynamicReconfigureCallback(
-      global_planner::GlobalPlannerNodeConfig& config, uint32_t level);
+  void dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig& config, uint32_t level);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);

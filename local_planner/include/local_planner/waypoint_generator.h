@@ -125,10 +125,8 @@ class WaypointGenerator {
   * @param[in] stay, true if the vehicle is loitering
   * @param[in] t, update system time
   **/
-  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
-                   const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel,
-                   bool stay, bool is_airborne);
+  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing
@@ -153,8 +151,7 @@ class WaypointGenerator {
   * @param[in] deg60_pt, 60 degrees angle entry point to line previous to
   * current goal from current vehicle postion
   **/
-  void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt,
-                                         Eigen::Vector3f& deg60_pt);
+  void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
   WaypointGenerator() = default;
   virtual ~WaypointGenerator() = default;

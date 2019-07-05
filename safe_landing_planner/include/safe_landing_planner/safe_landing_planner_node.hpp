@@ -87,9 +87,7 @@ class SafeLandingPlannerNode {
   bool cloud_transformed_ = false;
   double spin_dt_ = 0.1;
 
-  dynamic_reconfigure::Server<
-      safe_landing_planner::SafeLandingPlannerNodeConfig>
-      server_;
+  dynamic_reconfigure::Server<safe_landing_planner::SafeLandingPlannerNodeConfig> server_;
   safe_landing_planner::SafeLandingPlannerNodeConfig rqt_param_config_;
 
   /**
@@ -113,9 +111,7 @@ class SafeLandingPlannerNode {
   * @param     config, struct with all the parameters
   * @param     level, bitmsak to group together reconfigurable parameters
   **/
-  void dynamicReconfigureCallback(
-      safe_landing_planner::SafeLandingPlannerNodeConfig& config,
-      uint32_t level);
+  void dynamicReconfigureCallback(safe_landing_planner::SafeLandingPlannerNodeConfig& config, uint32_t level);
   /**
   * @brief     callaback for grid coming from rosbag
   * @param     msg, SLPGridMsg message

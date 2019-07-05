@@ -2,22 +2,16 @@
 
 namespace avoidance {
 
-AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh,
-                             const ros::NodeHandle& nh_private)
+AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
     : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
-  mavros_system_status_pub_ =
-      nh_.advertise<mavros_msgs::CompanionProcessStatus>(
-          "/mavros/companion_process/status", 1);
+  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
 
-  ros::TimerOptions cmdlooptimer_options(
-      ros::Duration(cmdloop_dt_),
-      boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
+  ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
+                                         boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
 
   ros::TimerOptions statuslooptimer_options(
-      ros::Duration(statusloop_dt_),
-      boost::bind(&AvoidanceNode::statusLoopCallback, this, _1),
-      &statusloop_queue_);
+      ros::Duration(statusloop_dt_), boost::bind(&AvoidanceNode::statusLoopCallback, this, _1), &statusloop_queue_);
   statusloop_timer_ = nh_.createTimer(statuslooptimer_options);
 
   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
@@ -38,13 +32,9 @@ AvoidanceNode::~AvoidanceNode() {}
 
 void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event) {}
 
-void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event) {
-  publishSystemStatus();
-}
+void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event) { publishSystemStatus(); }
 
-void AvoidanceNode::setSystemStatus(MAV_STATE state) {
-  companion_state_ = state;
-}
+void AvoidanceNode::setSystemStatus(MAV_STATE state) { companion_state_ = state; }
 
 // Publish companion process status
 void AvoidanceNode::publishSystemStatus() {
@@ -56,14 +46,12 @@ void AvoidanceNode::publishSystemStatus() {
   mavros_system_status_pub_.publish(status_msg);
 }
 
-void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud,
-                                  ros::Duration since_start, bool& hover) {
+void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
   ros::Duration timeout_termination = ros::Duration(timeout_termination_);
   ros::Duration timeout_critical = ros::Duration(timeout_critical_);
   ros::Duration timeout_startup = ros::Duration(timeout_startup_);
 
-  if (since_last_cloud > timeout_termination &&
-      since_start > timeout_termination) {
+  if (since_last_cloud > timeout_termination && since_start > timeout_termination) {
     setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
     ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
   } else {

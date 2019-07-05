@@ -202,8 +202,7 @@ class LocalPlanner {
   * @param     config, struct containing all the parameters
   * @param     level, bitmask to group together reconfigurable parameters
   **/
-  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config,
-                                   uint32_t level);
+  void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level);
   /**
   * @brief     getter method for current vehicle position and orientation
   * @returns   vehicle position and orientation

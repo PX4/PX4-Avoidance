@@ -3,21 +3,15 @@
 namespace global_planner {
 
 bool Node::isSmaller(const Node& other) const {
-  return cell_ < other.cell_ ||
-         (cell_ == other.cell_ && parent_ < other.parent_);
+  return cell_ < other.cell_ || (cell_ == other.cell_ && parent_ < other.parent_);
 }
-bool Node::isEqual(const Node& other) const {
-  return cell_ == other.cell_ && parent_ == other.parent_;
-}
+bool Node::isEqual(const Node& other) const { return cell_ == other.cell_ && parent_ == other.parent_; }
 
 std::size_t Node::hash() const {
-  return (std::hash<global_planner::Cell>()(cell_) << 1) ^
-         std::hash<global_planner::Cell>()(parent_);
+  return (std::hash<global_planner::Cell>()(cell_) << 1) ^ std::hash<global_planner::Cell>()(parent_);
 }
 
-NodePtr Node::nextNode(const Cell& nextCell) const {
-  return NodePtr(new Node(nextCell, cell_));
-}
+NodePtr Node::nextNode(const Cell& nextCell) const { return NodePtr(new Node(nextCell, cell_)); }
 
 std::vector<NodePtr> Node::getNeighbors() const {
   std::vector<NodePtr> neighbors;
@@ -71,16 +65,14 @@ double Node::getRotation(const Node& other) const {
 double Node::getXYRotation(const Node& other) const {
   Cell this_diff = (cell_ - parent_);
   Cell other_diff = (other.cell_ - other.parent_);
-  if ((this_diff.xIndex() == 0 && this_diff.yIndex() == 0) ||
-      (other_diff.xIndex() == 0 && this_diff.yIndex() == 0)) {
+  if ((this_diff.xIndex() == 0 && this_diff.yIndex() == 0) || (other_diff.xIndex() == 0 && this_diff.yIndex() == 0)) {
     return 0.0;  // Vertical movement
   }
   double this_ang = this_diff.angle();
   double other_ang = other_diff.angle();
   double ang_diff = other_ang - this_ang;
-  ang_diff = std::fabs(angleToRange(ang_diff));  // Rotation needed
-  double num_45_deg_turns =
-      ang_diff / (M_PI / 4);  // Minimum number of 45-turns to goal
+  ang_diff = std::fabs(angleToRange(ang_diff));     // Rotation needed
+  double num_45_deg_turns = ang_diff / (M_PI / 4);  // Minimum number of 45-turns to goal
   return num_45_deg_turns;
 }
 

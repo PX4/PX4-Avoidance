@@ -22,8 +22,7 @@ class TransformBuffer {
   * @param[in]  target_frame, name of the target frame
   * @returns    key string
   **/
-  std::string get_key(const std::string& source_frame,
-                      const std::string& target_frame) const;
+  std::string get_key(const std::string& source_frame, const std::string& target_frame) const;
 
   /**
   * @brief      interpolates between transforms
@@ -32,8 +31,7 @@ class TransformBuffer {
   * @param[out] transform, empty transform containing the desired timestep
   * @returns    bool, true if the transform can be interpolated
   **/
-  bool interpolateTransform(const tf::StampedTransform& tf_earlier,
-                            const tf::StampedTransform& tf_later,
+  bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
                             tf::StampedTransform& transform) const;
 
   /**
@@ -42,8 +40,7 @@ class TransformBuffer {
   * @param[in]  target_frame
   * @returns    bool, true if transform is registered
   **/
-  bool isRegistered(const std::string& source_frame,
-                    const std::string& target_frame) const;
+  bool isRegistered(const std::string& source_frame, const std::string& target_frame) const;
 
  public:
   std::vector<std::pair<std::string, std::string>> registered_transforms_;
@@ -56,8 +53,7 @@ class TransformBuffer {
   * @param[in]  source_frame
   * @param[in]  target_frame
   **/
-  void registerTransform(const std::string& source_frame,
-                         const std::string& target_frame);
+  void registerTransform(const std::string& source_frame, const std::string& target_frame);
 
   /**
   * @brief      inserts transform into buffer
@@ -67,8 +63,7 @@ class TransformBuffer {
   * @returns    bool, true if transform was inserted (will not be inserted
   *             if it is the same or older than the last one that was buffered)
   **/
-  bool insertTransform(const std::string& source_frame,
-                       const std::string& target_frame,
+  bool insertTransform(const std::string& source_frame, const std::string& target_frame,
                        tf::StampedTransform transform);
 
   /**
@@ -79,8 +74,7 @@ class TransformBuffer {
   * @param[out] transform
   * @returns    bool, true if the transform could be retrieved from the buffer
   **/
-  bool getTransform(const std::string& source_frame,
-                    const std::string& target_frame, ros::Time time,
+  bool getTransform(const std::string& source_frame, const std::string& target_frame, ros::Time time,
                     tf::StampedTransform& transform) const;
 };
 }

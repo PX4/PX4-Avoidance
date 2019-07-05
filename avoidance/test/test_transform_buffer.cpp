@@ -66,33 +66,27 @@ TEST(TransformBuffer, GetTransformAPI) {
   // THEN: we should be able to retrieve transforms at different times
 
   // time1 should get transform1
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time1,
-                                     retrieved_transform));
+  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time1, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time1);
   EXPECT_EQ(retrieved_transform, transform1);
 
   // time2 should get transform2
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time2,
-                                     retrieved_transform));
+  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time2, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time2);
   EXPECT_EQ(retrieved_transform, transform2);
 
   // time3 should get transform3
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time3,
-                                     retrieved_transform));
+  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time3, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time3);
   EXPECT_EQ(retrieved_transform, transform3);
 
   // time in between should give the timestamp of what we ask for
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time_between,
-                                     retrieved_transform));
+  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time_between, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time_between);
 
   // outside of the buffer should not give a transform
-  EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_before,
-                                      retrieved_transform));
-  EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_after,
-                                      retrieved_transform));
+  EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_before, retrieved_transform));
+  EXPECT_FALSE(tf_buffer.getTransform(source_frame, target_frame, time_after, retrieved_transform));
 }
 
 TEST_F(TransformBufferTests, insertTransform) {
@@ -156,8 +150,7 @@ TEST_F(TransformBufferTests, interpolateTransform) {
   ros::Time time_half = time1 + ros::Duration(1.f);
   ros::Time time2 = time1 + ros::Duration(2.f);
 
-  tf::StampedTransform transform1, transform2, retrieved_transform1,
-      retrieved_transform2, retrieved_transform3;
+  tf::StampedTransform transform1, transform2, retrieved_transform1, retrieved_transform2, retrieved_transform3;
   transform1.stamp_ = time1;
   transform2.stamp_ = time2;
   tf::Vector3 translation1 = {0.f, 0.f, 0.f};
@@ -176,12 +169,9 @@ TEST_F(TransformBufferTests, interpolateTransform) {
   retrieved_transform1.stamp_ = time_half;
   retrieved_transform2.stamp_ = time1;
   retrieved_transform3.stamp_ = time2;
-  ASSERT_TRUE(
-      interpolateTransform(transform1, transform2, retrieved_transform1));
-  ASSERT_TRUE(
-      interpolateTransform(transform1, transform2, retrieved_transform2));
-  ASSERT_TRUE(
-      interpolateTransform(transform1, transform2, retrieved_transform3));
+  ASSERT_TRUE(interpolateTransform(transform1, transform2, retrieved_transform1));
+  ASSERT_TRUE(interpolateTransform(transform1, transform2, retrieved_transform2));
+  ASSERT_TRUE(interpolateTransform(transform1, transform2, retrieved_transform3));
   tf::Quaternion rotation_retrieved1 = retrieved_transform1.getRotation();
 
   // THEN: we should get half the translation and rotation for the time in

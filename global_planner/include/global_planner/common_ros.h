@@ -23,21 +23,18 @@ tf::Vector3 toTfVector3(const P& point) {
   return tf::Vector3(point.x, point.y, point.z);
 }
 
-double distance(const geometry_msgs::PoseStamped& a,
-                const geometry_msgs::PoseStamped& b) {
+double distance(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b) {
   return distance(a.pose.position, b.pose.position);
 }
 
-geometry_msgs::TwistStamped transformTwistMsg(
-    const tf::TransformListener& listener, const std::string& target_frame,
-    const std::string& fixed_frame, const geometry_msgs::TwistStamped& msg) {
+geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& listener, const std::string& target_frame,
+                                              const std::string& fixed_frame, const geometry_msgs::TwistStamped& msg) {
   auto transformed_msg = msg;
   geometry_msgs::Vector3Stamped before;
   before.vector = msg.twist.linear;
   before.header = msg.header;
   geometry_msgs::Vector3Stamped after;
-  listener.transformVector(target_frame, ros::Time(0), before, fixed_frame,
-                           after);
+  listener.transformVector(target_frame, ros::Time(0), before, fixed_frame, after);
   transformed_msg.twist.linear = after.vector;
   return transformed_msg;
 }
@@ -53,8 +50,7 @@ std_msgs::ColorRGBA spectralColor(double hue, double alpha = 1.0) {
 }
 
 template <typename Point, typename Color>
-visualization_msgs::Marker createMarker(int id, Point position, Color color,
-                                        double scale = 0.1,
+visualization_msgs::Marker createMarker(int id, Point position, Color color, double scale = 0.1,
                                         std::string frame_id = "/world") {
   visualization_msgs::Marker marker;
   marker.id = id;
@@ -76,10 +72,8 @@ visualization_msgs::Marker createMarker(int id, Point position, Color color,
 // }
 
 // Returns true if msg1 and msg2 have both the same altitude and orientation
-bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1,
-                           const geometry_msgs::Pose& msg2) {
-  return msg1.orientation.z == msg2.orientation.z &&
-         msg1.orientation.w == msg2.orientation.w &&
+bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1, const geometry_msgs::Pose& msg2) {
+  return msg1.orientation.z == msg2.orientation.z && msg1.orientation.w == msg2.orientation.w &&
          msg1.position.z == msg2.position.z;
 }
 
@@ -92,8 +86,7 @@ double pathLength(const nav_msgs::Path& path) {
 }
 
 // Returns a path with only the corner points of msg
-std::vector<geometry_msgs::PoseStamped> filterPathCorners(
-    const std::vector<geometry_msgs::PoseStamped>& msg) {
+std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped>& msg) {
   std::vector<geometry_msgs::PoseStamped> corners = msg;
   corners.clear();
   if (msg.size() < 1) {
@@ -125,12 +118,9 @@ double pathKineticEnergy(const nav_msgs::Path& path) {
   std::vector<double> vel_y;
   std::vector<double> vel_z;
   for (int i = 1; i < path.poses.size(); ++i) {
-    vel_x.push_back(path.poses[i].pose.position.x -
-                    path.poses[i - 1].pose.position.x);
-    vel_y.push_back(path.poses[i].pose.position.y -
-                    path.poses[i - 1].pose.position.y);
-    vel_z.push_back(path.poses[i].pose.position.z -
-                    path.poses[i - 1].pose.position.z);
+    vel_x.push_back(path.poses[i].pose.position.x - path.poses[i - 1].pose.position.x);
+    vel_y.push_back(path.poses[i].pose.position.y - path.poses[i - 1].pose.position.y);
+    vel_z.push_back(path.poses[i].pose.position.z - path.poses[i - 1].pose.position.z);
   }
 
   double total_energy = 0.0;
@@ -146,8 +136,7 @@ double pathEnergy(const nav_msgs::Path& path, double up_penalty) {
   double total_energy = 0.0;
   for (int i = 1; i < path.poses.size(); ++i) {
     total_energy += distance(path.poses[i - 1], path.poses[i]);
-    double altitude_increase =
-        path.poses[i].pose.position.z - path.poses[i - 1].pose.position.z;
+    double altitude_increase = path.poses[i].pose.position.z - path.poses[i - 1].pose.position.z;
     total_energy += std::max(0.0, up_penalty * altitude_increase);
   }
   return total_energy;

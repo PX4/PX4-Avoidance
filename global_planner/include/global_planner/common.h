@@ -15,9 +15,7 @@ double squared(T x) {
 
 // Returns a weighted average of start and end, where ratio is the weight of
 // start
-double interpolate(double start, double end, double ratio) {
-  return start + (end - start) * ratio;
-}
+double interpolate(double start, double end, double ratio) { return start + (end - start) * ratio; }
 
 // Returns Map[key] if it exists, default_val otherwise
 template <typename Key, typename Value, typename Map>

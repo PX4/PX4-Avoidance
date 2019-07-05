@@ -40,9 +40,7 @@ class SafeLandingPlanner {
   * @param     config, struct containing all the parameters
   * @param     level, bitmask to group together reconfigurable parameters
   **/
-  void dynamicReconfigureSetParams(
-      const safe_landing_planner::SafeLandingPlannerNodeConfig& config,
-      uint32_t level);
+  void dynamicReconfigureSetParams(const safe_landing_planner::SafeLandingPlannerNodeConfig& config, uint32_t level);
 
   /**
   * @brief based on counter, standard devuation and mean, it decides if a cell
@@ -108,9 +106,7 @@ class SafeLandingPlanner {
   * @param[in] seq, number of data points already in the bin
   * @returns bin mean and variance
   **/
-  std::pair<float, float> computeOnlineMeanVariance(float prev_mean,
-                                                    float prev_variance,
-                                                    float new_value, float seq);
+  std::pair<float, float> computeOnlineMeanVariance(float prev_mean, float prev_variance, float new_value, float seq);
   /**
   * @brief process the grid coming from a rosbag and map it to the datatypes
   * such that the algorithm can be run again

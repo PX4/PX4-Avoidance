@@ -7,34 +7,25 @@
 
 namespace avoidance {
 
-void SafeLandingPlannerVisualization::initializePublishers(
-    ros::NodeHandle& nh) {
-  local_pointcloud_pub_ =
-      nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("/grid_pointcloud", 1);
-  path_actual_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
+void SafeLandingPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
+  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("/grid_pointcloud", 1);
+  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
   grid_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid", 1);
-  mean_std_dev_pub_ =
-      nh.advertise<visualization_msgs::MarkerArray>("/grid_mean_std_dev", 1);
-  counter_pub_ =
-      nh.advertise<visualization_msgs::MarkerArray>("/grid_counter", 1);
+  mean_std_dev_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid_mean_std_dev", 1);
+  counter_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid_counter", 1);
 }
 
 void SafeLandingPlannerVisualization::visualizeSafeLandingPlanner(
-    const SafeLandingPlanner& planner, const geometry_msgs::Point& pos,
-    const geometry_msgs::Point& last_pos,
+    const SafeLandingPlanner& planner, const geometry_msgs::Point& pos, const geometry_msgs::Point& last_pos,
     safe_landing_planner::SafeLandingPlannerNodeConfig& config) {
   local_pointcloud_pub_.publish(planner.visualization_cloud_);
   publishGrid(planner.getGrid(), pos, planner.getSmoothingSize());
-  publishMeanStdDev(planner.getGrid(),
-                    static_cast<float>(config.std_dev_threshold));
-  publishCounter(planner.getGrid(),
-                 static_cast<float>(config.n_points_threshold));
+  publishMeanStdDev(planner.getGrid(), static_cast<float>(config.std_dev_threshold));
+  publishCounter(planner.getGrid(), static_cast<float>(config.n_points_threshold));
   publishPaths(pos, last_pos);
 }
 
-void SafeLandingPlannerVisualization::publishMeanStdDev(
-    const Grid& grid, float std_dev_threshold) {
+void SafeLandingPlannerVisualization::publishMeanStdDev(const Grid& grid, float std_dev_threshold) {
   visualization_msgs::MarkerArray marker_array;
 
   float cell_size = grid.getCellSize();
@@ -71,14 +62,12 @@ void SafeLandingPlannerVisualization::publishMeanStdDev(
       cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
       cell.pose.position.z = mean(i, j);
 
-      float h = ((range_max - range_min) *
-                 (sqrtf(variance(i, j)) - variance_min_value) /
+      float h = ((range_max - range_min) * (sqrtf(variance(i, j)) - variance_min_value) /
                  (variance_max_value - variance_min_value)) +
                 range_min;
       float red, green, blue;
       float max_aa = 1.f;
-      std::tie(cell.color.r, cell.color.g, cell.color.b) =
-          HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
+      std::tie(cell.color.r, cell.color.g, cell.color.b) = HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
 
       if (sqrtf(variance(i, j)) > variance_max_value) {
         cell.color.r = 0.0;
@@ -92,8 +81,7 @@ void SafeLandingPlannerVisualization::publishMeanStdDev(
   }
   mean_std_dev_pub_.publish(marker_array);
 }
-std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(
-    std::tuple<float, float, float> hsv) {
+std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(std::tuple<float, float, float> hsv) {
   std::tuple<float, float, float> rgb;
   float fC = std::get<2>(hsv) * std::get<1>(hsv);  // fV * fS;  // Chroma
   float fHPrime = fmod(std::get<0>(hsv) / 60.0, 6);
@@ -137,8 +125,7 @@ std::tuple<float, float, float> SafeLandingPlannerVisualization::HSVtoRGB(
   return rgb;
 }
 
-void SafeLandingPlannerVisualization::publishCounter(const Grid& grid,
-                                                     float n_points_threshold) {
+void SafeLandingPlannerVisualization::publishCounter(const Grid& grid, float n_points_threshold) {
   visualization_msgs::MarkerArray marker_array;
 
   float cell_size = grid.getCellSize();
@@ -173,13 +160,11 @@ void SafeLandingPlannerVisualization::publishCounter(const Grid& grid,
       cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
       cell.pose.position.z = 0.0;
 
-      float h = ((range_max - range_min) *
-                 (static_cast<float>(counter(i, j)) - counter_min_value) /
+      float h = ((range_max - range_min) * (static_cast<float>(counter(i, j)) - counter_min_value) /
                  (counter_max_value - counter_min_value)) +
                 range_min;
 
-      std::tie(cell.color.r, cell.color.g, cell.color.b) =
-          HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
+      std::tie(cell.color.r, cell.color.g, cell.color.b) = HSVtoRGB(std::make_tuple(h, 1.f, 1.f));
 
       marker_array.markers.push_back(cell);
       cell.id += 1;
@@ -188,9 +173,8 @@ void SafeLandingPlannerVisualization::publishCounter(const Grid& grid,
   counter_pub_.publish(marker_array);
 }
 
-void SafeLandingPlannerVisualization::publishGrid(
-    const Grid& grid, const geometry_msgs::Point& pos,
-    float smoothing_size) const {
+void SafeLandingPlannerVisualization::publishGrid(const Grid& grid, const geometry_msgs::Point& pos,
+                                                  float smoothing_size) const {
   visualization_msgs::MarkerArray marker_array;
 
   float cell_size = grid.getCellSize();
@@ -228,8 +212,8 @@ void SafeLandingPlannerVisualization::publishGrid(
       }
       cell.scale.z = 0.1;
 
-      if (i >= (offset - smoothing_size) && i < (offset + smoothing_size) &&
-          j >= (offset - smoothing_size) && j < (offset + smoothing_size)) {
+      if (i >= (offset - smoothing_size) && i < (offset + smoothing_size) && j >= (offset - smoothing_size) &&
+          j < (offset + smoothing_size)) {
         cell.scale.z = 0.8;
       }
       marker_array.markers.push_back(cell);
@@ -239,8 +223,8 @@ void SafeLandingPlannerVisualization::publishGrid(
   grid_pub_.publish(marker_array);
 }
 
-void SafeLandingPlannerVisualization::publishPaths(
-    const geometry_msgs::Point& pos, const geometry_msgs::Point& last_pos) {
+void SafeLandingPlannerVisualization::publishPaths(const geometry_msgs::Point& pos,
+                                                   const geometry_msgs::Point& last_pos) {
   visualization_msgs::Marker path_actual_marker;
   path_actual_marker.header.frame_id = "local_origin";
   path_actual_marker.header.stamp = ros::Time::now();

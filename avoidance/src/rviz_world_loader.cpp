@@ -5,14 +5,12 @@
 namespace avoidance {
 
 WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>(
-      "/mavros/local_position/pose", 1, &WorldVisualizer::positionCallback,
-      this);
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
+                                                               &WorldVisualizer::positionCallback, this);
 
   world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
-  loop_timer_ =
-      nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
+  loop_timer_ = nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
 
   nh_.param<std::string>("world_name", world_path_, "");
 }
@@ -20,8 +18,7 @@ WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
 void WorldVisualizer::loopCallback(const ros::TimerEvent& event) {
   // visualize world in RVIZ
   if (!world_path_.empty()) {
-    if (visualizeRVIZWorld(world_path_))
-      ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");
+    if (visualizeRVIZWorld(world_path_)) ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");
   }
 }
 
@@ -30,9 +27,7 @@ int WorldVisualizer::resolveUri(std::string& uri) {
   char* gazebo_model_path = getenv("GAZEBO_MODEL_PATH");
   char* home = getenv("HOME");
   uri = uri.substr(7, std::string::npos);
-  std::stringstream all_locations(gazebo_model_path, std::ios_base::app |
-                                                         std::ios_base::out |
-                                                         std::ios_base::in);
+  std::stringstream all_locations(gazebo_model_path, std::ios_base::app | std::ios_base::out | std::ios_base::in);
   all_locations << ":" << home << "/.gazebo/models";
   std::string current_location;
   while (getline(all_locations, current_location, ':')) {
