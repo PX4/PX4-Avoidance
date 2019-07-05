@@ -54,8 +54,10 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
-        PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-
+        PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyzi), position);
+        PolarPoint p_pol_fcu = cartesianToPolarFCU(toEigen(xyzi), position);
+        p_pol_fcu.e -= pitch_fcu_frame_deg;
+        p_pol_fcu.z -= yaw_fcu_frame_deg;
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
 
         // only remember point if it's in a cell not previously populated by
@@ -84,7 +86,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-    PolarPoint p_pol = cartesianToPolar(p, position);
+    PolarPoint p_pol = cartesianToPolarHistogram(p, position);
     float dist = p_pol.r;
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
@@ -413,7 +415,7 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
       Eigen::Vector3f mean_point =
           (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] + l_frac * path_node_positions_extended[wp_idx];
 
-      p_pol = cartesianToPolar(mean_point, position);
+      p_pol = cartesianToPolarHistogram(mean_point, position);
       p_pol.r = 0.0f;
     }
   } else {
