@@ -121,6 +121,7 @@ class LocalPlanner {
   double starting_height_ = 0.0;
   float speed_ = 1.0f;
   float ground_distance_ = 2.0;
+  float mission_item_speed_ = NAN;
 
   ModelParameters px4_;  // PX4 Firmware paramters
 

@@ -265,6 +265,8 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   // update the Firmware paramters
   local_planner_->px4_ = avoidance_node_.getPX4Parameters();
 
+  local_planner_->mission_item_speed_ = avoidance_node_.getMissionItemSpeed();
+
   // send waypoint
   if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
 

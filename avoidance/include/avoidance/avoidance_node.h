@@ -6,6 +6,7 @@
 
 #include <mavros_msgs/Param.h>
 #include <mavros_msgs/ParamGet.h>
+#include <mavros_msgs/WaypointList.h>
 #include "avoidance/common.h"
 #include "mavros_msgs/CompanionProcessStatus.h"
 
@@ -30,6 +31,7 @@ class AvoidanceNode {
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
   ModelParameters getPX4Parameters() const { return px4_; }
+  float getMissionItemSpeed() const { return mission_item_speed_; }
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
@@ -43,6 +45,7 @@ class AvoidanceNode {
   ros::Publisher mavros_system_status_pub_;
 
   ros::Subscriber px4_param_sub_;
+  ros::Subscriber mission_sub_;
 
   ros::ServiceClient get_px4_param_client_;
 
@@ -65,14 +68,22 @@ class AvoidanceNode {
   bool position_received_;
   bool should_exit_;
 
+  float mission_item_speed_;
+
   void cmdLoopCallback(const ros::TimerEvent& event);
   void statusLoopCallback(const ros::TimerEvent& event);
   void publishSystemStatus();
   void setSystemStatus(MAV_STATE state);
   /**
-  * @brief     polls PX4 Firmware paramters every 30 seconds
+  * @brief     callaback with the list of FCU parameters
+  * @param[in] msg, list of paramters
   **/
   void px4ParamsCallback(const mavros_msgs::Param& msg);
+  /**
+  * @brief     callaback with the list of FCU Mission Items
+  * @param[in] msg, list of mission items
+  **/
+  void missionCallback(const mavros_msgs::WaypointList& msg);
 };
 }
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H

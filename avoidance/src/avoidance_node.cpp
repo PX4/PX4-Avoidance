@@ -6,6 +6,7 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& n
     : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
   mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
   px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
+  mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1, &AvoidanceNode::missionCallback, this);
   get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
   ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
@@ -31,6 +32,8 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& n
   timeout_termination_ = 15;
   timeout_critical_ = 0.5;
   timeout_startup_ = 5.0;
+
+  mission_item_speed_ = NAN;
 }
 
 AvoidanceNode::~AvoidanceNode() {}
@@ -135,6 +138,24 @@ void AvoidanceNode::checkPx4Parameters() {
       std::this_thread::sleep_for(std::chrono::seconds(5));
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(30));
+    }
+  }
+}
+
+void AvoidanceNode::missionCallback(const mavros_msgs::WaypointList& msg) {
+  for (int index = 0; index < msg.waypoints.size(); index++) {
+    if (msg.waypoints[index].is_current) {
+      std::cout << "index " << index << std::endl;
+      for (int i = index; i >= 0; i--) {
+        std::cout << "i " << i << std::endl;
+
+        if (msg.waypoints[i].command == 178 && (msg.waypoints[i].param1 - 1.0f) < FLT_MIN &&
+            msg.waypoints[i].param2 > 0.0f) {
+          // 1MAV_CMD_DO_CHANGE_SPEED, speed type: ground speed, speed valid
+          mission_item_speed_ = msg.waypoints[i].param2;
+          break;
+        }
+      }
     }
   }
 }
