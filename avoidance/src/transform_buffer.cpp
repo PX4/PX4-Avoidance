@@ -6,7 +6,7 @@ TransformBuffer::TransformBuffer(float buffer_size_s) : buffer_size_(ros::Durati
   mutex_.reset(new std::mutex);
 };
 
-std::string TransformBuffer::get_key(const std::string& source_frame, const std::string& target_frame) const {
+std::string TransformBuffer::getKey(const std::string& source_frame, const std::string& target_frame) const {
   return source_frame + "_to_" + target_frame;
 }
 
@@ -21,7 +21,7 @@ bool TransformBuffer::interpolateTransform(const tf::StampedTransform& tf_earlie
   ros::Duration timeAfterEarlier = transform.stamp_ - tf_earlier.stamp_;
   float tau = static_cast<float>(timeAfterEarlier.toNSec()) / timeBetween.toNSec();
 
-  tf::Vector3 translation = tf_earlier.getOrigin() * (1 - tau) + tf_later.getOrigin() * tau;
+  tf::Vector3 translation = tf_earlier.getOrigin() * (1.f - tau) + tf_later.getOrigin() * tau;
   tf::Quaternion rotation = tf_earlier.getRotation().slerp(tf_later.getRotation(), tau);
 
   transform.setOrigin(translation);
@@ -29,26 +29,25 @@ bool TransformBuffer::interpolateTransform(const tf::StampedTransform& tf_earlie
   return true;
 }
 
-bool TransformBuffer::isRegistered(const std::string& source_frame, const std::string& target_frame) const {
+bool TransformBuffer::isInitialized(const std::string& source_frame, const std::string& target_frame) const {
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::const_iterator iterator =
-      buffer_.find(get_key(source_frame, target_frame));
+      buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
     return false;
-  } else {
-    return true;
   }
+  return true;
 }
 
-void TransformBuffer::registerTransform(const std::string& source_frame, const std::string& target_frame) {
+void TransformBuffer::initializeDeque(const std::string& source_frame, const std::string& target_frame) {
   std::lock_guard<std::mutex> lck(*mutex_);
-  if (!isRegistered(source_frame, target_frame)) {
+  if (!isInitialized(source_frame, target_frame)) {
     std::deque<tf::StampedTransform> empty_deque;
     std::pair<std::string, std::string> transform_frames;
     transform_frames.first = source_frame;
     transform_frames.second = target_frame;
     registered_transforms_.push_back(transform_frames);
-    buffer_[get_key(source_frame, target_frame)] = empty_deque;
-    ROS_INFO("transform buffer: Registered %s", get_key(source_frame, target_frame).c_str());
+    buffer_[getKey(source_frame, target_frame)] = empty_deque;
+    ROS_INFO("transform buffer: Registered %s", getKey(source_frame, target_frame).c_str());
   }
 }
 
@@ -56,18 +55,12 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
                                       tf::StampedTransform transform) {
   std::lock_guard<std::mutex> lck(*mutex_);
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::iterator iterator =
-      buffer_.find(get_key(source_frame, target_frame));
+      buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
     ROS_ERROR("TF cannot be written to buffer, unregistered transform");
   } else {
     // check if the given transform is newer than the last buffered one
-    bool new_tf = false;
-    if (iterator->second.size() == 0) {
-      new_tf = true;
-    } else if (iterator->second.back().stamp_ < transform.stamp_) {
-      new_tf = true;
-    }
-    if (new_tf) {
+    if (iterator->second.size() == 0 || iterator->second.back().stamp_ < transform.stamp_) {
       iterator->second.push_back(transform);
       // remove transforms which are outside the buffer size
       while (transform.stamp_ - iterator->second.front().stamp_ > buffer_size_) {
@@ -79,11 +72,11 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
   return false;
 }
 
-bool TransformBuffer::getTransform(const std::string& source_frame, const std::string& target_frame, ros::Time time,
-                                   tf::StampedTransform& transform) const {
+bool TransformBuffer::getTransform(const std::string& source_frame, const std::string& target_frame,
+                                   const ros::Time& time, tf::StampedTransform& transform) const {
   std::lock_guard<std::mutex> lck(*mutex_);
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::const_iterator iterator =
-      buffer_.find(get_key(source_frame, target_frame));
+      buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
     ROS_ERROR("could not retrieve requested transform from buffer, unregistered");
     return false;

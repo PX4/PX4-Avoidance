@@ -13,16 +13,16 @@ namespace avoidance {
 class TransformBuffer {
  public:
   TransformBuffer(float buffer_size_s = 10.0f);
-  ~TransformBuffer() = default;
+  virtual ~TransformBuffer() = default;
 
   const std::vector<std::pair<std::string, std::string>>& getRegisteredTransforms() { return registered_transforms_; }
 
   /**
-  * @brief      initialized a new deque in the map to later store transforms
+  * @brief      initialize a new deque in the map to later store transforms
   * @param[in]  source_frame
   * @param[in]  target_frame
   **/
-  void registerTransform(const std::string& source_frame, const std::string& target_frame);
+  void initializeDeque(const std::string& source_frame, const std::string& target_frame);
 
   /**
   * @brief      inserts transform into buffer
@@ -43,7 +43,7 @@ class TransformBuffer {
   * @param[out] transform
   * @returns    bool, true if the transform could be retrieved from the buffer
   **/
-  bool getTransform(const std::string& source_frame, const std::string& target_frame, ros::Time time,
+  bool getTransform(const std::string& source_frame, const std::string& target_frame, const ros::Time& time,
                     tf::StampedTransform& transform) const;
 
  protected:
@@ -58,7 +58,7 @@ class TransformBuffer {
   * @param[in]  target_frame, name of the target frame
   * @returns    key string
   **/
-  std::string get_key(const std::string& source_frame, const std::string& target_frame) const;
+  std::string getKey(const std::string& source_frame, const std::string& target_frame) const;
 
   /**
   * @brief      interpolates between transforms
@@ -76,6 +76,6 @@ class TransformBuffer {
   * @param[in]  target_frame
   * @returns    bool, true if transform is registered
   **/
-  bool isRegistered(const std::string& source_frame, const std::string& target_frame) const;
+  bool isInitialized(const std::string& source_frame, const std::string& target_frame) const;
 };
 }

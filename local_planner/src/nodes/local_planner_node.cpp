@@ -17,7 +17,7 @@ namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5) {
+    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -480,7 +480,7 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
   cameras_[index].received_ = true;
   if (!cameras_[index].transform_registered_) {
-    tf_buffer_.registerTransform(msg->header.frame_id, "/local_origin");
+    tf_buffer_.initializeDeque(msg->header.frame_id, "/local_origin");
     cameras_[index].transform_registered_ = true;
   }
   cameras_[index].cloud_ready_cv_->notify_one();
