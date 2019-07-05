@@ -8,7 +8,7 @@ class TransformBufferTests : public ::testing::Test, public TransformBuffer {};
 
 TEST(TransformBuffer, registerTransformAPI) {
   // GIVEN: a transform Buffer and source/target frames
-  TransformBuffer tf_buffer(10);
+  TransformBuffer tf_buffer(10.0f);
   std::string source_frame = "frame1";
   std::string target_frame1 = "frame2";
   std::string target_frame2 = "frame3";
@@ -32,20 +32,20 @@ TEST(TransformBuffer, registerTransformAPI) {
 
 TEST(TransformBuffer, GetTransformAPI) {
   // GIVEN: a transform Buffer and source/target frames
-  TransformBuffer tf_buffer(10);
+  TransformBuffer tf_buffer(10.0f);
   std::string source_frame = "frame1";
   std::string target_frame = "frame2";
 
   ros::Time::init();
   ros::Time time1 = ros::Time::now();
-  ros::Time time2 = time1 - ros::Duration(2);
-  ros::Time time3 = time1 - ros::Duration(4);
-  ros::Time time_between = time1 - ros::Duration(1.5);
-  ros::Time time_before = time1 - ros::Duration(6);
-  ros::Time time_after = time1 + ros::Duration(1);
+  ros::Time time2 = time1 - ros::Duration(2.f);
+  ros::Time time3 = time1 - ros::Duration(4.f);
+  ros::Time time_between = time1 - ros::Duration(1.5f);
+  ros::Time time_before = time1 - ros::Duration(6.f);
+  ros::Time time_after = time1 + ros::Duration(1.f);
 
   tf::StampedTransform transform1, transform2, transform3, retrieved_transform;
-  tf::Vector3 zero_translation = {0, 0, 0};
+  tf::Vector3 zero_translation = {0.f, 0.f, 0.f};
   transform1.stamp_ = time1;
   transform1.setIdentity();
   transform1.setOrigin(zero_translation);
@@ -110,13 +110,13 @@ TEST_F(TransformBufferTests, insertTransform) {
   tf::StampedTransform transform1, transform2, transform3;
   transform1.stamp_ = time1;
   transform1.setIdentity();
-  transform1.setOrigin({0, 0, 0});
+  transform1.setOrigin({0.f, 0.f, 0.f});
   transform2.stamp_ = time2;
   transform2.setIdentity();
-  transform2.setOrigin({0, 0, 0});
+  transform2.setOrigin({0.f, 0.f, 0.f});
   transform3.stamp_ = time3;
   transform3.setIdentity();
-  transform3.setOrigin({0, 0, 0});
+  transform3.setOrigin({0.f, 0.f, 0.f});
 
   // WHEN: we register that transform and insert transforms
   registerTransform(source_frame, target_frame1);
@@ -153,19 +153,19 @@ TEST_F(TransformBufferTests, interpolateTransform) {
 
   ros::Time::init();
   ros::Time time1 = ros::Time::now();
-  ros::Time time_half = time1 + ros::Duration(1);
-  ros::Time time2 = time1 + ros::Duration(2);
+  ros::Time time_half = time1 + ros::Duration(1.f);
+  ros::Time time2 = time1 + ros::Duration(2.f);
 
   tf::StampedTransform transform1, transform2, retrieved_transform1,
       retrieved_transform2, retrieved_transform3;
   transform1.stamp_ = time1;
   transform2.stamp_ = time2;
-  tf::Vector3 translation1 = {0, 0, 0};
-  tf::Vector3 translation2 = {0, 0, 2};
-  tf::Vector3 translation_half = {0, 0, 1};
+  tf::Vector3 translation1 = {0.f, 0.f, 0.f};
+  tf::Vector3 translation2 = {0.f, 0.f, 2.f};
+  tf::Vector3 translation_half = {0.f, 0.f, 1.f};
   tf::Quaternion rotation2, rotation_half;
-  rotation2.setRPY(1, 0, 0);
-  rotation_half.setRPY(0.5, 0, 0);
+  rotation2.setRPY(1.f, 0.f, 0.f);
+  rotation_half.setRPY(0.5f, 0.f, 0.f);
 
   transform1.setIdentity();
   transform2.setRotation(rotation2);
