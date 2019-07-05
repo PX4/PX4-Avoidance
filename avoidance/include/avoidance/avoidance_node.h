@@ -34,14 +34,12 @@ class AvoidanceNode {
   float getMissionItemSpeed() const { return mission_item_speed_; }
   MAV_STATE getSystemStatus();
 
-
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
   **/
   void checkPx4Parameters();
 
   void setSystemStatus(MAV_STATE state);
-
 
  private:
   ros::NodeHandle nh_;
