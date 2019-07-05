@@ -465,8 +465,7 @@ void LocalPlannerNode::threadFunction() {
   }
 }
 
-void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud,
-                                     ros::Duration since_start, bool& hover) {
+void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover);
 }
 
