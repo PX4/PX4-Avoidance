@@ -11,42 +11,11 @@
 namespace avoidance {
 
 class TransformBuffer {
- protected:
-  std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
-  std::unique_ptr<std::mutex> mutex_;
-  ros::Duration buffer_size_;
-
-  /**
-  * @brief      gets a key word from two frame names to identify a transform
-  * @param[in]  source_frame, name of the source frame
-  * @param[in]  target_frame, name of the target frame
-  * @returns    key string
-  **/
-  std::string get_key(const std::string& source_frame, const std::string& target_frame) const;
-
-  /**
-  * @brief      interpolates between transforms
-  * @param[in]  tf_earlier
-  * @param[in]  tf_later
-  * @param[out] transform, empty transform containing the desired timestep
-  * @returns    bool, true if the transform can be interpolated
-  **/
-  bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
-                            tf::StampedTransform& transform) const;
-
-  /**
-  * @brief      return whether a transform is registered with the buffer
-  * @param[in]  source_frame
-  * @param[in]  target_frame
-  * @returns    bool, true if transform is registered
-  **/
-  bool isRegistered(const std::string& source_frame, const std::string& target_frame) const;
-
  public:
-  std::vector<std::pair<std::string, std::string>> registered_transforms_;
-
   TransformBuffer(float buffer_size_s = 10.0f);
   ~TransformBuffer() = default;
+
+  const std::vector<std::pair<std::string, std::string>>& getRegisteredTransforms() { return registered_transforms_; }
 
   /**
   * @brief      initialized a new deque in the map to later store transforms
@@ -76,5 +45,37 @@ class TransformBuffer {
   **/
   bool getTransform(const std::string& source_frame, const std::string& target_frame, ros::Time time,
                     tf::StampedTransform& transform) const;
+
+ protected:
+  std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
+  std::vector<std::pair<std::string, std::string>> registered_transforms_;
+  std::unique_ptr<std::mutex> mutex_;
+  ros::Duration buffer_size_;
+
+  /**
+  * @brief      gets a key word from two frame names to identify a transform
+  * @param[in]  source_frame, name of the source frame
+  * @param[in]  target_frame, name of the target frame
+  * @returns    key string
+  **/
+  std::string get_key(const std::string& source_frame, const std::string& target_frame) const;
+
+  /**
+  * @brief      interpolates between transforms
+  * @param[in]  tf_earlier
+  * @param[in]  tf_later
+  * @param[out] transform, empty transform containing the desired timestep
+  * @returns    bool, true if the transform can be interpolated
+  **/
+  bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
+                            tf::StampedTransform& transform) const;
+
+  /**
+  * @brief      return whether a transform is registered with the buffer
+  * @param[in]  source_frame
+  * @param[in]  target_frame
+  * @returns    bool, true if transform is registered
+  **/
+  bool isRegistered(const std::string& source_frame, const std::string& target_frame) const;
 };
 }

@@ -445,7 +445,7 @@ void LocalPlannerNode::checkPx4Parameters() {
 void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
     // listen to tf topic
-    for (auto const& frame_pair : tf_buffer_.registered_transforms_) {
+    for (auto const& frame_pair : tf_buffer_.getRegisteredTransforms()) {
       tf::StampedTransform transform;
 
       if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {

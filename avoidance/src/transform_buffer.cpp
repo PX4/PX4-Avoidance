@@ -48,7 +48,7 @@ void TransformBuffer::registerTransform(const std::string& source_frame, const s
     transform_frames.second = target_frame;
     registered_transforms_.push_back(transform_frames);
     buffer_[get_key(source_frame, target_frame)] = empty_deque;
-    ROS_WARN("transform buffer: Registered %s", get_key(source_frame, target_frame).c_str());
+    ROS_INFO("transform buffer: Registered %s", get_key(source_frame, target_frame).c_str());
   }
 }
 
@@ -67,7 +67,6 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
     } else if (iterator->second.back().stamp_ < transform.stamp_) {
       new_tf = true;
     }
-
     if (new_tf) {
       iterator->second.push_back(transform);
       // remove transforms which are outside the buffer size
@@ -89,20 +88,14 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
     ROS_ERROR("could not retrieve requested transform from buffer, unregistered");
     return false;
   } else if (iterator->second.size() == 0) {
-    ROS_WARN(
-        "could not retrieve requested transform from buffer, buffer is "
-        "empty");
+    ROS_WARN("could not retrieve requested transform from buffer, buffer is empty");
     return false;
   } else {
     if (iterator->second.back().stamp_ < time) {
-      ROS_WARN(
-          "could not retrieve requested transform from buffer, tf has not "
-          "yet arrived");
+      ROS_WARN("could not retrieve requested transform from buffer, tf has not yet arrived");
       return false;
     } else if (iterator->second.front().stamp_ > time) {
-      ROS_WARN(
-          "could not retrieve requested transform from buffer, tf has "
-          "already been dropped from buffer");
+      ROS_WARN("could not retrieve requested transform from buffer, tf has already been dropped from buffer");
       return false;
     } else {
       const tf::StampedTransform* previous = &iterator->second.back();

@@ -14,7 +14,7 @@ TEST(TransformBuffer, registerTransformAPI) {
   std::string target_frame2 = "frame3";
 
   // THEN: the buffer should not yet have this transform registered
-  EXPECT_EQ(tf_buffer.registered_transforms_.size(), 0);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms().size(), 0);
 
   // WHEN: we register that the transform and also try to register the same tf
   // twice
@@ -23,11 +23,11 @@ TEST(TransformBuffer, registerTransformAPI) {
   tf_buffer.registerTransform(source_frame, target_frame2);
 
   // THEN: the buffer should have the transforms registered once each
-  EXPECT_EQ(tf_buffer.registered_transforms_.size(), 2);
-  EXPECT_EQ(tf_buffer.registered_transforms_[0].first, source_frame);
-  EXPECT_EQ(tf_buffer.registered_transforms_[0].second, target_frame1);
-  EXPECT_EQ(tf_buffer.registered_transforms_[1].first, source_frame);
-  EXPECT_EQ(tf_buffer.registered_transforms_[1].second, target_frame2);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms().size(), 2);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[0].first, source_frame);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[0].second, target_frame1);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[1].first, source_frame);
+  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[1].second, target_frame2);
 }
 
 TEST(TransformBuffer, GetTransformAPI) {
@@ -59,29 +59,29 @@ TEST(TransformBuffer, GetTransformAPI) {
   // WHEN: we register that transform and insert the 3 transforms into the
   // buffer
   tf_buffer.registerTransform(source_frame, target_frame);
-  tf_buffer.insertTransform(source_frame, target_frame, transform3);
-  tf_buffer.insertTransform(source_frame, target_frame, transform2);
-  tf_buffer.insertTransform(source_frame, target_frame, transform1);
+  ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform3));
+  ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform2));
+  ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform1));
 
   // THEN: we should be able to retrieve transforms at different times
 
   // time1 should get transform1
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time1, retrieved_transform));
+  ASSERT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time1, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time1);
   EXPECT_EQ(retrieved_transform, transform1);
 
   // time2 should get transform2
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time2, retrieved_transform));
+  ASSERT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time2, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time2);
   EXPECT_EQ(retrieved_transform, transform2);
 
   // time3 should get transform3
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time3, retrieved_transform));
+  ASSERT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time3, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time3);
   EXPECT_EQ(retrieved_transform, transform3);
 
   // time in between should give the timestamp of what we ask for
-  EXPECT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time_between, retrieved_transform));
+  ASSERT_TRUE(tf_buffer.getTransform(source_frame, target_frame, time_between, retrieved_transform));
   EXPECT_EQ(retrieved_transform.stamp_, time_between);
 
   // outside of the buffer should not give a transform
