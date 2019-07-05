@@ -205,7 +205,6 @@ class LocalPlannerNode {
   ros::Subscriber distance_sensor_sub_;
   ros::Subscriber px4_param_sub_;
 
-  ros::ServiceClient mavros_set_mode_client_;
   ros::ServiceClient get_px4_param_client_;
 
   ros::CallbackQueue pointcloud_queue_;
