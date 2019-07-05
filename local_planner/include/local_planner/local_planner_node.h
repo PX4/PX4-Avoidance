@@ -15,8 +15,6 @@
 #include <geometry_msgs/TransformStamped.h>
 #include <mavros_msgs/Altitude.h>
 #include <mavros_msgs/CompanionProcessStatus.h>
-#include <mavros_msgs/Param.h>
-#include <mavros_msgs/ParamGet.h>
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
@@ -40,6 +38,7 @@
 #include <avoidance/common.h>
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
+#include "avoidance/avoidance_node.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -79,13 +78,12 @@ class LocalPlannerNode {
 
   std::vector<cameraData> cameras_;
 
-  ModelParameters model_params_;
-
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   LocalPlannerVisualization visualizer_;
+  avoidance::AvoidanceNode avoidance_node_;
 
 #ifndef DISABLE_SIMULATION
   std::unique_ptr<WorldVisualizer> world_visualizer_;
@@ -169,11 +167,6 @@ class LocalPlannerNode {
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
   /**
-  * @brief     polls PX4 Firmware paramters every 30 seconds
-  **/
-  void checkPx4Parameters();
-
-  /**
   * @brief     safes received transforms to buffer;
   **/
   void transformBufferThread();
@@ -203,9 +196,6 @@ class LocalPlannerNode {
   ros::Subscriber fcu_input_sub_;
   ros::Subscriber goal_topic_sub_;
   ros::Subscriber distance_sensor_sub_;
-  ros::Subscriber px4_param_sub_;
-
-  ros::ServiceClient get_px4_param_client_;
 
   ros::CallbackQueue pointcloud_queue_;
   ros::CallbackQueue main_queue_;
@@ -241,7 +231,6 @@ class LocalPlannerNode {
   bool hover_;
   bool planner_is_healthy_;
   bool position_not_received_error_sent_ = false;
-  bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
   double spin_dt_;
@@ -326,7 +315,6 @@ class LocalPlannerNode {
   * @param[in] msg, altitude message
   **/
   void distanceSensorCallback(const mavros_msgs::Altitude& msg);
-  void px4ParamsCallback(const mavros_msgs::Param& msg);
 
   /**
   * @brief     callaback for vehicle state

@@ -17,7 +17,7 @@ namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
+    : nh_(nh), nh_private_(nh_private), avoidance_node_(nh, nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
 
@@ -46,13 +46,11 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
   goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1, &LocalPlannerNode::updateGoalCallback, this);
   distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
-  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &LocalPlannerNode::px4ParamsCallback, this);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>("/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
   mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
   mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
-  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
@@ -65,7 +63,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
 
   hover_ = false;
   planner_is_healthy_ = true;
-  callPx4Params_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
 }
@@ -265,6 +262,9 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   // If planner is not running, update planner info and get last results
   updatePlanner();
 
+  // update the Firmware paramters
+  local_planner_->px4_ = avoidance_node_.getPX4Parameters();
+
   // send waypoint
   if (companion_state_ == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
 
@@ -363,66 +363,6 @@ void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg) 
     ground_distance_msg_ = msg;
     visualizer_.publishGround(local_planner_->getPosition(), local_planner_->histogram_box_.radius_,
                               local_planner_->ground_distance_);
-  }
-}
-
-void LocalPlannerNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
-  // collect all px4 parameters needed for model based trajectory planning
-  // when adding new parameter to the struct ModelParameters,
-  // add new else if case with correct value type
-  auto parse_param_f = [&msg](const std::string& name, float& val) -> bool {
-    if (msg.param_id == name) {
-      ROS_INFO("parameter %s is set from  %f to %f \n", name.c_str(), val, msg.value.real);
-      val = msg.value.real;
-      return true;
-    }
-    return false;
-  };
-
-  auto parse_param_i = [&msg](const std::string& name, int& val) -> bool {
-    if (msg.param_id == name) {
-      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val, msg.value.integer);
-      val = msg.value.integer;
-      return true;
-    }
-    return false;
-  };
-
-  // clang-format off
-  parse_param_f("MPC_ACC_DOWN_MAX", local_planner_->px4_.param_mpc_acc_down_max) ||
-  parse_param_f("MPC_ACC_HOR", local_planner_->px4_.param_mpc_acc_hor) ||
-  parse_param_f("MPC_ACC_UP_MAX", local_planner_->px4_.param_acc_up_max) ||
-  parse_param_i("MPC_AUTO_MODE", local_planner_->px4_.param_mpc_auto_mode) ||
-  parse_param_f("MPC_JERK_MIN", local_planner_->px4_.param_mpc_jerk_min) ||
-  parse_param_f("MPC_JERK_MAX", local_planner_->px4_.param_mpc_jerk_max) ||
-  parse_param_f("MPC_LAND_SPEED", local_planner_->px4_.param_mpc_land_speed) ||
-  parse_param_f("MPC_TKO_SPEED", local_planner_->px4_.param_mpc_tko_speed) ||
-  parse_param_f("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise) ||
-  parse_param_f("MPC_Z_VEL_MAX_DN", local_planner_->px4_.param_mpc_vel_max_dn) ||
-  parse_param_f("MPC_Z_VEL_MAX_UP", local_planner_->px4_.param_mpc_z_vel_max_up) ||
-  parse_param_f("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
-  // clang-format on
-}
-
-void LocalPlannerNode::checkPx4Parameters() {
-  auto& client = get_px4_param_client_;
-  auto request_param = [&client](const std::string& name, float& val) {
-    mavros_msgs::ParamGet req;
-    req.request.param_id = name;
-    if (client.call(req) && req.response.success) {
-      val = req.response.value.real;
-    }
-  };
-  while (!should_exit_) {
-    request_param("MPC_XY_CRUISE", local_planner_->px4_.param_mpc_xy_cruise);
-    request_param("MPC_COL_PREV_D", local_planner_->px4_.param_mpc_col_prev_d);
-
-    if (!std::isfinite(local_planner_->px4_.param_mpc_xy_cruise) ||
-        !std::isfinite(local_planner_->px4_.param_mpc_col_prev_d)) {
-      std::this_thread::sleep_for(std::chrono::seconds(5));
-    } else {
-      std::this_thread::sleep_for(std::chrono::seconds(30));
-    }
   }
 }
 

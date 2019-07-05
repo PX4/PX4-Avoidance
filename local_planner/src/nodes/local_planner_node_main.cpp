@@ -11,13 +11,9 @@ int main(int argc, char** argv) {
   Node.startNode();
 
   std::thread worker(&LocalPlannerNode::threadFunction, &Node);
-
-  std::thread worker_params(&LocalPlannerNode::checkPx4Parameters, &Node);
-
   std::thread worker_tf_buffer(&LocalPlannerNode::transformBufferThread, &Node);
 
   worker.join();
-  worker_params.join();
   worker_tf_buffer.join();
 
   for (size_t i = 0; i < Node.cameras_.size(); ++i) {
