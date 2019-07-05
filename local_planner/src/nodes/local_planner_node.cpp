@@ -266,17 +266,14 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   local_planner_->mission_item_speed_ = avoidance_node_.getMissionItemSpeed();
 
   // send waypoint
-  if (avoidance_node_.getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE)
-    calculateWaypoints(hover_);
+  if (avoidance_node_.getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
 
   position_received_ = false;
 
   return;
 }
 
-void LocalPlannerNode::setSystemStatus(MAV_STATE state) {
-  avoidance_node_.setSystemStatus(state);
-}
+void LocalPlannerNode::setSystemStatus(MAV_STATE state) { avoidance_node_.setSystemStatus(state); }
 
 MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_.getSystemStatus(); }
 
@@ -318,7 +315,6 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   }
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
-
 
 void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped& msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
