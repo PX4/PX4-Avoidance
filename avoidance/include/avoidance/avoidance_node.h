@@ -40,6 +40,7 @@ class AvoidanceNode {
   void checkPx4Parameters();
 
   void setSystemStatus(MAV_STATE state);
+  void init();
 
  private:
   ros::NodeHandle nh_;

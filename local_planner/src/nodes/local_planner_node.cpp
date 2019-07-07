@@ -17,9 +17,10 @@ namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
                                    const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), avoidance_node_(nh, nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
+    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
+  avoidance_node_.reset(new AvoidanceNode(nh, nh_private));
 
 #ifndef DISABLE_SIMULATION
   world_visualizer_.reset(new WorldVisualizer(nh_));
@@ -80,6 +81,8 @@ void LocalPlannerNode::startNode() {
 
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  avoidance_node_->init();
 }
 
 void LocalPlannerNode::readParams() {
@@ -258,21 +261,21 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   updatePlanner();
 
   // update the Firmware paramters
-  local_planner_->px4_ = avoidance_node_.getPX4Parameters();
+  local_planner_->px4_ = avoidance_node_->getPX4Parameters();
 
-  local_planner_->mission_item_speed_ = avoidance_node_.getMissionItemSpeed();
+  local_planner_->mission_item_speed_ = avoidance_node_->getMissionItemSpeed();
 
   // send waypoint
-  if (avoidance_node_.getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
+  if (avoidance_node_->getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
 
   position_received_ = false;
 
   return;
 }
 
-void LocalPlannerNode::setSystemStatus(MAV_STATE state) { avoidance_node_.setSystemStatus(state); }
+void LocalPlannerNode::setSystemStatus(MAV_STATE state) { avoidance_node_->setSystemStatus(state); }
 
-MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_.getSystemStatus(); }
+MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_->getSystemStatus(); }
 
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
@@ -466,7 +469,7 @@ void LocalPlannerNode::threadFunction() {
 }
 
 void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
-  avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover);
+  avoidance_node_->checkFailsafe(since_last_cloud, since_start, hover);
 }
 
 void LocalPlannerNode::pointCloudTransformThread(int index) {

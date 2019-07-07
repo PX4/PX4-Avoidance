@@ -59,7 +59,7 @@ class WaypointGeneratorNode final {
 
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig> server_;
 
-  avoidance::AvoidanceNode avoidance_node_;
+  std::unique_ptr<avoidance::AvoidanceNode> avoidance_node_;
 
   /**
   * @brief main loop callback
