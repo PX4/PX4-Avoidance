@@ -4,6 +4,19 @@ namespace avoidance {
 
 AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
     : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
+  position_received_ = true;
+  should_exit_ = false;
+
+  timeout_termination_ = 15;
+  timeout_critical_ = 0.5;
+  timeout_startup_ = 5.0;
+
+  mission_item_speed_ = NAN;
+}
+
+AvoidanceNode::~AvoidanceNode() {}
+
+void AvoidanceNode::init() {
   mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
   px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
   mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1, &AvoidanceNode::missionCallback, this);
@@ -25,18 +38,7 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& n
   statusloop_spinner_->start();
 
   worker_ = std::thread(&AvoidanceNode::checkPx4Parameters, this);
-
-  position_received_ = true;
-  should_exit_ = false;
-
-  timeout_termination_ = 15;
-  timeout_critical_ = 0.5;
-  timeout_startup_ = 5.0;
-
-  mission_item_speed_ = NAN;
 }
-
-AvoidanceNode::~AvoidanceNode() {}
 
 void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event) {}
 

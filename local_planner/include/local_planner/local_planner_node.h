@@ -39,7 +39,6 @@
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 #include "avoidance/avoidance_node.h"
-#include "avoidance/avoidance_node.h"
 
 #include <atomic>
 #include <condition_variable>
@@ -84,7 +83,7 @@ class LocalPlannerNode {
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
 
   LocalPlannerVisualization visualizer_;
-  avoidance::AvoidanceNode avoidance_node_;
+  std::unique_ptr<avoidance::AvoidanceNode> avoidance_node_;
 
 #ifndef DISABLE_SIMULATION
   std::unique_ptr<WorldVisualizer> world_visualizer_;
