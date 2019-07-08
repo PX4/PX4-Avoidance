@@ -177,6 +177,12 @@ void LocalPlannerNode::updatePlannerInfo() {
   // Update velocity
   local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
 
+  if (local_planner_->currently_armed_ && !armed_ && nav_state_ != NavigationState::offboard) {
+    goal_msg_.pose.position.x = NAN;
+    goal_msg_.pose.position.y = NAN;
+    goal_msg_.pose.position.z = NAN;
+    new_goal_ = true;
+  }
   // update state
   local_planner_->currently_armed_ = armed_;
 
@@ -339,8 +345,11 @@ void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray&
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) {
-  if ((msg.point_valid[1] == true) &&
-      (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position)).norm() > 0.01f) {
+  bool all_components_infinite = !std::isfinite(goal_msg_.pose.position.x) &&
+                                 !std::isfinite(goal_msg_.pose.position.y) && !std::isfinite(goal_msg_.pose.position.z);
+  if (((msg.point_valid[1] == true) &&
+       (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position)).norm() > 0.01f) ||
+      all_components_infinite) {
     new_goal_ = true;
     prev_goal_ = goal_msg_;
     goal_msg_.pose.position = msg.point_2.position;

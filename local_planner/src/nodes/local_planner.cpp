@@ -19,8 +19,7 @@ void LocalPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf&
   pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
   star_planner_->setPose(position_, yaw_fcu_frame_deg_);
 
-  if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
-    take_off_pose_ = position_;
+  if (!currently_armed_) {
     reach_altitude_ = false;
   }
 }
@@ -134,6 +133,9 @@ void LocalPlanner::determineStrategy() {
     reach_altitude_ = true;
   }
 
+  Eigen::Vector2f pos_xy = position_.head<2>();
+  Eigen::Vector2f goal_xy = goal_.head<2>();
+  float pos_to_goal_dist_xy = (position_ - goal_).head<2>().norm();
   if (!reach_altitude_) {
     starting_height_ = std::max(goal_.z() - 1.f, px4_.param_mis_takeoff_alt);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
@@ -147,6 +149,10 @@ void LocalPlanner::determineStrategy() {
     if (px4_.param_mpc_col_prev_d > 0.f) {
       create2DObstacleRepresentation(true);
     }
+  } else if (pos_to_goal_dist_xy < 0.5f && fabsf(goal_.z() - position_.z()) > 1.f) {
+    ROS_INFO("\033[1;31m[OA] Reach height: angle between position and goal vector \033[0m");
+    waypoint_type_ = reachHeight;
+
   } else {
     waypoint_type_ = tryPath;
 
