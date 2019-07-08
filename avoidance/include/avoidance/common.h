@@ -88,6 +88,8 @@ struct ModelParameters {
 
   float param_nav_acc_rad = NAN;
 
+  float param_mis_takeoff_alt = NAN;
+
   // TODO: add estimator limitations for max speed and height
 
   float param_mpc_col_prev_d = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled

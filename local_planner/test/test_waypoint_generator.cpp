@@ -62,6 +62,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   // goal altiude
   avoidance_output.waypoint_type = reachHeight;
   goal.z() = 5.f;
+  avoidance_output.starting_height = goal.z() - 0.8f;
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
   float goto_to_goal_prev = 1000.0f;

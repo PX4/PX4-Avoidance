@@ -59,11 +59,11 @@ class LocalPlannerVisualization {
 
   /**
   * @brief       Visualization of the data used during takeoff
-  * @params[in]  take_off_pose, pose at which the vehicle was armed
+  * @params[in]  pos, vehicle current position
   * @params[in]  starting_height, height at which the planner starts planning
   *forward
   **/
-  void publishReachHeight(const Eigen::Vector3f& take_off_pose, float starting_height) const;
+  void publishReachHeight(const Eigen::Vector3f& pos, float starting_height) const;
 
   /**
   * @brief       Visualization of the 2D compression of the local pointcloud
@@ -152,7 +152,6 @@ class LocalPlannerVisualization {
   ros::Publisher path_waypoint_pub_;
   ros::Publisher path_adapted_waypoint_pub_;
   ros::Publisher current_waypoint_pub_;
-  ros::Publisher takeoff_pose_pub_;
   ros::Publisher initial_height_pub_;
   ros::Publisher histogram_image_pub_;
   ros::Publisher cost_image_pub_;

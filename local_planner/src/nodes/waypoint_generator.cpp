@@ -142,14 +142,12 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
 void WaypointGenerator::reachGoalAltitudeFirst() {
   // goto_position is a unit vector pointing straight up/down from current
   // location
-  output_.goto_position = position_;
-  goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
-  goal_.y() = position_.y();
+  output_.goto_position = goal_;
 
   // Only move the setpoint if drone is in the air
   if (is_airborne_) {
     // Ascend/Descend to goal altitude
-    if (position_.z() <= goal_.z()) {
+    if (position_.z() <= planner_info_.starting_height) {
       output_.goto_position.z() += 1.0f;
     } else {
       output_.goto_position.z() -= 1.0f;

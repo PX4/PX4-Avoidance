@@ -135,7 +135,7 @@ void LocalPlanner::determineStrategy() {
   }
 
   if (!reach_altitude_) {
-    starting_height_ = std::max(goal_.z() - 0.5f, take_off_pose_.z() + 1.0f);
+    starting_height_ = std::max(goal_.z() - 1.f, px4_.param_mis_takeoff_alt);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
     waypoint_type_ = reachHeight;
 
@@ -303,7 +303,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
 
-  out.take_off_pose = take_off_pose_;
+  out.starting_height = starting_height_;
 
   out.path_node_positions = star_planner_->path_node_positions_;
   return out;

@@ -125,7 +125,6 @@ class LocalPlanner {
 
   ModelParameters px4_;  // PX4 Firmware paramters
 
-  Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
