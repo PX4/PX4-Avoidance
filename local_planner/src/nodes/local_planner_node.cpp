@@ -445,7 +445,7 @@ void LocalPlannerNode::checkPx4Parameters() {
 void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
     // listen to tf topic
-    for (auto const& frame_pair : tf_buffer_.getRegisteredTransforms()) {
+    for (auto const& frame_pair : buffered_transforms_) {
       tf::StampedTransform transform;
 
       if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {
@@ -480,7 +480,10 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
   cameras_[index].received_ = true;
   if (!cameras_[index].transform_registered_) {
-    tf_buffer_.initializeDeque(msg->header.frame_id, "/local_origin");
+    std::pair<std::string, std::string> transform_frames;
+    transform_frames.first = msg->header.frame_id;
+    transform_frames.second = "/local_origin";
+    buffered_transforms_.push_back(transform_frames);
     cameras_[index].transform_registered_ = true;
   }
   cameras_[index].cloud_ready_cv_->notify_one();

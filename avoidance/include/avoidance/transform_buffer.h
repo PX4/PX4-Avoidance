@@ -15,15 +15,6 @@ class TransformBuffer {
   TransformBuffer(float buffer_size_s = 10.0f);
   virtual ~TransformBuffer() = default;
 
-  const std::vector<std::pair<std::string, std::string>>& getRegisteredTransforms() { return registered_transforms_; }
-
-  /**
-  * @brief      initialize a new deque in the map to later store transforms
-  * @param[in]  source_frame
-  * @param[in]  target_frame
-  **/
-  void initializeDeque(const std::string& source_frame, const std::string& target_frame);
-
   /**
   * @brief      inserts transform into buffer
   * @param[in]  source_frame
@@ -48,7 +39,6 @@ class TransformBuffer {
 
  protected:
   std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
-  std::vector<std::pair<std::string, std::string>> registered_transforms_;
   std::unique_ptr<std::mutex> mutex_;
   ros::Duration buffer_size_;
 
@@ -69,13 +59,5 @@ class TransformBuffer {
   **/
   bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
                             tf::StampedTransform& transform) const;
-
-  /**
-  * @brief      return whether a transform is registered with the buffer
-  * @param[in]  source_frame
-  * @param[in]  target_frame
-  * @returns    bool, true if transform is registered
-  **/
-  bool isInitialized(const std::string& source_frame, const std::string& target_frame) const;
 };
 }

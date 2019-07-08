@@ -29,45 +29,26 @@ bool TransformBuffer::interpolateTransform(const tf::StampedTransform& tf_earlie
   return true;
 }
 
-bool TransformBuffer::isInitialized(const std::string& source_frame, const std::string& target_frame) const {
-  std::unordered_map<std::string, std::deque<tf::StampedTransform>>::const_iterator iterator =
-      buffer_.find(getKey(source_frame, target_frame));
-  if (iterator == buffer_.end()) {
-    return false;
-  }
-  return true;
-}
-
-void TransformBuffer::initializeDeque(const std::string& source_frame, const std::string& target_frame) {
-  std::lock_guard<std::mutex> lck(*mutex_);
-  if (!isInitialized(source_frame, target_frame)) {
-    std::deque<tf::StampedTransform> empty_deque;
-    std::pair<std::string, std::string> transform_frames;
-    transform_frames.first = source_frame;
-    transform_frames.second = target_frame;
-    registered_transforms_.push_back(transform_frames);
-    buffer_[getKey(source_frame, target_frame)] = empty_deque;
-    ROS_INFO("transform buffer: Registered %s", getKey(source_frame, target_frame).c_str());
-  }
-}
-
 bool TransformBuffer::insertTransform(const std::string& source_frame, const std::string& target_frame,
                                       tf::StampedTransform transform) {
   std::lock_guard<std::mutex> lck(*mutex_);
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::iterator iterator =
       buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
-    ROS_ERROR("TF cannot be written to buffer, unregistered transform");
-  } else {
-    // check if the given transform is newer than the last buffered one
-    if (iterator->second.size() == 0 || iterator->second.back().stamp_ < transform.stamp_) {
-      iterator->second.push_back(transform);
-      // remove transforms which are outside the buffer size
-      while (transform.stamp_ - iterator->second.front().stamp_ > buffer_size_) {
-        iterator->second.pop_front();
-      }
-      return true;
+    std::deque<tf::StampedTransform> empty_deque;
+    buffer_[getKey(source_frame, target_frame)] = empty_deque;
+    iterator = buffer_.find(getKey(source_frame, target_frame));
+    ROS_INFO("transform buffer: Registered %s", getKey(source_frame, target_frame).c_str());
+  }
+
+  // check if the given transform is newer than the last buffered one
+  if (iterator->second.size() == 0 || iterator->second.back().stamp_ < transform.stamp_) {
+    iterator->second.push_back(transform);
+    // remove transforms which are outside the buffer size
+    while (transform.stamp_ - iterator->second.front().stamp_ > buffer_size_) {
+      iterator->second.pop_front();
     }
+    return true;
   }
   return false;
 }

@@ -6,30 +6,6 @@ using namespace avoidance;
 
 class TransformBufferTests : public ::testing::Test, public TransformBuffer {};
 
-TEST(TransformBuffer, initializeDequeAPI) {
-  // GIVEN: a transform Buffer and source/target frames
-  TransformBuffer tf_buffer(10.0f);
-  std::string source_frame = "frame1";
-  std::string target_frame1 = "frame2";
-  std::string target_frame2 = "frame3";
-
-  // THEN: the buffer should not yet have this transform registered
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms().size(), 0);
-
-  // WHEN: we register that the transform and also try to register the same tf
-  // twice
-  tf_buffer.initializeDeque(source_frame, target_frame1);
-  tf_buffer.initializeDeque(source_frame, target_frame2);
-  tf_buffer.initializeDeque(source_frame, target_frame2);
-
-  // THEN: the buffer should have the transforms registered once each
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms().size(), 2);
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[0].first, source_frame);
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[0].second, target_frame1);
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[1].first, source_frame);
-  EXPECT_EQ(tf_buffer.getRegisteredTransforms()[1].second, target_frame2);
-}
-
 TEST(TransformBuffer, GetTransformAPI) {
   // GIVEN: a transform Buffer and source/target frames
   TransformBuffer tf_buffer(10.0f);
@@ -56,9 +32,7 @@ TEST(TransformBuffer, GetTransformAPI) {
   transform3.setIdentity();
   transform3.setOrigin(zero_translation);
 
-  // WHEN: we register that transform and insert the 3 transforms into the
-  // buffer
-  tf_buffer.initializeDeque(source_frame, target_frame);
+  // WHEN: we insert the 3 transforms into the buffer
   ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform3));
   ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform2));
   ASSERT_TRUE(tf_buffer.insertTransform(source_frame, target_frame, transform1));
@@ -112,16 +86,7 @@ TEST_F(TransformBufferTests, insertTransform) {
   transform3.setIdentity();
   transform3.setOrigin({0.f, 0.f, 0.f});
 
-  // WHEN: we register that transform and insert transforms
-  initializeDeque(source_frame, target_frame1);
-  initializeDeque(source_frame, target_frame2);
-
-  // THEN: the buffer should have the right transforms registered
-  ASSERT_TRUE(isInitialized(source_frame, target_frame1));
-  ASSERT_TRUE(isInitialized(source_frame, target_frame2));
-  ASSERT_FALSE(isInitialized(source_frame, target_frame3));
-
-  // AND: inserting transforms should work depending on timestamps
+  // THEN: inserting transforms should work depending on timestamps
   EXPECT_TRUE(insertTransform(source_frame, target_frame1, transform3));
   EXPECT_TRUE(insertTransform(source_frame, target_frame1, transform2));
   EXPECT_FALSE(insertTransform(source_frame, target_frame1, transform2));
@@ -132,7 +97,7 @@ TEST_F(TransformBufferTests, insertTransform) {
   EXPECT_TRUE(insertTransform(source_frame, target_frame2, transform3));
   EXPECT_TRUE(insertTransform(source_frame, target_frame2, transform2));
 
-  EXPECT_FALSE(insertTransform(source_frame, target_frame3, transform2));
+  EXPECT_TRUE(insertTransform(source_frame, target_frame3, transform2));
 
   // AND: the buffer should contain 3 transforms for the first target, and 2 for
   // the second
