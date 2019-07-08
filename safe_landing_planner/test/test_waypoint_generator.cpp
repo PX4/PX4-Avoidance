@@ -20,6 +20,8 @@ class WaypointGeneratorTests : public WaypointGenerator, public ::testing::Test 
       published_velocity = vel_sp;
       published_yaw = yaw_sp;
       published_yaw_velocity = yaw_speed_sp;
+
+      px4_.param_mpc_land_speed = 0.7f;
     };
   }
 };
