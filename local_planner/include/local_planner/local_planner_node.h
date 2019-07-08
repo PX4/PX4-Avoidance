@@ -1,6 +1,7 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
+#include "avoidance/transform_buffer.h"
 #include "local_planner/avoidance_output.h"
 #include "local_planner/local_planner_visualization.h"
 
@@ -65,6 +66,7 @@ struct cameraData {
 
   bool received_;
   bool transformed_;
+  bool transform_registered_ = false;
 };
 
 class LocalPlannerNode {
@@ -170,6 +172,11 @@ class LocalPlannerNode {
   **/
   void checkPx4Parameters();
 
+  /**
+  * @brief     safes received transforms to buffer;
+  **/
+  void transformBufferThread();
+
  private:
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
 
@@ -226,6 +233,8 @@ class LocalPlannerNode {
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
+  avoidance::tf_buffer::TransformBuffer tf_buffer_;
+  std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 
   bool armed_ = false;
   bool data_ready_ = false;

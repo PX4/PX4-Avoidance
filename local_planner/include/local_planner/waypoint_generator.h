@@ -13,7 +13,7 @@
 namespace avoidance {
 
 struct waypointResult {
-  waypoint_choice waypoint_type;
+  waypoint_choice waypoint_type = hover;
   Eigen::Vector3f position_wp;
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;

@@ -14,8 +14,11 @@ int main(int argc, char** argv) {
 
   std::thread worker_params(&LocalPlannerNode::checkPx4Parameters, &Node);
 
+  std::thread worker_tf_buffer(&LocalPlannerNode::transformBufferThread, &Node);
+
   worker.join();
   worker_params.join();
+  worker_tf_buffer.join();
 
   for (size_t i = 0; i < Node.cameras_.size(); ++i) {
     Node.cameras_[i].cloud_ready_cv_->notify_all();
