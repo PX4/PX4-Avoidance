@@ -10,6 +10,10 @@
 
 namespace avoidance {
 
+namespace tf_buffer {
+
+enum log_level { error, warn, info, debug };
+
 class TransformBuffer {
  public:
   TransformBuffer(float buffer_size_s = 10.0f);
@@ -39,8 +43,9 @@ class TransformBuffer {
 
  protected:
   std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
-  std::unique_ptr<std::mutex> mutex_;
+  mutable std::mutex mutex_;
   ros::Duration buffer_size_;
+  ros::Time startup_time_;
 
   /**
   * @brief      gets a key word from two frame names to identify a transform
@@ -54,10 +59,20 @@ class TransformBuffer {
   * @brief      interpolates between transforms
   * @param[in]  tf_earlier
   * @param[in]  tf_later
-  * @param[out] transform, empty transform containing the desired timestep
-  * @returns    bool, true if the transform can be interpolated
+  * @param[in/out] transform, [in]  empty transform stamped with DESIRED TIMESTAMP
+  *                           [out] correctly interpolated tf if interpolation is possible
+  *                                 otherwise transform remains unchanged
+  * @returns    bool, true if the transform was correctly interpolated
   **/
   bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
                             tf::StampedTransform& transform) const;
+
+  /**
+  * @brief      prints a message
+  * @param[in]  level, valid options are: error, warn, info, debug
+  * @param[in]  msg, string that should be printed
+  **/
+  void print(const log_level& level, const std::string& msg) const;
 };
+}
 }

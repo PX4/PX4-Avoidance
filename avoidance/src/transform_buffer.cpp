@@ -2,8 +2,10 @@
 
 namespace avoidance {
 
+namespace tf_buffer {
+
 TransformBuffer::TransformBuffer(float buffer_size_s) : buffer_size_(ros::Duration(buffer_size_s)) {
-  mutex_.reset(new std::mutex);
+  startup_time_ = ros::Time::now();
 };
 
 std::string TransformBuffer::getKey(const std::string& source_frame, const std::string& target_frame) const {
@@ -31,14 +33,13 @@ bool TransformBuffer::interpolateTransform(const tf::StampedTransform& tf_earlie
 
 bool TransformBuffer::insertTransform(const std::string& source_frame, const std::string& target_frame,
                                       tf::StampedTransform transform) {
-  std::lock_guard<std::mutex> lck(*mutex_);
+  std::lock_guard<std::mutex> lck(mutex_);
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::iterator iterator =
       buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
     std::deque<tf::StampedTransform> empty_deque;
     buffer_[getKey(source_frame, target_frame)] = empty_deque;
     iterator = buffer_.find(getKey(source_frame, target_frame));
-    ROS_INFO("transform buffer: Registered %s", getKey(source_frame, target_frame).c_str());
   }
 
   // check if the given transform is newer than the last buffered one
@@ -55,21 +56,22 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
 
 bool TransformBuffer::getTransform(const std::string& source_frame, const std::string& target_frame,
                                    const ros::Time& time, tf::StampedTransform& transform) const {
-  std::lock_guard<std::mutex> lck(*mutex_);
+  std::lock_guard<std::mutex> lck(mutex_);
   std::unordered_map<std::string, std::deque<tf::StampedTransform>>::const_iterator iterator =
       buffer_.find(getKey(source_frame, target_frame));
   if (iterator == buffer_.end()) {
-    ROS_ERROR("could not retrieve requested transform from buffer, unregistered");
+    print(log_level::error, "TF Buffer: could not retrieve requested transform from buffer, unregistered");
     return false;
   } else if (iterator->second.size() == 0) {
-    ROS_WARN("could not retrieve requested transform from buffer, buffer is empty");
+    print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, buffer is empty");
     return false;
   } else {
     if (iterator->second.back().stamp_ < time) {
-      ROS_WARN("could not retrieve requested transform from buffer, tf has not yet arrived");
+      print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, tf has not yet arrived");
       return false;
     } else if (iterator->second.front().stamp_ > time) {
-      ROS_WARN("could not retrieve requested transform from buffer, tf has already been dropped from buffer");
+      print(log_level::warn,
+            "TF Buffer: could not retrieve requested transform from buffer, tf has already been dropped from buffer");
       return false;
     } else {
       const tf::StampedTransform* previous = &iterator->second.back();
@@ -82,7 +84,7 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
           if (interpolateTransform(tf_earlier, tf_later, transform)) {
             return true;
           } else {
-            ROS_WARN("could not interpolate transform");
+            print(log_level::warn, "TF Buffer: could not interpolate transform");
             return false;
           }
         }
@@ -91,5 +93,29 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
     }
   }
   return false;
+}
+
+void TransformBuffer::print(const log_level& level, const std::string& msg) const {
+  if (ros::Time::now() - startup_time_ > ros::Duration(3)) {
+    switch (level) {
+      case error: {
+        ROS_ERROR("%s", msg.c_str());
+        break;
+      }
+      case warn: {
+        ROS_WARN("%s", msg.c_str());
+        break;
+      }
+      case info: {
+        ROS_INFO("%s", msg.c_str());
+        break;
+      }
+      case debug: {
+        ROS_DEBUG("%s", msg.c_str());
+        break;
+      }
+    }
+  }
+}
 }
 }

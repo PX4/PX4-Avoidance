@@ -444,16 +444,22 @@ void LocalPlannerNode::checkPx4Parameters() {
 
 void LocalPlannerNode::transformBufferThread() {
   while (!should_exit_) {
-    // listen to tf topic
-    for (auto const& frame_pair : buffered_transforms_) {
-      tf::StampedTransform transform;
+    // if all pointclouds were received for the first time and added to the transform list
+    bool all_tf_registered = true;
+    for (auto const& camera : cameras_) {
+      all_tf_registered = all_tf_registered && camera.transform_registered_;
+    }
+    if (all_tf_registered) {
+      for (auto const& frame_pair : buffered_transforms_) {
+        tf::StampedTransform transform;
 
-      if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {
-        try {
-          tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
-          tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
-        } catch (tf::TransformException& ex) {
-          ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
+        if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {
+          try {
+            tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
+            tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
+          } catch (tf::TransformException& ex) {
+            ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
+          }
         }
       }
     }

@@ -4,15 +4,17 @@
 
 using namespace avoidance;
 
-class TransformBufferTests : public ::testing::Test, public TransformBuffer {};
+class TransformBufferTests : public ::testing::Test, public tf_buffer::TransformBuffer {
+  void SetUp() override { ros::Time::init(); }
+};
 
 TEST(TransformBuffer, GetTransformAPI) {
   // GIVEN: a transform Buffer and source/target frames
-  TransformBuffer tf_buffer(10.0f);
+  ros::Time::init();
+  tf_buffer::TransformBuffer tf_buffer(10.0f);
   std::string source_frame = "frame1";
   std::string target_frame = "frame2";
 
-  ros::Time::init();
   ros::Time time1 = ros::Time::now();
   ros::Time time2 = time1 - ros::Duration(2.f);
   ros::Time time3 = time1 - ros::Duration(4.f);
@@ -70,7 +72,6 @@ TEST_F(TransformBufferTests, insertTransform) {
   std::string target_frame2 = "frame3";
   std::string target_frame3 = "frame4";
 
-  ros::Time::init();
   ros::Time time1 = ros::Time::now();
   ros::Time time2 = time1 - ros::Duration(2);
   ros::Time time3 = time1 - ros::Duration(4);
@@ -110,7 +111,6 @@ TEST_F(TransformBufferTests, interpolateTransform) {
   std::string source_frame = "frame1";
   std::string target_frame = "frame2";
 
-  ros::Time::init();
   ros::Time time1 = ros::Time::now();
   ros::Time time_half = time1 + ros::Duration(1.f);
   ros::Time time2 = time1 + ros::Duration(2.f);

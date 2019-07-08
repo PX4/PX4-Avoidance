@@ -233,7 +233,7 @@ class LocalPlannerNode {
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
-  TransformBuffer tf_buffer_;
+  avoidance::tf_buffer::TransformBuffer tf_buffer_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 
   bool armed_ = false;
