@@ -102,6 +102,8 @@ struct ModelParameters {
 const float DEG_TO_RAD = M_PI_F / 180.f;
 const float RAD_TO_DEG = 180.0f / M_PI_F;
 
+#define normXY() topRows<2>().norm()
+
 /**
 * @brief      determines whether point is inside FOV
 * @param[in]  vector of FOV structs defining current field of view

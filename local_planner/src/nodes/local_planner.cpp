@@ -58,6 +58,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(), goal_.z());
+  dist_to_goal_xy_ = (position_ - goal_).normXY();
   applyGoal();
 }
 
@@ -133,11 +134,8 @@ void LocalPlanner::determineStrategy() {
     reach_altitude_ = true;
   }
 
-  Eigen::Vector2f pos_xy = position_.head<2>();
-  Eigen::Vector2f goal_xy = goal_.head<2>();
-  float pos_to_goal_dist_xy = (position_ - goal_).head<2>().norm();
   if (!reach_altitude_) {
-    starting_height_ = std::max(goal_.z() - 1.f, px4_.param_mis_takeoff_alt);
+    starting_height_ = std::max(goal_.z() - 0.8f, px4_.param_mis_takeoff_alt);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
     waypoint_type_ = reachHeight;
 
@@ -149,8 +147,9 @@ void LocalPlanner::determineStrategy() {
     if (px4_.param_mpc_col_prev_d > 0.f) {
       create2DObstacleRepresentation(true);
     }
-  } else if (pos_to_goal_dist_xy < 0.5f && fabsf(goal_.z() - position_.z()) > 1.f) {
-    ROS_INFO("\033[1;31m[OA] Reach height: angle between position and goal vector \033[0m");
+  } else if (dist_to_goal_xy_ < 0.5f && fabsf(goal_.z() - position_.z()) > 1.f) {
+    ROS_INFO("\033[1;31m[OA] Reach height: vertical movement needed \033[0m \n");
+    starting_height_ = goal_.z() - 0.8f;
     waypoint_type_ = reachHeight;
 
   } else {

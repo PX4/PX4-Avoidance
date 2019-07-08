@@ -5,8 +5,6 @@
 
 #include <ros/param.h>
 
-#define normXY() topRows<2>().norm()
-
 namespace avoidance {
 
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
@@ -142,7 +140,7 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
 void WaypointGenerator::reachGoalAltitudeFirst() {
   // goto_position is a unit vector pointing straight up/down from current
   // location
-  output_.goto_position = goal_;
+  output_.goto_position = position_;
 
   // Only move the setpoint if drone is in the air
   if (is_airborne_) {
