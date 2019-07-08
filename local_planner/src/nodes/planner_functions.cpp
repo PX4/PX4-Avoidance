@@ -425,9 +425,8 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
   return tree_available;
 }
 
-void printHistogram(const Histogram& histogram) {
-  std::cout << "------------------------------------------Histogram------------"
-               "------------------------------------\n";
+void printHistogram(Histogram& histogram) {
+  std::cout << "------------------------------------------Histogram------------------------------------------------\n";
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       int val = floor(histogram.get_dist(e, z));
@@ -441,7 +440,6 @@ void printHistogram(const Histogram& histogram) {
     }
     std::cout << "\n";
   }
-  std::cout << "_______________________________________________________________"
-               "____________________________________\n";
+  std::cout << "___________________________________________________________________________________________________\n";
 }
 }

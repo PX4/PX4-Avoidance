@@ -552,15 +552,9 @@ void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud, ros::Durati
           }
         }
 
-        ROS_WARN(
-            "\033[1;33m Pointcloud timeout %s (Hovering at current position) "
-            "\n "
-            "\033[0m",
-            not_received.c_str());
+        ROS_WARN("\033[1;33m Pointcloud timeout %s (Hovering at current position) \n \033[0m", not_received.c_str());
       } else {
-        ROS_WARN(
-            "\033[1;33m Pointcloud timeout: No position received, no WP to "
-            "output.... \n \033[0m");
+        ROS_WARN("\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
       }
     } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);

@@ -240,10 +240,8 @@ void LocalPlanner::evaluateProgressRate() {
         cost_params_.height_change_cost_param_adapted += 0.03f;
       }
     }
-    ROS_DEBUG(
-        "\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: "
-        "%f .\033[0m",
-        avg_incline, cost_params_.height_change_cost_param_adapted);
+    ROS_DEBUG("\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: %f .\033[0m", avg_incline,
+              cost_params_.height_change_cost_param_adapted);
   } else {
     cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
   }
