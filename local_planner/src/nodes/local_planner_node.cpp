@@ -588,10 +588,10 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
         pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
         cloud_msg_lock.reset();
 
-          // remove nan padding and compute fov
-          pcl::PointCloud<pcl::PointXYZ> maxima = removeNaNAndGetMaxima(pcl_cloud);
-          pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
-          updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
+        // remove nan padding and compute fov
+        pcl::PointCloud<pcl::PointXYZ> maxima = removeNaNAndGetMaxima(pcl_cloud);
+        pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
+        updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
 
         // transform cloud to /local_origin frame
         pcl_ros::transformPointCloud(pcl_cloud, pcl_cloud, transform);

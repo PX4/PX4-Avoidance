@@ -11,7 +11,7 @@ namespace avoidance {
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, Box histogram_box,
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
                        const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
                        const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
                        int min_num_points_per_cell) {
@@ -58,6 +58,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
         PolarPoint p_pol_fcu = cartesianToPolarFCU(toEigen(xyzi), position);
         p_pol_fcu.e -= pitch_fcu_frame_deg;
         p_pol_fcu.z -= yaw_fcu_frame_deg;
+        wrapPolar(p_pol_fcu);
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
 
         // only remember point if it's in a cell not previously populated by
@@ -124,9 +125,9 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint, costParameters cost_params,
-                   bool only_yawed, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
-                   std::vector<uint8_t>& image_data) {
+                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
+                   const costParameters& cost_params, bool only_yawed, float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -306,7 +307,7 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
                   const Eigen::Vector3f& position, const float yaw_fcu_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint, costParameters cost_params, float& distance_cost,
+                  const Eigen::Vector3f& last_sent_waypoint, const costParameters& cost_params, float& distance_cost,
                   float& other_costs) {
   // Azimuth angle in histogram convention is different from FCU convention!
   // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
@@ -424,7 +425,7 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
   return tree_available;
 }
 
-void printHistogram(Histogram& histogram) {
+void printHistogram(const Histogram& histogram) {
   std::cout << "------------------------------------------Histogram------------"
                "------------------------------------\n";
   for (int e = 0; e < GRID_LENGTH_E; e++) {

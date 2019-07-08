@@ -45,10 +45,13 @@ bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int
   if (isInWhichFOV(fov_vec, p_pol, idx)) {
     PolarPoint just_outside = p_pol;
     // todo: check for pitch!
-    if (wrapAngleToPlusMinus180(p_pol.z - fov_vec[idx].yaw_deg) > 0.0f) {  // to the right
-      just_outside.z = wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg + fov_vec[idx].h_fov_deg / 2.0f + 1.0f);
-    } else {  // to the left
-      just_outside.z = wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg - fov_vec[idx].h_fov_deg / 2.0f - 1.0f);
+    if (wrapAngleToPlusMinus180(p_pol.z - fov_vec[idx].yaw_deg) > 0.0f) {
+      // check half-resolution degrees outside the current fov
+      just_outside.z =
+          wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg + fov_vec[idx].h_fov_deg / 2.0f + (ALPHA_RES / 2.0f));
+    } else {  // half-resolution degrees to the left
+      just_outside.z =
+          wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg - fov_vec[idx].h_fov_deg / 2.0f - (ALPHA_RES / 2.0f));
     }
 
     retval = !pointInsideFOV(fov_vec, just_outside);
@@ -478,7 +481,7 @@ void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima)
   if (h_diff > fov.h_fov_deg) {
     fov.h_fov_deg = h_diff;
 
-    // Note: the wrapping here assumes the FOV < 180 degrees!
+    // Note: the wrapping here assumes the FOV of one camera is < 180 degrees!
     if (h_diff >= h_max - h_min) {
       fov.yaw_deg = wrapAngleToPlusMinus180((h_max + h_min) / 2.0 - 180.0f);  // center of camera in [-180, 180]
     } else {

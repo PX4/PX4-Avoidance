@@ -1,6 +1,8 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include "avoidance/histogram.h"  // needed for ALPHA_RES
+
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <Eigen/Core>
@@ -77,7 +79,7 @@ bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
 /**
 * @brief      compute in which FOV the current point lies
 * @param[in]  vector of FOV defining the field of view of the drone
-* @param[in]  polar point of the current orienation in question
+* @param[in]  polar point of the current orientation in question
 * @param[out] index pointing to the camera in the FOV struct which contains the
 *             current point
 * @returns    boolean value if the point in question is in exactly one FOV
@@ -108,8 +110,6 @@ bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int
 *            go
 * @returns   a scale [0, 1] depending on whether the point in question can be
 *            seen from here
-* @TODO:     currently this is binary depending on whether its inside or outside
-*            in the near future I want to scale this correctly
 **/
 float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol);
 
