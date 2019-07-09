@@ -276,12 +276,6 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   bool current_path_is_ok = global_planner_.updateFullOctomap(msg);
-  if (!current_path_is_ok) {
-    ROS_INFO("  Path is bad, planning a new path \n");
-    if (global_planner_.goal_pos_.is_temporary_) {
-      popNextGoal();  // Throw away temporary goal
-    }
-  }
 }
 
 // Go through obstacle points and store them
