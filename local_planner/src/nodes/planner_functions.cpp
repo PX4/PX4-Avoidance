@@ -11,7 +11,8 @@ namespace avoidance {
 // trim the point cloud so that only points inside the bounding box are
 // considered
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, Box histogram_box, FOV& fov,
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
+                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
                        const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
                        int min_num_points_per_cell) {
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
@@ -21,11 +22,6 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
   final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
 
   float distance;
-
-  float fov_azimuth_lower_boundary = wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.0f);
-  float fov_azimuth_upper_boundary = wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.0f);
-  float fov_elevation_lower_boundary = fov.elevation_deg - fov.v_fov_deg / 2.0f;
-  float fov_elevation_upper_boundary = fov.elevation_deg + fov.v_fov_deg / 2.0f;
 
   // counter to keep track of how many points lie in a given cell
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2), 360 / (ALPHA_RES / 2));
@@ -38,14 +34,8 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
         if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
           distance = (position - toEigen(xyz)).norm();
           if (distance > min_realsense_dist && distance < histogram_box.radius_) {
-            // Keep track of the FOV
-            PolarPoint p_pol = cartesianToPolar(toEigen(xyz), position);
-            fov_azimuth_lower_boundary = std::min(fov_azimuth_lower_boundary, p_pol.z);
-            fov_azimuth_upper_boundary = std::max(fov_azimuth_upper_boundary, p_pol.z);
-            fov_elevation_lower_boundary = std::min(fov_elevation_lower_boundary, p_pol.e);
-            fov_elevation_upper_boundary = std::max(fov_elevation_upper_boundary, p_pol.e);
-
             // subsampling the cloud
+            PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyz), position);
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
             if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
@@ -57,13 +47,6 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     }
   }
 
-  // Update the FOV, accounting for discontinuity. Also subtract a tolerance
-  // margin to avoid creating a blind spot due to latency and fast yaw movements
-  fov.h_fov_deg = std::max(fov.h_fov_deg, std::min(360.0f - (fov_azimuth_upper_boundary - fov_azimuth_lower_boundary),
-                                                   fov_azimuth_upper_boundary - fov_azimuth_lower_boundary) -
-                                              15.0f);
-  fov.v_fov_deg = std::max(fov.v_fov_deg, fov_elevation_upper_boundary - fov_elevation_lower_boundary - 15.0f);
-
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {
     // adding older points if not expired and space is free according to new
@@ -71,14 +54,17 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
       distance = (position - toEigen(xyzi)).norm();
       if (distance < histogram_box.radius_) {
-        PolarPoint p_pol = cartesianToPolar(toEigen(xyzi), position);
-
+        PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyzi), position);
+        PolarPoint p_pol_fcu = cartesianToPolarFCU(toEigen(xyzi), position);
+        p_pol_fcu.e -= pitch_fcu_frame_deg;
+        p_pol_fcu.z -= yaw_fcu_frame_deg;
+        wrapPolar(p_pol_fcu);
         Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
 
         // only remember point if it's in a cell not previously populated by
         // complete_cloud, as well as outside FOV and 'young' enough
         if (histogram_points_counter(p_ind.y(), p_ind.x()) < min_num_points_per_cell && xyzi.intensity < max_age &&
-            !pointInsideFOV(fov, p_pol)) {
+            !pointInsideFOV(fov, p_pol_fcu)) {
           final_cloud.points.push_back(toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 
           // to indicate that this cell now has a point
@@ -101,7 +87,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
   counter.fill(0);
   for (auto xyz : cropped_cloud) {
     Eigen::Vector3f p = toEigen(xyz);
-    PolarPoint p_pol = cartesianToPolar(p, position);
+    PolarPoint p_pol = cartesianToPolarHistogram(p, position);
     float dist = p_pol.r;
     Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES);
 
@@ -139,8 +125,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed, const float smoothing_margin_degrees,
+                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
+                   const costParameters& cost_params, bool only_yawed, float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
@@ -161,8 +147,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, yaw_angle_histogram_frame_deg,
-                   last_sent_waypoint, cost_params, distance_cost, other_costs);
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, yaw_fcu_frame_deg, last_sent_waypoint,
+                   cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -320,18 +306,21 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const float yaw_angle_histogram_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint, costParameters cost_params, float& distance_cost,
+                  const Eigen::Vector3f& position, const float yaw_fcu_frame_deg,
+                  const Eigen::Vector3f& last_sent_waypoint, const costParameters& cost_params, float& distance_cost,
                   float& other_costs) {
+  // Azimuth angle in histogram convention is different from FCU convention!
+  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
+  float azimuth_hist_frame_deg = wrapAngleToPlusMinus180(-yaw_fcu_frame_deg + 90.0f);
   float goal_dist = (position - goal).norm();
   PolarPoint p_pol(e_angle, z_angle, goal_dist);
-  Eigen::Vector3f projected_candidate = polarToCartesian(p_pol, position);
-  PolarPoint heading_pol(e_angle, yaw_angle_histogram_frame_deg, goal_dist);
-  Eigen::Vector3f projected_heading = polarToCartesian(heading_pol, position);
+  Eigen::Vector3f projected_candidate = polarHistogramToCartesian(p_pol, position);
+  PolarPoint heading_pol(e_angle, azimuth_hist_frame_deg, goal_dist);
+  Eigen::Vector3f projected_heading = polarHistogramToCartesian(heading_pol, position);
   Eigen::Vector3f projected_goal = goal;
-  PolarPoint last_wp_pol = cartesianToPolar(last_sent_waypoint, position);
+  PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint, position);
   last_wp_pol.r = goal_dist;
-  Eigen::Vector3f projected_last_wp = polarToCartesian(last_wp_pol, position);
+  Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position);
 
   // goal costs
   float yaw_cost =
@@ -427,7 +416,7 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
       Eigen::Vector3f mean_point =
           (1.f - l_frac) * path_node_positions_extended[wp_idx - 1] + l_frac * path_node_positions_extended[wp_idx];
 
-      p_pol = cartesianToPolar(mean_point, position);
+      p_pol = cartesianToPolarHistogram(mean_point, position);
       p_pol.r = 0.0f;
     }
   } else {
@@ -436,7 +425,7 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
   return tree_available;
 }
 
-void printHistogram(Histogram& histogram) {
+void printHistogram(const Histogram& histogram) {
   std::cout << "------------------------------------------Histogram------------"
                "------------------------------------\n";
   for (int e = 0; e < GRID_LENGTH_E; e++) {

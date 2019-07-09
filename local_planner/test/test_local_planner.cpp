@@ -23,7 +23,7 @@ class LocalPlannerTests : public ::testing::Test {
     planner.setDefaultPx4Parameters();
     avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
     planner.dynamicReconfigureSetParams(config, 1);
-    planner.setFOV(59.0f, 46.0f);
+    planner.setFOV(0, FOV(0.0f, 0.0f, 59.0f, 46.0f));
 
     // start with basic pose
     Eigen::Vector3f pos(0.f, 0.f, 0.f);
@@ -70,7 +70,7 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // GIVEN: a local planner, a scan with obstacles everywhere, pose and goal
   float shift = 0.f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
+  float fov_half_y = distance * std::tan(planner.getHFOV(0) * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -124,7 +124,7 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // GIVEN: a local planner, a scan with obstacles on the right, pose and goal
   float shift = -0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
+  float fov_half_y = distance * std::tan(planner.getHFOV(0) * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -174,7 +174,7 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // GIVEN: a local planner, a scan with obstacles on the left, pose and goal
   float shift = 0.5f;
   float distance = 2.f;
-  float fov_half_y = distance * std::tan(planner.getHFOV() * TO_RAD / 2.f);
+  float fov_half_y = distance * std::tan(planner.getHFOV(0) * TO_RAD / 2.f);
   float max_y = shift + fov_half_y, min_y = shift - fov_half_y;
 
   pcl::PointCloud<pcl::PointXYZ> cloud;

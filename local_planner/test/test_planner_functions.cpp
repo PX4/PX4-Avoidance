@@ -41,7 +41,7 @@ TEST(PlannerFunctions, generateNewHistogramSpecificCells) {
   for (auto i : e_angle_filled) {
     for (auto j : z_angle_filled) {
       PolarPoint p_pol(i, j, distance);
-      middle_of_cell.push_back(polarToCartesian(p_pol, location));
+      middle_of_cell.push_back(polarHistogramToCartesian(p_pol, location));
       e_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).y());
       z_index.push_back(polarToHistogramIndex(p_pol, ALPHA_RES).x());
     }
@@ -99,32 +99,27 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2, processed_cloud3;
   Eigen::Vector3f memory_point(1.4f, 0.0f, 0.0f);
-  PolarPoint memory_point_polar = cartesianToPolar(position + memory_point, position);
+  PolarPoint memory_point_polar = cartesianToPolarFCU(position + memory_point, position);
   processed_cloud1.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud2.push_back(toXYZI(position + memory_point, 5.0f));
   processed_cloud3.push_back(toXYZI(position + memory_point, 5.0f));
 
-  FOV FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
-  FOV_zero.h_fov_deg = 0.0f;
-  FOV_zero.v_fov_deg = 0.0f;
-  FOV_zero.azimuth_deg = 1.0f;
-  FOV_zero.elevation_deg = 1.0f;
+  std::vector<FOV> FOV_zero;  // zero FOV means all pts are outside FOV, and thus remembered
+  FOV_zero.push_back(FOV(1.0f, 1.0f, 0.0f, 0.0f));
 
-  FOV FOV_regular;
-  FOV_regular.h_fov_deg = 85.0f;
-  FOV_regular.v_fov_deg = 65.0f;
-  FOV_regular.azimuth_deg = 90.0f;  // in histogram frame!
-  FOV_regular.elevation_deg = 1.0f;
+  std::vector<FOV> FOV_regular;
+  FOV_regular.push_back(FOV(0.0f, 1.0f, 85.0f, 65.0f));
 
   // WHEN: we filter the PointCloud with different values max_age
-  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 0.0f, 0.5f,
-                    1);
+  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero, 0.0f, 0.0f, position, min_realsense_dist,
+                    0.0f, 0.5f, 1);
 
-  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero, position, min_realsense_dist, 10.0f, .5f,
-                    1);
+  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero, 0.0f,
+                    0.0f,  // todo: test different yaw and pitch
+                    position, min_realsense_dist, 10.0f, .5f, 1);
 
-  processPointcloud(processed_cloud3, complete_cloud, histogram_box, FOV_regular, position, min_realsense_dist, 10.0f,
-                    0.5f, 1);
+  processPointcloud(processed_cloud3, complete_cloud, histogram_box, FOV_regular, 0.0f, 0.0f, position,
+                    min_realsense_dist, 10.0f, 0.5f, 1);
 
   // THEN: we expect the first cloud to have 6 points
   // the second cloud should contain 7 points
@@ -382,7 +377,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
                 cost_matrix, cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
-  PolarPoint best_pol = cartesianToPolar(goal, position);
+  PolarPoint best_pol = cartesianToPolarHistogram(goal, position);
   Eigen::Vector2i best_index = polarToHistogramIndex(best_pol, ALPHA_RES);
 
   Eigen::MatrixXf::Index minRow, minCol;
@@ -508,7 +503,7 @@ TEST(PlannerFunctions, CostfunctionHeadingCost) {
   Eigen::Vector3f position(0.f, 0.f, 0.f);
   Eigen::Vector3f goal(0.f, 5.f, 0.f);
   Eigen::Vector3f last_sent_waypoint(0.f, 1.f, 0.f);
-  float heading_1 = 10.f;
+  float heading_1 = 60.f;  // in fcu frame: 90deg yaw is toward the goal
   float heading_2 = 30.f;
   costParameters cost_params;
   cost_params.goal_cost_param = 3.f;

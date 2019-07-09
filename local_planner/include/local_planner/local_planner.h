@@ -83,8 +83,10 @@ class LocalPlanner {
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
+  float yaw_fcu_frame_deg_ = 0.0f;
+  float pitch_fcu_frame_deg_ = 0.0f;
 
-  FOV fov_;
+  std::vector<FOV> fov_fcu_frame_;
 
   waypoint_choice waypoint_type_ = hover;
   ros::Time last_path_time_;
@@ -169,24 +171,26 @@ class LocalPlanner {
   * @param[in] q, vehicle orientation message coming from the FCU
   **/
   void setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q);
+
   /**
   * @brief     setter method for mission goal
   * @param[in] mgs, goal message coming from the FCU
   **/
   void setGoal(const Eigen::Vector3f& goal);
+
   /**
   * @brief     setter method for field of view
-  * @param[in] horizontal angle in degrees of the sensor data
-  * @param[in] vertical angle in degrees of the sensor data
+  * @param[in] index of the camera
+  * @param[in] field of view structure of the camera
   */
-  void setFOV(float h_FOV_deg, float v_FOV_deg);
+  void setFOV(int i, const FOV& fov);
 
   /**
   * @brief     Getters for the FOV
   */
-  float getHFOV() { return fov_.h_fov_deg; }
-  float getVFOV() { return fov_.v_fov_deg; }
-  FOV getFOV() const { return fov_; }
+  float getHFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f; }
+  float getVFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f; }
+  const std::vector<FOV>& getFOV() const { return fov_fcu_frame_; }
 
   /**
   * @brief     getter method for current goal

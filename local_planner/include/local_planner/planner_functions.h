@@ -33,7 +33,8 @@ namespace avoidance {
 *             a valid input here)
 **/
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, Box histogram_box, FOV& fov,
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
+                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
                        const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
                        int min_num_points_per_cell);
 
@@ -51,7 +52,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
 * @brief      compresses the histogram such that for each azimuth the minimum
 *             distance at the elevation inside the FOV is saved
 * @param[out] new_hist, compressed elevation histogram
-* @param[int] input_hist, original histogram
+* @param[in] input_hist, original histogram
 **/
 void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist);
 /**
@@ -68,8 +69,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed, const float smoothing_margin_degrees,
+                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
+                   const costParameters& cost_params, bool only_yawed, float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
@@ -112,9 +113,8 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[out] other_costs, cost component due to goal and smoothness
 **/
 void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const float yaw_angle_histogram_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint, costParameters cost_params, float& distance_cost,
-                  float& other_costs);
+                  const Eigen::Vector3f& position, float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
+                  const costParameters& cost_params, float& distance_cost, float& other_costs);
 
 /**
 * @brief      max-median filtes the cost matrix
@@ -144,7 +144,7 @@ Eigen::ArrayXf getConicKernel(int radius);
 * @brief      helper method to output on the console the histogram
 * @param[in]  histogram, polar histogram
 **/
-void printHistogram(Histogram& histogram);
+void printHistogram(const Histogram& histogram);
 
 /**
 * @brief      finds the minimum cost direction in the tree
