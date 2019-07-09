@@ -273,6 +273,7 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   if (num_octomap_msg_++ % 10 > 0) {
     return;  // We get too many of those messages. Only process 1/10 of them
   }
+  std::lock_guard<std::mutex> lock(mutex_);
 
   bool current_path_is_ok = global_planner_.updateFullOctomap(msg);
   if (!current_path_is_ok) {
@@ -341,6 +342,7 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 }
 
 void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
+  std::lock_guard<std::mutex> lock(mutex_);
   bool is_in_goal = global_planner_.goal_pos_.withinPositionRadius(global_planner_.curr_pos_);
   if (is_in_goal || global_planner_.goal_is_blocked_) {
     popNextGoal();
