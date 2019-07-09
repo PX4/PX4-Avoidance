@@ -22,7 +22,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
-  laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
 
   // Publishers
@@ -245,26 +244,6 @@ void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg)
   if (msg.point_valid[1] == true && ((std::fabs(global_planner_.goal_pos_.xPos() - new_goal.xPos()) > 0.001) ||
                                      (std::fabs(global_planner_.goal_pos_.yPos() - new_goal.yPos()) > 0.001))) {
     setNewGoal(new_goal);
-  }
-}
-
-// If the laser senses something too close to current position, it is considered
-// a crash
-void GlobalPlannerNode::laserSensorCallback(const sensor_msgs::LaserScan& msg) {
-  if (global_planner_.going_back_) {
-    return;  // Don't deal with the same crash again
-  }
-
-  double ignore_dist = msg.range_min;  // Too close, probably part of the vehicle
-  double crash_dist = 0.5;             // Otherwise, a measurement below this is a crash
-  for (double range : msg.ranges) {
-    if (ignore_dist < range && range < crash_dist) {
-      if (global_planner_.path_back_.size() > 3) {
-        // Don't complain about crashing on take-off
-        ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", range);
-        global_planner_.goBack();
-      }
-    }
   }
 }
 

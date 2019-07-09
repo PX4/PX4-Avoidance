@@ -142,7 +142,6 @@ class GlobalPlannerNode {
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg);
-  void laserSensorCallback(const sensor_msgs::LaserScan& msg);
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
@@ -150,7 +149,6 @@ class GlobalPlannerNode {
   void plannerLoopCallback(const ros::TimerEvent& event);
   void publishGoal(const GoalCell& goal);
   void publishPath();
-  void publishExploredCells();
   void publishSetpoint();
   void printPointInfo(double x, double y, double z);
 };
