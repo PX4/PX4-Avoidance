@@ -8,78 +8,31 @@
 
 namespace avoidance {
 
-StarPlanner::StarPlanner() : tree_age_(0) {}
+StarPlanner::StarPlanner() {}
 
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
-  tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.box_radius_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
+  tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
 
-void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) { projected_last_wp_ = projected_last_wp; }
-
-void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw_fcu_frame_deg) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
   position_ = pos;
-  curr_yaw_histogram_frame_deg_ = wrapAngleToPlusMinus180(-curr_yaw_fcu_frame_deg + 90.0f);
+  velocity_ = vel;
 }
 
-void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
-  goal_ = goal;
-  tree_age_ = 1000;
-}
+void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
 
-float StarPlanner::treeCostFunction(int node_number) const {
-  int origin = tree_[node_number].origin_;
-  float e = tree_[node_number].last_e_;
-  float z = tree_[node_number].last_z_;
-  Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  PolarPoint goal_pol = cartesianToPolarHistogram(goal_, origin_position);
-
-  float target_cost = indexAngleDifference(z, goal_pol.z) +
-                      10.0f * indexAngleDifference(e, goal_pol.e);  // include effective direction?
-
-  float last_e = tree_[origin].last_e_;
-  float last_z = tree_[origin].last_z_;
-
-  float smooth_cost = 5.0f * (2.0f * indexAngleDifference(z, last_z) + 5.0f * indexAngleDifference(e, last_e));
-
-  float smooth_cost_to_old_tree = 0.0f;
-  if (tree_age_ < 10) {
-    int partner_node_idx = path_node_positions_.size() - 1 - tree_[node_number].depth_;
-    if (partner_node_idx >= 0) {
-      Eigen::Vector3f partner_node_position = path_node_positions_[partner_node_idx];
-      Eigen::Vector3f node_position = tree_[node_number].getPosition();
-      float dist = (partner_node_position - node_position).norm();
-      smooth_cost_to_old_tree = 200.0f * dist / (0.5f * static_cast<float>(tree_[node_number].depth_));
-    }
-  }
-
-  return std::pow(tree_discount_factor_, static_cast<float>(tree_[node_number].depth_)) *
-         (target_cost + smooth_cost + smooth_cost_to_old_tree);
-}
-
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  Eigen::Vector3f node_position = tree_[node_number].getPosition();
-  PolarPoint goal_pol = cartesianToPolarHistogram(goal_, node_position);
-
-  int origin = tree_[node_number].origin_;
-  Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  float origin_goal_dist = (goal_ - origin_position).norm();
-  float goal_dist = (goal_ - node_position).norm();
-  float goal_cost = (goal_dist / origin_goal_dist - 0.9f) * 5000.0f;
-
-  float smooth_cost = 10.0f * (indexAngleDifference(goal_pol.z, tree_[node_number].last_z_) +
-                               indexAngleDifference(goal_pol.e, tree_[node_number].last_e_));
-
-  return std::pow(tree_discount_factor_, static_cast<float>(tree_[node_number].depth_)) * (smooth_cost + goal_cost);
+  return (goal_ - tree_[node_number].getPosition()).norm() * tree_heuristic_weight_;
 }
 
 void StarPlanner::buildLookAheadTree() {
@@ -96,14 +49,15 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, position_));
+  tree_.push_back(TreeNode(0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
-  tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
+    Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
+    PolarPoint facing_goal = cartesianToPolarHistogram(goal_, origin_position);
+    float distance_to_goal = (goal_ - origin_position).norm();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
@@ -112,9 +66,8 @@ void StarPlanner::buildLookAheadTree() {
     cost_matrix.fill(0.f);
     cost_image_data.clear();
     candidate_vector.clear();
-    float yaw_fcu_frame_deg = wrapAngleToPlusMinus180(-tree_[origin].yaw_ + 90.0f);
-    getCostMatrix(histogram, goal_, origin_position, yaw_fcu_frame_deg, projected_last_wp_, cost_params_,
-                  smoothing_margin_degrees_, cost_matrix, cost_image_data);
+    getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
+                  cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes
@@ -122,13 +75,13 @@ void StarPlanner::buildLookAheadTree() {
       tree_[origin].total_cost_ = HUGE_VAL;
     } else {
       // insert new nodes
-      int depth = tree_[origin].depth_ + 1;
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
-        PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle, tree_node_distance_);
+        PolarPoint candidate_polar = candidate.toPolar(tree_node_distance_);
+        Eigen::Vector3f node_location = polarHistogramToCartesian(candidate_polar, origin_position);
+        Eigen::Vector3f node_velocity = node_location - origin_position;  // todo: simulate!
 
         // check if another close node has been added
-        Eigen::Vector3f node_location = polarHistogramToCartesian(p_pol, origin_position);
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
@@ -139,16 +92,10 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, depth, node_location));
-          tree_.back().last_e_ = p_pol.e;
-          tree_.back().last_z_ = p_pol.z;
+          tree_.push_back(TreeNode(origin, node_location, node_velocity));
           float h = treeHeuristicFunction(tree_.size() - 1);
-          float c = treeCostFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-          Eigen::Vector3f diff = node_location - origin_position;
-          float yaw_radians = atan2(diff.y(), diff.x());
-          tree_.back().yaw_ = std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
+          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
           children++;
         }
       }
@@ -177,22 +124,21 @@ void StarPlanner::buildLookAheadTree() {
   // smoothing between trees
   int tree_end = origin;
   path_node_positions_.clear();
-  path_node_origins_.clear();
   while (tree_end > 0) {
-    path_node_origins_.push_back(tree_end);
     path_node_positions_.push_back(tree_[tree_end].getPosition());
     tree_end = tree_[tree_end].origin_;
   }
   path_node_positions_.push_back(tree_[0].getPosition());
-  path_node_origins_.push_back(0);
-  tree_age_ = 0;
 
   ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
            path_node_positions_.size(), closed_set_.size(),
            static_cast<double>((std::clock() - start_time) / static_cast<double>(CLOCKS_PER_SEC / 1000)));
+
+#ifndef DISABLE_SIMULATION  // For large trees, this could be very slow!
   for (int j = 0; j < path_node_positions_.size(); j++) {
     ROS_DEBUG("\033[0;35m[SP] node %i : [ %f, %f, %f]\033[0m", j, path_node_positions_[j].x(),
               path_node_positions_[j].y(), path_node_positions_[j].z());
   }
+#endif
 }
 }

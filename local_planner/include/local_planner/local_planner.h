@@ -66,20 +66,12 @@ struct ModelParameters {
 
 class LocalPlanner {
  private:
-  bool adapt_cost_params_;
   bool reach_altitude_ = false;
-  bool waypoint_outside_FOV_ = false;
 
-  size_t dist_incline_window_size_ = 50;
-  int origin_;
-  int tree_age_ = 0;
   int children_per_node_;
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
 
-  ros::Time integral_time_old_;
-  float no_progress_slope_;
-  float new_yaw_;
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
@@ -92,11 +84,7 @@ class LocalPlanner {
   ros::Time last_path_time_;
   ros::Time last_pointcloud_process_time_;
 
-  std::deque<float> goal_dist_incline_;
-  std::vector<float> cost_path_candidates_;
-  std::vector<int> cost_idx_sorted_;
   std::vector<int> closed_set_;
-
   std::vector<TreeNode> tree_;
   std::unique_ptr<StarPlanner> star_planner_;
   costParameters cost_params_;
@@ -106,17 +94,11 @@ class LocalPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
   Eigen::MatrixXf cost_matrix_;
 
-  /**
-  * @brief     calculates the cost function weights to fly around or over
-  *            obstacles based on the progress towards the goal over time
-  **/
-  void evaluateProgressRate();
   /**
   * @brief     fills message to send histogram to the FCU
   **/
@@ -143,14 +125,12 @@ class LocalPlanner {
   std::vector<uint8_t> cost_image_data_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
-  bool smooth_waypoints_ = true;
   bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_startup_;
   double timeout_critical_;
   double timeout_termination_;
   double starting_height_ = 0.0;
-  float speed_ = 1.0f;
   float ground_distance_ = 2.0;
 
   ModelParameters px4_;  // PX4 Firmware paramters
@@ -166,11 +146,12 @@ class LocalPlanner {
   ~LocalPlanner();
 
   /**
-  * @brief     setter method for vehicle position
-  * @param[in] pos, vehicle position message coming from the FCU
+  * @brief     setter method for vehicle position, orientation and velocity
+  * @param[in] pos, vehicle position coming from the FCU
+  * @param[in] vel, vehicle velocity in the FCU frame
   * @param[in] q, vehicle orientation message coming from the FCU
   **/
-  void setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q);
+  void setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, const Eigen::Quaternionf& q);
 
   /**
   * @brief     setter method for mission goal
@@ -218,12 +199,6 @@ class LocalPlanner {
   * @returns   reference to pointcloud
   **/
   const pcl::PointCloud<pcl::PointXYZI>& getPointcloud() const;
-
-  /**
-  * @brief     setter method for vehicle velocity
-  * @param[in] vel, velocity message coming from the FCU
-  **/
-  void setCurrentVelocity(const Eigen::Vector3f& vel);
 
   /**
   * @brief     getter method to visualize the tree in rviz

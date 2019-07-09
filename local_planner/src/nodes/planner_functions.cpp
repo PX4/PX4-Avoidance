@@ -125,13 +125,11 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   const costParameters& cost_params, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
-                   std::vector<uint8_t>& image_data) {
+                   const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
-  float distance_cost = 0.f;
-  float other_costs = 0.f;
+
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
   cost_matrix.fill(NAN);
@@ -145,12 +143,11 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
 
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index += step_size) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
-      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
+      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, 1.0f);  // unit vector of current direction
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, yaw_fcu_frame_deg, last_sent_waypoint,
-                   cost_params, distance_cost, other_costs);
-      cost_matrix(e_index, z_index) = other_costs;
-      distance_matrix(e_index, z_index) = distance_cost;
+      std::pair<float, float> costs = costFunction(p_pol, obstacle_distance, goal, position, velocity, cost_params);
+      cost_matrix(e_index, z_index) = costs.second;
+      distance_matrix(e_index, z_index) = costs.first;
     }
     if (step_size > 1) {
       // horizontally interpolate all of the un-calculated values
@@ -305,54 +302,23 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const float yaw_fcu_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint, const costParameters& cost_params, float& distance_cost,
-                  float& other_costs) {
-  // Azimuth angle in histogram convention is different from FCU convention!
-  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
-  float azimuth_hist_frame_deg = wrapAngleToPlusMinus180(-yaw_fcu_frame_deg + 90.0f);
-  float goal_dist = (position - goal).norm();
-  PolarPoint p_pol(e_angle, z_angle, goal_dist);
-  Eigen::Vector3f projected_candidate = polarHistogramToCartesian(p_pol, position);
-  PolarPoint heading_pol(e_angle, azimuth_hist_frame_deg, goal_dist);
-  Eigen::Vector3f projected_heading = polarHistogramToCartesian(heading_pol, position);
-  Eigen::Vector3f projected_goal = goal;
-  PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint, position);
-  last_wp_pol.r = goal_dist;
-  Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position);
+std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
+                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                                     const Eigen::Vector3f& velocity, const costParameters& cost_params) {
+  // Compute  polar direction to goal and cartesian representation of current direction to evaluate
+  const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
+  const Eigen::Vector3f candidate_velocity_cartesian =
+      polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-  // goal costs
-  float yaw_cost =
-      cost_params.goal_cost_param * (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
-  float pitch_cost_up = 0.0f;
-  float pitch_cost_down = 0.0f;
-  if (projected_candidate.z() > projected_goal.z()) {
-    pitch_cost_up = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
-  } else {
-    pitch_cost_down = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
-  }
-
-  // smooth costs
-  float yaw_cost_smooth =
-      cost_params.smooth_cost_param * (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>()).norm();
-  float pitch_cost_smooth = cost_params.smooth_cost_param * std::abs(projected_last_wp.z() - projected_candidate.z());
-
-  // heading cost
-  float heading_cost =
-      cost_params.heading_cost_param * (projected_heading.topRows<2>() - projected_candidate.topRows<2>()).norm();
-
-  // distance cost
-  distance_cost = 0.0f;
-  if (obstacle_distance > 0.0f) {
-    distance_cost = 700.0f / obstacle_distance;
-  }
-
-  // combine costs
-  other_costs = 0.0f;
-  other_costs = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-                cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth + pitch_cost_smooth +
-                heading_cost;
+  const float velocity_cost =
+      cost_params.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
+  const float yaw_cost =
+      cost_params.yaw_cost_param * (candidate_polar.z - facing_goal.z) * (candidate_polar.z - facing_goal.z);
+  const float pitch_cost =
+      cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
+  const float d = cost_params.obstacle_cost_param - obstacle_distance;
+  const float distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
+  return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + pitch_cost);
 }
 
 bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
@@ -370,9 +336,8 @@ bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Ti
   }
 
   // step through the path until the point where we should be if we had traveled perfectly with velocity along it
-  float distance_left = std::max(0.1, (ros::Time::now() - path_generation_time).toSec() * velocity);
-
   Eigen::Vector3f path_segment = path[i - 3] - path[i - 2];
+  float distance_left = (ros::Time::now() - path_generation_time).toSec() * velocity;
   setpoint = path[i - 2] + (distance_left / path_segment.norm()) * path_segment;
 
   for (i = path.size() - 3; i > 0 && distance_left > path_segment.norm(); --i) {
@@ -380,7 +345,9 @@ bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Ti
     path_segment = path[i - 1] - path[i];
     setpoint = path[i] + (distance_left / path_segment.norm()) * path_segment;
   }
-  return i > 0;  // If we excited because we're passed the last node of the path, the path is no longer valid!
+
+  // If we excited because we're past the last node of the path, the path is no longer valid!
+  return distance_left < path_segment.norm();
 }
 
 void printHistogram(Histogram& histogram) {
