@@ -77,6 +77,15 @@ bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
 
 /**
+* @brief      determines whether point is inside the Yaw of the FOV
+* @param[in]  vector of FOV structs defining current field of view
+* @param[in]  p_pol, polar representation of the point in question
+* @return     whether point is inside the FOV
+**/
+bool pointInsideYawFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol);
+bool pointInsideYawFOV(const FOV& fov, const PolarPoint& p_pol);
+
+/**
 * @brief      compute in which FOV the current point lies
 * @param[in]  vector of FOV defining the field of view of the drone
 * @param[in]  polar point of the current orientation in question
