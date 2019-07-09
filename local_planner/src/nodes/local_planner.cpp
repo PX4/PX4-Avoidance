@@ -135,7 +135,7 @@ void LocalPlanner::determineStrategy() {
   }
 
   if (!reach_altitude_) {
-    starting_height_ = std::max(goal_.z() - 0.8f, px4_.param_mis_takeoff_alt);
+    starting_height_ = std::max(goal_.z() - px4_.param_nav_mc_alt_rad, px4_.param_mis_takeoff_alt);
     ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
     waypoint_type_ = reachHeight;
 
@@ -149,7 +149,7 @@ void LocalPlanner::determineStrategy() {
     }
   } else if (dist_to_goal_xy_ < 0.5f && fabsf(goal_.z() - position_.z()) > 1.f) {
     ROS_INFO("\033[1;31m[OA] Reach height: vertical movement needed \033[0m \n");
-    starting_height_ = goal_.z() - 0.8f;
+    starting_height_ = goal_.z() - px4_.param_nav_mc_alt_rad;
     waypoint_type_ = reachHeight;
 
   } else {

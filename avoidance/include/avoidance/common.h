@@ -86,9 +86,10 @@ struct ModelParameters {
   float param_mpc_tko_speed = NAN; // Takeoff climb rate
   float param_mpc_land_speed = NAN;   // Landing descend rate
 
-  float param_nav_acc_rad = NAN;
+  float param_nav_acc_rad = NAN; // xy acceptance radius at auto waypoint
+  float param_nav_mc_alt_rad = NAN; // z acceptance at multicopter auto waypoint
 
-  float param_mis_takeoff_alt = NAN;
+  float param_mis_takeoff_alt = NAN; // minimum takeoff altitude
 
   // TODO: add estimator limitations for max speed and height
 
