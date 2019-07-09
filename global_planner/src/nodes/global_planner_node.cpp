@@ -427,28 +427,6 @@ int main(int argc, char** argv) {
 
   global_planner::GlobalPlannerNode global_planner_node(nh, nh_private);
 
-  // Read waypoints from file, if any
-  ros::V_string args;
-  ros::removeROSArgs(argc, argv, args);
-
-  if (args.size() > 1) {
-    ROS_INFO("    ARGS: %s", args.at(1).c_str());
-    std::ifstream wp_file(args.at(1).c_str());
-    if (wp_file.is_open()) {
-      double x, y, z;
-      while (wp_file >> x >> y >> z) {
-        global_planner_node.waypoints_.push_back(global_planner::Cell(x, y, z));
-      }
-      wp_file.close();
-      ROS_INFO("  Read %d waypoints.", static_cast<int>(global_planner_node.waypoints_.size()));
-    } else {
-      ROS_ERROR_STREAM("Unable to open goal file: " << args.at(1));
-      return -1;
-    }
-  } else {
-    ROS_INFO("  No goal file given.");
-  }
-
   ros::spin();
   return 0;
 }
