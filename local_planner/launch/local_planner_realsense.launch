@@ -35,9 +35,9 @@
     </node>
     
     <!-- Launch pointcloud generation from Realsense images -->  
-    <arg name="camera_info" value="/realsense/camera/color/camera_info"/>
-    <arg name="depReg_imgraw" value="/realsense/camera/depth/image_raw"/>  <!--Raw depth image-->
-    <arg name="depReg_imgrect" value="/realsense/camera/depth/image_rect"/>  <!--Raw depth image-->
+    <arg name="camera_info" value="/realsense_plugin/camera/color/camera_info"/>
+    <arg name="depReg_imgraw" value="/realsense_plugin/camera/depth/image_raw"/>  <!--Raw depth image-->
+    <arg name="depReg_imgrect" value="/realsense_plugin/camera/depth/image_rect"/>  <!--Raw depth image-->
     <arg name="out_cloud" value="/realsense/camera/depth/points"/>
    
     <node pkg="nodelet" type="nodelet" name="standalone_nodelet" args="manager" output="screen"/>
