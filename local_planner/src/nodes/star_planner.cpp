@@ -113,7 +113,7 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     float yaw_fcu_frame_deg = wrapAngleToPlusMinus180(-tree_[origin].yaw_ + 90.0f);
-    getCostMatrix(histogram, goal_, origin_position, yaw_fcu_frame_deg, projected_last_wp_, cost_params_,
+    getCostMatrix(histogram, goal_, origin_position, cost_params_,
                   smoothing_margin_degrees_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 

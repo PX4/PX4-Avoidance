@@ -125,9 +125,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   const costParameters& cost_params, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
-                   std::vector<uint8_t>& image_data) {
+                   const costParameters& cost_params, float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -147,8 +146,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, yaw_fcu_frame_deg, last_sent_waypoint,
-                   cost_params, distance_cost, other_costs);
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -306,53 +304,20 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 
 // costfunction for every free histogram cell
 void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const float yaw_fcu_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint, const costParameters& cost_params, float& distance_cost,
+                  const Eigen::Vector3f& position, const costParameters& cost_params, float& distance_cost,
                   float& other_costs) {
-  // Azimuth angle in histogram convention is different from FCU convention!
-  // Azimuth is flipped and rotated 90 degrees, elevation is just flipped
-  float azimuth_hist_frame_deg = wrapAngleToPlusMinus180(-yaw_fcu_frame_deg + 90.0f);
-  float goal_dist = (position - goal).norm();
-  PolarPoint p_pol(e_angle, z_angle, goal_dist);
-  Eigen::Vector3f projected_candidate = polarHistogramToCartesian(p_pol, position);
-  PolarPoint heading_pol(e_angle, azimuth_hist_frame_deg, goal_dist);
-  Eigen::Vector3f projected_heading = polarHistogramToCartesian(heading_pol, position);
-  Eigen::Vector3f projected_goal = goal;
-  PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint, position);
-  last_wp_pol.r = goal_dist;
-  Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position);
+  const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
 
-  // goal costs
-  float yaw_cost =
-      cost_params.goal_cost_param * (projected_goal.topRows<2>() - projected_candidate.topRows<2>()).norm();
-  float pitch_cost_up = 0.0f;
-  float pitch_cost_down = 0.0f;
-  if (projected_candidate.z() > projected_goal.z()) {
-    pitch_cost_up = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
-  } else {
-    pitch_cost_down = cost_params.goal_cost_param * std::abs(projected_goal.z() - projected_candidate.z());
-  }
-
-  // smooth costs
-  float yaw_cost_smooth =
-      cost_params.smooth_cost_param * (projected_last_wp.topRows<2>() - projected_candidate.topRows<2>()).norm();
-  float pitch_cost_smooth = cost_params.smooth_cost_param * std::abs(projected_last_wp.z() - projected_candidate.z());
-
-  // heading cost
-  float heading_cost =
-      cost_params.heading_cost_param * (projected_heading.topRows<2>() - projected_candidate.topRows<2>()).norm();
+  // goal cost
+  other_costs = (cost_params.heading_cost_param * (z_angle - facing_goal.z) * (z_angle - facing_goal.z) +
+                 cost_params.goal_cost_param * (e_angle - facing_goal.e) * (e_angle - facing_goal.e));
 
   // distance cost
-  distance_cost = 0.0f;
   if (obstacle_distance > 0.0f) {
-    distance_cost = 700.0f / obstacle_distance;
+    distance_cost = 100000.0f / std::exp(obstacle_distance);  // explodes around 5 meters
+  } else {
+    distance_cost = 0.0f;
   }
-
-  // combine costs
-  other_costs = 0.0f;
-  other_costs = yaw_cost + cost_params.height_change_cost_param_adapted * pitch_cost_up +
-                cost_params.height_change_cost_param * pitch_cost_down + yaw_cost_smooth + pitch_cost_smooth +
-                heading_cost;
 }
 
 bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,

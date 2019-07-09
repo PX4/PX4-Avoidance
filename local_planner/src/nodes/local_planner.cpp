@@ -154,7 +154,7 @@ void LocalPlanner::determineStrategy() {
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_, last_sent_waypoint_, cost_params_,
+      getCostMatrix(polar_histogram_, goal_, position_, cost_params_,
                     smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
