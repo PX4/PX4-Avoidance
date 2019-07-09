@@ -359,7 +359,6 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
   }
 
   publishPath();
-  publishExploredCells();
 }
 
 // Publish the position of goal
@@ -389,42 +388,6 @@ void GlobalPlannerNode::publishPath() {
   global_temp_path_pub_.publish(simple_path_msg);
   setCurrentPath(simple_path_msg.poses);
   smooth_path_pub_.publish(smoothPath(simple_path_msg));
-}
-
-// Publish the cells that were explored in the last search
-// Can be tweeked to publish other info (path_cells)
-void GlobalPlannerNode::publishExploredCells() {
-  visualization_msgs::MarkerArray msg;
-
-  // The first marker deletes the ones from previous search
-  int id = 0;
-  visualization_msgs::Marker marker;
-  marker.id = id;
-  marker.action = 3;  // same as visualization_msgs::Marker::DELETEALL
-  msg.markers.push_back(marker);
-
-  id = 1;
-  for (const auto& cell : global_planner_.visitor_.seen_) {
-    // for (auto const& x : global_planner_.bubble_risk_cache_) {
-    // Cell cell = x.first;
-
-    // double hue = (cell.zPos()-1.0) / 7.0;                // height from 1 to
-    // 8 meters double hue = 0.5;                                    // single
-    // color (green) double hue = global_planner_.getHeuristic(Node(cell, cell),
-    // global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost; The
-    // color is the square root of the risk, shows difference in low risk
-    double hue = std::sqrt(global_planner_.getRisk(cell));
-    auto color = spectralColor(hue);
-    if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
-      // Unknown space
-      color.r = color.g = color.b = 0.2;  // Dark gray
-    }
-    visualization_msgs::Marker marker = createMarker(id++, cell.toPoint(), color);
-
-    // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    msg.markers.push_back(marker);
-  }
-  explored_cells_pub_.publish(msg);
 }
 
 // Prints information about the point, mostly the risk of the containing cell
