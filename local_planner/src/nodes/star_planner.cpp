@@ -143,7 +143,16 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
           float h = treeHeuristicFunction(tree_.size() - 1);
-          float c = treeCostFunction(tree_.size() - 1);
+
+          ///////////////////////////////////////////////////////////////////////////////////////
+          // float c = treeCostFunction(tree_.size() - 1);
+          float distance_cost = 0.f;
+          float c = 0.f;
+          Eigen::Vector2i idx_ppol = polarToHistogramIndex(p_pol, ALPHA_RES);
+          float obstacle_distance = histogram.get_dist(idx_ppol.x(), idx_ppol.y());
+          costFunction(p_pol.e, p_pol.z, obstacle_distance, goal_, node_location, cost_params_, distance_cost, c);
+          ////////////////////////////////////////////////////////////////////////////////////////////////////
+
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
