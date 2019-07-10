@@ -40,13 +40,6 @@ class StarPlanner {
 
  protected:
   /**
-  * @brief     computes the cost of a node
-  * @param[in] node_number, sequential number of entry in the tree
-  * @returns
-  **/
-  float treeCostFunction(int node_number) const;
-
-  /**
   * @brief     computes the heuristic for a node
   * @param[in] node_number, sequential number of entry in the tree
   * @returns

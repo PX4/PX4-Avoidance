@@ -36,50 +36,8 @@ void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
 
-float StarPlanner::treeCostFunction(int node_number) const {
-  int origin = tree_[node_number].origin_;
-  float e = tree_[node_number].last_e_;
-  float z = tree_[node_number].last_z_;
-  Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  PolarPoint goal_pol = cartesianToPolarHistogram(goal_, origin_position);
-
-  float target_cost = indexAngleDifference(z, goal_pol.z) +
-                      10.0f * indexAngleDifference(e, goal_pol.e);  // include effective direction?
-
-  float last_e = tree_[origin].last_e_;
-  float last_z = tree_[origin].last_z_;
-
-  float smooth_cost = 5.0f * (2.0f * indexAngleDifference(z, last_z) + 5.0f * indexAngleDifference(e, last_e));
-
-  float smooth_cost_to_old_tree = 0.0f;
-  if (tree_age_ < 10) {
-    int partner_node_idx = path_node_positions_.size() - 1 - tree_[node_number].depth_;
-    if (partner_node_idx >= 0) {
-      Eigen::Vector3f partner_node_position = path_node_positions_[partner_node_idx];
-      Eigen::Vector3f node_position = tree_[node_number].getPosition();
-      float dist = (partner_node_position - node_position).norm();
-      smooth_cost_to_old_tree = 200.0f * dist / (0.5f * static_cast<float>(tree_[node_number].depth_));
-    }
-  }
-
-  return std::pow(tree_discount_factor_, static_cast<float>(tree_[node_number].depth_)) *
-         (target_cost + smooth_cost + smooth_cost_to_old_tree);
-}
-
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  Eigen::Vector3f node_position = tree_[node_number].getPosition();
-  PolarPoint goal_pol = cartesianToPolarHistogram(goal_, node_position);
-
-  int origin = tree_[node_number].origin_;
-  Eigen::Vector3f origin_position = tree_[origin].getPosition();
-  float origin_goal_dist = (goal_ - origin_position).norm();
-  float goal_dist = (goal_ - node_position).norm();
-  float goal_cost = (goal_dist / origin_goal_dist - 0.9f) * 5000.0f;
-
-  float smooth_cost = 10.0f * (indexAngleDifference(goal_pol.z, tree_[node_number].last_z_) +
-                               indexAngleDifference(goal_pol.e, tree_[node_number].last_e_));
-
-  return std::pow(tree_discount_factor_, static_cast<float>(tree_[node_number].depth_)) * (smooth_cost + goal_cost);
+  return (goal_ - tree_[node_number].getPosition()).norm() * 0.1f;
 }
 
 void StarPlanner::buildLookAheadTree() {
@@ -143,16 +101,11 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
           float h = treeHeuristicFunction(tree_.size() - 1);
-
-          ///////////////////////////////////////////////////////////////////////////////////////
-          // float c = treeCostFunction(tree_.size() - 1);
           float distance_cost = 0.f;
           float c = 0.f;
           Eigen::Vector2i idx_ppol = polarToHistogramIndex(p_pol, ALPHA_RES);
           float obstacle_distance = histogram.get_dist(idx_ppol.x(), idx_ppol.y());
           costFunction(p_pol.e, p_pol.z, obstacle_distance, goal_, node_location, cost_params_, distance_cost, c);
-          ////////////////////////////////////////////////////////////////////////////////////////////////////
-
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
