@@ -154,6 +154,7 @@ void AvoidanceNode::missionCallback(const mavros_msgs::WaypointList& msg) {
           mission_item_speed_ = msg.waypoints[i].param2;
           break;
         }
+        break;
       }
     }
   }
