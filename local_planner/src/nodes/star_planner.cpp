@@ -16,7 +16,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
   tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
-  max_path_length_ = static_cast<float>(config.max_path_length_);
+  max_path_length_ = static_cast<float>(config.box_radius_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 }
 
@@ -44,8 +44,7 @@ float StarPlanner::treeCostFunction(int node_number) const {
   PolarPoint goal_pol = cartesianToPolarHistogram(goal_, origin_position);
 
   float target_cost = indexAngleDifference(z, goal_pol.z) +
-                      10.0f * indexAngleDifference(e, goal_pol.e);     // include effective direction?
-  float turning_cost = 5.0f * indexAngleDifference(z, tree_[0].yaw_);  // maybe include pitching cost?
+                      10.0f * indexAngleDifference(e, goal_pol.e);  // include effective direction?
 
   float last_e = tree_[origin].last_e_;
   float last_z = tree_[origin].last_z_;
@@ -64,7 +63,7 @@ float StarPlanner::treeCostFunction(int node_number) const {
   }
 
   return std::pow(tree_discount_factor_, static_cast<float>(tree_[node_number].depth_)) *
-         (target_cost + smooth_cost + smooth_cost_to_old_tree + turning_cost);
+         (target_cost + smooth_cost + smooth_cost_to_old_tree);
 }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
