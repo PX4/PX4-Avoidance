@@ -56,7 +56,7 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
   publishBox(planner.getPosition(), planner.histogram_box_.radius_, planner.histogram_box_.zmin_);
 
   // publish data related to takeoff maneuver
-  publishReachHeight(planner.take_off_pose_, planner.starting_height_);
+  // publishReachHeight(planner.take_off_pose_, planner.starting_height_);
 
   // publish histogram image
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_, newest_waypoint_position,

@@ -225,6 +225,8 @@ class LocalPlannerNode {
   geometry_msgs::PoseStamped goal_msg_;
   geometry_msgs::TwistStamped vel_msg_;
   geometry_msgs::PoseStamped prev_goal_;
+  geometry_msgs::TwistStamped desired_vel_msg_;
+  geometry_msgs::PoseStamped goal_mission_item_msg_;
   mavros_msgs::Altitude ground_distance_msg_;
 
   bool new_goal_ = false;
@@ -245,9 +247,14 @@ class LocalPlannerNode {
   bool callPx4Params_;
   bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
+  bool is_land_waypoint_{false};
+  bool is_takeoff_waypoint_{false};
   double spin_dt_;
   int path_length_ = 0;
   std::vector<float> algo_time;
+
+  float desired_yaw_setpoint_{NAN};
+  float desired_yaw_speed_setpoint_{NAN};
 
   boost::recursive_mutex config_mutex_;
 

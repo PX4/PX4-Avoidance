@@ -23,8 +23,8 @@
 
     <!-- Launch local planner -->
     <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
-        <param name="goal_x_param" value="17" />
-        <param name="goal_y_param" value="15"/>
+        <param name="goal_x_param" value="0" />
+        <param name="goal_y_param" value="0"/>
         <param name="goal_z_param" value="3" />
         <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
         <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />

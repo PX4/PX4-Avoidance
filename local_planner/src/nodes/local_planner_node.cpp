@@ -283,7 +283,8 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
 
   wp_generator_->updateState(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation),
                              toEigen(goal_msg_.pose.position), toEigen(prev_goal_.pose.position),
-                             toEigen(vel_msg_.twist.linear), hover, is_airborne);
+                             toEigen(vel_msg_.twist.linear), hover, is_airborne, nav_state_, is_land_waypoint_,
+                             is_takeoff_waypoint_, toEigen(desired_vel_msg_.twist.linear));
   waypointResult result = wp_generator_->getWaypoints();
 
   Eigen::Vector3f closest_pt = Eigen::Vector3f(NAN, NAN, NAN);
@@ -307,13 +308,10 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
 
   // send waypoints to mavros
   mavros_msgs::Trajectory obst_free_path = {};
-  if (local_planner_->use_vel_setpoints_) {
-    mavros_vel_setpoint_pub_.publish(toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
-    transformVelocityToTrajectory(obst_free_path, toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
-  } else {
-    mavros_pos_setpoint_pub_.publish(toPoseStamped(result.position_wp, result.orientation_wp));
-    transformPoseToTrajectory(obst_free_path, toPoseStamped(result.position_wp, result.orientation_wp));
-  }
+  transformToTrajectory(obst_free_path, toPoseStamped(result.position_wp, result.orientation_wp),
+                        toTwist(result.linear_velocity_wp, result.angular_velocity_wp));
+  mavros_pos_setpoint_pub_.publish(toPoseStamped(result.position_wp, result.orientation_wp));
+
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
@@ -348,11 +346,22 @@ void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray&
 }
 
 void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) {
-  if ((msg.point_valid[1] == true) &&
-      (toEigen(goal_msg_.pose.position) - toEigen(msg.point_2.position)).norm() > 0.01f) {
+  bool update =
+      ((avoidance::toEigen(msg.point_2.position) - avoidance::toEigen(goal_mission_item_msg_.pose.position)).norm() >
+       0.01) ||
+      !std::isfinite(goal_msg_.pose.position.x) || !std::isfinite(goal_msg_.pose.position.y);
+  if ((msg.point_valid[0] == true) && update) {
     new_goal_ = true;
     prev_goal_ = goal_msg_;
-    goal_msg_.pose.position = msg.point_2.position;
+    goal_msg_.pose.position = msg.point_1.position;
+    desired_vel_msg_.twist.linear = msg.point_1.velocity;
+    is_land_waypoint_ = (msg.command[1] == 21);
+    is_takeoff_waypoint_ = (msg.command[1] == 22);
+  }
+  if (msg.point_valid[1] == true) {
+    goal_mission_item_msg_.pose.position = msg.point_2.position;
+    desired_yaw_setpoint_ = msg.point_2.yaw;
+    desired_yaw_speed_setpoint_ = msg.point_2.yaw_rate;
   }
 }
 

@@ -38,6 +38,7 @@ class WaypointGenerator {
   Eigen::Vector3f prev_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector2f closest_pt_ = Eigen::Vector2f(NAN, NAN);
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f desired_vel_ = Eigen::Vector3f(NAN, NAN, NAN);
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
@@ -47,6 +48,11 @@ class WaypointGenerator {
   float smoothing_speed_z_{3.0f};
 
   bool is_airborne_ = false;
+  bool is_land_waypoint_{false};
+  bool is_takeoff_waypoint_{false};
+  bool reach_altitude_{false};
+  bool rtl_climb_{false};
+  bool rtl_descend_{false};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
@@ -54,6 +60,8 @@ class WaypointGenerator {
   std::vector<FOV> fov_fcu_frame_;
 
   Eigen::Vector3f hover_position_;
+
+  NavigationState nav_state_ = NavigationState::none;
 
   ros::Time velocity_time_;
 
@@ -97,6 +105,8 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
+  void changeAltitude();
+
  public:
   /**
   * @brief     getter method for position and velocity waypoints to be sent to
@@ -128,7 +138,9 @@ class WaypointGenerator {
   * @param[in] t, update system time
   **/
   void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne);
+                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne,
+                   const NavigationState& nav_state, const bool is_land_waypoint, const bool is_takeoff_waypoint,
+                   const Eigen::Vector3f& desired_vel);
 
   /**
   * @brief set the responsiveness of the smoothing
