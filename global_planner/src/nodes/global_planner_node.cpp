@@ -22,7 +22,6 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
-  laser_sensor_sub_ = nh_.subscribe("/scan", 1, &GlobalPlannerNode::laserSensorCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
 
   // Publishers
@@ -248,26 +247,6 @@ void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg)
   }
 }
 
-// If the laser senses something too close to current position, it is considered
-// a crash
-void GlobalPlannerNode::laserSensorCallback(const sensor_msgs::LaserScan& msg) {
-  if (global_planner_.going_back_) {
-    return;  // Don't deal with the same crash again
-  }
-
-  double ignore_dist = msg.range_min;  // Too close, probably part of the vehicle
-  double crash_dist = 0.5;             // Otherwise, a measurement below this is a crash
-  for (double range : msg.ranges) {
-    if (ignore_dist < range && range < crash_dist) {
-      if (global_planner_.path_back_.size() > 3) {
-        // Don't complain about crashing on take-off
-        ROS_INFO("CRASH!!! Distance to obstacle: %2.2f\n\n\n", range);
-        global_planner_.goBack();
-      }
-    }
-  }
-}
-
 // Check if the current path is blocked
 void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   if (num_octomap_msg_++ % 10 > 0) {
@@ -276,12 +255,6 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   bool current_path_is_ok = global_planner_.updateFullOctomap(msg);
-  if (!current_path_is_ok) {
-    ROS_INFO("  Path is bad, planning a new path \n");
-    if (global_planner_.goal_pos_.is_temporary_) {
-      popNextGoal();  // Throw away temporary goal
-    }
-  }
 }
 
 // Go through obstacle points and store them
@@ -359,7 +332,6 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
   }
 
   publishPath();
-  publishExploredCells();
 }
 
 // Publish the position of goal
@@ -389,42 +361,6 @@ void GlobalPlannerNode::publishPath() {
   global_temp_path_pub_.publish(simple_path_msg);
   setCurrentPath(simple_path_msg.poses);
   smooth_path_pub_.publish(smoothPath(simple_path_msg));
-}
-
-// Publish the cells that were explored in the last search
-// Can be tweeked to publish other info (path_cells)
-void GlobalPlannerNode::publishExploredCells() {
-  visualization_msgs::MarkerArray msg;
-
-  // The first marker deletes the ones from previous search
-  int id = 0;
-  visualization_msgs::Marker marker;
-  marker.id = id;
-  marker.action = 3;  // same as visualization_msgs::Marker::DELETEALL
-  msg.markers.push_back(marker);
-
-  id = 1;
-  for (const auto& cell : global_planner_.visitor_.seen_) {
-    // for (auto const& x : global_planner_.bubble_risk_cache_) {
-    // Cell cell = x.first;
-
-    // double hue = (cell.zPos()-1.0) / 7.0;                // height from 1 to
-    // 8 meters double hue = 0.5;                                    // single
-    // color (green) double hue = global_planner_.getHeuristic(Node(cell, cell),
-    // global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost; The
-    // color is the square root of the risk, shows difference in low risk
-    double hue = std::sqrt(global_planner_.getRisk(cell));
-    auto color = spectralColor(hue);
-    if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
-      // Unknown space
-      color.r = color.g = color.b = 0.2;  // Dark gray
-    }
-    visualization_msgs::Marker marker = createMarker(id++, cell.toPoint(), color);
-
-    // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    msg.markers.push_back(marker);
-  }
-  explored_cells_pub_.publish(msg);
 }
 
 // Prints information about the point, mostly the risk of the containing cell
@@ -469,28 +405,6 @@ int main(int argc, char** argv) {
   ros::NodeHandle nh_private("");
 
   global_planner::GlobalPlannerNode global_planner_node(nh, nh_private);
-
-  // Read waypoints from file, if any
-  ros::V_string args;
-  ros::removeROSArgs(argc, argv, args);
-
-  if (args.size() > 1) {
-    ROS_INFO("    ARGS: %s", args.at(1).c_str());
-    std::ifstream wp_file(args.at(1).c_str());
-    if (wp_file.is_open()) {
-      double x, y, z;
-      while (wp_file >> x >> y >> z) {
-        global_planner_node.waypoints_.push_back(global_planner::Cell(x, y, z));
-      }
-      wp_file.close();
-      ROS_INFO("  Read %d waypoints.", static_cast<int>(global_planner_node.waypoints_.size()));
-    } else {
-      ROS_ERROR_STREAM("Unable to open goal file: " << args.at(1));
-      return -1;
-    }
-  } else {
-    ROS_INFO("  No goal file given.");
-  }
 
   ros::spin();
   return 0;
