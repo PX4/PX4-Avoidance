@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <boost/bind.hpp>
+#include <mutex>
 #include <set>
 #include <string>
 
@@ -57,6 +58,8 @@ class GlobalPlannerNode {
   ~GlobalPlannerNode();
 
  private:
+  std::mutex mutex_;
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
