@@ -55,6 +55,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
 * @param[in] input_hist, original histogram
 **/
 void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist);
+
 /**
 * @brief      calculates each histogram bin cost and stores it in a cost matrix
 * @param[in]  histogram, polar histogram representing obstacles
@@ -63,15 +64,14 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[in]  current vehicle heading in histogram angle convention [deg]
 * @param[in]  last_sent_waypoint, last position waypoint
 * @param[in]  cost_params, weight for the cost function
-* @param[in]  only_yawed, true if
 * @param[in]  parameter how far an obstacle is spread in the cost matrix
 * @param[out] cost_matrix
 * @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   const costParameters& cost_params, bool only_yawed, float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
+                   const costParameters& cost_params, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image

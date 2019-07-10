@@ -373,8 +373,8 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
 
   // WHEN: we calculate the cost matrix from the input data
   std::vector<uint8_t> cost_image_data;
-  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint, cost_params, false, smoothing_radius,
-                cost_matrix, cost_image_data);
+  getCostMatrix(histogram, goal, position, heading, last_sent_waypoint, cost_params, smoothing_radius, cost_matrix,
+                cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolarHistogram(goal, position);
