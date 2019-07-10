@@ -281,9 +281,10 @@ pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity);
 geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a);
 geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p, const Eigen::Quaternionf& q);
 /**
-* @brief     transforms position setpoints from ROS message to MavROS message
-* @params[out] obst_avoid, position setpoint in MavROS message form
-* @params[in] pose, position setpoint computed by the planner
+* @brief     transforms setpoints from ROS message to MavROS message
+* @params[out] obst_avoid, setpoint in MavROS message form
+* @params[in] pose, position and attitude setpoint computed by the planner
+* @params[in] vel, velocity setpoint computed by the planner
 **/
 void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose,
                            geometry_msgs::Twist vel);

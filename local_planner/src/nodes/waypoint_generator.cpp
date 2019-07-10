@@ -15,6 +15,7 @@ void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
             position_.z());
   output_.waypoint_type = planner_info_.waypoint_type;
+  output_.linear_velocity_wp = Eigen::Vector3f(NAN, NAN, NAN);
 
   // Timing
   last_time_ = current_time_;
@@ -107,7 +108,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   nav_state_ = nav_state;
   is_land_waypoint_ = is_land_waypoint;
   is_takeoff_waypoint_ = is_takeoff_waypoint;
-  desired_vel_ = desired_vel_;
+  desired_vel_ = desired_vel;
 
   if (stay) {
     planner_info_.waypoint_type = hover;
@@ -215,8 +216,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
 
   const float desired_setpoint_yaw_rad =
       (position_ - output_.goto_position).normXY() > 0.1f ? nextYaw(position_, output_.goto_position) : curr_yaw_rad_;
-  std::cout << "desired_setpoint_yaw_rad " << desired_setpoint_yaw_rad << " curr_yaw_rad_ " << curr_yaw_rad_
-            << std::endl;
+
   // If smoothing is disabled, set yaw to face goal directly
   if (smoothing_speed_xy_ <= 0.01f) {
     setpoint_yaw_rad_ = desired_setpoint_yaw_rad;
@@ -324,7 +324,6 @@ void WaypointGenerator::changeAltitude() {
                          (nav_state_ == NavigationState::auto_rtl && rtl_descend_);
 
   const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land;
-  planner_info_.waypoint_type = tryPath;
   if (need_to_change_altitude) {
     planner_info_.waypoint_type = reachHeight;
 

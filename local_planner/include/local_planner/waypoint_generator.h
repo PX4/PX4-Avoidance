@@ -131,11 +131,16 @@ class WaypointGenerator {
   /**
   * @brief update with FCU vehice states
   * @param[in] act_pose, current vehicle position
-  * @param[in] act_pose, current vehicle orientation
-  * @param[in] goal, current goal
+  * @param[in] q, current vehicle orientation
+  * @param[in] goal, current goal position
+  * @param[in] prev_goal, previous goal position
   * @param[in] vel, current vehicle velocity
   * @param[in] stay, true if the vehicle is loitering
-  * @param[in] t, update system time
+  * @param[in] is_airborne, true if the vehicle is armed and in avoidance enabled mode
+  * @param[in] nav_state, vehicle navigation state
+  * @param[in] is_land_waypoint, true if the current mission item is a land waypoint
+  * @param[in] is_takeoff_waypoint, true if the current mission item is a takeoff waypoint
+  * @param[in] desired_vel, velocity setpoint from the Firmware
   **/
   void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne,
