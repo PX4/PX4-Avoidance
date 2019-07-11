@@ -53,6 +53,7 @@ class WaypointGenerator {
   bool reach_altitude_{false};
   bool rtl_climb_{false};
   bool rtl_descend_{false};
+  bool auto_land_{false};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;

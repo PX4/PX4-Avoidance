@@ -123,8 +123,8 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
     reach_altitude_ = false;
   }
 
-  // If we're chanfing altitude by Firmware setpoints, keep reinitializing the smoothing
-  if (planner_info_.waypoint_type == reachHeight && nav_state != NavigationState::offboard) {
+  // If we're changing altitude by Firmware setpoints, keep reinitializing the smoothing
+  if (auto_land_) {
     smoothed_goto_location_ = position_;
     smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   }
@@ -166,8 +166,10 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
     }
   } else {
     output_.goto_position = goal_;
-    output_.adapted_goto_position = goal_;
-    output_.smoothed_goto_position = goal_;
+    if (auto_land_) {
+      output_.adapted_goto_position = goal_;
+      output_.smoothed_goto_position = goal_;
+    }
     output_.linear_velocity_wp = desired_vel_;
   }
 }
@@ -285,14 +287,15 @@ void WaypointGenerator::getPathMsg() {
   // set the yaw at the setpoint based on our smoothed location
   nextSmoothYaw(dt);
 
-  if (planner_info_.waypoint_type != reachHeight || nav_state_ == NavigationState::offboard) {
-    // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
+  if (!auto_land_) {
+    // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
     adaptSpeed();
     smoothWaypoint(dt);
   }
 
-  ROS_DEBUG("[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
-            output_.smoothed_goto_position.z());
+  printf("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
+         output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
+         output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
 
   createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
 }
@@ -319,11 +322,10 @@ void WaypointGenerator::changeAltitude() {
   const bool auto_takeoff = nav_state_ == NavigationState::auto_takeoff ||
                             (nav_state_ == NavigationState::mission && is_takeoff_waypoint_) ||
                             (nav_state_ == NavigationState::auto_rtl && rtl_climb_);
-  const bool auto_land = nav_state_ == NavigationState::auto_land ||
-                         (nav_state_ == NavigationState::mission && is_land_waypoint_) ||
-                         (nav_state_ == NavigationState::auto_rtl && rtl_descend_);
-
-  const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land;
+  auto_land_ = nav_state_ == NavigationState::auto_land ||
+               (nav_state_ == NavigationState::mission && is_land_waypoint_) ||
+               (nav_state_ == NavigationState::auto_rtl && rtl_descend_);
+  const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land_;
   if (need_to_change_altitude) {
     planner_info_.waypoint_type = reachHeight;
 
