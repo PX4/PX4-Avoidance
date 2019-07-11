@@ -37,7 +37,7 @@ void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  return (goal_ - tree_[node_number].getPosition()).norm() * 0.1f;
+  return (goal_ - tree_[node_number].getPosition()).norm();
 }
 
 void StarPlanner::buildLookAheadTree() {
