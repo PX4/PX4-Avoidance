@@ -42,6 +42,12 @@ class AvoidanceNode {
   void setSystemStatus(MAV_STATE state);
   void init();
 
+  /**
+  * @brief     callaback with the list of FCU Mission Items
+  * @param[in] msg, list of mission items
+  **/
+  void missionCallback(const mavros_msgs::WaypointList& msg);
+
  private:
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
@@ -83,11 +89,7 @@ class AvoidanceNode {
   * @param[in] msg, list of paramters
   **/
   void px4ParamsCallback(const mavros_msgs::Param& msg);
-  /**
-  * @brief     callaback with the list of FCU Mission Items
-  * @param[in] msg, list of mission items
-  **/
-  void missionCallback(const mavros_msgs::WaypointList& msg);
+
 };
 }
 #endif  // AVOIDANCE_AVOIDANCE_NODE_H
