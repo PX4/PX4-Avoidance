@@ -13,11 +13,12 @@ LocalPlanner::LocalPlanner() : star_planner_(new StarPlanner()) {}
 LocalPlanner::~LocalPlanner() {}
 
 // update UAV pose
-void LocalPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q) {
+void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, const Eigen::Quaternionf& q) {
   position_ = pos;
+  velocity_ = vel;
   yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, yaw_fcu_frame_deg_);
+  star_planner_->setPose(position_, velocity_, yaw_fcu_frame_deg_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -28,12 +29,12 @@ void LocalPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf&
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   histogram_box_.radius_ = static_cast<float>(config.box_radius_);
-  cost_params_.goal_cost_param = config.goal_cost_param_;
-  cost_params_.heading_cost_param = config.heading_cost_param_;
-  cost_params_.smooth_cost_param = config.smooth_cost_param_;
+  cost_params_.pitch_cost_param = config.pitch_cost_param_;
+  cost_params_.yaw_cost_param = config.yaw_cost_param_;
+  cost_params_.velocity_cost_param = config.velocity_cost_param_;
+  cost_params_.obstacle_cost_param = config.obstacle_cost_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   min_num_points_per_cell_ = config.min_num_points_per_cell_;
-  no_progress_slope_ = static_cast<float>(config.no_progress_slope_);
   min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
   timeout_startup_ = config.timeout_startup_;
   timeout_critical_ = config.timeout_critical_;
@@ -49,7 +50,6 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   }
 
   use_vel_setpoints_ = config.use_vel_setpoints_;
-  adapt_cost_params_ = config.adapt_cost_params_;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -150,12 +150,11 @@ void LocalPlanner::determineStrategy() {
   } else {
     waypoint_type_ = tryPath;
 
-    evaluateProgressRate();
     create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
     if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, cost_params_,
-                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+      getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_,
+                    cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
@@ -206,52 +205,9 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   distance_data_ = msg;
 }
 
-// calculate the correct weight between fly over and fly around
-void LocalPlanner::evaluateProgressRate() {
-  if (reach_altitude_ && adapt_cost_params_) {
-    float goal_dist = (position_ - goal_).norm();
-    float goal_dist_old = (position_old_ - goal_).norm();
-
-    ros::Time time = ros::Time::now();
-    float time_diff_sec = static_cast<float>((time - integral_time_old_).toSec());
-    float incline = (goal_dist - goal_dist_old) / time_diff_sec;
-    integral_time_old_ = time;
-
-    goal_dist_incline_.push_back(incline);
-    if (goal_dist_incline_.size() > dist_incline_window_size_) {
-      goal_dist_incline_.pop_front();
-    }
-
-    float sum_incline = 0.0f;
-    int n_incline = 0;
-    for (size_t i = 0; i < goal_dist_incline_.size(); i++) {
-      sum_incline += goal_dist_incline_[i];
-      n_incline++;
-    }
-    float avg_incline = sum_incline / static_cast<float>(n_incline);
-
-    if (avg_incline > no_progress_slope_ && goal_dist_incline_.size() == dist_incline_window_size_) {
-      if (cost_params_.height_change_cost_param_adapted > 0.75f) {
-        cost_params_.height_change_cost_param_adapted -= 0.02f;
-      }
-    }
-    if (avg_incline < no_progress_slope_) {
-      if (cost_params_.height_change_cost_param_adapted < cost_params_.height_change_cost_param - 0.03f) {
-        cost_params_.height_change_cost_param_adapted += 0.03f;
-      }
-    }
-    ROS_DEBUG("\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: %f .\033[0m", avg_incline,
-              cost_params_.height_change_cost_param_adapted);
-  } else {
-    cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
-  }
-}
-
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
 const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const { return final_cloud_; }
-
-void LocalPlanner::setCurrentVelocity(const Eigen::Vector3f& vel) { velocity_ = vel; }
 
 void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_auto_mode = 1;

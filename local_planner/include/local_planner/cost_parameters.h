@@ -3,10 +3,9 @@
 namespace avoidance {
 
 struct costParameters {
-  float heading_cost_param = 0.5f;
-  float goal_cost_param = 3.f;
-  float smooth_cost_param = 1.5f;
-  float height_change_cost_param = 4.f;
-  float height_change_cost_param_adapted = 4.f;
+  float yaw_cost_param = 0.5f;
+  float pitch_cost_param = 3.f;
+  float velocity_cost_param = 1.5f;
+  float obstacle_cost_param = 100000.0f;
 };
 }

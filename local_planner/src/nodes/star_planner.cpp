@@ -15,7 +15,6 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
-  tree_discount_factor_ = static_cast<float>(config.tree_discount_factor_);
   max_path_length_ = static_cast<float>(config.box_radius_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
 }
@@ -24,8 +23,9 @@ void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_pa
 
 void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) { projected_last_wp_ = projected_last_wp; }
 
-void StarPlanner::setPose(const Eigen::Vector3f& pos, float curr_yaw_fcu_frame_deg) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, float curr_yaw_fcu_frame_deg) {
   position_ = pos;
+  velocity_ = vel;
   curr_yaw_histogram_frame_deg_ = wrapAngleToPlusMinus180(-curr_yaw_fcu_frame_deg + 90.0f);
 }
 
@@ -54,7 +54,7 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, position_));
+  tree_.push_back(TreeNode(0, 0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
   tree_.back().last_z_ = tree_.back().yaw_;
@@ -62,6 +62,7 @@ void StarPlanner::buildLookAheadTree() {
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
+    Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
@@ -70,9 +71,8 @@ void StarPlanner::buildLookAheadTree() {
     cost_matrix.fill(0.f);
     cost_image_data.clear();
     candidate_vector.clear();
-    float yaw_fcu_frame_deg = wrapAngleToPlusMinus180(-tree_[origin].yaw_ + 90.0f);
-    getCostMatrix(histogram, goal_, origin_position, cost_params_,
-                  smoothing_margin_degrees_, cost_matrix, cost_image_data);
+    getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
+                  cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes
@@ -87,6 +87,8 @@ void StarPlanner::buildLookAheadTree() {
 
         // check if another close node has been added
         Eigen::Vector3f node_location = polarHistogramToCartesian(p_pol, origin_position);
+        Eigen::Vector3f node_velocity =
+            tree_[tree_[origin].origin_].getVelocity() + (node_location - origin_position);  // todo: simulate!
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
@@ -97,15 +99,15 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, depth, node_location));
+          tree_.push_back(TreeNode(origin, depth, node_location, node_velocity));
           tree_.back().last_e_ = p_pol.e;
           tree_.back().last_z_ = p_pol.z;
           float h = treeHeuristicFunction(tree_.size() - 1);
-          float distance_cost = 0.f;
-          float c = 0.f;
+          float distance_cost = 0.f, other_cost = 0.f;
           Eigen::Vector2i idx_ppol = polarToHistogramIndex(p_pol, ALPHA_RES);
           float obstacle_distance = histogram.get_dist(idx_ppol.x(), idx_ppol.y());
-          costFunction(p_pol.e, p_pol.z, obstacle_distance, goal_, node_location, cost_params_, distance_cost, c);
+          float c = costFunction(p_pol.e, p_pol.z, obstacle_distance, goal_, node_location, node_velocity, cost_params_,
+                                 distance_cost, other_cost);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;

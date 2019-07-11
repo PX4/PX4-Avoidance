@@ -113,11 +113,6 @@ class LocalPlanner {
   Eigen::MatrixXf cost_matrix_;
 
   /**
-  * @brief     calculates the cost function weights to fly around or over
-  *            obstacles based on the progress towards the goal over time
-  **/
-  void evaluateProgressRate();
-  /**
   * @brief     fills message to send histogram to the FCU
   **/
   void updateObstacleDistanceMsg(Histogram hist);
@@ -166,11 +161,12 @@ class LocalPlanner {
   ~LocalPlanner();
 
   /**
-  * @brief     setter method for vehicle position
-  * @param[in] pos, vehicle position message coming from the FCU
+  * @brief     setter method for vehicle position, orientation and velocity
+  * @param[in] pos, vehicle position coming from the FCU
+  * @param[in] vel, vehicle velocity in the FCU frame
   * @param[in] q, vehicle orientation message coming from the FCU
   **/
-  void setPose(const Eigen::Vector3f& pos, const Eigen::Quaternionf& q);
+  void setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, const Eigen::Quaternionf& q);
 
   /**
   * @brief     setter method for mission goal
@@ -218,12 +214,6 @@ class LocalPlanner {
   * @returns   reference to pointcloud
   **/
   const pcl::PointCloud<pcl::PointXYZI>& getPointcloud() const;
-
-  /**
-  * @brief     setter method for vehicle velocity
-  * @param[in] vel, velocity message coming from the FCU
-  **/
-  void setCurrentVelocity(const Eigen::Vector3f& vel);
 
   /**
   * @brief     getter method to visualize the tree in rviz

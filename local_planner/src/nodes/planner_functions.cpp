@@ -125,7 +125,7 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 }
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const costParameters& cost_params, float smoothing_margin_degrees,
+                   const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
@@ -146,7 +146,8 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, cost_params, distance_cost, other_costs);
+      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, velocity, cost_params, distance_cost,
+                   other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -303,21 +304,20 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const costParameters& cost_params, float& distance_cost,
-                  float& other_costs) {
+float costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position, const Eigen::Vector3f& velocity, const costParameters& cost_params,
+                   float& distance_cost, float& other_costs) {
+  // Compute  polar direction to goal and cartesian representation of current direction to evaluate
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
+  const Eigen::Vector3f direction =
+      polarHistogramToCartesian(PolarPoint(e_angle, z_angle, 1.0f), Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-  // goal cost
-  other_costs = (cost_params.heading_cost_param * (z_angle - facing_goal.z) * (z_angle - facing_goal.z) +
-                 cost_params.goal_cost_param * (e_angle - facing_goal.e) * (e_angle - facing_goal.e));
-
-  // distance cost
-  if (obstacle_distance > 0.0f) {
-    distance_cost = 100000.0f / std::exp(obstacle_distance);  // explodes around 5 meters
-  } else {
-    distance_cost = 0.0f;
-  }
+  float velocity_cost = cost_params.velocity_cost_param * (velocity.norm() - direction.dot(velocity));
+  float yaw_cost = cost_params.yaw_cost_param * (z_angle - facing_goal.z) * (z_angle - facing_goal.z);
+  float pitch_cost = cost_params.pitch_cost_param * (e_angle - facing_goal.e) * (e_angle - facing_goal.e);
+  distance_cost = obstacle_distance > 0 ? cost_params.obstacle_cost_param / std::exp(obstacle_distance) : 0.0f;
+  other_costs = velocity_cost + yaw_cost + pitch_cost;
+  return velocity_cost + yaw_cost + pitch_cost + distance_cost;
 }
 
 bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,

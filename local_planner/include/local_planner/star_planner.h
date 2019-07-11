@@ -36,6 +36,7 @@ class StarPlanner {
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
  protected:
@@ -78,7 +79,7 @@ class StarPlanner {
   * @param[in] vehicle current position
   * @param[in] current yaw of the vehicle in FCU frame convention
   **/
-  void setPose(const Eigen::Vector3f& pos, float curr_yaw_fcu_frame_deg);
+  void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, float curr_yaw_fcu_frame_deg);
 
   /**
   * @brief     setter method for current goal

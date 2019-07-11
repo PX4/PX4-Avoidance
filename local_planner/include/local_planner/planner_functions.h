@@ -69,7 +69,7 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   const costParameters& cost_params, float smoothing_margin_degrees,
+                   const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
                    Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
@@ -104,13 +104,15 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[in]  z_angle, azimuth angle [deg]
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
+* @param[in]  velocity, current vehicle velocity
 * @param[in]  cost_params, weights for goal oriented vs smooth behaviour
 * @param[out] distance_cost, cost component due to proximity to obstacles
 * @param[out] other_costs, cost component due to goal and smoothness
+* @returns    total sum of all costs
 **/
-void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, const costParameters& cost_params, float& distance_cost,
-                  float& other_costs);
+float costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& position, const Eigen::Vector3f& velocity, const costParameters& cost_params,
+                   float& distance_cost, float& other_costs);
 
 /**
 * @brief      max-median filtes the cost matrix

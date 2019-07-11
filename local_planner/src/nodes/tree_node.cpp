@@ -12,9 +12,10 @@ TreeNode::TreeNode()
       yaw_{0.0f},
       closed_{false} {
   position_ = Eigen::Vector3f::Zero();
+  velocity_ = Eigen::Vector3f::Zero();
 }
 
-TreeNode::TreeNode(int from, int d, const Eigen::Vector3f& pos)
+TreeNode::TreeNode(int from, int d, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel)
     : total_cost_{0.0f},
       heuristic_{0.0f},
       last_e_{0.0f},
@@ -24,6 +25,7 @@ TreeNode::TreeNode(int from, int d, const Eigen::Vector3f& pos)
       yaw_{0.0f},
       closed_{false} {
   position_ = pos;
+  velocity_ = vel;
 }
 
 void TreeNode::setCosts(float h, float c) {
@@ -32,4 +34,5 @@ void TreeNode::setCosts(float h, float c) {
 }
 
 Eigen::Vector3f TreeNode::getPosition() const { return position_; }
+Eigen::Vector3f TreeNode::getVelocity() const { return velocity_; }
 }
