@@ -126,8 +126,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   const costParameters& cost_params, bool only_yawed, float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
+                   const costParameters& cost_params, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
   float distance_cost = 0.f;
@@ -425,9 +425,8 @@ bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>&
   return tree_available;
 }
 
-void printHistogram(const Histogram& histogram) {
-  std::cout << "------------------------------------------Histogram------------"
-               "------------------------------------\n";
+void printHistogram(Histogram& histogram) {
+  std::cout << "------------------------------------------Histogram------------------------------------------------\n";
   for (int e = 0; e < GRID_LENGTH_E; e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       int val = floor(histogram.get_dist(e, z));
@@ -441,7 +440,6 @@ void printHistogram(const Histogram& histogram) {
     }
     std::cout << "\n";
   }
-  std::cout << "_______________________________________________________________"
-               "____________________________________\n";
+  std::cout << "___________________________________________________________________________________________________\n";
 }
 }

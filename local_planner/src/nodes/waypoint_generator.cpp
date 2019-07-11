@@ -12,10 +12,8 @@ namespace avoidance {
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 void WaypointGenerator::calculateWaypoint() {
-  ROS_DEBUG(
-      "\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, "
-      "%f].\033[0m",
-      position_.x(), position_.y(), position_.z());
+  ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
+            position_.z());
   output_.waypoint_type = planner_info_.waypoint_type;
 
   // Timing

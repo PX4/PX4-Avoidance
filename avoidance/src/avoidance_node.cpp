@@ -61,9 +61,7 @@ void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration 
         setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
         std::string not_received = "";
       } else {
-        ROS_WARN(
-            "\033[1;33m Pointcloud timeout: No position received, no WP to "
-            "output.... \n \033[0m");
+        ROS_WARN("\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
       }
     } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);

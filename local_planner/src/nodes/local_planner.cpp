@@ -155,7 +155,7 @@ void LocalPlanner::determineStrategy() {
 
     if (!polar_histogram_.isEmpty()) {
       getCostMatrix(polar_histogram_, goal_, position_, yaw_fcu_frame_deg_, last_sent_waypoint_, cost_params_,
-                    velocity_.norm() < 0.1f, smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
+                    smoothing_margin_degrees_, cost_matrix_, cost_image_data_);
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
@@ -240,10 +240,8 @@ void LocalPlanner::evaluateProgressRate() {
         cost_params_.height_change_cost_param_adapted += 0.03f;
       }
     }
-    ROS_DEBUG(
-        "\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: "
-        "%f .\033[0m",
-        avg_incline, cost_params_.height_change_cost_param_adapted);
+    ROS_DEBUG("\033[0;35m[OA] Progress rate to goal: %f, adapted height change cost: %f .\033[0m", avg_incline,
+              cost_params_.height_change_cost_param_adapted);
   } else {
     cost_params_.height_change_cost_param_adapted = cost_params_.height_change_cost_param;
   }
