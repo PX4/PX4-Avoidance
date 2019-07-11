@@ -27,14 +27,15 @@ class LocalPlannerTests : public ::testing::Test {
 
     // start with basic pose
     Eigen::Vector3f pos(0.f, 0.f, 0.f);
+    Eigen::Vector3f vel(0.f, 0.f, 0.f);
     Eigen::Quaternionf q(1.f, 0.f, 0.f, 0.f);
     planner.currently_armed_ = false;
-    planner.setPose(pos, q);
+    planner.setState(pos, vel, q);
 
     // rise to altitude
     planner.currently_armed_ = true;
     pos.z() = 30.f;
-    planner.setPose(pos, q);
+    planner.setState(pos, vel, q);
 
     // goal straight in front, 100m away
     Eigen::Vector3f goal(100.f, 0.f, 30.f);
