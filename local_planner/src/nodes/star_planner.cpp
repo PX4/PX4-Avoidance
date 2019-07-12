@@ -77,11 +77,11 @@ void StarPlanner::buildLookAheadTree() {
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         PolarPoint candidate_polar = candidate.toPolar(tree_node_distance_);
-
-        // check if another close node has been added
         Eigen::Vector3f node_location = polarHistogramToCartesian(candidate_polar, origin_position);
         Eigen::Vector3f node_velocity =
             tree_[tree_[origin].origin_].getVelocity() + (node_location - origin_position);  // todo: simulate!
+
+        // check if another close node has been added
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
           float dist = (tree_[i].getPosition() - node_location).norm();
@@ -94,14 +94,8 @@ void StarPlanner::buildLookAheadTree() {
         if (children < children_per_node_ && close_nodes == 0) {
           tree_.push_back(TreeNode(origin, node_location, node_velocity));
           float h = treeHeuristicFunction(tree_.size() - 1);
-          float distance_cost = 0.f, other_cost = 0.f;  // dummy placeholders
-          Eigen::Vector2i idx_ppol = polarToHistogramIndex(candidate_polar, ALPHA_RES);
-          float obstacle_distance = histogram.get_dist(idx_ppol.x(), idx_ppol.y());
-          float c = costFunction(candidate_polar, obstacle_distance, goal_, node_location, node_velocity, cost_params_,
-                                 distance_cost, other_cost);
           tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
-          Eigen::Vector3f diff = node_location - origin_position;
+          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
           children++;
         }
       }
