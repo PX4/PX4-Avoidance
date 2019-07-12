@@ -53,7 +53,7 @@ class StarPlannerTests : public ::testing::Test {
 
     star_planner.setParams(cost_params);
     star_planner.setPointcloud(cloud);
-    star_planner.setPose(position, velocity, 0.0f);
+    star_planner.setPose(position, velocity);
     star_planner.setGoal(goal);
   }
   void TearDown() override {}
@@ -87,7 +87,7 @@ TEST_F(StarPlannerTests, buildTree) {
     // we set the vehicle position to be the first node position after the
     // origin for the next algorithm iterarion
     position = star_planner.tree_[1].getPosition();
-    star_planner.setPose(position, velocity, 0.0f);
+    star_planner.setPose(position, velocity);
   }
 }
 

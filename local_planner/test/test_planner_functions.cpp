@@ -446,13 +446,13 @@ TEST(PlannerFunctions, CostfunctionGoalCost) {
   float obstacle_distance = 0.f;
   float distance_cost_1, other_costs_1, distance_cost_2, other_costs_2;
 
-  Eigen::Vector2f candidate_1(0.f, 0.f);
+  PolarPoint candidate_1(0.f, 0.f, 1.0f);
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different goals
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_1, position, velocity, cost_params,
+  costFunction(candidate_1, obstacle_distance, goal_1, position, velocity, cost_params,
                distance_cost_1, other_costs_1);
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal_2, position, velocity, cost_params,
+  costFunction(candidate_1, obstacle_distance, goal_2, position, velocity, cost_params,
                distance_cost_2, other_costs_2);
 
   // THEN: The cost in the case where the goal is in the cell direction should
@@ -476,15 +476,15 @@ TEST(PlannerFunctions, CostfunctionDistanceCost) {
   float distance_3 = 5.f;
   float distance_cost_1, distance_cost_2, distance_cost_3, other_costs;
 
-  Eigen::Vector2f candidate_1(0.f, 0.f);
+  PolarPoint candidate_1(0.f, 0.f, 1.0f);
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different obstacle distance
-  costFunction(candidate_1.y(), candidate_1.x(), distance_1, goal, position, velocity, cost_params, distance_cost_1,
+  costFunction(candidate_1, distance_1, goal, position, velocity, cost_params, distance_cost_1,
                other_costs);
-  costFunction(candidate_1.y(), candidate_1.x(), distance_2, goal, position, velocity, cost_params, distance_cost_2,
+  costFunction(candidate_1, distance_2, goal, position, velocity, cost_params, distance_cost_2,
                other_costs);
-  costFunction(candidate_1.y(), candidate_1.x(), distance_3, goal, position, velocity, cost_params, distance_cost_3,
+  costFunction(candidate_1, distance_3, goal, position, velocity, cost_params, distance_cost_3,
                other_costs);
 
   // THEN: The distance cost for no obstacle should be zero and the distance
@@ -509,13 +509,13 @@ TEST(PlannerFunctions, CostfunctionVelocityCost) {
   float obstacle_distance = 0.f;
   float distance_cost, other_costs_1, other_costs_2;
 
-  Eigen::Vector2f candidate_1(0.f, 0.f);
+  PolarPoint candidate_1(0.f, 0.f, 1.0f);
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different initial velocities
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, velocity_1, cost_params,
+  costFunction(candidate_1,obstacle_distance, goal, position, velocity_1, cost_params,
                distance_cost, other_costs_1);
-  costFunction(candidate_1.y(), candidate_1.x(), obstacle_distance, goal, position, velocity_2, cost_params,
+  costFunction(candidate_1, obstacle_distance, goal, position, velocity_2, cost_params,
                distance_cost, other_costs_2);
 
   // THEN: The cost in the case where the initial heading is closer to the
