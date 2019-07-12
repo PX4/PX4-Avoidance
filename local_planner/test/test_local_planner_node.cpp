@@ -44,7 +44,6 @@ TEST(LocalPlannerNodeTests, failsafe) {
   }
 }
 
-
 TEST(LocalPlannerNodeTests, mission_item_speed) {
   ros::Time::init();
   ros::NodeHandle nh("~");
@@ -93,7 +92,6 @@ TEST(LocalPlannerNodeTests, mission_item_speed) {
   wp3.y_long = 0.f;
   wp3.z_alt = 2.f;
   waypoint_list.waypoints.push_back(wp3);
-
 
   mavros_msgs::Waypoint wp4;
   wp4.frame = 2;
@@ -179,11 +177,11 @@ TEST(LocalPlannerNodeTests, mission_item_speed) {
   wp9.z_alt = 0.f;
 
   waypoint_list.waypoints.push_back(wp9);
-  std::vector<int> is_current_index_list{ 0, 1, 5, 6, 7};
+  std::vector<int> is_current_index_list{0, 1, 5, 6, 7};
   std::vector<float> mission_item_speed_truth{NAN, NAN, 16, 16, 20};
 
   for (int i = 0; i < is_current_index_list.size(); i++) {
-    if ((i - 1) >= 0 ) {
+    if ((i - 1) >= 0) {
       waypoint_list.waypoints[is_current_index_list[i - 1]].is_current = 0;
     }
     waypoint_list.waypoints[is_current_index_list[i]].is_current = 1;
@@ -197,5 +195,4 @@ TEST(LocalPlannerNodeTests, mission_item_speed) {
       EXPECT_FLOAT_EQ(truth, mission_item_speed);
     }
   }
-
 }
