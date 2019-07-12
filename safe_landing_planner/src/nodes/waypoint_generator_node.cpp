@@ -85,7 +85,7 @@ void WaypointGeneratorNode::trajectoryCallback(const mavros_msgs::Trajectory &ms
   if (update && msg.point_valid[0] == true) {
     waypointGenerator_.goal_ = avoidance::toEigen(msg.point_1.position);
     waypointGenerator_.velocity_setpoint_ = avoidance::toEigen(msg.point_1.velocity);
-    waypointGenerator_.is_land_waypoint_ = (msg.command[1] == 21);
+    waypointGenerator_.is_land_waypoint_ = (msg.command[1] == static_cast<int>(MavCommand::MAV_CMD_NAV_LAND));
     ROS_INFO_STREAM("\033[1;33m [WGN] Set New goal from FCU " << waypointGenerator_.goal_.transpose()
                                                               << " - nan nan nan \033[0m");
   }
