@@ -144,10 +144,9 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
 
     for (int z_index = 0; z_index < GRID_LENGTH_Z; z_index += step_size) {
       float obstacle_distance = histogram.get_dist(e_index, z_index);
-      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, obstacle_distance);
+      PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, 1.0f);  // unit vector of current direction
 
-      costFunction(p_pol.e, p_pol.z, obstacle_distance, goal, position, velocity, cost_params, distance_cost,
-                   other_costs);
+      costFunction(p_pol, obstacle_distance, goal, position, velocity, cost_params, distance_cost, other_costs);
       cost_matrix(e_index, z_index) = other_costs;
       distance_matrix(e_index, z_index) = distance_cost;
     }
@@ -304,17 +303,18 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-float costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
+float costFunction(const PolarPoint& candidate_polar, float obstacle_distance, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const Eigen::Vector3f& velocity, const costParameters& cost_params,
                    float& distance_cost, float& other_costs) {
   // Compute  polar direction to goal and cartesian representation of current direction to evaluate
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
-  const Eigen::Vector3f direction =
-      polarHistogramToCartesian(PolarPoint(e_angle, z_angle, 1.0f), Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+  const Eigen::Vector3f candidate_velocity_cartesian =
+      polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-  float velocity_cost = cost_params.velocity_cost_param * (velocity.norm() - direction.dot(velocity));
-  float yaw_cost = cost_params.yaw_cost_param * (z_angle - facing_goal.z) * (z_angle - facing_goal.z);
-  float pitch_cost = cost_params.pitch_cost_param * (e_angle - facing_goal.e) * (e_angle - facing_goal.e);
+  float velocity_cost =
+      cost_params.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
+  float yaw_cost = cost_params.yaw_cost_param * (candidate_polar.z - facing_goal.z)*(candidate_polar.z - facing_goal.z);
+  float pitch_cost = cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e)*(candidate_polar.e - facing_goal.e);
   distance_cost = obstacle_distance > 0 ? cost_params.obstacle_cost_param / std::exp(obstacle_distance) : 0.0f;
   other_costs = velocity_cost + yaw_cost + pitch_cost;
   return velocity_cost + yaw_cost + pitch_cost + distance_cost;

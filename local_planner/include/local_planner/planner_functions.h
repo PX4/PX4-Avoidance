@@ -100,8 +100,7 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 
 /**
 * @brief      computes the cost of each direction in the polar histogram
-* @param[in]  e_angle, elevation angle [deg]
-* @param[in]  z_angle, azimuth angle [deg]
+* @param[in]  PolarPoint of the candidate direction
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
 * @param[in]  velocity, current vehicle velocity
@@ -110,7 +109,7 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[out] other_costs, cost component due to goal and smoothness
 * @returns    total sum of all costs
 **/
-float costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
+float costFunction(const PolarPoint& candidate_polar, float obstacle_distance, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& position, const Eigen::Vector3f& velocity, const costParameters& cost_params,
                    float& distance_cost, float& other_costs);
 

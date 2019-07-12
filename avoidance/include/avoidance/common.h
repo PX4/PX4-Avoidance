@@ -221,6 +221,7 @@ void wrapPolar(PolarPoint& p_pol);
 **/
 float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v);
 
+// todo: is this used?
 void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw);
 
 /**

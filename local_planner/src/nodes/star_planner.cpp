@@ -63,6 +63,8 @@ void StarPlanner::buildLookAheadTree() {
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
+    PolarPoint facing_goal = cartesianToPolarHistogram(goal_, origin_position);
+    float distance_to_goal = (goal_ - origin_position).norm();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
@@ -83,10 +85,10 @@ void StarPlanner::buildLookAheadTree() {
       int depth = tree_[origin].depth_ + 1;
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
-        PolarPoint p_pol(candidate.elevation_angle, candidate.azimuth_angle, tree_node_distance_);
+        PolarPoint candidate_polar = candidate.toPolar(tree_node_distance_);
 
         // check if another close node has been added
-        Eigen::Vector3f node_location = polarHistogramToCartesian(p_pol, origin_position);
+        Eigen::Vector3f node_location = polarHistogramToCartesian(candidate_polar, origin_position);
         Eigen::Vector3f node_velocity =
             tree_[tree_[origin].origin_].getVelocity() + (node_location - origin_position);  // todo: simulate!
         int close_nodes = 0;
@@ -100,19 +102,19 @@ void StarPlanner::buildLookAheadTree() {
 
         if (children < children_per_node_ && close_nodes == 0) {
           tree_.push_back(TreeNode(origin, depth, node_location, node_velocity));
-          tree_.back().last_e_ = p_pol.e;
-          tree_.back().last_z_ = p_pol.z;
+          tree_.back().last_e_ = candidate_polar.e;
+          tree_.back().last_z_ = candidate_polar.z;  // still needed?
           float h = treeHeuristicFunction(tree_.size() - 1);
-          float distance_cost = 0.f, other_cost = 0.f;
-          Eigen::Vector2i idx_ppol = polarToHistogramIndex(p_pol, ALPHA_RES);
+          float distance_cost = 0.f, other_cost = 0.f;  // dummy placeholders
+          Eigen::Vector2i idx_ppol = polarToHistogramIndex(candidate_polar, ALPHA_RES);
           float obstacle_distance = histogram.get_dist(idx_ppol.x(), idx_ppol.y());
-          float c = costFunction(p_pol.e, p_pol.z, obstacle_distance, goal_, node_location, node_velocity, cost_params_,
+          float c = costFunction(candidate_polar, obstacle_distance, goal_, node_location, node_velocity, cost_params_,
                                  distance_cost, other_cost);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
           float yaw_radians = atan2(diff.y(), diff.x());
-          tree_.back().yaw_ = std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;
+          tree_.back().yaw_ = std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;  // still needed?
           children++;
         }
       }
