@@ -27,8 +27,6 @@ class StarPlanner {
   float max_path_length_ = 4.f;
   float smoothing_margin_degrees_ = 30.f;
 
-  std::vector<int> path_node_origins_;
-
   pcl::PointCloud<pcl::PointXYZI> cloud_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);

@@ -130,14 +130,11 @@ void StarPlanner::buildLookAheadTree() {
   // smoothing between trees
   int tree_end = origin;
   path_node_positions_.clear();
-  path_node_origins_.clear();
   while (tree_end > 0) {
-    path_node_origins_.push_back(tree_end);
     path_node_positions_.push_back(tree_[tree_end].getPosition());
     tree_end = tree_[tree_end].origin_;
   }
   path_node_positions_.push_back(tree_[0].getPosition());
-  path_node_origins_.push_back(0);
 
   ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
            path_node_positions_.size(), closed_set_.size(),
