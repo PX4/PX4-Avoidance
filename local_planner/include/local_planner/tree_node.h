@@ -13,8 +13,6 @@ class TreeNode {
  public:
   float total_cost_;
   float heuristic_;
-  float last_e_;
-  float last_z_;
   int origin_;
   int depth_;
   float yaw_;

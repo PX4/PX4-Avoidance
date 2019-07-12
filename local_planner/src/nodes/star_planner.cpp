@@ -57,7 +57,6 @@ void StarPlanner::buildLookAheadTree() {
   tree_.push_back(TreeNode(0, 0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
   tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
-  tree_.back().last_z_ = tree_.back().yaw_;
 
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
@@ -102,8 +101,6 @@ void StarPlanner::buildLookAheadTree() {
 
         if (children < children_per_node_ && close_nodes == 0) {
           tree_.push_back(TreeNode(origin, depth, node_location, node_velocity));
-          tree_.back().last_e_ = candidate_polar.e;
-          tree_.back().last_z_ = candidate_polar.z;  // still needed?
           float h = treeHeuristicFunction(tree_.size() - 1);
           float distance_cost = 0.f, other_cost = 0.f;  // dummy placeholders
           Eigen::Vector2i idx_ppol = polarToHistogramIndex(candidate_polar, ALPHA_RES);
