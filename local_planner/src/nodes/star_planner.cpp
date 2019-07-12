@@ -8,7 +8,7 @@
 
 namespace avoidance {
 
-StarPlanner::StarPlanner() : tree_age_(0) {}
+StarPlanner::StarPlanner() {}
 
 // set parameters changed by dynamic rconfigure
 void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
@@ -21,8 +21,6 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
 
 void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
 
-void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) { projected_last_wp_ = projected_last_wp; }
-
 void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
   position_ = pos;
   velocity_ = vel;
@@ -30,7 +28,6 @@ void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
-  tree_age_ = 1000;
 }
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
@@ -144,7 +141,6 @@ void StarPlanner::buildLookAheadTree() {
   }
   path_node_positions_.push_back(tree_[0].getPosition());
   path_node_origins_.push_back(0);
-  tree_age_ = 0;
 
   ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
            path_node_positions_.size(), closed_set_.size(),

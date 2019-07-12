@@ -24,7 +24,6 @@ class StarPlanner {
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
-  float tree_discount_factor_ = 0.8f; // remove
   float max_path_length_ = 4.f;
   float smoothing_margin_degrees_ = 30.f;
 
@@ -33,7 +32,6 @@ class StarPlanner {
   pcl::PointCloud<pcl::PointXYZI> cloud_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f projected_last_wp_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
@@ -49,7 +47,6 @@ class StarPlanner {
  public:
   std::vector<Eigen::Vector3f> path_node_positions_;
   std::vector<int> closed_set_;
-  int tree_age_;
   std::vector<TreeNode> tree_;
 
   StarPlanner();
@@ -60,12 +57,6 @@ class StarPlanner {
   * @param[in] cost_params, parameters for the histogram cost function
   **/
   void setParams(costParameters cost_params);
-
-  /**
-  * @brief     setter method for last sent waypoint
-  * @param[in] projected_last_wp, last waypoint projected out to goal distance
-  **/
-  void setLastDirection(const Eigen::Vector3f& projected_last_wp);
 
   /**
   * @brief     setter method for star_planner pointcloud

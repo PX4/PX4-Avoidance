@@ -124,7 +124,6 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
 }
 
 void LocalPlanner::determineStrategy() {
-  star_planner_->tree_age_++;
 
   // clear cost image
   cost_image_data_.clear();
@@ -158,12 +157,6 @@ void LocalPlanner::determineStrategy() {
 
       star_planner_->setParams(cost_params_);
       star_planner_->setPointcloud(final_cloud_);
-
-      // set last chosen direction for smoothing
-      PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint_, position_);
-      last_wp_pol.r = (position_ - goal_).norm();
-      Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position_);
-      star_planner_->setLastDirection(projected_last_wp); //todo: remove
 
       // build search tree
       star_planner_->buildLookAheadTree();
