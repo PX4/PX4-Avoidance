@@ -18,7 +18,7 @@ void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& v
   velocity_ = vel;
   yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, velocity_, yaw_fcu_frame_deg_);
+  star_planner_->setPose(position_, velocity_);
 
   if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
     take_off_pose_ = position_;
@@ -163,7 +163,7 @@ void LocalPlanner::determineStrategy() {
       PolarPoint last_wp_pol = cartesianToPolarHistogram(last_sent_waypoint_, position_);
       last_wp_pol.r = (position_ - goal_).norm();
       Eigen::Vector3f projected_last_wp = polarHistogramToCartesian(last_wp_pol, position_);
-      star_planner_->setLastDirection(projected_last_wp);
+      star_planner_->setLastDirection(projected_last_wp); //todo: remove
 
       // build search tree
       star_planner_->buildLookAheadTree();

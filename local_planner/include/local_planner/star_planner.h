@@ -24,9 +24,8 @@ class StarPlanner {
   int children_per_node_ = 1;
   int n_expanded_nodes_ = 5;
   float tree_node_distance_ = 1.0f;
-  float tree_discount_factor_ = 0.8f;
+  float tree_discount_factor_ = 0.8f; // remove
   float max_path_length_ = 4.f;
-  float curr_yaw_histogram_frame_deg_ = 90.f;
   float smoothing_margin_degrees_ = 30.f;
 
   std::vector<int> path_node_origins_;
@@ -77,9 +76,8 @@ class StarPlanner {
   /**
   * @brief     setter method for vehicle position
   * @param[in] vehicle current position
-  * @param[in] current yaw of the vehicle in FCU frame convention
   **/
-  void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, float curr_yaw_fcu_frame_deg);
+  void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
 
   /**
   * @brief     setter method for current goal

@@ -23,10 +23,9 @@ void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_pa
 
 void StarPlanner::setLastDirection(const Eigen::Vector3f& projected_last_wp) { projected_last_wp_ = projected_last_wp; }
 
-void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, float curr_yaw_fcu_frame_deg) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
   position_ = pos;
   velocity_ = vel;
-  curr_yaw_histogram_frame_deg_ = wrapAngleToPlusMinus180(-curr_yaw_fcu_frame_deg + 90.0f);
 }
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
@@ -56,7 +55,6 @@ void StarPlanner::buildLookAheadTree() {
   // insert first node
   tree_.push_back(TreeNode(0, 0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
-  tree_.back().yaw_ = curr_yaw_histogram_frame_deg_;
 
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
@@ -110,8 +108,6 @@ void StarPlanner::buildLookAheadTree() {
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + c + h;
           Eigen::Vector3f diff = node_location - origin_position;
-          float yaw_radians = atan2(diff.y(), diff.x());
-          tree_.back().yaw_ = std::round((-yaw_radians * 180.0f / M_PI_F)) + 90.0f;  // still needed?
           children++;
         }
       }

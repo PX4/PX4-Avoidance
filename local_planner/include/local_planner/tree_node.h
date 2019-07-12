@@ -15,7 +15,6 @@ class TreeNode {
   float heuristic_;
   int origin_;
   int depth_;
-  float yaw_;
   bool closed_;
 
   TreeNode();
