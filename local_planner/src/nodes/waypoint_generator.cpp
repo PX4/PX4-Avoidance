@@ -307,24 +307,26 @@ waypointResult WaypointGenerator::getWaypoints() {
 }
 
 void WaypointGenerator::changeAltitude() {
+  bool rtl_descend = false;
+  bool rtl_climb = false;
   if (position_.z() > (goal_.z() - 0.8f)) {
-    rtl_descend_ = false;
-    rtl_climb_ = false;
+    rtl_descend = false;
+    rtl_climb = false;
   } else if (goal_.z() > position_.z()) {
-    rtl_descend_ = false;
-    rtl_climb_ = true;
+    rtl_descend = false;
+    rtl_climb = true;
   } else {
-    rtl_descend_ = true;
-    rtl_climb_ = false;
+    rtl_descend = true;
+    rtl_climb = false;
   }
 
   const bool offboard_goal_altitude_not_reached = nav_state_ == NavigationState::offboard && !reach_altitude_;
   const bool auto_takeoff = nav_state_ == NavigationState::auto_takeoff ||
                             (nav_state_ == NavigationState::mission && is_takeoff_waypoint_) ||
-                            (nav_state_ == NavigationState::auto_rtl && rtl_climb_);
+                            (nav_state_ == NavigationState::auto_rtl && rtl_climb);
   auto_land_ = nav_state_ == NavigationState::auto_land ||
                (nav_state_ == NavigationState::mission && is_land_waypoint_) ||
-               (nav_state_ == NavigationState::auto_rtl && rtl_descend_);
+               (nav_state_ == NavigationState::auto_rtl && rtl_descend);
   const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land_;
   if (need_to_change_altitude) {
     planner_info_.waypoint_type = reachHeight;

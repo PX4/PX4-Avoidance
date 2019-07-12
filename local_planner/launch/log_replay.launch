@@ -54,7 +54,6 @@
       <param name="goal_x_param" value="15" />
       <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="4" />
-      <param name="disable_rise_to_goal_altitude" value="true" />
       <param name="accept_goal_input_topic" value="true" />
       <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
     </node>

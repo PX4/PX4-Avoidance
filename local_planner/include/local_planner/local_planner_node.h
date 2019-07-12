@@ -245,7 +245,6 @@ class LocalPlannerNode {
   bool planner_is_healthy_;
   bool position_not_received_error_sent_ = false;
   bool callPx4Params_;
-  bool disable_rise_to_goal_altitude_;
   bool accept_goal_input_topic_;
   bool is_land_waypoint_{false};
   bool is_takeoff_waypoint_{false};

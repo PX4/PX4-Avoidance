@@ -60,7 +60,6 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
   // pass initial goal into local planner
   local_planner_->applyGoal();
 
-  local_planner_->disable_rise_to_goal_altitude_ = disable_rise_to_goal_altitude_;
   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
   hover_ = false;
@@ -93,7 +92,6 @@ void LocalPlannerNode::readParams() {
   nh_.param<double>("goal_x_param", goal.x, 9.0);
   nh_.param<double>("goal_y_param", goal.y, 13.0);
   nh_.param<double>("goal_z_param", goal.z, 3.5);
-  nh_.param<bool>("disable_rise_to_goal_altitude", disable_rise_to_goal_altitude_, false);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;

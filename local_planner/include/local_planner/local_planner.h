@@ -123,7 +123,6 @@ class LocalPlanner {
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
   bool currently_armed_ = false;
-  bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_startup_;
   double timeout_critical_;
