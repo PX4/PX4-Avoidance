@@ -450,10 +450,8 @@ TEST(PlannerFunctions, CostfunctionGoalCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different goals
-  costFunction(candidate_1, obstacle_distance, goal_1, position, velocity, cost_params,
-               distance_cost_1, other_costs_1);
-  costFunction(candidate_1, obstacle_distance, goal_2, position, velocity, cost_params,
-               distance_cost_2, other_costs_2);
+  costFunction(candidate_1, obstacle_distance, goal_1, position, velocity, cost_params, distance_cost_1, other_costs_1);
+  costFunction(candidate_1, obstacle_distance, goal_2, position, velocity, cost_params, distance_cost_2, other_costs_2);
 
   // THEN: The cost in the case where the goal is in the cell direction should
   // be lower
@@ -480,12 +478,9 @@ TEST(PlannerFunctions, CostfunctionDistanceCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different obstacle distance
-  costFunction(candidate_1, distance_1, goal, position, velocity, cost_params, distance_cost_1,
-               other_costs);
-  costFunction(candidate_1, distance_2, goal, position, velocity, cost_params, distance_cost_2,
-               other_costs);
-  costFunction(candidate_1, distance_3, goal, position, velocity, cost_params, distance_cost_3,
-               other_costs);
+  costFunction(candidate_1, distance_1, goal, position, velocity, cost_params, distance_cost_1, other_costs);
+  costFunction(candidate_1, distance_2, goal, position, velocity, cost_params, distance_cost_2, other_costs);
+  costFunction(candidate_1, distance_3, goal, position, velocity, cost_params, distance_cost_3, other_costs);
 
   // THEN: The distance cost for no obstacle should be zero and the distance
   // cost for the closer obstacle should be bigger
@@ -513,10 +508,8 @@ TEST(PlannerFunctions, CostfunctionVelocityCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different initial velocities
-  costFunction(candidate_1,obstacle_distance, goal, position, velocity_1, cost_params,
-               distance_cost, other_costs_1);
-  costFunction(candidate_1, obstacle_distance, goal, position, velocity_2, cost_params,
-               distance_cost, other_costs_2);
+  costFunction(candidate_1, obstacle_distance, goal, position, velocity_1, cost_params, distance_cost, other_costs_1);
+  costFunction(candidate_1, obstacle_distance, goal, position, velocity_2, cost_params, distance_cost, other_costs_2);
 
   // THEN: The cost in the case where the initial heading is closer to the
   // candidate should be lower
