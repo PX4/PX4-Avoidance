@@ -26,9 +26,7 @@ void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel
   velocity_ = vel;
 }
 
-void StarPlanner::setGoal(const Eigen::Vector3f& goal) {
-  goal_ = goal;
-}
+void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
 
@@ -50,7 +48,7 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, 0, position_, velocity_));
+  tree_.push_back(TreeNode(0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
@@ -76,7 +74,6 @@ void StarPlanner::buildLookAheadTree() {
       tree_[origin].total_cost_ = HUGE_VAL;
     } else {
       // insert new nodes
-      int depth = tree_[origin].depth_ + 1;
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         PolarPoint candidate_polar = candidate.toPolar(tree_node_distance_);
@@ -95,7 +92,7 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, depth, node_location, node_velocity));
+          tree_.push_back(TreeNode(origin, node_location, node_velocity));
           float h = treeHeuristicFunction(tree_.size() - 1);
           float distance_cost = 0.f, other_cost = 0.f;  // dummy placeholders
           Eigen::Vector2i idx_ppol = polarToHistogramIndex(candidate_polar, ALPHA_RES);

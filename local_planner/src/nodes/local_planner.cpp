@@ -124,7 +124,6 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
 }
 
 void LocalPlanner::determineStrategy() {
-
   // clear cost image
   cost_image_data_.clear();
   cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);

@@ -14,11 +14,10 @@ class TreeNode {
   float total_cost_;
   float heuristic_;
   int origin_;
-  int depth_;
   bool closed_;
 
   TreeNode();
-  TreeNode(int from, int d, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
+  TreeNode(int from, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
   ~TreeNode() = default;
 
   /**
