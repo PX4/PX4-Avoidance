@@ -78,6 +78,9 @@ void WaypointGenerator::calculateWaypoint() {
 
     case reachHeight: {
       ROS_DEBUG("[WG] Reaching height first");
+      if (last_wp_type_ != reachHeight) {
+        yaw_reach_height_rad_ = curr_yaw_rad_;
+      }
       reachGoalAltitudeFirst();
       getPathMsg();
       break;
@@ -216,8 +219,12 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   // Use xy smoothing constant for yaw, since this makes more sense than z,
   // and we dont want to introduce yet another parameter
 
-  const float desired_setpoint_yaw_rad =
+  float desired_setpoint_yaw_rad =
       (position_ - output_.goto_position).normXY() > 0.1f ? nextYaw(position_, output_.goto_position) : curr_yaw_rad_;
+
+  if (planner_info_.waypoint_type == reachHeight) {
+    desired_setpoint_yaw_rad = yaw_reach_height_rad_;
+  }
 
   // If smoothing is disabled, set yaw to face goal directly
   if (smoothing_speed_xy_ <= 0.01f) {

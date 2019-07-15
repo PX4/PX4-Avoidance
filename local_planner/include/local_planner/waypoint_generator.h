@@ -55,6 +55,7 @@ class WaypointGenerator {
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
+  float yaw_reach_height_rad_ = NAN;
   float speed_ = 1.0f;
   std::vector<FOV> fov_fcu_frame_;
 
