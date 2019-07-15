@@ -365,7 +365,7 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   cost_params.yaw_cost_param = 2.5f;
   cost_params.pitch_cost_param = 10.0f;
   cost_params.velocity_cost_param = 1200.f;
-  cost_params.obstacle_cost_param = 200000.0f;
+  cost_params.obstacle_cost_param = 5.0f;
   Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
   float smoothing_radius = 30.f;
@@ -442,7 +442,7 @@ TEST(PlannerFunctions, CostfunctionGoalCost) {
   cost_params.yaw_cost_param = 2.5f;
   cost_params.pitch_cost_param = 10.0f;
   cost_params.velocity_cost_param = 1200.f;
-  cost_params.obstacle_cost_param = 200000.0f;
+  cost_params.obstacle_cost_param = 5.0f;
   float obstacle_distance = 0.f;
   float distance_cost_1, other_costs_1, distance_cost_2, other_costs_2;
 
@@ -468,7 +468,7 @@ TEST(PlannerFunctions, CostfunctionDistanceCost) {
   cost_params.yaw_cost_param = 2.5f;
   cost_params.pitch_cost_param = 10.0f;
   cost_params.velocity_cost_param = 1200.f;
-  cost_params.obstacle_cost_param = 200000.0f;
+  cost_params.obstacle_cost_param = 5.0f;
   float distance_1 = 0.f;
   float distance_2 = 3.f;
   float distance_3 = 5.f;
@@ -500,7 +500,7 @@ TEST(PlannerFunctions, CostfunctionVelocityCost) {
   cost_params.yaw_cost_param = 2.5f;
   cost_params.pitch_cost_param = 10.0f;
   cost_params.velocity_cost_param = 1200.f;
-  cost_params.obstacle_cost_param = 200000.0f;
+  cost_params.obstacle_cost_param = 5.0f;
   float obstacle_distance = 0.f;
   float distance_cost, other_costs_1, other_costs_2;
 

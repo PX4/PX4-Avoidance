@@ -311,14 +311,14 @@ float costFunction(const PolarPoint& candidate_polar, float obstacle_distance, c
   const Eigen::Vector3f candidate_velocity_cartesian =
       polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
-  float velocity_cost =
+  const float velocity_cost =
       cost_params.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
-  float yaw_cost =
+  const float yaw_cost =
       cost_params.yaw_cost_param * (candidate_polar.z - facing_goal.z) * (candidate_polar.z - facing_goal.z);
-  float pitch_cost =
+  const float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
-  distance_cost =
-      obstacle_distance > 0 ? 2000.0f / (std::exp((obstacle_distance - cost_params.obstacle_cost_param))) : 0.0f;
+  const float d = cost_params.obstacle_cost_param - obstacle_distance;
+  distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
   other_costs = velocity_cost + yaw_cost + pitch_cost;
   return velocity_cost + yaw_cost + pitch_cost + distance_cost;
 }
