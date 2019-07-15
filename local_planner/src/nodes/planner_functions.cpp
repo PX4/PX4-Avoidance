@@ -317,7 +317,8 @@ float costFunction(const PolarPoint& candidate_polar, float obstacle_distance, c
       cost_params.yaw_cost_param * (candidate_polar.z - facing_goal.z) * (candidate_polar.z - facing_goal.z);
   float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
-  distance_cost = obstacle_distance > 0 ? cost_params.obstacle_cost_param / std::exp(obstacle_distance) : 0.0f;
+  distance_cost =
+      obstacle_distance > 0 ? 2000.0f / (std::exp((obstacle_distance - cost_params.obstacle_cost_param))) : 0.0f;
   other_costs = velocity_cost + yaw_cost + pitch_cost;
   return velocity_cost + yaw_cost + pitch_cost + distance_cost;
 }
