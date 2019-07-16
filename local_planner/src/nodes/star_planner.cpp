@@ -51,6 +51,12 @@ void StarPlanner::buildLookAheadTree() {
   tree_.push_back(TreeNode(0, position_, velocity_));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
+  kdtree_t tree_cloud;
+  for (auto point : cloud_) {
+    tree_cloud.addPoint(toArray(toEigen(point)), point.intensity, false);
+  }
+  tree_cloud.splitOutstanding();
+
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
@@ -59,7 +65,7 @@ void StarPlanner::buildLookAheadTree() {
     float distance_to_goal = (goal_ - origin_position).norm();
 
     histogram.setZero();
-    generateNewHistogram(histogram, cloud_, origin_position);
+    generateHistogramHACK(histogram, tree_cloud, origin_position, tree_node_distance_);
 
     // calculate candidates
     cost_matrix.fill(0.f);

@@ -264,6 +264,7 @@ Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq);
 
 geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
 geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3);
+std::array<float, 3> toArray(const Eigen::Vector3f& ev3);
 geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3);
 pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
 pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity);

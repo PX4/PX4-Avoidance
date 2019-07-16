@@ -287,6 +287,8 @@ geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
   return gmv3;
 }
 
+std::array<float, 3> toArray(const Eigen::Vector3f& ev3) { return {ev3.x(), ev3.y(), ev3.z()}; }
+
 geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& eqf) {
   geometry_msgs::Quaternion q;
   q.x = eqf.x();
