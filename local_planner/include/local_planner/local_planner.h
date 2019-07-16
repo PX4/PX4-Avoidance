@@ -66,20 +66,12 @@ struct ModelParameters {
 
 class LocalPlanner {
  private:
-  bool adapt_cost_params_;
   bool reach_altitude_ = false;
-  bool waypoint_outside_FOV_ = false;
 
-  size_t dist_incline_window_size_ = 50;
-  int origin_;
-  int tree_age_ = 0;
   int children_per_node_;
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
 
-  ros::Time integral_time_old_;
-  float no_progress_slope_;
-  float new_yaw_;
   float min_realsense_dist_ = 0.2f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
@@ -92,11 +84,7 @@ class LocalPlanner {
   ros::Time last_path_time_;
   ros::Time last_pointcloud_process_time_;
 
-  std::deque<float> goal_dist_incline_;
-  std::vector<float> cost_path_candidates_;
-  std::vector<int> cost_idx_sorted_;
   std::vector<int> closed_set_;
-
   std::vector<TreeNode> tree_;
   std::unique_ptr<StarPlanner> star_planner_;
   costParameters cost_params_;
@@ -106,7 +94,6 @@ class LocalPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
-  Eigen::Vector3f position_old_ = Eigen::Vector3f::Zero();
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
@@ -138,14 +125,12 @@ class LocalPlanner {
   std::vector<uint8_t> cost_image_data_;
   bool use_vel_setpoints_;
   bool currently_armed_ = false;
-  bool smooth_waypoints_ = true;
   bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_startup_;
   double timeout_critical_;
   double timeout_termination_;
   double starting_height_ = 0.0;
-  float speed_ = 1.0f;
   float ground_distance_ = 2.0;
 
   ModelParameters px4_;  // PX4 Firmware paramters

@@ -72,10 +72,7 @@ void LocalPlanner::setFOV(int i, const FOV& fov) {
 
 Eigen::Vector3f LocalPlanner::getGoal() const { return goal_; }
 
-void LocalPlanner::applyGoal() {
-  star_planner_->setGoal(goal_);
-  goal_dist_incline_.clear();
-}
+void LocalPlanner::applyGoal() { star_planner_->setGoal(goal_); }
 
 void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
@@ -162,7 +159,6 @@ void LocalPlanner::determineStrategy() {
       last_path_time_ = ros::Time::now();
     }
   }
-  position_old_ = position_;
 }
 
 void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
