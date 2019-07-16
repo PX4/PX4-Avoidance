@@ -99,6 +99,7 @@ void LocalPlannerNode::readParams() {
   initializeCameraSubscribers(camera_topics);
 
   goal_msg_.pose.position = goal;
+  new_goal_ = true;
 }
 
 void LocalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
