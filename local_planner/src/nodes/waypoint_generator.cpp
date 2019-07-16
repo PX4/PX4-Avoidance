@@ -300,9 +300,9 @@ void WaypointGenerator::getPathMsg() {
     smoothWaypoint(dt);
   }
 
-  printf("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
-         output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
-         output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
+  ROS_INFO("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
+           output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
+           output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
 
   createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
 }

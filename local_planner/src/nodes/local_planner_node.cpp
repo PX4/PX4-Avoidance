@@ -363,7 +363,6 @@ void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) 
       desired_vel_msg_.twist.linear.x = NAN;
       desired_vel_msg_.twist.linear.y = NAN;
       desired_vel_msg_.twist.linear.z = NAN;
-
     }
     desired_yaw_setpoint_ = msg.point_2.yaw;
     desired_yaw_speed_setpoint_ = msg.point_2.yaw_rate;
