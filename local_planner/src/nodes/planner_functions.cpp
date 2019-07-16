@@ -75,6 +75,23 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
   final_cloud.width = final_cloud.points.size();
 }
 
+void generateHistogramHACK(Histogram& polar_histogram, const kdtree_t& cropped_cloud, const Eigen::Vector3f& position,
+                           float distance) {
+  // for each bin put a point in that direction and get the distance to the nearest obstacle
+  for (int e = 0; e < GRID_LENGTH_E; e++) {
+    for (int z = 0; z < GRID_LENGTH_Z; z++) {
+      Eigen::Vector3f eval = polarHistogramToCartesian(histogramIndexToPolar(e, z, ALPHA_RES, distance), position);
+      std::array<float, 3> point{eval.x(), eval.y(), eval.z()};
+      auto nearest = cropped_cloud.search(point);
+      if (!std::isinf(nearest.distance)) {
+        polar_histogram.set_dist(e, z, nearest.distance);
+      } else {
+        polar_histogram.set_dist(e, z, 0);
+      }
+    }
+  }
+}
+
 // Generate new histogram from pointcloud
 void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl::PointXYZI>& cropped_cloud,
                           const Eigen::Vector3f& position) {

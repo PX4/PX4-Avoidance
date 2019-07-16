@@ -3,6 +3,7 @@
 
 #include "avoidance/common.h"
 #include "avoidance/histogram.h"
+#include "avoidance/kdtree.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 
@@ -15,6 +16,8 @@
 #include <vector>
 
 namespace avoidance {
+
+using kdtree_t = jk::tree::KDTree<double, 3, 16, jk::tree::SquaredL2, float>;
 
 /**
 * @brief      crops and subsamples the incomming data, then combines it with
@@ -45,6 +48,9 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
 **/
 void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl::PointXYZI>& cropped_cloud,
                           const Eigen::Vector3f& position);
+
+void generateHistogramHACK(Histogram& polar_histogram, const kdtree_t& cropped_cloud, const Eigen::Vector3f& position,
+                           float distance);
 
 /**
 * @brief      compresses the histogram such that for each azimuth the minimum

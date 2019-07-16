@@ -395,6 +395,11 @@ inline Eigen::Vector3f toEigen(const pcl::PointXYZI& p) {
   return ev3;
 }
 
+inline std::array<float, 3> toArray(const Eigen::Vector3f& ev3){
+  std::array<float, 3> ret {ev3.x(), ev3.y(), ev3.z()};
+   return ret;
+}
+
 inline Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq) {
   Eigen::Quaternionf eqf;
   eqf.x() = gmq.x;
