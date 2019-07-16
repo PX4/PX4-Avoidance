@@ -28,7 +28,7 @@ class WaypointGenerator {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
-  waypoint_choice last_wp_type_;
+  waypoint_choice last_wp_type_ = hover;
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
