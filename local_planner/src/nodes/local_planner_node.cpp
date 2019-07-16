@@ -353,11 +353,18 @@ void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) 
     prev_goal_ = goal_msg_;
     goal_msg_.pose.position = msg.point_1.position;
     desired_vel_msg_.twist.linear = msg.point_1.velocity;
-    is_land_waypoint_ = (msg.command[1] == 21);
-    is_takeoff_waypoint_ = (msg.command[1] == 22);
+    is_land_waypoint_ = (msg.command[0] == 21);
+    is_takeoff_waypoint_ = (msg.command[0] == 22);
   }
   if (msg.point_valid[1] == true) {
     goal_mission_item_msg_.pose.position = msg.point_2.position;
+    if (msg.command[1] == UINT16_MAX) {
+      goal_msg_.pose.position = msg.point_2.position;
+      desired_vel_msg_.twist.linear.x = NAN;
+      desired_vel_msg_.twist.linear.y = NAN;
+      desired_vel_msg_.twist.linear.z = NAN;
+
+    }
     desired_yaw_setpoint_ = msg.point_2.yaw;
     desired_yaw_speed_setpoint_ = msg.point_2.yaw_rate;
   }
