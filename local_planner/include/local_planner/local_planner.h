@@ -4,7 +4,6 @@
 #include <sensor_msgs/image_encodings.h>
 #include "avoidance/histogram.h"
 #include "avoidance_output.h"
-#include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 #include "planner_functions.h"
@@ -44,6 +43,7 @@ class LocalPlanner {
   float max_point_age_s_ = 10;
   float yaw_fcu_frame_deg_ = 0.0f;
   float pitch_fcu_frame_deg_ = 0.0f;
+  float sensor_range_ = 12.0f;
 
   std::vector<FOV> fov_fcu_frame_;
 
@@ -87,7 +87,6 @@ class LocalPlanner {
   void generateHistogramImage(Histogram& histogram);
 
  public:
-  Box histogram_box_;
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
   bool currently_armed_ = false;
@@ -96,7 +95,6 @@ class LocalPlanner {
   double timeout_critical_;
   double timeout_termination_;
   float speed_ = 1.0f;
-  float ground_distance_ = 2.0;
   float mission_item_speed_ = NAN;
 
   ModelParameters px4_;  // PX4 Firmware paramters
@@ -137,6 +135,7 @@ class LocalPlanner {
   float getHFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f; }
   float getVFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f; }
   const std::vector<FOV>& getFOV() const { return fov_fcu_frame_; }
+  float getSensorRange() const { return sensor_range_; }
 
   /**
   * @brief     getter method for current goal

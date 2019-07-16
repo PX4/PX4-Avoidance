@@ -51,15 +51,12 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
   // visualize goal
   publishGoal(toPoint(planner.getGoal()));
 
-  // publish bounding box of pointcloud
-  publishBox(planner.getPosition(), planner.histogram_box_.radius_, planner.histogram_box_.zmin_);
-
   // publish histogram image
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_, newest_waypoint_position,
                     newest_adapted_waypoint_position, newest_pose);
 
   // publish the FOV
-  publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
+  publishFOV(planner.getFOV(), planner.getSensorRange());
 
   // range scan
   publishRangeScan(planner.distance_data_, newest_pose);
@@ -262,52 +259,6 @@ void LocalPlannerVisualization::publishGoal(const geometry_msgs::Point& goal) co
   marker_goal_pub_.publish(marker_goal);
 }
 
-void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos, float box_radius,
-                                           float plane_height) const {
-  visualization_msgs::MarkerArray marker_array;
-
-  visualization_msgs::Marker box;
-  box.header.frame_id = "local_origin";
-  box.header.stamp = ros::Time::now();
-  box.id = 0;
-  box.type = visualization_msgs::Marker::SPHERE;
-  box.action = visualization_msgs::Marker::ADD;
-  box.pose.position = toPoint(drone_pos);
-  box.pose.orientation.x = 0.0;
-  box.pose.orientation.y = 0.0;
-  box.pose.orientation.z = 0.0;
-  box.pose.orientation.w = 1.0;
-  box.scale.x = 2.0 * box_radius;
-  box.scale.y = 2.0 * box_radius;
-  box.scale.z = 2.0 * box_radius;
-  box.color.a = 0.5;
-  box.color.r = 0.0;
-  box.color.g = 1.0;
-  box.color.b = 0.0;
-  marker_array.markers.push_back(box);
-
-  visualization_msgs::Marker plane;
-  plane.header.frame_id = "local_origin";
-  plane.header.stamp = ros::Time::now();
-  plane.id = 1;
-  plane.type = visualization_msgs::Marker::CUBE;
-  plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position = toPoint(drone_pos);
-  plane.pose.position.z = plane_height;
-  plane.pose.orientation.x = 0.0;
-  plane.pose.orientation.y = 0.0;
-  plane.pose.orientation.z = 0.0;
-  plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * box_radius;
-  plane.scale.y = 2.0 * box_radius;
-  plane.scale.z = 0.001;
-  plane.color.a = 0.5;
-  plane.color.r = 0.0;
-  plane.color.g = 1.0;
-  plane.color.b = 0.0;
-  marker_array.markers.push_back(plane);
-
-  bounding_box_pub_.publish(marker_array);
 }
 
 void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& histogram_image_data,
@@ -546,31 +497,5 @@ void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twis
   }
 
   current_waypoint_pub_.publish(setpoint);
-}
-
-void LocalPlannerVisualization::publishGround(const Eigen::Vector3f& drone_pos, float box_radius,
-                                              float ground_distance) const {
-  visualization_msgs::Marker plane;
-
-  plane.header.frame_id = "local_origin";
-  plane.header.stamp = ros::Time::now();
-  plane.id = 1;
-  plane.type = visualization_msgs::Marker::CUBE;
-  plane.action = visualization_msgs::Marker::ADD;
-  plane.pose.position = toPoint(drone_pos);
-  plane.pose.position.z = drone_pos.z() - static_cast<double>(ground_distance);
-  plane.pose.orientation.x = 0.0;
-  plane.pose.orientation.y = 0.0;
-  plane.pose.orientation.z = 0.0;
-  plane.pose.orientation.w = 1.0;
-  plane.scale.x = 2.0 * box_radius;
-  plane.scale.y = 2.0 * box_radius;
-  plane.scale.z = 0.001;
-  ;
-  plane.color.a = 0.5;
-  plane.color.r = 0.0;
-  plane.color.g = 0.0;
-  plane.color.b = 1.0;
-  ground_measurement_pub_.publish(plane);
 }
 }

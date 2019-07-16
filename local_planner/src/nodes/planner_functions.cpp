@@ -8,13 +8,11 @@
 
 namespace avoidance {
 
-// trim the point cloud so that only points inside the bounding box are
-// considered
+// trim the point cloud so that only one valid point per histogram cell is around
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
-                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
-                       const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
-                       int min_num_points_per_cell) {
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const std::vector<FOV>& fov,
+                       float yaw_fcu_frame_deg, float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
+                       float min_realsense_dist, float max_age, float elapsed_s, int min_num_points_per_cell) {
   const int SCALE_FACTOR = 4;
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
@@ -32,16 +30,14 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     for (const pcl::PointXYZ& xyz : cloud) {
       // Check if the point is invalid
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
-        if (histogram_box.isPointWithinBox(xyz.x, xyz.y, xyz.z)) {
-          distance = (position - toEigen(xyz)).norm();
-          if (distance > min_realsense_dist && distance < histogram_box.radius_) {
-            // subsampling the cloud
-            PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyz), position);
-            Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
-            histogram_points_counter(p_ind.y(), p_ind.x())++;
-            if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
-              final_cloud.points.push_back(toXYZI(toEigen(xyz), 0.0f));
-            }
+        distance = (position - toEigen(xyz)).norm();
+        if (distance > min_realsense_dist) {
+          // subsampling the cloud
+          PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyz), position);
+          Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
+          histogram_points_counter(p_ind.y(), p_ind.x())++;
+          if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
+            final_cloud.points.push_back(toXYZI(toEigen(xyz), 0.0f));
           }
         }
       }
@@ -50,28 +46,22 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
 
   // combine with old cloud
   for (const pcl::PointXYZI& xyzi : old_cloud) {
-    // adding older points if not expired and space is free according to new
-    // cloud
-    if (histogram_box.isPointWithinBox(xyzi.x, xyzi.y, xyzi.z)) {
-      distance = (position - toEigen(xyzi)).norm();
-      if (distance < histogram_box.radius_) {
-        PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyzi), position);
-        PolarPoint p_pol_fcu = cartesianToPolarFCU(toEigen(xyzi), position);
-        p_pol_fcu.e -= pitch_fcu_frame_deg;
-        p_pol_fcu.z -= yaw_fcu_frame_deg;
-        wrapPolar(p_pol_fcu);
-        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
+    // adding older points if not expired and space is free according to new cloud
+    PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyzi), position);
+    PolarPoint p_pol_fcu = cartesianToPolarFCU(toEigen(xyzi), position);
+    p_pol_fcu.e -= pitch_fcu_frame_deg;
+    p_pol_fcu.z -= yaw_fcu_frame_deg;
+    wrapPolar(p_pol_fcu);
+    Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
 
-        // only remember point if it's in a cell not previously populated by
-        // complete_cloud, as well as outside FOV and 'young' enough
-        if (histogram_points_counter(p_ind.y(), p_ind.x()) < min_num_points_per_cell && xyzi.intensity < max_age &&
-            !pointInsideFOV(fov, p_pol_fcu)) {
-          final_cloud.points.push_back(toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
+    // only remember point if it's in a cell not previously populated by complete_cloud, as well as outside FOV and
+    // 'young' enough
+    if (histogram_points_counter(p_ind.y(), p_ind.x()) < min_num_points_per_cell && xyzi.intensity < max_age &&
+        !pointInsideFOV(fov, p_pol_fcu)) {
+      final_cloud.points.push_back(toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 
-          // to indicate that this cell now has a point
-          histogram_points_counter(p_ind.y(), p_ind.x()) = min_num_points_per_cell;
-        }
-      }
+      // to indicate that this cell now has a point
+      histogram_points_counter(p_ind.y(), p_ind.x()) = min_num_points_per_cell;
     }
   }
 

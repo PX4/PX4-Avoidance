@@ -183,14 +183,6 @@ void LocalPlannerNode::updatePlannerInfo() {
     new_goal_ = false;
   }
 
-  // update ground distance
-  if (ros::Time::now() - ground_distance_msg_.header.stamp < ros::Duration(0.5)) {
-    local_planner_->ground_distance_ = ground_distance_msg_.bottom_clearance;
-  } else {
-    local_planner_->ground_distance_ = 2.0;  // in case where no range data is
-    // available assume vehicle is close to ground
-  }
-
   // update last sent waypoint
   local_planner_->last_sent_waypoint_ = toEigen(newest_waypoint_position_);
 }
@@ -362,8 +354,6 @@ void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) 
 void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg) {
   if (!std::isnan(msg.bottom_clearance)) {
     ground_distance_msg_ = msg;
-    visualizer_.publishGround(local_planner_->getPosition(), local_planner_->histogram_box_.radius_,
-                              local_planner_->ground_distance_);
   }
 }
 

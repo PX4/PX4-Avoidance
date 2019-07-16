@@ -49,15 +49,6 @@ class LocalPlannerVisualization {
   void publishGoal(const geometry_msgs::Point& goal) const;
 
   /**
-  * @brief       Visualization of the bounding box used to crop the pointcloud
-  * @params[in]  drone_pos, current position of the drone
-  * @params[in]  box_radius, the radius of the bounding box
-  * @params[in]  plane_height, the height above ground at which the pointcloud
-  *              is additionally cropped
-  **/
-  void publishBox(const Eigen::Vector3f& drone_pos, float box_radius, float plane_height) const;
-
-  /**
   * @brief       Visualization of the 2D compression of the local pointcloud
   * @params[in]  histogram_image, data for visualization
   * @params[in]  cost_image, data for visualization
@@ -109,14 +100,6 @@ class LocalPlannerVisualization {
   **/
   void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const waypoint_choice& waypoint_type,
                               const geometry_msgs::Point& newest_pos) const;
-
-  /**
-  * @brief       Visualization of the ground
-  * @params[in]  drone_pos, location of the drone at the current timestep
-  * @params[in]  box_radius, the radius of the bounding box
-  * @params[in]  ground_distance, measured distance to ground
-  **/
-  void publishGround(const Eigen::Vector3f& drone_pos, float box_radius, float ground_distance) const;
 
   /**
   * @brief       Visualization of the offtrack state

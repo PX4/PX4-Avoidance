@@ -86,15 +86,13 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   p1.push_back(toXYZ(position + Eigen::Vector3f(-1.0f, -1.1f, 3.5f)));
 
   pcl::PointCloud<pcl::PointXYZ> p2;
-  p2.push_back(toXYZ(position + Eigen::Vector3f(1.0f, 5.0f, 1.0f)));    // > histogram_box.radius
-  p2.push_back(toXYZ(position + Eigen::Vector3f(100.0f, 5.0f, 1.0f)));  // > histogram_box.radius
+  p2.push_back(toXYZ(position + Eigen::Vector3f(1.0f, 5.0f, 1.0f)));
+  p2.push_back(toXYZ(position + Eigen::Vector3f(100.0f, 5.0f, 1.0f)));
   p2.push_back(toXYZ(position + Eigen::Vector3f(0.1f, 0.05f, 0.05f)));  // < min_realsense_dist
 
   std::vector<pcl::PointCloud<pcl::PointXYZ>> complete_cloud;
   complete_cloud.push_back(p1);
   complete_cloud.push_back(p2);
-  Box histogram_box(5.0f);
-  histogram_box.setBoxLimits(position, 4.5f);
   float min_realsense_dist = 0.2f;
 
   pcl::PointCloud<pcl::PointXYZI> processed_cloud1, processed_cloud2, processed_cloud3;
@@ -111,22 +109,22 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   FOV_regular.push_back(FOV(0.0f, 1.0f, 85.0f, 65.0f));
 
   // WHEN: we filter the PointCloud with different values max_age
-  processPointcloud(processed_cloud1, complete_cloud, histogram_box, FOV_zero, 0.0f, 0.0f, position, min_realsense_dist,
-                    0.0f, 0.5f, 1);
+  processPointcloud(processed_cloud1, complete_cloud, FOV_zero, 0.0f, 0.0f, position, min_realsense_dist, 0.0f, 0.5f,
+                    1);
 
-  processPointcloud(processed_cloud2, complete_cloud, histogram_box, FOV_zero, 0.0f,
-                    0.0f,  // todo: test different yaw and pitch
-                    position, min_realsense_dist, 10.0f, .5f, 1);
+  // todo: test different yaw and pitch
+  processPointcloud(processed_cloud2, complete_cloud, FOV_zero, 0.0f, 0.0f, position, min_realsense_dist, 10.0f, .5f,
+                    1);
 
-  processPointcloud(processed_cloud3, complete_cloud, histogram_box, FOV_regular, 0.0f, 0.0f, position,
-                    min_realsense_dist, 10.0f, 0.5f, 1);
+  processPointcloud(processed_cloud3, complete_cloud, FOV_regular, 0.0f, 0.0f, position, min_realsense_dist, 10.0f,
+                    0.5f, 1);
 
-  // THEN: we expect the first cloud to have 6 points
-  // the second cloud should contain 7 points
-  EXPECT_EQ(6, processed_cloud1.size());
-  EXPECT_EQ(7, processed_cloud2.size());
+  // THEN: we expect the first cloud to have 8 points
+  // the second cloud should contain all 9 points
+  EXPECT_EQ(8, processed_cloud1.size());
+  EXPECT_EQ(9, processed_cloud2.size());
   EXPECT_TRUE(pointInsideFOV(FOV_regular, memory_point_polar));
-  EXPECT_EQ(6, processed_cloud3.size());
+  EXPECT_EQ(8, processed_cloud3.size());  // since memory point is inside FOV, it isn't remembered
 }
 
 TEST(PlannerFunctions, getSetpointFromPath) {
