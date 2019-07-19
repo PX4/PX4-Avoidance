@@ -148,11 +148,13 @@ void printHistogram(const Histogram& histogram);
 
 /**
 * @brief      finds the minimum cost direction in the tree
-* @param[out] p_pol, polar coordinates of the cheapest direction
-* @param[in]  path_node_positions, array of expanded tree nodes
-* @param[in]  position, current vehicle position
+* @param[in]  vector of nodes defining the tree
+* @param[in]  ros time of tree generation
+* @param[in]  velocity, scalar value for the current vehicle velocitz
+* @param[out] setpoint on the tree toward which the drone should fly
+* @returns    boolean indicating whether the tree was valid
 **/
-bool getDirectionFromTree(PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
-                          const Eigen::Vector3f& position, const Eigen::Vector3f& goal);
+bool getSetpointFromTree(const std::vector<Eigen::Vector3f>& tree, const ros::Time& tree_generation_time,
+                         float velocity, Eigen::Vector3f& setpoint);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
