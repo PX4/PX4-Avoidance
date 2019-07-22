@@ -1,4 +1,7 @@
 #pragma once
+#include <Eigen/Core>
+#include <Eigen/Dense>
+#include <cmath>
 #include "avoidance/common.h"
 
 namespace avoidance {
@@ -15,5 +18,10 @@ struct candidateDirection {
   bool operator>(const candidateDirection& y) const { return cost > y.cost; }
 
   PolarPoint toPolar(float r) const { return PolarPoint(elevation_angle, azimuth_angle, r); }
+  Eigen::Vector3f toEigen() const {
+    return Eigen::Vector3f(std::cos(elevation_angle * DEG_TO_RAD) * std::sin(azimuth_angle * DEG_TO_RAD),
+                           std::cos(elevation_angle * DEG_TO_RAD) * std::cos(azimuth_angle * DEG_TO_RAD),
+                           std::sin(elevation_angle * DEG_TO_RAD));
+  }
 };
 }

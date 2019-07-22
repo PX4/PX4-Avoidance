@@ -7,6 +7,7 @@
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 #include "planner_functions.h"
+#include "trajectory_simulator.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>

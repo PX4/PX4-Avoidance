@@ -3,6 +3,7 @@
 
 #include "avoidance/histogram.h"
 #include "cost_parameters.h"
+#include "trajectory_simulator.h"
 
 #include <Eigen/Dense>
 
@@ -33,6 +34,7 @@ class StarPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
+  simulation_limits lims_;
 
  protected:
   /**
@@ -53,8 +55,9 @@ class StarPlanner {
   /**
   * @brief     setter method for costMatrix paramters
   * @param[in] cost_params, parameters for the histogram cost function
+  * @param[in] simulation limits defining maximum acceleration, velocity, and jerk
   **/
-  void setParams(costParameters cost_params);
+  void setParams(const costParameters& cost_params, const simulation_limits& limits);
 
   /**
   * @brief     setter method for star_planner pointcloud
