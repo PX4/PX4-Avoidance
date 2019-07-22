@@ -136,7 +136,14 @@ void LocalPlanner::determineStrategy() {
     getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
                   max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
 
-    star_planner_->setParams(cost_params_);
+    simulation_limits lims;
+    setDefaultPx4Parameters();  // TODO: remove but make sure they're set!
+    lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
+    lims.min_z_velocity = -1.0f * px4_.param_mpc_vel_max_dn;
+    lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
+    lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
+    lims.max_jerk_norm = px4_.param_mpc_jerk_max;
+    star_planner_->setParams(cost_params_, lims);
     star_planner_->setPointcloud(final_cloud_);
     star_planner_->setClosestPointOnLine(closest_pt_);
 

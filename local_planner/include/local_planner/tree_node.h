@@ -3,21 +3,20 @@
 
 #include <Eigen/Core>
 #include <vector>
+#include "trajectory_simulator.h"
 
 namespace avoidance {
 
 class TreeNode {
-  Eigen::Vector3f position_;
-  Eigen::Vector3f velocity_;
-
  public:
   float total_cost_;
   float heuristic_;
   int origin_;
   bool closed_;
+  simulation_state state;
 
   TreeNode();
-  TreeNode(int from, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
+  TreeNode(int from, const simulation_state& start_state);
   ~TreeNode() = default;
 
   /**
