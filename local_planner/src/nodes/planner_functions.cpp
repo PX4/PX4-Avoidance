@@ -363,17 +363,24 @@ bool getSetpointFromTree(const std::vector<Eigen::Vector3f>& tree, const ros::Ti
     return false;
   }
 
+  // path only has one segment: return end of that segment as setpoint
+  if (i == 2) {
+    setpoint = tree[0];
+    return true;
+  }
+
   // step through the tree until the point where we should be if we had traveled perfectly with velocity along it
   float distance_left = std::max(0.1, (ros::Time::now() - tree_generation_time).toSec() * velocity);
-  setpoint = tree[i - 2];
-  Eigen::Vector3f tree_segment = tree[i - 2] - tree[i - 1];
 
-  for (i = tree.size() - 2; i > 0 && distance_left > tree_segment.norm(); --i) {
+  Eigen::Vector3f tree_segment = tree[i - 3] - tree[i - 2];
+  setpoint = tree[i - 2] + (distance_left / tree_segment.norm()) * tree_segment;
+
+  for (i = tree.size() - 3; i > 0 && distance_left > tree_segment.norm(); --i) {
     distance_left -= tree_segment.norm();
     tree_segment = tree[i - 1] - tree[i];
-    setpoint = tree[i - 1];
+    setpoint = tree[i] + (distance_left / tree_segment.norm()) * tree_segment;
   }
-  return true;
+  return i > 0;  // If we excited because we're passed the last node of the tree, the tree is no longer valid!
 }
 
 void printHistogram(Histogram& histogram) {

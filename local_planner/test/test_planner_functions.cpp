@@ -151,28 +151,36 @@ TEST(PlannerFunctions, testDirectionTree) {
   Eigen::Vector3f sp1, sp2, sp3;
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getSetpointFromTree(path_node_positions, t1, velocity, sp1);  // very short time should still return node 0
+  bool res = getSetpointFromTree(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
   bool res1 = getSetpointFromTree(path_node_positions, t2, velocity, sp2);
   bool res2 = getSetpointFromTree(path_node_positions, t3, velocity, sp3);  // should be second node on tree
   bool res3 = getSetpointFromTree(empty_tree, t1, velocity, sp1);
 
-  // THEN: we expect a direction in between node n1 and n2 for position, between
-  // node n3 and n4 for position1, and not to get an available tree for the
-  // position2
+  // THEN: we expect the setpoint in between node n1 and n2 for t1 and t2 between
+  // node n2 and n3 for t3, and not to get an available tree for the empty tree
   ASSERT_TRUE(res);
-  EXPECT_FLOAT_EQ(sp1.x(), n1.x());
-  EXPECT_FLOAT_EQ(sp1.y(), n1.y());
-  EXPECT_FLOAT_EQ(sp1.z(), n1.z());
+  EXPECT_GE(sp1.x(), n1.x());
+  EXPECT_LE(sp1.x(), n2.x());
+  EXPECT_GE(sp1.y(), n1.y());
+  EXPECT_LE(sp1.y(), n2.y());
+  EXPECT_GE(sp1.z(), n1.z());
+  EXPECT_LE(sp1.z(), n2.z());
 
   ASSERT_TRUE(res1);
-  EXPECT_FLOAT_EQ(sp2.x(), n1.x());
-  EXPECT_FLOAT_EQ(sp2.y(), n1.y());
-  EXPECT_FLOAT_EQ(sp2.z(), n1.z());
+  EXPECT_GE(sp2.x(), n1.x());
+  EXPECT_LE(sp2.x(), n2.x());
+  EXPECT_GE(sp2.y(), n1.y());
+  EXPECT_LE(sp2.y(), n2.y());
+  EXPECT_GE(sp2.z(), n1.z());
+  EXPECT_LE(sp2.z(), n2.z());
 
   ASSERT_TRUE(res2);
-  EXPECT_FLOAT_EQ(sp3.x(), n2.x());
-  EXPECT_FLOAT_EQ(sp3.y(), n2.y());
-  EXPECT_FLOAT_EQ(sp3.z(), n2.z());
+  EXPECT_GE(sp3.x(), n2.x());
+  EXPECT_LE(sp3.x(), n3.x());
+  EXPECT_GE(sp3.y(), n2.y());
+  EXPECT_LE(sp3.y(), n3.y());
+  EXPECT_GE(sp3.z(), n2.z());
+  EXPECT_LE(sp3.z(), n3.z());
 
   ASSERT_FALSE(res3);
 }
