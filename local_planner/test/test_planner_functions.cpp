@@ -129,8 +129,8 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   EXPECT_EQ(6, processed_cloud3.size());
 }
 
-TEST(PlannerFunctions, testDirectionTree) {
-  // GIVEN: the node positions in a tree and some possible vehicle positions
+TEST(PlannerFunctions, getSetpointFromPath) {
+  // GIVEN: the node positions in a path and some possible vehicle positions
   float n1_x = 0.8f;
   float n2_x = 1.5f;
   float n3_x = 2.1f;
@@ -141,30 +141,48 @@ TEST(PlannerFunctions, testDirectionTree) {
   Eigen::Vector3f n3(n3_x, n2.y() + sqrtf(1 - powf(n3_x - n2.x(), 2)), 2.5f);
   Eigen::Vector3f n4(n4_x, n3.y() + sqrtf(1 - powf(n4_x - n3.x(), 2)), 2.5f);
   const std::vector<Eigen::Vector3f> path_node_positions = {n4, n3, n2, n1, n0};
+  const std::vector<Eigen::Vector3f> empty_path = {};
+  ros::Time t1 = ros::Time::now();
+  ros::Time t2 = t1 - ros::Duration(0.1);
+  ros::Time t3 = t1 - ros::Duration(1.1);
 
-  PolarPoint p, p1, p2;
-  Eigen::Vector3f postion(0.2f, 0.3f, 1.5f);
-  Eigen::Vector3f postion1(1.1f, 2.3f, 2.5f);
-  Eigen::Vector3f postion2(5.4f, 2.0f, 2.5f);
-  Eigen::Vector3f goal(10.0f, 5.0f, 2.5f);
+  float velocity = 1.0f;  // assume we're flying at 1m/s
+
+  Eigen::Vector3f sp1, sp2, sp3;
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getDirectionFromTree(p, path_node_positions, postion, goal);
-  bool res1 = getDirectionFromTree(p1, path_node_positions, postion1, goal);
-  bool res2 = getDirectionFromTree(p2, path_node_positions, postion2, goal);
+  bool res = getSetpointFromPath(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
+  bool res1 = getSetpointFromPath(path_node_positions, t2, velocity, sp2);
+  bool res2 = getSetpointFromPath(path_node_positions, t3, velocity, sp3);  // should be second node on path
+  bool res3 = getSetpointFromPath(empty_path, t1, velocity, sp1);
 
-  // THEN: we expect a direction in between node n1 and n2 for position, between
-  // node n3 and n4 for position1, and not to get an available tree for the
-  // position2
+  // THEN: we expect the setpoint in between node n1 and n2 for t1 and t2 between
+  // node n2 and n3 for t3, and not to get an available path for the empty path
   ASSERT_TRUE(res);
-  EXPECT_NEAR(45.0f, p.e, 1.f);
-  EXPECT_NEAR(57.0f, p.z, 1.f);
+  EXPECT_GE(sp1.x(), n1.x());
+  EXPECT_LE(sp1.x(), n2.x());
+  EXPECT_GE(sp1.y(), n1.y());
+  EXPECT_LE(sp1.y(), n2.y());
+  EXPECT_GE(sp1.z(), n1.z());
+  EXPECT_LE(sp1.z(), n2.z());
 
   ASSERT_TRUE(res1);
-  EXPECT_NEAR(0.0f, p1.e, 1.f);
-  EXPECT_NEAR(72.0f, p1.z, 1.f);
+  EXPECT_GE(sp2.x(), n1.x());
+  EXPECT_LE(sp2.x(), n2.x());
+  EXPECT_GE(sp2.y(), n1.y());
+  EXPECT_LE(sp2.y(), n2.y());
+  EXPECT_GE(sp2.z(), n1.z());
+  EXPECT_LE(sp2.z(), n2.z());
 
-  ASSERT_FALSE(res2);
+  ASSERT_TRUE(res2);
+  EXPECT_GE(sp3.x(), n2.x());
+  EXPECT_LE(sp3.x(), n3.x());
+  EXPECT_GE(sp3.y(), n2.y());
+  EXPECT_LE(sp3.y(), n3.y());
+  EXPECT_GE(sp3.z(), n2.z());
+  EXPECT_LE(sp3.z(), n3.z());
+
+  ASSERT_FALSE(res3);
 }
 
 TEST(PlannerFunctions, padPolarMatrixAzimuthWrapping) {
