@@ -34,7 +34,7 @@ void WaypointGenerator::calculateWaypoint() {
 
     case tryPath: {
       Eigen::Vector3f setpoint = position_;
-      if (getSetpointFromTree(planner_info_.path_node_positions, planner_info_.last_path_time,
+      if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
                               planner_info_.cruise_velocity, setpoint)) {
         output_.goto_position = position_ + (setpoint - position_).normalized();
         ROS_DEBUG("[WG] Using calculated tree\n");

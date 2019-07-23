@@ -355,9 +355,9 @@ void costFunction(float e_angle, float z_angle, float obstacle_distance, const E
                 heading_cost;
 }
 
-bool getSetpointFromTree(const std::vector<Eigen::Vector3f>& tree, const ros::Time& tree_generation_time,
+bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
                          float velocity, Eigen::Vector3f& setpoint) {
-  int i = tree.size();
+  int i = path.size();
   // path contains nothing meaningful
   if (i < 2) {
     return false;
@@ -365,22 +365,22 @@ bool getSetpointFromTree(const std::vector<Eigen::Vector3f>& tree, const ros::Ti
 
   // path only has one segment: return end of that segment as setpoint
   if (i == 2) {
-    setpoint = tree[0];
+    setpoint = path[0];
     return true;
   }
 
-  // step through the tree until the point where we should be if we had traveled perfectly with velocity along it
-  float distance_left = std::max(0.1, (ros::Time::now() - tree_generation_time).toSec() * velocity);
+  // step through the path until the point where we should be if we had traveled perfectly with velocity along it
+  float distance_left = std::max(0.1, (ros::Time::now() - path_generation_time).toSec() * velocity);
 
-  Eigen::Vector3f tree_segment = tree[i - 3] - tree[i - 2];
-  setpoint = tree[i - 2] + (distance_left / tree_segment.norm()) * tree_segment;
+  Eigen::Vector3f path_segment = path[i - 3] - path[i - 2];
+  setpoint = path[i - 2] + (distance_left / path_segment.norm()) * path_segment;
 
-  for (i = tree.size() - 3; i > 0 && distance_left > tree_segment.norm(); --i) {
-    distance_left -= tree_segment.norm();
-    tree_segment = tree[i - 1] - tree[i];
-    setpoint = tree[i] + (distance_left / tree_segment.norm()) * tree_segment;
+  for (i = path.size() - 3; i > 0 && distance_left > path_segment.norm(); --i) {
+    distance_left -= path_segment.norm();
+    path_segment = path[i - 1] - path[i];
+    setpoint = path[i] + (distance_left / path_segment.norm()) * path_segment;
   }
-  return i > 0;  // If we excited because we're passed the last node of the tree, the tree is no longer valid!
+  return i > 0;  // If we excited because we're passed the last node of the path, the path is no longer valid!
 }
 
 void printHistogram(Histogram& histogram) {

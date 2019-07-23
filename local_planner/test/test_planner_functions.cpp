@@ -129,8 +129,8 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   EXPECT_EQ(6, processed_cloud3.size());
 }
 
-TEST(PlannerFunctions, testDirectionTree) {
-  // GIVEN: the node positions in a tree and some possible vehicle positions
+TEST(PlannerFunctions, getSetpointFromPath) {
+  // GIVEN: the node positions in a path and some possible vehicle positions
   float n1_x = 0.8f;
   float n2_x = 1.5f;
   float n3_x = 2.1f;
@@ -141,7 +141,7 @@ TEST(PlannerFunctions, testDirectionTree) {
   Eigen::Vector3f n3(n3_x, n2.y() + sqrtf(1 - powf(n3_x - n2.x(), 2)), 2.5f);
   Eigen::Vector3f n4(n4_x, n3.y() + sqrtf(1 - powf(n4_x - n3.x(), 2)), 2.5f);
   const std::vector<Eigen::Vector3f> path_node_positions = {n4, n3, n2, n1, n0};
-  const std::vector<Eigen::Vector3f> empty_tree = {};
+  const std::vector<Eigen::Vector3f> empty_path = {};
   ros::Time t1 = ros::Time::now();
   ros::Time t2 = t1 - ros::Duration(0.1);
   ros::Time t3 = t1 - ros::Duration(1.1);
@@ -151,13 +151,13 @@ TEST(PlannerFunctions, testDirectionTree) {
   Eigen::Vector3f sp1, sp2, sp3;
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getSetpointFromTree(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
-  bool res1 = getSetpointFromTree(path_node_positions, t2, velocity, sp2);
-  bool res2 = getSetpointFromTree(path_node_positions, t3, velocity, sp3);  // should be second node on tree
-  bool res3 = getSetpointFromTree(empty_tree, t1, velocity, sp1);
+  bool res = getSetpointFromPath(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
+  bool res1 = getSetpointFromPath(path_node_positions, t2, velocity, sp2);
+  bool res2 = getSetpointFromPath(path_node_positions, t3, velocity, sp3);  // should be second node on path
+  bool res3 = getSetpointFromPath(empty_path, t1, velocity, sp1);
 
   // THEN: we expect the setpoint in between node n1 and n2 for t1 and t2 between
-  // node n2 and n3 for t3, and not to get an available tree for the empty tree
+  // node n2 and n3 for t3, and not to get an available path for the empty path
   ASSERT_TRUE(res);
   EXPECT_GE(sp1.x(), n1.x());
   EXPECT_LE(sp1.x(), n2.x());

@@ -147,14 +147,14 @@ Eigen::ArrayXf getConicKernel(int radius);
 void printHistogram(const Histogram& histogram);
 
 /**
-* @brief      finds the minimum cost direction in the tree
-* @param[in]  vector of nodes defining the tree
-* @param[in]  ros time of tree generation
-* @param[in]  velocity, scalar value for the current vehicle velocitz
+* @brief      Returns a setpoint that lies on the given path
+* @param[in]  vector of nodes defining the path
+* @param[in]  ros time of path generation
+* @param[in]  velocity, scalar value for the norm of the current vehicle velocity
 * @param[out] setpoint on the tree toward which the drone should fly
 * @returns    boolean indicating whether the tree was valid
 **/
-bool getSetpointFromTree(const std::vector<Eigen::Vector3f>& tree, const ros::Time& tree_generation_time,
+bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
                          float velocity, Eigen::Vector3f& setpoint);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
