@@ -148,7 +148,7 @@ void printHistogram(const Histogram& histogram);
 
 /**
 * @brief      Returns a setpoint that lies on the given path
-* @param[in]  vector of nodes defining the path
+* @param[in]  vector of nodes defining the path, with the last node of the path at index 0
 * @param[in]  ros time of path generation
 * @param[in]  velocity, scalar value for the norm of the current vehicle velocity
 * @param[out] setpoint on the tree toward which the drone should fly
