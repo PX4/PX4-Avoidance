@@ -13,7 +13,7 @@ namespace avoidance {
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
                        const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
-                       const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
+                       const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
                        int min_num_points_per_cell) {
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
@@ -39,7 +39,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
             Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
             if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
-              final_cloud.points.push_back(toXYZI(toEigen(xyz), 0));
+              final_cloud.points.push_back(toXYZI(toEigen(xyz), 0.0f));
             }
           }
         }
