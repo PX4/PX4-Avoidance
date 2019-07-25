@@ -4,6 +4,7 @@
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
 
+#include <std_msgs/ColorRGBA.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 
@@ -153,10 +154,10 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   tree_marker.action = visualization_msgs::Marker::ADD;
   tree_marker.pose.orientation.w = 1.0;
   tree_marker.scale.x = 0.05;
-  tree_marker.color.a = 0.8;
-  tree_marker.color.r = 0.4;
-  tree_marker.color.g = 0.0;
-  tree_marker.color.b = 0.6;
+  // tree_marker.color.a = 0.8;
+  // tree_marker.color.r = 0.4;
+  // tree_marker.color.g = 0.0;
+  // tree_marker.color.b = 0.6;
 
   visualization_msgs::Marker path_marker;
   path_marker.header.frame_id = "local_origin";
@@ -178,7 +179,9 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
     int origin = tree[node_nr].origin_;
     geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
     tree_marker.points.push_back(p1);
+   tree_marker.colors.push_back(tree[node_nr].getDominantTerm());
     tree_marker.points.push_back(p2);
+    tree_marker.colors.push_back(tree[origin].getDominantTerm());
   }
 
   path_marker.points.reserve(path_node_positions.size() * 2);

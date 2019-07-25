@@ -70,7 +70,9 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
+                   Eigen::MatrixXf& cost_matrix, Eigen::MatrixXf& distance_matrix,
+                   Eigen::MatrixXf& velocity_cost_matrix, Eigen::MatrixXf& yaw_cost_matrix,
+                   Eigen::MatrixXf& pitch_cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -95,7 +97,11 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf
 * @param[out] candidate_vector, array of candidate polar direction arranged from
 *             the least to the most expensive
 **/
-void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
+void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& total_cost_matrix,
+                                     const Eigen::MatrixXf& distance_cost_matrix,
+                                     const Eigen::MatrixXf& velocity_cost_matrix,
+                                     const Eigen::MatrixXf& yaw_cost_matrix, const Eigen::MatrixXf& pitch_cost_matrix,
+                                     unsigned int number_of_candidates,
                                      std::vector<candidateDirection>& candidate_vector);
 
 /**
@@ -107,9 +113,9 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[in]  cost_params, weights for goal oriented vs smooth behaviour
 * @returns    a pair with the first value representing the distance cost, and the second the sum of all other costs
 **/
-std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
-                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                                     const Eigen::Vector3f& velocity, const costParameters& cost_params);
+std::vector<float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance, const Eigen::Vector3f& goal,
+                                const Eigen::Vector3f& position, const Eigen::Vector3f& velocity,
+                                const costParameters& cost_params);
 
 /**
 * @brief      max-median filtes the cost matrix

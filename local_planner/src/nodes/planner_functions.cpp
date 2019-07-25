@@ -125,9 +125,18 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
-  Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
+                   Eigen::MatrixXf& cost_matrix, Eigen::MatrixXf& distance_matrix,
+                   Eigen::MatrixXf& velocity_cost_matrix, Eigen::MatrixXf& yaw_cost_matrix,
+                   Eigen::MatrixXf& pitch_cost_matrix, std::vector<uint8_t>& image_data) {
+  distance_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  velocity_cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  yaw_cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+  pitch_cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
+
   distance_matrix.fill(NAN);
+  velocity_cost_matrix.fill(NAN);
+  yaw_cost_matrix.fill(NAN);
+  pitch_cost_matrix.fill(NAN);
 
   // reset cost matrix to zero
   cost_matrix.resize(GRID_LENGTH_E, GRID_LENGTH_Z);
@@ -144,9 +153,12 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, 1.0f);  // unit vector of current direction
 
-      std::pair<float, float> costs = costFunction(p_pol, obstacle_distance, goal, position, velocity, cost_params);
-      cost_matrix(e_index, z_index) = costs.second;
-      distance_matrix(e_index, z_index) = costs.first;
+      std::vector<float> costs = costFunction(p_pol, obstacle_distance, goal, position, velocity, cost_params);
+      cost_matrix(e_index, z_index) = costs[1];
+      distance_matrix(e_index, z_index) = costs[0];
+      velocity_cost_matrix(e_index, z_index) = costs[2];
+      yaw_cost_matrix(e_index, z_index) = costs[3];
+      pitch_cost_matrix(e_index, z_index) = costs[4];
     }
     if (step_size > 1) {
       // horizontally interpolate all of the un-calculated values
@@ -155,9 +167,19 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
         float other_costs_gradient = (cost_matrix(e_index, z_index) - cost_matrix(e_index, last_index)) / step_size;
         float distance_cost_gradient =
             (distance_matrix(e_index, z_index) - distance_matrix(e_index, last_index)) / step_size;
+        float velocity_cost_gradient =
+            (velocity_cost_matrix(e_index, z_index) - velocity_cost_matrix(e_index, last_index)) / step_size;
+        float yaw_cost_gradient =
+            (yaw_cost_matrix(e_index, z_index) - yaw_cost_matrix(e_index, last_index)) / step_size;
+        float pitch_cost_gradient =
+            (pitch_cost_matrix(e_index, z_index) - pitch_cost_matrix(e_index, last_index)) / step_size;
         for (int i = 1; i < step_size; i++) {
           cost_matrix(e_index, last_index + i) = cost_matrix(e_index, last_index) + other_costs_gradient * i;
           distance_matrix(e_index, last_index + i) = distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+          velocity_cost_matrix(e_index, last_index + i) =
+              velocity_cost_matrix(e_index, last_index) + velocity_cost_gradient * i;
+          yaw_cost_matrix(e_index, last_index + i) = yaw_cost_matrix(e_index, last_index) + yaw_cost_gradient * i;
+          pitch_cost_matrix(e_index, last_index + i) = pitch_cost_matrix(e_index, last_index) + pitch_cost_gradient * i;
         }
         last_index = z_index;
       }
@@ -167,10 +189,19 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float other_costs_gradient = (cost_matrix(e_index, 0) - cost_matrix(e_index, last_index)) / clamped_z_scale;
       float distance_cost_gradient =
           (distance_matrix(e_index, 0) - distance_matrix(e_index, last_index)) / clamped_z_scale;
+      float velocity_cost_gradient =
+          (velocity_cost_matrix(e_index, 0) - velocity_cost_matrix(e_index, last_index)) / clamped_z_scale;
+      float yaw_cost_gradient = (yaw_cost_matrix(e_index, 0) - yaw_cost_matrix(e_index, last_index)) / clamped_z_scale;
+      float pitch_cost_gradient =
+          (pitch_cost_matrix(e_index, 0) - pitch_cost_matrix(e_index, last_index)) / clamped_z_scale;
 
       for (int i = 1; i < clamped_z_scale; i++) {
         cost_matrix(e_index, last_index + i) = cost_matrix(e_index, last_index) + other_costs_gradient * i;
         distance_matrix(e_index, last_index + i) = distance_matrix(e_index, last_index) + distance_cost_gradient * i;
+        velocity_cost_matrix(e_index, last_index + i) =
+            velocity_cost_matrix(e_index, last_index) + velocity_cost_gradient * i;
+        yaw_cost_matrix(e_index, last_index + i) = yaw_cost_matrix(e_index, last_index) + yaw_cost_gradient * i;
+        pitch_cost_matrix(e_index, last_index + i) = pitch_cost_matrix(e_index, last_index) + pitch_cost_gradient * i;
       }
     }
   }
@@ -204,15 +235,21 @@ int colorImageIndex(int e_ind, int z_ind, int color) {
   return ((GRID_LENGTH_E - e_ind - 1) * GRID_LENGTH_Z + z_ind) * 3 + color;
 }
 
-void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
+void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& total_cost_matrix,
+                                     const Eigen::MatrixXf& distance_cost_matrix,
+                                     const Eigen::MatrixXf& velocity_cost_matrix,
+                                     const Eigen::MatrixXf& yaw_cost_matrix, const Eigen::MatrixXf& pitch_cost_matrix,
+                                     unsigned int number_of_candidates,
                                      std::vector<candidateDirection>& candidate_vector) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
 
-  for (int row_index = 0; row_index < matrix.rows(); row_index++) {
-    for (int col_index = 0; col_index < matrix.cols(); col_index++) {
+  for (int row_index = 0; row_index < total_cost_matrix.rows(); row_index++) {
+    for (int col_index = 0; col_index < total_cost_matrix.cols(); col_index++) {
       PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
-      float cost = matrix(row_index, col_index);
-      candidateDirection candidate(cost, p_pol.e, p_pol.z);
+      float cost = total_cost_matrix(row_index, col_index);
+      candidateDirection candidate(cost, distance_cost_matrix(row_index, col_index),
+                                   velocity_cost_matrix(row_index, col_index), yaw_cost_matrix(row_index, col_index),
+                                   pitch_cost_matrix(row_index, col_index), p_pol.e, p_pol.z);
 
       if (queue.size() < number_of_candidates) {
         queue.push(candidate);
@@ -301,9 +338,9 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 }
 
 // costfunction for every free histogram cell
-std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
-                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                                     const Eigen::Vector3f& velocity, const costParameters& cost_params) {
+std::vector<float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance, const Eigen::Vector3f& goal,
+                                const Eigen::Vector3f& position, const Eigen::Vector3f& velocity,
+                                const costParameters& cost_params) {
   // Compute  polar direction to goal and cartesian representation of current direction to evaluate
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
   const Eigen::Vector3f candidate_velocity_cartesian =
@@ -317,7 +354,8 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
   const float d = cost_params.obstacle_cost_param - obstacle_distance;
   const float distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
-  return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + pitch_cost);
+  std::vector<float> ret{distance_cost, velocity_cost + yaw_cost + pitch_cost, velocity_cost, yaw_cost, pitch_cost};
+  return ret;
 }
 
 bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,

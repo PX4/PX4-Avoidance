@@ -41,7 +41,11 @@ void StarPlanner::buildLookAheadTree() {
   Histogram histogram(ALPHA_RES);
   std::vector<uint8_t> cost_image_data;
   std::vector<candidateDirection> candidate_vector;
-  Eigen::MatrixXf cost_matrix;
+  Eigen::MatrixXf total_cost_matrix;
+  Eigen::MatrixXf distance_cost_matrix;
+  Eigen::MatrixXf velocity_cost_matrix;
+  Eigen::MatrixXf yaw_cost_matrix;
+  Eigen::MatrixXf pitch_cost_matrix;
 
   bool is_expanded_node = true;
 
@@ -63,12 +67,14 @@ void StarPlanner::buildLookAheadTree() {
     generateNewHistogram(histogram, cloud_, origin_position);
 
     // calculate candidates
-    cost_matrix.fill(0.f);
+    total_cost_matrix.fill(0.f);
     cost_image_data.clear();
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  cost_matrix, cost_image_data);
-    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
+                  total_cost_matrix, distance_cost_matrix, velocity_cost_matrix, yaw_cost_matrix, pitch_cost_matrix,
+                  cost_image_data);
+    getBestCandidatesFromCostMatrix(total_cost_matrix, distance_cost_matrix, velocity_cost_matrix, yaw_cost_matrix,
+                                    pitch_cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes
     if (candidate_vector.empty()) {
@@ -94,8 +100,12 @@ void StarPlanner::buildLookAheadTree() {
         if (children < children_per_node_ && close_nodes == 0) {
           tree_.push_back(TreeNode(origin, node_location, node_velocity));
           float h = treeHeuristicFunction(tree_.size() - 1);
+          tree_.back().distance_cost = candidate.distance_cost;
+          tree_.back().velocity_cost = candidate.velocity_cost;
+          tree_.back().yaw_cost = candidate.yaw_cost;
+          tree_.back().pitch_cost = candidate.pitch_cost;
           tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
+          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.total_cost + h;
           children++;
         }
       }
