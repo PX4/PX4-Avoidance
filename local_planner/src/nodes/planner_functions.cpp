@@ -63,8 +63,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
 
         // only remember point if it's in a cell not previously populated by
         // complete_cloud, as well as outside FOV and 'young' enough
-        if (histogram_points_counter(p_ind.y(), p_ind.x()) < min_num_points_per_cell && xyzi.intensity < max_age &&
-            !pointInsideFOV(fov, p_pol_fcu)) {
+        if (xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol_fcu)) {
           final_cloud.points.push_back(toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 
           // to indicate that this cell now has a point
