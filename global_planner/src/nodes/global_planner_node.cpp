@@ -397,15 +397,3 @@ void GlobalPlannerNode::publishSetpoint() {
 bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < 1.5; }
 
 }  // namespace global_planner
-
-int main(int argc, char** argv) {
-  ros::init(argc, argv, "global_planner_node");
-
-  ros::NodeHandle nh("~");
-  ros::NodeHandle nh_private("");
-
-  global_planner::GlobalPlannerNode global_planner_node(nh, nh_private);
-
-  ros::spin();
-  return 0;
-}

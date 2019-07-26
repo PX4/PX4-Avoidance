@@ -150,9 +150,10 @@ link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
 add_library(global_planner
-  src/library/global_planner.cpp
   src/library/node.cpp
   src/library/cell.cpp
+  src/library/global_planner.cpp
+  src/nodes/global_planner_node.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -161,7 +162,7 @@ add_library(global_planner
 add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(global_planner_node src/nodes/global_planner_node.cpp)
+add_executable(global_planner_node src/nodes/global_planner_node_main.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(global_planner_node
