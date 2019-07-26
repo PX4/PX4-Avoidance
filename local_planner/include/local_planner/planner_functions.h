@@ -26,7 +26,7 @@ namespace avoidance {
 * @param[in]  FOV, struct defining current field of view
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
-* @param[in]  max_age, maximum age (compute cycles) to keep data
+* @param[in]  max_age, maximum age in seconds to keep data
 * @param[in]  elapsed, time elapsed since last processing [s]
 * @param[in]  min_num_points_per_cell, number of points from which on they will
 *             be kept, less points are discarded as noise (careful: 0 is not
@@ -35,7 +35,7 @@ namespace avoidance {
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
                        const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
-                       const Eigen::Vector3f& position, float min_realsense_dist, int max_age, float elapsed_s,
+                       const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
                        int min_num_points_per_cell);
 
 /**
@@ -69,9 +69,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[out] image of the cost matrix for visualization
 **/
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                   float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                   const costParameters& cost_params, float smoothing_margin_degrees, Eigen::MatrixXf& cost_matrix,
-                   std::vector<uint8_t>& image_data);
+                   const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -101,20 +100,16 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 
 /**
 * @brief      computes the cost of each direction in the polar histogram
-* @param[in]  e_angle, elevation angle [deg]
-* @param[in]  z_angle, azimuth angle [deg]
+* @param[in]  PolarPoint of the candidate direction
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
-* @param[in]  position, current vehicle heading in histogram angle convention
-*             [deg]
-* @param[in]  last_sent_waypoint, previous position waypoint
+* @param[in]  velocity, current vehicle velocity
 * @param[in]  cost_params, weights for goal oriented vs smooth behaviour
-* @param[out] distance_cost, cost component due to proximity to obstacles
-* @param[out] other_costs, cost component due to goal and smoothness
+* @returns    a pair with the first value representing the distance cost, and the second the sum of all other costs
 **/
-void costFunction(float e_angle, float z_angle, float obstacle_distance, const Eigen::Vector3f& goal,
-                  const Eigen::Vector3f& position, float yaw_fcu_frame_deg, const Eigen::Vector3f& last_sent_waypoint,
-                  const costParameters& cost_params, float& distance_cost, float& other_costs);
+std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
+                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                                     const Eigen::Vector3f& velocity, const costParameters& cost_params);
 
 /**
 * @brief      max-median filtes the cost matrix

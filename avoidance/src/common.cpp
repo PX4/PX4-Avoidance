@@ -226,6 +226,11 @@ float wrapAngleToPlusMinusPI(float angle) { return angle - 2.0f * M_PI_F * std::
 
 float wrapAngleToPlusMinus180(float angle) { return angle - 360.f * std::floor(angle / 360.f + 0.5f); }
 
+float angleDifference(float a, float b) {
+  float angle = fmod(a - b, 360.f);
+  return angle >= 0.f ? (angle < 180.f) ? angle : angle - 360.f : (angle >= -180.f) ? angle : angle + 360.f;
+}
+
 double getAngularVelocity(float desired_yaw, float curr_yaw) {
   desired_yaw = wrapAngleToPlusMinusPI(desired_yaw);
   float yaw_vel1 = desired_yaw - curr_yaw;

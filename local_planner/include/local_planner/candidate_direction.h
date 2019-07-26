@@ -1,4 +1,5 @@
 #pragma once
+#include "avoidance/common.h"
 
 namespace avoidance {
 
@@ -12,5 +13,7 @@ struct candidateDirection {
   bool operator<(const candidateDirection& y) const { return cost < y.cost; }
 
   bool operator>(const candidateDirection& y) const { return cost > y.cost; }
+
+  PolarPoint toPolar(float r) const { return PolarPoint(elevation_angle, azimuth_angle, r); }
 };
 }

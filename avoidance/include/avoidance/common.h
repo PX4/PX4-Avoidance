@@ -221,6 +221,7 @@ void wrapPolar(PolarPoint& p_pol);
 **/
 float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v);
 
+// todo: is this used?
 void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw);
 
 /**
@@ -247,6 +248,15 @@ float WARN_UNUSED wrapAngleToPlusMinusPI(float angle);
 * @returns   wrapped angle [deg]
 **/
 float WARN_UNUSED wrapAngleToPlusMinus180(float angle);
+
+/**
+* @brief     returns the correctly wrapped angle difference in degrees
+* @param[in] the first angle in degrees
+* @param[in] the second angle in degrees
+* @returns   the angle between the two given angles [0, 180]
+**/
+float angleDifference(float a, float b);
+
 /**
 * @brief     computes an angular velocity to reach the desired_yaw
 * @param[in] adesired_yaw  [rad]

@@ -172,11 +172,9 @@ void LocalPlannerNode::updatePlannerInfo() {
     }
   }
 
-  // update position
-  local_planner_->setPose(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation));
-
-  // Update velocity
-  local_planner_->setCurrentVelocity(toEigen(vel_msg_.twist.linear));
+  // update pose
+  local_planner_->setState(toEigen(newest_pose_.pose.position), toEigen(vel_msg_.twist.linear),
+                           toEigen(newest_pose_.pose.orientation));
 
   // update state
   local_planner_->currently_armed_ = armed_;

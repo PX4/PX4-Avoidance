@@ -8,19 +8,16 @@ namespace avoidance {
 
 class TreeNode {
   Eigen::Vector3f position_;
+  Eigen::Vector3f velocity_;
 
  public:
   float total_cost_;
   float heuristic_;
-  float last_e_;
-  float last_z_;
   int origin_;
-  int depth_;
-  float yaw_;
   bool closed_;
 
   TreeNode();
-  TreeNode(int from, int d, const Eigen::Vector3f& pos);
+  TreeNode(int from, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
   ~TreeNode() = default;
 
   /**
@@ -35,6 +32,7 @@ class TreeNode {
   * @returns   node position in 3D cartesian coordinates
   **/
   Eigen::Vector3f getPosition() const;
+  Eigen::Vector3f getVelocity() const;
 };
 }
 
