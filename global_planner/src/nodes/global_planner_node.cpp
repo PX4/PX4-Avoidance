@@ -3,7 +3,12 @@
 namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
-    : nh_(nh), nh_private_(nh_private), avoidance_node_(nh, nh_private), cmdloop_dt_(0.1), plannerloop_dt_(1.0), start_yaw_(0.0) {
+    : nh_(nh),
+      nh_private_(nh_private),
+      avoidance_node_(nh, nh_private),
+      cmdloop_dt_(0.1),
+      plannerloop_dt_(1.0),
+      start_yaw_(0.0) {
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
