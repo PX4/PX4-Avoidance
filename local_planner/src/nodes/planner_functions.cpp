@@ -15,16 +15,17 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
                        const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
                        int min_num_points_per_cell) {
+  const int SCALE_FACTOR = 4;
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
   final_cloud.points.clear();
   final_cloud.width = 0;
-  final_cloud.points.reserve((2 * GRID_LENGTH_Z) * (2 * GRID_LENGTH_E));
+  final_cloud.points.reserve((SCALE_FACTOR * GRID_LENGTH_Z) * (SCALE_FACTOR * GRID_LENGTH_E));
 
   float distance;
 
   // counter to keep track of how many points lie in a given cell
-  Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / 2), 360 / (ALPHA_RES / 2));
+  Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / SCALE_FACTOR), 360 / (ALPHA_RES / SCALE_FACTOR));
   histogram_points_counter.fill(0);
 
   for (const auto& cloud : complete_cloud) {
@@ -36,7 +37,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
           if (distance > min_realsense_dist && distance < histogram_box.radius_) {
             // subsampling the cloud
             PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyz), position);
-            Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+            Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
             histogram_points_counter(p_ind.y(), p_ind.x())++;
             if (histogram_points_counter(p_ind.y(), p_ind.x()) == min_num_points_per_cell) {
               final_cloud.points.push_back(toXYZI(toEigen(xyz), 0.0f));
@@ -59,11 +60,12 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
         p_pol_fcu.e -= pitch_fcu_frame_deg;
         p_pol_fcu.z -= yaw_fcu_frame_deg;
         wrapPolar(p_pol_fcu);
-        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / 2);
+        Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
 
         // only remember point if it's in a cell not previously populated by
         // complete_cloud, as well as outside FOV and 'young' enough
-        if (xyzi.intensity < max_age && !pointInsideFOV(fov, p_pol_fcu)) {
+        if (histogram_points_counter(p_ind.y(), p_ind.x()) < min_num_points_per_cell && xyzi.intensity < max_age &&
+            !pointInsideFOV(fov, p_pol_fcu)) {
           final_cloud.points.push_back(toXYZI(toEigen(xyzi), xyzi.intensity + elapsed_s));
 
           // to indicate that this cell now has a point
