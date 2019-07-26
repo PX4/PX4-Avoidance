@@ -118,16 +118,16 @@ std::vector<Cell> simplifyPath(GlobalPlanner* global_planner, std::vector<Cell>&
 }
 
 template <typename GlobalPlanner>
-inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s, const GoalCell& t,
-                          int max_iterations = 2000) {
+inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s,
+                                 const GoalCell& t, int max_iterations = 2000) {
   NullVisitor visitor;
   return findSmoothPath(global_planner, path, s, t, max_iterations, visitor);
 }
 
 // A* to find a path from start to t, true iff it found a path
 template <typename GlobalPlanner, typename Visitor>
-inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s, const GoalCell& t,
-                          int max_iterations, Visitor& visitor) {
+inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s,
+                                 const GoalCell& t, int max_iterations, Visitor& visitor) {
   // Initialize containers
   NodePtr best_goal_node;
   visitor.init();

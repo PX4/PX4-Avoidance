@@ -27,8 +27,9 @@ inline double distance(const geometry_msgs::PoseStamped& a, const geometry_msgs:
   return distance(a.pose.position, b.pose.position);
 }
 
-inline geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& listener, const std::string& target_frame,
-                                              const std::string& fixed_frame, const geometry_msgs::TwistStamped& msg) {
+inline geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& listener,
+                                                     const std::string& target_frame, const std::string& fixed_frame,
+                                                     const geometry_msgs::TwistStamped& msg) {
   auto transformed_msg = msg;
   geometry_msgs::Vector3Stamped before;
   before.vector = msg.twist.linear;
