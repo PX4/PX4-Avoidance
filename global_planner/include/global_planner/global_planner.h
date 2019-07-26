@@ -22,7 +22,6 @@
 #include <global_planner/GlobalPlannerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
 #include "global_planner/analysis.h"
-#include "global_planner/bezier.h"
 #include "global_planner/cell.h"
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
