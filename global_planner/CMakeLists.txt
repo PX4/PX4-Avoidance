@@ -22,6 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(PCL 1.7 REQUIRED)
 find_package(octomap REQUIRED)
+find_package(ompl REQUIRED)
 
 if(DISABLE_SIMULATION)
   message(STATUS "Building avoidance without Gazebo Simulation")
@@ -145,7 +146,8 @@ include_directories(
   ${PCL_INCLUDE_DIRS}
   ${OCTOMAP_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIR}
-)
+  ${OMPL_INCLUDE_DIR}
+  )
 link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
@@ -154,6 +156,11 @@ add_library(global_planner
   src/library/cell.cpp
   src/library/global_planner.cpp
   src/nodes/global_planner_node.cpp
+  src/library/octomap_ompl_rrt.cpp
+  src/library/octomap_rrt_planner.cpp
+)
+target_link_libraries(global_planner
+  ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OMPL_LIBRARIES}
 )
 
 ## Add cmake target dependencies of the library
@@ -168,6 +175,12 @@ add_executable(global_planner_node src/nodes/global_planner_node_main.cpp)
 target_link_libraries(global_planner_node
   global_planner ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES}
 )
+
+add_executable(octomap_rrt_planner_node src/nodes/octomap_rrt_planner_node.cpp)
+target_link_libraries(octomap_rrt_planner_node
+  global_planner ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES} ${OMPL_LIBRARIES}
+)
+
 
 #############
 ## Install ##

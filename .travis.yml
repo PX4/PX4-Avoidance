@@ -33,7 +33,7 @@ before_install:
   # Install yaml-cpp ROS package
   - sudo apt-get install -y libyaml-cpp-dev
   # Install MavLink and Mavros
-  - sudo apt-get install -y ros-$ROS_DISTRO-mavlink ros-$ROS_DISTRO-mavros-msgs ros-$ROS_DISTRO-mavros ros-$ROS_DISTRO-mavros-extras
+  - sudo apt-get install -y ros-$ROS_DISTRO-mavlink ros-$ROS_DISTRO-mavros-msgs ros-$ROS_DISTRO-mavros ros-$ROS_DISTRO-mavros-extras ros-$ROS_DISTRO-ompl
   # Source environment
   - source /opt/ros/$ROS_DISTRO/setup.bash
   # Prepare rosdep
