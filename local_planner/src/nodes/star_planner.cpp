@@ -86,7 +86,7 @@ void StarPlanner::buildLookAheadTree() {
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         simulation_state state = tree_[origin].state;
-        TrajectorySimulator sim(lims_, state, 0.05f); // todo: parameterize simulation step size [s]
+        TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
         std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_distance_);
 
         // Ignore node if it brings us farther away from the goal

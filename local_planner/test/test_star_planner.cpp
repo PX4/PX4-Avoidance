@@ -50,8 +50,14 @@ class StarPlannerTests : public ::testing::Test {
       }
     }
     costParameters cost_params;
+    simulation_limits lims;
+    lims.max_z_velocity = 3.f;
+    lims.min_z_velocity = -1.f;
+    lims.max_xy_velocity_norm = 3.f;
+    lims.max_acceleration_norm = 5.f;
+    lims.max_jerk_norm = 20.f;
 
-    star_planner.setParams(cost_params);
+    star_planner.setParams(cost_params, lims);
     star_planner.setPointcloud(cloud);
     star_planner.setPose(position, velocity);
     star_planner.setGoal(goal);
