@@ -227,10 +227,19 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
     tree_marker.points.push_back(p2);
   }
 
-  path_marker.points.reserve(path_node_setpoints.size() * 2);
-  for (size_t i = 1; i < path_node_setpoints.size(); i++) {
-    path_marker.points.push_back(toPoint(path_node_setpoints[i - 1]));
-    path_marker.points.push_back(toPoint(path_node_setpoints[i]));
+  // Visualizing the setpoints is a hack: they are actually in the body frame. This is an approximate visualization
+  // that just accumulates them to illustrate them as a path
+  if (path_node_setpoints.size() > 0) {
+    path_marker.points.reserve(path_node_setpoints.size() * 2);
+    Eigen::Vector3f p1;
+    Eigen::Vector3f p2 = tree[closed_set.front()].getPosition();
+    for (int i = path_node_setpoints.size() - 1; i >= 1; --i) {
+      float scale = (tree[closed_set[i]].getPosition() - tree[closed_set[i - 1]].getPosition()).norm();
+      p1 = p2;
+      p2 = p1 + scale * path_node_setpoints[i];
+      path_marker.points.push_back(toPoint(p1));
+      path_marker.points.push_back(toPoint(p2));
+    }
   }
 
   complete_tree_pub_.publish(tree_marker);

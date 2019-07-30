@@ -22,9 +22,10 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
 }
 
-void StarPlanner::setParams(const costParameters& cost_params, const simulation_limits& limits) {
+void StarPlanner::setParams(const costParameters& cost_params, const simulation_limits& limits, float acc_rad) {
   cost_params_ = cost_params;
   lims_ = limits;
+  acceptance_radius_ = acc_rad;
 }
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
@@ -93,12 +94,6 @@ void StarPlanner::buildLookAheadTree() {
         TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
         std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
 
-        // Ignore node if it brings us farther away from the goal
-        // todo: this breaks being able to get out of concave obstacles! But it helps to not "overplan"
-        if ((trajectory.back().position - goal_).norm() > (trajectory.front().position - goal_).norm()) {
-          continue;
-        }
-
         // check if another close node has been added
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
@@ -127,6 +122,14 @@ void StarPlanner::buildLookAheadTree() {
     is_expanded_node = false;
     for (size_t i = 0; i < tree_.size(); i++) {
       if (!(tree_[i].closed_)) {
+        // If we reach the acceptance radius, add goal as last node and exit
+        if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
+          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
+          closed_set_.push_back(i);
+          closed_set_.push_back(tree_.size() - 1);
+          break;
+        }
+
         float node_distance = (tree_[i].getPosition() - position_).norm();
         if (tree_[i].total_cost_ < minimal_cost && node_distance < max_path_length_) {
           minimal_cost = tree_[i].total_cost_;

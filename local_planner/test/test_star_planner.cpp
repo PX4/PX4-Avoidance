@@ -28,7 +28,7 @@ class StarPlannerTests : public ::testing::Test {
     avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
     config.children_per_node_ = 2;
     config.n_expanded_nodes_ = 10;
-    config.tree_node_duration_ = 1.0;
+    config.tree_node_duration_ = 0.5f;
     star_planner.dynamicReconfigureSetStarParams(config, 1);
 
     position.x() = 1.2f;
@@ -57,7 +57,7 @@ class StarPlannerTests : public ::testing::Test {
     lims.max_acceleration_norm = 5.f;
     lims.max_jerk_norm = 20.f;
 
-    star_planner.setParams(cost_params, lims);
+    star_planner.setParams(cost_params, lims, 2.0f);
     star_planner.setPointcloud(cloud);
     star_planner.setPose(position, velocity);
     star_planner.setGoal(goal);

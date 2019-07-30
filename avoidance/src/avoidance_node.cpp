@@ -113,7 +113,7 @@ void AvoidanceNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   parse_param_f("MPC_LAND_SPEED", px4_.param_mpc_land_speed) ||
   parse_param_f("MPC_TKO_SPEED", px4_.param_mpc_tko_speed) ||
   parse_param_f("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise) ||
-  parse_param_f("MPC_Z_VEL_MAX_DN", px4_.param_mpc_vel_max_dn) ||
+  parse_param_f("MPC_Z_VEL_MAX_DN", px4_.param_mpc_z_vel_max_dn) ||
   parse_param_f("MPC_Z_VEL_MAX_UP", px4_.param_mpc_z_vel_max_up) ||
   parse_param_f("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d) ||
   parse_param_f("NAV_ACC_RAD", px4_.param_nav_acc_rad);

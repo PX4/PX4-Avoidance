@@ -6,13 +6,14 @@
 namespace avoidance {
 
 struct simulation_state {
-  simulation_state(float t, const Eigen::Vector3f& p, const Eigen::Vector3f& v, const Eigen::Vector3f& a)
+  simulation_state(float t = NAN, const Eigen::Vector3f& p = NAN * Eigen::Vector3f::Zero(),
+                   const Eigen::Vector3f& v = NAN * Eigen::Vector3f::Zero(),
+                   const Eigen::Vector3f& a = NAN * Eigen::Vector3f::Zero())
       : time(t), position(p), velocity(v), acceleration(a){};
-  simulation_state(){};
-  float time = NAN;
-  Eigen::Vector3f position = NAN * Eigen::Vector3f::Ones();
-  Eigen::Vector3f velocity = NAN * Eigen::Vector3f::Ones();
-  Eigen::Vector3f acceleration = NAN * Eigen::Vector3f::Ones();
+  float time;
+  Eigen::Vector3f position;
+  Eigen::Vector3f velocity;
+  Eigen::Vector3f acceleration;
 };
 
 struct simulation_limits {

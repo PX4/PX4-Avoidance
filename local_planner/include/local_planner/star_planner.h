@@ -26,7 +26,8 @@ class StarPlanner {
   float tree_node_duration_ = 0.5f;
   float max_path_length_ = 15.f;
   float smoothing_margin_degrees_ = 40.f;
-  float tree_heuristic_weight_ = 35.0f;
+  float tree_heuristic_weight_ = 35.f;
+  float acceptance_radius_ = 2.f;
   float max_sensor_range_ = 15.f;
   float min_sensor_range_ = 0.2f;
 
@@ -60,7 +61,7 @@ class StarPlanner {
   * @param[in] cost_params, parameters for the histogram cost function
   * @param[in] simulation limits defining maximum acceleration, velocity, and jerk
   **/
-  void setParams(const costParameters& cost_params, const simulation_limits& limits);
+  void setParams(const costParameters& cost_params, const simulation_limits& limits, float acc_rad);
 
   /**
   * @brief     setter method for star_planner pointcloud
