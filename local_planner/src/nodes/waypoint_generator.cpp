@@ -80,10 +80,10 @@ usm::Transition WaypointGenerator::runCurrentState() {
 }
 
 usm::Transition WaypointGenerator::runTryPath() {
-  Eigen::Vector3f setpoint = position_;
-  const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                                                  planner_info_.cruise_velocity, setpoint);
-  output_.goto_position = position_ + (setpoint - position_).normalized();
+  Eigen::Vector3f setpoint = Eigen::Vector3f::Zero();
+  const bool tree_available = interpolateBetweenSetpoints(planner_info_.path_node_setpoints, planner_info_.last_path_time,
+                                  planner_info_.tree_node_duration, setpoint);
+  output_.goto_position = position_ + setpoint;
   getPathMsg();
 
   if (isAltitudeChange()) {
@@ -178,9 +178,9 @@ usm::Transition WaypointGenerator::runDirect() {
             output_.goto_position.y(), output_.goto_position.z());
 
   getPathMsg();
-  Eigen::Vector3f setpoint;
-  if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                          planner_info_.cruise_velocity, setpoint)) {
+  Eigen::Vector3f setpoint = Eigen::Vector3f::Zero();
+  if (interpolateBetweenSetpoints(planner_info_.path_node_setpoints, planner_info_.last_path_time,
+                                  planner_info_.tree_node_duration, setpoint)) {
     return usm::Transition::NEXT1;  // TRY_PATH
   } else if (isAltitudeChange()) {
     return usm::Transition::NEXT2;  // ALTITUDE_CHANGE

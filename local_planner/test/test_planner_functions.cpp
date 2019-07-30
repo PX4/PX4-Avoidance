@@ -157,7 +157,7 @@ TEST(PlannerFunctions, compressHistogramElevation) {
   }
 }
 
-TEST(PlannerFunctions, getSetpointFromPath) {
+TEST(PlannerFunctions, interpolateBetweenSetpoints) {
   // GIVEN: the node positions in a path and some possible vehicle positions
   float n1_x = 0.8f;
   float n2_x = 1.5f;
@@ -168,7 +168,7 @@ TEST(PlannerFunctions, getSetpointFromPath) {
   Eigen::Vector3f n2(n2_x, n1.y() + sqrtf(1 - powf(n2_x - n1.x(), 2)), 2.5f);
   Eigen::Vector3f n3(n3_x, n2.y() + sqrtf(1 - powf(n3_x - n2.x(), 2)), 2.5f);
   Eigen::Vector3f n4(n4_x, n3.y() + sqrtf(1 - powf(n4_x - n3.x(), 2)), 2.5f);
-  const std::vector<Eigen::Vector3f> path_node_positions = {n4, n3, n2, n1, n0};
+  const std::vector<Eigen::Vector3f> path_node_setpoints = {n4, n3, n2, n1, n0};
   const std::vector<Eigen::Vector3f> empty_path = {};
   ros::Time t1 = ros::Time::now();
   ros::Time t2 = t1 - ros::Duration(0.1);
@@ -179,10 +179,11 @@ TEST(PlannerFunctions, getSetpointFromPath) {
   Eigen::Vector3f sp1, sp2, sp3;
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getSetpointFromPath(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
-  bool res1 = getSetpointFromPath(path_node_positions, t2, velocity, sp2);
-  bool res2 = getSetpointFromPath(path_node_positions, t3, velocity, sp3);  // should be second node on path
-  bool res3 = getSetpointFromPath(empty_path, t1, velocity, sp1);
+  bool res = interpolateBetweenSetpoints(path_node_setpoints, t1, velocity,
+                                         sp1);  // very short time should still return node 1
+  bool res1 = interpolateBetweenSetpoints(path_node_setpoints, t2, velocity, sp2);
+  bool res2 = interpolateBetweenSetpoints(path_node_setpoints, t3, velocity, sp3);  // should be second node on path
+  bool res3 = interpolateBetweenSetpoints(empty_path, t1, velocity, sp1);
 
   // THEN: we expect the setpoint in between node n1 and n2 for t1 and t2 between
   // node n2 and n3 for t3, and not to get an available path for the empty path

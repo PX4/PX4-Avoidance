@@ -43,7 +43,7 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
     Eigen::Vector3f n3(n3_x, n2.y() + sqrtf(1 - powf(n3_x - n2.x(), 2)), 2.0f);
     Eigen::Vector3f n4(n4_x, n3.y() + sqrtf(1 - powf(n4_x - n3.x(), 2)), 2.0f);
     Eigen::Vector3f n5(n5_x, n4.y() + sqrtf(1 - powf(n5_x - n4.x(), 2)), 2.0f);
-    avoidance_output.path_node_positions = {n5, n4, n3, n2, n1, n0};
+    avoidance_output.path_node_setpoints = {n5, n4, n3, n2, n1, n0};
 
     position = Eigen::Vector3f(0.f, 0.f, 0.f);
     q = Eigen::Quaternionf(1.f, 0.f, 0.f, 0.f);

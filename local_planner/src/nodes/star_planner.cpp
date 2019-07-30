@@ -14,7 +14,7 @@ StarPlanner::StarPlanner() {}
 void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
+  tree_node_duration_ = static_cast<float>(config.tree_node_duration_);
   max_path_length_ = static_cast<float>(config.max_sensor_range_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
   tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
@@ -61,7 +61,7 @@ void StarPlanner::buildLookAheadTree() {
   start_state.velocity = velocity_;
   start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   start_state.time = ros::Time::now().toSec();
-  tree_.push_back(TreeNode(0, start_state));
+  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
@@ -91,7 +91,7 @@ void StarPlanner::buildLookAheadTree() {
       for (candidateDirection candidate : candidate_vector) {
         simulation_state state = tree_[origin].state;
         TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
-        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_distance_);
+        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
 
         // Ignore node if it brings us farther away from the goal
         // todo: this breaks being able to get out of concave obstacles! But it helps to not "overplan"
@@ -110,7 +110,7 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, trajectory.back()));
+          tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
@@ -139,24 +139,14 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
   }
-  // smoothing between trees
+
+  // Get setpoints into member vector
   int tree_end = origin;
-  path_node_positions_.clear();
+  path_node_setpoints_.clear();
   while (tree_end > 0) {
-    path_node_positions_.push_back(tree_[tree_end].getPosition());
+    path_node_setpoints_.push_back(tree_[tree_end].getSetpoint());
     tree_end = tree_[tree_end].origin_;
   }
-  path_node_positions_.push_back(tree_[0].getPosition());
-
-  ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
-           path_node_positions_.size(), closed_set_.size(),
-           static_cast<double>((std::clock() - start_time) / static_cast<double>(CLOCKS_PER_SEC / 1000)));
-
-#ifndef DISABLE_SIMULATION  // For large trees, this could be very slow!
-  for (int j = 0; j < path_node_positions_.size(); j++) {
-    ROS_DEBUG("\033[0;35m[SP] node %i : [ %f, %f, %f]\033[0m", j, path_node_positions_[j].x(),
-              path_node_positions_[j].y(), path_node_positions_[j].z());
-  }
-#endif
+  path_node_setpoints_.push_back(tree_[0].getSetpoint());
 }
 }
