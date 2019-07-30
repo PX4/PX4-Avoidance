@@ -85,7 +85,7 @@ struct ModelParameters {
   float param_acc_up_max = NAN;   // Maximum vertical acceleration in velocity controlled modes upward
   float param_mpc_z_vel_max_up = NAN;   // Maximum vertical ascent velocity
   float param_mpc_acc_down_max = NAN; // Maximum vertical acceleration in velocity controlled modes down
-  float param_mpc_vel_max_dn = NAN; // Maximum vertical descent velocity
+  float param_mpc_z_vel_max_dn = NAN; // Maximum vertical descent velocity
   float param_mpc_acc_hor = NAN;  // Maximum horizontal acceleration for auto mode and
                       // maximum deceleration for manual mode
   float param_mpc_xy_cruise = NAN;   // Desired horizontal velocity in mission
