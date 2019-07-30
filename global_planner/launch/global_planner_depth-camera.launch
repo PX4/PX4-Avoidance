@@ -9,8 +9,6 @@
 
     <!-- Define a static transform from a camera internal frame to the fcu for every camera used -->
     <!-- Ros transformation -->
-    <node pkg="tf" type="static_transform_publisher" name="tf_local_origin"
-          args="0 0 0 0 0 0 world local_origin 10"/>
     <node pkg="tf" type="static_transform_publisher" name="tf_depth_camera"
           args="0 0 0 -1.57 0 -1.57 fcu camera_link 10"/>
 
@@ -24,7 +22,7 @@
     <!-- Launch local planner -->
     <!-- Global planner -->
     <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
-        <arg name="point_cloud_topic" value="$(arg pointcloud_topics)" />
+        <arg name="pointcloud_topics" value="$(arg pointcloud_topics)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />
         <arg name="start_pos_y" value="$(arg start_pos_y)" />
         <arg name="start_pos_z" value="$(arg start_pos_z)" />

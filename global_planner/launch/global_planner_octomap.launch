@@ -4,23 +4,26 @@
     <arg name="start_pos_y" default="0.5" />
     <arg name="start_pos_z" default="3.5" />
     <arg name="world_file_name"    default="simple_obstacle" />
+    <arg name="frame_id"    default="local_origin" />
+
 
     <!-- Global Planner -->
     <node name="global_planner_node" pkg="global_planner" type="global_planner_node" output="screen"
           args="$(find global_planner)/resource/random_goals"  >
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
         <param name="start_pos_x" value="$(arg start_pos_x)" />
         <param name="start_pos_y" value="$(arg start_pos_y)" />
         <param name="start_pos_z" value="$(arg start_pos_z)" />
         <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
         <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
-        <param name="robot_radius" value="0.5" />        
+        <param name="robot_radius" value="0.5" /> 
     </node>
 
     <!-- OctoMap Server -->
     <node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
         <param name="resolution" value="1.0" />
         <!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
-        <param name="frame_id" type="string" value="world" />
+        <param name="frame_id" type="string" value="$(arg frame_id)" />
         <!-- maximum range to integrate (speedup!) -->
         <param name="sensor_model/max_range" value="9.0" />
         <param name="sensor_model/min" value="0.01" />

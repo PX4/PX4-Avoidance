@@ -3,7 +3,12 @@
 namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
-    : nh_(nh), nh_private_(nh_private), avoidance_node_(nh, nh_private), cmdloop_dt_(0.1), plannerloop_dt_(1.0) {
+    : nh_(nh),
+      nh_private_(nh_private),
+      avoidance_node_(nh, nh_private),
+      cmdloop_dt_(0.1),
+      plannerloop_dt_(1.0),
+      start_yaw_(0.0) {
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&GlobalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
@@ -36,9 +41,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
   pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_in", 10);
 
-  actual_path_.header.frame_id = "/world";
-  listener_.waitForTransform("/fcu", "/world", ros::Time(0), ros::Duration(3.0));
-  listener_.waitForTransform("/local_origin", "/world", ros::Time(0), ros::Duration(3.0));
+  actual_path_.header.frame_id = frame_id_;
 
   ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
                                          boost::bind(&GlobalPlannerNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
@@ -55,7 +58,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   plannerloop_spinner_.reset(new ros::AsyncSpinner(1, &plannerloop_queue_));
   plannerloop_spinner_->start();
 
-  current_goal_.header.frame_id = "/world";
+  current_goal_.header.frame_id = frame_id_;
   current_goal_.pose.position = start_pos_;
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
@@ -74,6 +77,7 @@ void GlobalPlannerNode::readParams() {
   nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
   nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
+  nh_.param<std::string>("frame_id", frame_id_, "/local_origin");
   nh_.getParam("pointcloud_topics", camera_topics);
 
   initializeCameraSubscribers(camera_topics);
@@ -183,22 +187,20 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
 }
 
 void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) {
-  auto transformed_msg = transformTwistMsg(listener_, "world", "local_origin", msg);  // 90 deg fix
-  global_planner_.curr_vel_ = transformed_msg.twist.linear;
+  global_planner_.curr_vel_ = msg.twist.linear;
 }
 
 // Sets the current position and checks if the current goal has been reached
 void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   // Update position
-  listener_.transformPose("world", ros::Time(0), msg, "local_origin", last_pos_);  // 90 deg fix
-
+  last_pos_ = msg;
   global_planner_.setPose(last_pos_);
 
   // Check if a new goal is needed
   if (num_pos_msg_++ % 10 == 0) {
     // Keep track of and publish the actual travel trajectory
     // ROS_INFO("Travelled path extended");
-    last_pos_.header.frame_id = "/world";
+    last_pos_.header.frame_id = frame_id_;
     actual_path_.poses.push_back(last_pos_);
     actual_path_pub_.publish(actual_path_);
   }
@@ -262,11 +264,11 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
   try {
     // Transform msg from camera frame to world frame
     ros::Time now = ros::Time::now();
-    listener_.waitForTransform("/world", "/camera_link", now, ros::Duration(5.0));
+    listener_.waitForTransform(frame_id_, "/camera_link", now, ros::Duration(5.0));
     tf::StampedTransform transform;
-    listener_.lookupTransform("/world", "/camera_link", now, transform);
+    listener_.lookupTransform(frame_id_, "/camera_link", now, transform);
     sensor_msgs::PointCloud2 transformed_msg;
-    pcl_ros::transformPointCloud("/world", transform, msg, transformed_msg);
+    pcl_ros::transformPointCloud(frame_id_, transform, msg, transformed_msg);
     pcl::PointCloud<pcl::PointXYZ> cloud;  // Easier to loop through pcl::PointCloud
     pcl::fromROSMsg(transformed_msg, cloud);
 
@@ -281,7 +283,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
     pointcloud_pub_.publish(msg);
   } catch (tf::TransformException const& ex) {
     ROS_DEBUG("%s", ex.what());
-    ROS_WARN("Transformation not available (/world to /camera_link");
+    ROS_WARN("Transformation not available (%s to /camera_link", frame_id_);
   }
 }
 
@@ -337,7 +339,7 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
 // Publish the position of goal
 void GlobalPlannerNode::publishGoal(const GoalCell& goal) {
   geometry_msgs::PointStamped pointMsg;
-  pointMsg.header.frame_id = "/world";
+  pointMsg.header.frame_id = frame_id_;
   pointMsg.point = goal.toPoint();
 
   // Always publish as temporary to remove any obsolete temporary path
@@ -384,8 +386,6 @@ void GlobalPlannerNode::publishSetpoint() {
 
   // Publish setpoint for vizualization
   current_waypoint_publisher_.publish(setpoint);
-
-  listener_.transformPose("local_origin", ros::Time(0), setpoint, "world", setpoint);
 
   // Publish setpoint to Mavros
   mavros_waypoint_publisher_.publish(setpoint);
