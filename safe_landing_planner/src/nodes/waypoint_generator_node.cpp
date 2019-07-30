@@ -217,30 +217,42 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   waypointGenerator_.grid_slp_.getGridLimits(grid_min, grid_max);
   int offset = waypointGenerator_.grid_slp_.land_.rows() / 2;
   int counter = 0;
+  std::cout << "landing area visualization offset center " << waypointGenerator_.offset_center_.x() << " " << waypointGenerator_.offset_center_.y() << std::endl;
 
   int slc = waypointGenerator_.smoothing_land_cell_;
-  for (size_t i = 0; i < waypointGenerator_.grid_slp_.getRowColSize(); i++) {
-    for (size_t j = 0; j < waypointGenerator_.grid_slp_.getRowColSize(); j++) {
-      if (i >= (offset - slc) && i <= (offset + slc) && j >= (offset - slc) && j <= (offset + slc)) {
-        cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
-        cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
-        cell.pose.position.z = 1.0;
-        if (waypointGenerator_.can_land_hysteresis_[counter] > waypointGenerator_.can_land_thr_) {
-          cell.color.r = 0.0;
-          cell.color.g = 1.0;
-        } else {
-          cell.color.r = 1.0;
-          cell.color.g = 0.0;
-        }
-        cell.color.a = 0.5;
-        counter++;
+  int stride = 9;
+  for (int i = 1; i <= 1 + (waypointGenerator_.grid_slp_.land_.rows() - (2 * slc + 1)) / stride; i++) {
+    for (int j = 1; j <= 1 + (waypointGenerator_.grid_slp_.land_.cols() - (2 * slc + 1)) / stride; j++) {
+      int increment_i = (i - 1) * (2 * slc + 1) - (i - 1) * (stride - slc) + slc;
+      int increment_j = (j - 1) * (2 * slc + 1) - (j - 1) * (stride - slc) + slc;
 
-        marker_array.markers.push_back(cell);
-        cell.id += 1;
+      int offset_x = increment_i - (i - 1);
+      int offset_y = increment_j - (j - 1);
+
+      for (size_t k = 0; k < waypointGenerator_.grid_slp_.getRowColSize(); k++) {
+        for (size_t l = 0; l < waypointGenerator_.grid_slp_.getRowColSize(); l++) {
+          if (k >= (offset_x - slc) && k <= (offset_x + slc) && l >= (offset_y - slc) && l <= (offset_y + slc)) {
+            cell.pose.position.x = (k * cell_size) + grid_min.x() + (cell_size / 2.f);
+            cell.pose.position.y = (l * cell_size) + grid_min.y() + (cell_size / 2.f);
+            cell.pose.position.z = 2 + i % 2;
+            if (waypointGenerator_.can_land_hysteresis_matrix_(k, l) > waypointGenerator_.can_land_thr_) {
+              cell.color.r = 0.0;
+              cell.color.g = 1.0;
+            } else {
+              cell.color.r = 1.0;
+              cell.color.g = 0.0;
+            }
+            cell.color.a = 0.5;
+            counter++;
+
+            marker_array.markers.push_back(cell);
+            cell.id += 1;
+          }
+        }
       }
+      // land_hysteresis_pub_.publish(marker_array);
     }
   }
-  land_hysteresis_pub_.publish(marker_array);
 }
 
 void WaypointGeneratorNode::goalVisualization() {

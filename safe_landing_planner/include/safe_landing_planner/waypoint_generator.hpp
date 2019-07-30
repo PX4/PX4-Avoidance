@@ -16,7 +16,7 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
 
 const float LAND_SPEED = 0.7f;  // TODO: replace with Firmware parameter
 
-enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE };
+enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE, EVALUATE_GRID };
 std::string toString(SLPState state);  // for logging
 
 class WaypointGenerator : public usm::StateMachine<SLPState> {
@@ -54,6 +54,8 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   bool can_land_ = true;
   bool update_smoothing_size_ = false;
   bool explorarion_is_active_ = false;
+  bool found_land_area_in_grid_ = false;
+  bool start_grid_exploration_ = true;
   int start_seq_landing_decision_ = 0;
   int grid_slp_seq_ = 0;
   int n_explored_pattern_ = -1;
@@ -64,9 +66,11 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Eigen::Vector3f loiter_position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f exploration_anchor_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector2i pos_index_ = Eigen::Vector2i::Zero();
+  Eigen::Vector2i offset_center_ = Eigen::Vector2i::Zero();
 
   Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
   Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
+  Eigen::MatrixXf can_land_hysteresis_matrix_ = Eigen::MatrixXf::Zero(40, 40);
   std::vector<float> can_land_hysteresis_;
   Grid grid_slp_ = Grid(10.f, 1.f);
 
@@ -93,6 +97,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   usm::Transition runLoiter();
   usm::Transition runLand();
   usm::Transition runAltitudeChange();
+  usm::Transition runEvaluateGrid();
   /**
   * @brief     checks if the vehicle is within the xy acceptance radius of a
   *            waypoint
@@ -113,6 +118,8 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   * @returns    height of the landing area
   **/
   float landingAreaHeightPercentile(float percentile);
+
+  void evaluatePatch(Eigen::Vector2i &offset);
 
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
