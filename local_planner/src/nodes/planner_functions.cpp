@@ -323,33 +323,36 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + pitch_cost);
 }
 
-bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
-                         float velocity, Eigen::Vector3f& setpoint) {
-  int i = path.size();
+bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
+                                 const ros::Time& path_generation_time, float tree_node_duration,
+                                 Eigen::Vector3f& setpoint) {
+  int i = setpoint_array.size();
   // path contains nothing meaningful
   if (i < 2) {
+    ROS_WARN("Path contains fewer than two nodes, this is not a path!");
     return false;
   }
 
   // path only has one segment: return end of that segment as setpoint
   if (i == 2) {
-    setpoint = path[0];
+    ROS_INFO("Path contains only two nodes, using second node as setpoint!");
+    setpoint = setpoint_array[0];
     return true;
   }
 
   // step through the path until the point where we should be if we had traveled perfectly with velocity along it
-  Eigen::Vector3f path_segment = path[i - 3] - path[i - 2];
-  float distance_left = (ros::Time::now() - path_generation_time).toSec() * velocity;
-  setpoint = path[i - 2] + (distance_left / path_segment.norm()) * path_segment;
+  const int seg = i - 2 - std::floor((ros::Time::now() - path_generation_time).toSec() / tree_node_duration);
 
-  for (i = path.size() - 3; i > 0 && distance_left > path_segment.norm(); --i) {
-    distance_left -= path_segment.norm();
-    path_segment = path[i - 1] - path[i];
-    setpoint = path[i] + (distance_left / path_segment.norm()) * path_segment;
+  // path expired
+  if (seg < 1) {
+    ROS_WARN("Path has expired!");
+    return false;
   }
 
-  // If we excited because we're past the last node of the path, the path is no longer valid!
-  return distance_left < path_segment.norm();
+  Eigen::Vector3f path_segment = setpoint_array[seg - 1] - setpoint_array[seg];
+  float distance_left = fmod((ros::Time::now() - path_generation_time).toSec(), tree_node_duration);
+  setpoint = setpoint_array[seg] + (distance_left / tree_node_duration) * path_segment;
+  return true;
 }
 
 void printHistogram(Histogram& histogram) {

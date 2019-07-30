@@ -28,7 +28,7 @@ class StarPlannerTests : public ::testing::Test {
     avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
     config.children_per_node_ = 2;
     config.n_expanded_nodes_ = 10;
-    config.tree_node_distance_ = 1.0;
+    config.tree_node_duration_ = 1.0;
     star_planner.dynamicReconfigureSetStarParams(config, 1);
 
     position.x() = 1.2f;

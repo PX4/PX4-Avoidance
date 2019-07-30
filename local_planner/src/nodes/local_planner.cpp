@@ -37,6 +37,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
+  tree_node_duration_ = static_cast<float>(config.tree_node_duration_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -196,10 +197,10 @@ void LocalPlanner::setDefaultPx4Parameters() {
 }
 
 void LocalPlanner::getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-                           std::vector<Eigen::Vector3f>& path_node_positions) const {
+                           std::vector<Eigen::Vector3f>& path_node_setpoints) const {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
-  path_node_positions = star_planner_->path_node_positions_;
+  path_node_setpoints = star_planner_->path_node_setpoints_;
 }
 
 void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_distance) {
@@ -227,8 +228,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
-
-  out.path_node_positions = star_planner_->path_node_positions_;
+  out.tree_node_duration = tree_node_duration_;
+  out.path_node_setpoints = star_planner_->path_node_setpoints_;
   return out;
 }
 }
