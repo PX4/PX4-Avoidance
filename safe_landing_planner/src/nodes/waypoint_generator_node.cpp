@@ -60,7 +60,7 @@ void WaypointGeneratorNode::dynamicReconfigureCallback(safe_landing_planner::Way
   waypointGenerator_.vertical_range_error_ = static_cast<float>(config.vertical_range_error);
   waypointGenerator_.spiral_width_ = static_cast<float>(config.spiral_width);
 
-  if (waypointGenerator_.can_land_hysteresis_.size() != std::pow((waypointGenerator_.smoothing_land_cell_ * 2), 2)) {
+  if (waypointGenerator_.mask_.rows() != ((waypointGenerator_.smoothing_land_cell_ * 2) + 1)) {
     waypointGenerator_.update_smoothing_size_ = true;
   }
 }
@@ -217,7 +217,8 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   waypointGenerator_.grid_slp_.getGridLimits(grid_min, grid_max);
   int offset = waypointGenerator_.grid_slp_.land_.rows() / 2;
   int counter = 0;
-  std::cout << "landing area visualization offset center " << waypointGenerator_.offset_center_.x() << " " << waypointGenerator_.offset_center_.y() << std::endl;
+  std::cout << "landing area visualization offset center " << waypointGenerator_.offset_center_.x() << " "
+            << waypointGenerator_.offset_center_.y() << std::endl;
 
   int slc = waypointGenerator_.smoothing_land_cell_;
   int stride = 9;

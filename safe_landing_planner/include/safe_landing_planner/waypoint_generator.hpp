@@ -59,6 +59,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   int start_seq_landing_decision_ = 0;
   int grid_slp_seq_ = 0;
   int n_explored_pattern_ = -1;
+  int stride_ = 1;
 
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -74,7 +75,6 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Eigen::MatrixXi can_land_hysteresis_result_ = Eigen::MatrixXi(40, 40);
   Eigen::MatrixXi mask_ = Eigen::MatrixXi(13, 13);
 
-  std::vector<float> can_land_hysteresis_;
   Grid grid_slp_ = Grid(10.f, 1.f);
 
   // outside world link
@@ -123,7 +123,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   float landingAreaHeightPercentile(float percentile);
 
   // void evaluatePatch(Eigen::Vector2i &offset);
-  bool evaluatePatch(Eigen::Vector2i &left_upper_corner);
+  bool evaluatePatch(Eigen::Vector2i& left_upper_corner);
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
 }
