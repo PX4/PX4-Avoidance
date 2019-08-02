@@ -20,6 +20,7 @@ class WaypointGeneratorTests : public WaypointGenerator, public ::testing::Test 
       published_velocity = vel_sp;
       published_yaw = yaw_sp;
       published_yaw_velocity = yaw_speed_sp;
+      smoothing_land_cell_ = 6;
     };
   }
 };
@@ -146,7 +147,7 @@ TEST_F(WaypointGeneratorTests, loiter_to_land) {
 
   // WHEN: the data shows that landing is possible
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
+  can_land_hysteresis_matrix_.fill(can_land_thr_ + 1);
   calculateWaypoint();
 
   // THEN: the state should switch to land, the position setpoint should
@@ -157,13 +158,13 @@ TEST_F(WaypointGeneratorTests, loiter_to_land) {
 }
 
 TEST_F(WaypointGeneratorTests, loiter_to_goTo) {
-  // GIVEN: a basic waypoint generator,  that switched to loiter after first
-  // iteration
+  // GIVEN: a basic waypoint generator,  that switched to loiter after the grid exploration
   ASSERT_EQ(SLPState::GOTO, getState());
 
   goal_ << 10, 10, 0;
   position_ << 10, 10, 4.5;
   is_land_waypoint_ = true;
+  start_grid_exploration_ = false;
   can_land_ = 0;
 
   calculateWaypoint();
@@ -183,11 +184,123 @@ TEST_F(WaypointGeneratorTests, loiter_to_goTo) {
   grid_slp_seq_ = 25;
   calculateWaypoint();
 
-  // THEN: the state should switch to land, the position setpoint should
+  // THEN: the state should switch to GOTO to do the spiral pattern, the position setpoint should
   // correspond to current position and the velocity setpoint should be NAN
   ASSERT_EQ(SLPState::GOTO, getState());
   ASSERT_EQ((published_position - position_).norm(), 0);
   ASSERT_TRUE(published_velocity.array().isNaN().all());
+}
+
+TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid_to_Land) {
+  // GIVEN: a basic waypoint generator,  that switched to loiter after first
+  // iteration
+  ASSERT_EQ(SLPState::GOTO, getState());
+
+  goal_ << 10, 10, 0;
+  position_ << 10, 10, 4.5;
+  is_land_waypoint_ = true;
+  start_grid_exploration_ = true;
+  can_land_ = 0;
+
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::LOITER, getState());
+  can_land_hysteresis_matrix_ << 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1,
+      1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+      1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1,
+      1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0;
+
+  // WHEN: the data allows no landing, first do a grid exploration
+  grid_slp_seq_ = 25;
+
+  calculateWaypoint();
+
+  // THEN: the state should switch to EVALUATE_GRID, the position setpoint should
+  // correspond to current position and the velocity setpoint should be NAN
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
+  ASSERT_EQ((published_position - position_).norm(), 0);
+  ASSERT_TRUE(published_velocity.array().isNaN().all());
+
+  // THEN: grid exploration allows landing, go to goto
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::GOTO, getState());
+
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::GOTO, getState());
+
+  // THEN: reached the founded the landing spot, go to LAND state
+  position_ << 22, 22, 4.5;
+  calculateWaypoint();
+
+  ASSERT_EQ(SLPState::LAND, getState());
+}
+
+TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid) {
+  // GIVEN: a basic waypoint generator,  that switched to loiter after first
+  // iteration
+  ASSERT_EQ(SLPState::GOTO, getState());
+
+  goal_ << 10, 10, 0;
+  position_ << 10, 10, 4.5;
+  is_land_waypoint_ = true;
+  start_grid_exploration_ = true;
+  can_land_ = 0;
+
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::LOITER, getState());
+
+  // WHEN: the data allows no landing, first do a grid exploration
+  grid_slp_seq_ = 25;
+
+  calculateWaypoint();
+
+  // THEN: the state should switch to EVALUATE_GRID, the position setpoint should
+  // correspond to current position and the velocity setpoint should be NAN
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
+  ASSERT_EQ((published_position - position_).norm(), 0);
+  ASSERT_TRUE(published_velocity.array().isNaN().all());
+
+  // THEN: grid exploration allows no landing, go to loiter
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::LOITER, getState());
 }
 
 TEST_F(WaypointGeneratorTests, land_transitions) {
@@ -204,7 +317,8 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
   ASSERT_EQ(SLPState::LOITER, getState());
 
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
+  can_land_hysteresis_matrix_.fill(can_land_thr_ + 1);
+
   calculateWaypoint();
 
   ASSERT_EQ(SLPState::LAND, getState());
