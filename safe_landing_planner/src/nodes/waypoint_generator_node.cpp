@@ -216,44 +216,36 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   Eigen::Vector2f grid_min, grid_max;
   waypointGenerator_.grid_slp_.getGridLimits(grid_min, grid_max);
   int offset = waypointGenerator_.grid_slp_.land_.rows() / 2;
-  int counter = 0;
-  std::cout << "landing area visualization offset center " << waypointGenerator_.offset_center_.x() << " "
-            << waypointGenerator_.offset_center_.y() << std::endl;
+
+  Eigen::MatrixXi kernel(waypointGenerator_.can_land_hysteresis_matrix_.rows(),
+                         waypointGenerator_.can_land_hysteresis_matrix_.cols());
+  kernel.fill(0);
+  kernel.block(20 - waypointGenerator_.smoothing_land_cell_, 20 - waypointGenerator_.smoothing_land_cell_,
+               waypointGenerator_.mask_.rows(), waypointGenerator_.mask_.cols()) = waypointGenerator_.mask_;
+
+  Eigen::MatrixXi result = waypointGenerator_.can_land_hysteresis_result_.cwiseProduct(kernel);
 
   int slc = waypointGenerator_.smoothing_land_cell_;
-  int stride = 9;
-  for (int i = 1; i <= 1 + (waypointGenerator_.grid_slp_.land_.rows() - (2 * slc + 1)) / stride; i++) {
-    for (int j = 1; j <= 1 + (waypointGenerator_.grid_slp_.land_.cols() - (2 * slc + 1)) / stride; j++) {
-      int increment_i = (i - 1) * (2 * slc + 1) - (i - 1) * (stride - slc) + slc;
-      int increment_j = (j - 1) * (2 * slc + 1) - (j - 1) * (stride - slc) + slc;
 
-      int offset_x = increment_i - (i - 1);
-      int offset_y = increment_j - (j - 1);
-
-      for (size_t k = 0; k < waypointGenerator_.grid_slp_.getRowColSize(); k++) {
-        for (size_t l = 0; l < waypointGenerator_.grid_slp_.getRowColSize(); l++) {
-          if (k >= (offset_x - slc) && k <= (offset_x + slc) && l >= (offset_y - slc) && l <= (offset_y + slc)) {
-            cell.pose.position.x = (k * cell_size) + grid_min.x() + (cell_size / 2.f);
-            cell.pose.position.y = (l * cell_size) + grid_min.y() + (cell_size / 2.f);
-            cell.pose.position.z = 2 + i % 2;
-            if (waypointGenerator_.can_land_hysteresis_matrix_(k, l) > waypointGenerator_.can_land_thr_) {
-              cell.color.r = 0.0;
-              cell.color.g = 1.0;
-            } else {
-              cell.color.r = 1.0;
-              cell.color.g = 0.0;
-            }
-            cell.color.a = 0.5;
-            counter++;
-
-            marker_array.markers.push_back(cell);
-            cell.id += 1;
-          }
-        }
+  for (size_t k = offset - slc; k <= offset + slc; k++) {
+    for (size_t l = offset - slc; l <= offset + slc; l++) {
+      cell.pose.position.x = grid_min.x() + (cell_size * k);
+      cell.pose.position.y = grid_min.y() + (cell_size * l);
+      cell.pose.position.z = 1;
+      if (result(k, l)) {
+        cell.color.r = 0.0;
+        cell.color.g = 1.0;
+      } else {
+        cell.color.r = 1.0;
+        cell.color.g = 0.0;
       }
-      // land_hysteresis_pub_.publish(marker_array);
+      cell.color.a = 0.5;
+
+      marker_array.markers.push_back(cell);
+      cell.id += 1;
     }
   }
+  land_hysteresis_pub_.publish(marker_array);
 }
 
 void WaypointGeneratorNode::goalVisualization() {
