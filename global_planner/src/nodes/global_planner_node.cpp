@@ -8,6 +8,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
       avoidance_node_(nh, nh_private),
       cmdloop_dt_(0.1),
       plannerloop_dt_(1.0),
+      mapupdate_dt_(0.2),
       start_yaw_(0.0) {
   // Set up Dynamic Reconfigure Server
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig>::CallbackType f;
@@ -256,7 +257,7 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   
   ros::Time current = ros::Time::now();
   // Update map at a fixed rate. This is useful on setting replanning rates for the planner.
-  if ((current - last_wp_time_).toSec() < 0.1) {
+  if ((current - last_wp_time_).toSec() < mapupdate_dt_) {
     return;
   }
   last_wp_time_ = ros::Time::now();

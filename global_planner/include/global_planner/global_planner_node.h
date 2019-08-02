@@ -112,6 +112,7 @@ class GlobalPlannerNode {
   int num_pos_msg_ = 0;
   double cmdloop_dt_;
   double plannerloop_dt_;
+  double mapupdate_dt_;
   double min_speed_;
   double speed_ = min_speed_;
   double start_yaw_;
