@@ -61,6 +61,10 @@ void GlobalPlanner::setPath(const std::vector<Cell>& path) {
   }
 }
 
+void GlobalPlanner::setFrame(std::string frame_id){
+  frame_id_ = frame_id;
+}
+
 // Returns false iff current path has an obstacle
 // Going through the octomap can take more than 50 ms for 100m x 100m explored
 // map
@@ -336,7 +340,7 @@ double GlobalPlanner::getHeuristic(const Node& u, const Cell& goal) {
 
 geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell& cell, double yaw) {
   geometry_msgs::PoseStamped pose_msg;
-  pose_msg.header.frame_id = "/world";
+  pose_msg.header.frame_id = frame_id_;
   pose_msg.pose.position = cell.toPoint();
   pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
   return pose_msg;
@@ -346,7 +350,7 @@ nav_msgs::Path GlobalPlanner::getPathMsg() { return getPathMsg(curr_path_); }
 
 nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
   nav_msgs::Path path_msg;
-  path_msg.header.frame_id = "/world";
+  path_msg.header.frame_id = frame_id_;
 
   if (path.size() == 0) {
     return path_msg;

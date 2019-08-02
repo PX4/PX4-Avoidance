@@ -95,6 +95,7 @@ class GlobalPlanner {
   bool use_risk_heuristics_ = true;
   bool use_speedup_heuristics_ = true;
   std::string default_node_type_ = "SpeedNode";
+  std::string frame_id_ = "world";
 
   GlobalPlanner();
   ~GlobalPlanner();
@@ -104,6 +105,7 @@ class GlobalPlanner {
   void setPose(const geometry_msgs::PoseStamped& new_pose);
   void setGoal(const GoalCell& goal);
   void setPath(const std::vector<Cell>& path);
+  void setFrame(std::string frame_id);
 
   bool updateFullOctomap(const octomap_msgs::Octomap& msg);
 
