@@ -17,7 +17,6 @@
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>
 
-
 #include <global_planner/GlobalPlannerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
 #include "global_planner/analysis.h"

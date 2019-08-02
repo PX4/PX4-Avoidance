@@ -254,7 +254,7 @@ void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg)
 // Check if the current path is blocked
 void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   std::lock_guard<std::mutex> lock(mutex_);
-  
+
   ros::Time current = ros::Time::now();
   // Update map at a fixed rate. This is useful on setting replanning rates for the planner.
   if ((current - last_wp_time_).toSec() < mapupdate_dt_) {

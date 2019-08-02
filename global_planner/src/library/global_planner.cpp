@@ -61,9 +61,7 @@ void GlobalPlanner::setPath(const std::vector<Cell>& path) {
   }
 }
 
-void GlobalPlanner::setFrame(std::string frame_id){
-  frame_id_ = frame_id;
-}
+void GlobalPlanner::setFrame(std::string frame_id) { frame_id_ = frame_id; }
 
 // Returns false iff current path has an obstacle
 // Going through the octomap can take more than 50 ms for 100m x 100m explored
