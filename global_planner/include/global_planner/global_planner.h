@@ -16,8 +16,7 @@
 
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>
-#include <octomap_msgs/Octomap.h>
-#include <octomap_msgs/conversions.h>
+
 
 #include <global_planner/GlobalPlannerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
@@ -107,7 +106,7 @@ class GlobalPlanner {
   void setPath(const std::vector<Cell>& path);
   void setFrame(std::string frame_id);
 
-  bool updateFullOctomap(const octomap_msgs::Octomap& msg);
+  bool updateFullOctomap(octomap::AbstractOcTree* tree);
 
   void getOpenNeighbors(const Cell& cell, std::vector<CellDistancePair>& neighbors, bool is_3D);
   bool isNearWall(const Cell& cell);

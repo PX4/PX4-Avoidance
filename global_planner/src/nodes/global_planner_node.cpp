@@ -256,8 +256,9 @@ void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
     return;  // We get too many of those messages. Only process 1/10 of them
   }
   std::lock_guard<std::mutex> lock(mutex_);
+  octomap::AbstractOcTree* tree = octomap_msgs::msgToMap(msg);
 
-  bool current_path_is_ok = global_planner_.updateFullOctomap(msg);
+  bool current_path_is_ok = global_planner_.updateFullOctomap(tree);
 }
 
 // Go through obstacle points and store them

@@ -68,9 +68,8 @@ void GlobalPlanner::setFrame(std::string frame_id){
 // Returns false iff current path has an obstacle
 // Going through the octomap can take more than 50 ms for 100m x 100m explored
 // map
-bool GlobalPlanner::updateFullOctomap(const octomap_msgs::Octomap& msg) {
+bool GlobalPlanner::updateFullOctomap(octomap::AbstractOcTree* tree) {
   risk_cache_.clear();
-  octomap::AbstractOcTree* tree = octomap_msgs::msgToMap(msg);
   if (octree_) {
     delete octree_;
   }
