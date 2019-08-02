@@ -54,7 +54,7 @@ void WaypointGenerator::calculateWaypoint() {
 }
 
 void WaypointGenerator::updateSLPState() {
-  if (update_smoothing_size_) {
+  if (update_smoothing_size_ || mask_.rows() != (smoothing_land_cell_ * 2 + 1)) {
     mask_.resize((smoothing_land_cell_ * 2 + 1), (smoothing_land_cell_ * 2 + 1));
 
     for (size_t i = 0; i < mask_.rows(); i++) {
