@@ -68,23 +68,13 @@ void GlobalPlanner::setFrame(std::string frame_id){
 // Returns false iff current path has an obstacle
 // Going through the octomap can take more than 50 ms for 100m x 100m explored
 // map
-bool GlobalPlanner::updateFullOctomap(octomap::AbstractOcTree* tree) {
+void GlobalPlanner::updateFullOctomap(octomap::AbstractOcTree* tree) {
   risk_cache_.clear();
   if (octree_) {
     delete octree_;
   }
   octree_ = dynamic_cast<octomap::OcTree*>(tree);
   octree_resolution_ = octree_->getResolution();
-
-  // Check if the risk of the current path has increased
-  if (!curr_path_.empty()) {
-    PathInfo new_info = getPathInfo(curr_path_);
-    if (new_info.is_blocked || new_info.risk > curr_path_info_.risk + 10) {
-      ROS_INFO("Risk increase");
-      return false;
-    }
-  }
-  return true;
 }
 
 // TODO: simplify and return neighbors
