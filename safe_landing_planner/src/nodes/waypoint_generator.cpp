@@ -34,7 +34,14 @@ WaypointGenerator::WaypointGenerator()
     : usm::StateMachine<SLPState>(SLPState::GOTO),
       publishTrajectorySetpoints_([](const Eigen::Vector3f&, const Eigen::Vector3f&, float, float) {
         ROS_ERROR("publishTrajectorySetpoints_ not set in WaypointGenerator");
-      }) {}
+      }) {
+      for (size_t i = 0; i < mask_.rows(); i++) {
+        for (size_t j = 0; j < mask_.cols(); j++) {
+          mask_(i,j) = sqrt((i - smoothing_land_cell_)*(i-smoothing_land_cell_) + (j-smoothing_land_cell_)*(j-smoothing_land_cell_)) < (smoothing_land_cell_ + 0.5f);
+        }
+      }
+
+      }
 
 void WaypointGenerator::calculateWaypoint() {
   updateSLPState();
@@ -49,7 +56,13 @@ void WaypointGenerator::calculateWaypoint() {
 void WaypointGenerator::updateSLPState() {
   if (update_smoothing_size_ || can_land_hysteresis_.size() == 0) {
     can_land_hysteresis_.resize((smoothing_land_cell_ * 2 + 1) * (smoothing_land_cell_ * 2 + 1));
-    std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
+    mask_.resize((smoothing_land_cell_ * 2 + 1), (smoothing_land_cell_ * 2 + 1));
+
+    for (size_t i = 0; i < mask_.rows(); i++) {
+      for (size_t j = 0; j < mask_.cols(); j++) {
+        mask_(i,j) = sqrt((i - smoothing_land_cell_)*(i-smoothing_land_cell_) + (j-smoothing_land_cell_)*(j-smoothing_land_cell_)) < (smoothing_land_cell_ + 0.5f);
+      }
+    }    std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), 0.f);
     update_smoothing_size_ = false;
   }
 
@@ -188,36 +201,18 @@ usm::Transition WaypointGenerator::runLoiter() {
         can_land_hysteresis_matrix_(i, j) = (beta_ * can_land_hysteresis_matrix_prev) + (1.f - beta_) * cell_land_value;
       }
     }
-  }
+  } else {
 
-  evaluatePatch(offset_center_);
-  // for (int i = offset_center_ - smoothing_land_cell_; i <= offset_center_ + smoothing_land_cell_; i++) {
-  //   for (int j = offset_center_ - smoothing_land_cell_; j <= offset_center_ + smoothing_land_cell_; j++) {
-  //     int index = (smoothing_land_cell_ * 2 + 1) * (i - offset_center_ + smoothing_land_cell_) +
-  //                 (j - offset_center_ + smoothing_land_cell_);
-  //     float cell_land_value = static_cast<float>(grid_slp_.land_(i, j));
-  //     float can_land_hysteresis_prev = can_land_hysteresis_[index];
-  //     can_land_hysteresis_[index] = (beta_ * can_land_hysteresis_prev) + (1.f - beta_) * cell_land_value;
-  //     std::cout << can_land_hysteresis_[index] << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
-  // std::cout << "\n";
-  //
-  // if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
-  //   decision_taken_ = true;
-  //   int land_counter = 0;
-  //   for (int i = 0; i < can_land_hysteresis_.size(); i++) {
-  //     if (can_land_hysteresis_[i] > can_land_thr_) {
-  //       land_counter++;
-  //     }
-  //     can_land_ = (can_land_ && (can_land_hysteresis_[i] > can_land_thr_));
-  //     if (can_land_ == 0 && land_counter == can_land_hysteresis_.size()) {
-  //       can_land_ = 1;
-  //       ROS_INFO("[WGN] Decision changed from can't land to can land!");
-  //     }
-  //   }
-  // }
+    decision_taken_ = true;
+
+    can_land_hysteresis_matrix_ = (can_land_hysteresis_matrix_.array() <= can_land_thr_).select(0, can_land_hysteresis_matrix_);
+    can_land_hysteresis_matrix_ = (can_land_hysteresis_matrix_.array() > can_land_thr_).select(1, can_land_hysteresis_matrix_);
+    can_land_hysteresis_result_ = can_land_hysteresis_matrix_.template cast<int>();
+    std::cout << can_land_hysteresis_result_ << std::endl;
+
+    Eigen::Vector2i left_upper_corner = Eigen::Vector2i(offset_center_.x() - smoothing_land_cell_, offset_center_.y() - smoothing_land_cell_);
+    can_land_ = evaluatePatch(left_upper_corner);
+  }
 
   publishTrajectorySetpoints_(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
   ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan \033[0m\n", loiter_position_.x(), loiter_position_.y(),
@@ -266,37 +261,27 @@ usm::Transition WaypointGenerator::runLand() {
 
 usm::Transition  WaypointGenerator::runEvaluateGrid() {
   ROS_INFO("\033[1;31m [WGN] runEvaluateGrid \033[0m\n");
+  publishTrajectorySetpoints_(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
 
-  int stride = 3; // 2 * smoothing_land_cell_ + 1;
+  int stride = 1; // 2 * smoothing_land_cell_ + 1;
   std::cout << smoothing_land_cell_ << " " << grid_slp_.land_.rows() << " " << 1 + ((grid_slp_.land_.rows() - (2 * smoothing_land_cell_ + 1)) / stride) << std::endl;
   Eigen::Vector2i center = Eigen::Vector2i(grid_slp_.land_.rows() /2, grid_slp_.land_.cols() / 2);
   Eigen::Vector2i offset = Eigen::Vector2i(grid_slp_.land_.rows() /2, grid_slp_.land_.cols() / 2);
 
-  int n_iterations = (1 + (grid_slp_.land_.cols() - (2 * smoothing_land_cell_ + 1)) / stride) / 2;
-  for (int i = 1; i <= n_iterations; i++) {
+  int n_iterations = (1 + (40 - (2 * smoothing_land_cell_ + 1)) / stride) / 2;
+  for (int i = 1; i < n_iterations; i++) {
     for (int j = 0; j < exploration_pattern.size(); j++) {
-
-  // for (int i = -numb_iter_x; i <= numb_iter_x; i++) {
-    // for (int j = -bumb_iter_y; j <= bumb_iter_y; j++) {
-      // int increment_i = (i - 1) * (2 * smoothing_land_cell_ + 1) - (i - 1) * abs(stride - smoothing_land_cell_) + smoothing_land_cell_;
-      // int increment_j = (j - 1) * (2 * smoothing_land_cell_ + 1) - (j - 1) * abs(stride - smoothing_land_cell_) + smoothing_land_cell_;
-      //
-      // offset_center_ = Eigen::Vector2i((i - 1) * stride + smoothing_land_cell_, (j - 1) * stride + smoothing_land_cell_);
-
-      offset.x() = center.x() + exploration_pattern[j].x() * i * stride + exploration_pattern[j].x() * smoothing_land_cell_ +1;
-      offset.y() = center.y() + exploration_pattern[j].y() * i * stride + exploration_pattern[j].y() * smoothing_land_cell_ +1;
-      // std::cout << "center " << offset_center_.x() << " " << offset_center_.x() << std::endl;
-      std::cout << "i " << i << " j " << j << std::endl;
-
-      evaluatePatch(offset);
-      std::cout << "center " << offset.x() << " " << offset.x() << " can land " << can_land_ << "\n\n";
+      offset.x() = center.x() + exploration_pattern[j].x() * i * stride - smoothing_land_cell_;
+      offset.y() = center.y() + exploration_pattern[j].y() * i * stride - smoothing_land_cell_;
+      can_land_ = evaluatePatch(offset);
 
       if (can_land_) {
         found_land_area_in_grid_ = true;
         Eigen::Vector2f min, max;
 
         grid_slp_.getGridLimits(min, max);
-        goal_ = Eigen::Vector3f(min.x() + grid_slp_.getCellSize() * offset.x(), min.y() + grid_slp_.getCellSize() * offset.y(), position_.z());
+        goal_ = Eigen::Vector3f(min.x() + grid_slp_.getCellSize() * (offset.x() + smoothing_land_cell_),
+         min.y() + grid_slp_.getCellSize() * (offset.y() + smoothing_land_cell_), position_.z());
         ROS_INFO("found_land_area_in_grid_ index %d %d - %f %f %f \n", offset.x(), offset.y(), goal_.x(), goal_.y(), goal_.z());
         return usm::Transition::NEXT1;
       }
@@ -307,64 +292,20 @@ usm::Transition  WaypointGenerator::runEvaluateGrid() {
 
 }
 
-void WaypointGenerator::evaluatePatch(Eigen::Vector2i &offset) {
-  std::cout << "evaluate patch " << abs(grid_slp_seq_ - start_seq_landing_decision_) << std::endl;
-  if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
-    decision_taken_ = true;
-    int land_counter = 0;
-    std::cout << "evaluatePatch center " << offset.x() << " " << offset.y() << std::endl;
-    std::cout << "i=["<<offset.x() - smoothing_land_cell_ << " : " << offset.x() + smoothing_land_cell_ << "]\n";
-    std::cout << "j=["<<offset.y() - smoothing_land_cell_ << " : " << offset.y() + smoothing_land_cell_ << "]\n";
+bool WaypointGenerator::evaluatePatch(Eigen::Vector2i &left_upper_corner) {
+  Eigen::MatrixXi kernel(can_land_hysteresis_matrix_.rows(), can_land_hysteresis_matrix_.cols());
+  kernel.fill(0);
+  printf("%d %d - %d %d \n", left_upper_corner.x(), left_upper_corner.y(), left_upper_corner.x()+13, left_upper_corner.y()+13);
+  kernel.block(left_upper_corner.x(), left_upper_corner.y(), mask_.rows(), mask_.cols()) = mask_;
 
+  Eigen::MatrixXi result = can_land_hysteresis_result_.cwiseProduct(kernel);
+  if (result.sum() == mask_.sum()) {
+    std::cout << kernel << "\n\n";
+    std::cout << can_land_hysteresis_result_ << "\n\n";
 
-    for (int i = offset.x() - smoothing_land_cell_; i <= offset.x() + smoothing_land_cell_; i++) {
-      for (int j = offset.y() - smoothing_land_cell_; j <= offset.y() + smoothing_land_cell_; j++) {
-        if (can_land_hysteresis_matrix_(i, j) > can_land_thr_) {
-          land_counter++;
-        }
-        can_land_ = (can_land_ && (can_land_hysteresis_matrix_(i, j) > can_land_thr_));
-        if (can_land_hysteresis_matrix_(i, j) > can_land_thr_) {
-          std::cout << "\033[1;32m" << can_land_hysteresis_matrix_(i, j) << "\033[0m ";
-        } else {
-          std::cout << "\033[1;31m" << can_land_hysteresis_matrix_(i, j) << "\033[0m ";
-        }
-
-        if (can_land_ == 0 && land_counter == ((smoothing_land_cell_ * 2 + 1) * (smoothing_land_cell_ * 2 + 1))) {
-          can_land_ = 1;
-          ROS_INFO("[WGN] Decision changed from can't land to can land!");
-        }
-      }
-      std::cout << "\n";
-    }
+    std::cout << result << "\n\n";
   }
-  // std::cout << "i=["<<offset_center_.x() - smoothing_land_cell_ << " : " << offset_center_.x() + smoothing_land_cell_ << "]\n";
-  // for (int i = offset_center_.x() - smoothing_land_cell_; i <= offset_center_.x() + smoothing_land_cell_; i++) {
-  //   for (int j = offset_center_.y() - smoothing_land_cell_; j <= offset_center_.y() + smoothing_land_cell_; j++) {
-  //     int index = (smoothing_land_cell_ * 2 + 1) * (i - offset_center_.x() + smoothing_land_cell_) +
-  //                 (j - offset_center_.y() + smoothing_land_cell_);
-  //     float cell_land_value = static_cast<float>(grid_slp_.land_(i, j));
-  //     float can_land_hysteresis_prev = can_land_hysteresis_[index];
-  //     can_land_hysteresis_[index] = (beta_ * can_land_hysteresis_prev) + (1.f - beta_) * cell_land_value;
-  //     std::cout << can_land_hysteresis_[index] << " ";
-  //   }
-  //   std::cout << "\n";
-  // }
-  // std::cout << "\n";
-  //
-  // if (abs(grid_slp_seq_ - start_seq_landing_decision_) > 20) {
-  //   decision_taken_ = true;
-  //   int land_counter = 0;
-  //   for (int i = 0; i < can_land_hysteresis_.size(); i++) {
-  //     if (can_land_hysteresis_[i] > can_land_thr_) {
-  //       land_counter++;
-  //     }
-  //     can_land_ = (can_land_ && (can_land_hysteresis_[i] > can_land_thr_));
-  //     if (can_land_ == 0 && land_counter == can_land_hysteresis_.size()) {
-  //       can_land_ = 1;
-  //       ROS_INFO("[WGN] Decision changed from can't land to can land!");
-  //     }
-  //   }
-  // }
+  return result.sum() == mask_.sum();
 }
 
 bool WaypointGenerator::withinLandingRadius() {
