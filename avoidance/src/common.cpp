@@ -8,57 +8,139 @@
 
 namespace avoidance {
 
+bool pointInsideFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol) {
+  for (auto fov : fov_vec) {
+    if (pointInsideFOV(fov, p_pol)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol) {
-  return p_pol.z <=
-             wrapAngleToPlusMinus180(fov.azimuth_deg + fov.h_fov_deg / 2.f) &&
-         p_pol.z >=
-             wrapAngleToPlusMinus180(fov.azimuth_deg - fov.h_fov_deg / 2.f) &&
-         p_pol.e <= fov.elevation_deg + fov.v_fov_deg / 2.f &&
-         p_pol.e >= fov.elevation_deg - fov.v_fov_deg / 2.f;
+  return p_pol.z <= wrapAngleToPlusMinus180(fov.yaw_deg + fov.h_fov_deg / 2.f) &&
+         p_pol.z >= wrapAngleToPlusMinus180(fov.yaw_deg - fov.h_fov_deg / 2.f) &&
+         p_pol.e <= fov.pitch_deg + fov.v_fov_deg / 2.f && p_pol.e >= fov.pitch_deg - fov.v_fov_deg / 2.f;
+}
+
+bool pointInsideYawFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol) {
+  for (auto fov : fov_vec) {
+    if (pointInsideYawFOV(fov, p_pol)) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool pointInsideYawFOV(const FOV& fov, const PolarPoint& p_pol) {
+  return p_pol.z <= wrapAngleToPlusMinus180(fov.yaw_deg + fov.h_fov_deg / 2.f) &&
+         p_pol.z >= wrapAngleToPlusMinus180(fov.yaw_deg - fov.h_fov_deg / 2.f);
+}
+
+bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int& idx) {
+  bool retval = false;
+  idx = -1;
+  for (int i = 0; i < fov_vec.size(); ++i) {
+    if (pointInsideYawFOV(fov_vec[i], p_pol)) {
+      if (retval) {  // if it's been found before, return false!
+        idx = -1;
+        return false;
+      }
+      idx = i;
+      retval = true;
+    }
+  }
+  return retval;
+}
+
+bool isOnEdgeOfFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int& idx) {
+  idx = -1;
+  bool retval = false;
+  if (isInWhichFOV(fov_vec, p_pol, idx)) {
+    PolarPoint just_outside = p_pol;
+    // todo: check for pitch!
+    if (wrapAngleToPlusMinus180(p_pol.z - fov_vec[idx].yaw_deg) > 0.0f) {
+      // check half-resolution degrees outside the current fov
+      just_outside.z =
+          wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg + fov_vec[idx].h_fov_deg / 2.0f + (ALPHA_RES / 2.0f));
+    } else {  // half-resolution degrees to the left
+      just_outside.z =
+          wrapAngleToPlusMinus180(fov_vec[idx].yaw_deg - fov_vec[idx].h_fov_deg / 2.0f - (ALPHA_RES / 2.0f));
+    }
+
+    retval = !pointInsideYawFOV(fov_vec, just_outside);
+    if (!retval) {
+      idx = -1;
+    }
+  }
+  return retval;
+}
+
+float scaleToFOV(const std::vector<FOV>& fov, const PolarPoint& p_pol) {
+  int i;
+  if (isOnEdgeOfFOV(fov, p_pol, i)) {
+    float angle_diff_deg = std::abs(fov[i].yaw_deg - p_pol.z);
+    angle_diff_deg = std::min(angle_diff_deg, std::abs(360.f - angle_diff_deg));
+    angle_diff_deg = std::min(fov[i].h_fov_deg / 2.0f, angle_diff_deg);  // Clamp at h_FOV/2
+    return 1.0f - 2.0f * angle_diff_deg / fov[i].h_fov_deg;
+  }
+  return pointInsideYawFOV(fov, p_pol) ? 1.f : 0.f;
 }
 
 float distance2DPolar(const PolarPoint& p1, const PolarPoint& p2) {
   return sqrt((p1.e - p2.e) * (p1.e - p2.e) + (p1.z - p2.z) * (p1.z - p2.z));
 }
 
-Eigen::Vector3f polarToCartesian(const PolarPoint& p_pol,
-                                 const Eigen::Vector3f& pos) {
+Eigen::Vector3f polarHistogramToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos) {
   Eigen::Vector3f p;
-  p.x() =
-      pos.x() +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
-  p.y() =
-      pos.y() +
-      p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.x() = pos.x() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+  p.y() = pos.y() + p_pol.r * std::cos(p_pol.e * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
   p.z() = pos.z() + p_pol.r * std::sin(p_pol.e * DEG_TO_RAD);
 
   return p;
 }
+
+Eigen::Vector3f polarFCUToCartesian(const PolarPoint& p_pol, const Eigen::Vector3f& pos) {
+  Eigen::Vector3f p;
+  p.x() = pos.x() + p_pol.r * std::sin((90.0f - p_pol.e) * DEG_TO_RAD) * std::cos(p_pol.z * DEG_TO_RAD);
+  p.y() = pos.y() + p_pol.r * std::sin((90.0f - p_pol.e) * DEG_TO_RAD) * std::sin(p_pol.z * DEG_TO_RAD);
+  p.z() = pos.z() + p_pol.r * std::cos((90.0f - p_pol.e) * DEG_TO_RAD);
+
+  return p;
+}
+
 float indexAngleDifference(float a, float b) {
-  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)),
-                  std::abs(a - b + 360.f));
+  return std::min(std::min(std::abs(a - b), std::abs(a - b - 360.f)), std::abs(a - b + 360.f));
 }
 
 PolarPoint histogramIndexToPolar(int e, int z, int res, float radius) {
   // ALPHA_RES%2=0 as per definition, see histogram.h
-  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90),
-                   static_cast<float>(z * res + res / 2 - 180), radius);
+  PolarPoint p_pol(static_cast<float>(e * res + res / 2 - 90), static_cast<float>(z * res + res / 2 - 180), radius);
   return p_pol;
 }
 
-PolarPoint cartesianToPolar(const Eigen::Vector3f& pos,
-                            const Eigen::Vector3f& origin) {
-  return cartesianToPolar(pos.x(), pos.y(), pos.z(), origin);
+PolarPoint cartesianToPolarHistogram(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin) {
+  return cartesianToPolarHistogram(pos.x(), pos.y(), pos.z(), origin);
 }
-PolarPoint cartesianToPolar(float x, float y, float z,
-                            const Eigen::Vector3f& pos) {
+PolarPoint cartesianToPolarHistogram(float x, float y, float z, const Eigen::Vector3f& pos) {
   PolarPoint p_pol(0.0f, 0.0f, 0.0f);
   float den = (Eigen::Vector2f(x, y) - pos.topRows<2>()).norm();
   p_pol.e = std::atan2(z - pos.z(), den) * RAD_TO_DEG;          //(-90.+90)
   p_pol.z = std::atan2(x - pos.x(), y - pos.y()) * RAD_TO_DEG;  //(-180. +180]
-  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) +
-                 (z - pos.z()) * (z - pos.z()));
+  p_pol.r = sqrt((x - pos.x()) * (x - pos.x()) + (y - pos.y()) * (y - pos.y()) + (z - pos.z()) * (z - pos.z()));
   return p_pol;
+}
+
+PolarPoint cartesianToPolarFCU(const Eigen::Vector3f& pos, const Eigen::Vector3f& origin) {
+  PolarPoint p = cartesianToPolarHistogram(pos, origin);
+  p.z = -p.z + 90.0f;
+  p.e = -p.e;
+  wrapPolar(p);
+  return p;
+}
+
+PolarPoint cartesianToPolarFCU(const pcl::PointXYZ& p) {
+  return cartesianToPolarFCU(Eigen::Vector3f(p.x, p.y, p.z), Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 }
 
 Eigen::Vector2i polarToHistogramIndex(const PolarPoint& p_pol, int res) {
@@ -114,12 +196,10 @@ float nextYaw(const Eigen::Vector3f& u, const Eigen::Vector3f& v) {
   return atan2(dy, dx);
 }
 
-void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q,
-                   const Eigen::Vector3f& in_waypt, float yaw) {
+void createPoseMsg(Eigen::Vector3f& out_waypt, Eigen::Quaternionf& out_q, const Eigen::Vector3f& in_waypt, float yaw) {
   out_waypt = in_waypt;
   float roll = 0.0f, pitch = 0.0f;
-  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) *
-          Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+  out_q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) * Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
           Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
 }
 
@@ -142,12 +222,13 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q) {
   return pitch * RAD_TO_DEG;
 }
 
-float wrapAngleToPlusMinusPI(float angle) {
-  return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f);
-}
+float wrapAngleToPlusMinusPI(float angle) { return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f); }
 
-float wrapAngleToPlusMinus180(float angle) {
-  return angle - 360.f * std::floor(angle / 360.f + 0.5f);
+float wrapAngleToPlusMinus180(float angle) { return angle - 360.f * std::floor(angle / 360.f + 0.5f); }
+
+float angleDifference(float a, float b) {
+  float angle = fmod(a - b, 360.f);
+  return angle >= 0.f ? (angle < 180.f) ? angle : angle - 360.f : (angle >= -180.f) ? angle : angle + 360.f;
 }
 
 double getAngularVelocity(float desired_yaw, float curr_yaw) {
@@ -246,16 +327,23 @@ pcl::PointXYZI toXYZI(float x, float y, float z, float intensity) {
   return p;
 }
 
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l,
-                             const Eigen::Vector3f& a) {
+pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity) {
+  pcl::PointXYZI p;
+  p.x = xyz.x;
+  p.y = xyz.y;
+  p.z = xyz.z;
+  p.intensity = intensity;
+  return p;
+}
+
+geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a) {
   geometry_msgs::Twist gmt;
   gmt.linear = toVector3(l);
   gmt.angular = toVector3(a);
   return gmt;
 }
 
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
-                                         const Eigen::Quaternionf& eq) {
+geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
   geometry_msgs::PoseStamped gmps;
   gmps.header.stamp = ros::Time::now();
   gmps.header.frame_id = "/local_origin";
@@ -264,8 +352,7 @@ geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
   return gmps;
 }
 
-void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                               geometry_msgs::PoseStamped pose) {
+void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose) {
   obst_avoid.header = pose.header;
   obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = pose.pose.position.x;
@@ -290,8 +377,7 @@ void transformPoseToTrajectory(mavros_msgs::Trajectory& obst_avoid,
   obst_avoid.point_valid = {true, false, false, false, false};
 }
 
-void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid,
-                                   geometry_msgs::Twist vel) {
+void transformVelocityToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::Twist vel) {
   obst_avoid.header.stamp = ros::Time::now();
   obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
   obst_avoid.point_1.position.x = NAN;
@@ -329,4 +415,105 @@ void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point) {
   point.yaw = NAN;
   point.yaw_rate = NAN;
 }
+
+// This function is a refactor of the original in the pcl library
+pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(pcl::PointCloud<pcl::PointXYZ>& cloud) {
+  // Filter out NANs and keep track of outermost points for FOV
+  size_t j = 0;
+  float x_max = -9999.f, y_max = -9999.f, z_max = -9999.f, x_min = 9999.f, y_min = 9999.f, z_min = 9999.f;
+  int i_x_max = -1, i_x_min = -1, i_y_max = -1, i_y_min = -1, i_z_max = -1, i_z_min = -1;
+  for (size_t i = 0; i < cloud.points.size(); ++i) {
+    if (!std::isfinite(cloud.points[i].x) || !std::isfinite(cloud.points[i].y) || !std::isfinite(cloud.points[i].z))
+      continue;
+    cloud.points[j] = cloud.points[i];  // safe, because i is always ahead of j
+
+    if (cloud.points[j].x > x_max) {
+      x_max = cloud.points[j].x;
+      i_x_max = j;
+    }
+
+    if (cloud.points[j].y > y_max) {
+      y_max = cloud.points[j].y;
+      i_y_max = j;
+    }
+
+    if (cloud.points[j].z > z_max) {
+      z_max = cloud.points[j].z;
+      i_z_max = j;
+    }
+
+    if (cloud.points[j].x < x_min) {
+      x_min = cloud.points[j].x;
+      i_x_min = j;
+    }
+
+    if (cloud.points[j].y < y_min) {
+      y_min = cloud.points[j].y;
+      i_y_min = j;
+    }
+
+    if (cloud.points[j].z < z_min) {
+      z_min = cloud.points[j].z;
+      i_z_min = j;
+    }
+
+    j++;
+  }
+  if (j != cloud.points.size()) {
+    // Resize to the correct size
+    cloud.points.resize(j);
+  }
+
+  cloud.height = 1;
+  cloud.width = static_cast<uint32_t>(j);
+
+  // Removing bad points => dense (note: 'dense' doesn't mean 'organized')
+  cloud.is_dense = true;
+  pcl::PointCloud<pcl::PointXYZ> maxima;
+  maxima.header.frame_id = cloud.header.frame_id;
+  if (i_x_max >= 0) maxima.push_back(cloud.points[i_x_max]);
+  if (i_y_max >= 0) maxima.push_back(cloud.points[i_y_max]);
+  if (i_z_max >= 0) maxima.push_back(cloud.points[i_z_max]);
+  if (i_x_min >= 0) maxima.push_back(cloud.points[i_x_min]);
+  if (i_y_min >= 0) maxima.push_back(cloud.points[i_y_min]);
+  if (i_z_min >= 0) maxima.push_back(cloud.points[i_z_min]);
+
+  return maxima;
 }
+
+void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima) {
+  float h_min = 9999.f, h_max = -9999.f, v_min = 9999.f, v_max = -9999.f;
+
+  for (auto p : maxima) {
+    PolarPoint p_pol_fcu = cartesianToPolarFCU(p);
+    p_pol_fcu.z += 180.0f;  // move azimuth to [0, 360]
+    p_pol_fcu.e += 90.0f;   // move elevation to [0, 180]
+    h_min = std::min(p_pol_fcu.z, h_min);
+    h_max = std::max(p_pol_fcu.z, h_max);
+    v_min = std::min(p_pol_fcu.e, v_min);
+    v_max = std::max(p_pol_fcu.e, v_max);
+  }
+
+  float h_diff = std::min(h_max - h_min, 360.0f - h_max + h_min);
+  float v_diff = std::min(v_max - v_min, 360.0f - v_max + v_min);
+
+  if (h_diff > fov.h_fov_deg) {
+    fov.h_fov_deg = h_diff;
+
+    // Note: the wrapping here assumes the FOV of one camera is < 180 degrees!
+    if (h_diff >= h_max - h_min) {
+      fov.yaw_deg = wrapAngleToPlusMinus180((h_max + h_min) / 2.0 - 180.0f);  // center of camera in [-180, 180]
+    } else {
+      fov.yaw_deg = wrapAngleToPlusMinus180((h_max + h_min) / 2.0);
+    }
+  }
+
+  // Note: no wrapping in elevation! If the camera sees the zenith or nadir,
+  // we are in trouble anyways! (aka. horizontal FOV = 360 degrees)
+  if (v_diff > fov.v_fov_deg) {
+    fov.v_fov_deg = v_diff;
+    fov.pitch_deg = (v_max + v_min) / 2.0f - 90.0f;
+  }
+}
+
+}  // namespace avoidance

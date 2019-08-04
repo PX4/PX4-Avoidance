@@ -23,10 +23,8 @@ Box::Box()
       box_dist_to_ground_{1.0f} {}
 
 // update bounding box limit coordinates around a new UAV pose
-void Box::setBoxLimits(const Eigen::Vector3f& pos,
-                       const float ground_distance) {
-  float zmin_close_to_ground =
-      std::min(pos.z() + 0.8f, pos.z() - ground_distance + box_dist_to_ground_);
+void Box::setBoxLimits(const Eigen::Vector3f& pos, const float ground_distance) {
+  float zmin_close_to_ground = std::min(pos.z() + 0.8f, pos.z() - ground_distance + box_dist_to_ground_);
   zmin_ = std::max(zmin_close_to_ground, pos.z() - 1.0f);
   xmin_ = pos.x() - radius_;
   ymin_ = pos.y() - radius_;

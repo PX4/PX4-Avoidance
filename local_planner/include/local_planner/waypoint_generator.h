@@ -1,6 +1,7 @@
 #ifndef WAYPOINT_GENERATOR_H
 #define WAYPOINT_GENERATOR_H
 
+#include "avoidance/common.h"
 #include "avoidance_output.h"
 
 #include <Eigen/Dense>
@@ -13,7 +14,7 @@
 namespace avoidance {
 
 struct waypointResult {
-  waypoint_choice waypoint_type;
+  waypoint_choice waypoint_type = hover;
   Eigen::Vector3f position_wp;
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;
@@ -38,6 +39,7 @@ class WaypointGenerator {
   Eigen::Vector2f closest_pt_ = Eigen::Vector2f(NAN, NAN);
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   float curr_yaw_rad_ = NAN;
+  float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
 
@@ -49,8 +51,7 @@ class WaypointGenerator {
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
   float speed_ = 1.0f;
-  float h_FOV_deg_ = 59.0f;
-  float v_FOV_deg_ = 46.0f;
+  std::vector<FOV> fov_fcu_frame_;
 
   Eigen::Vector3f hover_position_;
 
@@ -112,10 +113,11 @@ class WaypointGenerator {
   void setPlannerInfo(const avoidanceOutput& input);
   /**
   * @brief set horizontal and vertical Field of View based on camera matrix
-  * @param[in] h_FOV, horizontal Field of View [deg]
-  * @param[in] v_FOV, vertical Field of View [deg]
+  * @param[in] index of the camera
+  * @param[in] FOV structures defining the FOV of the specific camera
   **/
-  void setFOV(float h_FOV, float v_FOV);
+  void setFOV(int i, const FOV& fov);
+
   /**
   * @brief update with FCU vehice states
   * @param[in] act_pose, current vehicle position
@@ -125,10 +127,8 @@ class WaypointGenerator {
   * @param[in] stay, true if the vehicle is loitering
   * @param[in] t, update system time
   **/
-  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
-                   const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel,
-                   bool stay, bool is_airborne);
+  void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
+                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne);
 
   /**
   * @brief set the responsiveness of the smoothing
@@ -153,8 +153,7 @@ class WaypointGenerator {
   * @param[in] deg60_pt, 60 degrees angle entry point to line previous to
   * current goal from current vehicle postion
   **/
-  void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt,
-                                         Eigen::Vector3f& deg60_pt);
+  void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
   WaypointGenerator() = default;
   virtual ~WaypointGenerator() = default;

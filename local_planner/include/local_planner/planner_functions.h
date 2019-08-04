@@ -26,18 +26,17 @@ namespace avoidance {
 * @param[in]  FOV, struct defining current field of view
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
-* @param[in]  max_age, maximum age (compute cycles) to keep data
+* @param[in]  max_age, maximum age in seconds to keep data
 * @param[in]  elapsed, time elapsed since last processing [s]
 * @param[in]  min_num_points_per_cell, number of points from which on they will
 *             be kept, less points are discarded as noise (careful: 0 is not
 *             a valid input here)
 **/
-void processPointcloud(
-    pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-    const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
-    Box histogram_box, FOV& fov, const Eigen::Vector3f& position,
-    float min_realsense_dist, int max_age, float elapsed_s,
-    int min_num_points_per_cell);
+void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
+                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
+                       const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
+                       int min_num_points_per_cell);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
@@ -46,18 +45,17 @@ void processPointcloud(
 * @param[in]  cropped_cloud, current frame filtered pointcloud
 * @param[in]  position, current vehicle position
 **/
-void generateNewHistogram(Histogram& polar_histogram,
-                          const pcl::PointCloud<pcl::PointXYZI>& cropped_cloud,
+void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl::PointXYZI>& cropped_cloud,
                           const Eigen::Vector3f& position);
 
 /**
 * @brief      compresses the histogram such that for each azimuth the minimum
 *             distance at the elevation inside the FOV is saved
 * @param[out] new_hist, compressed elevation histogram
-* @param[int] input_hist, original histogram
+* @param[in] input_hist, original histogram
 **/
-void compressHistogramElevation(Histogram& new_hist,
-                                const Histogram& input_hist);
+void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist);
+
 /**
 * @brief      calculates each histogram bin cost and stores it in a cost matrix
 * @param[in]  histogram, polar histogram representing obstacles
@@ -66,19 +64,13 @@ void compressHistogramElevation(Histogram& new_hist,
 * @param[in]  current vehicle heading in histogram angle convention [deg]
 * @param[in]  last_sent_waypoint, last position waypoint
 * @param[in]  cost_params, weight for the cost function
-* @param[in]  only_yawed, true if
 * @param[in]  parameter how far an obstacle is spread in the cost matrix
 * @param[out] cost_matrix
 * @param[out] image of the cost matrix for visualization
 **/
-void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& position,
-                   const float yaw_angle_histogram_frame_deg,
-                   const Eigen::Vector3f& last_sent_waypoint,
-                   costParameters cost_params, bool only_yawed,
-                   const float smoothing_margin_degrees,
-                   Eigen::MatrixXf& cost_matrix,
-                   std::vector<uint8_t>& image_data);
+void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                   const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
+                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -93,8 +85,7 @@ int colorImageIndex(int e_ind, int z_ind, int color);
 * @param[in]  cost matrices
 * @param[out] image for cost matrix visualization
 **/
-void generateCostImage(const Eigen::MatrixXf& cost_matrix,
-                       const Eigen::MatrixXf& distance_matrix,
+void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf& distance_matrix,
                        std::vector<uint8_t>& image_data);
 
 /**
@@ -104,29 +95,21 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix,
 * @param[out] candidate_vector, array of candidate polar direction arranged from
 *             the least to the most expensive
 **/
-void getBestCandidatesFromCostMatrix(
-    const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-    std::vector<candidateDirection>& candidate_vector);
+void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
+                                     std::vector<candidateDirection>& candidate_vector);
 
 /**
 * @brief      computes the cost of each direction in the polar histogram
-* @param[in]  e_angle, elevation angle [deg]
-* @param[in]  z_angle, azimuth angle [deg]
+* @param[in]  PolarPoint of the candidate direction
 * @param[in]  goal, current goal position
 * @param[in]  position, current vehicle position
-* @param[in]  position, current vehicle heading in histogram angle convention
-*             [deg]
-* @param[in]  last_sent_waypoint, previous position waypoint
+* @param[in]  velocity, current vehicle velocity
 * @param[in]  cost_params, weights for goal oriented vs smooth behaviour
-* @param[out] distance_cost, cost component due to proximity to obstacles
-* @param[out] other_costs, cost component due to goal and smoothness
+* @returns    a pair with the first value representing the distance cost, and the second the sum of all other costs
 **/
-void costFunction(float e_angle, float z_angle, float obstacle_distance,
-                  const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
-                  const float yaw_angle_histogram_frame_deg,
-                  const Eigen::Vector3f& last_sent_waypoint,
-                  costParameters cost_params, float& distance_cost,
-                  float& other_costs);
+std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
+                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
+                                     const Eigen::Vector3f& velocity, const costParameters& cost_params);
 
 /**
 * @brief      max-median filtes the cost matrix
@@ -142,8 +125,7 @@ void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius);
 * @param[in]  n_lines_padding, number of rows/columns to be added to matrix
 * @param[out] matrix_padded, cost matrix after padding
 **/
-void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
-                    Eigen::MatrixXf& matrix_padded);
+void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding, Eigen::MatrixXf& matrix_padded);
 
 /**
  * @brief     creates an 1d array with size 2*radius + 1 in length and fills it
@@ -157,16 +139,17 @@ Eigen::ArrayXf getConicKernel(int radius);
 * @brief      helper method to output on the console the histogram
 * @param[in]  histogram, polar histogram
 **/
-void printHistogram(Histogram& histogram);
+void printHistogram(const Histogram& histogram);
 
 /**
-* @brief      finds the minimum cost direction in the tree
-* @param[out] p_pol, polar coordinates of the cheapest direction
-* @param[in]  path_node_positions, array of expanded tree nodes
-* @param[in]  position, current vehicle position
+* @brief      Returns a setpoint that lies on the given path
+* @param[in]  vector of nodes defining the path, with the last node of the path at index 0
+* @param[in]  ros time of path generation
+* @param[in]  velocity, scalar value for the norm of the current vehicle velocity
+* @param[out] setpoint on the tree toward which the drone should fly
+* @returns    boolean indicating whether the tree was valid
 **/
-bool getDirectionFromTree(
-    PolarPoint& p_pol, const std::vector<Eigen::Vector3f>& path_node_positions,
-    const Eigen::Vector3f& position, const Eigen::Vector3f& goal);
+bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
+                         float velocity, Eigen::Vector3f& setpoint);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

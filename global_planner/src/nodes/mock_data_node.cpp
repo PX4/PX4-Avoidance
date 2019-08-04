@@ -7,12 +7,9 @@ MockDataNode::MockDataNode() {
 
   path_sub_ = nh.subscribe("/global_path", 1, &MockDataNode::receivePath, this);
 
-  depth_points_pub_ =
-      nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
-  local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>(
-      "/mavros/local_position/pose", 10);
-  global_goal_pub_ =
-      nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
+  depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
+  local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
+  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
 
   createWall(5, 5, 6);
 
@@ -72,10 +69,8 @@ void MockDataNode::sendMockData() {
   // of the PointField, the number of occurences of the type in the PointField,
   // the type of the PointField
   sensor_msgs::PointCloud2Modifier modifier(cloud_msg);
-  modifier.setPointCloud2Fields(4, "x", 1, sensor_msgs::PointField::FLOAT32,
-                                "y", 1, sensor_msgs::PointField::FLOAT32, "z",
-                                1, sensor_msgs::PointField::FLOAT32, "rgb", 1,
-                                sensor_msgs::PointField::FLOAT32);
+  modifier.setPointCloud2Fields(4, "x", 1, sensor_msgs::PointField::FLOAT32, "y", 1, sensor_msgs::PointField::FLOAT32,
+                                "z", 1, sensor_msgs::PointField::FLOAT32, "rgb", 1, sensor_msgs::PointField::FLOAT32);
   // For convenience and the xyz, rgb, rgba fields, you can also use the
   // following overloaded function. You have to be aware that the following
   // function does add extra padding for backward compatibility though so it is
@@ -103,8 +98,7 @@ void MockDataNode::sendMockData() {
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_g(cloud_msg, "g");
   sensor_msgs::PointCloud2Iterator<uint8_t> iter_b(cloud_msg, "b");
   // Fill the PointCloud2
-  for (size_t i = 0; i < n;
-       ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b) {
+  for (size_t i = 0; i < n; ++i, ++iter_x, ++iter_y, ++iter_z, ++iter_r, ++iter_g, ++iter_b) {
     *iter_x = points_[3 * i + 0];
     *iter_y = points_[3 * i + 1];
     *iter_z = points_[3 * i + 2];

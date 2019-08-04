@@ -27,11 +27,9 @@ class LocalPlannerVisualization {
   * @params[in]  newest_adapted_waypoint_position, last caluclated waypoint
   *              (non-smoothed)
   **/
-  void visualizePlannerData(
-      const LocalPlanner& planner,
-      const geometry_msgs::Point& newest_waypoint_position,
-      const geometry_msgs::Point& newest_adapted_waypoint_position,
-      const geometry_msgs::PoseStamped& newest_pose) const;
+  void visualizePlannerData(const LocalPlanner& planner, const geometry_msgs::Point& newest_waypoint_position,
+                            const geometry_msgs::Point& newest_adapted_waypoint_position,
+                            const geometry_msgs::PoseStamped& newest_pose) const;
 
   /**
   * @brief       Visualization of the calculated search tree and the best path
@@ -41,9 +39,8 @@ class LocalPlannerVisualization {
   * @params[in]  path_node_positions, the positions of all nodes belonging to
   *              the chosen best path
   **/
-  void publishTree(
-      const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
-      const std::vector<Eigen::Vector3f>& path_node_positions) const;
+  void publishTree(const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
+                   const std::vector<Eigen::Vector3f>& path_node_positions) const;
 
   /**
   * @brief       Visualization of the goal position
@@ -58,8 +55,7 @@ class LocalPlannerVisualization {
   * @params[in]  plane_height, the height above ground at which the pointcloud
   *              is additionally cropped
   **/
-  void publishBox(const Eigen::Vector3f& drone_pos, float box_radius,
-                  float plane_height) const;
+  void publishBox(const Eigen::Vector3f& drone_pos, float box_radius, float plane_height) const;
 
   /**
   * @brief       Visualization of the data used during takeoff
@@ -67,8 +63,7 @@ class LocalPlannerVisualization {
   * @params[in]  starting_height, height at which the planner starts planning
   *forward
   **/
-  void publishReachHeight(const Eigen::Vector3f& take_off_pose,
-                          float starting_height) const;
+  void publishReachHeight(const Eigen::Vector3f& take_off_pose, float starting_height) const;
 
   /**
   * @brief       Visualization of the 2D compression of the local pointcloud
@@ -79,12 +74,10 @@ class LocalPlannerVisualization {
   *              (non-smoothed)
   * @params[in]  newest_pose, most recent drone pose
   **/
-  void publishDataImages(
-      const std::vector<uint8_t>& histogram_image_data,
-      const std::vector<uint8_t>& cost_image_data,
-      const geometry_msgs::Point& newest_waypoint_position,
-      const geometry_msgs::Point& newest_adapted_waypoint_position,
-      const geometry_msgs::PoseStamped& newest_pose) const;
+  void publishDataImages(const std::vector<uint8_t>& histogram_image_data, const std::vector<uint8_t>& cost_image_data,
+                         const geometry_msgs::Point& newest_waypoint_position,
+                         const geometry_msgs::Point& newest_adapted_waypoint_position,
+                         const geometry_msgs::PoseStamped& newest_pose) const;
 
   /**
   * @brief       Visualization of the waypoint calculation
@@ -94,8 +87,7 @@ class LocalPlannerVisualization {
   * @params[in]  smoothed_goto_position, smoothed waypoint which is given to the
   *controller
   **/
-  void visualizeWaypoints(const Eigen::Vector3f& goto_position,
-                          const Eigen::Vector3f& adapted_goto_position,
+  void visualizeWaypoints(const Eigen::Vector3f& goto_position, const Eigen::Vector3f& adapted_goto_position,
                           const Eigen::Vector3f& smoothed_goto_position) const;
 
   /**
@@ -111,12 +103,9 @@ class LocalPlannerVisualization {
   * @params[in]  newest_adapted_wp, location of the adapted waypoint at the
   *              current timestep
   **/
-  void publishPaths(const geometry_msgs::Point& last_pos,
-                    const geometry_msgs::Point& newest_pos,
-                    const geometry_msgs::Point& last_wp,
-                    const geometry_msgs::Point& newest_wp,
-                    const geometry_msgs::Point& last_adapted_wp,
-                    const geometry_msgs::Point& newest_adapted_wp);
+  void publishPaths(const geometry_msgs::Point& last_pos, const geometry_msgs::Point& newest_pos,
+                    const geometry_msgs::Point& last_wp, const geometry_msgs::Point& newest_wp,
+                    const geometry_msgs::Point& last_adapted_wp, const geometry_msgs::Point& newest_adapted_wp);
 
   /**
   * @brief       Visualization of the sent waypoint color coded with the mode
@@ -126,8 +115,7 @@ class LocalPlannerVisualization {
   *              visualization
   * @params[in]  newest_pos, location of the drone at the current timestep
   **/
-  void publishCurrentSetpoint(const geometry_msgs::Twist& wp,
-                              const waypoint_choice& waypoint_type,
+  void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const waypoint_choice& waypoint_type,
                               const geometry_msgs::Point& newest_pos) const;
 
   /**
@@ -136,8 +124,7 @@ class LocalPlannerVisualization {
   * @params[in]  box_radius, the radius of the bounding box
   * @params[in]  ground_distance, measured distance to ground
   **/
-  void publishGround(const Eigen::Vector3f& drone_pos, float box_radius,
-                     float ground_distance) const;
+  void publishGround(const Eigen::Vector3f& drone_pos, float box_radius, float ground_distance) const;
 
   /**
   * @brief       Visualization of the offtrack state
@@ -146,11 +133,9 @@ class LocalPlannerVisualization {
   * @params[in]  deg60_pt, 60 degrees angle entry point to line previous to
   * current goal from current vehicle postion
   **/
-  void publishOfftrackPoints(Eigen::Vector3f& closest_pt,
-                             Eigen::Vector3f& deg60_pt);
+  void publishOfftrackPoints(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
-  void publishFOV(const Eigen::Vector3f& drone_pos, const FOV& fov,
-                  const float max_range) const;
+  void publishFOV(const std::vector<FOV>& fov, float max_range) const;
 
  private:
   ros::Publisher local_pointcloud_pub_;

@@ -106,6 +106,7 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
+  LIBRARIES local_planner
   CATKIN_DEPENDS roscpp rospy std_msgs mavros_msgs geometry_msgs sensor_msgs message_runtime tf avoidance
 #  DEPENDS system_lib
 )
@@ -220,16 +221,16 @@ if(CATKIN_ENABLE_TESTING)
                                           test/test_trajectory_simulator.cpp
                                           test/test_waypoint_generator.cpp)
 
-  catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
+    catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
                                         test/test_local_planner_node.cpp)
     if(TARGET ${PROJECT_NAME}-test)
-      target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
+        target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
     endif()
 
-  if(TARGET ${PROJECT_NAME}-test-roscore)
-      target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
+    if(TARGET ${PROJECT_NAME}-test-roscore)
+        target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
     endif()

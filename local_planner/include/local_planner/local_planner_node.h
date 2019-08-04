@@ -1,6 +1,7 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_NODE_H
 
+#include "avoidance/transform_buffer.h"
 #include "local_planner/avoidance_output.h"
 #include "local_planner/local_planner_visualization.h"
 
@@ -54,25 +55,24 @@ class WaypointGenerator;
 struct cameraData {
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
-  ros::Subscriber camera_info_sub_;
   sensor_msgs::PointCloud2 newest_cloud_msg_;
 
-  std::unique_ptr<std::mutex> trans_ready_mutex_;
-  std::unique_ptr<std::condition_variable> trans_ready_cv_;
+  FOV fov_fcu_frame_;
 
-  std::unique_ptr<std::mutex> cloud_ready_mutex_;
+  std::unique_ptr<std::mutex> cloud_msg_mutex_;
+  std::unique_ptr<std::mutex> transformed_cloud_mutex_;
   std::unique_ptr<std::condition_variable> cloud_ready_cv_;
   std::thread transform_thread_;
   pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
 
   bool received_;
   bool transformed_;
+  bool transform_registered_ = false;
 };
 
 class LocalPlannerNode {
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-                   const bool tf_spin_thread = true);
+  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private, const bool tf_spin_thread = true);
   ~LocalPlannerNode();
 
   std::atomic<bool> should_exit_{false};
@@ -109,13 +109,6 @@ class LocalPlannerNode {
   void startNode();
 
   void updatePlanner();
-
-  /**
-  * @brief     checks if the transformation from the camera frame to
-  *            local_origin is available at the pointcloud timestamp
-  * @returns   true, if the transformation is available
-  **/
-  bool canUpdatePlannerInfo();
 
   /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
@@ -173,13 +166,17 @@ class LocalPlannerNode {
   *errors
   * @param[out] hover, true if the vehicle is hovering
   **/
-  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start,
-                     bool& hover);
+  void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
   /**
   * @brief     polls PX4 Firmware paramters every 30 seconds
   **/
   void checkPx4Parameters();
+
+  /**
+  * @brief     safes received transforms to buffer;
+  **/
+  void transformBufferThread();
 
  private:
   avoidance::LocalPlannerNodeConfig rqt_param_config_;
@@ -237,6 +234,8 @@ class LocalPlannerNode {
 
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
   tf::TransformListener* tf_listener_;
+  avoidance::tf_buffer::TransformBuffer tf_buffer_;
+  std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 
   bool armed_ = false;
   bool data_ready_ = false;
@@ -257,8 +256,7 @@ class LocalPlannerNode {
   * @param     config, struct with all the parameters
   * @param     level, bitmsak to group together reconfigurable parameters
   **/
-  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config,
-                                  uint32_t level);
+  void dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level);
 
   /**
   * @brief     subscribes to all the camera topics and camera info
@@ -277,15 +275,13 @@ class LocalPlannerNode {
   * @param[in] msg, pointcloud message
   * @param[in] index, pointcloud instance number
   **/
-  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg,
-                          int index);
+  void pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index);
   /**
   * @brief     callaback for camera information
   * @param[in] msg, camera information message
   * @param[in] index, camera info instace number
   **/
-  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg,
-                          int index);
+  void cameraInfoCallback(const sensor_msgs::CameraInfo::ConstPtr& msg, int index);
 
   /**
   * @brief     callaback for vehicle velocity

@@ -4,6 +4,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <boost/bind.hpp>
+#include <mutex>
 #include <set>
 #include <string>
 
@@ -43,17 +44,22 @@
 
 namespace global_planner {
 
+struct cameraData {
+  ros::Subscriber pointcloud_sub_;
+};
+
 class GlobalPlannerNode {
  public:
   // TODO: Deque instead of vector
   GlobalPlanner global_planner_;
   std::vector<GoalCell> waypoints_;  // Intermediate goals, from file, mavros
                                      // mission or intermediate goals
-  GlobalPlannerNode(const ros::NodeHandle& nh,
-                    const ros::NodeHandle& nh_private);
+  GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   ~GlobalPlannerNode();
 
  private:
+  std::mutex mutex_;
+
   ros::NodeHandle nh_;
   ros::NodeHandle nh_private_;
 
@@ -65,7 +71,6 @@ class GlobalPlannerNode {
   ros::Subscriber clicked_point_sub_;
   ros::Subscriber move_base_simple_sub_;
   ros::Subscriber laser_sensor_sub_;
-  ros::Subscriber depth_camera_sub_;
   ros::Subscriber fcu_input_sub_;
 
   // Publishers
@@ -78,6 +83,7 @@ class GlobalPlannerNode {
   ros::Publisher mavros_obstacle_free_path_pub_;
   ros::Publisher mavros_waypoint_publisher_;
   ros::Publisher current_waypoint_publisher_;
+  ros::Publisher pointcloud_pub_;
 
   ros::Time start_time_;
   ros::Time last_wp_time_;
@@ -100,6 +106,7 @@ class GlobalPlannerNode {
 
   std::vector<geometry_msgs::PoseStamped> last_clicked_points;
   std::vector<geometry_msgs::PoseStamped> path_;
+  std::vector<cameraData> cameras_;
 
   int num_octomap_msg_ = 0;
   int num_pos_msg_ = 0;
@@ -109,6 +116,7 @@ class GlobalPlannerNode {
   double speed_ = min_speed_;
   double start_yaw_;
   bool position_received_;
+  std::string frame_id_;
 
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
@@ -122,6 +130,7 @@ class GlobalPlannerNode {
   std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
 #endif
   void readParams();
+  void initializeCameraSubscribers(std::vector<std::string>& camera_topics);
   void receivePath(const nav_msgs::Path& msg);
   void setNewGoal(const GoalCell& goal);
   void popNextGoal();
@@ -129,13 +138,11 @@ class GlobalPlannerNode {
   void setIntermediateGoal();
   bool isCloseToGoal();
   void setCurrentPath(const std::vector<geometry_msgs::PoseStamped>& poses);
-  void dynamicReconfigureCallback(
-      global_planner::GlobalPlannerNodeConfig& config, uint32_t level);
+  void dynamicReconfigureCallback(global_planner::GlobalPlannerNodeConfig& config, uint32_t level);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg);
-  void laserSensorCallback(const sensor_msgs::LaserScan& msg);
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);
@@ -143,7 +150,6 @@ class GlobalPlannerNode {
   void plannerLoopCallback(const ros::TimerEvent& event);
   void publishGoal(const GoalCell& goal);
   void publishPath();
-  void publishExploredCells();
   void publishSetpoint();
   void printPointInfo(double x, double y, double z);
 };

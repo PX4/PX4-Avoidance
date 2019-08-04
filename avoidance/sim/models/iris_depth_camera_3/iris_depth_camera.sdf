@@ -37,7 +37,7 @@
           </image>
           <clip>
             <near>0.5</near>
-            <far>9</far>
+            <far>18</far>
           </clip>
         </camera>
         <plugin filename="libgazebo_ros_openni_kinect.so" name="camera_controller">
@@ -58,10 +58,10 @@
           <distortion_t1>0.0</distortion_t1>
           <distortion_t2>0.0</distortion_t2>
         </plugin>
-      </sensor>  
+      </sensor>
     </link>
   </model>
-  
+
     <joint name="depth_camera_new_joint_front" type="revolute">
       <child>front_camera::link</child>
       <parent>iris::base_link</parent>
@@ -73,10 +73,10 @@
         </limit>
       </axis>
     </joint>
-    
-    
+
+
   <model name="left_camera">
-    <pose>0.05 0.05 -0.03 0 0 1.57</pose>
+    <pose>0.05 0.05 -0.03 0 0 1.0472</pose>
     <link name="link">
       <inertial>
         <pose>0.01 0.025 0.025 0 0 0</pose>
@@ -109,7 +109,7 @@
           </image>
           <clip>
             <near>0.5</near>
-            <far>9</far>
+            <far>18</far>
           </clip>
         </camera>
         <plugin filename="libgazebo_ros_openni_kinect.so" name="camera_controller">
@@ -133,7 +133,7 @@
       </sensor>
     </link>
   </model>
-  
+
     <joint name="depth_camera_new_joint_left" type="revolute">
       <child>left_camera::link</child>
       <parent>iris::base_link</parent>
@@ -145,9 +145,9 @@
         </limit>
       </axis>
     </joint>
-    
+
   <model name="right_camera">
-    <pose>0.05 -0.05 -0.03 0 0 -1.57</pose>
+    <pose>0.05 -0.05 -0.03 0 0 -1.0472</pose>
     <link name="link">
       <inertial>
         <pose>0.01 0.025 0.025 0 0 0</pose>
@@ -180,7 +180,7 @@
           </image>
           <clip>
             <near>0.5</near>
-            <far>9</far>
+            <far>18</far>
           </clip>
         </camera>
         <plugin filename="libgazebo_ros_openni_kinect.so" name="camera_controller">
@@ -204,7 +204,7 @@
       </sensor>
     </link>
   </model>
-  
+
     <joint name="depth_camera_new_joint_right" type="revolute">
       <child>right_camera::link</child>
       <parent>iris::base_link</parent>
@@ -216,7 +216,7 @@
         </limit>
       </axis>
     </joint>
-    
+
     <include>
       <uri>model://lidar</uri>
       <pose>-0.12 0 0 0 3.1415 0</pose>
@@ -232,7 +232,7 @@
         </limit>
       </axis>
     </joint>
-  
+
   <!--<model name="distance_sensor">
     <pose>-0.01 0 -0.02 0 1.57 0</pose>
     <link name="link">
@@ -275,7 +275,7 @@
 	    </sensor>
       </link>
     </model> -->
-    
+
     <!-- <joint name="distance_sensor_new_joint_right" type="revolute">
       <child>distance_sensor::link</child>
       <parent>iris::base_link</parent>
@@ -287,6 +287,6 @@
         </limit>
       </axis>
     </joint> -->
-  
+
   </model>
-</sdf> 
+</sdf>

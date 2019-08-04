@@ -23,9 +23,8 @@ class MockDataNode {
   void receivePath(const nav_msgs::Path& msg);
   void sendMockData();
 
-  std::vector<float> points_{5.5, -0.5, 0.5, 5.5, 0.5, 0.5, 5.5, 1.5, 0.5,
-                             5.5, -0.5, 1.5, 5.5, 0.5, 1.5, 5.5, 1.5, 1.5,
-                             5.5, -0.5, 2.5, 5.5, 0.5, 2.5, 5.5, 1.5, 2.5};
+  std::vector<float> points_{5.5, -0.5, 0.5, 5.5, 0.5, 0.5,  5.5, 1.5, 0.5, 5.5, -0.5, 1.5, 5.5, 0.5,
+                             1.5, 5.5,  1.5, 1.5, 5.5, -0.5, 2.5, 5.5, 0.5, 2.5, 5.5,  1.5, 2.5};
 
  private:
   ros::Subscriber path_sub_;

@@ -11,55 +11,36 @@ namespace avoidance {
 
 // initialize subscribers for local planner visualization topics
 void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
-  local_pointcloud_pub_ =
-      nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
   pointcloud_size_pub_ = nh.advertise<std_msgs::UInt32>("/pointcloud_size", 1);
-  bounding_box_pub_ =
-      nh.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
-  ground_measurement_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
-  original_wp_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
-  adapted_wp_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
-  smoothed_wp_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
-  complete_tree_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/complete_tree", 1);
+  bounding_box_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
+  ground_measurement_pub_ = nh.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
+  original_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
+  adapted_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
+  smoothed_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
+  complete_tree_pub_ = nh.advertise<visualization_msgs::Marker>("/complete_tree", 1);
   tree_path_pub_ = nh.advertise<visualization_msgs::Marker>("/tree_path", 1);
-  marker_goal_pub_ =
-      nh.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  path_actual_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
-  path_waypoint_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
-  path_adapted_waypoint_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
-  current_waypoint_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  takeoff_pose_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
-  initial_height_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/initial_height", 1);
-  histogram_image_pub_ =
-      nh.advertise<sensor_msgs::Image>("/histogram_image", 1);
+  marker_goal_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
+  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
+  path_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
+  path_adapted_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
+  current_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
+  takeoff_pose_pub_ = nh.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
+  initial_height_pub_ = nh.advertise<visualization_msgs::Marker>("/initial_height", 1);
+  histogram_image_pub_ = nh.advertise<sensor_msgs::Image>("/histogram_image", 1);
   cost_image_pub_ = nh.advertise<sensor_msgs::Image>("/cost_image", 1);
-  closest_point_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
-  deg60_point_pub_ =
-      nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
-  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 1);
+  closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
+  deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
+  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
 }
 
-void LocalPlannerVisualization::visualizePlannerData(
-    const LocalPlanner& planner,
-    const geometry_msgs::Point& newest_waypoint_position,
-    const geometry_msgs::Point& newest_adapted_waypoint_position,
-    const geometry_msgs::PoseStamped& newest_pose) const {
+void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
+                                                     const geometry_msgs::Point& newest_waypoint_position,
+                                                     const geometry_msgs::Point& newest_adapted_waypoint_position,
+                                                     const geometry_msgs::PoseStamped& newest_pose) const {
   // visualize clouds
   local_pointcloud_pub_.publish(planner.getPointcloud());
-  pointcloud_size_pub_.publish(
-      static_cast<uint32_t>(planner.getPointcloud().size()));
+  pointcloud_size_pub_.publish(static_cast<uint32_t>(planner.getPointcloud().size()));
 
   // visualize tree calculation
   std::vector<TreeNode> tree;
@@ -72,70 +53,67 @@ void LocalPlannerVisualization::visualizePlannerData(
   publishGoal(toPoint(planner.getGoal()));
 
   // publish bounding box of pointcloud
-  publishBox(planner.getPosition(), planner.histogram_box_.radius_,
-             planner.histogram_box_.zmin_);
+  publishBox(planner.getPosition(), planner.histogram_box_.radius_, planner.histogram_box_.zmin_);
 
   // publish data related to takeoff maneuver
   publishReachHeight(planner.take_off_pose_, planner.starting_height_);
 
   // publish histogram image
-  publishDataImages(planner.histogram_image_data_, planner.cost_image_data_,
-                    newest_waypoint_position, newest_adapted_waypoint_position,
-                    newest_pose);
+  publishDataImages(planner.histogram_image_data_, planner.cost_image_data_, newest_waypoint_position,
+                    newest_adapted_waypoint_position, newest_pose);
 
   // publish the FOV
-  publishFOV(planner.getPosition(), planner.getFOV(),
-             planner.histogram_box_.radius_);
+  publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
 }
 
-void LocalPlannerVisualization::publishFOV(const Eigen::Vector3f& drone_pos,
-                                           const FOV& fov,
-                                           const float max_range) const {
-  PolarPoint p1(fov.elevation_deg - fov.v_fov_deg / 2.f,
-                fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p2(fov.elevation_deg + fov.v_fov_deg / 2.f,
-                fov.azimuth_deg + fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p3(fov.elevation_deg + fov.v_fov_deg / 2.f,
-                fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
-  PolarPoint p4(fov.elevation_deg - fov.v_fov_deg / 2.f,
-                fov.azimuth_deg - fov.h_fov_deg / 2.f, max_range);
+void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, float max_range) const {
+  Eigen::Vector3f drone_pos = Eigen::Vector3f(0.f, 0.f, 0.f);
+  for (int i = 0; i < fov_vec.size(); ++i) {
+    PolarPoint p1(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p2(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg + fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p3(fov_vec[i].pitch_deg + fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
+    PolarPoint p4(fov_vec[i].pitch_deg - fov_vec[i].v_fov_deg / 2.f, fov_vec[i].yaw_deg - fov_vec[i].h_fov_deg / 2.f,
+                  max_range);
 
-  visualization_msgs::Marker m;
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.id = 0;
-  m.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  m.action = visualization_msgs::Marker::ADD;
-  m.scale.x = 1.0;
-  m.scale.y = 1.0;
-  m.scale.z = 1.0;
-  m.color.a = 0.4;
-  m.color.r = 0.5;
-  m.color.g = 0.5;
-  m.color.b = 1.0;
+    visualization_msgs::Marker m;
+    m.header.frame_id = "fcu";
+    m.header.stamp = ros::Time::now();
+    m.id = i;
+    m.type = visualization_msgs::Marker::TRIANGLE_LIST;
+    m.action = visualization_msgs::Marker::ADD;
+    m.scale.x = 1.0;
+    m.scale.y = 1.0;
+    m.scale.z = 1.0;
+    m.color.a = 0.4;
+    m.color.r = 0.5;
+    m.color.g = 0.5;
+    m.color.b = 1.0;
 
-  // side 1
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
-  // side 2
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p2, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
-  // side 3
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p3, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
-  // side 4
-  m.points.push_back(toPoint(drone_pos));
-  m.points.push_back(toPoint(polarToCartesian(p4, drone_pos)));
-  m.points.push_back(toPoint(polarToCartesian(p1, drone_pos)));
+    // side 1
+    m.points.push_back(toPoint(drone_pos));
+    m.points.push_back(toPoint(polarFCUToCartesian(p1, drone_pos)));
+    m.points.push_back(toPoint(polarFCUToCartesian(p2, drone_pos)));
+    // side 2
+    m.points.push_back(toPoint(drone_pos));
+    m.points.push_back(toPoint(polarFCUToCartesian(p2, drone_pos)));
+    m.points.push_back(toPoint(polarFCUToCartesian(p3, drone_pos)));
+    // side 3
+    m.points.push_back(toPoint(drone_pos));
+    m.points.push_back(toPoint(polarFCUToCartesian(p3, drone_pos)));
+    m.points.push_back(toPoint(polarFCUToCartesian(p4, drone_pos)));
+    // side 4
+    m.points.push_back(toPoint(drone_pos));
+    m.points.push_back(toPoint(polarFCUToCartesian(p4, drone_pos)));
+    m.points.push_back(toPoint(polarFCUToCartesian(p1, drone_pos)));
 
-  fov_pub_.publish(m);
+    fov_pub_.publish(m);
+  }
 }
 
-void LocalPlannerVisualization::publishOfftrackPoints(
-    Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
+void LocalPlannerVisualization::publishOfftrackPoints(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
   visualization_msgs::Marker m;
 
   m.header.frame_id = "local_origin";
@@ -165,9 +143,8 @@ void LocalPlannerVisualization::publishOfftrackPoints(
   deg60_point_pub_.publish(m);
 }
 
-void LocalPlannerVisualization::publishTree(
-    const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
-    const std::vector<Eigen::Vector3f>& path_node_positions) const {
+void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
+                                            const std::vector<Eigen::Vector3f>& path_node_positions) const {
   visualization_msgs::Marker tree_marker;
   tree_marker.header.frame_id = "local_origin";
   tree_marker.header.stamp = ros::Time::now();
@@ -214,8 +191,7 @@ void LocalPlannerVisualization::publishTree(
   tree_path_pub_.publish(path_marker);
 }
 
-void LocalPlannerVisualization::publishGoal(
-    const geometry_msgs::Point& goal) const {
+void LocalPlannerVisualization::publishGoal(const geometry_msgs::Point& goal) const {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;
 
@@ -237,8 +213,7 @@ void LocalPlannerVisualization::publishGoal(
   marker_goal_pub_.publish(marker_goal);
 }
 
-void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos,
-                                           float box_radius,
+void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos, float box_radius,
                                            float plane_height) const {
   visualization_msgs::MarkerArray marker_array;
 
@@ -286,8 +261,7 @@ void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos,
   bounding_box_pub_.publish(marker_array);
 }
 
-void LocalPlannerVisualization::publishReachHeight(
-    const Eigen::Vector3f& take_off_pose, float starting_height) const {
+void LocalPlannerVisualization::publishReachHeight(const Eigen::Vector3f& take_off_pose, float starting_height) const {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -329,12 +303,11 @@ void LocalPlannerVisualization::publishReachHeight(
   takeoff_pose_pub_.publish(t);
 }
 
-void LocalPlannerVisualization::publishDataImages(
-    const std::vector<uint8_t>& histogram_image_data,
-    const std::vector<uint8_t>& cost_image_data,
-    const geometry_msgs::Point& newest_waypoint_position,
-    const geometry_msgs::Point& newest_adapted_waypoint_position,
-    const geometry_msgs::PoseStamped& newest_pose) const {
+void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& histogram_image_data,
+                                                  const std::vector<uint8_t>& cost_image_data,
+                                                  const geometry_msgs::Point& newest_waypoint_position,
+                                                  const geometry_msgs::Point& newest_adapted_waypoint_position,
+                                                  const geometry_msgs::PoseStamped& newest_pose) const {
   sensor_msgs::Image cost_img;
   cost_img.header.stamp = ros::Time::now();
   cost_img.height = GRID_LENGTH_E;
@@ -345,43 +318,32 @@ void LocalPlannerVisualization::publishDataImages(
   cost_img.data = cost_image_data;
 
   // current orientation
-  float curr_yaw_fcu_frame =
-      getYawFromQuaternion(toEigen(newest_pose.pose.orientation));
-  float yaw_angle_histogram_frame =
-      -static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F + 90.0f;
+  float curr_yaw_fcu_frame = getYawFromQuaternion(toEigen(newest_pose.pose.orientation));
+  float yaw_angle_histogram_frame = -static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F + 90.0f;
   PolarPoint heading_pol(0, yaw_angle_histogram_frame, 1.0);
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 
   // current setpoint
-  PolarPoint waypoint_pol = cartesianToPolar(
-      toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
-  Eigen::Vector2i waypoint_index =
-      polarToHistogramIndex(waypoint_pol, ALPHA_RES);
+  PolarPoint waypoint_pol =
+      cartesianToPolarHistogram(toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
+  Eigen::Vector2i waypoint_index = polarToHistogramIndex(waypoint_pol, ALPHA_RES);
   PolarPoint adapted_waypoint_pol =
-      cartesianToPolar(toEigen(newest_adapted_waypoint_position),
-                       toEigen(newest_pose.pose.position));
-  Eigen::Vector2i adapted_waypoint_index =
-      polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
+      cartesianToPolarHistogram(toEigen(newest_adapted_waypoint_position), toEigen(newest_pose.pose.position));
+  Eigen::Vector2i adapted_waypoint_index = polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
 
   // color in the image
   if (cost_img.data.size() == 3 * GRID_LENGTH_E * GRID_LENGTH_Z) {
     // current heading blue
-    cost_img.data[colorImageIndex(heading_index.y(), heading_index.x(), 2)] =
-        255.f;
+    cost_img.data[colorImageIndex(heading_index.y(), heading_index.x(), 2)] = 255.f;
 
     // waypoint white
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 0)] =
-        255.f;
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 1)] =
-        255.f;
-    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 2)] =
-        255.f;
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 0)] = 255.f;
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 1)] = 255.f;
+    cost_img.data[colorImageIndex(waypoint_index.y(), waypoint_index.x(), 2)] = 255.f;
 
     // adapted waypoint light blue
-    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
-                                  adapted_waypoint_index.x(), 1)] = 255.f;
-    cost_img.data[colorImageIndex(adapted_waypoint_index.y(),
-                                  adapted_waypoint_index.x(), 2)] = 255.f;
+    cost_img.data[colorImageIndex(adapted_waypoint_index.y(), adapted_waypoint_index.x(), 1)] = 255.f;
+    cost_img.data[colorImageIndex(adapted_waypoint_index.y(), adapted_waypoint_index.x(), 2)] = 255.f;
   }
 
   // histogram image
@@ -398,10 +360,9 @@ void LocalPlannerVisualization::publishDataImages(
   cost_image_pub_.publish(cost_img);
 }
 
-void LocalPlannerVisualization::visualizeWaypoints(
-    const Eigen::Vector3f& goto_position,
-    const Eigen::Vector3f& adapted_goto_position,
-    const Eigen::Vector3f& smoothed_goto_position) const {
+void LocalPlannerVisualization::visualizeWaypoints(const Eigen::Vector3f& goto_position,
+                                                   const Eigen::Vector3f& adapted_goto_position,
+                                                   const Eigen::Vector3f& smoothed_goto_position) const {
   visualization_msgs::Marker sphere1;
   visualization_msgs::Marker sphere2;
   visualization_msgs::Marker sphere3;
@@ -467,12 +428,11 @@ void LocalPlannerVisualization::visualizeWaypoints(
   smoothed_wp_pub_.publish(sphere3);
 }
 
-void LocalPlannerVisualization::publishPaths(
-    const geometry_msgs::Point& last_pos,
-    const geometry_msgs::Point& newest_pos, const geometry_msgs::Point& last_wp,
-    const geometry_msgs::Point& newest_wp,
-    const geometry_msgs::Point& last_adapted_wp,
-    const geometry_msgs::Point& newest_adapted_wp) {
+void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_pos,
+                                             const geometry_msgs::Point& newest_pos,
+                                             const geometry_msgs::Point& last_wp, const geometry_msgs::Point& newest_wp,
+                                             const geometry_msgs::Point& last_adapted_wp,
+                                             const geometry_msgs::Point& newest_adapted_wp) {
   // publish actual path
   visualization_msgs::Marker path_actual_marker;
   path_actual_marker.header.frame_id = "local_origin";
@@ -530,9 +490,9 @@ void LocalPlannerVisualization::publishPaths(
   path_length_++;
 }
 
-void LocalPlannerVisualization::publishCurrentSetpoint(
-    const geometry_msgs::Twist& wp, const waypoint_choice& waypoint_type,
-    const geometry_msgs::Point& newest_pos) const {
+void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp,
+                                                       const waypoint_choice& waypoint_type,
+                                                       const geometry_msgs::Point& newest_pos) const {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
   setpoint.header.stamp = ros::Time::now();
@@ -581,8 +541,7 @@ void LocalPlannerVisualization::publishCurrentSetpoint(
   current_waypoint_pub_.publish(setpoint);
 }
 
-void LocalPlannerVisualization::publishGround(const Eigen::Vector3f& drone_pos,
-                                              float box_radius,
+void LocalPlannerVisualization::publishGround(const Eigen::Vector3f& drone_pos, float box_radius,
                                               float ground_distance) const {
   visualization_msgs::Marker plane;
 

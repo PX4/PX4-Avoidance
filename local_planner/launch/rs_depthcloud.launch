@@ -18,6 +18,7 @@ limitations under the License.
   <arg name="tf_prefix"           default=""/>
   <arg name="namespace"           default="camera"/>
   <arg name="manager"             default="realsense2_camera_manager"/>
+  <arg name="required"            default="false"/>
 
   <!-- Camera device specific arguments -->
   <arg name="serial_no"           default=""/>
@@ -46,10 +47,11 @@ limitations under the License.
    <group ns="$(arg namespace)">
      <!-- Launch the camera device nodelet-->
      <include file="$(find realsense2_camera)/launch/includes/nodelet.launch.xml">
-       <arg name="tf_prefix"                  value="$(arg tf_prefix)"/>
+       <arg name="tf_prefix"                value="$(arg tf_prefix)"/>
        <arg name="manager"                  value="$(arg manager)"/>
        <arg name="serial_no"                value="$(arg serial_no)"/>
        <arg name="json_file_path"           value="$(arg json_file_path)"/>
+       <arg name="required"                 value="$(arg required)"/>
 
        <arg name="enable_pointcloud"        value="$(arg enable_pointcloud)"/>
        <arg name="enable_sync"              value="$(arg enable_sync)"/>
@@ -73,7 +75,7 @@ limitations under the License.
      </include>
 
       <node pkg="nodelet" type="nodelet" name="points_xyz_sw_registered"
-            args="load depth_image_proc/point_cloud_xyz $(arg manager) true" respawn="true">
+            args="load depth_image_proc/point_cloud_xyz $(arg manager) true" required="$(arg required)">
         <remap from="camera_info"             to="depth/camera_info" />
         <remap from="image_rect" to="depth/image_rect_raw" />
         <remap from="points"     to="depth/points" />

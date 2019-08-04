@@ -17,7 +17,6 @@ dictitems:
         state: []
       heading_cost_param_: 0.5
       id: 0
-      max_path_length_: 3.0
       max_point_age_s_: 20.0
       min_num_points_per_cell_: 25 # Tune to your sensor requirements!
       min_realsense_dist_: 0.2
@@ -40,7 +39,6 @@ dictitems:
       use_vel_setpoints_: false
     state: []
   heading_cost_param_: 0.5
-  max_path_length_: 3.0
   max_point_age_s_: 20.0
   min_num_points_per_cell_: 25 # Tune to your sensor requirements!
   min_realsense_dist_: 0.2
