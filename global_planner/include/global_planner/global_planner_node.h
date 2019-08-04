@@ -72,6 +72,7 @@ class GlobalPlannerNode {
   ros::Subscriber move_base_simple_sub_;
   ros::Subscriber laser_sensor_sub_;
   ros::Subscriber fcu_input_sub_;
+  ros::Subscriber point_goal_sub_;
 
   // Publishers
   ros::Publisher global_temp_path_pub_;
@@ -143,6 +144,7 @@ class GlobalPlannerNode {
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void clickedPointCallback(const geometry_msgs::PointStamped& msg);
   void moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg);
+  void pointGoalCallback(const geometry_msgs::Point& msg);
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void fcuInputGoalCallback(const mavros_msgs::Trajectory& msg);

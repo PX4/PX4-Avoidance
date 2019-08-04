@@ -28,6 +28,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
   fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
+  point_goal_sub_ = nh_.subscribe("/point_goal", 1, &GlobalPlannerNode::pointGoalCallback, this);
 
   // Publishers
   global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
@@ -249,6 +250,10 @@ void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg)
   }
 }
 
+void GlobalPlannerNode::pointGoalCallback(const geometry_msgs::Point& msg) {
+    setNewGoal(GoalCell(msg.x, msg.y, msg.z));
+}
+
 // Check if the current path is blocked
 void GlobalPlannerNode::octomapFullCallback(const octomap_msgs::Octomap& msg) {
   if (num_octomap_msg_++ % 10 > 0) {
@@ -283,7 +288,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
     pointcloud_pub_.publish(msg);
   } catch (tf::TransformException const& ex) {
     ROS_DEBUG("%s", ex.what());
-    ROS_WARN("Transformation not available (%s to /camera_link", frame_id_);
+    ROS_WARN("Transformation not available (%s to /camera_link", frame_id_.c_str());
   }
 }
 
