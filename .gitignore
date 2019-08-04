@@ -7,3 +7,4 @@
 *.kdev4
 /local_planner/launch/avoidance.launch
 .idea/
+cmake-build-debug/
