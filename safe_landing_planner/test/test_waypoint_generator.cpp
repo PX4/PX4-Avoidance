@@ -201,6 +201,7 @@ TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid_to_Land) {
   is_land_waypoint_ = true;
   start_grid_exploration_ = true;
   can_land_ = 0;
+  grid_slp_.setFilterLimits(position_);
 
   calculateWaypoint();
   ASSERT_EQ(SLPState::LOITER, getState());
@@ -267,7 +268,7 @@ TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid_to_Land) {
   ASSERT_EQ(SLPState::GOTO, getState());
 
   // THEN: reached the founded the landing spot, go to LAND state
-  position_ << 22, 22, 4.5;
+  position_ << 12, 12, 4.5;
   calculateWaypoint();
 
   ASSERT_EQ(SLPState::LAND, getState());
