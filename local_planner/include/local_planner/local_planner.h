@@ -66,7 +66,6 @@ struct ModelParameters {
 
 class LocalPlanner {
  private:
-
   int children_per_node_;
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
