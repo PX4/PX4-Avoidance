@@ -29,6 +29,7 @@
 #include <octomap_msgs/conversions.h>
 
 #include <avoidance/avoidance_node.h>
+#include <avoidance/common.h>
 #include <global_planner/octomap_ompl_rrt.h>
 
 #ifndef DISABLE_SIMULATION
@@ -58,9 +59,14 @@ class OctomapRrtPlanner {
   ros::Subscriber pose_sub_;
   ros::Subscriber octomap_full_sub_;
   ros::Subscriber move_base_simple_sub_;
+  ros::Subscriber desiredtrajectory_sub_;
 
   ros::Timer cmdloop_timer_;
-  ros::Timer statusloop_timer_;
+  ros::Timer plannerloop_timer_;
+  ros::CallbackQueue cmdloop_queue_;
+  ros::CallbackQueue plannerloop_queue_;
+  std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+  std::unique_ptr<ros::AsyncSpinner> plannerloop_spinner_;
 
   ros::Time last_wp_time_;
   ros::Time start_time_;
@@ -69,8 +75,11 @@ class OctomapRrtPlanner {
   double plannerloop_dt_;
   bool hover_;
   int num_octomap_msg_;
+  std::string frame_id_;
 
   Eigen::Vector3d local_position_, local_velocity_;
+  Eigen::Vector3d reference_pos_;
+  Eigen::Quaternionf reference_att_;
   Eigen::Vector3d goal_;
 
   std::vector<Eigen::Vector3d> current_path_;
@@ -84,17 +93,19 @@ class OctomapRrtPlanner {
 #ifndef DISABLE_SIMULATION
   std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
 #endif
-  void cmdloopCallback(const ros::TimerEvent& event);
-  void statusloopCallback(const ros::TimerEvent& event);
+  void cmdLoopCallback(const ros::TimerEvent& event);
+  void plannerLoopCallback(const ros::TimerEvent& event);
   void octomapFullCallback(const octomap_msgs::Octomap& msg);
   void positionCallback(const geometry_msgs::PoseStamped& msg);
   void velocityCallback(const geometry_msgs::TwistStamped& msg);
+  void DesiredTrajectoryCallback(const mavros_msgs::Trajectory& msg);
   void moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg);
   void depthCameraCallback(const sensor_msgs::PointCloud2& msg);
   void publishSetpoint();
   void initializeCameraSubscribers(std::vector<std::string>& camera_topics);
   void publishPath();
   geometry_msgs::PoseStamped vector3d2PoseStampedMsg(Eigen::Vector3d position);
+  void updateReference(ros::Time current_time);
 
  public:
   OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);

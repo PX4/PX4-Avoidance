@@ -13,20 +13,17 @@ OctomapRrtPlanner::OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeH
     : nh_(nh),
       nh_private_(nh_private),
       avoidance_node_(nh, nh_private),
-      cmdloop_dt_(0.1),
+      cmdloop_dt_(0.05),
       plannerloop_dt_(1.0),
       rrt_planner_(nh, nh_private) {
 #ifndef DISABLE_SIMULATION
   world_visualizer_.reset(new avoidance::WorldVisualizer(nh_));
 #endif
 
-  cmdloop_timer_ = nh_.createTimer(ros::Duration(cmdloop_dt_), &OctomapRrtPlanner::cmdloopCallback,
-                                   this);  // Define timer for constant loop rate
-  statusloop_timer_ = nh_.createTimer(ros::Duration(plannerloop_dt_), &OctomapRrtPlanner::statusloopCallback,
-                                      this);  // Define timer for constant loop rate
-
   pose_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &OctomapRrtPlanner::positionCallback, this);
   move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &OctomapRrtPlanner::moveBaseSimpleCallback, this);
+  desiredtrajectory_sub_ =
+      nh_.subscribe("/mavros/trajectory/desired", 1, &OctomapRrtPlanner::DesiredTrajectoryCallback, this);
 
   octomap_full_sub_ = nh_.subscribe("/octomap_full", 1, &OctomapRrtPlanner::octomapFullCallback, this);
   trajectory_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
@@ -38,17 +35,38 @@ OctomapRrtPlanner::OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeH
 
   std::vector<std::string> camera_topics;
   nh_.getParam("pointcloud_topics", camera_topics);
+  nh_.param<std::string>("frame_id", frame_id_, "/local_origin");
+
+  ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
+                                         boost::bind(&OctomapRrtPlanner::cmdLoopCallback, this, _1), &cmdloop_queue_);
+  cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
+
+  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
+  cmdloop_spinner_->start();
+
+  ros::TimerOptions plannerlooptimer_options(ros::Duration(plannerloop_dt_),
+                                             boost::bind(&OctomapRrtPlanner::plannerLoopCallback, this, _1),
+                                             &plannerloop_queue_);
+  plannerloop_timer_ = nh_.createTimer(plannerlooptimer_options);
+
+  plannerloop_spinner_.reset(new ros::AsyncSpinner(1, &plannerloop_queue_));
+  plannerloop_spinner_->start();
+
   initializeCameraSubscribers(camera_topics);
 
   rrt_planner_.setMap(octree_);
 
   goal_ << 0.0, 1.0, 0.0;
+  reference_att_.x() = 0.0;
+  reference_att_.y() = 0.0;
+  reference_att_.z() = 0.0;
+  reference_att_.w() = 1.0;
 }
 OctomapRrtPlanner::~OctomapRrtPlanner() {
   // Destructor
 }
 
-void OctomapRrtPlanner::cmdloopCallback(const ros::TimerEvent& event) {
+void OctomapRrtPlanner::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
 
   // Check if all information was received
@@ -59,14 +77,15 @@ void OctomapRrtPlanner::cmdloopCallback(const ros::TimerEvent& event) {
   ros::Duration since_start = now - start_time_;
 
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
+  updateReference(now);
   publishSetpoint();
 }
 
-void OctomapRrtPlanner::statusloopCallback(const ros::TimerEvent& event) {
+void OctomapRrtPlanner::plannerLoopCallback(const ros::TimerEvent& event) {
   std::lock_guard<std::mutex> lock(mutex_);
 
   planWithSimpleSetup();
-  publishPath();
+  publishPath();  // For visualization
 }
 
 // Check if the current path is blocked
@@ -114,6 +133,15 @@ void OctomapRrtPlanner::velocityCallback(const geometry_msgs::TwistStamped& msg)
   local_velocity_(2) = msg.twist.linear.z;
 }
 
+void OctomapRrtPlanner::DesiredTrajectoryCallback(const mavros_msgs::Trajectory& msg) {
+  // Read waypoint from trajectory messages
+  if (msg.point_valid[0]) {
+    goal_(0) = msg.point_1.position.x;
+    goal_(1) = msg.point_1.position.y;
+    goal_(2) = msg.point_1.position.z;
+  }
+}
+
 void OctomapRrtPlanner::moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg) {
   goal_(0) = msg.pose.position.x;
   goal_(1) = msg.pose.position.y;
@@ -122,7 +150,10 @@ void OctomapRrtPlanner::moveBaseSimpleCallback(const geometry_msgs::PoseStamped&
 
 void OctomapRrtPlanner::publishSetpoint() {
   mavros_msgs::Trajectory msg;
-
+  Eigen::Vector3f reference_posf = reference_pos_.cast<float>();
+  avoidance::transformPoseToTrajectory(msg, avoidance::toPoseStamped(reference_posf, reference_att_));
+  msg.header.frame_id = frame_id_;
+  msg.header.stamp = ros::Time::now();
   trajectory_pub_.publish(msg);
 }
 
@@ -136,7 +167,6 @@ void OctomapRrtPlanner::publishPath() {
   for (int i = 0; i < current_path_.size(); i++) {
     path.insert(path.begin(), vector3d2PoseStampedMsg(current_path_[i]));
   }
-  std::cout << current_path_.size() << std::endl;
   msg.poses = path;
   global_path_pub_.publish(msg);
 }
@@ -164,14 +194,21 @@ geometry_msgs::PoseStamped OctomapRrtPlanner::vector3d2PoseStampedMsg(Eigen::Vec
   return encode_msg;
 }
 
+void OctomapRrtPlanner::updateReference(ros::Time current_time) { reference_pos_ << 0.0, 0.0, 3.0; }
+
 void OctomapRrtPlanner::planWithSimpleSetup() {
   if (octree_) {
+    // TODO: Define planning bounds based on goal and current location
     Eigen::Vector3d lower, upper;
     lower << -10.0, -10.0, -10.0;
-    upper << 10.0, 10.0, 10.0;
+    upper << 10.0, 10.0, 50.0;
     rrt_planner_.setMap(octree_);
     rrt_planner_.setBounds(lower, upper);
     rrt_planner_.setupProblem();
     rrt_planner_.getPath(local_position_, goal_, &current_path_);
+    if (current_path_.empty()) {
+      current_path_.emplace_back(reference_pos_);
+      std::cout << "Path is empty" << std::endl;
+    }
   }
 }
