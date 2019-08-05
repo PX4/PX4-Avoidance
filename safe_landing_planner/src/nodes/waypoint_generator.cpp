@@ -57,8 +57,8 @@ void WaypointGenerator::updateSLPState() {
   if (update_smoothing_size_ || mask_.rows() != (smoothing_land_cell_ * 2 + 1)) {
     mask_.resize((smoothing_land_cell_ * 2 + 1), (smoothing_land_cell_ * 2 + 1));
 
-    for (size_t i = 0; i < mask_.rows(); i++) {
-      for (size_t j = 0; j < mask_.cols(); j++) {
+    for (int i = 0; i < mask_.rows(); i++) {
+      for (int j = 0; j < mask_.cols(); j++) {
         mask_(i, j) = sqrt((i - smoothing_land_cell_) * (i - smoothing_land_cell_) +
                            (j - smoothing_land_cell_) * (j - smoothing_land_cell_)) < (smoothing_land_cell_ + 0.5f);
       }
@@ -194,8 +194,7 @@ usm::Transition WaypointGenerator::runLoiter() {
   if (prev_slp_state_ != SLPState::EVALUATE_GRID) {
     offset_center_ = Eigen::Vector2i(grid_slp_.land_.rows() / 2, grid_slp_.land_.cols() / 2);
   }
-  std::cout << "grid_slp_seq_ " << grid_slp_seq_ << " start_seq_landing_decision_ " << start_seq_landing_decision_
-            << std::endl;
+
   if (abs(grid_slp_seq_ - start_seq_landing_decision_) <= 20) {
     for (int i = 0; i < grid_slp_.land_.rows(); i++) {
       for (int j = 0; j < grid_slp_.land_.cols(); j++) {
@@ -222,8 +221,6 @@ usm::Transition WaypointGenerator::runLoiter() {
   publishTrajectorySetpoints_(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
   ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan \033[0m\n", loiter_position_.x(), loiter_position_.y(),
            loiter_position_.z());
-  std::cout << "decision_taken_ " << decision_taken_ << " can_land_ " << can_land_ << " start_grid_exploration_ "
-            << start_grid_exploration_ << std::endl;
   if (decision_taken_ && can_land_) {
     return usm::Transition::NEXT1;
   } else if (decision_taken_ && !can_land_ && start_grid_exploration_) {
@@ -286,7 +283,6 @@ usm::Transition WaypointGenerator::runEvaluateGrid() {
         grid_slp_.getGridLimits(min, max);
         goal_ = Eigen::Vector3f(min.x() + grid_slp_.getCellSize() * (offset.x() + smoothing_land_cell_),
                                 min.y() + grid_slp_.getCellSize() * (offset.y() + smoothing_land_cell_), position_.z());
-        printf("min %f %f max %f %f \n", min.x(), min.y(), max.x(), max.y());
         ROS_INFO("found_land_area_in_grid_ index %d %d - %f %f %f \n", offset.x(), offset.y(), goal_.x(), goal_.y(),
                  goal_.z());
         return usm::Transition::NEXT1;
@@ -303,12 +299,6 @@ bool WaypointGenerator::evaluatePatch(Eigen::Vector2i &left_upper_corner) {
   kernel.block(left_upper_corner.x(), left_upper_corner.y(), mask_.rows(), mask_.cols()) = mask_;
 
   Eigen::MatrixXi result = can_land_hysteresis_result_.cwiseProduct(kernel);
-  if (result.sum() == mask_.sum()) {
-    std::cout << kernel << "\n\n";
-    std::cout << can_land_hysteresis_result_ << "\n\n";
-
-    std::cout << result << "\n\n";
-  }
   return result.sum() == mask_.sum();
 }
 

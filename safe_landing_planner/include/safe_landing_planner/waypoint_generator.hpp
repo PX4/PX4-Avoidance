@@ -43,7 +43,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   float vertical_range_error_ = 1.f;
   float spiral_width_ = 2.f;
   float altitude_landing_area_percentile_ = -1.f;
-  int smoothing_land_cell_ = 2;
+  int smoothing_land_cell_ = 6;
 
   // state
   bool trigger_reset_ = false;
