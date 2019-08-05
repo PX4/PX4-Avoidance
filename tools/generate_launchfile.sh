@@ -13,7 +13,7 @@ cat > local_planner/launch/avoidance.launch <<- EOM
         <include file="\$(find mavros)/launch/node.launch">
             <arg name="pluginlists_yaml" value="\$(find mavros)/launch/px4_pluginlists.yaml" />
             <!-- Need to change the config file to get the tf topic and get local position in terms of local origin -->
-            <arg name="config_yaml" value="\$(find mavros)/launch/px4_config.yaml" />
+            <arg name="config_yaml" value="\$(find local_planner)/resource/px4_config.yaml" />
             <arg name="fcu_url" value="\$(arg fcu_url)" />
             <arg name="gcs_url" value="\$(arg gcs_url)" />
             <arg name="tgt_system" value="\$(arg tgt_system)" />
