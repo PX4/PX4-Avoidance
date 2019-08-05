@@ -35,10 +35,13 @@ WaypointGenerator::WaypointGenerator()
       publishTrajectorySetpoints_([](const Eigen::Vector3f &, const Eigen::Vector3f &, float, float) {
         ROS_ERROR("publishTrajectorySetpoints_ not set in WaypointGenerator");
       }) {
-  for (size_t i = 0; i < mask_.rows(); i++) {
-    for (size_t j = 0; j < mask_.cols(); j++) {
-      mask_(i, j) = sqrt((i - smoothing_land_cell_) * (i - smoothing_land_cell_) +
-                         (j - smoothing_land_cell_) * (j - smoothing_land_cell_)) < (smoothing_land_cell_ + 0.5f);
+    initializeMask();
+}
+
+void WaypointGenerator::initializeMask() {
+  for (int i = 0; i < mask_.rows(); i++) {
+    for (int j = 0; j < mask_.cols(); j++) {
+      mask_(i, j) = std::hypot(i - smoothing_land_cell_, j - smoothing_land_cell_) < (smoothing_land_cell_ + 0.5f);
     }
   }
 }
@@ -57,12 +60,7 @@ void WaypointGenerator::updateSLPState() {
   if (update_smoothing_size_ || mask_.rows() != (smoothing_land_cell_ * 2 + 1)) {
     mask_.resize((smoothing_land_cell_ * 2 + 1), (smoothing_land_cell_ * 2 + 1));
 
-    for (int i = 0; i < mask_.rows(); i++) {
-      for (int j = 0; j < mask_.cols(); j++) {
-        mask_(i, j) = sqrt((i - smoothing_land_cell_) * (i - smoothing_land_cell_) +
-                           (j - smoothing_land_cell_) * (j - smoothing_land_cell_)) < (smoothing_land_cell_ + 0.5f);
-      }
-    }
+    initializeMask();
     update_smoothing_size_ = false;
   }
 
@@ -88,16 +86,20 @@ void WaypointGenerator::updateSLPState() {
 
 SLPState WaypointGenerator::chooseNextState(SLPState currentState, usm::Transition transition) {
   prev_slp_state_ = currentState;
+  // clang-format off
   USM_TABLE(
       currentState, SLPState::GOTO,
       USM_STATE(transition, SLPState::GOTO, USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
-                USM_MAP(usm::Transition::NEXT2, SLPState::LOITER); USM_MAP(usm::Transition::NEXT3, SLPState::LAND));
-      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::LOITER)); USM_STATE(
-          transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::LAND);
-          USM_MAP(usm::Transition::NEXT2, SLPState::GOTO); USM_MAP(usm::Transition::NEXT3, SLPState::EVALUATE_GRID));
+                USM_MAP(usm::Transition::NEXT2, SLPState::LOITER);
+                USM_MAP(usm::Transition::NEXT3, SLPState::LAND));
+      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::LOITER));
+      USM_STATE(transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::LAND);
+                USM_MAP(usm::Transition::NEXT2, SLPState::GOTO);
+                USM_MAP(usm::Transition::NEXT3, SLPState::EVALUATE_GRID));
       USM_STATE(transition, SLPState::EVALUATE_GRID, USM_MAP(usm::Transition::NEXT1, SLPState::GOTO);
                 USM_MAP(usm::Transition::NEXT2, SLPState::LOITER));
       USM_STATE(transition, SLPState::LAND, ));
+  // clang-format on
 }
 
 usm::Transition WaypointGenerator::runCurrentState() {

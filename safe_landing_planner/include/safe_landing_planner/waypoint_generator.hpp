@@ -122,8 +122,9 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   **/
   float landingAreaHeightPercentile(float percentile);
 
-  // void evaluatePatch(Eigen::Vector2i &offset);
   bool evaluatePatch(Eigen::Vector2i& left_upper_corner);
+
+  void initializeMask();
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
 }
