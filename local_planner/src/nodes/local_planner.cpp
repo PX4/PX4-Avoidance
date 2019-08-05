@@ -23,7 +23,6 @@ void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& v
 
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  //  histogram_box_.radius_ = static_cast<float>(config.box_radius_);
   sensor_range_ = static_cast<float>(config.sensor_range_);
   cost_params_.pitch_cost_param = config.pitch_cost_param_;
   cost_params_.yaw_cost_param = config.yaw_cost_param_;
