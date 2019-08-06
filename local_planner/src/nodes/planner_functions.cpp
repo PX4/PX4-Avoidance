@@ -100,6 +100,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
 
 void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist) {
   float vertical_FOV_range_sensor = 20.0;
+  float vertical_cap = 1.0f; //ignore obstacles, which are more than that above or below the drone.
   PolarPoint p_pol_lower(-1.0f * vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
   PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
   Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
@@ -108,7 +109,11 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
   for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (input_hist.get_dist(e, z) > 0) {
-        if (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) || (new_hist.get_dist(0, z) == 0.f))
+    	//check if inside vertical range
+    	PolarPoint obstacle = histogramIndexToPolar(e, z, ALPHA_RES, input_hist.get_dist(e, z));
+    	float ceil_angle = DEG_TO_RAD * (std::abs(obstacle.e) + ALPHA_RES/2);
+    	float height_difference = std::abs(input_hist.get_dist(e, z) * std::sin(ceil_angle));
+        if (height_difference < vertical_cap && (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) || new_hist.get_dist(0, z) == 0.f))
           new_hist.set_dist(0, z, input_hist.get_dist(e, z));
       }
     }
