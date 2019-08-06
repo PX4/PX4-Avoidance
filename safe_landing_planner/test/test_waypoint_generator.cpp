@@ -131,11 +131,9 @@ TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid) {
   // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
   ASSERT_TRUE(published_velocity.array().isNaN().all());
   ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
-
 }
 
 TEST_F(WaypointGeneratorTests, evaluateGrid_to_goToLand) {
-
   // GIVEN: a basic waypoint generator, that switched to altitude change after
   // first iteration
   ASSERT_EQ(SLPState::GOTO, getState());
@@ -167,11 +165,9 @@ TEST_F(WaypointGeneratorTests, evaluateGrid_to_goToLand) {
   // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
   ASSERT_TRUE(published_velocity.array().isNaN().all());
   ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
-
 }
 
 TEST_F(WaypointGeneratorTests, evaluateGrid_to_goTo) {
-
   // GIVEN: a basic waypoint generator, that switched to altitude change after
   // first iteration
   ASSERT_EQ(SLPState::GOTO, getState());
@@ -202,7 +198,6 @@ TEST_F(WaypointGeneratorTests, evaluateGrid_to_goTo) {
   // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
   ASSERT_TRUE(published_velocity.array().isNaN().all());
   ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
-
 }
 
 TEST_F(WaypointGeneratorTests, land_transitions) {
@@ -235,7 +230,7 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
   // THEN: the state should go to goto_land
   ASSERT_EQ(SLPState::GOTO_LAND, getState());
 
-  //WHEN: we are above the landing location
+  // WHEN: we are above the landing location
   calculateWaypoint();
   // THEN: the state should go to land
   ASSERT_EQ(SLPState::LAND, getState());

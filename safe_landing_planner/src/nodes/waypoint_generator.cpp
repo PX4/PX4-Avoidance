@@ -185,7 +185,8 @@ usm::Transition WaypointGenerator::runGoTo() {
 usm::Transition WaypointGenerator::runGoToLand() {
   publishTrajectorySetpoints_(goal_, velocity_setpoint_, avoidance::nextYaw(position_, goal_), yaw_speed_setpoint_);
   ROS_INFO("\033[1;32m [WGN] goToLand %f %f %f - %f %f %f yaw %f \033[0m\n", goal_.x(), goal_.y(), goal_.z(),
-           velocity_setpoint_.x(), velocity_setpoint_.y(), velocity_setpoint_.z(), avoidance::nextYaw(position_, goal_));
+           velocity_setpoint_.x(), velocity_setpoint_.y(), velocity_setpoint_.z(),
+           avoidance::nextYaw(position_, goal_));
 
   if (withinLandingRadius()) {
     return usm::Transition::NEXT1;  // LAND
@@ -223,8 +224,8 @@ usm::Transition WaypointGenerator::runLoiter() {
   }
 
   publishTrajectorySetpoints_(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
-  ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan yaw %f \033[0m\n", loiter_position_.x(), loiter_position_.y(),
-           loiter_position_.z(), loiter_yaw_);
+  ROS_INFO("\033[1;34m [WGN] Loiter %f %f %f - nan nan nan yaw %f \033[0m\n", loiter_position_.x(),
+           loiter_position_.y(), loiter_position_.z(), loiter_yaw_);
 
   if (abs(grid_slp_seq_ - start_seq_landing_decision_) <= 20) {
     for (int i = 0; i < grid_slp_.land_.rows(); i++) {
@@ -264,8 +265,8 @@ usm::Transition WaypointGenerator::runLand() {
 usm::Transition WaypointGenerator::runEvaluateGrid() {
   ROS_INFO("\033[1;31m [WGN] runEvaluateGrid \033[0m\n");
   publishTrajectorySetpoints_(loiter_position_, nan_setpoint, loiter_yaw_, NAN);
-  ROS_INFO("\033[1;31m [WGN] runEvaluateGrid %f %f %f - nan nan nan yaw %f \033[0m\n", loiter_position_.x(), loiter_position_.y(),
-           loiter_position_.z(), loiter_yaw_);
+  ROS_INFO("\033[1;31m [WGN] runEvaluateGrid %f %f %f - nan nan nan yaw %f \033[0m\n", loiter_position_.x(),
+           loiter_position_.y(), loiter_position_.z(), loiter_yaw_);
 
   landing_radius_ = 0.5f;
   Eigen::Vector2i center = Eigen::Vector2i(grid_slp_.land_.rows() / 2, grid_slp_.land_.cols() / 2);
