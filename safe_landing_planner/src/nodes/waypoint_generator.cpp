@@ -309,12 +309,9 @@ usm::Transition WaypointGenerator::runEvaluateGrid() {
 }
 
 bool WaypointGenerator::evaluatePatch(Eigen::Vector2i &left_upper_corner) {
-  Eigen::MatrixXi kernel(can_land_hysteresis_matrix_.rows(), can_land_hysteresis_matrix_.cols());
-  kernel.fill(0);
-  kernel.block(left_upper_corner.x(), left_upper_corner.y(), mask_.rows(), mask_.cols()) = mask_;
-
-  Eigen::MatrixXi result = can_land_hysteresis_result_.cwiseProduct(kernel);
-  return result.sum() == mask_.sum();
+  return can_land_hysteresis_result_.block(left_upper_corner.x(), left_upper_corner.y(), mask_.rows(), mask_.cols())
+             .cwiseProduct(mask_)
+             .sum() == mask_.sum();
 }
 
 bool WaypointGenerator::withinLandingRadius() {
