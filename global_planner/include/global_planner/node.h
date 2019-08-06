@@ -31,12 +31,12 @@ class Node {
   Cell parent_;
 };
 
-bool operator==(const Node& lhs, const Node& rhs) { return lhs.isEqual(rhs); }
-bool operator<(const Node& lhs, const Node& rhs) { return lhs.isSmaller(rhs); }
-bool operator!=(const Node& lhs, const Node& rhs) { return !operator==(lhs, rhs); }
-bool operator>(const Node& lhs, const Node& rhs) { return operator<(rhs, lhs); }
-bool operator<=(const Node& lhs, const Node& rhs) { return !operator>(lhs, rhs); }
-bool operator>=(const Node& lhs, const Node& rhs) { return !operator<(lhs, rhs); }
+inline bool operator==(const Node& lhs, const Node& rhs) { return lhs.isEqual(rhs); }
+inline bool operator<(const Node& lhs, const Node& rhs) { return lhs.isSmaller(rhs); }
+inline bool operator!=(const Node& lhs, const Node& rhs) { return !operator==(lhs, rhs); }
+inline bool operator>(const Node& lhs, const Node& rhs) { return operator<(rhs, lhs); }
+inline bool operator<=(const Node& lhs, const Node& rhs) { return !operator>(lhs, rhs); }
+inline bool operator>=(const Node& lhs, const Node& rhs) { return !operator<(lhs, rhs); }
 
 typedef std::shared_ptr<Node> NodePtr;
 typedef std::pair<Node, double> NodeDistancePair;
@@ -67,7 +67,7 @@ class NodeWithoutSmooth : public Node {
   double getRotation(const Node& other) const { return 0.0; }
 };
 
-double SPEEDNODE_RADIUS = 5.0;
+static double SPEEDNODE_RADIUS = 5.0;
 // Node represents 3D position, orientation and speed
 // TODO: Needs to check the risk of Cells between cell and parent
 class SpeedNode : public Node {

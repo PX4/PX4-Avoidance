@@ -29,14 +29,7 @@
 #include <octomap_msgs/conversions.h>
 
 #include "avoidance/avoidance_node.h"
-#include "global_planner/PathWithRiskMsg.h"
-#include "global_planner/analysis.h"
-#include "global_planner/cell.h"
-#include "global_planner/common.h"
-#include "global_planner/common_ros.h"
 #include "global_planner/global_planner.h"
-#include "global_planner/search_tools.h"
-#include "global_planner/visitor.h"
 
 #ifndef DISABLE_SIMULATION
 #include <avoidance/rviz_world_loader.h>

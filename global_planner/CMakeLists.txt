@@ -122,7 +122,6 @@ generate_dynamic_reconfigure_options(
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include
-  LIBRARIES global_planner cell node
   CATKIN_DEPENDS roscpp rospy std_msgs geometry_msgs sensor_msgs message_runtime tf
 #  DEPENDS system_lib
 )
@@ -150,14 +149,11 @@ include_directories(
 link_libraries(${OCTOMAP_LIBRARIES})
 
 ## Declare a C++ library
-add_library(cell
-  src/library/cell.cpp
-)
-add_library(node
-  src/library/node.cpp
-)
 add_library(global_planner
+  src/library/node.cpp
+  src/library/cell.cpp
   src/library/global_planner.cpp
+  src/nodes/global_planner_node.cpp
 )
 
 ## Add cmake target dependencies of the library
@@ -166,11 +162,11 @@ add_library(global_planner
 add_dependencies(global_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
-add_executable(global_planner_node src/nodes/global_planner_node.cpp)
+add_executable(global_planner_node src/nodes/global_planner_node_main.cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(global_planner_node
-  global_planner cell node ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES}
+  global_planner ${catkin_LIBRARIES} ${PCL_LIBRARIES} ${YAML_CPP_LIBRARIES}
 )
 
 #############

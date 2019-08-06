@@ -15,7 +15,7 @@ double squared(T x) {
 
 // Returns a weighted average of start and end, where ratio is the weight of
 // start
-double interpolate(double start, double end, double ratio) { return start + (end - start) * ratio; }
+inline double interpolate(double start, double end, double ratio) { return start + (end - start) * ratio; }
 
 // Returns Map[key] if it exists, default_val otherwise
 template <typename Key, typename Value, typename Map>
@@ -92,19 +92,19 @@ double distance(const P& p1, const P& p2) {
   return norm((p2.x - p1.x), (p2.y - p1.y), (p2.z - p1.z));
 }
 
-double clocksToMicroSec(std::clock_t start, std::clock_t end) {
+inline double clocksToMicroSec(std::clock_t start, std::clock_t end) {
   return (end - start) / (double)(CLOCKS_PER_SEC / 1000000);
 }
 
 // returns angle in the range [-pi, pi]
-double angleToRange(double angle) {
+inline double angleToRange(double angle) {
   angle += M_PI;
   angle -= (2 * M_PI) * std::floor(angle / (2 * M_PI));
   angle -= M_PI;
   return angle;
 }
 
-double posterior(double p, double prior) {
+inline double posterior(double p, double prior) {
   // p and prior are independent measurements of the same event
   double prob_obstacle = p * prior;
   double prob_free = (1 - p) * (1 - prior);

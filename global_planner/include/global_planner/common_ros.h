@@ -23,12 +23,13 @@ tf::Vector3 toTfVector3(const P& point) {
   return tf::Vector3(point.x, point.y, point.z);
 }
 
-double distance(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b) {
+inline double distance(const geometry_msgs::PoseStamped& a, const geometry_msgs::PoseStamped& b) {
   return distance(a.pose.position, b.pose.position);
 }
 
-geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& listener, const std::string& target_frame,
-                                              const std::string& fixed_frame, const geometry_msgs::TwistStamped& msg) {
+inline geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& listener,
+                                                     const std::string& target_frame, const std::string& fixed_frame,
+                                                     const geometry_msgs::TwistStamped& msg) {
   auto transformed_msg = msg;
   geometry_msgs::Vector3Stamped before;
   before.vector = msg.twist.linear;
@@ -40,7 +41,7 @@ geometry_msgs::TwistStamped transformTwistMsg(const tf::TransformListener& liste
 }
 
 // Returns a spectral color between red (0.0) and blue (1.0)
-std_msgs::ColorRGBA spectralColor(double hue, double alpha = 1.0) {
+inline std_msgs::ColorRGBA spectralColor(double hue, double alpha = 1.0) {
   std_msgs::ColorRGBA color;
   color.r = std::max(0.0, 2 * hue - 1);
   color.g = 1.0 - 2.0 * std::abs(hue - 0.5);
@@ -72,12 +73,12 @@ visualization_msgs::Marker createMarker(int id, Point position, Color color, dou
 // }
 
 // Returns true if msg1 and msg2 have both the same altitude and orientation
-bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1, const geometry_msgs::Pose& msg2) {
+inline bool hasSameYawAndAltitude(const geometry_msgs::Pose& msg1, const geometry_msgs::Pose& msg2) {
   return msg1.orientation.z == msg2.orientation.z && msg1.orientation.w == msg2.orientation.w &&
          msg1.position.z == msg2.position.z;
 }
 
-double pathLength(const nav_msgs::Path& path) {
+inline double pathLength(const nav_msgs::Path& path) {
   double total_dist = 0.0;
   for (int i = 1; i < path.poses.size(); ++i) {
     total_dist += distance(path.poses[i - 1], path.poses[i]);
@@ -86,7 +87,7 @@ double pathLength(const nav_msgs::Path& path) {
 }
 
 // Returns a path with only the corner points of msg
-std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped>& msg) {
+inline std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::PoseStamped>& msg) {
   std::vector<geometry_msgs::PoseStamped> corners = msg;
   corners.clear();
   if (msg.size() < 1) {
@@ -110,7 +111,7 @@ std::vector<geometry_msgs::PoseStamped> filterPathCorners(const std::vector<geom
   return corners;
 }
 
-double pathKineticEnergy(const nav_msgs::Path& path) {
+inline double pathKineticEnergy(const nav_msgs::Path& path) {
   if (path.poses.size() < 3) {
     return 0.0;
   }
@@ -132,7 +133,7 @@ double pathKineticEnergy(const nav_msgs::Path& path) {
   return total_energy;
 }
 
-double pathEnergy(const nav_msgs::Path& path, double up_penalty) {
+inline double pathEnergy(const nav_msgs::Path& path, double up_penalty) {
   double total_energy = 0.0;
   for (int i = 1; i < path.poses.size(); ++i) {
     total_energy += distance(path.poses[i - 1], path.poses[i]);

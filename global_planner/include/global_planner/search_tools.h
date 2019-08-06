@@ -29,7 +29,7 @@ struct SearchInfo {
   double search_time;  // in micro seconds
 };
 
-void printSearchInfo(SearchInfo info, std::string node_type = "Node", double overestimate_factor = 1.0) {
+inline void printSearchInfo(SearchInfo info, std::string node_type = "Node", double overestimate_factor = 1.0) {
   double avg_time = info.search_time / info.num_iter;
   std::cout << std::setw(20) << std::left << node_type << std::setw(10) << std::setprecision(3) << avg_time
             << std::setw(10) << std::setprecision(3) << overestimate_factor << std::setw(10) << info.num_iter
@@ -37,7 +37,7 @@ void printSearchInfo(SearchInfo info, std::string node_type = "Node", double ove
 }
 
 // Returns a path where corners are smoothed with quadratic Bezier-curves
-nav_msgs::Path smoothPath(const nav_msgs::Path& path) {
+inline nav_msgs::Path smoothPath(const nav_msgs::Path& path) {
   if (path.poses.size() < 3) {
     return path;
   }
@@ -118,16 +118,16 @@ std::vector<Cell> simplifyPath(GlobalPlanner* global_planner, std::vector<Cell>&
 }
 
 template <typename GlobalPlanner>
-SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s, const GoalCell& t,
-                          int max_iterations = 2000) {
+inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s,
+                                 const GoalCell& t, int max_iterations = 2000) {
   NullVisitor visitor;
   return findSmoothPath(global_planner, path, s, t, max_iterations, visitor);
 }
 
 // A* to find a path from start to t, true iff it found a path
 template <typename GlobalPlanner, typename Visitor>
-SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s, const GoalCell& t,
-                          int max_iterations, Visitor& visitor) {
+inline SearchInfo findSmoothPath(GlobalPlanner* global_planner, std::vector<Cell>& path, const NodePtr& s,
+                                 const GoalCell& t, int max_iterations, Visitor& visitor) {
   // Initialize containers
   NodePtr best_goal_node;
   visitor.init();
