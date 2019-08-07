@@ -137,11 +137,11 @@ cat >> launch/safe_landing_planner_launch.launch <<- EOM
     <!-- Launch avoidance -->
     <arg name="pointcloud_topics" default="$camera_topics"/>
 
-    <node name="safe_landing_planner_node" pkg="safe_landing_planner" type="safe_landing_planner_node" output="screen" >
+    <node name="safe_landing_planner_node" pkg="safe_landing_planner" type="safe_landing_planner_node"  >
       <param name="pointcloud_topics" value="\$(arg pointcloud_topics)" />
     </node>
 
-    <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node" output="screen" >
+    <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node"  >
     </node>
 
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->

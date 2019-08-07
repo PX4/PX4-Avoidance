@@ -70,7 +70,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
   Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
   Eigen::MatrixXf can_land_hysteresis_matrix_ = Eigen::MatrixXf::Zero(40, 40);
-  Eigen::MatrixXi can_land_hysteresis_result_ = Eigen::MatrixXi(40, 40);
+  Eigen::MatrixXi can_land_hysteresis_result_ = Eigen::MatrixXi::Zero(40, 40);
   Eigen::MatrixXi mask_ = Eigen::MatrixXi(13, 13);
 
   Grid grid_slp_ = Grid(10.f, 1.f);
