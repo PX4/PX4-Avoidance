@@ -166,7 +166,7 @@ In the following section we guide you trough installing and running a Gazebo sim
    # Build and run simulation
    make px4_sitl_default gazebo
 
-   # Setup some more Gazebo-related environment variables
+   # Setup some more Gazebo-related environment variables (You may need to modify this line based on the location of the Firmware folder on your machine)
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
@@ -180,6 +180,7 @@ In the following section we guide you trough installing and running a Gazebo sim
 echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
 ```
 
+Steps 3, 4 and 5 together with sourcing your catkin setup.bash (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
 
 ### Global Planner
