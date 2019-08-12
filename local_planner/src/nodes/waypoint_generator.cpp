@@ -123,6 +123,8 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   if (!is_airborne_ || !smoothed_goto_location_.allFinite() || !smoothed_goto_location_velocity_.allFinite()) {
     smoothed_goto_location_ = position_;
     smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
+    setpoint_yaw_rad_ = curr_yaw_rad_;
+    setpoint_yaw_velocity_ = 0.f;
     reach_altitude_ = false;
   }
 
