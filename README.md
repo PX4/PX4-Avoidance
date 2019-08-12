@@ -166,7 +166,7 @@ In the following section we guide you trough installing and running a Gazebo sim
    # Build and run simulation
    make px4_sitl_default gazebo
 
-   # Setup some more Gazebo-related environment variables
+   # Setup some more Gazebo-related environment variables (You may need to modify this line based on the location of the Firmware folder on your machine)
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
@@ -180,6 +180,7 @@ In the following section we guide you trough installing and running a Gazebo sim
 echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
 ```
 
+Steps 3, 4 and 5 together with sourcing your catkin setup.bash (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
 
 ### Local Planner (default, heavily flight tested)
@@ -468,16 +469,19 @@ home_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_air_data | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
 vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
+- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
+- | MISSION_ITEM | waypoint | mavros_msgs::WaypointList | /mavros/mission/waypoints
+
 
 This is the complete message flow *to* PX4 Firmware from the local planner.
 
 ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 --- | --- | --- | --- | ---
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
-/mavros/setpoint_velocity/cmd_vel_unstamped (offboard) | geometry_msgs::TwistStamped | setpoint_velocity | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
 /mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
 /mavros/obstacle/send | sensor_msgs::LaserScan | obstacle_distance | OBSTACLE_DISTANCE | obstacle_distance
-/mavros/set_mode | mavros_msgs::SetMode | sys_status | SET_MODE | vehicle_command
+/mavros/companion_process/status | mavros_msgs::CompanionProcessStatus | companion_process_status | HEARTBEAT | telemetry_status
+
 
 ### PX4 and global planner
 
@@ -487,12 +491,32 @@ PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | Topic
 --- | --- | --- | --- | ---
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
+vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
 
 This is the complete message flow *to* PX4 Firmware *from* the global planner.
 
 ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
 --- | --- | --- | --- | ---
 /mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
+/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
+
+### PX4 and safe landing planner
+
+This is the complete message flow *from* PX4 Firmware to the safe landing planner.
+
+PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic
+--- | --- | --- | --- | ---
+vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
+vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
+vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
+- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
+
+This is the complete message flow *to* PX4 Firmware from the safe landing planner.
+
+ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
+--- | --- | --- | --- | ---
+/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
+/mavros/companion_process/status | mavros_msgs::CompanionProcessStatus | companion_process_status | HEARTBEAT | telemetry_status
 
 # Contributing
 
