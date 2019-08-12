@@ -12,15 +12,14 @@ namespace avoidance {
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const std::vector<FOV>& fov,
                        float yaw_fcu_frame_deg, float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
-                       float min_realsense_dist, float max_age, float elapsed_s, int min_num_points_per_cell) {
+                       float min_sensor_range, float max_sensor_range, float max_age, float elapsed_s,
+                       int min_num_points_per_cell) {
   const int SCALE_FACTOR = 4;
   pcl::PointCloud<pcl::PointXYZI> old_cloud;
   std::swap(final_cloud, old_cloud);
   final_cloud.points.clear();
   final_cloud.width = 0;
   final_cloud.points.reserve((SCALE_FACTOR * GRID_LENGTH_Z) * (SCALE_FACTOR * GRID_LENGTH_E));
-
-  float distance;
 
   // counter to keep track of how many points lie in a given cell
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / SCALE_FACTOR), 360 / (ALPHA_RES / SCALE_FACTOR));
@@ -30,8 +29,8 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
     for (const pcl::PointXYZ& xyz : cloud) {
       // Check if the point is invalid
       if (!std::isnan(xyz.x) && !std::isnan(xyz.y) && !std::isnan(xyz.z)) {
-        distance = (position - toEigen(xyz)).norm();
-        if (distance > min_realsense_dist) {
+        float distance = (position - toEigen(xyz)).squaredNorm();
+        if (min_sensor_range < distance && distance < max_sensor_range) {
           // subsampling the cloud
           PolarPoint p_pol = cartesianToPolarHistogram(toEigen(xyz), position);
           Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, ALPHA_RES / SCALE_FACTOR);
@@ -100,7 +99,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
 
 void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist) {
   float vertical_FOV_range_sensor = 20.0;
-  float vertical_cap = 1.0f; //ignore obstacles, which are more than that above or below the drone.
+  float vertical_cap = 1.0f;  // ignore obstacles, which are more than that above or below the drone.
   PolarPoint p_pol_lower(-1.0f * vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
   PolarPoint p_pol_upper(vertical_FOV_range_sensor / 2.0f, 0.0f, 0.0f);
   Eigen::Vector2i p_ind_lower = polarToHistogramIndex(p_pol_lower, ALPHA_RES);
@@ -109,11 +108,12 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
   for (int e = p_ind_lower.y(); e <= p_ind_upper.y(); e++) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       if (input_hist.get_dist(e, z) > 0) {
-    	//check if inside vertical range
-    	PolarPoint obstacle = histogramIndexToPolar(e, z, ALPHA_RES, input_hist.get_dist(e, z));
-    	float ceil_angle = DEG_TO_RAD * (std::abs(obstacle.e) + ALPHA_RES/2);
-    	float height_difference = std::abs(input_hist.get_dist(e, z) * std::sin(ceil_angle));
-        if (height_difference < vertical_cap && (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) || new_hist.get_dist(0, z) == 0.f))
+        // check if inside vertical range
+        PolarPoint obstacle = histogramIndexToPolar(e, z, ALPHA_RES, input_hist.get_dist(e, z));
+        float ceil_angle = DEG_TO_RAD * (std::abs(obstacle.e) + ALPHA_RES / 2);
+        float height_difference = std::abs(input_hist.get_dist(e, z) * std::sin(ceil_angle));
+        if (height_difference < vertical_cap &&
+            (input_hist.get_dist(e, z) < new_hist.get_dist(0, z) || new_hist.get_dist(0, z) == 0.f))
           new_hist.set_dist(0, z, input_hist.get_dist(e, z));
       }
     }

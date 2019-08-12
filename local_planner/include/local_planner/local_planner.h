@@ -38,12 +38,12 @@ class LocalPlanner {
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
 
-  float min_realsense_dist_ = 0.2f;
+  float min_sensor_range_ = 0.2f;
+  float max_sensor_range_ = 12.0f;
   float smoothing_margin_degrees_ = 30.f;
   float max_point_age_s_ = 10;
   float yaw_fcu_frame_deg_ = 0.0f;
   float pitch_fcu_frame_deg_ = 0.0f;
-  float sensor_range_ = 12.0f;
 
   std::vector<FOV> fov_fcu_frame_;
 
@@ -135,7 +135,7 @@ class LocalPlanner {
   float getHFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].h_fov_deg : 0.f; }
   float getVFOV(int i) { return i < fov_fcu_frame_.size() ? fov_fcu_frame_[i].v_fov_deg : 0.f; }
   const std::vector<FOV>& getFOV() const { return fov_fcu_frame_; }
-  float getSensorRange() const { return sensor_range_; }
+  float getSensorRange() const { return max_sensor_range_; }
 
   /**
   * @brief     getter method for current goal

@@ -33,7 +33,8 @@ namespace avoidance {
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
                        const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const std::vector<FOV>& fov,
                        float yaw_fcu_frame_deg, float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
-                       float min_realsense_dist, float max_age, float elapsed_s, int min_num_points_per_cell);
+                       float min_sensor_range, float max_sensor_range, float max_age, float elapsed_s,
+                       int min_num_points_per_cell);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
