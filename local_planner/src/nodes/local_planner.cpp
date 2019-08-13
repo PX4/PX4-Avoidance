@@ -19,11 +19,6 @@ void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& v
   yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
   star_planner_->setPose(position_, velocity_);
-
-  if (!currently_armed_ && !disable_rise_to_goal_altitude_) {
-    take_off_pose_ = position_;
-    reach_altitude_ = false;
-  }
 }
 
 // set parameters changed by dynamic rconfigure
@@ -48,8 +43,6 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
     goal.z() = config.goal_z_param;
     setGoal(goal);
   }
-
-  use_vel_setpoints_ = config.use_vel_setpoints_;
 
   star_planner_->dynamicReconfigureSetStarParams(config, level);
 
@@ -125,39 +118,20 @@ void LocalPlanner::determineStrategy() {
   cost_image_data_.clear();
   cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
-  if (disable_rise_to_goal_altitude_) {
-    reach_altitude_ = true;
-  }
+  waypoint_type_ = tryPath;
 
-  if (!reach_altitude_) {
-    starting_height_ = std::max(goal_.z() - 0.5f, take_off_pose_.z() + 1.0f);
-    ROS_INFO("\033[1;35m[OA] Reach height (%f) first: Go fast\n \033[0m", starting_height_);
-    waypoint_type_ = reachHeight;
+  create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
-    if (position_.z() > starting_height_) {
-      reach_altitude_ = true;
-      waypoint_type_ = direct;
-    }
+  if (!polar_histogram_.isEmpty()) {
+    getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, cost_matrix_,
+                  cost_image_data_);
 
-    if (px4_.param_mpc_col_prev_d > 0.f) {
-      create2DObstacleRepresentation(true);
-    }
-  } else {
-    waypoint_type_ = tryPath;
+    star_planner_->setParams(cost_params_);
+    star_planner_->setPointcloud(final_cloud_);
 
-    create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
-
-    if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_,
-                    cost_matrix_, cost_image_data_);
-
-      star_planner_->setParams(cost_params_);
-      star_planner_->setPointcloud(final_cloud_);
-
-      // build search tree
-      star_planner_->buildLookAheadTree();
-      last_path_time_ = ros::Time::now();
-    }
+    // build search tree
+    star_planner_->buildLookAheadTree();
+    last_path_time_ = ros::Time::now();
   }
 }
 
@@ -243,8 +217,6 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
-
-  out.take_off_pose = take_off_pose_;
 
   out.path_node_positions = star_planner_->path_node_positions_;
   return out;

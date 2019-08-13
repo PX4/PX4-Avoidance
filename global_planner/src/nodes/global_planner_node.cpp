@@ -397,7 +397,11 @@ void GlobalPlannerNode::publishSetpoint() {
   // Publish setpoint to Mavros
   mavros_waypoint_publisher_.publish(setpoint);
   mavros_msgs::Trajectory obst_free_path = {};
-  avoidance::transformPoseToTrajectory(obst_free_path, setpoint);
+  geometry_msgs::Twist velocity_setpoint{};
+  velocity_setpoint.linear.x = NAN;
+  velocity_setpoint.linear.y = NAN;
+  velocity_setpoint.linear.z = NAN;
+  avoidance::transformToTrajectory(obst_free_path, setpoint, velocity_setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 

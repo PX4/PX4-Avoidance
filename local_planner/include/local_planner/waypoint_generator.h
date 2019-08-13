@@ -28,7 +28,7 @@ class WaypointGenerator {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
-  waypoint_choice last_wp_type_;
+  waypoint_choice last_wp_type_ = hover;
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
@@ -38,6 +38,7 @@ class WaypointGenerator {
   Eigen::Vector3f prev_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector2f closest_pt_ = Eigen::Vector2f(NAN, NAN);
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f desired_vel_ = Eigen::Vector3f(NAN, NAN, NAN);
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
@@ -47,13 +48,20 @@ class WaypointGenerator {
   float smoothing_speed_z_{3.0f};
 
   bool is_airborne_ = false;
+  bool is_land_waypoint_{false};
+  bool is_takeoff_waypoint_{false};
+  bool reach_altitude_{false};
+  bool auto_land_{false};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
+  float yaw_reach_height_rad_ = NAN;
   float speed_ = 1.0f;
   std::vector<FOV> fov_fcu_frame_;
 
   Eigen::Vector3f hover_position_;
+
+  NavigationState nav_state_ = NavigationState::none;
 
   ros::Time velocity_time_;
 
@@ -97,6 +105,8 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
+  void changeAltitude();
+
  public:
   /**
   * @brief     getter method for position and velocity waypoints to be sent to
@@ -121,14 +131,21 @@ class WaypointGenerator {
   /**
   * @brief update with FCU vehice states
   * @param[in] act_pose, current vehicle position
-  * @param[in] act_pose, current vehicle orientation
-  * @param[in] goal, current goal
+  * @param[in] q, current vehicle orientation
+  * @param[in] goal, current goal position
+  * @param[in] prev_goal, previous goal position
   * @param[in] vel, current vehicle velocity
   * @param[in] stay, true if the vehicle is loitering
-  * @param[in] t, update system time
+  * @param[in] is_airborne, true if the vehicle is armed and in avoidance enabled mode
+  * @param[in] nav_state, vehicle navigation state
+  * @param[in] is_land_waypoint, true if the current mission item is a land waypoint
+  * @param[in] is_takeoff_waypoint, true if the current mission item is a takeoff waypoint
+  * @param[in] desired_vel, velocity setpoint from the Firmware
   **/
   void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
-                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne);
+                   const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne,
+                   const NavigationState& nav_state, const bool is_land_waypoint, const bool is_takeoff_waypoint,
+                   const Eigen::Vector3f& desired_vel);
 
   /**
   * @brief set the responsiveness of the smoothing

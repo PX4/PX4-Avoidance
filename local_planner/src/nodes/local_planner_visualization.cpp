@@ -25,8 +25,6 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   path_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
   path_adapted_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
   current_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  takeoff_pose_pub_ = nh.advertise<visualization_msgs::Marker>("/take_off_pose", 1);
-  initial_height_pub_ = nh.advertise<visualization_msgs::Marker>("/initial_height", 1);
   histogram_image_pub_ = nh.advertise<sensor_msgs::Image>("/histogram_image", 1);
   cost_image_pub_ = nh.advertise<sensor_msgs::Image>("/cost_image", 1);
   closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
@@ -54,9 +52,6 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
 
   // publish bounding box of pointcloud
   publishBox(planner.getPosition(), planner.histogram_box_.radius_, planner.histogram_box_.zmin_);
-
-  // publish data related to takeoff maneuver
-  publishReachHeight(planner.take_off_pose_, planner.starting_height_);
 
   // publish histogram image
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_, newest_waypoint_position,
@@ -259,48 +254,6 @@ void LocalPlannerVisualization::publishBox(const Eigen::Vector3f& drone_pos, flo
   marker_array.markers.push_back(plane);
 
   bounding_box_pub_.publish(marker_array);
-}
-
-void LocalPlannerVisualization::publishReachHeight(const Eigen::Vector3f& take_off_pose, float starting_height) const {
-  visualization_msgs::Marker m;
-  m.header.frame_id = "local_origin";
-  m.header.stamp = ros::Time::now();
-  m.type = visualization_msgs::Marker::CUBE;
-  m.pose.position.x = take_off_pose.x();
-  m.pose.position.y = take_off_pose.y();
-  m.pose.position.z = starting_height;
-  m.pose.orientation.x = 0.0;
-  m.pose.orientation.y = 0.0;
-  m.pose.orientation.z = 0.0;
-  m.pose.orientation.w = 1.0;
-  m.scale.x = 10;
-  m.scale.y = 10;
-  m.scale.z = 0.001;
-  m.color.a = 0.5;
-  m.color.r = 0.0;
-  m.color.g = 0.0;
-  m.color.b = 1.0;
-  m.lifetime = ros::Duration(0.5);
-  m.id = 0;
-
-  initial_height_pub_.publish(m);
-
-  visualization_msgs::Marker t;
-  t.header.frame_id = "local_origin";
-  t.header.stamp = ros::Time::now();
-  t.type = visualization_msgs::Marker::SPHERE;
-  t.action = visualization_msgs::Marker::ADD;
-  t.scale.x = 0.2;
-  t.scale.y = 0.2;
-  t.scale.z = 0.2;
-  t.color.a = 1.0;
-  t.color.r = 1.0;
-  t.color.g = 0.0;
-  t.color.b = 0.0;
-  t.lifetime = ros::Duration();
-  t.id = 0;
-  t.pose.position = toPoint(take_off_pose);
-  takeoff_pose_pub_.publish(t);
 }
 
 void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& histogram_image_data,

@@ -36,7 +36,6 @@ dictitems:
       tree_discount_factor_: 0.8
       tree_node_distance_: 1.0
       type: ''
-      use_vel_setpoints_: false
     state: []
   heading_cost_param_: 0.5
   max_point_age_s_: 20.0
@@ -52,5 +51,4 @@ dictitems:
   timeout_termination_: 15.0
   tree_discount_factor_: 0.8
   tree_node_distance_: 1.0
-  use_vel_setpoints_: false
 state: []

@@ -15,6 +15,7 @@ void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
             position_.z());
   output_.waypoint_type = planner_info_.waypoint_type;
+  output_.linear_velocity_wp = Eigen::Vector3f(NAN, NAN, NAN);
 
   // Timing
   last_time_ = current_time_;
@@ -77,6 +78,9 @@ void WaypointGenerator::calculateWaypoint() {
 
     case reachHeight: {
       ROS_DEBUG("[WG] Reaching height first");
+      if (last_wp_type_ != reachHeight) {
+        yaw_reach_height_rad_ = curr_yaw_rad_;
+      }
       reachGoalAltitudeFirst();
       getPathMsg();
       break;
@@ -95,13 +99,19 @@ void WaypointGenerator::setFOV(int i, const FOV& fov) {
 
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& prev_goal,
-                                    const Eigen::Vector3f& vel, bool stay, bool is_airborne) {
+                                    const Eigen::Vector3f& vel, bool stay, bool is_airborne,
+                                    const NavigationState& nav_state, const bool is_land_waypoint,
+                                    const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel) {
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
   prev_goal_ = prev_goal;
   curr_yaw_rad_ = getYawFromQuaternion(q) * DEG_TO_RAD;
   curr_pitch_deg_ = getPitchFromQuaternion(q);
+  nav_state_ = nav_state;
+  is_land_waypoint_ = is_land_waypoint;
+  is_takeoff_waypoint_ = is_takeoff_waypoint;
+  desired_vel_ = desired_vel;
 
   if (stay) {
     planner_info_.waypoint_type = hover;
@@ -111,6 +121,15 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   // Initialize the smoothing point to current location, if it is undefined or
   // the  vehicle is not flying autonomously yet
   if (!is_airborne_ || !smoothed_goto_location_.allFinite() || !smoothed_goto_location_velocity_.allFinite()) {
+    smoothed_goto_location_ = position_;
+    smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
+    setpoint_yaw_rad_ = curr_yaw_rad_;
+    setpoint_yaw_velocity_ = 0.f;
+    reach_altitude_ = false;
+  }
+
+  // If we're changing altitude by Firmware setpoints, keep reinitializing the smoothing
+  if (auto_land_) {
     smoothed_goto_location_ = position_;
     smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   }
@@ -134,20 +153,29 @@ void WaypointGenerator::transformPositionToVelocityWaypoint() {
 
 // when taking off, first publish waypoints to reach the goal altitude
 void WaypointGenerator::reachGoalAltitudeFirst() {
-  // goto_position is a unit vector pointing straight up/down from current
-  // location
-  output_.goto_position = position_;
-  goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
-  goal_.y() = position_.y();
+  if (nav_state_ == NavigationState::offboard) {
+    // goto_position is a unit vector pointing straight up/down from current
+    // location
+    output_.goto_position = position_;
+    goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
+    goal_.y() = position_.y();
 
-  // Only move the setpoint if drone is in the air
-  if (is_airborne_) {
-    // Ascend/Descend to goal altitude
-    if (position_.z() <= goal_.z()) {
-      output_.goto_position.z() += 1.0f;
-    } else {
-      output_.goto_position.z() -= 1.0f;
+    // Only move the setpoint if drone is in the air
+    if (is_airborne_) {
+      // Ascend/Descend to goal altitude
+      if (position_.z() <= goal_.z()) {
+        output_.goto_position.z() += 1.0f;
+      } else {
+        output_.goto_position.z() -= 1.0f;
+      }
     }
+  } else {
+    output_.goto_position = goal_;
+    if (auto_land_) {
+      output_.adapted_goto_position = goal_;
+      output_.smoothed_goto_position = goal_;
+    }
+    output_.linear_velocity_wp = desired_vel_;
   }
 }
 
@@ -164,7 +192,6 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   const Eigen::Array3f D_constant = 2 * P_constant.sqrt();
 
   const Eigen::Vector3f desired_location = output_.adapted_goto_position;
-
   // Prevent overshoot when drone is close to goal
   const Eigen::Vector3f desired_velocity =
       (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero() : velocity_;
@@ -194,8 +221,12 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   // Use xy smoothing constant for yaw, since this makes more sense than z,
   // and we dont want to introduce yet another parameter
 
-  const float desired_setpoint_yaw_rad =
+  float desired_setpoint_yaw_rad =
       (position_ - output_.goto_position).normXY() > 0.1f ? nextYaw(position_, output_.goto_position) : curr_yaw_rad_;
+
+  if (planner_info_.waypoint_type == reachHeight) {
+    desired_setpoint_yaw_rad = yaw_reach_height_rad_;
+  }
 
   // If smoothing is disabled, set yaw to face goal directly
   if (smoothing_speed_xy_ <= 0.01f) {
@@ -265,19 +296,59 @@ void WaypointGenerator::getPathMsg() {
   // set the yaw at the setpoint based on our smoothed location
   nextSmoothYaw(dt);
 
-  // adapt waypoint to suitable speed (slow down if waypoint is out of FOV)
-  adaptSpeed();
-  smoothWaypoint(dt);
+  if (!auto_land_) {
+    // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
+    adaptSpeed();
+    smoothWaypoint(dt);
+  }
 
-  ROS_DEBUG("[WG] Final waypoint: [%f %f %f].", output_.smoothed_goto_position.x(), output_.smoothed_goto_position.y(),
-            output_.smoothed_goto_position.z());
+  ROS_INFO("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
+           output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
+           output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
+
   createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
-  transformPositionToVelocityWaypoint();
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
+  changeAltitude();
   calculateWaypoint();
   return output_;
+}
+
+void WaypointGenerator::changeAltitude() {
+  bool rtl_descend = false;
+  bool rtl_climb = false;
+  if (position_.z() > (goal_.z() - 0.8f)) {
+    rtl_descend = false;
+    rtl_climb = false;
+  } else if (goal_.z() > position_.z()) {
+    rtl_descend = false;
+    rtl_climb = true;
+  } else {
+    rtl_descend = true;
+    rtl_climb = false;
+  }
+
+  const bool offboard_goal_altitude_not_reached = nav_state_ == NavigationState::offboard && !reach_altitude_;
+  const bool auto_takeoff = nav_state_ == NavigationState::auto_takeoff ||
+                            (nav_state_ == NavigationState::mission && is_takeoff_waypoint_) ||
+                            (nav_state_ == NavigationState::auto_rtl && rtl_climb);
+  auto_land_ = nav_state_ == NavigationState::auto_land ||
+               (nav_state_ == NavigationState::mission && is_land_waypoint_) ||
+               (nav_state_ == NavigationState::auto_rtl && rtl_descend);
+  const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land_;
+  if (need_to_change_altitude) {
+    planner_info_.waypoint_type = reachHeight;
+
+    if (nav_state_ == NavigationState::offboard) {
+      if (position_.z() > goal_.z()) {
+        reach_altitude_ = true;
+        planner_info_.waypoint_type = direct;
+      }
+    }
+
+    ROS_INFO("\033[1;35m[OA] Reach height first \033[0m");
+  }
 }
 
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) { planner_info_ = input; }

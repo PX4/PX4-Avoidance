@@ -66,8 +66,6 @@ struct ModelParameters {
 
 class LocalPlanner {
  private:
-  bool reach_altitude_ = false;
-
   int children_per_node_;
   int n_expanded_nodes_;
   int min_num_points_per_cell_ = 3;
@@ -123,19 +121,16 @@ class LocalPlanner {
   Box histogram_box_;
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
-  bool use_vel_setpoints_;
   bool currently_armed_ = false;
-  bool disable_rise_to_goal_altitude_ = false;
 
   double timeout_startup_;
   double timeout_critical_;
   double timeout_termination_;
-  double starting_height_ = 0.0;
+  float speed_ = 1.0f;
   float ground_distance_ = 2.0;
 
   ModelParameters px4_;  // PX4 Firmware paramters
 
-  Eigen::Vector3f take_off_pose_ = Eigen::Vector3f::Zero();
   sensor_msgs::LaserScan distance_data_ = {};
   Eigen::Vector3f last_sent_waypoint_ = Eigen::Vector3f::Zero();
 
