@@ -43,6 +43,29 @@ The documentation contains information about how to setup and run the two planne
 
 ## Installation
 
+### Script Installation (Recommended)
+1. Go to the [PX4 Development Guide](https://dev.px4.io/v1.8.2/en/setup/dev_env_linux.html#gazebo-with-ros) and run the Gazebo with ROS Kinetic installation script (Note: make sure to be on the version 1.8.2)
+1. Download [install_avoidance.sh](https://github.com/PX4/avoidance/blob/master/install_avoidance.sh)
+1. Run the script
+``` bash
+source install_avoidance.sh
+```
+Run the desired planner:
+* Local planner:
+```bash
+roslaunch local_planner local_planner_sitl_3cam.launch
+```
+* Safe landing planner:
+```bash
+roslaunch safe_landing_planner safe_landing_planner.launch
+```
+* Global planner:
+```bash
+roslaunch global_planner global_planner_depth-camera.launch
+```
+
+Alternatively you can follow the step by step instructions in the following sections.
+
 ### Installation for Ubuntu 16.04 and ROS Kinetic
 
 This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04. You might want to skip some of them if your system is already partially installed.
