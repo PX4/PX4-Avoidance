@@ -259,7 +259,6 @@ void LocalPlannerVisualization::publishGoal(const geometry_msgs::Point& goal) co
   marker_goal_pub_.publish(marker_goal);
 }
 
-}
 
 void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& histogram_image_data,
                                                   const std::vector<uint8_t>& cost_image_data,
