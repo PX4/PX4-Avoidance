@@ -1,6 +1,6 @@
  - type: "cube"
    name: "box1"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [3.5, 0.0, 2.5]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -8,7 +8,7 @@
 
  - type: "cube"
    name: "box2"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [5.5, 7.0, 4.0]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -16,7 +16,7 @@
 
  - type: "cube"
    name: "box3"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [10.0, -1.0, 2.5]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -24,7 +24,7 @@
 
  - type: "cube"
    name: "box4"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [13.0, 6.0, 4.0]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -32,7 +32,7 @@
 
  - type: "cube"
    name: "box5"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [6.0, -7.0, 4.0]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -40,7 +40,7 @@
 
  - type: "cube"
    name: "box6"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [7.0, 13.5, 4.0]
    orientation: [0.0, 0.0, 0.0, 1.0]
@@ -48,7 +48,7 @@
 
  - type: "cube"
    name: "box7"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [11.5, -7.0, 4.0]
    orientation: [0.0, 0.0, 0.0, 1.0]

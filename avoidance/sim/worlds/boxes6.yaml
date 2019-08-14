@@ -1,6 +1,6 @@
  - type: "cube"
    name: "box1"
-   frame_id: "world"
+   frame_id: "local_origin"
    mesh_resource: ""
    position: [20.0, 0.0, 1.25]
    orientation: [0.0, 0.25, 0.0, 1.0]
@@ -10,7 +10,7 @@
 models:
  - box:
     name: "Box1"
-    frame_id: "world"
+    frame_id: "local_origin"
     position:
       x: 20
       y: 0
