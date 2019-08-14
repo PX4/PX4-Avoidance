@@ -60,7 +60,7 @@ void WaypointGeneratorNode::dynamicReconfigureCallback(safe_landing_planner::Way
   waypointGenerator_.vertical_range_error_ = static_cast<float>(config.vertical_range_error);
   waypointGenerator_.spiral_width_ = static_cast<float>(config.spiral_width);
 
-  if (waypointGenerator_.can_land_hysteresis_.size() != std::pow((waypointGenerator_.smoothing_land_cell_ * 2), 2)) {
+  if (waypointGenerator_.mask_.rows() != ((waypointGenerator_.smoothing_land_cell_ * 2) + 1)) {
     waypointGenerator_.update_smoothing_size_ = true;
   }
 }
@@ -216,28 +216,33 @@ void WaypointGeneratorNode::landingAreaVisualization() {
   Eigen::Vector2f grid_min, grid_max;
   waypointGenerator_.grid_slp_.getGridLimits(grid_min, grid_max);
   int offset = waypointGenerator_.grid_slp_.land_.rows() / 2;
-  int counter = 0;
+
+  Eigen::MatrixXi kernel(waypointGenerator_.can_land_hysteresis_matrix_.rows(),
+                         waypointGenerator_.can_land_hysteresis_matrix_.cols());
+  kernel.fill(0);
+  kernel.block(20 - waypointGenerator_.smoothing_land_cell_, 20 - waypointGenerator_.smoothing_land_cell_,
+               waypointGenerator_.mask_.rows(), waypointGenerator_.mask_.cols()) = waypointGenerator_.mask_;
+
+  Eigen::MatrixXi result = waypointGenerator_.can_land_hysteresis_result_.cwiseProduct(kernel);
 
   int slc = waypointGenerator_.smoothing_land_cell_;
-  for (size_t i = 0; i < waypointGenerator_.grid_slp_.getRowColSize(); i++) {
-    for (size_t j = 0; j < waypointGenerator_.grid_slp_.getRowColSize(); j++) {
-      if (i >= (offset - slc) && i <= (offset + slc) && j >= (offset - slc) && j <= (offset + slc)) {
-        cell.pose.position.x = (i * cell_size) + grid_min.x() + (cell_size / 2.f);
-        cell.pose.position.y = (j * cell_size) + grid_min.y() + (cell_size / 2.f);
-        cell.pose.position.z = 1.0;
-        if (waypointGenerator_.can_land_hysteresis_[counter] > waypointGenerator_.can_land_thr_) {
-          cell.color.r = 0.0;
-          cell.color.g = 1.0;
-        } else {
-          cell.color.r = 1.0;
-          cell.color.g = 0.0;
-        }
-        cell.color.a = 0.5;
-        counter++;
 
-        marker_array.markers.push_back(cell);
-        cell.id += 1;
+  for (size_t k = offset - slc; k <= offset + slc; k++) {
+    for (size_t l = offset - slc; l <= offset + slc; l++) {
+      cell.pose.position.x = grid_min.x() + (cell_size * k);
+      cell.pose.position.y = grid_min.y() + (cell_size * l);
+      cell.pose.position.z = 1;
+      if (result(k, l)) {
+        cell.color.r = 0.0;
+        cell.color.g = 1.0;
+      } else {
+        cell.color.r = 1.0;
+        cell.color.g = 0.0;
       }
+      cell.color.a = 0.5;
+
+      marker_array.markers.push_back(cell);
+      cell.id += 1;
     }
   }
   land_hysteresis_pub_.publish(marker_array);

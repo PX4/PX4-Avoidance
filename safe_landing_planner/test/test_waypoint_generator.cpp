@@ -20,6 +20,7 @@ class WaypointGeneratorTests : public WaypointGenerator, public ::testing::Test 
       published_velocity = vel_sp;
       published_yaw = yaw_sp;
       published_yaw_velocity = yaw_speed_sp;
+      smoothing_land_cell_ = 6;
     };
   }
 };
@@ -61,26 +62,7 @@ TEST_F(WaypointGeneratorTests, goTo_to_altitudechange) {
   ASSERT_TRUE(published_velocity.array().isNaN().all());
 }
 
-TEST_F(WaypointGeneratorTests, goTo_to_loiter) {
-  // GIVEN: a basic waypoint generator
-  ASSERT_EQ(SLPState::GOTO, getState());
-
-  // WHEN: we get above our landing location, with a correct altitude
-  goal_ << 10, 10, 0;
-  position_ << 10, 10, 4.5;
-  is_land_waypoint_ = true;
-
-  calculateWaypoint();
-
-  // THEN: the state should be loiter
-  ASSERT_EQ(SLPState::LOITER, getState());
-
-  // AND: there should be a reasonable published position/velocity
-  ASSERT_EQ((published_position - goal_).norm(), 0);
-  ASSERT_TRUE(published_velocity.array().isNaN().all());
-}
-
-TEST_F(WaypointGeneratorTests, altitudechange_transitions) {
+TEST_F(WaypointGeneratorTests, altitudeChange_to_Loiter) {
   // GIVEN: a basic waypoint generator, that switched to altitude change after
   // first iteration
   ASSERT_EQ(SLPState::GOTO, getState());
@@ -121,73 +103,101 @@ TEST_F(WaypointGeneratorTests, altitudechange_transitions) {
   ASSERT_FALSE(std::isnan(published_velocity.z()));
 }
 
-TEST_F(WaypointGeneratorTests, loiter_to_land) {
-  // GIVEN: a basic waypoint generator,  that switched to loiter after first
-  // iteration
+TEST_F(WaypointGeneratorTests, loiter_to_evaluateGrid) {
+  // GIVEN: a basic waypoint generator, that switched to altitude change after
+  // first iteration
   ASSERT_EQ(SLPState::GOTO, getState());
 
+  // WHEN: we are above our landing location
   goal_ << 10, 10, 0;
-  position_ << 10, 10, 4.5;
+  position_ << 10, 10, 8;
   is_land_waypoint_ = true;
-  can_land_ = 0;
 
+  // THEN: the state should go to altitudeChange
   calculateWaypoint();
+  ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
+
+  // WHEN: we are above our landing location and the altitude is correct
+  position_ << 10, 10, 4.2;
+  calculateWaypoint();
+  // THEN: the state should go to Loiter
   ASSERT_EQ(SLPState::LOITER, getState());
 
-  // WHEN: we are loitering above our landing location
-  for (int i = 0; i < 10; i++) {
-    calculateWaypoint();
-    // THEN: the state should remain loiter, the position setpoint should
-    // correspond to current position and the velocity setpoint should be NAN
-    ASSERT_EQ(SLPState::LOITER, getState());
-    ASSERT_EQ((published_position - position_).norm(), 0);
-    ASSERT_TRUE(published_velocity.array().isNaN().all());
-  }
-
-  // WHEN: the data shows that landing is possible
+  // WHEN: data is ready
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
   calculateWaypoint();
-
-  // THEN: the state should switch to land, the position setpoint should
-  // correspond to current position and the velocity setpoint should be NAN
-  ASSERT_EQ(SLPState::LAND, getState());
-  ASSERT_EQ((published_position - position_).norm(), 0);
+  // THEN: the state should go to EvaluateGrid
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
+  // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
   ASSERT_TRUE(published_velocity.array().isNaN().all());
+  ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
 }
 
-TEST_F(WaypointGeneratorTests, loiter_to_goTo) {
-  // GIVEN: a basic waypoint generator,  that switched to loiter after first
-  // iteration
+TEST_F(WaypointGeneratorTests, evaluateGrid_to_goToLand) {
+  // GIVEN: a basic waypoint generator, that switched to altitude change after
+  // first iteration
   ASSERT_EQ(SLPState::GOTO, getState());
 
+  // WHEN: we are above our landing location and at the correct altitude
   goal_ << 10, 10, 0;
   position_ << 10, 10, 4.5;
   is_land_waypoint_ = true;
-  can_land_ = 0;
 
+  // THEN: the state should go to altitudeChange
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
+
+  // THEN: the state should go to Loiter
   calculateWaypoint();
   ASSERT_EQ(SLPState::LOITER, getState());
 
-  // WHEN: we are loitering above our landing location
-  for (int i = 0; i < 10; i++) {
-    calculateWaypoint();
-    // THEN: the state should remain loiter, the position setpoint should
-    // correspond to current position and the velocity setpoint should be NAN
-    ASSERT_EQ(SLPState::LOITER, getState());
-    ASSERT_EQ((published_position - position_).norm(), 0);
-    ASSERT_TRUE(published_velocity.array().isNaN().all());
-  }
-
-  // WHEN: the data allows no landing
+  // WHEN: data is ready
   grid_slp_seq_ = 25;
   calculateWaypoint();
+  // THEN: the state should go to EvaluateGrid
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
 
-  // THEN: the state should switch to land, the position setpoint should
-  // correspond to current position and the velocity setpoint should be NAN
-  ASSERT_EQ(SLPState::GOTO, getState());
-  ASSERT_EQ((published_position - position_).norm(), 0);
+  // WHEN: a landing area is available in the current grid
+  can_land_hysteresis_result_.fill(1);
+  calculateWaypoint();
+  // THEN: the state should go to goto_land
+  ASSERT_EQ(SLPState::GOTO_LAND, getState());
+  // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
   ASSERT_TRUE(published_velocity.array().isNaN().all());
+  ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
+}
+
+TEST_F(WaypointGeneratorTests, evaluateGrid_to_goTo) {
+  // GIVEN: a basic waypoint generator, that switched to altitude change after
+  // first iteration
+  ASSERT_EQ(SLPState::GOTO, getState());
+
+  // WHEN: we are above our landing location and at the correct altitude
+  goal_ << 10, 10, 0;
+  position_ << 10, 10, 4.5;
+  is_land_waypoint_ = true;
+
+  // THEN: the state should go to altitudeChange
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
+
+  // THEN: the state should go to Loiter
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::LOITER, getState());
+
+  // WHEN: data is ready and there isn't any landing area in the current grid
+  grid_slp_seq_ = 25;
+  can_land_hysteresis_matrix_.fill(can_land_thr_ - 0.2);
+  calculateWaypoint();
+  // THEN: the state should go to EvaluateGrid
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
+
+  calculateWaypoint();
+  // THEN: the state should go to goto
+  ASSERT_EQ(SLPState::GOTO, getState());
+  // AND: published position should be loiter_position is x, y, z and velocity (nan, nan, nan)
+  ASSERT_TRUE(published_velocity.array().isNaN().all());
+  ASSERT_EQ(Eigen::Vector2f(published_position.x() - position_.x(), published_position.y() - position_.y()).norm(), 0);
 }
 
 TEST_F(WaypointGeneratorTests, land_transitions) {
@@ -195,18 +205,34 @@ TEST_F(WaypointGeneratorTests, land_transitions) {
   // land
   ASSERT_EQ(SLPState::GOTO, getState());
 
+  // WHEN: we are above our landing location and at the correct altitude
   goal_ << 10, 10, 0;
   position_ << 10, 10, 4.5;
   is_land_waypoint_ = true;
   can_land_ = 0;
 
+  // THEN: the state should go to altitudeChange
+  calculateWaypoint();
+  ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
+
+  // THEN: the state should go to Loiter
   calculateWaypoint();
   ASSERT_EQ(SLPState::LOITER, getState());
 
+  // WHEN: data is ready and there is a landing area in the current grid
   grid_slp_seq_ = 25;
-  std::fill(can_land_hysteresis_.begin(), can_land_hysteresis_.end(), can_land_thr_ + 1);
+  can_land_hysteresis_matrix_.fill(can_land_thr_ + 1);
   calculateWaypoint();
+  // THEN: the state should go to EvaluateGrid
+  ASSERT_EQ(SLPState::EVALUATE_GRID, getState());
 
+  calculateWaypoint();
+  // THEN: the state should go to goto_land
+  ASSERT_EQ(SLPState::GOTO_LAND, getState());
+
+  // WHEN: we are above the landing location
+  calculateWaypoint();
+  // THEN: the state should go to land
   ASSERT_EQ(SLPState::LAND, getState());
 
   // WHEN: we calculate the next waypoint without changing the data

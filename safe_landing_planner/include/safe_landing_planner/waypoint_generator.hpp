@@ -16,7 +16,7 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
 
 const float LAND_SPEED = 0.7f;  // TODO: replace with Firmware parameter
 
-enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE };
+enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE, EVALUATE_GRID, GOTO_LAND };
 std::string toString(SLPState state);  // for logging
 
 class WaypointGenerator : public usm::StateMachine<SLPState> {
@@ -43,7 +43,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   float vertical_range_error_ = 1.f;
   float spiral_width_ = 2.f;
   float altitude_landing_area_percentile_ = -1.f;
-  int smoothing_land_cell_ = 2;
+  int smoothing_land_cell_ = 6;
 
   // state
   bool trigger_reset_ = false;
@@ -54,9 +54,11 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   bool can_land_ = true;
   bool update_smoothing_size_ = false;
   bool explorarion_is_active_ = false;
+  bool state_changed_ = false;
   int start_seq_landing_decision_ = 0;
   int grid_slp_seq_ = 0;
   int n_explored_pattern_ = -1;
+  int stride_ = 1;
 
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -67,7 +69,10 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
 
   Eigen::MatrixXf mean_ = Eigen::MatrixXf(40, 40);
   Eigen::MatrixXi land_ = Eigen::MatrixXi(40, 40);
-  std::vector<float> can_land_hysteresis_;
+  Eigen::MatrixXf can_land_hysteresis_matrix_ = Eigen::MatrixXf::Zero(40, 40);
+  Eigen::MatrixXi can_land_hysteresis_result_ = Eigen::MatrixXi::Zero(40, 40);
+  Eigen::MatrixXi mask_ = Eigen::MatrixXi(13, 13);
+
   Grid grid_slp_ = Grid(10.f, 1.f);
 
   // outside world link
@@ -93,6 +98,8 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   usm::Transition runLoiter();
   usm::Transition runLand();
   usm::Transition runAltitudeChange();
+  usm::Transition runEvaluateGrid();
+  usm::Transition runGoToLand();
   /**
   * @brief     checks if the vehicle is within the xy acceptance radius of a
   *            waypoint
@@ -114,6 +121,9 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   **/
   float landingAreaHeightPercentile(float percentile);
 
+  bool evaluatePatch(Eigen::Vector2i& left_upper_corner);
+
+  void initializeMask();
   friend class WaypointGeneratorNode;  // TODO make an API and get rid of this
 };
 }

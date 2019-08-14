@@ -94,6 +94,7 @@ for camera in $CAMERA_CONFIGS; do
          <arg name="depth_enable"          value="true" />
          <arg name="frame_sync_enabled"    value="false" />
          <arg name="depth_framerate"       value="$DEPTH_CAMERA_FRAME_RATE" />
+         <arg name="depth_resolution"      value="_320x240" />
          <arg name="depth_apply_correction_before_stream"              value="true"/>
       </include>
 
@@ -137,11 +138,11 @@ cat >> launch/safe_landing_planner_launch.launch <<- EOM
     <!-- Launch avoidance -->
     <arg name="pointcloud_topics" default="$camera_topics"/>
 
-    <node name="safe_landing_planner_node" pkg="safe_landing_planner" type="safe_landing_planner_node" output="screen" >
+    <node name="safe_landing_planner_node" pkg="safe_landing_planner" type="safe_landing_planner_node"  >
       <param name="pointcloud_topics" value="\$(arg pointcloud_topics)" />
     </node>
 
-    <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node" output="screen" >
+    <node name="waypoint_generator_node" pkg="safe_landing_planner" type="waypoint_generator_node"  >
     </node>
 
     <!-- switch off and on auto exposure of Realsense cameras, as it does not work on startup -->
