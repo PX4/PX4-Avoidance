@@ -122,10 +122,10 @@ TEST(PlannerFunctionsTests, processPointcloud) {
 
   // THEN: we expect the first cloud to have 5 points
   // the second cloud should contain all 6 points
-  EXPECT_EQ(5, processed_cloud1.size());
-  EXPECT_EQ(6, processed_cloud2.size());
+  EXPECT_EQ(7, processed_cloud1.size());
+  EXPECT_EQ(8, processed_cloud2.size());
   EXPECT_TRUE(pointInsideFOV(FOV_regular, memory_point_polar));
-  EXPECT_EQ(5, processed_cloud3.size());  // since memory point is inside FOV, it isn't remembered
+  EXPECT_EQ(7, processed_cloud3.size());  // since memory point is inside FOV, it isn't remembered
 }
 
 TEST(PlannerFunctions, getSetpointFromPath) {
