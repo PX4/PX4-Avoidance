@@ -17,6 +17,7 @@
 #include <safe_landing_planner/WaypointGeneratorNodeConfig.h>
 
 #include <safe_landing_planner/waypoint_generator.hpp>
+#include "avoidance/avoidance_node.h"
 
 namespace avoidance {
 
@@ -34,6 +35,7 @@ class WaypointGeneratorNode final {
   WaypointGenerator waypointGenerator_;
 
   ros::NodeHandle nh_;
+  ros::NodeHandle nh_private_;
 
   ros::Timer cmdloop_timer_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
@@ -56,6 +58,8 @@ class WaypointGeneratorNode final {
   Eigen::Vector3f goal_visualization_ = Eigen::Vector3f::Zero();
 
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig> server_;
+
+  std::unique_ptr<avoidance::AvoidanceNode> avoidance_node_;
 
   /**
   * @brief main loop callback

@@ -1,5 +1,22 @@
 
 {
+   <insert_a_suppression_name_here>
+   Memcheck:Cond
+   fun:_ZN3ros14ROSOutAppender3logENS_7console6levels5LevelEPKcS5_S5_i
+   fun:_ZN3ros7console4impl15Log4cxxAppender6appendERKN7log4cxx7helpers10ObjectPtrTINS3_3spi12LoggingEventEEERNS4_4PoolE
+   fun:_ZN7log4cxx16AppenderSkeleton8doAppendERKNS_7helpers10ObjectPtrTINS_3spi12LoggingEventEEERNS1_4PoolE
+   fun:_ZN7log4cxx7helpers22AppenderAttachableImpl21appendLoopOnAppendersERKNS0_10ObjectPtrTINS_3spi12LoggingEventEEERNS0_4PoolE
+   fun:_ZNK7log4cxx6Logger13callAppendersERKNS_7helpers10ObjectPtrTINS_3spi12LoggingEventEEERNS1_4PoolE
+   fun:_ZNK7log4cxx6Logger9forcedLogERKNS_7helpers10ObjectPtrTINS_5LevelEEERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKNS_3spi12LocationInfoE
+   fun:_ZN3ros7console4impl5printEPvNS0_6levels5LevelEPKcS6_S6_i
+   fun:_ZN3ros7console5printEPNS0_10FilterBaseEPvNS0_6levels5LevelEPKciS7_S7_z
+   fun:_ZN9avoidance13AvoidanceNode13checkFailsafeEN3ros8DurationES2_Rb
+   fun:_ZN9avoidance16LocalPlannerNode13checkFailsafeEN3ros8DurationES2_Rb
+   fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
+   fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
+   fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
+}
+{
    Ros Logging Not Restarted Correctly
    Memcheck:Leak
    match-leak-kinds: possible
@@ -14,9 +31,10 @@
    fun:_ZN3ros10NodeHandle9constructERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
    fun:_ZN3ros10NodeHandleC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS6_S6_St4lessIS6_ESaISt4pairIS7_S6_EEE
    fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
-   fun:_ZN7testing8internal38HandleSehExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
+   fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
    fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
    fun:_ZN7testing4Test3RunEv
+   fun:_ZN7testing8TestInfo3RunEv
 }
 {
    ROS-related memory leak
@@ -28,7 +46,7 @@
    fun:allocate_stack
    fun:pthread_create@@GLIBC_2.2.5
    fun:_ZN5boost6thread21start_thread_noexceptEv
-   fun:_ZN3ros14ROSOutAppenderC1Ev
+   fun:_ZN5boost6threadC1IRFvvEEEOT_
    fun:_ZN3ros5startEv
    fun:_ZN3ros10NodeHandle9constructERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
    fun:_ZN3ros10NodeHandleC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS6_S6_St4lessIS6_ESaISt4pairIS7_S6_EEE

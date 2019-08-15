@@ -213,7 +213,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   float c = 2 * -px4_.param_mpc_acc_hor * histogram_box_.radius_;
   float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
 
-  float max_speed = std::min(px4_.param_mpc_xy_cruise, limited_speed);
+  float speed = std::isfinite(mission_item_speed_) ? mission_item_speed_ : px4_.param_mpc_xy_cruise;
+  float max_speed = std::min(speed, limited_speed);
 
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;

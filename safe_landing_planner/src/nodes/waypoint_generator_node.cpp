@@ -1,6 +1,5 @@
 #include "safe_landing_planner/waypoint_generator_node.hpp"
 
-#include "avoidance/common.h"
 #include "safe_landing_planner/safe_landing_planner.hpp"
 #include "tf/transform_datatypes.h"
 
@@ -8,6 +7,8 @@ namespace avoidance {
 const Eigen::Vector3f nan_setpoint = Eigen::Vector3f(NAN, NAN, NAN);
 
 WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh) : nh_(nh), spin_dt_(0.1) {
+  avoidance_node_.reset(new AvoidanceNode(nh, nh));
+
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>::CallbackType f;
   f = boost::bind(&WaypointGeneratorNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
@@ -35,6 +36,8 @@ void WaypointGeneratorNode::startNode() {
   cmdloop_timer_ = nh_.createTimer(timer_options);
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
+
+  avoidance_node_->init();
 }
 
 void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
@@ -42,6 +45,7 @@ void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
   }
 
+  waypointGenerator_.px4_ = avoidance_node_->getPX4Parameters();
   waypointGenerator_.calculateWaypoint();
   landingAreaVisualization();
   goalVisualization();
@@ -53,7 +57,6 @@ void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
 void WaypointGeneratorNode::dynamicReconfigureCallback(safe_landing_planner::WaypointGeneratorNodeConfig &config,
                                                        uint32_t level) {
   waypointGenerator_.beta_ = static_cast<float>(config.beta);
-  waypointGenerator_.landing_radius_ = static_cast<float>(config.landing_radius);
   waypointGenerator_.can_land_thr_ = static_cast<float>(config.can_land_thr);
   waypointGenerator_.loiter_height_ = static_cast<float>(config.loiter_height);
   waypointGenerator_.smoothing_land_cell_ = config.smoothing_land_cell;
