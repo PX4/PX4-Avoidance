@@ -1,0 +1,56 @@
+ - type: "cube"
+   name: "left"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5, -0.15, 3.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 0.05, 1.8]
+ - type: "cube"
+   name: "right"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 1.05, 3.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 0.05, 1.8]
+ - type: "cube"
+   name: "bottom"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 0.45, 2.1]
+   orientation: [0.7071, 0.7071, 0.0, 0.0]
+   scale: [1.2, 0.05, 0.05]
+ - type: "cube"
+   name: "top"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 0.45, 3.9]
+   orientation: [0.7071, 0.7071, 0.0, 0.0]
+   scale: [1.2, 0.05, 0.05]
+ - type: "cube"
+   name: "wall_right"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, -2.68, 4.5]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 5.0, 9.0]
+ - type: "cube"
+   name: "wall_left"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 3.57, 4.5]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 5.0, 9.0]
+ - type: "cube"
+   name: "wall_top"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 0.45, 6.43]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 1.3, 5.0]
+ - type: "cube"
+   name: "wall_bottom"
+   frame_id: "local_origin"
+   mesh_resource: "file://media/materials/scripts/gazebo.material"
+   position: [5.0, 0.45, 1.0]
+   orientation: [0.0, 0.0, 0.0, 1.0]
+   scale: [0.05, 1.3, 2.2]
