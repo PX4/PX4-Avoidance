@@ -147,8 +147,16 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     int j = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
     float dist = hist.get_dist(0, j);
 
-    // special case: distance of 0 denotes 'no obstacle in sight'
-    msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
+    // is bin inside FOV?
+    PolarPoint pol_hist = histogramIndexToPolar(GRID_LENGTH_E / 2, j, ALPHA_RES, 1.f);
+    Eigen::Vector3f cart = polarHistogramToCartesian(pol_hist, position_);
+    PolarPoint pol_fcu = cartesianToPolarFCU(cart, position_);
+
+    if (!pointInsideFOV(fov_fcu_frame_, pol_fcu)) {
+      msg.ranges.push_back(UINT16_MAX);
+    } else {
+      msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
+    }
   }
 
   distance_data_ = msg;
