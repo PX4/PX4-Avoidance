@@ -80,6 +80,7 @@ void WaypointGenerator::calculateWaypoint() {
       ROS_DEBUG("[WG] Reaching height first");
       if (last_wp_type_ != reachHeight) {
         yaw_reach_height_rad_ = curr_yaw_rad_;
+        change_altitude_pos_ = position_;
       }
       reachGoalAltitudeFirst();
       getPathMsg();
@@ -170,12 +171,29 @@ void WaypointGenerator::reachGoalAltitudeFirst() {
       }
     }
   } else {
-    output_.goto_position = goal_;
-    if (auto_land_) {
-      output_.adapted_goto_position = goal_;
-      output_.smoothed_goto_position = goal_;
+    if (velocity_.normXY() > 0.5f) {
+      // First decelerate
+      output_.linear_velocity_wp.topRows<2>() = Eigen::Vector2f::Zero();
+      output_.linear_velocity_wp.z() = NAN;
+      output_.position_wp.topRows<2>() = Eigen::Vector2f(NAN, NAN);
+      output_.position_wp.z() = position_.z();
+      output_.goto_position = position_;
+      output_.adapted_goto_position = position_;
+      output_.smoothed_goto_position = position_;
+      change_altitude_pos_ = position_;
+    } else {
+      // Change altitude
+      output_.goto_position = goal_;
+
+      if (auto_land_) {
+        output_.goto_position.topRows<2>() = change_altitude_pos_.topRows<2>();
+        output_.adapted_goto_position = change_altitude_pos_;
+        output_.smoothed_goto_position = change_altitude_pos_;
+        output_.adapted_goto_position.z() = goal_.z();
+        output_.smoothed_goto_position.z() = goal_.z();
+      }
+      output_.linear_velocity_wp = desired_vel_;
     }
-    output_.linear_velocity_wp = desired_vel_;
   }
 }
 
