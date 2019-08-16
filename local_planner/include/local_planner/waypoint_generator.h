@@ -39,6 +39,7 @@ class WaypointGenerator {
   Eigen::Vector2f closest_pt_ = Eigen::Vector2f(NAN, NAN);
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f desired_vel_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f change_altitude_pos_ = Eigen::Vector3f(NAN, NAN, NAN);
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
