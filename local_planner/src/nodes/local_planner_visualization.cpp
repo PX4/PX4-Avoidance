@@ -30,6 +30,7 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
   deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
   fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
+  range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("/range_scan", 1);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
@@ -59,6 +60,9 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
 
   // publish the FOV
   publishFOV(planner.getFOV(), planner.histogram_box_.radius_);
+
+  // range scan
+  publishRangeScan(planner.distance_data_, newest_pose);
 }
 
 void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, float max_range) const {
@@ -106,6 +110,56 @@ void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, floa
 
     fov_pub_.publish(m);
   }
+}
+
+void LocalPlannerVisualization::publishRangeScan(const sensor_msgs::LaserScan& scan,
+                                                 const geometry_msgs::PoseStamped& newest_pose) const {
+  visualization_msgs::Marker m;
+  m.header.frame_id = "local_origin";
+  m.header.stamp = ros::Time::now();
+  m.id = 0;
+  m.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  m.action = visualization_msgs::Marker::ADD;
+  m.scale.x = 1.0;
+  m.scale.y = 1.0;
+  m.scale.z = 1.0;
+  m.color.a = 0.7;
+  m.color.r = 1.0;
+  m.color.g = 1.0;
+  m.color.b = 1.0;
+
+  std_msgs::ColorRGBA c;
+  c.a = 0.7;
+
+  for (int i = 0; i < scan.ranges.size(); ++i) {
+    PolarPoint p1(0, RAD_TO_DEG * (i + 0.5) * scan.angle_increment, scan.ranges[i]);
+    PolarPoint p2(0, RAD_TO_DEG * (i - 0.5) * scan.angle_increment, scan.ranges[i]);
+
+    if (scan.ranges[i] == UINT16_MAX) {
+      c.r = 1.0;
+      c.g = 0.0;
+      c.b = 0.0;
+    } else if (scan.ranges[i] > scan.range_max) {
+      c.r = 0.0;
+      c.g = 1.0;
+      c.b = 0.0;
+
+    } else {
+      c.g = scan.ranges[i] / scan.range_max;
+      c.r = 1.0 - scan.ranges[i] / scan.range_max;
+      c.b = 0.0;
+    }
+    m.colors.push_back(c);
+    m.colors.push_back(c);
+    m.colors.push_back(c);
+
+    // side 1
+    m.points.push_back(newest_pose.pose.position);
+    m.points.push_back(toPoint(polarHistogramToCartesian(p1, toEigen(newest_pose.pose.position))));
+    m.points.push_back(toPoint(polarHistogramToCartesian(p2, toEigen(newest_pose.pose.position))));
+  }
+
+  range_scan_pub_.publish(m);
 }
 
 void LocalPlannerVisualization::publishOfftrackPoints(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
