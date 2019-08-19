@@ -150,10 +150,17 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     // is bin inside FOV?
     PolarPoint pol_hist = histogramIndexToPolar(GRID_LENGTH_E / 2, j, ALPHA_RES, 1.f);
     Eigen::Vector3f cart = polarHistogramToCartesian(pol_hist, position_);
-    PolarPoint pol_fcu = cartesianToPolarFCU(cart, position_);
+    PolarPoint pol_fcu = cartesianToPolarFCU(cart, position_);  // z down convention
+    pol_fcu.z -= yaw_fcu_frame_deg_;                            // transform to fcu body frame
+    PolarPoint pol_fcu_plus = pol_fcu;
+    PolarPoint pol_fcu_minus = pol_fcu;
+    pol_fcu_plus.z += ALPHA_RES / 2.f;
+    pol_fcu_minus.z -= ALPHA_RES / 2.f;
+    wrapPolar(pol_fcu_plus);
+    wrapPolar(pol_fcu_minus);
 
-    if (!pointInsideFOV(fov_fcu_frame_, pol_fcu)) {
-      msg.ranges.push_back(UINT16_MAX);
+    if (!pointInsideFOV(fov_fcu_frame_, pol_fcu_plus) && !pointInsideFOV(fov_fcu_frame_, pol_fcu_minus)) {
+      msg.ranges.push_back(NAN);
     } else {
       msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
     }
