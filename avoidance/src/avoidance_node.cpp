@@ -148,7 +148,7 @@ void AvoidanceNode::missionCallback(const mavros_msgs::WaypointList& msg) {
   for (int index = 0; index < msg.waypoints.size(); index++) {
     if (msg.waypoints[index].is_current) {
       for (int i = index; i >= 0; i--) {
-        if (msg.waypoints[i].command == 178 && (msg.waypoints[i].param1 - 1.0f) < FLT_MIN &&
+        if (msg.waypoints[i].command == static_cast<int>(MavCommand::MAV_CMD_DO_CHANGE_SPEED) && (msg.waypoints[i].param1 - 1.0f) < FLT_MIN &&
             msg.waypoints[i].param2 > 0.0f) {
           // 1MAV_CMD_DO_CHANGE_SPEED, speed type: ground speed, speed valid
           mission_item_speed_ = msg.waypoints[i].param2;
