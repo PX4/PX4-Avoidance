@@ -39,6 +39,12 @@ enum class NavigationState {
   none,
 };
 
+enum class MavCommand {
+  MAV_CMD_NAV_LAND = 21,
+  MAV_CMD_NAV_TAKEOFF,
+  MAV_CMD_DO_CHANGE_SPEED = 178,
+};
+
 struct PolarPoint {
   PolarPoint(float e_, float z_, float r_) : e(e_), z(z_), r(r_){};
   PolarPoint() : e(0.0f), z(0.0f), r(0.0f){};

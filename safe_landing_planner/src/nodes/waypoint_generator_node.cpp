@@ -7,8 +7,6 @@ namespace avoidance {
 const Eigen::Vector3f nan_setpoint = Eigen::Vector3f(NAN, NAN, NAN);
 
 WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh) : nh_(nh), spin_dt_(0.1) {
-  avoidance_node_.reset(new AvoidanceNode(nh, nh));
-
   dynamic_reconfigure::Server<safe_landing_planner::WaypointGeneratorNodeConfig>::CallbackType f;
   f = boost::bind(&WaypointGeneratorNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
@@ -16,7 +14,6 @@ WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh) : nh_(nh
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("/mavros/local_position/pose", 1,
                                                                 &WaypointGeneratorNode::positionCallback, this);
   trajectory_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &WaypointGeneratorNode::trajectoryCallback, this);
-  mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1, &WaypointGeneratorNode::missionCallback, this);
   state_sub_ = nh_.subscribe("/mavros/state", 1, &WaypointGeneratorNode::stateCallback, this);
   grid_sub_ = nh_.subscribe("/grid_slp", 1, &WaypointGeneratorNode::gridCallback, this);
 
@@ -36,8 +33,6 @@ void WaypointGeneratorNode::startNode() {
   cmdloop_timer_ = nh_.createTimer(timer_options);
   cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
   cmdloop_spinner_->start();
-
-  avoidance_node_->init();
 }
 
 void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
@@ -45,7 +40,6 @@ void WaypointGeneratorNode::cmdLoopCallback(const ros::TimerEvent &event) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
   }
 
-  waypointGenerator_.px4_ = avoidance_node_->getPX4Parameters();
   waypointGenerator_.calculateWaypoint();
   landingAreaVisualization();
   goalVisualization();
@@ -86,7 +80,7 @@ void WaypointGeneratorNode::trajectoryCallback(const mavros_msgs::Trajectory &ms
   if (update && msg.point_valid[0] == true) {
     waypointGenerator_.goal_ = avoidance::toEigen(msg.point_1.position);
     waypointGenerator_.velocity_setpoint_ = avoidance::toEigen(msg.point_1.velocity);
-
+    waypointGenerator_.is_land_waypoint_ = (msg.command[1] == static_cast<int>(MavCommand::MAV_CMD_NAV_LAND));
     ROS_INFO_STREAM("\033[1;33m [WGN] Set New goal from FCU " << waypointGenerator_.goal_.transpose()
                                                               << " - nan nan nan \033[0m");
   }
@@ -94,15 +88,6 @@ void WaypointGeneratorNode::trajectoryCallback(const mavros_msgs::Trajectory &ms
     goal_visualization_ = avoidance::toEigen(msg.point_2.position);
     waypointGenerator_.yaw_setpoint_ = msg.point_2.yaw;
     waypointGenerator_.yaw_speed_setpoint_ = msg.point_2.yaw_rate;
-  }
-}
-
-void WaypointGeneratorNode::missionCallback(const mavros_msgs::WaypointList &msg) {
-  waypointGenerator_.is_land_waypoint_ = false;
-  for (auto waypoint : msg.waypoints) {
-    if (waypoint.is_current && waypoint.command == 21) {
-      waypointGenerator_.is_land_waypoint_ = true;
-    }
   }
 }
 

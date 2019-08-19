@@ -19,6 +19,8 @@ const std::vector<Eigen::Vector2f> exploration_pattern = {
 enum class SLPState { GOTO, LOITER, LAND, ALTITUDE_CHANGE, EVALUATE_GRID, GOTO_LAND };
 std::string toString(SLPState state);  // for logging
 
+static const float LAND_SPEED = 0.7f;
+
 class WaypointGenerator : public usm::StateMachine<SLPState> {
  public:
   WaypointGenerator();
@@ -78,8 +80,6 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   // outside world link
   std::function<void(const Eigen::Vector3f& pos_sp, const Eigen::Vector3f& vel_sp, float yaw_sp, float yaw_speed_sp)>
       publishTrajectorySetpoints_;
-
-  avoidance::ModelParameters px4_;  // PX4 Firmware paramters
 
   /**
   * @brief     update the waypoint generator state based on the vehicle status
