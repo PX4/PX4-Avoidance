@@ -23,14 +23,14 @@ void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& v
 
 // set parameters changed by dynamic rconfigure
 void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  histogram_box_.radius_ = static_cast<float>(config.box_radius_);
+  max_sensor_range_ = static_cast<float>(config.max_sensor_range_);
   cost_params_.pitch_cost_param = config.pitch_cost_param_;
   cost_params_.yaw_cost_param = config.yaw_cost_param_;
   cost_params_.velocity_cost_param = config.velocity_cost_param_;
   cost_params_.obstacle_cost_param = config.obstacle_cost_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   min_num_points_per_cell_ = config.min_num_points_per_cell_;
-  min_realsense_dist_ = static_cast<float>(config.min_realsense_dist_);
+  min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
   timeout_startup_ = config.timeout_startup_;
   timeout_critical_ = config.timeout_critical_;
   timeout_termination_ = config.timeout_termination_;
@@ -71,12 +71,10 @@ void LocalPlanner::runPlanner() {
   ROS_INFO("\033[1;35m[OA] Planning started, using %i cameras\n \033[0m",
            static_cast<int>(original_cloud_vector_.size()));
 
-  histogram_box_.setBoxLimits(position_, ground_distance_);
-
   float elapsed_since_last_processing = static_cast<float>((ros::Time::now() - last_pointcloud_process_time_).toSec());
-  processPointcloud(final_cloud_, original_cloud_vector_, histogram_box_, fov_fcu_frame_, yaw_fcu_frame_deg_,
-                    pitch_fcu_frame_deg_, position_, min_realsense_dist_, max_point_age_s_,
-                    elapsed_since_last_processing, min_num_points_per_cell_);
+  processPointcloud(final_cloud_, original_cloud_vector_, fov_fcu_frame_, yaw_fcu_frame_deg_, pitch_fcu_frame_deg_,
+                    position_, min_sensor_range_, max_sensor_range_, max_point_age_s_, elapsed_since_last_processing,
+                    min_num_points_per_cell_);
   last_pointcloud_process_time_ = ros::Time::now();
 
   determineStrategy();
@@ -107,7 +105,7 @@ void LocalPlanner::generateHistogramImage(Histogram& histogram) {
   for (int e = GRID_LENGTH_E - 1; e >= 0; e--) {
     for (int z = 0; z < GRID_LENGTH_Z; z++) {
       float dist = histogram.get_dist(e, z);
-      float depth_val = dist > 0.01f ? 255.f - 255.f * dist / histogram_box_.radius_ : 0.f;
+      float depth_val = dist > 0.01f ? 255.f - 255.f * dist / max_sensor_range_ : 0.f;
       histogram_image_data_.push_back((int)std::max(0.0f, std::min(255.f, depth_val)));
     }
   }
@@ -140,8 +138,8 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "local_origin";
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
-  msg.range_min = min_realsense_dist_;
-  msg.range_max = histogram_box_.radius_;
+  msg.range_min = min_sensor_range_;
+  msg.range_max = max_sensor_range_;
   msg.ranges.reserve(GRID_LENGTH_Z);
 
   for (int i = 0; i < GRID_LENGTH_Z; ++i) {
@@ -150,7 +148,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     float dist = hist.get_dist(0, j);
 
     // special case: distance of 0 denotes 'no obstacle in sight'
-    msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
+    msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
   }
 
   distance_data_ = msg;
@@ -161,8 +159,8 @@ void LocalPlanner::updateObstacleDistanceMsg() {
   msg.header.stamp = ros::Time::now();
   msg.header.frame_id = "local_origin";
   msg.angle_increment = static_cast<double>(ALPHA_RES) * M_PI / 180.0;
-  msg.range_min = min_realsense_dist_;
-  msg.range_max = histogram_box_.radius_;
+  msg.range_min = min_sensor_range_;
+  msg.range_max = max_sensor_range_;
 
   distance_data_ = msg;
 }
@@ -210,7 +208,7 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
   float a = 1;
   float b = 2 * px4_.param_mpc_acc_hor * accel_ramp_time;
-  float c = 2 * -px4_.param_mpc_acc_hor * histogram_box_.radius_;
+  float c = 2 * -px4_.param_mpc_acc_hor * max_sensor_range_;
   float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
 
   float speed = std::isfinite(mission_item_speed_) ? mission_item_speed_ : px4_.param_mpc_xy_cruise;

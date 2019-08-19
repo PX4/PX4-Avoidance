@@ -304,21 +304,6 @@ float angleDifference(float a, float b);
 **/
 double getAngularVelocity(float desired_yaw, float curr_yaw);
 
-Eigen::Vector3f toEigen(const geometry_msgs::Point& p);
-Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3);
-Eigen::Vector3f toEigen(const pcl::PointXYZ& p);
-Eigen::Vector3f toEigen(const pcl::PointXYZI& p);
-Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq);
-
-geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3);
-geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3);
-geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& qf3);
-pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3);
-pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity);
-pcl::PointXYZI toXYZI(float x, float y, float z, float intensity);
-pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity);
-geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a);
-geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& p, const Eigen::Quaternionf& q);
 /**
 * @brief     transforms setpoints from ROS message to MavROS message
 * @params[out] obst_avoid, setpoint in MavROS message form
@@ -354,6 +339,111 @@ pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(pcl::PointCloud<pcl::PointX
 *                  bigger FOV than previously thought
 **/
 void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima);
+
+inline Eigen::Vector3f toEigen(const geometry_msgs::Point& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+inline Eigen::Vector3f toEigen(const geometry_msgs::Vector3& v3) {
+  Eigen::Vector3f ev3(v3.x, v3.y, v3.z);
+  return ev3;
+}
+
+inline Eigen::Vector3f toEigen(const pcl::PointXYZ& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+inline Eigen::Vector3f toEigen(const pcl::PointXYZI& p) {
+  Eigen::Vector3f ev3(p.x, p.y, p.z);
+  return ev3;
+}
+
+inline Eigen::Quaternionf toEigen(const geometry_msgs::Quaternion& gmq) {
+  Eigen::Quaternionf eqf;
+  eqf.x() = gmq.x;
+  eqf.y() = gmq.y;
+  eqf.z() = gmq.z;
+  eqf.w() = gmq.w;
+  return eqf;
+}
+
+inline geometry_msgs::Point toPoint(const Eigen::Vector3f& ev3) {
+  geometry_msgs::Point gmp;
+  gmp.x = ev3.x();
+  gmp.y = ev3.y();
+  gmp.z = ev3.z();
+  return gmp;
+}
+
+inline geometry_msgs::Vector3 toVector3(const Eigen::Vector3f& ev3) {
+  geometry_msgs::Vector3 gmv3;
+  gmv3.x = ev3.x();
+  gmv3.y = ev3.y();
+  gmv3.z = ev3.z();
+  return gmv3;
+}
+
+inline geometry_msgs::Quaternion toQuaternion(const Eigen::Quaternionf& eqf) {
+  geometry_msgs::Quaternion q;
+  q.x = eqf.x();
+  q.y = eqf.y();
+  q.z = eqf.z();
+  q.w = eqf.w();
+  return q;
+}
+
+inline pcl::PointXYZ toXYZ(const Eigen::Vector3f& ev3) {
+  pcl::PointXYZ xyz;
+  xyz.x = ev3.x();
+  xyz.y = ev3.y();
+  xyz.z = ev3.z();
+  return xyz;
+}
+
+inline pcl::PointXYZI toXYZI(const Eigen::Vector3f& ev3, float intensity) {
+  pcl::PointXYZI p;
+  p.x = ev3.x();
+  p.y = ev3.y();
+  p.z = ev3.z();
+  p.intensity = intensity;
+  return p;
+}
+
+inline pcl::PointXYZI toXYZI(float x, float y, float z, float intensity) {
+  pcl::PointXYZI p;
+  p.x = x;
+  p.y = y;
+  p.z = z;
+  p.intensity = intensity;
+  return p;
+}
+
+inline pcl::PointXYZI toXYZI(const pcl::PointXYZ& xyz, float intensity) {
+  pcl::PointXYZI p;
+  p.x = xyz.x;
+  p.y = xyz.y;
+  p.z = xyz.z;
+  p.intensity = intensity;
+  return p;
+}
+
+inline geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vector3f& a) {
+  geometry_msgs::Twist gmt;
+  gmt.linear = toVector3(l);
+  gmt.angular = toVector3(a);
+  return gmt;
+}
+
+inline geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
+  geometry_msgs::PoseStamped gmps;
+  gmps.header.stamp = ros::Time::now();
+  gmps.header.frame_id = "/local_origin";
+  gmps.pose.position = toPoint(ev3);
+  gmps.pose.orientation = toQuaternion(eq);
+  return gmps;
+}
 
 }  // namespace avoidance
 

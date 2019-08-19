@@ -3,7 +3,6 @@
 
 #include "avoidance/common.h"
 #include "avoidance/histogram.h"
-#include "box.h"
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 
@@ -22,7 +21,6 @@ namespace avoidance {
 *             the data from the last timestep
 * @param      final_cloud, processed data to be used for planning
 * @param[in]  complete_cloud, array of pointclouds from the sensors
-* @param[in]  histogram_box, geometry definition of the bounding box
 * @param[in]  FOV, struct defining current field of view
 * @param[in]  position, current vehicle position
 * @param[in]  min_realsense_dist, minimum sensor range [m]
@@ -33,9 +31,9 @@ namespace avoidance {
 *             a valid input here)
 **/
 void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const Box& histogram_box,
-                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
-                       const Eigen::Vector3f& position, float min_realsense_dist, float max_age, float elapsed_s,
+                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const std::vector<FOV>& fov,
+                       float yaw_fcu_frame_deg, float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
+                       float min_sensor_range, float max_sensor_range, float max_age, float elapsed_s,
                        int min_num_points_per_cell);
 
 /**
