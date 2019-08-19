@@ -25,7 +25,7 @@ void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
   Eigen::MatrixXi histogram_points_counter(180 / (ALPHA_RES / SCALE_FACTOR), 360 / (ALPHA_RES / SCALE_FACTOR));
   histogram_points_counter.fill(0);
 
-  auto sqr = [](float f){return f*f;};
+  auto sqr = [](float f) { return f * f; };
 
   for (const auto& cloud : complete_cloud) {
     for (const pcl::PointXYZ& xyz : cloud) {
