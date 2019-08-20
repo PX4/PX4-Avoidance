@@ -162,7 +162,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     if (!pointInsideFOV(fov_fcu_frame_, pol_fcu_plus) && !pointInsideFOV(fov_fcu_frame_, pol_fcu_minus)) {
       msg.ranges.push_back(NAN);
     } else {
-      msg.ranges.push_back(dist > min_realsense_dist_ ? dist : histogram_box_.radius_ + 1.0f);
+      msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
     }
   }
 
