@@ -58,12 +58,20 @@ TEST_F(LocalPlannerTests, no_obstacles) {
   avoidanceOutput output = planner.getAvoidanceOutput();
   EXPECT_FALSE(output.obstacle_ahead);
 
-  // AND: the scan shouldn't have any data
+  // AND: the scan should contain NANs outside the FOV and out of range data inside
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  const std::vector<FOV> fov_vec = planner.getFOV();
+  Eigen::Vector3f position = planner.getPosition();
+  float curr_yaw_deg = planner.getOrientation();
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    EXPECT_GT(scan.ranges[i], scan.range_max);
+    int hist_idx = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    if (histogramIndexYawInsideFOV(fov_vec, hist_idx, position, curr_yaw_deg)) {
+      EXPECT_GT(scan.ranges[i], scan.range_max);
+    } else {
+      EXPECT_TRUE(std::isnan(scan.ranges[i]));  // outside the FOV the values should be NAN
+    }
   }
 }
 
@@ -88,16 +96,23 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  const std::vector<FOV> fov_vec = planner.getFOV();
+  Eigen::Vector3f position = planner.getPosition();
+  float curr_yaw_deg = planner.getOrientation();
   int idx_lower_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
   int idx_upper_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
+    int hist_idx = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    if (!histogramIndexYawInsideFOV(fov_vec, hist_idx, position, curr_yaw_deg)) {
+      EXPECT_TRUE(std::isnan(scan.ranges[i]));  // outside the FOV the values should be NAN
+    } else if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin) {
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
-    else
+    } else {
       EXPECT_GT(scan.ranges[i], scan.range_max);
+    }
   }
 
   // WHEN: we run the local planner again
@@ -142,16 +157,23 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  const std::vector<FOV> fov_vec = planner.getFOV();
+  Eigen::Vector3f position = planner.getPosition();
+  float curr_yaw_deg = planner.getOrientation();
   int idx_lower_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
   int idx_upper_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
+    int hist_idx = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    if (!histogramIndexYawInsideFOV(fov_vec, hist_idx, position, curr_yaw_deg)) {
+      EXPECT_TRUE(std::isnan(scan.ranges[i]));  // outside the FOV the values should be NAN
+    } else if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin) {
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
-    else
+    } else {
       EXPECT_GT(scan.ranges[i], scan.range_max);
+    }
   }
 
   // WHEN: we run the local planner again
@@ -192,16 +214,23 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // THEN: it should get a scan showing the obstacle
   sensor_msgs::LaserScan scan;
   planner.getObstacleDistanceData(scan);
+  const std::vector<FOV> fov_vec = planner.getFOV();
+  Eigen::Vector3f position = planner.getPosition();
+  float curr_yaw_deg = planner.getOrientation();
   int idx_lower_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(max_y, distance)) / (scan.angle_increment));
   int idx_upper_obstacle_boundary_bin =
       static_cast<int>((M_PI_F / 2 - atan2(min_y, distance)) / (scan.angle_increment));
 
   for (size_t i = 0; i < scan.ranges.size(); i++) {
-    if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin)
+    int hist_idx = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
+    if (!histogramIndexYawInsideFOV(fov_vec, hist_idx, position, curr_yaw_deg)) {
+      EXPECT_TRUE(std::isnan(scan.ranges[i]));  // outside the FOV the values should be NAN
+    } else if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin) {
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
-    else
+    } else {
       EXPECT_GT(scan.ranges[i], scan.range_max);
+    }
   }
 
   // WHEN: we run the local planner again

@@ -152,9 +152,16 @@ class LocalPlanner {
   * @param     level, bitmask to group together reconfigurable parameters
   **/
   void dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig& config, uint32_t level);
+
   /**
-  * @brief     getter method for current vehicle position and orientation
-  * @returns   vehicle position and orientation
+  * @brief     getter method for current vehicle orientation
+  * @returns   vehicle orientation in the fcu convention of the world frame
+  **/
+  float getOrientation() const { return yaw_fcu_frame_deg_; }
+
+  /**
+  * @brief     getter method for current vehicle position
+  * @returns   vehicle position
   **/
   Eigen::Vector3f getPosition() const;
 

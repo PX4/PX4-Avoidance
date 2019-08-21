@@ -129,10 +129,10 @@ void LocalPlannerVisualization::publishRangeScan(const sensor_msgs::LaserScan& s
   c.a = 0.7;
 
   for (int i = 0; i < scan.ranges.size(); ++i) {
-    PolarPoint p1(0, RAD_TO_DEG * (i + 0.5) * scan.angle_increment, scan.ranges[i]);
-    PolarPoint p2(0, RAD_TO_DEG * (i - 0.5) * scan.angle_increment, scan.ranges[i]);
+    PolarPoint p1(0, RAD_TO_DEG * (i + 0.5) * scan.angle_increment, std::min(scan.range_max, scan.ranges[i]));
+    PolarPoint p2(0, RAD_TO_DEG * (i - 0.5) * scan.angle_increment, std::min(scan.range_max, scan.ranges[i]));
 
-    if (scan.ranges[i] == UINT16_MAX) {
+    if (std::isnan(scan.ranges[i])) {
       c.r = 1.0;
       c.g = 0.0;
       c.b = 0.0;

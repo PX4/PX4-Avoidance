@@ -41,7 +41,7 @@
           <cameraName>camera</cameraName>
           <alwaysOn>true</alwaysOn>
           <updateRate>20</updateRate>
-          <pointCloudCutoff>1</pointCloudCutoff>
+          <pointCloudCutoff>0.2</pointCloudCutoff>
           <pointCloudCutoffMax>20</pointCloudCutoffMax>
           <imageTopicName>rgb/image_raw</imageTopicName>
           <cameraInfoTopicName>rgb/camera_info</cameraInfoTopicName>

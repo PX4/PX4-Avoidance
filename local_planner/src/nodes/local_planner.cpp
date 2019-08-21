@@ -147,8 +147,12 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
     int j = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
     float dist = hist.get_dist(0, j);
 
-    // special case: distance of 0 denotes 'no obstacle in sight'
-    msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
+    // is bin inside FOV?
+    if (histogramIndexYawInsideFOV(fov_fcu_frame_, j, position_, yaw_fcu_frame_deg_)) {
+      msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
+    } else {
+      msg.ranges.push_back(NAN);
+    }
   }
 
   distance_data_ = msg;
