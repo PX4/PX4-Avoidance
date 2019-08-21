@@ -9,85 +9,168 @@
 
 namespace avoidance {
 
+WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::TRY_PATH) { }
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
+
+using avoidance::SLPState;
+std::string toString(SLPState state) {
+  std::string state_str = "unknown";
+  switch (state) {
+    case SLPState::TRY_PATH:
+      state_str = "TRY_PATH";
+      break;
+    case SLPState::ALTITUDE_CHANGE:
+      state_str = "ALTITUDE CHANGE";
+      break;
+    case SLPState::LOITER:
+      state_str = "LOITER";
+      break;
+  }
+  return state_str;
+}
+
+SLPState WaypointGenerator::chooseNextState(SLPState currentState, usm::Transition transition) {
+  prev_slp_state_ = currentState;
+  state_changed_ = true;
+  // clang-format off
+  USM_TABLE(
+      currentState, SLPState::LOITER,
+      USM_STATE(transition, SLPState::TRY_PATH, USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
+         USM_MAP(usm::Transition::NEXT2, SLPState::LOITER));
+      USM_STATE(transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH));
+      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH)));
+  // clang-format on
+
+}
+
+usm::Transition WaypointGenerator::runCurrentState() {
+  if (trigger_reset_) {
+    trigger_reset_ = false;
+    return usm::Transition::ERROR;
+  }
+
+  usm::Transition t;
+  switch (getState()) {
+    case SLPState::TRY_PATH:
+      t = runTryPath();
+      break;
+
+    case SLPState::ALTITUDE_CHANGE:
+      t = runAltitudeChange();
+      break;
+
+    case SLPState::LOITER:
+      t = runLoiter();
+      break;
+  }
+  state_changed_ = false;
+  return t;
+}
+
+usm::Transition WaypointGenerator::runTryPath() {
+  Eigen::Vector3f setpoint = position_;
+  if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
+                          planner_info_.cruise_velocity, setpoint)) {
+    output_.goto_position = position_ + (setpoint - position_).normalized();
+    ROS_DEBUG("[WG] Using calculated tree\n");
+    getPathMsg();
+    if (isAltitudeChange()) {
+      return usm::Transition::NEXT1; //ALTITUDE_CHANGE
+    }
+    return usm::Transition::REPEAT;
+  }
+  return usm::Transition::NEXT2; //LOITER
+}
+
+usm::Transition WaypointGenerator::runAltitudeChange() {
+  ROS_DEBUG("[WG] Reaching height first");
+  if (state_changed_) {
+    yaw_reach_height_rad_ = curr_yaw_rad_;
+    change_altitude_pos_ = position_;
+  }
+  if (nav_state_ == NavigationState::offboard) {
+    // goto_position is a unit vector pointing straight up/down from current
+    // location
+    output_.goto_position = position_;
+    goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
+    goal_.y() = position_.y();
+
+    // Only move the setpoint if drone is in the air
+    if (is_airborne_) {
+      // Ascend/Descend to goal altitude
+      if (position_.z() <= goal_.z()) {
+        output_.goto_position.z() += 1.0f;
+      } else {
+        output_.goto_position.z() -= 1.0f;
+      }
+    }
+  } else {
+    if (velocity_.normXY() > 0.5f) {
+      // First decelerate
+      output_.linear_velocity_wp.topRows<2>() = Eigen::Vector2f::Zero();
+      output_.linear_velocity_wp.z() = NAN;
+      output_.position_wp.topRows<2>() = Eigen::Vector2f(NAN, NAN);
+      output_.position_wp.z() = position_.z();
+      output_.goto_position = position_;
+      output_.adapted_goto_position = position_;
+      output_.smoothed_goto_position = position_;
+      change_altitude_pos_ = position_;
+    } else {
+      // Change altitude
+      output_.goto_position = goal_;
+
+      if (auto_land_) {
+        output_.goto_position.topRows<2>() = change_altitude_pos_.topRows<2>();
+        output_.adapted_goto_position = change_altitude_pos_;
+        output_.smoothed_goto_position = change_altitude_pos_;
+        output_.adapted_goto_position.z() = goal_.z();
+        output_.smoothed_goto_position.z() = goal_.z();
+      }
+      output_.linear_velocity_wp = desired_vel_;
+    }
+  }
+  getPathMsg();
+
+  if (isAltitudeChange()) {
+    return usm::Transition::REPEAT;
+  } else {
+    return usm::Transition::NEXT1;  // TRY_PATH
+  }
+
+}
+usm::Transition WaypointGenerator::runLoiter() {
+  if (state_changed_) {
+    hover_position_ = position_;
+  }
+  output_.goto_position = hover_position_;
+  ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(), output_.goto_position.y(),
+            output_.goto_position.z());
+  getPathMsg();
+
+  if (loiter_) {
+    return usm::Transition::REPEAT;
+  } else {
+    return usm::Transition::NEXT1;
+  }
+
+}
+
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
             position_.z());
-  output_.waypoint_type = planner_info_.waypoint_type;
   output_.linear_velocity_wp = Eigen::Vector3f(NAN, NAN, NAN);
 
   // Timing
   last_time_ = current_time_;
   current_time_ = getSystemTime();
 
-  switch (planner_info_.waypoint_type) {
-    case hover: {
-      if (last_wp_type_ != hover) {
-        hover_position_ = position_;
-      }
-      output_.goto_position = hover_position_;
-      ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(), output_.goto_position.y(),
-                output_.goto_position.z());
-      getPathMsg();
-      break;
-    }
-
-    case tryPath: {
-      Eigen::Vector3f setpoint = position_;
-      if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                              planner_info_.cruise_velocity, setpoint)) {
-        output_.goto_position = position_ + (setpoint - position_).normalized();
-        ROS_DEBUG("[WG] Using calculated tree\n");
-      } else {
-        ROS_DEBUG("[WG] No valid tree, going straight");
-        output_.waypoint_type = direct;
-
-        // calculate the vehicle position on the line between the previous and
-        // current goal
-        Eigen::Vector2f u_prev_to_goal = (goal_ - prev_goal_).head<2>().normalized();
-        Eigen::Vector2f prev_to_pos = (position_ - prev_goal_).head<2>();
-        Eigen::Vector2f pos_2f = position_.head<2>();
-        closest_pt_ = prev_goal_.head<2>() + (u_prev_to_goal * u_prev_to_goal.dot(prev_to_pos));
-
-        // if the vehicle is more than the cruise velocity away from the line
-        // previous to current goal, set temporary goal on the line  entering
-        // at 60 degrees
-        if ((pos_2f - closest_pt_).norm() > planner_info_.cruise_velocity) {
-          float len = (pos_2f - closest_pt_).norm() * std::cos(DEG_TO_RAD * 60.0f) / std::sin(DEG_TO_RAD * 60.0f);
-          tmp_goal_.x() = closest_pt_.x() + len * u_prev_to_goal.x();
-          tmp_goal_.y() = closest_pt_.y() + len * u_prev_to_goal.y();
-          tmp_goal_.z() = goal_.z();
-
-          Eigen::Vector3f dir = (tmp_goal_ - position_).normalized();
-          output_.goto_position = position_ + dir;
-        } else {
-          goStraight();
-        }
-      }
-      getPathMsg();
-      break;
-    }
-
-    case direct: {
-      ROS_DEBUG("[WG] No obstacle ahead, going straight");
-      goStraight();
-      getPathMsg();
-      break;
-    }
-
-    case reachHeight: {
-      ROS_DEBUG("[WG] Reaching height first");
-      if (last_wp_type_ != reachHeight) {
-        yaw_reach_height_rad_ = curr_yaw_rad_;
-        change_altitude_pos_ = position_;
-      }
-      reachGoalAltitudeFirst();
-      getPathMsg();
-      break;
-    }
+  iterateOnce();
+  output_.waypoint_type = getState();
+  if (getState() != prev_slp_state_) {
+    std::string state_str = toString(getState());
+    ROS_DEBUG("\033[1;36m [WGN] Update to %s state \033[0m", state_str.c_str());
   }
-  last_wp_type_ = planner_info_.waypoint_type;
 }
 
 void WaypointGenerator::setFOV(int i, const FOV& fov) {
@@ -113,10 +196,8 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   is_land_waypoint_ = is_land_waypoint;
   is_takeoff_waypoint_ = is_takeoff_waypoint;
   desired_vel_ = desired_vel;
+  loiter_ = stay;
 
-  if (stay) {
-    planner_info_.waypoint_type = hover;
-  }
   is_airborne_ = is_airborne;
 
   // Initialize the smoothing point to current location, if it is undefined or
@@ -242,7 +323,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   float desired_setpoint_yaw_rad =
       (position_ - output_.goto_position).normXY() > 0.1f ? nextYaw(position_, output_.goto_position) : curr_yaw_rad_;
 
-  if (planner_info_.waypoint_type == reachHeight) {
+  if (getState() == SLPState::ALTITUDE_CHANGE) {
     desired_setpoint_yaw_rad = yaw_reach_height_rad_;
   }
 
@@ -283,7 +364,7 @@ void WaypointGenerator::adaptSpeed() {
     setpoint_yaw_rad_ = heading_at_goal_rad_;
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
-    if (output_.waypoint_type != reachHeight) {
+    if (getState() != SLPState::ALTITUDE_CHANGE) {
       PolarPoint p_pol_fcu = cartesianToPolarFCU(output_.goto_position, position_);
       p_pol_fcu.e -= curr_pitch_deg_;
       p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;
@@ -328,12 +409,12 @@ void WaypointGenerator::getPathMsg() {
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
-  changeAltitude();
+  // isAltitudeChange();
   calculateWaypoint();
   return output_;
 }
 
-void WaypointGenerator::changeAltitude() {
+bool WaypointGenerator::isAltitudeChange() {
   bool rtl_descend = false;
   bool rtl_climb = false;
   if (position_.z() > (goal_.z() - 0.8f)) {
@@ -356,17 +437,19 @@ void WaypointGenerator::changeAltitude() {
                (nav_state_ == NavigationState::auto_rtl && rtl_descend);
   const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land_;
   if (need_to_change_altitude) {
-    planner_info_.waypoint_type = reachHeight;
+    return true;
 
     if (nav_state_ == NavigationState::offboard) {
       if (position_.z() > goal_.z()) {
         reach_altitude_ = true;
-        planner_info_.waypoint_type = direct;
+        return false;
       }
     }
 
     ROS_INFO("\033[1;35m[OA] Reach height first \033[0m");
   }
+
+  return false;
 }
 
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) { planner_info_ = input; }

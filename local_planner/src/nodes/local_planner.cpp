@@ -116,8 +116,6 @@ void LocalPlanner::determineStrategy() {
   cost_image_data_.clear();
   cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
-  waypoint_type_ = tryPath;
-
   create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
   if (!polar_histogram_.isEmpty()) {
@@ -197,7 +195,6 @@ void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_dist
 
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
-  out.waypoint_type = waypoint_type_;
   out.obstacle_ahead = !polar_histogram_.isEmpty();
 
   // calculate maximum speed given the sensor range and vehicle parameters

@@ -1,0 +1,6 @@
+digraph {
+    "TRY_PATH" -> "ALTITUDE_CHANGE" [label="NEXT1", style="solid", weight=1]
+    "TRY_PATH" -> "LOITER" [label="ERROR", style="dotted", weight=0.1]
+    "ALTITUDE_CHANGE" -> "TRY_PATH" [label="NEXT1", style="solid", weight=1]
+    "ALTITUDE_CHANGE" -> "LOITER" [label="ERROR", style="dotted", weight=0.1]
+}

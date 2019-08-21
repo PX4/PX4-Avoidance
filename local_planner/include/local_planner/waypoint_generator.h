@@ -3,6 +3,7 @@
 
 #include "avoidance/common.h"
 #include "avoidance_output.h"
+#include <avoidance/usm.h>
 
 #include <Eigen/Dense>
 
@@ -13,8 +14,11 @@
 
 namespace avoidance {
 
+enum class SLPState { TRY_PATH, ALTITUDE_CHANGE, LOITER };
+std::string toString(SLPState state);  // for logging
+
 struct waypointResult {
-  waypoint_choice waypoint_type = hover;
+  avoidance::SLPState waypoint_type;
   Eigen::Vector3f position_wp;
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;
@@ -24,7 +28,7 @@ struct waypointResult {
   Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
-class WaypointGenerator {
+class WaypointGenerator : public usm::StateMachine<SLPState> {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
@@ -53,6 +57,7 @@ class WaypointGenerator {
   bool is_takeoff_waypoint_{false};
   bool reach_altitude_{false};
   bool auto_land_{false};
+  bool loiter_{false};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
@@ -65,6 +70,24 @@ class WaypointGenerator {
   NavigationState nav_state_ = NavigationState::none;
 
   ros::Time velocity_time_;
+
+  // state
+  bool trigger_reset_ = false;
+  bool state_changed_ = false;
+  SLPState prev_slp_state_ = SLPState::TRY_PATH;
+  usm::Transition runTryPath();
+  usm::Transition runAltitudeChange();
+  usm::Transition runLoiter();
+
+  /**
+  * @brief iterate the statemachine
+  */
+  usm::Transition runCurrentState() override final;
+
+  /**
+  * @brief the setup of the statemachine
+  */
+  SLPState chooseNextState(SLPState currentState, usm::Transition transition) override final;
 
   /**
   * @brief     computes position and velocity waypoints based on the input
@@ -106,7 +129,7 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
-  void changeAltitude();
+  bool isAltitudeChange();
 
  public:
   /**
@@ -173,7 +196,7 @@ class WaypointGenerator {
   **/
   void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
-  WaypointGenerator() = default;
+  WaypointGenerator();
   virtual ~WaypointGenerator() = default;
 };
 }
