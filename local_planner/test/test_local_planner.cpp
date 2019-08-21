@@ -108,9 +108,9 @@ TEST_F(LocalPlannerTests, all_obstacles) {
     int hist_idx = (i + GRID_LENGTH_Z / 2) % GRID_LENGTH_Z;
     if (!histogramIndexYawInsideFOV(fov_vec, hist_idx, position, curr_yaw_deg)) {
       EXPECT_TRUE(std::isnan(scan.ranges[i]));  // outside the FOV the values should be NAN
-    } else if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin){
+    } else if (idx_lower_obstacle_boundary_bin <= i && i <= idx_upper_obstacle_boundary_bin) {
       EXPECT_LT(scan.ranges[i], distance * 1.5f);
-    }else {  // disregard values outside FOV
+    } else {
       EXPECT_GT(scan.ranges[i], scan.range_max);
     }
   }

@@ -124,7 +124,8 @@ bool pointInsideFOV(const FOV& fov, const PolarPoint& p_pol);
 * @param[in]  yaw_fcu_frame, yaw orientation of the vehicle in global fcu frame
 * @return     whether point is inside the FOV
 **/
-bool histogramIndexYawInsideFOV(const std::vector<FOV>& fov_vec, const int idx, Eigen::Vector3f position, float yaw_fcu_frame);
+bool histogramIndexYawInsideFOV(const std::vector<FOV>& fov_vec, const int idx, Eigen::Vector3f position,
+                                float yaw_fcu_frame);
 bool histogramIndexYawInsideFOV(const FOV& fov, const int idx, Eigen::Vector3f position, float yaw_fcu_frame);
 
 /**
