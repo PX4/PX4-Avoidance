@@ -27,7 +27,6 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
   void SetUp() override {
     ros::Time::init();
 
-    avoidance_output.waypoint_type = direct;
     avoidance_output.obstacle_ahead = false;
     avoidance_output.cruise_velocity = 1.0;
     avoidance_output.last_path_time = ros::Time(0.28);
@@ -69,7 +68,8 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
 TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   // GIVEN: a waypoint of type goFast and the vehicle has not yet reached the
   // goal altiude
-  avoidance_output.waypoint_type = reachHeight;
+  ASSERT_EQ(SLPState::TRY_PATH, getState());
+
   goal << 0.f, 0.f, 5.f;
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
@@ -84,34 +84,36 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
               is_takeoff_waypoint, desired_velocity);
   waypointResult result = getWaypoints();
 
+  std::cout << toString(getState()) << "\n";
+
   // THEN: we expect the goto position to point straight up
-  EXPECT_NEAR(goal.x(), result.goto_position.x(), 0.1);
-  EXPECT_NEAR(goal.y(), result.goto_position.y(), 0.1);
-  EXPECT_LT(position.z(), result.goto_position.z());
-
-  // THEN: we expect the adapted goto position to be between goal and drone in z
-  EXPECT_GT(result.adapted_goto_position.z(), position.z());
-  EXPECT_LT(result.adapted_goto_position.z(), goal.z());
-
-  // THEN: we expect the adapted goto position to be close to the drone location
-  // in xy
-  EXPECT_NEAR(position.x(), result.adapted_goto_position.x(), 0.1);
-  EXPECT_NEAR(position.y(), result.adapted_goto_position.y(), 0.1);
-
-  // THEN: we expect the smoothed goto position to be the same as the drone
-  // location
-  // (first iteration of smoothing)
-  EXPECT_NEAR(position.x(), result.smoothed_goto_position.x(), 0.1);
-  EXPECT_NEAR(position.y(), result.smoothed_goto_position.y(), 0.1);
-  EXPECT_NEAR(position.z(), result.smoothed_goto_position.z(), 0.1);
-
-  // THEN: we expect the smoothed goto position to be the position waypoint,
-  // since smoothing was enabled
-  EXPECT_EQ(result.smoothed_goto_position.x(), result.position_wp.x());
-  EXPECT_EQ(result.smoothed_goto_position.y(), result.position_wp.y());
-  EXPECT_EQ(result.smoothed_goto_position.z(), result.position_wp.z());
-
-  ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
+  // EXPECT_NEAR(goal.x(), result.goto_position.x(), 0.1);
+  // EXPECT_NEAR(goal.y(), result.goto_position.y(), 0.1);
+  // EXPECT_LT(position.z(), result.goto_position.z());
+  //
+  // // THEN: we expect the adapted goto position to be between goal and drone in z
+  // EXPECT_GT(result.adapted_goto_position.z(), position.z());
+  // EXPECT_LT(result.adapted_goto_position.z(), goal.z());
+  //
+  // // THEN: we expect the adapted goto position to be close to the drone location
+  // // in xy
+  // EXPECT_NEAR(position.x(), result.adapted_goto_position.x(), 0.1);
+  // EXPECT_NEAR(position.y(), result.adapted_goto_position.y(), 0.1);
+  //
+  // // THEN: we expect the smoothed goto position to be the same as the drone
+  // // location
+  // // (first iteration of smoothing)
+  // EXPECT_NEAR(position.x(), result.smoothed_goto_position.x(), 0.1);
+  // EXPECT_NEAR(position.y(), result.smoothed_goto_position.y(), 0.1);
+  // EXPECT_NEAR(position.z(), result.smoothed_goto_position.z(), 0.1);
+  //
+  // // THEN: we expect the smoothed goto position to be the position waypoint,
+  // // since smoothing was enabled
+  // EXPECT_EQ(result.smoothed_goto_position.x(), result.position_wp.x());
+  // EXPECT_EQ(result.smoothed_goto_position.y(), result.position_wp.y());
+  // EXPECT_EQ(result.smoothed_goto_position.z(), result.position_wp.z());
+  //
+  // ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
 
   // WHEN: we generate subsequent waypoints
   for (size_t i = 0; i < 10; i++) {
@@ -121,6 +123,9 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
                 is_takeoff_waypoint, desired_velocity);
     waypointResult result = getWaypoints();
+    std::cout << toString(getState()) << "\n";
+
+    ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
 
     // THEN: we expect the goto location to point straight up
     EXPECT_NEAR(position.x(), result.goto_position.x(), 0.1);
@@ -141,7 +146,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // since smoothing was enabled
     EXPECT_LT(position.z(), result.smoothed_goto_position.z());
     EXPECT_GT(result.adapted_goto_position.z(), result.smoothed_goto_position.z());
-
+    std::cout << result.linear_velocity_wp.z() << " " << desired_velocity.z() << std::endl;
     // THEN: we expect a finite z velocity component on the setpoint
     ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
 
@@ -163,7 +168,6 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
 
 TEST_F(WaypointGeneratorTests, goStraightTest) {
   // GIVEN: a waypoint of type goStraight
-  avoidance_output.waypoint_type = direct;
   is_takeoff_waypoint = false;
   desired_velocity.z() = NAN;
   setPlannerInfo(avoidance_output);
@@ -173,6 +177,11 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
   float pos_sp_to_goal_prev = 1000.0f;
   double time_sec = time.toSec();
 
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+
+  waypointResult result = getWaypoints();
+
   // WHEN: we generate waypoints
   for (size_t i = 0; i < 10; i++) {
     time_sec += 0.03;
@@ -181,6 +190,9 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
                 is_takeoff_waypoint, desired_velocity);
 
     waypointResult result = getWaypoints();
+
+    ASSERT_EQ(SLPState::DIRECT, getState());
+
     float goto_to_goal = (goal - result.goto_position).norm();
     float adapted_to_goal = (goal - result.adapted_goto_position).norm();
     float pos_sp_to_goal = (goal - result.position_wp).norm();
@@ -214,19 +226,25 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   setPlannerInfo(avoidance_output);
   double time_sec = 0.0;
   time = ros::Time(time_sec);
+  stay = true;
   updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
               is_takeoff_waypoint, desired_velocity);
   waypointResult result = getWaypoints();
+  ASSERT_EQ(SLPState::LOITER, getState());
 
-  avoidance_output.waypoint_type = hover;
+
   setPlannerInfo(avoidance_output);
   time_sec += 0.033;
   time = ros::Time(time_sec);
   updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
               is_takeoff_waypoint, desired_velocity);
 
+
   // WHEN: we generate waypoints
   result = getWaypoints();
+  result = getWaypoints();
+  ASSERT_EQ(SLPState::LOITER, getState());
+
 
   // THEN: we expect the position waypoint to be the same as the current vehicle
   // position
@@ -251,7 +269,6 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
 
 TEST_F(WaypointGeneratorTests, trypathTest) {
   // GIVEN: a waypoint of type tryPath
-  avoidance_output.waypoint_type = tryPath;
   setPlannerInfo(avoidance_output);
 
   float goto_to_goal_prev = 1000.0f;
