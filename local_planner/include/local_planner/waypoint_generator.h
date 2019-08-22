@@ -14,7 +14,7 @@
 
 namespace avoidance {
 
-enum class SLPState { TRY_PATH, ALTITUDE_CHANGE, LOITER };
+enum class SLPState { TRY_PATH, ALTITUDE_CHANGE, LOITER, DIRECT };
 std::string toString(SLPState state);  // for logging
 
 struct waypointResult {
@@ -55,7 +55,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   bool is_airborne_ = false;
   bool is_land_waypoint_{false};
   bool is_takeoff_waypoint_{false};
-  bool reach_altitude_{false};
+  bool reach_altitude_offboard_{false};
   bool auto_land_{false};
   bool loiter_{false};
   float setpoint_yaw_rad_ = 0.0f;
@@ -78,6 +78,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   usm::Transition runTryPath();
   usm::Transition runAltitudeChange();
   usm::Transition runLoiter();
+  usm::Transition runDirect();
 
   /**
   * @brief iterate the statemachine

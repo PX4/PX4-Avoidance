@@ -25,6 +25,9 @@ std::string toString(SLPState state) {
     case SLPState::LOITER:
       state_str = "LOITER";
       break;
+    case SLPState::DIRECT:
+      state_str = "DIRECT";
+      break;
   }
   return state_str;
 }
@@ -36,8 +39,10 @@ SLPState WaypointGenerator::chooseNextState(SLPState currentState, usm::Transiti
   USM_TABLE(
       currentState, SLPState::LOITER,
       USM_STATE(transition, SLPState::TRY_PATH, USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
-         USM_MAP(usm::Transition::NEXT2, SLPState::LOITER));
+         USM_MAP(usm::Transition::NEXT2, SLPState::DIRECT));
       USM_STATE(transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH));
+      USM_STATE(transition, SLPState::DIRECT, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH);
+         USM_MAP(usm::Transition::NEXT2, SLPState::ALTITUDE_CHANGE));
       USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH)));
   // clang-format on
 
@@ -62,6 +67,10 @@ usm::Transition WaypointGenerator::runCurrentState() {
     case SLPState::LOITER:
       t = runLoiter();
       break;
+
+    case SLPState::DIRECT:
+      t = runDirect();
+      break;
   }
   state_changed_ = false;
   return t;
@@ -79,11 +88,14 @@ usm::Transition WaypointGenerator::runTryPath() {
     }
     return usm::Transition::REPEAT;
   }
-  return usm::Transition::NEXT2; //LOITER
+
+  if (isAltitudeChange()) {
+    return usm::Transition::NEXT1; //ALTITUDE_CHANGE
+  }
+  return usm::Transition::NEXT2; //DIRECT
 }
 
 usm::Transition WaypointGenerator::runAltitudeChange() {
-  ROS_DEBUG("[WG] Reaching height first");
   if (state_changed_) {
     yaw_reach_height_rad_ = curr_yaw_rad_;
     change_altitude_pos_ = position_;
@@ -155,6 +167,25 @@ usm::Transition WaypointGenerator::runLoiter() {
 
 }
 
+usm::Transition WaypointGenerator::runDirect() {
+  Eigen::Vector3f dir = (goal_ - position_).normalized();
+  output_.goto_position = position_ + dir;
+
+  ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].", output_.goto_position.x(),
+            output_.goto_position.y(), output_.goto_position.z());
+
+  getPathMsg();
+  Eigen::Vector3f setpoint;
+  if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
+                          planner_info_.cruise_velocity, setpoint)) {
+      return usm::Transition::NEXT1; //TRY_PATH
+  } else if (isAltitudeChange()) {
+    return usm::Transition::NEXT2; //ALTITUDE_CHANGE
+  } else {
+    return usm::Transition::REPEAT;
+  }
+}
+
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
@@ -197,6 +228,11 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   is_takeoff_waypoint_ = is_takeoff_waypoint;
   desired_vel_ = desired_vel;
   loiter_ = stay;
+  if (loiter_) {
+    trigger_reset_ = true;
+  } else {
+    trigger_reset_ = false;
+  }
 
   is_airborne_ = is_airborne;
 
@@ -207,7 +243,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
     smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
     setpoint_yaw_rad_ = curr_yaw_rad_;
     setpoint_yaw_velocity_ = 0.f;
-    reach_altitude_ = false;
+    reach_altitude_offboard_ = false;
   }
 
   // If we're changing altitude by Firmware setpoints, keep reinitializing the smoothing
@@ -428,7 +464,7 @@ bool WaypointGenerator::isAltitudeChange() {
     rtl_climb = false;
   }
 
-  const bool offboard_goal_altitude_not_reached = nav_state_ == NavigationState::offboard && !reach_altitude_;
+  const bool offboard_goal_altitude_not_reached = nav_state_ == NavigationState::offboard && !reach_altitude_offboard_;
   const bool auto_takeoff = nav_state_ == NavigationState::auto_takeoff ||
                             (nav_state_ == NavigationState::mission && is_takeoff_waypoint_) ||
                             (nav_state_ == NavigationState::auto_rtl && rtl_climb);
@@ -441,7 +477,7 @@ bool WaypointGenerator::isAltitudeChange() {
 
     if (nav_state_ == NavigationState::offboard) {
       if (position_.z() > goal_.z()) {
-        reach_altitude_ = true;
+        reach_altitude_offboard_ = true;
         return false;
       }
     }
