@@ -253,65 +253,12 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   }
 }
 
-// if there isn't any obstacle in front of the UAV, increase cruising speed
-void WaypointGenerator::goStraight() {
-  Eigen::Vector3f dir = (goal_ - position_).normalized();
-  output_.goto_position = position_ + dir;
-
-  ROS_DEBUG("[WG] Going straight to selected waypoint: [%f, %f, %f].", output_.goto_position.x(),
-            output_.goto_position.y(), output_.goto_position.z());
-}
 
 void WaypointGenerator::transformPositionToVelocityWaypoint() {
   output_.linear_velocity_wp = output_.position_wp - position_;
   output_.angular_velocity_wp.x() = 0.0f;
   output_.angular_velocity_wp.y() = 0.0f;
   output_.angular_velocity_wp.z() = getAngularVelocity(setpoint_yaw_rad_, curr_yaw_rad_);
-}
-
-// when taking off, first publish waypoints to reach the goal altitude
-void WaypointGenerator::reachGoalAltitudeFirst() {
-  if (nav_state_ == NavigationState::offboard) {
-    // goto_position is a unit vector pointing straight up/down from current
-    // location
-    output_.goto_position = position_;
-    goal_.x() = position_.x();  // Needed so adaptSpeed can clamp to goal
-    goal_.y() = position_.y();
-
-    // Only move the setpoint if drone is in the air
-    if (is_airborne_) {
-      // Ascend/Descend to goal altitude
-      if (position_.z() <= goal_.z()) {
-        output_.goto_position.z() += 1.0f;
-      } else {
-        output_.goto_position.z() -= 1.0f;
-      }
-    }
-  } else {
-    if (velocity_.normXY() > 0.5f) {
-      // First decelerate
-      output_.linear_velocity_wp.topRows<2>() = Eigen::Vector2f::Zero();
-      output_.linear_velocity_wp.z() = NAN;
-      output_.position_wp.topRows<2>() = Eigen::Vector2f(NAN, NAN);
-      output_.position_wp.z() = position_.z();
-      output_.goto_position = position_;
-      output_.adapted_goto_position = position_;
-      output_.smoothed_goto_position = position_;
-      change_altitude_pos_ = position_;
-    } else {
-      // Change altitude
-      output_.goto_position = goal_;
-
-      if (auto_land_) {
-        output_.goto_position.topRows<2>() = change_altitude_pos_.topRows<2>();
-        output_.adapted_goto_position = change_altitude_pos_;
-        output_.smoothed_goto_position = change_altitude_pos_;
-        output_.adapted_goto_position.z() = goal_.z();
-        output_.smoothed_goto_position.z() = goal_.z();
-      }
-      output_.linear_velocity_wp = desired_vel_;
-    }
-  }
 }
 
 void WaypointGenerator::smoothWaypoint(float dt) {
@@ -445,7 +392,6 @@ void WaypointGenerator::getPathMsg() {
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
-  // isAltitudeChange();
   calculateWaypoint();
   return output_;
 }
