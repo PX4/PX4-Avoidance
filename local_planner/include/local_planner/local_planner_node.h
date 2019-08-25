@@ -34,6 +34,7 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Core>
 #include <boost/bind.hpp>
+#include <nodelet/nodelet.h>
 
 #include <avoidance/common.h>
 #include <dynamic_reconfigure/server.h>
@@ -69,10 +70,11 @@ struct cameraData {
   bool transform_registered_ = false;
 };
 
-class LocalPlannerNode {
+class LocalPlannerNode : public nodelet::Nodelet{
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private, const bool tf_spin_thread = true);
+  LocalPlannerNode();
   ~LocalPlannerNode();
+  virtual void onInit();
 
   std::atomic<bool> should_exit_{false};
 
@@ -81,6 +83,9 @@ class LocalPlannerNode {
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
+  std::thread worker;
+  std::thread worker_tf_listener;
 
   LocalPlannerVisualization visualizer_;
   std::unique_ptr<avoidance::AvoidanceNode> avoidance_node_;

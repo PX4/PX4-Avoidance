@@ -15,12 +15,30 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-                                   const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
+LocalPlannerNode::LocalPlannerNode()
+    : spin_dt_(0.1), tf_buffer_(5.f) {
+  
+}
+
+LocalPlannerNode::~LocalPlannerNode() {
+  should_exit_ = true;
+  data_ready_cv_.notify_all();
+
+  delete server_;
+  delete tf_listener_;
+}
+
+void LocalPlannerNode::onInit()
+{
+  NODELET_DEBUG("Initializing nodelet...");
+
+  nh_ = ros::NodeHandle("~");
+  nh_private_ = ros::NodeHandle("");
+  const bool tf_spin_thread = true;
+
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-  avoidance_node_.reset(new AvoidanceNode(nh, nh_private));
+  avoidance_node_.reset(new AvoidanceNode(nh_, nh_private_));
 
 #ifndef DISABLE_SIMULATION
   world_visualizer_.reset(new WorldVisualizer(nh_));
@@ -64,14 +82,18 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
   planner_is_healthy_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
-}
 
-LocalPlannerNode::~LocalPlannerNode() {
-  should_exit_ = true;
-  data_ready_cv_.notify_all();
+  startNode();
+  worker = std::thread(&LocalPlannerNode::threadFunction, this);
+  worker_tf_listener = std::thread(&LocalPlannerNode::transformBufferThread, this);
 
-  delete server_;
-  delete tf_listener_;
+  worker.join();
+  worker_tf_listener.join();
+
+  for (size_t i = 0; i < cameras_.size(); ++i ){
+    cameras_[i].cloud_ready_cv_ -> notify_all();
+    cameras_[i].transform_thread_.join();
+  }
 }
 
 void LocalPlannerNode::startNode() {
@@ -503,3 +525,5 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
   }
 }
 }
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(avoidance::LocalPlannerNode, nodelet::Nodelet);
