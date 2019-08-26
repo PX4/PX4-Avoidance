@@ -207,12 +207,9 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
               is_takeoff_waypoint, desired_velocity);
 
-
   // WHEN: we generate waypoints
   result = getWaypoints();
-  result = getWaypoints();
   ASSERT_EQ(SLPState::LOITER, getState());
-
 
   // THEN: we expect the position waypoint to be the same as the current vehicle
   // position

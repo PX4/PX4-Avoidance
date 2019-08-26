@@ -1,9 +1,9 @@
 #ifndef WAYPOINT_GENERATOR_H
 #define WAYPOINT_GENERATOR_H
 
+#include <avoidance/usm.h>
 #include "avoidance/common.h"
 #include "avoidance_output.h"
-#include <avoidance/usm.h>
 
 #include <Eigen/Dense>
 
@@ -95,19 +95,12 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   *            waypoint_choice
   **/
   void calculateWaypoint();
-  /**
-  * @brief     computes waypoints when there isn't any obstacle
-  **/
-  void goStraight();
+
   /**
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
-  /**
-  * @brief     checks if the goal altitude has been reached. If not, it computes
-  *            waypoints to climb to the goal altitude
-  **/
-  void reachGoalAltitudeFirst();
+
   /**
   * @brief     smooths waypoints with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles

@@ -9,7 +9,7 @@
 
 namespace avoidance {
 
-WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::TRY_PATH) { }
+WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::TRY_PATH) {}
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 using avoidance::SLPState;
@@ -35,17 +35,20 @@ std::string toString(SLPState state) {
 SLPState WaypointGenerator::chooseNextState(SLPState currentState, usm::Transition transition) {
   prev_slp_state_ = currentState;
   state_changed_ = true;
+
   // clang-format off
   USM_TABLE(
       currentState, SLPState::LOITER,
       USM_STATE(transition, SLPState::TRY_PATH, USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
-         USM_MAP(usm::Transition::NEXT2, SLPState::DIRECT));
+         USM_MAP(usm::Transition::NEXT2, SLPState::DIRECT);
+         USM_MAP(usm::Transition::NEXT3, SLPState::LOITER));
       USM_STATE(transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH));
       USM_STATE(transition, SLPState::DIRECT, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH);
-         USM_MAP(usm::Transition::NEXT2, SLPState::ALTITUDE_CHANGE));
-      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH)));
+         USM_MAP(usm::Transition::NEXT2, SLPState::ALTITUDE_CHANGE);
+         USM_MAP(usm::Transition::NEXT3, SLPState::LOITER));
+      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH);
+         USM_MAP(usm::Transition::NEXT2, SLPState::LOITER)));
   // clang-format on
-
 }
 
 usm::Transition WaypointGenerator::runCurrentState() {
@@ -78,21 +81,21 @@ usm::Transition WaypointGenerator::runCurrentState() {
 
 usm::Transition WaypointGenerator::runTryPath() {
   Eigen::Vector3f setpoint = position_;
-  if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                          planner_info_.cruise_velocity, setpoint)) {
-    output_.goto_position = position_ + (setpoint - position_).normalized();
-    ROS_DEBUG("[WG] Using calculated tree\n");
-    getPathMsg();
-    if (isAltitudeChange()) {
-      return usm::Transition::NEXT1; //ALTITUDE_CHANGE
-    }
-    return usm::Transition::REPEAT;
-  }
+  const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
+                                                  planner_info_.cruise_velocity, setpoint);
+  output_.goto_position = position_ + (setpoint - position_).normalized();
+  getPathMsg();
 
   if (isAltitudeChange()) {
-    return usm::Transition::NEXT1; //ALTITUDE_CHANGE
+    return usm::Transition::NEXT1;  // ALTITUDE_CHANGE
+  } else if (tree_available) {
+    ROS_DEBUG("[WG] Using calculated tree\n");
+    return usm::Transition::REPEAT;
+  } else if (loiter_) {
+    return usm::Transition::NEXT3;  // LOITER
+  } else {
+    return usm::Transition::NEXT2;  // DIRECT
   }
-  return usm::Transition::NEXT2; //DIRECT
 }
 
 usm::Transition WaypointGenerator::runAltitudeChange() {
@@ -145,10 +148,11 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
 
   if (isAltitudeChange()) {
     return usm::Transition::REPEAT;
+  } else if (loiter_) {
+    return usm::Transition::NEXT2;  // LOITER
   } else {
     return usm::Transition::NEXT1;  // TRY_PATH
   }
-
 }
 usm::Transition WaypointGenerator::runLoiter() {
   if (state_changed_) {
@@ -164,7 +168,6 @@ usm::Transition WaypointGenerator::runLoiter() {
   } else {
     return usm::Transition::NEXT1;
   }
-
 }
 
 usm::Transition WaypointGenerator::runDirect() {
@@ -178,14 +181,15 @@ usm::Transition WaypointGenerator::runDirect() {
   Eigen::Vector3f setpoint;
   if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
                           planner_info_.cruise_velocity, setpoint)) {
-      return usm::Transition::NEXT1; //TRY_PATH
+    return usm::Transition::NEXT1;  // TRY_PATH
   } else if (isAltitudeChange()) {
-    return usm::Transition::NEXT2; //ALTITUDE_CHANGE
+    return usm::Transition::NEXT2;  // ALTITUDE_CHANGE
+  } else if (loiter_) {
+    return usm::Transition::NEXT3;  // LOITER
   } else {
     return usm::Transition::REPEAT;
   }
 }
-
 
 void WaypointGenerator::calculateWaypoint() {
   ROS_DEBUG("\033[1;32m[WG] Generate Waypoint, current position: [%f, %f, %f].\033[0m", position_.x(), position_.y(),
@@ -200,7 +204,7 @@ void WaypointGenerator::calculateWaypoint() {
   output_.waypoint_type = getState();
   if (getState() != prev_slp_state_) {
     std::string state_str = toString(getState());
-    ROS_DEBUG("\033[1;36m [WGN] Update to %s state \033[0m", state_str.c_str());
+    ROS_DEBUG("\033[1;36m [WGN] Update to %s state \n \033[0m", state_str.c_str());
   }
 }
 
@@ -228,11 +232,6 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   is_takeoff_waypoint_ = is_takeoff_waypoint;
   desired_vel_ = desired_vel;
   loiter_ = stay;
-  if (loiter_) {
-    trigger_reset_ = true;
-  } else {
-    trigger_reset_ = false;
-  }
 
   is_airborne_ = is_airborne;
 
@@ -252,7 +251,6 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
     smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   }
 }
-
 
 void WaypointGenerator::transformPositionToVelocityWaypoint() {
   output_.linear_velocity_wp = output_.position_wp - position_;

@@ -446,8 +446,7 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
   path_length_++;
 }
 
-void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp,
-                                                       const SLPState& waypoint_type,
+void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp, const SLPState& waypoint_type,
                                                        const geometry_msgs::Point& newest_pos) const {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
