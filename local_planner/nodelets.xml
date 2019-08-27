@@ -1,5 +1,5 @@
 <library path="lib/liblocal_planner">
-    <class name="LocalPlannerNode" type="local_planner::LocalPlannerNode" base_class_type="nodelet::Nodelet">
+    <class name="LocalPlannerNode" type="avoidance::LocalPlannerNode" base_class_type="nodelet::Nodelet">
         <description>
             Local planner nodelet
         </description>
