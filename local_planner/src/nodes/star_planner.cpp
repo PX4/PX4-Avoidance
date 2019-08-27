@@ -31,6 +31,8 @@ void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
 
+void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
+
 float StarPlanner::treeHeuristicFunction(int node_number) const {
   return (goal_ - tree_[node_number].getPosition()).norm() * tree_heuristic_weight_;
 }
@@ -67,7 +69,7 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  cost_matrix, cost_image_data);
+                  closest_pt_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes

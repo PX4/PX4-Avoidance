@@ -32,6 +32,7 @@ class StarPlanner {
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f closest_pt_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
 
  protected:
@@ -67,6 +68,12 @@ class StarPlanner {
   * @param[in] vehicle current position
   **/
   void setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);
+
+  /**
+  * @brief     setter method for vehicle position projection on the line between the current and previous goal
+  * @param[in] closest_pt, projection point
+  **/
+  void setClosestPointOnLine(const Eigen::Vector3f& closest_pt);
 
   /**
   * @brief     setter method for current goal
