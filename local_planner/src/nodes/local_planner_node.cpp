@@ -17,7 +17,7 @@ namespace avoidance {
 
 LocalPlannerNode::LocalPlannerNode()
     : spin_dt_(0.1), tf_buffer_(5.f) {
-  
+
 }
 
 LocalPlannerNode::~LocalPlannerNode() {
@@ -30,7 +30,7 @@ LocalPlannerNode::~LocalPlannerNode() {
 
 void LocalPlannerNode::onInit()
 {
-  NODELET_DEBUG("Initializing nodelet...");
+  printf("Initializing nodelet...");
 
   nh_ = ros::NodeHandle("~");
   nh_private_ = ros::NodeHandle("");
@@ -108,6 +108,7 @@ void LocalPlannerNode::startNode() {
 }
 
 void LocalPlannerNode::readParams() {
+  printf("readParams\n" );
   // Parameter from launch file
   auto goal = toPoint(local_planner_->getGoal());
   nh_.param<double>("goal_x_param", goal.x, 9.0);
@@ -116,8 +117,17 @@ void LocalPlannerNode::readParams() {
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
-  nh_.getParam("pointcloud_topics", camera_topics);
+  // nh_.getParam("pointcloud_topics", camera_topics);
+  std::string name_cloud = "/camera/depth/points";
+  // nh_.param("pointcloud_topics", name_cloud, std::string(""));
+  camera_topics.push_back(name_cloud);
   initializeCameraSubscribers(camera_topics);
+
+  for (size_t i = 0; i < camera_topics.size(); i++) {
+    std::cout << camera_topics[i] << std::endl;
+  }
+
+
 
   goal_msg_.pose.position = goal;
   new_goal_ = true;
