@@ -9,7 +9,7 @@
 
 namespace avoidance {
 
-WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::TRY_PATH) {}
+WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::LOITER) {}
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
 using avoidance::SLPState;

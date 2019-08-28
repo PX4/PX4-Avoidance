@@ -479,12 +479,12 @@ void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twis
       setpoint.color.b = 0.0;
       break;
     }
-    // case direct: {
-    //   setpoint.color.r = 0.0;
-    //   setpoint.color.g = 0.0;
-    //   setpoint.color.b = 1.0;
-    //   break;
-    // }
+    case SLPState::DIRECT: {
+      setpoint.color.r = 0.0;
+      setpoint.color.g = 0.0;
+      setpoint.color.b = 1.0;
+      break;
+    }
     case SLPState::ALTITUDE_CHANGE: {
       setpoint.color.r = 1.0;
       setpoint.color.g = 0.0;
