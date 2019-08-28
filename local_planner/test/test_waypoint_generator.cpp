@@ -68,7 +68,7 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
 TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   // GIVEN: a waypoint of type goFast and the vehicle has not yet reached the
   // goal altiude
-  ASSERT_EQ(SLPState::TRY_PATH, getState());
+  ASSERT_EQ(SLPState::LOITER, getState());
 
   goal << 0.f, 0.f, 5.f;
   setPlannerInfo(avoidance_output);
@@ -83,6 +83,9 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
               is_takeoff_waypoint, desired_velocity);
   waypointResult result = getWaypoints();
+  result = getWaypoints();
+
+  ASSERT_EQ(SLPState::ALTITUDE_CHANGE, getState());
 
   // WHEN: we generate subsequent waypoints
   for (size_t i = 0; i < 10; i++) {
@@ -188,7 +191,7 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
 
 TEST_F(WaypointGeneratorTests, hoverTest) {
   // GIVEN: a waypoint of type hover
-  ASSERT_EQ(SLPState::TRY_PATH, getState());
+  ASSERT_EQ(SLPState::LOITER, getState());
 
   // first run one the waypoint generator such that smoothed_goto_location_ gets
   // initialize
