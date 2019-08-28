@@ -30,7 +30,7 @@ LocalPlannerNode::~LocalPlannerNode() {
 
 void LocalPlannerNode::onInit()
 {
-  printf("Initializing nodelet...");
+  NODELET_DEBUG("Initializing nodelet...");
 
   nh_ = ros::NodeHandle("~");
   nh_private_ = ros::NodeHandle("");
@@ -108,25 +108,16 @@ void LocalPlannerNode::startNode() {
 }
 
 void LocalPlannerNode::readParams() {
-  printf("readParams\n" );
   // Parameter from launch file
-  nh_.param<float>("goal_x_param", goal_position_.x(), 9.0);
-  nh_.param<float>("goal_y_param", goal_position_.y(), 13.0);
-  nh_.param<float>("goal_z_param", goal_position_.z(), 3.5);
-  nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_x_param", goal_position_.x(), 0.0);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_y_param", goal_position_.y(), 0.0);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/lgoal_z_param", goal_position_.z(), 0.0);
+  nh_private_.param<bool>(nodelet::Nodelet::getName()  + "/accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
-  // nh_.getParam("pointcloud_topics", camera_topics);
-  std::string name_cloud = "/camera/depth/points";
-  // nh_.param("pointcloud_topics", name_cloud, std::string(""));
-  camera_topics.push_back(name_cloud);
+  nh_private_.getParam(nodelet::Nodelet::getName() + "/pointcloud_topics", camera_topics);
+
   initializeCameraSubscribers(camera_topics);
-
-  for (size_t i = 0; i < camera_topics.size(); i++) {
-    std::cout << camera_topics[i] << std::endl;
-  }
-
-
 
   new_goal_ = true;
 }
