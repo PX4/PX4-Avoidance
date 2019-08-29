@@ -28,6 +28,7 @@ class StarPlanner {
   float smoothing_margin_degrees_ = 40.f;
   float tree_heuristic_weight_ = 35.f;
   float acceptance_radius_ = 2.f;
+  float tree_step_size_s_ = 0.05f;
 
   pcl::PointCloud<pcl::PointXYZI> cloud_;
 

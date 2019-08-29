@@ -37,7 +37,7 @@ dictitems:
   min_num_points_per_cell_: 1
   min_sensor_range_: 0.2
   n_expanded_nodes_: 40
-  obstacle_cost_param_: 8.5
+  obstacle_cost_param_: 5.0
   pitch_cost_param_: 25.0
   max_sensor_range_: 15.0
   smoothing_margin_degrees_: 40.0

@@ -134,6 +134,10 @@ void AvoidanceNode::checkPx4Parameters() {
     request_param("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d);
     request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
     request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
+    request_param("MPC_Z_VEL_MAX_DN", px4_.param_mpc_z_vel_max_dn);
+    request_param("MPC_Z_VEL_MAX_UP", px4_.param_mpc_z_vel_max_up);
+    request_param("MPC_ACC_HOR", px4_.param_mpc_acc_hor);
+    request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
 
     if (!std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_mpc_col_prev_d) ||
         !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad)) {

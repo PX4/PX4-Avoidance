@@ -18,6 +18,7 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   max_path_length_ = static_cast<float>(config.max_sensor_range_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
   tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
+  tree_step_size_s_ = static_cast<float>(config.tree_step_size_s_);
 }
 
 void StarPlanner::setParams(const costParameters& cost_params, const simulation_limits& limits, float acc_rad) {
@@ -41,7 +42,6 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
-
   Histogram histogram(ALPHA_RES);
   std::vector<uint8_t> cost_image_data;
   std::vector<candidateDirection> candidate_vector;
@@ -87,7 +87,7 @@ void StarPlanner::buildLookAheadTree() {
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
         simulation_state state = tree_[origin].state;
-        TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
+        TrajectorySimulator sim(lims_, state, tree_step_size_s_);
         std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
 
         // check if another close node has been added
