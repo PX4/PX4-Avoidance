@@ -9,45 +9,45 @@
 
 namespace avoidance {
 
-WaypointGenerator::WaypointGenerator() : usm::StateMachine<SLPState>(SLPState::LOITER) {}
+WaypointGenerator::WaypointGenerator() : usm::StateMachine<PlannerState>(PlannerState::LOITER) {}
 ros::Time WaypointGenerator::getSystemTime() { return ros::Time::now(); }
 
-using avoidance::SLPState;
-std::string toString(SLPState state) {
+using avoidance::PlannerState;
+std::string toString(PlannerState state) {
   std::string state_str = "unknown";
   switch (state) {
-    case SLPState::TRY_PATH:
+    case PlannerState::TRY_PATH:
       state_str = "TRY_PATH";
       break;
-    case SLPState::ALTITUDE_CHANGE:
+    case PlannerState::ALTITUDE_CHANGE:
       state_str = "ALTITUDE CHANGE";
       break;
-    case SLPState::LOITER:
+    case PlannerState::LOITER:
       state_str = "LOITER";
       break;
-    case SLPState::DIRECT:
+    case PlannerState::DIRECT:
       state_str = "DIRECT";
       break;
   }
   return state_str;
 }
 
-SLPState WaypointGenerator::chooseNextState(SLPState currentState, usm::Transition transition) {
+PlannerState WaypointGenerator::chooseNextState(PlannerState currentState, usm::Transition transition) {
   prev_slp_state_ = currentState;
   state_changed_ = true;
 
   // clang-format off
   USM_TABLE(
-      currentState, SLPState::LOITER,
-      USM_STATE(transition, SLPState::TRY_PATH, USM_MAP(usm::Transition::NEXT1, SLPState::ALTITUDE_CHANGE);
-         USM_MAP(usm::Transition::NEXT2, SLPState::DIRECT);
-         USM_MAP(usm::Transition::NEXT3, SLPState::LOITER));
-      USM_STATE(transition, SLPState::LOITER, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH));
-      USM_STATE(transition, SLPState::DIRECT, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH);
-         USM_MAP(usm::Transition::NEXT2, SLPState::ALTITUDE_CHANGE);
-         USM_MAP(usm::Transition::NEXT3, SLPState::LOITER));
-      USM_STATE(transition, SLPState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, SLPState::TRY_PATH);
-         USM_MAP(usm::Transition::NEXT2, SLPState::LOITER)));
+      currentState, PlannerState::LOITER,
+      USM_STATE(transition, PlannerState::TRY_PATH, USM_MAP(usm::Transition::NEXT1, PlannerState::ALTITUDE_CHANGE);
+         USM_MAP(usm::Transition::NEXT2, PlannerState::DIRECT);
+         USM_MAP(usm::Transition::NEXT3, PlannerState::LOITER));
+      USM_STATE(transition, PlannerState::LOITER, USM_MAP(usm::Transition::NEXT1, PlannerState::TRY_PATH));
+      USM_STATE(transition, PlannerState::DIRECT, USM_MAP(usm::Transition::NEXT1, PlannerState::TRY_PATH);
+         USM_MAP(usm::Transition::NEXT2, PlannerState::ALTITUDE_CHANGE);
+         USM_MAP(usm::Transition::NEXT3, PlannerState::LOITER));
+      USM_STATE(transition, PlannerState::ALTITUDE_CHANGE, USM_MAP(usm::Transition::NEXT1, PlannerState::TRY_PATH);
+         USM_MAP(usm::Transition::NEXT2, PlannerState::LOITER)));
   // clang-format on
 }
 
@@ -59,19 +59,19 @@ usm::Transition WaypointGenerator::runCurrentState() {
 
   usm::Transition t;
   switch (getState()) {
-    case SLPState::TRY_PATH:
+    case PlannerState::TRY_PATH:
       t = runTryPath();
       break;
 
-    case SLPState::ALTITUDE_CHANGE:
+    case PlannerState::ALTITUDE_CHANGE:
       t = runAltitudeChange();
       break;
 
-    case SLPState::LOITER:
+    case PlannerState::LOITER:
       t = runLoiter();
       break;
 
-    case SLPState::DIRECT:
+    case PlannerState::DIRECT:
       t = runDirect();
       break;
   }
@@ -304,7 +304,7 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   float desired_setpoint_yaw_rad =
       (position_ - output_.goto_position).normXY() > 0.1f ? nextYaw(position_, output_.goto_position) : curr_yaw_rad_;
 
-  if (getState() == SLPState::ALTITUDE_CHANGE) {
+  if (getState() == PlannerState::ALTITUDE_CHANGE) {
     desired_setpoint_yaw_rad = yaw_reach_height_rad_;
   }
 
@@ -345,7 +345,7 @@ void WaypointGenerator::adaptSpeed() {
     setpoint_yaw_rad_ = heading_at_goal_rad_;
   } else {
     // Scale the speed by a factor that is 0 if the waypoint is outside the FOV
-    if (getState() != SLPState::ALTITUDE_CHANGE) {
+    if (getState() != PlannerState::ALTITUDE_CHANGE) {
       PolarPoint p_pol_fcu = cartesianToPolarFCU(output_.goto_position, position_);
       p_pol_fcu.e -= curr_pitch_deg_;
       p_pol_fcu.z -= RAD_TO_DEG * curr_yaw_rad_;

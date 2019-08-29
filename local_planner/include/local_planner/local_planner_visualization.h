@@ -99,7 +99,7 @@ class LocalPlannerVisualization {
   *              visualization
   * @params[in]  newest_pos, location of the drone at the current timestep
   **/
-  void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const SLPState& waypoint_type,
+  void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const PlannerState& waypoint_type,
                               const geometry_msgs::Point& newest_pos) const;
 
   /**

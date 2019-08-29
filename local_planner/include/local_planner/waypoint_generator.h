@@ -14,11 +14,11 @@
 
 namespace avoidance {
 
-enum class SLPState { TRY_PATH, ALTITUDE_CHANGE, LOITER, DIRECT };
-std::string toString(SLPState state);  // for logging
+enum class PlannerState { TRY_PATH, ALTITUDE_CHANGE, LOITER, DIRECT };
+std::string toString(PlannerState state);  // for logging
 
 struct waypointResult {
-  avoidance::SLPState waypoint_type;
+  avoidance::PlannerState waypoint_type;
   Eigen::Vector3f position_wp;
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;
@@ -28,7 +28,7 @@ struct waypointResult {
   Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
-class WaypointGenerator : public usm::StateMachine<SLPState> {
+class WaypointGenerator : public usm::StateMachine<PlannerState> {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
@@ -73,7 +73,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   // state
   bool trigger_reset_ = false;
   bool state_changed_ = false;
-  SLPState prev_slp_state_ = SLPState::TRY_PATH;
+  PlannerState prev_slp_state_ = PlannerState::TRY_PATH;
   usm::Transition runTryPath();
   usm::Transition runAltitudeChange();
   usm::Transition runLoiter();
@@ -87,7 +87,7 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   /**
   * @brief the setup of the statemachine
   */
-  SLPState chooseNextState(SLPState currentState, usm::Transition transition) override final;
+  PlannerState chooseNextState(PlannerState currentState, usm::Transition transition) override final;
 
   /**
   * @brief     computes position and velocity waypoints based on the input

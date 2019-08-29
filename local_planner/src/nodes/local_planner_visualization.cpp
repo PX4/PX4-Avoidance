@@ -446,7 +446,8 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
   path_length_++;
 }
 
-void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp, const SLPState& waypoint_type,
+void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp,
+                                                       const PlannerState& waypoint_type,
                                                        const geometry_msgs::Point& newest_pos) const {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
@@ -467,25 +468,25 @@ void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twis
   setpoint.color.a = 1.0;
 
   switch (waypoint_type) {
-    case SLPState::LOITER: {
+    case PlannerState::LOITER: {
       setpoint.color.r = 1.0;
       setpoint.color.g = 1.0;
       setpoint.color.b = 0.0;
       break;
     }
-    case SLPState::TRY_PATH: {
+    case PlannerState::TRY_PATH: {
       setpoint.color.r = 0.0;
       setpoint.color.g = 1.0;
       setpoint.color.b = 0.0;
       break;
     }
-    case SLPState::DIRECT: {
+    case PlannerState::DIRECT: {
       setpoint.color.r = 0.0;
       setpoint.color.g = 0.0;
       setpoint.color.b = 1.0;
       break;
     }
-    case SLPState::ALTITUDE_CHANGE: {
+    case PlannerState::ALTITUDE_CHANGE: {
       setpoint.color.r = 1.0;
       setpoint.color.g = 0.0;
       setpoint.color.b = 1.0;
