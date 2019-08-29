@@ -14,13 +14,18 @@ StarPlanner::StarPlanner() {}
 void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
+  tree_node_duration_ = static_cast<float>(config.tree_node_duration_);
   max_path_length_ = static_cast<float>(config.max_sensor_range_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
   tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
+  tree_step_size_s_ = static_cast<float>(config.tree_step_size_s_);
 }
 
-void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
+void StarPlanner::setParams(const costParameters& cost_params, const simulation_limits& limits, float acc_rad) {
+  cost_params_ = cost_params;
+  lims_ = limits;
+  acceptance_radius_ = acc_rad;
+}
 
 void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
   position_ = pos;
@@ -37,7 +42,6 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
-
   Histogram histogram(ALPHA_RES);
   std::vector<uint8_t> cost_image_data;
   std::vector<candidateDirection> candidate_vector;
@@ -49,7 +53,12 @@ void StarPlanner::buildLookAheadTree() {
   closed_set_.clear();
 
   // insert first node
-  tree_.push_back(TreeNode(0, position_, velocity_));
+  simulation_state start_state;
+  start_state.position = position_;
+  start_state.velocity = velocity_;
+  start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
+  start_state.time = ros::Time::now().toSec();
+  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
@@ -77,14 +86,14 @@ void StarPlanner::buildLookAheadTree() {
       // insert new nodes
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
-        PolarPoint candidate_polar = candidate.toPolar(tree_node_distance_);
-        Eigen::Vector3f node_location = polarHistogramToCartesian(candidate_polar, origin_position);
-        Eigen::Vector3f node_velocity = node_location - origin_position;  // todo: simulate!
+        simulation_state state = tree_[origin].state;
+        TrajectorySimulator sim(lims_, state, tree_step_size_s_);
+        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
 
         // check if another close node has been added
         int close_nodes = 0;
         for (size_t i = 0; i < tree_.size(); i++) {
-          float dist = (tree_[i].getPosition() - node_location).norm();
+          float dist = (tree_[i].getPosition() - trajectory.back().position).norm();
           if (dist < 0.2f) {
             close_nodes++;
             break;
@@ -92,7 +101,7 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, node_location, node_velocity));
+          tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
@@ -109,6 +118,14 @@ void StarPlanner::buildLookAheadTree() {
     is_expanded_node = false;
     for (size_t i = 0; i < tree_.size(); i++) {
       if (!(tree_[i].closed_)) {
+        // If we reach the acceptance radius, add goal as last node and exit
+        if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
+          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
+          closed_set_.push_back(i);
+          closed_set_.push_back(tree_.size() - 1);
+          break;
+        }
+
         float node_distance = (tree_[i].getPosition() - position_).norm();
         if (tree_[i].total_cost_ < minimal_cost && node_distance < max_path_length_) {
           minimal_cost = tree_[i].total_cost_;
@@ -121,24 +138,14 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
   }
-  // smoothing between trees
+
+  // Get setpoints into member vector
   int tree_end = origin;
-  path_node_positions_.clear();
+  path_node_setpoints_.clear();
   while (tree_end > 0) {
-    path_node_positions_.push_back(tree_[tree_end].getPosition());
+    path_node_setpoints_.push_back(tree_[tree_end].getSetpoint());
     tree_end = tree_[tree_end].origin_;
   }
-  path_node_positions_.push_back(tree_[0].getPosition());
-
-  ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
-           path_node_positions_.size(), closed_set_.size(),
-           static_cast<double>((std::clock() - start_time) / static_cast<double>(CLOCKS_PER_SEC / 1000)));
-
-#ifndef DISABLE_SIMULATION  // For large trees, this could be very slow!
-  for (int j = 0; j < path_node_positions_.size(); j++) {
-    ROS_DEBUG("\033[0;35m[SP] node %i : [ %f, %f, %f]\033[0m", j, path_node_positions_[j].x(),
-              path_node_positions_[j].y(), path_node_positions_[j].z());
-  }
-#endif
+  path_node_setpoints_.push_back(tree_[0].getSetpoint());
 }
 }

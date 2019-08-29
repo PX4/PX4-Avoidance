@@ -3,6 +3,7 @@
 
 #include "avoidance/histogram.h"
 #include "cost_parameters.h"
+#include "trajectory_simulator.h"
 
 #include <Eigen/Dense>
 
@@ -20,12 +21,14 @@ namespace avoidance {
 class TreeNode;
 
 class StarPlanner {
-  int children_per_node_ = 1;
-  int n_expanded_nodes_ = 5;
-  float tree_node_distance_ = 1.0f;
-  float max_path_length_ = 4.f;
-  float smoothing_margin_degrees_ = 30.f;
-  float tree_heuristic_weight_ = 10.0f;
+  int children_per_node_ = 8;
+  int n_expanded_nodes_ = 40;
+  float tree_node_duration_ = 0.5f;
+  float max_path_length_ = 15.f;
+  float smoothing_margin_degrees_ = 40.f;
+  float tree_heuristic_weight_ = 35.f;
+  float acceptance_radius_ = 2.f;
+  float tree_step_size_s_ = 0.05f;
 
   pcl::PointCloud<pcl::PointXYZI> cloud_;
 
@@ -33,6 +36,7 @@ class StarPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
+  simulation_limits lims_;
 
  protected:
   /**
@@ -43,7 +47,7 @@ class StarPlanner {
   float treeHeuristicFunction(int node_number) const;
 
  public:
-  std::vector<Eigen::Vector3f> path_node_positions_;
+  std::vector<Eigen::Vector3f> path_node_setpoints_;
   std::vector<int> closed_set_;
   std::vector<TreeNode> tree_;
 
@@ -53,8 +57,9 @@ class StarPlanner {
   /**
   * @brief     setter method for costMatrix paramters
   * @param[in] cost_params, parameters for the histogram cost function
+  * @param[in] simulation limits defining maximum acceleration, velocity, and jerk
   **/
-  void setParams(costParameters cost_params);
+  void setParams(const costParameters& cost_params, const simulation_limits& limits, float acc_rad);
 
   /**
   * @brief     setter method for star_planner pointcloud

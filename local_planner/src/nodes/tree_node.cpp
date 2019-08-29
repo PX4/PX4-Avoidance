@@ -2,22 +2,15 @@
 
 namespace avoidance {
 
-TreeNode::TreeNode() : total_cost_{0.0f}, heuristic_{0.0f}, origin_{0}, closed_{false} {
-  position_ = Eigen::Vector3f::Zero();
-  velocity_ = Eigen::Vector3f::Zero();
-}
-
-TreeNode::TreeNode(int from, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel)
-    : total_cost_{0.0f}, heuristic_{0.0f}, origin_{from}, closed_{false} {
-  position_ = pos;
-  velocity_ = vel;
-}
+TreeNode::TreeNode(int from, const simulation_state& start_state, const Eigen::Vector3f& sp)
+    : total_cost_{0.0f}, heuristic_{0.0f}, origin_{from}, closed_{false}, state(start_state), setpoint(sp) {}
 
 void TreeNode::setCosts(float h, float c) {
   heuristic_ = h;
   total_cost_ = c;
 }
 
-Eigen::Vector3f TreeNode::getPosition() const { return position_; }
-Eigen::Vector3f TreeNode::getVelocity() const { return velocity_; }
+Eigen::Vector3f TreeNode::getPosition() const { return state.position; }
+Eigen::Vector3f TreeNode::getVelocity() const { return state.velocity; }
+Eigen::Vector3f TreeNode::getSetpoint() const { return setpoint; }
 }

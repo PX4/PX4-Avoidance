@@ -6,13 +6,24 @@
 namespace avoidance {
 
 struct simulation_state {
-  float time = NAN;
-  Eigen::Vector3f position = NAN * Eigen::Vector3f::Ones();
-  Eigen::Vector3f velocity = NAN * Eigen::Vector3f::Ones();
-  Eigen::Vector3f acceleration = NAN * Eigen::Vector3f::Ones();
+  simulation_state(float t = NAN, const Eigen::Vector3f& p = NAN * Eigen::Vector3f::Zero(),
+                   const Eigen::Vector3f& v = NAN * Eigen::Vector3f::Zero(),
+                   const Eigen::Vector3f& a = NAN * Eigen::Vector3f::Zero())
+      : time(t), position(p), velocity(v), acceleration(a){};
+  float time;
+  Eigen::Vector3f position;
+  Eigen::Vector3f velocity;
+  Eigen::Vector3f acceleration;
 };
 
 struct simulation_limits {
+  simulation_limits(float max_z, float min_z, float max_xy_n, float max_acc_n, float max_jerk_n)
+      : max_z_velocity(max_z),
+        min_z_velocity(min_z),
+        max_xy_velocity_norm(max_xy_n),
+        max_acceleration_norm(max_acc_n),
+        max_jerk_norm(max_jerk_n){};
+  simulation_limits(){};
   float max_z_velocity = NAN;
   float min_z_velocity = NAN;
   float max_xy_velocity_norm = NAN;

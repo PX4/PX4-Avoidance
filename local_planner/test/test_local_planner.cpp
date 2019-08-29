@@ -122,14 +122,22 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   avoidanceOutput output = planner.getAvoidanceOutput();
 
   EXPECT_TRUE(output.obstacle_ahead);
-  ASSERT_GE(output.path_node_positions.size(), 2);
+  ASSERT_GE(output.path_node_setpoints.size(), 2);
   float node_max_y = 0.f;
   float node_min_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
+  simulation_state state(0.f, Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero(), Eigen::Vector3f::Zero());
+  simulation_limits lims(3.f, -1.f, 3.f, 5.f, 20.f);
+  for (auto it = output.path_node_setpoints.rbegin() + 1; it != output.path_node_setpoints.rend(); ++it) {
     auto node = *it;
-    if (node.x() > distance) break;
-    if (node.y() > node_max_y) node_max_y = node.y();
-    if (node.y() < node_min_y) node_min_y = node.y();
+    TrajectorySimulator sim(lims, state, 0.05f);
+
+    std::vector<simulation_state> trajectory = sim.generate_trajectory(node, output.tree_node_duration);
+    for (auto& p : trajectory) {
+      if (p.position.x() > distance) break;
+      if (p.position.y() > node_max_y) node_max_y = p.position.y();
+      if (p.position.y() < node_min_y) node_min_y = p.position.y();
+    }
+    state = trajectory.back();
   }
 
   bool steer_clear = node_max_y > max_y || node_min_y < min_y;
@@ -183,9 +191,9 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   avoidanceOutput output = planner.getAvoidanceOutput();
 
   EXPECT_TRUE(output.obstacle_ahead);
-  ASSERT_GE(output.path_node_positions.size(), 2);
+  ASSERT_GE(output.path_node_setpoints.size(), 2);
   float node_max_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_setpoints.rbegin(); it != output.path_node_setpoints.rend(); ++it) {
     auto node = *it;
     if (node.x() > distance) break;
     if (node.y() > node_max_y) node_max_y = node.y();
@@ -240,9 +248,9 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   avoidanceOutput output = planner.getAvoidanceOutput();
 
   EXPECT_TRUE(output.obstacle_ahead);
-  ASSERT_GE(output.path_node_positions.size(), 2);
+  ASSERT_GE(output.path_node_setpoints.size(), 2);
   float node_min_y = 0.f;
-  for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
+  for (auto it = output.path_node_setpoints.rbegin(); it != output.path_node_setpoints.rend(); ++it) {
     auto node = *it;
     if (node.x() > distance) break;
     if (node.y() < node_min_y) node_min_y = node.y();

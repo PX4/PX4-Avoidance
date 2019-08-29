@@ -44,9 +44,9 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
   // visualize tree calculation
   std::vector<TreeNode> tree;
   std::vector<int> closed_set;
-  std::vector<Eigen::Vector3f> path_node_positions;
-  planner.getTree(tree, closed_set, path_node_positions);
-  publishTree(tree, closed_set, path_node_positions);
+  std::vector<Eigen::Vector3f> path_node_setpoints;
+  planner.getTree(tree, closed_set, path_node_setpoints);
+  publishTree(tree, closed_set, path_node_setpoints);
 
   // visualize goal
   publishGoal(toPoint(planner.getGoal()));
@@ -190,7 +190,7 @@ void LocalPlannerVisualization::publishOfftrackPoints(Eigen::Vector3f& closest_p
 }
 
 void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
-                                            const std::vector<Eigen::Vector3f>& path_node_positions) const {
+                                            const std::vector<Eigen::Vector3f>& path_node_setpoints) const {
   visualization_msgs::Marker tree_marker;
   tree_marker.header.frame_id = "local_origin";
   tree_marker.header.stamp = ros::Time::now();
@@ -227,10 +227,19 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
     tree_marker.points.push_back(p2);
   }
 
-  path_marker.points.reserve(path_node_positions.size() * 2);
-  for (size_t i = 1; i < path_node_positions.size(); i++) {
-    path_marker.points.push_back(toPoint(path_node_positions[i - 1]));
-    path_marker.points.push_back(toPoint(path_node_positions[i]));
+  // Visualizing the setpoints is a hack: they are actually in the body frame. This is an approximate visualization
+  // that just accumulates them to illustrate them as a path
+  if (path_node_setpoints.size() > 0) {
+    path_marker.points.reserve(path_node_setpoints.size() * 2);
+    Eigen::Vector3f p1;
+    Eigen::Vector3f p2 = tree[closed_set.front()].getPosition();
+    for (int i = path_node_setpoints.size() - 1; i >= 1; --i) {
+      float scale = (tree[closed_set[i]].getPosition() - tree[closed_set[i - 1]].getPosition()).norm();
+      p1 = p2;
+      p2 = p1 + scale * path_node_setpoints[i];
+      path_marker.points.push_back(toPoint(p1));
+      path_marker.points.push_back(toPoint(p2));
+    }
   }
 
   complete_tree_pub_.publish(tree_marker);

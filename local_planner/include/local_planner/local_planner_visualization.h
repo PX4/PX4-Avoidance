@@ -36,11 +36,11 @@ class LocalPlannerVisualization {
   *              chosen
   * @params[in]  tree, the complete calculated search tree
   * @params[in]  closed_set, the closed set (all expanded nodes)
-  * @params[in]  path_node_positions, the positions of all nodes belonging to
+  * @params[in]  path_node_setpoints, the setpoints of all nodes belonging to
   *              the chosen best path
   **/
   void publishTree(const std::vector<TreeNode>& tree, const std::vector<int>& closed_set,
-                   const std::vector<Eigen::Vector3f>& path_node_positions) const;
+                   const std::vector<Eigen::Vector3f>& path_node_setpoints) const;
 
   /**
   * @brief       Visualization of the goal position

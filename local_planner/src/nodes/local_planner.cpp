@@ -37,6 +37,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   children_per_node_ = config.children_per_node_;
   n_expanded_nodes_ = config.n_expanded_nodes_;
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
+  tree_node_duration_ = static_cast<float>(config.tree_node_duration_);
 
   if (getGoal().z() != config.goal_z_param) {
     auto goal = getGoal();
@@ -124,7 +125,13 @@ void LocalPlanner::determineStrategy() {
     getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, cost_matrix_,
                   cost_image_data_);
 
-    star_planner_->setParams(cost_params_);
+    simulation_limits lims;
+    lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
+    lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
+    lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
+    lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
+    lims.max_jerk_norm = px4_.param_mpc_jerk_max;
+    star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
     star_planner_->setPointcloud(final_cloud_);
 
     // build search tree
@@ -180,19 +187,20 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_acc_up_max = 10.f;
   px4_.param_mpc_z_vel_max_up = 3.f;
   px4_.param_mpc_acc_down_max = 10.f;
-  px4_.param_mpc_vel_max_dn = 1.f;
+  px4_.param_mpc_z_vel_max_dn = 1.f;
   px4_.param_mpc_acc_hor = 5.f;
   px4_.param_mpc_xy_cruise = 3.f;
   px4_.param_mpc_tko_speed = 1.f;
   px4_.param_mpc_land_speed = 0.7f;
   px4_.param_mpc_col_prev_d = 4.f;
+  px4_.param_nav_acc_rad = 2.f;
 }
 
 void LocalPlanner::getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-                           std::vector<Eigen::Vector3f>& path_node_positions) const {
+                           std::vector<Eigen::Vector3f>& path_node_setpoints) const {
   tree = star_planner_->tree_;
   closed_set = star_planner_->closed_set_;
-  path_node_positions = star_planner_->path_node_positions_;
+  path_node_setpoints = star_planner_->path_node_setpoints_;
 }
 
 void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_distance) {
@@ -220,8 +228,8 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
 
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
-
-  out.path_node_positions = star_planner_->path_node_positions_;
+  out.tree_node_duration = tree_node_duration_;
+  out.path_node_setpoints = star_planner_->path_node_setpoints_;
   return out;
 }
 }

@@ -34,10 +34,10 @@ void WaypointGenerator::calculateWaypoint() {
     }
 
     case tryPath: {
-      Eigen::Vector3f setpoint = position_;
-      if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                              planner_info_.cruise_velocity, setpoint)) {
-        output_.goto_position = position_ + (setpoint - position_).normalized();
+      Eigen::Vector3f setpoint = Eigen::Vector3f::Zero();
+      if (interpolateBetweenSetpoints(planner_info_.path_node_setpoints, planner_info_.last_path_time,
+                                      planner_info_.tree_node_duration, setpoint)) {
+        output_.goto_position = position_ + setpoint;
         ROS_DEBUG("[WG] Using calculated tree\n");
       } else {
         ROS_DEBUG("[WG] No valid tree, going straight");

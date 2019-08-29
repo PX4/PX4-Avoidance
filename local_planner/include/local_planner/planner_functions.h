@@ -143,11 +143,12 @@ void printHistogram(const Histogram& histogram);
 * @brief      Returns a setpoint that lies on the given path
 * @param[in]  vector of nodes defining the path, with the last node of the path at index 0
 * @param[in]  ros time of path generation
-* @param[in]  velocity, scalar value for the norm of the current vehicle velocity
+* @param[in]  tree_node_duration, scalar value for length in time each path segment is to be used
 * @param[out] setpoint on the tree toward which the drone should fly
 * @returns    boolean indicating whether the tree was valid
 **/
-bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
-                         float velocity, Eigen::Vector3f& setpoint);
+bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
+                                 const ros::Time& path_generation_time, float tree_node_duration,
+                                 Eigen::Vector3f& setpoint);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

@@ -7,6 +7,7 @@
 #include "candidate_direction.h"
 #include "cost_parameters.h"
 #include "planner_functions.h"
+#include "trajectory_simulator.h"
 
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
@@ -44,6 +45,7 @@ class LocalPlanner {
   float max_point_age_s_ = 10;
   float yaw_fcu_frame_deg_ = 0.0f;
   float pitch_fcu_frame_deg_ = 0.0f;
+  float tree_node_duration_ = 0.5f;
 
   std::vector<FOV> fov_fcu_frame_;
 
@@ -174,11 +176,11 @@ class LocalPlanner {
   /**
   * @brief     getter method to visualize the tree in rviz
   * @param[in] tree, the whole tree built during planning (vector of nodes)
-  * @param[in] closed_set, velocity message coming from the FCU
-  * @param[in] path_node_positions, velocity message coming from the FCU
+  * @param[in] closed_set
+  * @param[in] path_node_setpoints
   **/
   void getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
-               std::vector<Eigen::Vector3f>& path_node_positions) const;
+               std::vector<Eigen::Vector3f>& path_node_setpoints) const;
   /**
   * @brief     getter method for obstacle distance information
   * @param     obstacle_distance, obstacle distance message to fill
