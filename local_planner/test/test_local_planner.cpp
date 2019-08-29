@@ -133,7 +133,6 @@ TEST_F(LocalPlannerTests, all_obstacles) {
 
     std::vector<simulation_state> trajectory = sim.generate_trajectory(node, output.tree_node_duration);
     for (auto& p : trajectory) {
-      std::cout << p.position << std::endl;
       if (p.position.x() > distance) break;
       if (p.position.y() > node_max_y) node_max_y = p.position.y();
       if (p.position.y() < node_min_y) node_min_y = p.position.y();

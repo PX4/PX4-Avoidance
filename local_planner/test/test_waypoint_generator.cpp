@@ -31,6 +31,7 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
     avoidance_output.obstacle_ahead = false;
     avoidance_output.cruise_velocity = 1.0;
     avoidance_output.last_path_time = ros::Time(0.28);
+    avoidance_output.tree_node_duration = 0.5f;
 
     PolarPoint p_pol = histogramIndexToPolar(15, 35, 6, 0.f);
 
