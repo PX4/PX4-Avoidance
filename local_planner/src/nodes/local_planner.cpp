@@ -122,21 +122,21 @@ void LocalPlanner::determineStrategy() {
   create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
   if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_,
-                    cost_matrix_, cost_image_data_);
+    getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, cost_matrix_,
+                  cost_image_data_);
 
-      simulation_limits lims;
-      lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
-      lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
-      lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
-      lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
-      lims.max_jerk_norm = px4_.param_mpc_jerk_max;
-      star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
-      star_planner_->setPointcloud(final_cloud_);
+    simulation_limits lims;
+    lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
+    lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
+    lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
+    lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
+    lims.max_jerk_norm = px4_.param_mpc_jerk_max;
+    star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
+    star_planner_->setPointcloud(final_cloud_);
 
-      // build search tree
-      star_planner_->buildLookAheadTree();
-      last_path_time_ = ros::Time::now();
+    // build search tree
+    star_planner_->buildLookAheadTree();
+    last_path_time_ = ros::Time::now();
   }
 }
 
