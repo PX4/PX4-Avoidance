@@ -155,7 +155,7 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
   }
 }
 usm::Transition WaypointGenerator::runLoiter() {
-  if (state_changed_) {
+  if (state_changed_ || hover_position_.array().hasNaN()) {
     hover_position_ = position_;
   }
   output_.goto_position = hover_position_;

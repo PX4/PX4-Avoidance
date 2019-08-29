@@ -210,7 +210,6 @@ void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_dist
 
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
-  out.obstacle_ahead = !polar_histogram_.isEmpty();
 
   // calculate maximum speed given the sensor range and vehicle parameters
   // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r

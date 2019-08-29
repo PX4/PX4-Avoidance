@@ -32,7 +32,6 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
-  waypoint_choice last_wp_type_ = hover;
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
@@ -44,6 +43,8 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f desired_vel_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f change_altitude_pos_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f hover_position_ = Eigen::Vector3f(NAN, NAN, NAN);
+
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
@@ -64,8 +65,6 @@ class WaypointGenerator : public usm::StateMachine<SLPState> {
   float yaw_reach_height_rad_ = NAN;
   float speed_ = 1.0f;
   std::vector<FOV> fov_fcu_frame_;
-
-  Eigen::Vector3f hover_position_;
 
   NavigationState nav_state_ = NavigationState::none;
 

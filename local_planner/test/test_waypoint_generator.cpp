@@ -27,7 +27,6 @@ class WaypointGeneratorTests : public ::testing::Test, public WaypointGenerator 
   void SetUp() override {
     ros::Time::init();
 
-    avoidance_output.obstacle_ahead = false;
     avoidance_output.cruise_velocity = 1.0;
     avoidance_output.last_path_time = ros::Time(0.28);
 
