@@ -134,7 +134,7 @@ void LocalPlanner::determineStrategy() {
 
   if (!polar_histogram_.isEmpty()) {
     getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
-                  cost_matrix_, cost_image_data_);
+                  max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
 
     star_planner_->setParams(cost_params_);
     star_planner_->setPointcloud(final_cloud_);

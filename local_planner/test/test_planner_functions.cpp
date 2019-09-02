@@ -386,10 +386,13 @@ TEST(PlannerFunctions, getCostMatrixNoObstacles) {
   Eigen::MatrixXf cost_matrix;
   Histogram histogram = Histogram(ALPHA_RES);
   float smoothing_radius = 30.f;
+  const float max_sensor_range = 15.f;
+  const float min_sensor_range = 0.2f;
 
   // WHEN: we calculate the cost matrix from the input data
   std::vector<uint8_t> cost_image_data;
-  getCostMatrix(histogram, goal, position, velocity, cost_params, smoothing_radius, goal, cost_matrix, cost_image_data);
+  getCostMatrix(histogram, goal, position, velocity, cost_params, smoothing_radius, goal, max_sensor_range,
+                min_sensor_range, cost_matrix, cost_image_data);
 
   // THEN: The minimum cost should be in the direction of the goal
   PolarPoint best_pol = cartesianToPolarHistogram(goal, position);
@@ -467,8 +470,8 @@ TEST(PlannerFunctions, CostfunctionGoalCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different goals
-  cost_1 = costFunction(candidate_1, obstacle_distance, goal_1, position, velocity, cost_params, goal_1);
-  cost_2 = costFunction(candidate_1, obstacle_distance, goal_2, position, velocity, cost_params, goal_2);
+  cost_1 = costFunction(candidate_1, obstacle_distance, goal_1, position, velocity, cost_params, goal_1, true);
+  cost_2 = costFunction(candidate_1, obstacle_distance, goal_2, position, velocity, cost_params, goal_2, true);
 
   // THEN: The cost in the case where the goal is in the cell direction should
   // be lower
@@ -494,9 +497,9 @@ TEST(PlannerFunctions, CostfunctionDistanceCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different obstacle distance
-  cost_1 = costFunction(candidate_1, distance_1, goal, position, velocity, cost_params, goal);
-  cost_2 = costFunction(candidate_1, distance_2, goal, position, velocity, cost_params, goal);
-  cost_3 = costFunction(candidate_1, distance_3, goal, position, velocity, cost_params, goal);
+  cost_1 = costFunction(candidate_1, distance_1, goal, position, velocity, cost_params, goal, true);
+  cost_2 = costFunction(candidate_1, distance_2, goal, position, velocity, cost_params, goal, true);
+  cost_3 = costFunction(candidate_1, distance_3, goal, position, velocity, cost_params, goal, true);
 
   // THEN: The distance cost for no obstacle should be zero and the distance
   // cost for the closer obstacle should be bigger
@@ -524,8 +527,8 @@ TEST(PlannerFunctions, CostfunctionVelocityCost) {
 
   // WHEN: we calculate the cost of one cell for the same scenario but with two
   // different initial velocities
-  cost_1 = costFunction(candidate_1, obstacle_distance, goal, position, velocity_1, cost_params, goal);
-  cost_2 = costFunction(candidate_1, obstacle_distance, goal, position, velocity_2, cost_params, goal);
+  cost_1 = costFunction(candidate_1, obstacle_distance, goal, position, velocity_1, cost_params, goal, true);
+  cost_2 = costFunction(candidate_1, obstacle_distance, goal, position, velocity_2, cost_params, goal, true);
 
   // THEN: The cost in the case where the initial heading is closer to the
   // candidate should be lower

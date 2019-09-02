@@ -18,6 +18,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   max_path_length_ = static_cast<float>(config.max_sensor_range_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
   tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
+  max_sensor_range_ = static_cast<float>(config.max_sensor_range_);
+  min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
@@ -69,7 +71,7 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  closest_pt_, cost_matrix, cost_image_data);
+                  closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes

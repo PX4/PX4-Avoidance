@@ -26,6 +26,8 @@ class StarPlanner {
   float max_path_length_ = 4.f;
   float smoothing_margin_degrees_ = 30.f;
   float tree_heuristic_weight_ = 10.0f;
+  float max_sensor_range_ = 15.f;
+  float min_sensor_range_ = 0.2f;
 
   pcl::PointCloud<pcl::PointXYZI> cloud_;
 
