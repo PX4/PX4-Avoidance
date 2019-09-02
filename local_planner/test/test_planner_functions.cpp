@@ -128,6 +128,35 @@ TEST(PlannerFunctionsTests, processPointcloud) {
   EXPECT_EQ(7, processed_cloud3.size());  // since memory point is inside FOV, it isn't remembered
 }
 
+TEST(PlannerFunctions, compressHistogramElevation) {
+  // GIVEN: a position and a pointcloud with data
+  const Eigen::Vector3f position(0.f, 0.f, 5.f);
+  const Eigen::Vector3f data_point(14.f, 0.f, 5.f);
+  pcl::PointCloud<pcl::PointXYZI> cloud;
+
+  for (int j = 0; j < 1000; j++) {
+    cloud.push_back(toXYZI(data_point, 0));
+  }
+
+  Histogram histogram = Histogram(ALPHA_RES);
+  Histogram compressed_histogram = Histogram(ALPHA_RES);
+
+  // WHEN: we build a histogram
+  generateNewHistogram(histogram, cloud, position);
+  compressHistogramElevation(compressed_histogram, histogram, position);
+
+  PolarPoint data_pol = cartesianToPolarHistogram(data_point, position);
+  Eigen::Vector2i indices = polarToHistogramIndex(data_pol, ALPHA_RES);
+
+  for (int z = 0; z < GRID_LENGTH_Z; z++) {
+    if (z == indices.x()) {
+      EXPECT_FLOAT_EQ(compressed_histogram.get_dist(0, z), 14.f);
+    } else {
+      EXPECT_FLOAT_EQ(compressed_histogram.get_dist(0, z), 0.f);
+    }
+  }
+}
+
 TEST(PlannerFunctions, getSetpointFromPath) {
   // GIVEN: the node positions in a path and some possible vehicle positions
   float n1_x = 0.8f;
