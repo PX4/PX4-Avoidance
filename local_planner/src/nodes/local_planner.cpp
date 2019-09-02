@@ -88,7 +88,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   generateNewHistogram(new_histogram, final_cloud_, position_);
 
   if (send_to_fcu) {
-    compressHistogramElevation(to_fcu_histogram_, new_histogram);
+    compressHistogramElevation(to_fcu_histogram_, new_histogram, position_);
     updateObstacleDistanceMsg(to_fcu_histogram_);
   }
   polar_histogram_ = new_histogram;
