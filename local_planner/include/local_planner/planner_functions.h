@@ -52,7 +52,7 @@ void generateNewHistogram(Histogram& polar_histogram, const pcl::PointCloud<pcl:
 * @param[out] new_hist, compressed elevation histogram
 * @param[in] input_hist, original histogram
 **/
-void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist);
+void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist, const Eigen::Vector3f& position);
 
 /**
 * @brief      calculates each histogram bin cost and stores it in a cost matrix
