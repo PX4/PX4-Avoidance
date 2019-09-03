@@ -36,6 +36,7 @@ class TrajectorySimulator {
   TrajectorySimulator(const simulation_limits& config, const simulation_state& start, float step_time = 0.1f);
 
   std::vector<simulation_state> generate_trajectory(const Eigen::Vector3f& goal_direction, float simulation_duration);
+  simulation_state generate_trajectory_endpoint(const Eigen::Vector3f& goal_direction, float simulation_duration);
 
  protected:
   const simulation_limits config_;
@@ -48,6 +49,10 @@ class TrajectorySimulator {
   static Eigen::Vector3f jerk_for_velocity_setpoint(float P_constant, float D_constant, float max_jerk_norm,
                                                     const Eigen::Vector3f& desired_velocity,
                                                     const simulation_state& state);
+
+ private:
+  void generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
+                           std::function<void(avoidance::simulation_state)> path_handler);
 };
 
 // templated helper function

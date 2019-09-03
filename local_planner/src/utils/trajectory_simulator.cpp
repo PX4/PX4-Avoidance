@@ -20,12 +20,30 @@ TrajectorySimulator::TrajectorySimulator(const avoidance::simulation_limits& con
                                          const avoidance::simulation_state& start, float step_time)
     : config_(config), start_(start), step_time_(step_time) {}
 
+simulation_state TrajectorySimulator::generate_trajectory_endpoint(const Eigen::Vector3f& goal_direction,
+                                                                   float simulation_duration) {
+  int num_steps = static_cast<int>(std::ceil(simulation_duration / step_time_));
+  simulation_state last_state;
+
+  generate_trajectory(goal_direction, num_steps, [&last_state](simulation_state state) { last_state = state; });
+
+  return last_state;
+}
+
 std::vector<simulation_state> TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction,
                                                                        float simulation_duration) {
   int num_steps = static_cast<int>(std::ceil(simulation_duration / step_time_));
   std::vector<simulation_state> timepoints;
   timepoints.reserve(num_steps);
 
+  generate_trajectory(goal_direction, num_steps,
+                      [&timepoints](simulation_state state) { timepoints.push_back(state); });
+
+  return timepoints;
+}
+
+void TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
+                                              std::function<void(avoidance::simulation_state)> path_handler) {
   const Eigen::Vector3f unit_goal = goal_direction.normalized();
   const Eigen::Vector3f desired_velocity =
       xy_norm_z_clamp(unit_goal * std::hypot(config_.max_xy_velocity_norm,
@@ -61,10 +79,8 @@ std::vector<simulation_state> TrajectorySimulator::generate_trajectory(const Eig
 
     // update the state based on motion equations with the final jerk
     run_state = simulate_step_constant_jerk(run_state, jerk, single_step_time);
-    timepoints.push_back(run_state);
+    path_handler(run_state);
   }
-
-  return timepoints;
 }
 
 simulation_state TrajectorySimulator::simulate_step_constant_jerk(const simulation_state& state,
