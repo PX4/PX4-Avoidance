@@ -113,6 +113,7 @@ class LocalPlannerVisualization {
   void publishFOV(const std::vector<FOV>& fov, float max_range) const;
 
   void publishRangeScan(const sensor_msgs::LaserScan& scan, const geometry_msgs::PoseStamped& newest_pose) const;
+  std::tuple<float, float, float> HSVtoRGB(std::tuple<float, float, float> hsv) const;
 
  private:
   ros::Publisher local_pointcloud_pub_;
@@ -135,6 +136,9 @@ class LocalPlannerVisualization {
   ros::Publisher deg60_point_pub_;
   ros::Publisher fov_pub_;
   ros::Publisher range_scan_pub_;
+  ros::Publisher tree_cost_pub_;
+
+
 
   int path_length_ = 0;
 };

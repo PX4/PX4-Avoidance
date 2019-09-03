@@ -20,6 +20,12 @@ TrajectorySimulator::TrajectorySimulator(const avoidance::simulation_limits& con
                                          const avoidance::simulation_state& start, float step_time)
     : config_(config), start_(start), step_time_(step_time) {}
 
+simulation_state TrajectorySimulator::generate_trajectory_endpoint(const Eigen::Vector3f& goal_direction,
+                                                                       float simulation_duration) {
+    std::vector<simulation_state> result = generate_trajectory(goal_direction, simulation_duration);
+    return result.back();
+}
+
 std::vector<simulation_state> TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction,
                                                                        float simulation_duration) {
   int num_steps = static_cast<int>(std::ceil(simulation_duration / step_time_));

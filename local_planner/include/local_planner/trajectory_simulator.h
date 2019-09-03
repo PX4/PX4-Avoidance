@@ -36,6 +36,7 @@ class TrajectorySimulator {
   TrajectorySimulator(const simulation_limits& config, const simulation_state& start, float step_time = 0.1f);
 
   std::vector<simulation_state> generate_trajectory(const Eigen::Vector3f& goal_direction, float simulation_duration);
+  simulation_state generate_trajectory_endpoint(const Eigen::Vector3f& goal_direction, float simulation_duration);
 
  protected:
   const simulation_limits config_;

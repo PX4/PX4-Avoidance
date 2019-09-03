@@ -31,6 +31,7 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
   fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
   range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("/range_scan", 1);
+  tree_cost_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/tree_cost", 1);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
@@ -242,10 +243,98 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
     }
   }
 
+  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::Marker marker;
+  marker.header.frame_id = "local_origin";
+  marker.header.stamp = ros::Time::now();
+  marker.id = 0;
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.pose.orientation.w = 1.0;
+  marker.scale.x = 0.2;
+    marker.scale.y = 0.2;
+      marker.scale.z = 0.2;
+  marker.color.a = 1.0;
+  marker.color.r = 0.0;
+  marker.color.g = 0.0;
+
+  float variance_max_value = -1.f;
+  float variance_min_value = FLT_MAX;
+  float range_max = 120.f;
+  float range_min = 0.f;
+
+  // std::cout << tree.size() << std::endl;
+  for (size_t i = 0; i < closed_set.size(); i++) {
+    int node_nr = closed_set[i];
+
+    variance_max_value = std::max(variance_max_value, tree[node_nr].cost_);
+    variance_min_value = std::min(variance_min_value, tree[node_nr].cost_);
+  }
+  for (size_t i = 0; i < closed_set.size(); i++) {
+    int node_nr = closed_set[i];
+    marker.pose.position = toPoint(tree[node_nr].getPosition());
+    float cost = tree[node_nr].cost_;
+    float heuristic = tree[i].heuristic_;
+
+    float h = ((range_max - range_min) * (cost - variance_min_value) /
+               (variance_max_value - variance_min_value)) +
+              range_min;
+    float red, green, blue;
+    float max_aa = 1.f;
+    std::tuple<float, float, float> test(h, 1.f, 1.f);
+    std::tie(marker.color.r, marker.color.g, marker.color.b) = HSVtoRGB(test);
+    marker_array.markers.push_back(marker);
+    marker.id += 1;
+  }
+
+  tree_cost_pub_.publish(marker_array);
+
   complete_tree_pub_.publish(tree_marker);
   tree_path_pub_.publish(path_marker);
 }
+std::tuple<float, float, float> LocalPlannerVisualization::HSVtoRGB(std::tuple<float, float, float> hsv) const {
+  std::tuple<float, float, float> rgb;
+  float fC = std::get<2>(hsv) * std::get<1>(hsv);  // fV * fS;  // Chroma
+  float fHPrime = fmod(std::get<0>(hsv) / 60.0, 6);
+  float fX = fC * (1 - fabs(fmod(fHPrime, 2) - 1));
+  float fM = std::get<2>(hsv) - fC;
 
+  if (0 <= fHPrime && fHPrime < 1) {
+    std::get<0>(rgb) = fC;
+    std::get<1>(rgb) = fX;
+    std::get<2>(rgb) = 0;
+  } else if (1 <= fHPrime && fHPrime < 2) {
+    std::get<0>(rgb) = fX;
+    std::get<1>(rgb) = fC;
+    std::get<2>(rgb) = 0;
+  } else if (2 <= fHPrime && fHPrime < 3) {
+    std::get<0>(rgb) = 0;
+    std::get<1>(rgb) = fC;
+    std::get<2>(rgb) = fX;
+  } else if (3 <= fHPrime && fHPrime < 4) {
+    std::get<0>(rgb) = 0;
+    std::get<1>(rgb) = fX;
+    std::get<2>(rgb) = fC;
+  } else if (4 <= fHPrime && fHPrime < 5) {
+    std::get<0>(rgb) = fX;
+    std::get<1>(rgb) = 0;
+    std::get<2>(rgb) = fC;
+  } else if (5 <= fHPrime && fHPrime < 6) {
+    std::get<0>(rgb) = fC;
+    std::get<1>(rgb) = 0;
+    std::get<2>(rgb) = fX;
+  } else {
+    std::get<0>(rgb) = 0;
+    std::get<1>(rgb) = 0;
+    std::get<2>(rgb) = 0;
+  }
+
+  std::get<0>(rgb) += fM;
+  std::get<1>(rgb) += fM;
+  std::get<2>(rgb) += fM;
+
+  return rgb;
+}
 void LocalPlannerVisualization::publishGoal(const geometry_msgs::Point& goal) const {
   visualization_msgs::MarkerArray marker_goal;
   visualization_msgs::Marker m;

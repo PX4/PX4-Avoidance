@@ -58,7 +58,7 @@ void StarPlanner::buildLookAheadTree() {
   start_state.velocity = velocity_;
   start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   start_state.time = ros::Time::now().toSec();
-  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
+  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero(), 0.f));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
@@ -77,36 +77,49 @@ void StarPlanner::buildLookAheadTree() {
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   cost_matrix, cost_image_data);
-    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
-    // add candidates as nodes
-    if (candidate_vector.empty()) {
-      tree_[origin].total_cost_ = HUGE_VAL;
-    } else {
-      // insert new nodes
-      int children = 0;
-      for (candidateDirection candidate : candidate_vector) {
+    std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
+    for (int row_index = 0; row_index < cost_matrix.rows(); row_index++) {
+      for (int col_index = 0; col_index < cost_matrix.cols(); col_index++) {
+        PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
+        float cost = cost_matrix(row_index, col_index);
+        candidateDirection candidate(cost, p_pol.e, p_pol.z);
         simulation_state state = tree_[origin].state;
         TrajectorySimulator sim(lims_, state, tree_step_size_s_);
-        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
-
-        // check if another close node has been added
+        simulation_state trajectory_endpoint = sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
         int close_nodes = 0;
-        for (size_t i = 0; i < tree_.size(); i++) {
-          float dist = (tree_[i].getPosition() - trajectory.back().position).norm();
+        std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue_tmp = queue;
+        while (!queue_tmp.empty()) {
+          float dist = (queue_tmp.top().tree_node.getPosition() - trajectory_endpoint.position).norm();
+          queue_tmp.pop();
           if (dist < 0.2f) {
             close_nodes++;
             break;
           }
         }
 
-        if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
-          float h = treeHeuristicFunction(tree_.size() - 1);
-          tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
-          children++;
+        if (queue.size() < children_per_node_) {
+          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen(), candidate.cost);
+          queue.push(candidate);
+        } else if (candidate < queue.top() && close_nodes == 0) {
+          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen(), candidate.cost);
+          queue.push(candidate);
+          queue.pop();
         }
+      }
+    }
+
+    int children = 0;
+    while (!queue.empty()) {
+      if (children < children_per_node_) {
+        tree_.push_back(queue.top().tree_node);
+        float h = treeHeuristicFunction(tree_.size() - 1);
+        tree_.back().heuristic_ = h;
+        tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + queue.top().cost + h;
+        queue.pop();
+        children++;
+      } else {
+        break;
       }
     }
 
@@ -120,7 +133,7 @@ void StarPlanner::buildLookAheadTree() {
       if (!(tree_[i].closed_)) {
         // If we reach the acceptance radius, add goal as last node and exit
         if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
-          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
+          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition(), tree_[i].cost_));
           closed_set_.push_back(i);
           closed_set_.push_back(tree_.size() - 1);
           break;
