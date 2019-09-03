@@ -86,9 +86,11 @@ void StarPlanner::buildLookAheadTree() {
         candidateDirection candidate(cost, p_pol.e, p_pol.z);
         simulation_state state = tree_[origin].state;
         TrajectorySimulator sim(lims_, state, tree_step_size_s_);
-        simulation_state trajectory_endpoint = sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
+        simulation_state trajectory_endpoint =
+            sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
         int close_nodes = 0;
-        std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue_tmp = queue;
+        std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>>
+            queue_tmp = queue;
         while (!queue_tmp.empty()) {
           float dist = (queue_tmp.top().tree_node.getPosition() - trajectory_endpoint.position).norm();
           queue_tmp.pop();

@@ -138,8 +138,6 @@ class LocalPlannerVisualization {
   ros::Publisher range_scan_pub_;
   ros::Publisher tree_cost_pub_;
 
-
-
   int path_length_ = 0;
 };
 }

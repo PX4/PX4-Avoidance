@@ -252,8 +252,8 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   marker.action = visualization_msgs::Marker::ADD;
   marker.pose.orientation.w = 1.0;
   marker.scale.x = 0.2;
-    marker.scale.y = 0.2;
-      marker.scale.z = 0.2;
+  marker.scale.y = 0.2;
+  marker.scale.z = 0.2;
   marker.color.a = 1.0;
   marker.color.r = 0.0;
   marker.color.g = 0.0;
@@ -276,9 +276,8 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
     float cost = tree[node_nr].cost_;
     float heuristic = tree[i].heuristic_;
 
-    float h = ((range_max - range_min) * (cost - variance_min_value) /
-               (variance_max_value - variance_min_value)) +
-              range_min;
+    float h =
+        ((range_max - range_min) * (cost - variance_min_value) / (variance_max_value - variance_min_value)) + range_min;
     float red, green, blue;
     float max_aa = 1.f;
     std::tuple<float, float, float> test(h, 1.f, 1.f);
