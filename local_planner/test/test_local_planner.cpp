@@ -56,7 +56,6 @@ TEST_F(LocalPlannerTests, no_obstacles) {
 
   // THEN: it shouldn't find any obstacles
   avoidanceOutput output = planner.getAvoidanceOutput();
-  EXPECT_FALSE(output.obstacle_ahead);
 
   // AND: the scan should contain NANs outside the FOV and out of range data inside
   sensor_msgs::LaserScan scan;
@@ -121,7 +120,6 @@ TEST_F(LocalPlannerTests, all_obstacles) {
   // THEN: it should detect the obstacle and go left
   avoidanceOutput output = planner.getAvoidanceOutput();
 
-  EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
   float node_min_y = 0.f;
@@ -182,7 +180,6 @@ TEST_F(LocalPlannerTests, obstacles_right) {
   // THEN: it should modify the path to the left
   avoidanceOutput output = planner.getAvoidanceOutput();
 
-  EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_max_y = 0.f;
   for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {
@@ -239,7 +236,6 @@ TEST_F(LocalPlannerTests, obstacles_left) {
   // THEN: it should modify the path to the right
   avoidanceOutput output = planner.getAvoidanceOutput();
 
-  EXPECT_TRUE(output.obstacle_ahead);
   ASSERT_GE(output.path_node_positions.size(), 2);
   float node_min_y = 0.f;
   for (auto it = output.path_node_positions.rbegin(); it != output.path_node_positions.rend(); ++it) {

@@ -18,6 +18,8 @@ void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerN
   max_path_length_ = static_cast<float>(config.max_sensor_range_);
   smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
   tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
+  max_sensor_range_ = static_cast<float>(config.max_sensor_range_);
+  min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
 }
 
 void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
@@ -30,6 +32,8 @@ void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
 
 void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
+
+void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
   return (goal_ - tree_[node_number].getPosition()).norm() * tree_heuristic_weight_;
@@ -67,7 +71,7 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  cost_matrix, cost_image_data);
+                  closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
     // add candidates as nodes

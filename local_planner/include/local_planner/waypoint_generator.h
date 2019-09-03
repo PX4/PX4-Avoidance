@@ -1,6 +1,7 @@
 #ifndef WAYPOINT_GENERATOR_H
 #define WAYPOINT_GENERATOR_H
 
+#include <avoidance/usm.h>
 #include "avoidance/common.h"
 #include "avoidance_output.h"
 
@@ -13,8 +14,11 @@
 
 namespace avoidance {
 
+enum class PlannerState { TRY_PATH, ALTITUDE_CHANGE, LOITER, DIRECT };
+std::string toString(PlannerState state);  // for logging
+
 struct waypointResult {
-  waypoint_choice waypoint_type = hover;
+  avoidance::PlannerState waypoint_type;
   Eigen::Vector3f position_wp;
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;
@@ -24,11 +28,10 @@ struct waypointResult {
   Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
-class WaypointGenerator {
+class WaypointGenerator : public usm::StateMachine<PlannerState> {
  private:
   avoidanceOutput planner_info_;
   waypointResult output_;
-  waypoint_choice last_wp_type_ = hover;
 
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
@@ -40,6 +43,8 @@ class WaypointGenerator {
   Eigen::Vector3f tmp_goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f desired_vel_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f change_altitude_pos_ = Eigen::Vector3f(NAN, NAN, NAN);
+  Eigen::Vector3f hover_position_ = Eigen::Vector3f(NAN, NAN, NAN);
+
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
@@ -51,8 +56,9 @@ class WaypointGenerator {
   bool is_airborne_ = false;
   bool is_land_waypoint_{false};
   bool is_takeoff_waypoint_{false};
-  bool reach_altitude_{false};
+  bool reach_altitude_offboard_{false};
   bool auto_land_{false};
+  bool loiter_{false};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
@@ -60,30 +66,40 @@ class WaypointGenerator {
   float speed_ = 1.0f;
   std::vector<FOV> fov_fcu_frame_;
 
-  Eigen::Vector3f hover_position_;
-
   NavigationState nav_state_ = NavigationState::none;
 
   ros::Time velocity_time_;
+
+  // state
+  bool trigger_reset_ = false;
+  bool state_changed_ = false;
+  PlannerState prev_slp_state_ = PlannerState::TRY_PATH;
+  usm::Transition runTryPath();
+  usm::Transition runAltitudeChange();
+  usm::Transition runLoiter();
+  usm::Transition runDirect();
+
+  /**
+  * @brief iterate the statemachine
+  */
+  usm::Transition runCurrentState() override final;
+
+  /**
+  * @brief the setup of the statemachine
+  */
+  PlannerState chooseNextState(PlannerState currentState, usm::Transition transition) override final;
 
   /**
   * @brief     computes position and velocity waypoints based on the input
   *            waypoint_choice
   **/
   void calculateWaypoint();
-  /**
-  * @brief     computes waypoints when there isn't any obstacle
-  **/
-  void goStraight();
+
   /**
   * @brief     transform a position waypoint into a velocity waypoint
   **/
   void transformPositionToVelocityWaypoint();
-  /**
-  * @brief     checks if the goal altitude has been reached. If not, it computes
-  *            waypoints to climb to the goal altitude
-  **/
-  void reachGoalAltitudeFirst();
+
   /**
   * @brief     smooths waypoints with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
@@ -106,7 +122,7 @@ class WaypointGenerator {
   **/
   void getPathMsg();
 
-  void changeAltitude();
+  bool isAltitudeChange();
 
  public:
   /**
@@ -173,7 +189,7 @@ class WaypointGenerator {
   **/
   void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
 
-  WaypointGenerator() = default;
+  WaypointGenerator();
   virtual ~WaypointGenerator() = default;
 };
 }

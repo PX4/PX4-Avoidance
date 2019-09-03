@@ -55,6 +55,7 @@ class StarPlannerTests : public ::testing::Test {
     star_planner.setPointcloud(cloud);
     star_planner.setPose(position, velocity);
     star_planner.setGoal(goal);
+    star_planner.setClosestPointOnLine(goal);
   }
   void TearDown() override {}
 };

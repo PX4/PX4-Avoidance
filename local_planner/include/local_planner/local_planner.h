@@ -47,7 +47,6 @@ class LocalPlanner {
 
   std::vector<FOV> fov_fcu_frame_;
 
-  waypoint_choice waypoint_type_ = hover;
   ros::Time last_path_time_;
   ros::Time last_pointcloud_process_time_;
 
@@ -61,6 +60,8 @@ class LocalPlanner {
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f goal_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f prev_goal_ = Eigen::Vector3f::Zero();
+  Eigen::Vector3f closest_pt_ = Eigen::Vector3f::Zero();
 
   Histogram polar_histogram_ = Histogram(ALPHA_RES);
   Histogram to_fcu_histogram_ = Histogram(ALPHA_RES);
@@ -118,9 +119,15 @@ class LocalPlanner {
 
   /**
   * @brief     setter method for mission goal
-  * @param[in] mgs, goal message coming from the FCU
+  * @param[in] goal, goal message coming from the FCU
   **/
   void setGoal(const Eigen::Vector3f& goal);
+
+  /**
+  * @brief     setter method for previous mission goal
+  * @param[in] prev_goal, previous goal message coming from the FCU
+  **/
+  void setPreviousGoal(const Eigen::Vector3f& prev_goal);
 
   /**
   * @brief     setter method for field of view

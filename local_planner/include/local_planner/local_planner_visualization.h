@@ -2,6 +2,7 @@
 #define LOCAL_PLANNER_VISUALIZATION_H
 
 #include "local_planner/local_planner.h"
+#include "local_planner/waypoint_generator.h"
 
 #include <pcl/point_cloud.h>
 #include <pcl_ros/point_cloud.h>
@@ -98,7 +99,7 @@ class LocalPlannerVisualization {
   *              visualization
   * @params[in]  newest_pos, location of the drone at the current timestep
   **/
-  void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const waypoint_choice& waypoint_type,
+  void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const PlannerState& waypoint_type,
                               const geometry_msgs::Point& newest_pos) const;
 
   /**

@@ -51,9 +51,11 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
 
 void LocalPlanner::setGoal(const Eigen::Vector3f& goal) {
   goal_ = goal;
+
   ROS_INFO("===== Set Goal ======: [%f, %f, %f].", goal_.x(), goal_.y(), goal_.z());
   applyGoal();
 }
+void LocalPlanner::setPreviousGoal(const Eigen::Vector3f& prev_goal) { prev_goal_ = prev_goal; }
 
 void LocalPlanner::setFOV(int i, const FOV& fov) {
   if (i < fov_fcu_frame_.size()) {
@@ -116,16 +118,27 @@ void LocalPlanner::determineStrategy() {
   cost_image_data_.clear();
   cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
-  waypoint_type_ = tryPath;
-
   create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
 
+  // calculate the vehicle projected position on the line between the previous and current goal
+  Eigen::Vector2f u_prev_to_goal = (goal_ - prev_goal_).head<2>().normalized();
+  Eigen::Vector2f prev_to_pos = (position_ - prev_goal_).head<2>();
+  closest_pt_.head<2>() = prev_goal_.head<2>() + (u_prev_to_goal * u_prev_to_goal.dot(prev_to_pos));
+  closest_pt_.z() = goal_.z();
+
+  // if the vehicle is less than the cruise speed away from the line, set the projection point to the goal such that
+  // the cost function doesn't pull the vehicle towards the line
+  if ((position_ - closest_pt_).head<2>().norm() < px4_.param_mpc_xy_cruise) {
+    closest_pt_ = goal_;
+  }
+
   if (!polar_histogram_.isEmpty()) {
-    getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, cost_matrix_,
-                  cost_image_data_);
+    getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
+                  max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
 
     star_planner_->setParams(cost_params_);
     star_planner_->setPointcloud(final_cloud_);
+    star_planner_->setClosestPointOnLine(closest_pt_);
 
     // build search tree
     star_planner_->buildLookAheadTree();
@@ -201,8 +214,6 @@ void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_dist
 
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
-  out.waypoint_type = waypoint_type_;
-  out.obstacle_ahead = !polar_histogram_.isEmpty();
 
   // calculate maximum speed given the sensor range and vehicle parameters
   // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r

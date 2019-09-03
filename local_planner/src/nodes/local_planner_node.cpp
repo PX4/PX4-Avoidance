@@ -180,6 +180,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   // update goal
   if (new_goal_) {
     local_planner_->setGoal(toEigen(goal_msg_.pose.position));
+    local_planner_->setPreviousGoal(toEigen(prev_goal_.pose.position));
     new_goal_ = false;
   }
 
@@ -312,6 +313,7 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped& m
 
 void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg) {
   new_goal_ = true;
+  prev_goal_ = goal_msg_;
   goal_msg_ = msg;
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
@@ -320,6 +322,7 @@ void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg
 
 void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg) {
   if (accept_goal_input_topic_ && msg.markers.size() > 0) {
+    prev_goal_ = goal_msg_;
     goal_msg_.pose = msg.markers[0].pose;
     new_goal_ = true;
   }
