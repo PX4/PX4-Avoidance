@@ -128,7 +128,11 @@ void LocalPlanner::determineStrategy() {
     simulation_limits lims;
     lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
     lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
-    lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
+    lims.max_xy_velocity_norm =
+        std::min(getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
+                             px4_.param_mpc_xy_cruise, mission_item_speed_),
+                 getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, (goal_ - position_).norm(),
+                             px4_.param_mpc_xy_cruise, mission_item_speed_));
     lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
     lims.max_jerk_norm = px4_.param_mpc_jerk_max;
     star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
@@ -212,24 +216,32 @@ avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   out.waypoint_type = waypoint_type_;
   out.obstacle_ahead = !polar_histogram_.isEmpty();
 
-  // calculate maximum speed given the sensor range and vehicle parameters
-  // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r
-  // u = initial velocity, a = max acceleration
-  // s = stopping distance under constant acceleration
-  // j = maximum jerk, r = maximum range sensor distance
-  float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
-  float a = 1;
-  float b = 2 * px4_.param_mpc_acc_hor * accel_ramp_time;
-  float c = 2 * -px4_.param_mpc_acc_hor * max_sensor_range_;
-  float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
-
-  float speed = std::isfinite(mission_item_speed_) ? mission_item_speed_ : px4_.param_mpc_xy_cruise;
-  float max_speed = std::min(speed, limited_speed);
+  float max_speed = getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
+                                px4_.param_mpc_xy_cruise, mission_item_speed_);
 
   out.cruise_velocity = max_speed;
   out.last_path_time = last_path_time_;
   out.tree_node_duration = tree_node_duration_;
   out.path_node_setpoints = star_planner_->path_node_setpoints_;
   return out;
+}
+
+float LocalPlanner::computeMaxSpeedFromBrakingDistance(const float jerk, const float accel,
+                                                       const float braking_distance) const {
+  // Calculate maximum speed given the sensor range and vehicle parameters
+  // We assume a constant acceleration profile with a delay of 2*accel/jerk (time to reach the desired acceleration from
+  // opposite max acceleration)
+  // Equation to solve: 0 = vel^2 - 2*acc*(x - vel*2*acc/jerk)
+  float b = 4.f * accel * accel / jerk;
+  float c = -2.f * accel * braking_distance;
+
+  return 0.5f * (-b + sqrtf(b * b - 4.f * c));
+}
+
+float LocalPlanner::getMaxSpeed(const float jerk, const float accel, const float braking_distance,
+                                const float mpc_xy_cruise, const float mission_item_speed) const {
+  float limited_speed = computeMaxSpeedFromBrakingDistance(jerk, accel, braking_distance);
+  float speed = std::isfinite(mission_item_speed) ? mission_item_speed : mpc_xy_cruise;
+  return std::min(speed, limited_speed);
 }
 }

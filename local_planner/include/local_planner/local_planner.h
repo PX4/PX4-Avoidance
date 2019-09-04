@@ -88,6 +88,28 @@ class LocalPlanner {
   **/
   void generateHistogramImage(Histogram& histogram);
 
+  /**
+  * @brief     compute the maximum speed allowed based on sensor range and vehicle tuning
+  * @param     jerk, vehicle maximum jerk
+  * @param     accel, vehicle maximum horizontal acceleration
+  * @param     braking_distance, maximum sensor range
+  * @returns   maximum speed
+  **/
+  float computeMaxSpeedFromBrakingDistance(const float jerk, const float accel, const float braking_distance) const;
+
+  /**
+  * @brief     compute if the cruise speed requested by paramters or mission item is feasible based on vehicle dynamics
+  *and sesnor range
+  * @param     jerk, vehicle maximum jerk
+  * @param     accel, vehicle maximum horizontal acceleration
+  * @param     braking_distance, maximum sensor range
+  * @param     mpc_xy_cruise, desired speed set from parameter
+  * @param     mission_item_speed, desired speed set from mission item
+  * @returns   maximum speed
+  **/
+  float getMaxSpeed(const float jerk, const float accel, const float braking_distance, const float mpc_xy_cruise,
+                    const float mission_item_speed) const;
+
  public:
   std::vector<uint8_t> histogram_image_data_;
   std::vector<uint8_t> cost_image_data_;
