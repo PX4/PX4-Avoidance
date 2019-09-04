@@ -18,6 +18,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <nodelet/nodelet.h>
 #include <pcl/filters/filter.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
@@ -34,7 +35,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <Eigen/Core>
 #include <boost/bind.hpp>
-#include <nodelet/nodelet.h>
 
 #include <avoidance/common.h>
 #include <dynamic_reconfigure/server.h>
@@ -70,10 +70,10 @@ struct cameraData {
   bool transform_registered_ = false;
 };
 
-class LocalPlannerNode : public nodelet::Nodelet{
+class LocalPlannerNodelet : public nodelet::Nodelet {
  public:
-  LocalPlannerNode();
-  ~LocalPlannerNode();
+  LocalPlannerNodelet();
+  ~LocalPlannerNodelet();
   /**
   * @brief     Initializer for nodeletes
   **/
@@ -81,7 +81,7 @@ class LocalPlannerNode : public nodelet::Nodelet{
   /**
   * @brief     Initialize ROS components
   **/
-  void InitializeNode();
+  void InitializeNodelet();
 
   std::atomic<bool> should_exit_{false};
 
