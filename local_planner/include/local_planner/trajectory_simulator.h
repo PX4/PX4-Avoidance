@@ -51,8 +51,8 @@ class TrajectorySimulator {
                                                     const simulation_state& state);
 
  private:
-  void generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
-                           std::function<void(avoidance::simulation_state)> path_handler);
+  simulation_state generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
+                                       std::vector<simulation_state>* timepoints);
 };
 
 // templated helper function
