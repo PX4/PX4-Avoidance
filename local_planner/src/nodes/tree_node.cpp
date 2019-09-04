@@ -2,14 +2,13 @@
 
 namespace avoidance {
 
-TreeNode::TreeNode(int from, const simulation_state& start_state, const Eigen::Vector3f& sp, const float cost)
+TreeNode::TreeNode(int from, const simulation_state& start_state, const Eigen::Vector3f& sp)
     : total_cost_{0.0f},
       heuristic_{0.0f},
       origin_{from},
       closed_{false},
       state(start_state),
-      setpoint(sp),
-      cost_{cost} {}
+      setpoint(sp) {}
 
 void TreeNode::setCosts(float h, float c) {
   heuristic_ = h;

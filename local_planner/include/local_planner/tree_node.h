@@ -10,7 +10,6 @@ namespace avoidance {
 class TreeNode {
  public:
   float total_cost_;
-  float cost_;
   float heuristic_;
   int origin_;
   bool closed_;
@@ -18,7 +17,7 @@ class TreeNode {
   Eigen::Vector3f setpoint;  // Setpoint required to send to PX4 in order to get to this state
 
   TreeNode() = default;
-  TreeNode(int from, const simulation_state& start_state, const Eigen::Vector3f& sp, const float cost);
+  TreeNode(int from, const simulation_state& start_state, const Eigen::Vector3f& sp);
   ~TreeNode() = default;
 
   /**

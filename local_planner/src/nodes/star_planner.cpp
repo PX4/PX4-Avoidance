@@ -58,7 +58,7 @@ void StarPlanner::buildLookAheadTree() {
   start_state.velocity = velocity_;
   start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   start_state.time = ros::Time::now().toSec();
-  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero(), 0.f));
+  tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
@@ -98,10 +98,10 @@ void StarPlanner::buildLookAheadTree() {
         }
 
         if (queue.size() < children_per_node_) {
-          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen(), candidate.cost);
+          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen());
           queue.push(candidate);
         } else if (candidate < queue.top() && close_nodes == 0) {
-          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen(), candidate.cost);
+          candidate.tree_node = TreeNode(origin, trajectory_endpoint, candidate.toEigen());
           queue.push(candidate);
           queue.pop();
         }
@@ -132,7 +132,7 @@ void StarPlanner::buildLookAheadTree() {
       if (!(tree_[i].closed_)) {
         // If we reach the acceptance radius, add goal as last node and exit
         if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
-          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition(), tree_[i].cost_));
+          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
           closed_set_.push_back(i);
           closed_set_.push_back(tree_.size() - 1);
           break;

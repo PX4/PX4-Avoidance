@@ -263,17 +263,15 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   float range_max = 120.f;
   float range_min = 0.f;
 
-  // std::cout << tree.size() << std::endl;
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
-
-    variance_max_value = std::max(variance_max_value, tree[node_nr].cost_);
-    variance_min_value = std::min(variance_min_value, tree[node_nr].cost_);
+    variance_max_value = std::max(variance_max_value, tree[node_nr].total_cost_);
+    variance_min_value = std::min(variance_min_value, tree[node_nr].total_cost_);
   }
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
     marker.pose.position = toPoint(tree[node_nr].getPosition());
-    float cost = tree[node_nr].cost_;
+    float cost = tree[node_nr].total_cost_;
     float heuristic = tree[i].heuristic_;
 
     float h =

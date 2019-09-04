@@ -19,7 +19,7 @@ struct candidateDirection {
     start_state.velocity = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
     start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
     start_state.time = ros::Time::now().toSec();
-    tree_node = TreeNode(0, start_state, Eigen::Vector3f::Zero(), 0.f);
+    tree_node = TreeNode(0, start_state, Eigen::Vector3f::Zero());
   };
 
   bool operator<(const candidateDirection& y) const { return cost < y.cost; }
