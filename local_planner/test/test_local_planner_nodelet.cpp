@@ -7,13 +7,13 @@ using namespace avoidance;
 TEST(LocalPlannerNodeletTests, failsafe) {
   ros::Time::init();
   LocalPlannerNodelet Node;
-  Node.InitializeNode();
+  Node.InitializeNodelet();
   bool hover = false;
 
   Node.position_received_ = true;
   Node.setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
 
-  avoidance::LocalPlannerNodeletConfig config = avoidance::LocalPlannerNodeletConfig::__getDefault__();
+  avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
 
   ros::Duration since_last_cloud = ros::Duration(0.0);
   ros::Duration since_start = ros::Duration(config.timeout_startup_);
@@ -46,7 +46,7 @@ TEST(LocalPlannerNodeletTests, failsafe) {
 TEST(LocalPlannerNodeletTests, mission_item_speed) {
   ros::Time::init();
   LocalPlannerNodelet Node;
-  Node.InitializeNode();
+  Node.InitializeNodelet();
 
   mavros_msgs::WaypointList waypoint_list{};
   mavros_msgs::Waypoint wp1;
