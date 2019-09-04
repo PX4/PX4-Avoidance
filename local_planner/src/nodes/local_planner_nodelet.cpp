@@ -1,4 +1,4 @@
-#include "local_planner/local_planner_node.h"
+#include "local_planner/local_planner_nodelet.h"
 
 #include "local_planner/local_planner.h"
 #include "local_planner/planner_functions.h"

@@ -1,19 +1,19 @@
 #include <gtest/gtest.h>
 
-#include "../include/local_planner/local_planner_node.h"
+#include "../include/local_planner/local_planner_nodelet.h"
 
 using namespace avoidance;
 
-TEST(LocalPlannerNodeTests, failsafe) {
+TEST(LocalPlannerNodeletTests, failsafe) {
   ros::Time::init();
-  LocalPlannerNode Node;
+  LocalPlannerNodelet Node;
   Node.InitializeNode();
   bool hover = false;
 
   Node.position_received_ = true;
   Node.setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
 
-  avoidance::LocalPlannerNodeConfig config = avoidance::LocalPlannerNodeConfig::__getDefault__();
+  avoidance::LocalPlannerNodeletConfig config = avoidance::LocalPlannerNodeletConfig::__getDefault__();
 
   ros::Duration since_last_cloud = ros::Duration(0.0);
   ros::Duration since_start = ros::Duration(config.timeout_startup_);
@@ -43,9 +43,9 @@ TEST(LocalPlannerNodeTests, failsafe) {
   }
 }
 
-TEST(LocalPlannerNodeTests, mission_item_speed) {
+TEST(LocalPlannerNodeletTests, mission_item_speed) {
   ros::Time::init();
-  LocalPlannerNode Node;
+  LocalPlannerNodelet Node;
   Node.InitializeNode();
 
   mavros_msgs::WaypointList waypoint_list{};

@@ -140,7 +140,7 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/tree_node.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
-                              "src/nodes/local_planner_node.cpp"
+                              "src/nodes/local_planner_nodelet.cpp"
                               "src/nodes/local_planner_visualization.cpp"
                               "src/utils/trajectory_simulator.cpp"
 )
@@ -227,7 +227,7 @@ if(CATKIN_ENABLE_TESTING)
                                           test/test_waypoint_generator.cpp)
 
     catkin_add_gtest(${PROJECT_NAME}-test-roscore test/main.cpp
-                                        test/test_local_planner_node.cpp)
+                                        test/test_local_planner_nodelet.cpp)
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
