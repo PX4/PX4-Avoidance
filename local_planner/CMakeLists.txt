@@ -30,7 +30,7 @@ endif()
 ## Gazebo Simulation
 ################################################
 ## System dependencies are found with CMake's conventions
-# find_package(Boost REQUIRED COMPONENTS system)
+find_package(Boost REQUIRED COMPONENTS system)
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -155,7 +155,7 @@ add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPO
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
-#add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
+add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -170,6 +170,12 @@ target_link_libraries(
   local_planner
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
+
+target_link_libraries(
+  local_planner_node
+  ${catkin_LIBRARIES}
+  ${YAML_CPP_LIBRARIES}
+  ${Boost_LIBRARIES})
 
 #############
 ## Install ##
