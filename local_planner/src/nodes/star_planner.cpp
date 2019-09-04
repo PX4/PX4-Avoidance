@@ -78,7 +78,7 @@ void StarPlanner::buildLookAheadTree() {
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   cost_matrix, cost_image_data);
 
-    std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
+    iterable_priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
     for (int row_index = 0; row_index < cost_matrix.rows(); row_index++) {
       for (int col_index = 0; col_index < cost_matrix.cols(); col_index++) {
         PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
@@ -89,11 +89,8 @@ void StarPlanner::buildLookAheadTree() {
         simulation_state trajectory_endpoint =
             sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
         int close_nodes = 0;
-        std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>>
-            queue_tmp = queue;
-        while (!queue_tmp.empty()) {
-          float dist = (queue_tmp.top().tree_node.getPosition() - trajectory_endpoint.position).norm();
-          queue_tmp.pop();
+        for (auto it = queue.begin(); it != queue.end(); it++) {
+          float dist = ((*it).tree_node.getPosition() - trajectory_endpoint.position).norm();
           if (dist < 0.2f) {
             close_nodes++;
             break;
