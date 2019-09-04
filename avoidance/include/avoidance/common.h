@@ -352,6 +352,27 @@ pcl::PointCloud<pcl::PointXYZ> removeNaNAndGetMaxima(pcl::PointCloud<pcl::PointX
 *                  bigger FOV than previously thought
 **/
 void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima);
+/**
+* @brief     compute the maximum speed allowed based on sensor range and vehicle tuning
+* @param     jerk, vehicle maximum jerk
+* @param     accel, vehicle maximum horizontal acceleration
+* @param     braking_distance, maximum sensor range
+* @returns   maximum speed
+**/
+float computeMaxSpeedFromBrakingDistance(const float jerk, const float accel, const float braking_distance);
+
+/**
+* @brief     compute if the cruise speed requested by paramters or mission item is feasible based on vehicle dynamics
+*and sesnor range
+* @param     jerk, vehicle maximum jerk
+* @param     accel, vehicle maximum horizontal acceleration
+* @param     braking_distance, maximum sensor range
+* @param     mpc_xy_cruise, desired speed set from parameter
+* @param     mission_item_speed, desired speed set from mission item
+* @returns   maximum speed
+**/
+float getMaxSpeed(const float jerk, const float accel, const float braking_distance, const float mpc_xy_cruise,
+                  const float mission_item_speed);
 
 inline Eigen::Vector3f toEigen(const geometry_msgs::Point& p) {
   Eigen::Vector3f ev3(p.x, p.y, p.z);

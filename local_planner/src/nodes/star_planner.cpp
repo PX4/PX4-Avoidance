@@ -78,14 +78,19 @@ void StarPlanner::buildLookAheadTree() {
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   cost_matrix, cost_image_data);
 
+    simulation_limits limits = lims_;
+    simulation_state state = tree_[origin].state;
+    limits.max_xy_velocity_norm =
+        std::min(computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
+                                                    (state.position - goal_).head<2>().norm()),
+                 lims_.max_xy_velocity_norm);
+    TrajectorySimulator sim(limits, state, tree_step_size_s_);
     iterable_priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
     for (int row_index = 0; row_index < cost_matrix.rows(); row_index++) {
       for (int col_index = 0; col_index < cost_matrix.cols(); col_index++) {
         PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
         float cost = cost_matrix(row_index, col_index);
         candidateDirection candidate(cost, p_pol.e, p_pol.z);
-        simulation_state state = tree_[origin].state;
-        TrajectorySimulator sim(lims_, state, tree_step_size_s_);
         simulation_state trajectory_endpoint =
             sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
         int close_nodes = 0;
