@@ -23,11 +23,7 @@ TrajectorySimulator::TrajectorySimulator(const avoidance::simulation_limits& con
 simulation_state TrajectorySimulator::generate_trajectory_endpoint(const Eigen::Vector3f& goal_direction,
                                                                    float simulation_duration) {
   int num_steps = static_cast<int>(std::ceil(simulation_duration / step_time_));
-  simulation_state last_state;
-
-  generate_trajectory(goal_direction, num_steps, [&last_state](simulation_state state) { last_state = state; });
-
-  return last_state;
+  return generate_trajectory(goal_direction, num_steps, nullptr);
 }
 
 std::vector<simulation_state> TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction,
@@ -36,22 +32,20 @@ std::vector<simulation_state> TrajectorySimulator::generate_trajectory(const Eig
   std::vector<simulation_state> timepoints;
   timepoints.reserve(num_steps);
 
-  generate_trajectory(goal_direction, num_steps,
-                      [&timepoints](simulation_state state) { timepoints.push_back(state); });
+  generate_trajectory(goal_direction, num_steps, &timepoints);
 
   return timepoints;
 }
 
-void TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
-                                              std::function<void(avoidance::simulation_state)> path_handler) {
+simulation_state TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direction, int num_steps,
+                                                          std::vector<simulation_state>* timepoints) {
   const Eigen::Vector3f unit_goal = goal_direction.normalized();
   const Eigen::Vector3f desired_velocity =
       xy_norm_z_clamp(unit_goal * std::hypot(config_.max_xy_velocity_norm,
                                              unit_goal.z() > 0 ? config_.max_z_velocity : config_.min_z_velocity),
                       config_.max_xy_velocity_norm, config_.min_z_velocity, config_.max_z_velocity);
 
-  // calculate P and D constants such that they hit the jerk limit when
-  // doing accel from 0
+  // calculate P and D constants such that they hit the jerk limit when doing accel from 0
   float max_accel_norm = std::min(2 * std::sqrt(config_.max_jerk_norm), config_.max_acceleration_norm);
   float P_constant =
       (std::sqrt(sqr(max_accel_norm) + config_.max_jerk_norm * desired_velocity.norm()) - max_accel_norm) /
@@ -64,8 +58,7 @@ void TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direct
     const Eigen::Vector3f damped_jerk =
         jerk_for_velocity_setpoint(P_constant, D_constant, config_.max_jerk_norm, desired_velocity, run_state);
 
-    // limit time step to not exceed the maximum acceleration, but clamp
-    // jerk to 0 if at maximum acceleration already
+    // limit time step to not exceed the maximum acceleration, but clamp jerk to 0 if at maximum acceleration already
     const Eigen::Vector3f requested_accel = run_state.acceleration + single_step_time * damped_jerk;
     Eigen::Vector3f jerk = damped_jerk;
     if (requested_accel.squaredNorm() > sqr(max_accel_norm)) {
@@ -79,8 +72,11 @@ void TrajectorySimulator::generate_trajectory(const Eigen::Vector3f& goal_direct
 
     // update the state based on motion equations with the final jerk
     run_state = simulate_step_constant_jerk(run_state, jerk, single_step_time);
-    path_handler(run_state);
+    if (timepoints != nullptr) {
+      timepoints->push_back(run_state);
+    }
   }
+  return run_state;
 }
 
 simulation_state TrajectorySimulator::simulate_step_constant_jerk(const simulation_state& state,
