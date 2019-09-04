@@ -22,7 +22,7 @@
     <arg name="manager"             default="local_planner_manager"/>
 
     <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
-    <node pkg="nodelet" type="nodelet" name="local_planner_nodelet" args="load LocalPlannerNode $(arg manager)" output="screen">
+    <node pkg="nodelet" type="nodelet" name="local_planner_nodelet" args="load LocalPlannerNodelet $(arg manager)" output="screen">
       <param name="goal_x_param" value="17" />
       <param name="goal_y_param" value="15"/>
       <param name="goal_z_param" value="3" />
