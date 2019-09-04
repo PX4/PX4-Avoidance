@@ -74,7 +74,14 @@ class LocalPlannerNode : public nodelet::Nodelet{
  public:
   LocalPlannerNode();
   ~LocalPlannerNode();
+  /**
+  * @brief     Initializer for nodeletes
+  **/
   virtual void onInit();
+  /**
+  * @brief     Initialize ROS components
+  **/
+  void InitializeNode();
 
   std::atomic<bool> should_exit_{false};
 
