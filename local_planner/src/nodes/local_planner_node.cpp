@@ -31,7 +31,23 @@ LocalPlannerNode::~LocalPlannerNode() {
 void LocalPlannerNode::onInit()
 {
   NODELET_DEBUG("Initializing nodelet...");
+  InitializeNode();
+  
+  startNode();
+  
+  worker = std::thread(&LocalPlannerNode::threadFunction, this);
+  worker_tf_listener = std::thread(&LocalPlannerNode::transformBufferThread, this);
 
+  worker.join();
+  worker_tf_listener.join();
+
+  for (size_t i = 0; i < cameras_.size(); ++i ){
+    cameras_[i].cloud_ready_cv_ -> notify_all();
+    cameras_[i].transform_thread_.join();
+  }
+}
+
+void LocalPlannerNode::InitializeNode(){
   nh_ = ros::NodeHandle("~");
   nh_private_ = ros::NodeHandle("");
   const bool tf_spin_thread = true;
@@ -82,18 +98,6 @@ void LocalPlannerNode::onInit()
   planner_is_healthy_ = true;
   armed_ = false;
   start_time_ = ros::Time::now();
-
-  startNode();
-  worker = std::thread(&LocalPlannerNode::threadFunction, this);
-  worker_tf_listener = std::thread(&LocalPlannerNode::transformBufferThread, this);
-
-  worker.join();
-  worker_tf_listener.join();
-
-  for (size_t i = 0; i < cameras_.size(); ++i ){
-    cameras_[i].cloud_ready_cv_ -> notify_all();
-    cameras_[i].transform_thread_.join();
-  }
 }
 
 void LocalPlannerNode::startNode() {

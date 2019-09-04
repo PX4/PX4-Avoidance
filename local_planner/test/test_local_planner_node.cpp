@@ -6,9 +6,8 @@ using namespace avoidance;
 
 TEST(LocalPlannerNodeTests, failsafe) {
   ros::Time::init();
-  ros::NodeHandle nh("~");
-  ros::NodeHandle nh_private("");
-  LocalPlannerNode Node(nh, nh_private, false);
+  LocalPlannerNode Node;
+  Node.InitializeNode();
   bool hover = false;
 
   Node.position_received_ = true;
@@ -46,9 +45,8 @@ TEST(LocalPlannerNodeTests, failsafe) {
 
 TEST(LocalPlannerNodeTests, mission_item_speed) {
   ros::Time::init();
-  ros::NodeHandle nh("~");
-  ros::NodeHandle nh_private("");
-  LocalPlannerNode Node(nh, nh_private, false);
+  LocalPlannerNode Node;
+  Node.InitializeNode();
 
   mavros_msgs::WaypointList waypoint_list{};
   mavros_msgs::Waypoint wp1;
