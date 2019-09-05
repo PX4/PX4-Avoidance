@@ -2,7 +2,7 @@
 #include <ros/ros.h>
 
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "local_planner_node");
+  ros::init(argc, argv, "local_planner_nodelet");
 
   nodelet::Loader nodelet;
   nodelet::M_string remap(ros::names::getRemappings());
