@@ -1,23 +1,19 @@
-
 {
    <insert_a_suppression_name_here>
-   Memcheck:Cond
-   fun:_ZN3ros14ROSOutAppender3logENS_7console6levels5LevelEPKcS5_S5_i
-   fun:_ZN3ros7console4impl15Log4cxxAppender6appendERKN7log4cxx7helpers10ObjectPtrTINS3_3spi12LoggingEventEEERNS4_4PoolE
-   fun:_ZN7log4cxx16AppenderSkeleton8doAppendERKNS_7helpers10ObjectPtrTINS_3spi12LoggingEventEEERNS1_4PoolE
-   fun:_ZN7log4cxx7helpers22AppenderAttachableImpl21appendLoopOnAppendersERKNS0_10ObjectPtrTINS_3spi12LoggingEventEEERNS0_4PoolE
-   fun:_ZNK7log4cxx6Logger13callAppendersERKNS_7helpers10ObjectPtrTINS_3spi12LoggingEventEEERNS1_4PoolE
-   fun:_ZNK7log4cxx6Logger9forcedLogERKNS_7helpers10ObjectPtrTINS_5LevelEEERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKNS_3spi12LocationInfoE
-   fun:_ZN3ros7console4impl5printEPvNS0_6levels5LevelEPKcS6_S6_i
-   fun:_ZN3ros7console5printEPNS0_10FilterBaseEPvNS0_6levels5LevelEPKciS7_S7_z
-   fun:_ZN9avoidance13AvoidanceNode13checkFailsafeEN3ros8DurationES2_Rb
-   fun:_ZN9avoidance16LocalPlannerNode13checkFailsafeEN3ros8DurationES2_Rb
-   fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
-   fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
-   fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:_Znwm
+   fun:_ZN12class_loader20class_loader_private14registerPluginIN9avoidance19LocalPlannerNodeletEN7nodelet7NodeletEEEvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESD_
+   fun:ProxyExec0
+   fun:__static_initialization_and_destruction_0
+   fun:_GLOBAL__sub_I_local_planner_nodelet.cpp
+   fun:call_init.part.0
+   fun:call_init
+   fun:_dl_init
+   obj:/lib/x86_64-linux-gnu/ld-2.23.so
 }
 {
-   Ros Logging Not Restarted Correctly
+   <insert_a_suppression_name_here>
    Memcheck:Leak
    match-leak-kinds: possible
    fun:calloc
@@ -30,14 +26,14 @@
    fun:_ZN3ros5startEv
    fun:_ZN3ros10NodeHandle9constructERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
    fun:_ZN3ros10NodeHandleC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS6_S6_St4lessIS6_ESaISt4pairIS7_S6_EEE
-   fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
+   fun:_ZN9avoidance19LocalPlannerNodeletC1Ev
+   fun:_ZN38LocalPlannerNodeletTests_failsafe_Test8TestBodyEv
    fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
    fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
    fun:_ZN7testing4Test3RunEv
-   fun:_ZN7testing8TestInfo3RunEv
 }
 {
-   ROS-related memory leak
+   <insert_a_suppression_name_here>
    Memcheck:Leak
    match-leak-kinds: possible
    fun:calloc
@@ -50,9 +46,9 @@
    fun:_ZN3ros5startEv
    fun:_ZN3ros10NodeHandle9constructERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEEb
    fun:_ZN3ros10NodeHandleC1ERKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEERKSt3mapIS6_S6_St4lessIS6_ESaISt4pairIS7_S6_EEE
-   fun:_ZN35LocalPlannerNodeTests_failsafe_Test8TestBodyEv
+   fun:_ZN9avoidance19LocalPlannerNodeletC1Ev
+   fun:_ZN38LocalPlannerNodeletTests_failsafe_Test8TestBodyEv
    fun:HandleSehExceptionsInMethodIfSupported<testing::Test, void>
    fun:_ZN7testing8internal35HandleExceptionsInMethodIfSupportedINS_4TestEvEET0_PT_MS4_FS3_vEPKc
    fun:_ZN7testing4Test3RunEv
-   fun:_ZN7testing8TestInfo3RunEv
 }
