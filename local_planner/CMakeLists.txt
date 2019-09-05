@@ -140,18 +140,18 @@ set(LOCAL_PLANNER_CPP_FILES   "src/nodes/local_planner.cpp"
                               "src/nodes/tree_node.cpp"
                               "src/nodes/star_planner.cpp"
                               "src/nodes/planner_functions.cpp"
-                              "src/nodes/local_planner_nodelet.cpp"
                               "src/nodes/local_planner_visualization.cpp"
                               "src/utils/trajectory_simulator.cpp"
 )
 
 add_library(local_planner     "${LOCAL_PLANNER_CPP_FILES}")
-
+add_library(local_planner_nodelet src/nodes/local_planner_nodelet.cpp)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 add_dependencies(local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(local_planner_nodelet local_planner ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
@@ -168,11 +168,21 @@ add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 # )
 target_link_libraries(
   local_planner
+  PUBLIC
+  ${catkin_LIBRARIES}
+  ${YAML_CPP_LIBRARIES})
+
+target_link_libraries(
+  local_planner_nodelet
+  PUBLIC
+  local_planner
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 
 target_link_libraries(
   local_planner_node
+  PUBLIC
+  local_planner_nodelet
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${Boost_LIBRARIES})
@@ -235,7 +245,7 @@ if(CATKIN_ENABLE_TESTING)
     endif()
 
     if(TARGET ${PROJECT_NAME}-test-roscore)
-        target_link_libraries(${PROJECT_NAME}-test-roscore ${PROJECT_NAME}
+        target_link_libraries(${PROJECT_NAME}-test-roscore local_planner_nodelet
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
     endif()
