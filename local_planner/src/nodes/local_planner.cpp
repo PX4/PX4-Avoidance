@@ -162,7 +162,7 @@ void LocalPlanner::updateObstacleDistanceMsg(Histogram hist) {
 
     // is bin inside FOV?
     if (histogramIndexYawInsideFOV(fov_fcu_frame_, j, position_, yaw_fcu_frame_deg_)) {
-      msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 1.0f);
+      msg.ranges.push_back(dist > min_sensor_range_ ? dist : max_sensor_range_ + 0.01f);
     } else {
       msg.ranges.push_back(NAN);
     }
