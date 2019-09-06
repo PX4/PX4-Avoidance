@@ -21,6 +21,14 @@ LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
   data_ready_cv_.notify_all();
 
+  worker.join();
+  worker_tf_listener.join();
+
+  for (size_t i = 0; i < cameras_.size(); ++i) {
+    cameras_[i].cloud_ready_cv_->notify_all();
+    cameras_[i].transform_thread_.join();
+  }
+
   delete server_;
   delete tf_listener_;
 }
@@ -34,13 +42,6 @@ void LocalPlannerNodelet::onInit() {
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
 
-  worker.join();
-  worker_tf_listener.join();
-
-  for (size_t i = 0; i < cameras_.size(); ++i) {
-    cameras_[i].cloud_ready_cv_->notify_all();
-    cameras_[i].transform_thread_.join();
-  }
 }
 
 void LocalPlannerNodelet::InitializeNodelet() {
