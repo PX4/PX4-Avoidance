@@ -73,7 +73,7 @@ struct cameraData {
 class LocalPlannerNodelet : public nodelet::Nodelet {
  public:
   LocalPlannerNodelet();
-  ~LocalPlannerNodelet();
+  virtual ~LocalPlannerNodelet();
   /**
   * @brief     Initializer for nodeletes
   **/
