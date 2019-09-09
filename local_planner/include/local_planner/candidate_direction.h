@@ -3,6 +3,8 @@
 #include <Eigen/Dense>
 #include <cmath>
 #include "avoidance/common.h"
+#include "trajectory_simulator.h"
+
 
 namespace avoidance {
 
@@ -10,6 +12,7 @@ struct candidateDirection {
   float cost;
   float elevation_angle;
   float azimuth_angle;
+  simulation_state trajectory_endpoint;
 
   candidateDirection(float c, float e, float z) : cost(c), elevation_angle(e), azimuth_angle(z){};
 

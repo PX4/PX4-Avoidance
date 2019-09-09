@@ -81,7 +81,56 @@ void StarPlanner::buildLookAheadTree() {
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
-    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
+
+    iterable_priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
+
+    for (int row_index = 0; row_index < cost_matrix.rows(); row_index++) {
+      for (int col_index = 0; col_index < cost_matrix.cols(); col_index++) {
+        PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
+        float cost = cost_matrix(row_index, col_index);
+        candidateDirection candidate(cost, p_pol.e, p_pol.z);
+        // h = treeHeuristicFunction(origin_position + candidate.toEigen());
+        // candidate.cost += h;
+
+        simulation_state state = tree_[origin].state;
+        TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
+        simulation_state trajectory = sim.generate_trajectory_endpoint(candidate.toEigen(), tree_node_duration_);
+        candidate.trajectory_endpoint = trajectory;
+
+        // check if another close node has been added
+        int close_nodes = 0;
+        for (size_t i = 0; i < tree_.size(); i++) {
+          float dist = (tree_[i].getPosition() - trajectory.position).norm();
+          if (dist < 0.2f) {
+            close_nodes++;
+            break;
+          }
+        }
+
+        for (auto it = queue.begin(); it != queue.end(); it++) {
+          float dist = ((*it).trajectory_endpoint.position - trajectory.position).norm();
+          if (dist < 0.2f) {
+            close_nodes++;
+            break;
+          }
+        }
+
+        if (queue.size() < children_per_node_ && close_nodes == 0) {
+          queue.push(candidate);
+        } else if (candidate < queue.top() && close_nodes == 0) {
+          queue.push(candidate);
+          queue.pop();
+        }
+      }
+    }
+
+    std::vector<candidateDirection> candidate_vector;
+    candidate_vector.reserve(queue.size());
+    while (!queue.empty()) {
+      candidate_vector.push_back(queue.top());
+      queue.pop();
+    }
+    std::reverse(candidate_vector.begin(), candidate_vector.end());
 
     // add candidates as nodes
     if (candidate_vector.empty()) {
@@ -90,27 +139,30 @@ void StarPlanner::buildLookAheadTree() {
       // insert new nodes
       int children = 0;
       for (candidateDirection candidate : candidate_vector) {
-        simulation_state state = tree_[origin].state;
-        TrajectorySimulator sim(lims_, state, 0.05f);  // todo: parameterize simulation step size [s]
-        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
 
-        // check if another close node has been added
-        int close_nodes = 0;
-        for (size_t i = 0; i < tree_.size(); i++) {
-          float dist = (tree_[i].getPosition() - trajectory.back().position).norm();
-          if (dist < 0.2f) {
-            close_nodes++;
-            break;
-          }
+        // Ignore node if it brings us farther away from the goal
+        // todo: this breaks being able to get out of concave obstacles! But it helps to not "overplan"
+        if ((candidate.trajectory_endpoint.position - goal_).norm() > (tree_[origin].getPosition() - goal_).norm()) {
+          continue;
         }
 
-        if (children < children_per_node_ && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
+        // check if another close node has been added
+        // int close_nodes = 0;
+        // for (size_t i = 0; i < tree_.size(); i++) {
+        //   float dist = (tree_[i].getPosition() - trajectory.back().position).norm();
+        //   if (dist < 0.2f) {
+        //     close_nodes++;
+        //     break;
+        //   }
+        // }
+
+        // if (children < children_per_node_ && close_nodes == 0) {
+          tree_.push_back(TreeNode(origin, candidate.trajectory_endpoint, candidate.toEigen()));
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
           children++;
-        }
+        // }
       }
     }
 
@@ -122,14 +174,6 @@ void StarPlanner::buildLookAheadTree() {
     is_expanded_node = false;
     for (size_t i = 0; i < tree_.size(); i++) {
       if (!(tree_[i].closed_)) {
-        // If we reach the acceptance radius, add goal as last node and exit
-        if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
-          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
-          closed_set_.push_back(i);
-          closed_set_.push_back(tree_.size() - 1);
-          break;
-        }
-
         float node_distance = (tree_[i].getPosition() - position_).norm();
         if (tree_[i].total_cost_ < minimal_cost && node_distance < max_path_length_) {
           minimal_cost = tree_[i].total_cost_;
