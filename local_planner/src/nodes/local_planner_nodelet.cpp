@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <string>
@@ -21,12 +22,12 @@ LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
   data_ready_cv_.notify_all();
 
-  worker.join();
-  worker_tf_listener.join();
+  if (worker.joinable()) worker.join();
+  if (worker_tf_listener.joinable()) worker_tf_listener.join();
 
   for (size_t i = 0; i < cameras_.size(); ++i) {
     cameras_[i].cloud_ready_cv_->notify_all();
-    cameras_[i].transform_thread_.join();
+    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
   }
 
   delete server_;
@@ -41,7 +42,6 @@ void LocalPlannerNodelet::onInit() {
 
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
-
 }
 
 void LocalPlannerNodelet::InitializeNodelet() {
@@ -461,7 +461,7 @@ void LocalPlannerNodelet::threadFunction() {
     // wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
+      data_ready_cv_.wait_for(lk, std::chrono::milliseconds(200), [this] { return data_ready_ && !should_exit_; });
       data_ready_ = false;
     }
 
@@ -490,7 +490,7 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
     {
       std::unique_lock<std::mutex> cloud_msg_lock(*(cameras_[index].cloud_msg_mutex_));
-      cameras_[index].cloud_ready_cv_->wait(cloud_msg_lock);
+      cameras_[index].cloud_ready_cv_->wait_for(cloud_msg_lock, std::chrono::milliseconds(200));
     }
     while (cameras_[index].transformed_ == false) {
       if (should_exit_) break;
