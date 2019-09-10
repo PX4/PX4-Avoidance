@@ -8,6 +8,7 @@
 #include <boost/algorithm/string.hpp>
 
 #include <atomic>
+#include <chrono>
 #include <condition_variable>
 #include <mutex>
 #include <string>
@@ -41,6 +42,7 @@ void LocalPlannerNodelet::onInit() {
 
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
+
   // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
@@ -465,7 +467,7 @@ void LocalPlannerNodelet::threadFunction() {
     // wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
+      data_ready_cv_.wait_for(lk, std::chrono::milliseconds(200), [this] { return data_ready_ && !should_exit_; });
       data_ready_ = false;
     }
 
@@ -494,7 +496,7 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
     {
       std::unique_lock<std::mutex> cloud_msg_lock(*(cameras_[index].cloud_msg_mutex_));
-      cameras_[index].cloud_ready_cv_->wait(cloud_msg_lock);
+      cameras_[index].cloud_ready_cv_->wait_for(cloud_msg_lock, std::chrono::milliseconds(200));
     }
     while (cameras_[index].transformed_ == false) {
       if (should_exit_) break;
