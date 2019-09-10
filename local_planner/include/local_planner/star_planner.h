@@ -60,7 +60,7 @@ class StarPlanner {
   * @param[in] node_number, sequential number of entry in the tree
   * @returns
   **/
-  float treeHeuristicFunction(int node_number) const;
+  float treeHeuristicFunction(const Eigen::Vector3f &node_position) const;
 
  public:
   std::vector<Eigen::Vector3f> path_node_setpoints_;

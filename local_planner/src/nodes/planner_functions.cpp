@@ -203,7 +203,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
   smoothPolarMatrix(distance_matrix, smooth_radius);
 
   generateCostImage(cost_matrix, distance_matrix, image_data);
-  cost_matrix = cost_matrix + distance_matrix;
+  cost_matrix = distance_matrix;
 }
 
 void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf& distance_matrix,
@@ -330,31 +330,31 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
                                      const Eigen::Vector3f& velocity, const costParameters& cost_params,
                                      const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal) {
   // Compute  polar direction to goal and cartesian representation of current direction to evaluate
-  const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
-  const Eigen::Vector3f candidate_velocity_cartesian =
-      polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
-
-  const float angle_diff = angleDifference(candidate_polar.z, facing_goal.z);
-
-  const PolarPoint facing_line = cartesianToPolarHistogram(closest_pt, position);
-  const float angle_diff_to_line = angleDifference(candidate_polar.z, facing_line.z);
-
-  const float velocity_cost =
-      cost_params.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
-
-  float weight = 0.f;  // yaw cost partition between back to line previous-current goal and goal
-  if (!is_obstacle_facing_goal) {
-    weight = 0.5f;
-  }
-
-  const float yaw_cost = (1.f - weight) * cost_params.yaw_cost_param * angle_diff * angle_diff;
-  const float yaw_to_line_cost = weight * cost_params.yaw_cost_param * angle_diff_to_line * angle_diff_to_line;
-  const float pitch_cost =
-      cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
+  // const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
+  // const Eigen::Vector3f candidate_velocity_cartesian =
+  //     polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
+  //
+  // const float angle_diff = angleDifference(candidate_polar.z, facing_goal.z);
+  //
+  // const PolarPoint facing_line = cartesianToPolarHistogram(closest_pt, position);
+  // const float angle_diff_to_line = angleDifference(candidate_polar.z, facing_line.z);
+  //
+  // const float velocity_cost =
+  //     cost_params.velocity_cost_param * (velocity.norm() - candidate_velocity_cartesian.normalized().dot(velocity));
+  //
+  // float weight = 0.f;  // yaw cost partition between back to line previous-current goal and goal
+  // if (!is_obstacle_facing_goal) {
+  //   weight = 0.5f;
+  // }
+  //
+  // const float yaw_cost = (1.f - weight) * cost_params.yaw_cost_param * angle_diff * angle_diff;
+  // const float yaw_to_line_cost = weight * cost_params.yaw_cost_param * angle_diff_to_line * angle_diff_to_line;
+  // const float pitch_cost =
+  //     cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
   const float d = cost_params.obstacle_cost_param - obstacle_distance;
   const float distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
-  return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + yaw_to_line_cost + pitch_cost);
+  return std::pair<float, float>(distance_cost, 0.f);
 }
 
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,

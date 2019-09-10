@@ -220,9 +220,9 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   tree_marker.points.reserve(closed_set.size() * 2);
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
-    geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
+    geometry_msgs::Point p1 = toPoint(tree[node_nr].getSetpoint());
     int origin = tree[node_nr].origin_;
-    geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
+    geometry_msgs::Point p2 = toPoint(tree[origin].getSetpoint());
     tree_marker.points.push_back(p1);
     tree_marker.points.push_back(p2);
   }
@@ -232,15 +232,16 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   if (path_node_setpoints.size() > 0) {
     path_marker.points.reserve(path_node_setpoints.size() * 2);
     Eigen::Vector3f p1;
-    Eigen::Vector3f p2 = tree[closed_set.front()].getPosition();
+    Eigen::Vector3f p2 = tree[closed_set.front()].getSetpoint();
     for (int i = path_node_setpoints.size() - 1; i >= 1; --i) {
-      float scale = (tree[closed_set[i]].getPosition() - tree[closed_set[i - 1]].getPosition()).norm();
-      p1 = p2;
-      p2 = p1 + scale * path_node_setpoints[i];
+      // float scale = (tree[closed_set[i]].getSetpoin/t() - tree[closed_set[i - 1]].getSetpoint()).norm();
+      p1 = path_node_setpoints[i];
+      p2 = path_node_setpoints[i - 1];
       path_marker.points.push_back(toPoint(p1));
       path_marker.points.push_back(toPoint(p2));
     }
   }
+  printf("\n");
 
   complete_tree_pub_.publish(tree_marker);
   tree_path_pub_.publish(path_marker);
