@@ -387,14 +387,28 @@ void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima)
   float h_min = 9999.f, h_max = -9999.f, v_min = 9999.f, v_max = -9999.f;
 
   for (auto p : maxima) {
+
     PolarPoint p_pol_fcu = cartesianToPolarFCU(p);
-    p_pol_fcu.z += 180.0f;  // move azimuth to [0, 360]
-    p_pol_fcu.e += 90.0f;   // move elevation to [0, 180]
-    h_min = std::min(p_pol_fcu.z, h_min);
-    h_max = std::max(p_pol_fcu.z, h_max);
-    v_min = std::min(p_pol_fcu.e, v_min);
-    v_max = std::max(p_pol_fcu.e, v_max);
+
+    //the trusted fov is a bit smaller than where we get data
+    PolarPoint p_pol_fcu_min = p_pol_fcu;
+    p_pol_fcu_min.z += 5;
+    PolarPoint p_pol_fcu_max = p_pol_fcu;
+    p_pol_fcu_max.z -= 5;
+    wrapPolar(p_pol_fcu_min);
+    wrapPolar(p_pol_fcu_max);
+
+    p_pol_fcu_min.z += 180.0f;  // move azimuth to [0, 360]
+    p_pol_fcu_min.e += 90.0f;   // move elevation to [0, 180]
+    p_pol_fcu_max.z += 180.0f;  // move azimuth to [0, 360]
+    p_pol_fcu_max.e += 90.0f;   // move elevation to [0, 180]
+
+    h_min = std::min(p_pol_fcu_min.z, h_min);
+    h_max = std::max(p_pol_fcu_max.z, h_max);
+    v_min = std::min(p_pol_fcu_min.e, v_min);
+    v_max = std::max(p_pol_fcu_max.e, v_max);
   }
+
 
   float h_diff = std::min(h_max - h_min, 360.0f - h_max + h_min);
   float v_diff = std::min(v_max - v_min, 360.0f - v_max + v_min);
