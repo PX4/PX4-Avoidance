@@ -151,7 +151,7 @@ void OctomapRrtPlanner::moveBaseSimpleCallback(const geometry_msgs::PoseStamped&
 void OctomapRrtPlanner::publishSetpoint() {
   mavros_msgs::Trajectory msg;
   Eigen::Vector3f reference_posf = reference_pos_.cast<float>();
-  avoidance::transformPoseToTrajectory(msg, avoidance::toPoseStamped(reference_posf, reference_att_));
+  avoidance::transformToTrajectory(msg, avoidance::toPoseStamped(reference_posf, reference_att_));
   msg.header.frame_id = frame_id_;
   msg.header.stamp = ros::Time::now();
   trajectory_pub_.publish(msg);

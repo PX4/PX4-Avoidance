@@ -321,6 +321,13 @@ double getAngularVelocity(float desired_yaw, float curr_yaw);
 * @brief     transforms setpoints from ROS message to MavROS message
 * @params[out] obst_avoid, setpoint in MavROS message form
 * @params[in] pose, position and attitude setpoint computed by the planner
+**/
+void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose);
+
+/**
+* @brief     transforms setpoints from ROS message to MavROS message
+* @params[out] obst_avoid, setpoint in MavROS message form
+* @params[in] pose, position and attitude setpoint computed by the planner
 * @params[in] vel, velocity setpoint computed by the planner
 **/
 void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose,
