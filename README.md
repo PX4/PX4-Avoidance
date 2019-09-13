@@ -1,5 +1,6 @@
 # Obstacle Detection and Avoidance
 [![Build Status](https://travis-ci.org/PX4/avoidance.svg?branch=master)](https://travis-ci.org/PX4/avoidance)
+
 PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance. This repository contains two different implementations:
 
   * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
