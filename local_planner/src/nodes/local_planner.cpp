@@ -141,7 +141,11 @@ void LocalPlanner::determineStrategy() {
       setDefaultPx4Parameters();  // TODO: remove but make sure they're set!
       lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
       lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
-      lims.max_xy_velocity_norm = px4_.param_mpc_xy_cruise;
+      lims.max_xy_velocity_norm =
+         std::min(getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
+                              px4_.param_mpc_xy_cruise, mission_item_speed_),
+                  getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, (goal_ - position_).norm(),
+                              px4_.param_mpc_xy_cruise, mission_item_speed_));
       lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
       lims.max_jerk_norm = px4_.param_mpc_jerk_max;
       star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
@@ -223,22 +227,8 @@ void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_dist
 
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
-
-  // calculate maximum speed given the sensor range and vehicle parameters
-  // quadratic solve of 0 = u^2 + 2as, with s = u * |a/j| + r
-  // u = initial velocity, a = max acceleration
-  // s = stopping distance under constant acceleration
-  // j = maximum jerk, r = maximum range sensor distance
-  float accel_ramp_time = px4_.param_mpc_acc_hor / px4_.param_mpc_jerk_max;
-  float a = 1;
-  float b = 2 * px4_.param_mpc_acc_hor * accel_ramp_time;
-  float c = 2 * -px4_.param_mpc_acc_hor * max_sensor_range_;
-  float limited_speed = (-b + std::sqrt(b * b - 4 * a * c)) / (2 * a);
-
-  float speed = std::isfinite(mission_item_speed_) ? mission_item_speed_ : px4_.param_mpc_xy_cruise;
-  float max_speed = std::min(speed, limited_speed);
-
-  out.cruise_velocity = max_speed;
+  out.cruise_velocity = getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
+                                px4_.param_mpc_xy_cruise, mission_item_speed_);
   out.last_path_time = last_path_time_;
   out.tree_node_duration = tree_node_duration_;
   out.path_node_setpoints = star_planner_->path_node_setpoints_;

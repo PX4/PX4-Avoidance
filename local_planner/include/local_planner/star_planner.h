@@ -39,7 +39,8 @@ class StarPlanner {
   Eigen::Vector3f closest_pt_ = Eigen::Vector3f(NAN, NAN, NAN);
   costParameters cost_params_;
   simulation_limits lims_;
-
+  Eigen::Vector3f starting_direction_ = Eigen::Vector3f(NAN, NAN, NAN);
+  float init_angle_ = 0.f;
  protected:
   /**
   * @brief     computes the heuristic for a node

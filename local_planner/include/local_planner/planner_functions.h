@@ -98,7 +98,7 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf
 *             the least to the most expensive
 **/
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector);
+                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir, const Eigen::Vector3f pos);
 
 /**
 * @brief      computes the cost of each direction in the polar histogram
@@ -157,5 +157,6 @@ void printHistogram(const Histogram& histogram);
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
                                  const ros::Time& path_generation_time, float tree_node_duration,
                                  Eigen::Vector3f& setpoint);
+float costChangeInTreeDirection(Eigen::Vector2f &prev_direction, Eigen::Vector2f &curr_direction, float &init_angle);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

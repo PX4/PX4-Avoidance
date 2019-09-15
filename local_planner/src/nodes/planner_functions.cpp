@@ -229,7 +229,8 @@ int colorImageIndex(int e_ind, int z_ind, int color) {
 }
 
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector) {
+                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir,
+                                   const Eigen::Vector3f pos) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
@@ -237,7 +238,13 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
       PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
       float cost = matrix(row_index, col_index);
       candidateDirection candidate(cost, p_pol.e, p_pol.z);
-
+      if (!prev_init_dir.array().hasNaN()) {
+        Eigen::Vector2f candidate_dir = candidate.toEigen().head<2>();
+        Eigen::Vector2f prev_init_dir_2f = prev_init_dir.head<2>();
+        float angle = 0.f;
+        float add = costChangeInTreeDirection(prev_init_dir_2f, candidate_dir, angle);
+        candidate.cost += add;
+      }
       if (queue.size() < number_of_candidates) {
         queue.push(candidate);
       } else if (candidate < queue.top()) {
@@ -246,6 +253,25 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
       }
     }
   }
+
+  candidateDirection best_direction = queue.top();
+  for (int i = 0; i < 5; i++) {
+    candidateDirection candidate(0.f, best_direction.elevation_angle, best_direction.azimuth_angle + (i + 1) * 60.f);
+    PolarPoint candidate_polar = PolarPoint(candidate.elevation_angle, candidate.azimuth_angle, 1.f);
+    wrapPolar(candidate_polar);
+    Eigen::Vector2i histogram_index = polarToHistogramIndex(candidate_polar, ALPHA_RES);
+    candidate.cost = matrix(histogram_index.y(), histogram_index.x());
+
+    if (!prev_init_dir.array().hasNaN()) {
+      Eigen::Vector2f candidate_dir = candidate.toEigen().head<2>();
+      Eigen::Vector2f prev_init_dir_2f = prev_init_dir.head<2>();
+      float angle = 0.f;
+      float add = costChangeInTreeDirection(prev_init_dir_2f, candidate_dir, angle);
+      candidate.cost += add;
+    }
+    queue.push(candidate);
+  }
+
   // copy queue to vector and change order such that lowest cost is at the
   // front
   candidate_vector.clear();
@@ -255,6 +281,24 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
     queue.pop();
   }
   std::reverse(candidate_vector.begin(), candidate_vector.end());
+}
+
+float costChangeInTreeDirection(Eigen::Vector2f &prev_direction, Eigen::Vector2f &curr_direction, float &init_angle) {
+  init_angle = atan2(curr_direction.y(), curr_direction.x()) - atan2(prev_direction.y(), prev_direction.x());
+  if (init_angle > M_PI_F) {
+    init_angle -= 2 * M_PI_F;
+  } else if (init_angle <= -M_PI_F) {
+    init_angle += 2 * M_PI_F;
+  }
+
+  init_angle *= RAD_TO_DEG;
+  init_angle = std::abs(init_angle);
+  float add = init_angle > 10.f ? (5000.f / (1.f + std::exp((-init_angle + 10.f) / 20.f))) : 0.f;
+  if (init_angle > 20.f) {
+    add = 1000000.0f;
+  }
+
+  return add;
 }
 
 void smoothPolarMatrix(Eigen::MatrixXf& matrix, unsigned int smoothing_radius) {
@@ -344,7 +388,7 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
 
   float weight = 0.f;  // yaw cost partition between back to line previous-current goal and goal
   if (!is_obstacle_facing_goal) {
-    weight = 0.5f;
+    weight = 0.25f;
   }
 
   const float yaw_cost = (1.f - weight) * cost_params.yaw_cost_param * angle_diff * angle_diff;
@@ -352,9 +396,9 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   const float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
   const float d = cost_params.obstacle_cost_param - obstacle_distance;
-  const float distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
+  const float distance_cost = obstacle_distance > 0.f ? 1000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
-  return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + yaw_to_line_cost + pitch_cost);
+  return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost);
 }
 
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,

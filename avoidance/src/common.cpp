@@ -418,4 +418,22 @@ void updateFOVFromMaxima(FOV& fov, const pcl::PointCloud<pcl::PointXYZ>& maxima)
   }
 }
 
+float computeMaxSpeedFromBrakingDistance(const float jerk, const float accel, const float braking_distance) {
+  // Calculate maximum speed given the sensor range and vehicle parameters
+  // We assume a constant acceleration profile with a delay of 2*accel/jerk (time to reach the desired acceleration from
+  // opposite max acceleration)
+  // Equation to solve: 0 = vel^2 - 2*acc*(x - vel*2*acc/jerk)
+  float b = 4.f * accel * accel / jerk;
+  float c = -2.f * accel * braking_distance;
+
+  return 0.5f * (-b + sqrtf(b * b - 4.f * c));
+}
+
+float getMaxSpeed(const float jerk, const float accel, const float braking_distance, const float mpc_xy_cruise,
+                  const float mission_item_speed) {
+  float limited_speed = computeMaxSpeedFromBrakingDistance(jerk, accel, braking_distance);
+  float speed = std::isfinite(mission_item_speed) ? mission_item_speed : mpc_xy_cruise;
+  return std::min(speed, limited_speed);
+}
+
 }  // namespace avoidance

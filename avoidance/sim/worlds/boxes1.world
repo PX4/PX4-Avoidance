@@ -85,18 +85,18 @@
      <model name="box">
       <static>true</static>
       <link name='box'>
-        <pose>15 0 2.5 0 0 0</pose>
+        <pose>15 0 8 0 0 0</pose>
         <collision name='collision'>
           <geometry>
             <box>
-              <size>1 10 5</size>
+              <size>1 15 25</size>
             </box>
           </geometry>
         </collision>
         <visual name='visual'>
           <geometry>
             <box>
-              <size>1 10 5</size>
+              <size>1 15 25</size>
             </box>
           </geometry>
           <material>
