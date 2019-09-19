@@ -64,24 +64,25 @@ install:
   - chmod +x install_geographiclib_datasets.sh
   - sudo -H ./install_geographiclib_datasets.sh
 
+build:
+  script:
+    - set -e
+    - cd ~/catkin_ws
+    - catkin build
+    - source ~/catkin_ws/devel/setup.bash
+    # Check for clang format
+    - cd src/avoidance
+    - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    - (cd tools && ./check_state_machine_diagrams.sh)
+    - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
+    - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
+
 before_script:
   # Source environment
   - source /opt/ros/$ROS_DISTRO/setup.bash
 
 jobs:
   include:
-    - stage: build
-      script:
-        - set -e
-        - cd ~/catkin_ws
-        - catkin build
-        - source ~/catkin_ws/devel/setup.bash
-        # Check for clang format
-        - cd src/avoidance
-        - git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
-        - (cd tools && ./check_state_machine_diagrams.sh)
-        - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
-        - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
     - stage: test
       dist: xenial
       script:
