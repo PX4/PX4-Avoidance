@@ -136,6 +136,59 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   }
 }
 
+TEST_F(WaypointGeneratorTests, reachAltitudeOffboardTest) {
+  // GIVEN: a waypoint of type goFast and the vehicle has not yet reached the
+  // goal altiude
+  ASSERT_EQ(PlannerState::LOITER, getState());
+
+  goal << 0.f, 0.f, 5.f;
+  setPlannerInfo(avoidance_output);
+  double time_sec = 0.0;
+  float adapted_to_goal_prev = 1000.0f;
+  float pos_sp_to_goal_prev = 1000.0f;
+  is_takeoff_waypoint = true;
+  desired_velocity.z() = 1.5f;
+  nav_state = NavigationState::offboard;
+
+  // WHEN: we generate the first waypoint
+  time = ros::Time(time_sec);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  result = getWaypoints();
+
+  ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+
+  // WHEN: we generate subsequent waypoints
+  for (size_t i = 0; i < 6; i++) {
+    // calculate new vehicle position
+    time_sec += 0.03;
+    time = ros::Time(time_sec);
+    updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+                is_takeoff_waypoint, desired_velocity);
+    waypointResult result = getWaypoints();
+
+    ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+
+    // THEN: we expect the z velocity component on the setpoint not to be set
+    ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.z()));
+
+    // THEN: we expect the vehicle z position to move closer to goal.z
+    Eigen::Vector3f new_pos = result.goto_position;
+    EXPECT_LT(position.z(), new_pos.z());
+    EXPECT_NEAR(position.x(), result.position_wp.x(), 0.1);
+    EXPECT_NEAR(position.y(), result.position_wp.y(), 0.1);
+    position = new_pos;
+  }
+
+  time_sec += 0.03;
+  time = ros::Time(time_sec);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+}
+
 TEST_F(WaypointGeneratorTests, goStraightTest) {
   // GIVEN: a waypoint of type goStraight
   is_takeoff_waypoint = false;
