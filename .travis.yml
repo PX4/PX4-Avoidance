@@ -3,10 +3,9 @@
 # vim:set ts=2 sw=2 et:
 language: generic
 
-- dist: xenial
-  env: ROS_DISTRO=kinetic
-- dist: bionic
-  env: ROS_DISTRO=melodic
+dist:
+  - xenial
+  - bionic
 
 sudo: required
 compiler:
