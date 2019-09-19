@@ -31,8 +31,6 @@ before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -y build-essential git valgrind
   - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
-  # Install clang-format 3.8
-  - sudo apt-get install -y clang-format-3.8
   # Install ROS Kinetic
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
   # Install yaml-cpp ROS package
@@ -82,5 +80,6 @@ script:
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || status=1; done
 
 after_script:
+  - if [[ ROS_DISTRO=kinetic ]]; then  sudo apt-get install -y clang-format-3.8; fi
   - if [[ ROS_DISTRO=kinetic ]]; then (cd tools && ./check_code_format.sh); fi
   - if [[ ROS_DISTRO=kinetic ]]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && exit $status; fi
