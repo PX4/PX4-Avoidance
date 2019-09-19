@@ -19,6 +19,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   world_visualizer_.reset(new avoidance::WorldVisualizer(nh_));
 #endif
 
+  avoidance_node_.init();
   // Read Ros parameters
   readParams();
 
