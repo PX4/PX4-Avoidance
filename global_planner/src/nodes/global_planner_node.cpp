@@ -20,6 +20,8 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
 #endif
 
   avoidance_node_.init();
+  wp_generator_.reset(new global_planner::WaypointGenerator());
+
   // Read Ros parameters
   readParams();
 
@@ -61,9 +63,10 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   plannerloop_spinner_->start();
 
   current_goal_.header.frame_id = frame_id_;
-  current_goal_.pose.position = start_pos_;
+  current_goal_.pose.position = avoidance::toPoint(start_pos_);
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
+  goal_position_ = start_pos_;
 
   speed_ = 5.0;
 
@@ -75,15 +78,17 @@ GlobalPlannerNode::~GlobalPlannerNode() {}
 // Read Ros parameters
 void GlobalPlannerNode::readParams() {
   std::vector<std::string> camera_topics;
-
-  nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
-  nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
-  nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
+  float start_pos_x, start_pos_y, start_pos_z;
+  nh_.param<float>("start_pos_x", start_pos_x, 0.5);
+  nh_.param<float>("start_pos_y", start_pos_y, 0.5);
+  nh_.param<float>("start_pos_z", start_pos_z, 3.5);
   nh_.param<std::string>("frame_id", frame_id_, "/local_origin");
   nh_.getParam("pointcloud_topics", camera_topics);
 
+  start_pos_ << start_pos_x, start_pos_y, start_pos_z;
+  
   initializeCameraSubscribers(camera_topics);
-  global_planner_.goal_pos_ = GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
+  global_planner_.goal_pos_ = GoalCell(start_pos_(0), start_pos_(1), start_pos_(2));
   double robot_radius;
   nh_.param<double>("robot_radius", robot_radius, 0.5);
   global_planner_.setFrame(frame_id_);
@@ -101,6 +106,7 @@ void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& ca
 // Sets a new goal, plans a path to it and publishes some info
 void GlobalPlannerNode::setNewGoal(const GoalCell& goal) {
   ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
+  goal_position_ = goal.toEigen();
   global_planner_.setGoal(goal);
   publishGoal(goal);
 }
@@ -190,6 +196,7 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
 }
 
 void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) {
+  current_velocity_ = avoidance::toEigen(msg.twist.linear);
   global_planner_.curr_vel_ = msg.twist.linear;
 }
 
@@ -197,6 +204,8 @@ void GlobalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg)
 void GlobalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   // Update position
   last_pos_ = msg;
+  current_position_ = avoidance::toEigen(msg.pose.position);
+  current_attitude_ = avoidance::toEigen(msg.pose.orientation);
   global_planner_.setPose(last_pos_);
 
   // Check if a new goal is needed
@@ -313,6 +322,7 @@ void GlobalPlannerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStam
 
 void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
+  bool is_airborne = true;
 
   // Check if all information was received
   ros::Time now = ros::Time::now();
@@ -321,6 +331,13 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   ros::Duration since_start = now - start_time_;
 
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
+  
+  //TODO: Switch this to waypoint generator
+  wp_generator_->updateState(current_position_, current_attitude_,
+                             goal_position_, prev_goal_position_,
+                             current_velocity_, hover_, is_airborne, nav_state_, is_land_waypoint_,
+                             is_takeoff_waypoint_, desired_velocity_);
+
   publishSetpoint();
 }
 
@@ -332,7 +349,8 @@ void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
   }
 
   planPath();
-
+  wp_generator_->setPlannerInfo(global_planner_.getAvoidanceOutput());
+  
   // Print and publish info
   if (is_in_goal && !waypoints_.empty()) {
     ROS_INFO("Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(),
@@ -380,30 +398,17 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
 }
 
 void GlobalPlannerNode::publishSetpoint() {
-  // Vector pointing from current position to the current goal
-  tf::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
-  // If we are less than 1.0 away, then we should stop at the goal
-  double new_len = vec.length() < 1.0 ? vec.length() : speed_;
-  vec.normalize();
-  vec *= new_len;
-
-  auto setpoint = current_goal_;  // The intermediate position sent to Mavros
-  setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
-  setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
-  setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
-
-  // Publish setpoint for vizualization
-  current_waypoint_publisher_.publish(setpoint);
-
-  // Publish setpoint to Mavros
-  mavros_waypoint_publisher_.publish(setpoint);
-  mavros_msgs::Trajectory obst_free_path = {};
   geometry_msgs::Twist velocity_setpoint{};
   velocity_setpoint.linear.x = NAN;
   velocity_setpoint.linear.y = NAN;
   velocity_setpoint.linear.z = NAN;
-  avoidance::transformToTrajectory(obst_free_path, setpoint, velocity_setpoint);
+
+  waypointResult result = wp_generator_->getWaypoints();
+
+  mavros_msgs::Trajectory obst_free_path = {};
+  avoidance::transformToTrajectory(obst_free_path, avoidance::toPoseStamped(result.position_wp, result.orientation_wp), velocity_setpoint);
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
+
 }
 
 bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < 1.5; }

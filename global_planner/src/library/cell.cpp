@@ -24,6 +24,10 @@ geometry_msgs::Point Cell::toPoint() const {
   return point;
 }
 
+Eigen::Vector3f Cell::toEigen() const {
+  return Eigen::Vector3f(xPos(), yPos(), zPos());
+}
+
 // Returns the Manhattan-distance from the center of the Cell
 double Cell::manhattanDist(double _x, double _y, double _z) const {
   return std::abs(xPos() - _x) + std::abs(yPos() - _y) + std::abs(zPos() - _z);

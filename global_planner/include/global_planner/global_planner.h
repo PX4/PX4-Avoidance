@@ -26,6 +26,7 @@
 #include "global_planner/node.h"
 #include "global_planner/search_tools.h"
 #include "global_planner/visitor.h"
+#include "global_planner/avoidance_output.h"
 
 namespace global_planner {
 
@@ -129,6 +130,8 @@ class GlobalPlanner {
   geometry_msgs::PoseStamped createPoseMsg(const Cell& cell, double yaw);
   nav_msgs::Path getPathMsg();
   nav_msgs::Path getPathMsg(const std::vector<Cell>& path);
+  std::vector<Eigen::Vector3f> getPath();
+  std::vector<Eigen::Vector3f> getPath(std::vector<Cell>& path);
   PathWithRiskMsg getPathWithRiskMsg();
   PathInfo getPathInfo(const std::vector<Cell>& path);
 
@@ -139,6 +142,7 @@ class GlobalPlanner {
   void goBack();
   void stop();
   void setRobotRadius(double radius);
+  avoidanceOutput getAvoidanceOutput();
 
  private:
   double robot_radius_;

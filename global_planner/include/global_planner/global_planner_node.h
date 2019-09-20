@@ -30,6 +30,7 @@
 
 #include "avoidance/avoidance_node.h"
 #include "global_planner/global_planner.h"
+#include "global_planner/waypoint_generator.h"
 
 #ifndef DISABLE_SIMULATION
 #include <avoidance/rviz_world_loader.h>
@@ -92,10 +93,16 @@ class GlobalPlannerNode {
   dynamic_reconfigure::Server<global_planner::GlobalPlannerNodeConfig> server_;
 
   nav_msgs::Path actual_path_;
-  geometry_msgs::Point start_pos_;
   geometry_msgs::PoseStamped current_goal_;
   geometry_msgs::PoseStamped last_goal_;
   geometry_msgs::PoseStamped last_pos_;
+  Eigen::Vector3f current_position_;
+  Eigen::Vector3f current_velocity_;
+  Eigen::Quaternionf current_attitude_;
+  Eigen::Vector3f start_pos_;
+  Eigen::Vector3f goal_position_;
+  Eigen::Vector3f prev_goal_position_;
+  Eigen::Vector3f desired_velocity_;
 
   std::vector<geometry_msgs::PoseStamped> last_clicked_points;
   std::vector<geometry_msgs::PoseStamped> path_;
@@ -116,13 +123,20 @@ class GlobalPlannerNode {
   double clicked_goal_alt_;
   double clicked_goal_radius_;
   bool hover_;
+  bool is_land_waypoint_;
+  bool is_takeoff_waypoint_;
   int simplify_iterations_;
   double simplify_margin_;
 
+  avoidance::NavigationState nav_state_ = avoidance::NavigationState::none;
+
   avoidance::AvoidanceNode avoidance_node_;
+
+  std::unique_ptr<global_planner::WaypointGenerator> wp_generator_;
 #ifndef DISABLE_SIMULATION
   std::unique_ptr<avoidance::WorldVisualizer> world_visualizer_;
 #endif
+
   void readParams();
   void initializeCameraSubscribers(std::vector<std::string>& camera_topics);
   void receivePath(const nav_msgs::Path& msg);

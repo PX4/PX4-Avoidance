@@ -359,6 +359,16 @@ nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
   return path_msg;
 }
 
+std::vector<Eigen::Vector3f> GlobalPlanner::getPath() { return getPath(curr_path_); }
+
+std::vector<Eigen::Vector3f> GlobalPlanner::getPath(std::vector<Cell>& parse_path){
+  std::vector<Eigen::Vector3f> path;
+
+  if (parse_path.size() == 0) return path;
+  for (int i = 0; i < parse_path.size() - 1; ++i)  path.push_back(parse_path[i].toEigen());
+  return path;
+}
+
 PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
   nav_msgs::Path path_msg = getPathMsg();
   PathWithRiskMsg risk_msg;
@@ -528,5 +538,12 @@ void GlobalPlanner::stop() {
 }
 
 void GlobalPlanner::setRobotRadius(double radius) { robot_radius_ = radius; }
+
+avoidanceOutput GlobalPlanner::getAvoidanceOutput() {
+  avoidanceOutput out;
+  out.cruise_velocity = 5.0;
+  out.path_node_positions = getPath();
+  return out;
+}
 
 }  // namespace global_planner

@@ -1,0 +1,12 @@
+digraph {
+    "TRY_PATH" -> "ALTITUDE_CHANGE" [label="NEXT1", style="solid", weight=1]
+    "TRY_PATH" -> "DIRECT" [label="NEXT2", style="solid", weight=1]
+    "TRY_PATH" -> "LOITER" [label="NEXT3\nERROR", style="solid", weight=1]
+    "LOITER" -> "TRY_PATH" [label="NEXT1", style="solid", weight=1]
+    "LOITER" -> "LOITER" [label="ERROR", style="dotted", weight=0.1]
+    "DIRECT" -> "TRY_PATH" [label="NEXT1", style="solid", weight=1]
+    "DIRECT" -> "ALTITUDE_CHANGE" [label="NEXT2", style="solid", weight=1]
+    "DIRECT" -> "LOITER" [label="NEXT3\nERROR", style="solid", weight=1]
+    "ALTITUDE_CHANGE" -> "TRY_PATH" [label="NEXT1", style="solid", weight=1]
+    "ALTITUDE_CHANGE" -> "LOITER" [label="NEXT2\nERROR", style="solid", weight=1]
+}

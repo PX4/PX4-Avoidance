@@ -372,10 +372,9 @@ void WaypointGenerator::getPathMsg() {
 
   float time_diff_sec = static_cast<float>((current_time_ - last_time_).toSec());
   float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.0001f;
-
   // set the yaw at the setpoint based on our smoothed location
   nextSmoothYaw(dt);
-
+ 
   if (!auto_land_) {
     // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
     adaptSpeed();
