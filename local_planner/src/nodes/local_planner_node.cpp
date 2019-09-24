@@ -277,10 +277,9 @@ MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_->getSyste
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
-  wp_generator_->updateState(newest_position_, newest_orientation_,
-                             goal_position_, prev_goal_position_,
-                             velocity_, hover, is_airborne, nav_state_, is_land_waypoint_,
-                             is_takeoff_waypoint_, desired_velocity_);
+  wp_generator_->updateState(newest_position_, newest_orientation_, goal_position_, prev_goal_position_, velocity_,
+                             hover, is_airborne, nav_state_, is_land_waypoint_, is_takeoff_waypoint_,
+                             desired_velocity_);
   waypointResult result = wp_generator_->getWaypoints();
 
   Eigen::Vector3f closest_pt = Eigen::Vector3f(NAN, NAN, NAN);
@@ -294,9 +293,8 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
 
   // visualize waypoint topics
   visualizer_.visualizeWaypoints(result.goto_position, result.adapted_goto_position, result.smoothed_goto_position);
-  visualizer_.publishPaths(last_position_, newest_position_, last_waypoint_position_,
-                           newest_waypoint_position_, last_adapted_waypoint_position_,
-                           newest_adapted_waypoint_position_);
+  visualizer_.publishPaths(last_position_, newest_position_, last_waypoint_position_, newest_waypoint_position_,
+                           last_adapted_waypoint_position_, newest_adapted_waypoint_position_);
   visualizer_.publishCurrentSetpoint(toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
                                      result.waypoint_type, newest_position_);
 

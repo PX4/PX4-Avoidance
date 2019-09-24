@@ -33,9 +33,11 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("/range_scan", 1);
 }
 
-void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner, const Eigen::Vector3f& newest_waypoint_position,
+void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
+                                                     const Eigen::Vector3f& newest_waypoint_position,
                                                      const Eigen::Vector3f& newest_adapted_waypoint_position,
-                                                     const Eigen::Vector3f& newest_position, const Eigen::Quaternionf& newest_orientation) const {
+                                                     const Eigen::Vector3f& newest_position,
+                                                     const Eigen::Quaternionf& newest_orientation) const {
   // visualize clouds
   local_pointcloud_pub_.publish(planner.getPointcloud());
   pointcloud_size_pub_.publish(static_cast<uint32_t>(planner.getPointcloud().size()));
@@ -264,7 +266,8 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
                                                   const std::vector<uint8_t>& cost_image_data,
                                                   const Eigen::Vector3f& newest_waypoint_position,
                                                   const Eigen::Vector3f& newest_adapted_waypoint_position,
-                                                  const Eigen::Vector3f& newest_position, const Eigen::Quaternionf newest_orientation) const {
+                                                  const Eigen::Vector3f& newest_position,
+                                                  const Eigen::Quaternionf newest_orientation) const {
   sensor_msgs::Image cost_img;
   cost_img.header.stamp = ros::Time::now();
   cost_img.height = GRID_LENGTH_E;
@@ -281,11 +284,9 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 
   // current setpoint
-  PolarPoint waypoint_pol =
-      cartesianToPolarHistogram(newest_waypoint_position, newest_position);
+  PolarPoint waypoint_pol = cartesianToPolarHistogram(newest_waypoint_position, newest_position);
   Eigen::Vector2i waypoint_index = polarToHistogramIndex(waypoint_pol, ALPHA_RES);
-  PolarPoint adapted_waypoint_pol =
-      cartesianToPolarHistogram(newest_adapted_waypoint_position, newest_position);
+  PolarPoint adapted_waypoint_pol = cartesianToPolarHistogram(newest_adapted_waypoint_position, newest_position);
   Eigen::Vector2i adapted_waypoint_index = polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
 
   // color in the image
@@ -386,9 +387,8 @@ void LocalPlannerVisualization::visualizeWaypoints(const Eigen::Vector3f& goto_p
 }
 
 void LocalPlannerVisualization::publishPaths(const Eigen::Vector3f& last_position,
-                                             const Eigen::Vector3f& newest_position,
-                                             const Eigen::Vector3f& last_wp, const Eigen::Vector3f& newest_wp,
-                                             const Eigen::Vector3f& last_adapted_wp,
+                                             const Eigen::Vector3f& newest_position, const Eigen::Vector3f& last_wp,
+                                             const Eigen::Vector3f& newest_wp, const Eigen::Vector3f& last_adapted_wp,
                                              const Eigen::Vector3f& newest_adapted_wp) {
   // publish actual path
   visualization_msgs::Marker path_actual_marker;
