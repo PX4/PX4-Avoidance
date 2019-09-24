@@ -152,9 +152,7 @@ void LocalPlannerVisualization::publishRangeScan(const sensor_msgs::LaserScan& s
     m.colors.push_back(c);
 
     // side 1
-    geometry_msgs::Point newest_position_msg;
-    newest_position_msg = toPoint(newest_position);
-    m.points.push_back(newest_position_msg);
+    m.points.push_back(toPoint(newest_position));
     m.points.push_back(toPoint(polarHistogramToCartesian(p1, newest_position)));
     m.points.push_back(toPoint(polarHistogramToCartesian(p2, newest_position)));
   }
@@ -404,16 +402,8 @@ void LocalPlannerVisualization::publishPaths(const Eigen::Vector3f& last_positio
   path_actual_marker.color.g = 1.0;
   path_actual_marker.color.b = 0.0;
 
-  geometry_msgs::Point last_pos;
-  last_pos.x = last_position(0);
-  last_pos.y = last_position(1);
-  last_pos.z = last_position(2);
-  path_actual_marker.points.push_back(last_pos);
-  geometry_msgs::Point newest_pos;
-  newest_pos.x = newest_position(0);
-  newest_pos.y = newest_position(1);
-  newest_pos.z = newest_position(2);
-  path_actual_marker.points.push_back(newest_pos);
+  path_actual_marker.points.push_back(toPoint(last_position));
+  path_actual_marker.points.push_back(toPoint(newest_position));
   path_actual_pub_.publish(path_actual_marker);
 
   // publish path set by calculated waypoints
@@ -430,11 +420,8 @@ void LocalPlannerVisualization::publishPaths(const Eigen::Vector3f& last_positio
   path_waypoint_marker.color.g = 0.0;
   path_waypoint_marker.color.b = 0.0;
 
-  geometry_msgs::Point last_wp_msg, newest_wp_msg;
-  last_wp_msg = toPoint(last_wp);
-  newest_wp_msg = toPoint(newest_wp);
-  path_waypoint_marker.points.push_back(last_wp_msg);
-  path_waypoint_marker.points.push_back(newest_wp_msg);
+  path_waypoint_marker.points.push_back(toPoint(last_wp));
+  path_waypoint_marker.points.push_back(toPoint(newest_wp));
   path_waypoint_pub_.publish(path_waypoint_marker);
 
   // publish path set by calculated waypoints
@@ -451,11 +438,8 @@ void LocalPlannerVisualization::publishPaths(const Eigen::Vector3f& last_positio
   path_adapted_waypoint_marker.color.g = 0.0;
   path_adapted_waypoint_marker.color.b = 1.0;
 
-  geometry_msgs::Point last_adapted_wp_msg, newest_adapted_wp_msg;
-  last_adapted_wp_msg = toPoint(last_adapted_wp);
-  newest_adapted_wp_msg = toPoint(newest_adapted_wp);
-  path_adapted_waypoint_marker.points.push_back(last_adapted_wp_msg);
-  path_adapted_waypoint_marker.points.push_back(newest_adapted_wp_msg);
+  path_adapted_waypoint_marker.points.push_back(toPoint(last_adapted_wp));
+  path_adapted_waypoint_marker.points.push_back(toPoint(newest_adapted_wp));
   path_adapted_waypoint_pub_.publish(path_adapted_waypoint_marker);
 
   path_length_++;
