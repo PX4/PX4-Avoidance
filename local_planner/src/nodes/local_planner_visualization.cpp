@@ -33,10 +33,9 @@ void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
   range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("/range_scan", 1);
 }
 
-void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
-                                                     const geometry_msgs::Point& newest_waypoint_position,
-                                                     const geometry_msgs::Point& newest_adapted_waypoint_position,
-                                                     const geometry_msgs::PoseStamped& newest_pose) const {
+void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner, const Eigen::Vector3f& newest_waypoint_position,
+                                                     const Eigen::Vector3f& newest_adapted_waypoint_position,
+                                                     const Eigen::Vector3f& newest_position, const Eigen::Quaternionf& newest_orientation) const {
   // visualize clouds
   local_pointcloud_pub_.publish(planner.getPointcloud());
   pointcloud_size_pub_.publish(static_cast<uint32_t>(planner.getPointcloud().size()));
@@ -53,13 +52,13 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
 
   // publish histogram image
   publishDataImages(planner.histogram_image_data_, planner.cost_image_data_, newest_waypoint_position,
-                    newest_adapted_waypoint_position, newest_pose);
+                    newest_adapted_waypoint_position, newest_position, newest_orientation);
 
   // publish the FOV
   publishFOV(planner.getFOV(), planner.getSensorRange());
 
   // range scan
-  publishRangeScan(planner.distance_data_, newest_pose);
+  publishRangeScan(planner.distance_data_, newest_position);
 }
 
 void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, float max_range) const {
@@ -110,7 +109,7 @@ void LocalPlannerVisualization::publishFOV(const std::vector<FOV>& fov_vec, floa
 }
 
 void LocalPlannerVisualization::publishRangeScan(const sensor_msgs::LaserScan& scan,
-                                                 const geometry_msgs::PoseStamped& newest_pose) const {
+                                                 const Eigen::Vector3f& newest_position) const {
   visualization_msgs::Marker m;
   m.header.frame_id = "local_origin";
   m.header.stamp = ros::Time::now();
@@ -151,9 +150,11 @@ void LocalPlannerVisualization::publishRangeScan(const sensor_msgs::LaserScan& s
     m.colors.push_back(c);
 
     // side 1
-    m.points.push_back(newest_pose.pose.position);
-    m.points.push_back(toPoint(polarHistogramToCartesian(p1, toEigen(newest_pose.pose.position))));
-    m.points.push_back(toPoint(polarHistogramToCartesian(p2, toEigen(newest_pose.pose.position))));
+    geometry_msgs::Point newest_position_msg;
+    newest_position_msg = toPoint(newest_position);
+    m.points.push_back(newest_position_msg);
+    m.points.push_back(toPoint(polarHistogramToCartesian(p1, newest_position)));
+    m.points.push_back(toPoint(polarHistogramToCartesian(p2, newest_position)));
   }
 
   range_scan_pub_.publish(m);
@@ -261,9 +262,9 @@ void LocalPlannerVisualization::publishGoal(const geometry_msgs::Point& goal) co
 
 void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& histogram_image_data,
                                                   const std::vector<uint8_t>& cost_image_data,
-                                                  const geometry_msgs::Point& newest_waypoint_position,
-                                                  const geometry_msgs::Point& newest_adapted_waypoint_position,
-                                                  const geometry_msgs::PoseStamped& newest_pose) const {
+                                                  const Eigen::Vector3f& newest_waypoint_position,
+                                                  const Eigen::Vector3f& newest_adapted_waypoint_position,
+                                                  const Eigen::Vector3f& newest_position, const Eigen::Quaternionf newest_orientation) const {
   sensor_msgs::Image cost_img;
   cost_img.header.stamp = ros::Time::now();
   cost_img.height = GRID_LENGTH_E;
@@ -274,17 +275,17 @@ void LocalPlannerVisualization::publishDataImages(const std::vector<uint8_t>& hi
   cost_img.data = cost_image_data;
 
   // current orientation
-  float curr_yaw_fcu_frame = getYawFromQuaternion(toEigen(newest_pose.pose.orientation));
+  float curr_yaw_fcu_frame = getYawFromQuaternion(newest_orientation);
   float yaw_angle_histogram_frame = -static_cast<float>(curr_yaw_fcu_frame) * 180.0f / M_PI_F + 90.0f;
   PolarPoint heading_pol(0, yaw_angle_histogram_frame, 1.0);
   Eigen::Vector2i heading_index = polarToHistogramIndex(heading_pol, ALPHA_RES);
 
   // current setpoint
   PolarPoint waypoint_pol =
-      cartesianToPolarHistogram(toEigen(newest_waypoint_position), toEigen(newest_pose.pose.position));
+      cartesianToPolarHistogram(newest_waypoint_position, newest_position);
   Eigen::Vector2i waypoint_index = polarToHistogramIndex(waypoint_pol, ALPHA_RES);
   PolarPoint adapted_waypoint_pol =
-      cartesianToPolarHistogram(toEigen(newest_adapted_waypoint_position), toEigen(newest_pose.pose.position));
+      cartesianToPolarHistogram(newest_adapted_waypoint_position, newest_position);
   Eigen::Vector2i adapted_waypoint_index = polarToHistogramIndex(adapted_waypoint_pol, ALPHA_RES);
 
   // color in the image
@@ -384,11 +385,11 @@ void LocalPlannerVisualization::visualizeWaypoints(const Eigen::Vector3f& goto_p
   smoothed_wp_pub_.publish(sphere3);
 }
 
-void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_pos,
-                                             const geometry_msgs::Point& newest_pos,
-                                             const geometry_msgs::Point& last_wp, const geometry_msgs::Point& newest_wp,
-                                             const geometry_msgs::Point& last_adapted_wp,
-                                             const geometry_msgs::Point& newest_adapted_wp) {
+void LocalPlannerVisualization::publishPaths(const Eigen::Vector3f& last_position,
+                                             const Eigen::Vector3f& newest_position,
+                                             const Eigen::Vector3f& last_wp, const Eigen::Vector3f& newest_wp,
+                                             const Eigen::Vector3f& last_adapted_wp,
+                                             const Eigen::Vector3f& newest_adapted_wp) {
   // publish actual path
   visualization_msgs::Marker path_actual_marker;
   path_actual_marker.header.frame_id = "local_origin";
@@ -403,7 +404,15 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
   path_actual_marker.color.g = 1.0;
   path_actual_marker.color.b = 0.0;
 
+  geometry_msgs::Point last_pos;
+  last_pos.x = last_position(0);
+  last_pos.y = last_position(1);
+  last_pos.z = last_position(2);
   path_actual_marker.points.push_back(last_pos);
+  geometry_msgs::Point newest_pos;
+  newest_pos.x = newest_position(0);
+  newest_pos.y = newest_position(1);
+  newest_pos.z = newest_position(2);
   path_actual_marker.points.push_back(newest_pos);
   path_actual_pub_.publish(path_actual_marker);
 
@@ -421,8 +430,11 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
   path_waypoint_marker.color.g = 0.0;
   path_waypoint_marker.color.b = 0.0;
 
-  path_waypoint_marker.points.push_back(last_wp);
-  path_waypoint_marker.points.push_back(newest_wp);
+  geometry_msgs::Point last_wp_msg, newest_wp_msg;
+  last_wp_msg = toPoint(last_wp);
+  newest_wp_msg = toPoint(newest_wp);
+  path_waypoint_marker.points.push_back(last_wp_msg);
+  path_waypoint_marker.points.push_back(newest_wp_msg);
   path_waypoint_pub_.publish(path_waypoint_marker);
 
   // publish path set by calculated waypoints
@@ -439,8 +451,11 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
   path_adapted_waypoint_marker.color.g = 0.0;
   path_adapted_waypoint_marker.color.b = 1.0;
 
-  path_adapted_waypoint_marker.points.push_back(last_adapted_wp);
-  path_adapted_waypoint_marker.points.push_back(newest_adapted_wp);
+  geometry_msgs::Point last_adapted_wp_msg, newest_adapted_wp_msg;
+  last_adapted_wp_msg = toPoint(last_adapted_wp);
+  newest_adapted_wp_msg = toPoint(newest_adapted_wp);
+  path_adapted_waypoint_marker.points.push_back(last_adapted_wp_msg);
+  path_adapted_waypoint_marker.points.push_back(newest_adapted_wp_msg);
   path_adapted_waypoint_pub_.publish(path_adapted_waypoint_marker);
 
   path_length_++;
@@ -448,7 +463,7 @@ void LocalPlannerVisualization::publishPaths(const geometry_msgs::Point& last_po
 
 void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twist& wp,
                                                        const PlannerState& waypoint_type,
-                                                       const geometry_msgs::Point& newest_pos) const {
+                                                       const Eigen::Vector3f& newest_position) const {
   visualization_msgs::Marker setpoint;
   setpoint.header.frame_id = "local_origin";
   setpoint.header.stamp = ros::Time::now();
@@ -457,6 +472,11 @@ void LocalPlannerVisualization::publishCurrentSetpoint(const geometry_msgs::Twis
   setpoint.action = visualization_msgs::Marker::ADD;
 
   geometry_msgs::Point tip;
+  geometry_msgs::Point newest_pos;
+
+  newest_pos.x = newest_position(0);
+  newest_pos.y = newest_position(1);
+  newest_pos.z = newest_position(2);
   tip.x = newest_pos.x + wp.linear.x;
   tip.y = newest_pos.y + wp.linear.y;
   tip.z = newest_pos.z + wp.linear.z;

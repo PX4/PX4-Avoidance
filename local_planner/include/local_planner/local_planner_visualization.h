@@ -28,9 +28,9 @@ class LocalPlannerVisualization {
   * @params[in]  newest_adapted_waypoint_position, last caluclated waypoint
   *              (non-smoothed)
   **/
-  void visualizePlannerData(const LocalPlanner& planner, const geometry_msgs::Point& newest_waypoint_position,
-                            const geometry_msgs::Point& newest_adapted_waypoint_position,
-                            const geometry_msgs::PoseStamped& newest_pose) const;
+  void visualizePlannerData(const LocalPlanner& planner, const Eigen::Vector3f& newest_waypoint_position,
+                            const Eigen::Vector3f& newest_adapted_waypoint_position,
+                            const Eigen::Vector3f& newest_position, const Eigen::Quaternionf& newest_orientation) const;
 
   /**
   * @brief       Visualization of the calculated search tree and the best path
@@ -59,9 +59,9 @@ class LocalPlannerVisualization {
   * @params[in]  newest_pose, most recent drone pose
   **/
   void publishDataImages(const std::vector<uint8_t>& histogram_image_data, const std::vector<uint8_t>& cost_image_data,
-                         const geometry_msgs::Point& newest_waypoint_position,
-                         const geometry_msgs::Point& newest_adapted_waypoint_position,
-                         const geometry_msgs::PoseStamped& newest_pose) const;
+                         const Eigen::Vector3f& newest_waypoint_position,
+                         const Eigen::Vector3f& newest_adapted_waypoint_position,
+                         const Eigen::Vector3f& newest_position, const Eigen::Quaternionf newest_orientation) const;
 
   /**
   * @brief       Visualization of the waypoint calculation
@@ -87,9 +87,9 @@ class LocalPlannerVisualization {
   * @params[in]  newest_adapted_wp, location of the adapted waypoint at the
   *              current timestep
   **/
-  void publishPaths(const geometry_msgs::Point& last_pos, const geometry_msgs::Point& newest_pos,
-                    const geometry_msgs::Point& last_wp, const geometry_msgs::Point& newest_wp,
-                    const geometry_msgs::Point& last_adapted_wp, const geometry_msgs::Point& newest_adapted_wp);
+  void publishPaths(const Eigen::Vector3f& last_position, const Eigen::Vector3f& newest_position,
+                    const Eigen::Vector3f& last_wp, const Eigen::Vector3f& newest_wp,
+                    const Eigen::Vector3f& last_adapted_wp, const Eigen::Vector3f& newest_adapted_wp);
 
   /**
   * @brief       Visualization of the sent waypoint color coded with the mode
@@ -100,7 +100,7 @@ class LocalPlannerVisualization {
   * @params[in]  newest_pos, location of the drone at the current timestep
   **/
   void publishCurrentSetpoint(const geometry_msgs::Twist& wp, const PlannerState& waypoint_type,
-                              const geometry_msgs::Point& newest_pos) const;
+                              const Eigen::Vector3f& newest_position) const;
 
   /**
   * @brief       Visualization of the offtrack state
@@ -113,7 +113,7 @@ class LocalPlannerVisualization {
 
   void publishFOV(const std::vector<FOV>& fov, float max_range) const;
 
-  void publishRangeScan(const sensor_msgs::LaserScan& scan, const geometry_msgs::PoseStamped& newest_pose) const;
+  void publishRangeScan(const sensor_msgs::LaserScan& scan, const Eigen::Vector3f& newest_position) const;
 
  private:
   ros::Publisher local_pointcloud_pub_;

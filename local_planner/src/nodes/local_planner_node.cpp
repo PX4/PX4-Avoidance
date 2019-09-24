@@ -87,17 +87,18 @@ void LocalPlannerNode::startNode() {
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  auto goal = toPoint(local_planner_->getGoal());
-  nh_.param<double>("goal_x_param", goal.x, 9.0);
-  nh_.param<double>("goal_y_param", goal.y, 13.0);
-  nh_.param<double>("goal_z_param", goal.z, 3.5);
+  float init_goal_position_x, init_goal_position_y, init_goal_position_z;
+
+  nh_.param<float>("goal_x_param", init_goal_position_x, 9.0);
+  nh_.param<float>("goal_y_param", init_goal_position_y, 13.0);
+  nh_.param<float>("goal_z_param", init_goal_position_z, 3.5);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
   nh_.getParam("pointcloud_topics", camera_topics);
   initializeCameraSubscribers(camera_topics);
 
-  goal_msg_.pose.position = goal;
+  goal_position_ << init_goal_position_x, init_goal_position_y, init_goal_position_z;
   new_goal_ = true;
 }
 
@@ -171,30 +172,33 @@ void LocalPlannerNode::updatePlannerInfo() {
   }
 
   // update pose
-  local_planner_->setState(toEigen(newest_pose_.pose.position), toEigen(vel_msg_.twist.linear),
-                           toEigen(newest_pose_.pose.orientation));
+  local_planner_->setState(newest_position_, velocity_, newest_orientation_);
 
   // update state
   local_planner_->currently_armed_ = armed_;
 
   // update goal
   if (new_goal_) {
-    local_planner_->setGoal(toEigen(goal_msg_.pose.position));
-    local_planner_->setPreviousGoal(toEigen(prev_goal_.pose.position));
+    local_planner_->setGoal(goal_position_);
+    local_planner_->setPreviousGoal(prev_goal_position_);
     new_goal_ = false;
   }
 
   // update last sent waypoint
-  local_planner_->last_sent_waypoint_ = toEigen(newest_waypoint_position_);
+  local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
 }
 
 void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
-  last_pose_ = newest_pose_;
-  newest_pose_ = msg;
+  last_position_ = newest_position_;
+  newest_position_ = toEigen(msg.pose.position);
+  newest_orientation_ = toEigen(msg.pose.orientation);
+
   position_received_ = true;
 }
 
-void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) { vel_msg_ = msg; }
+void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) {
+  velocity_ = toEigen(msg.twist.linear);
+}
 
 void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   armed_ = msg.armed;
@@ -273,10 +277,10 @@ MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_->getSyste
 void LocalPlannerNode::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
-  wp_generator_->updateState(toEigen(newest_pose_.pose.position), toEigen(newest_pose_.pose.orientation),
-                             toEigen(goal_msg_.pose.position), toEigen(prev_goal_.pose.position),
-                             toEigen(vel_msg_.twist.linear), hover, is_airborne, nav_state_, is_land_waypoint_,
-                             is_takeoff_waypoint_, toEigen(desired_vel_msg_.twist.linear));
+  wp_generator_->updateState(newest_position_, newest_orientation_,
+                             goal_position_, prev_goal_position_,
+                             velocity_, hover, is_airborne, nav_state_, is_land_waypoint_,
+                             is_takeoff_waypoint_, desired_velocity_);
   waypointResult result = wp_generator_->getWaypoints();
 
   Eigen::Vector3f closest_pt = Eigen::Vector3f(NAN, NAN, NAN);
@@ -284,17 +288,17 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   wp_generator_->getOfftrackPointsForVisualization(closest_pt, deg60_pt);
 
   last_waypoint_position_ = newest_waypoint_position_;
-  newest_waypoint_position_ = toPoint(result.smoothed_goto_position);
+  newest_waypoint_position_ = result.smoothed_goto_position;
   last_adapted_waypoint_position_ = newest_adapted_waypoint_position_;
-  newest_adapted_waypoint_position_ = toPoint(result.adapted_goto_position);
+  newest_adapted_waypoint_position_ = result.adapted_goto_position;
 
   // visualize waypoint topics
   visualizer_.visualizeWaypoints(result.goto_position, result.adapted_goto_position, result.smoothed_goto_position);
-  visualizer_.publishPaths(last_pose_.pose.position, newest_pose_.pose.position, last_waypoint_position_,
+  visualizer_.publishPaths(last_position_, newest_position_, last_waypoint_position_,
                            newest_waypoint_position_, last_adapted_waypoint_position_,
                            newest_adapted_waypoint_position_);
   visualizer_.publishCurrentSetpoint(toTwist(result.linear_velocity_wp, result.angular_velocity_wp),
-                                     result.waypoint_type, newest_pose_.pose.position);
+                                     result.waypoint_type, newest_position_);
 
   visualizer_.publishOfftrackPoints(closest_pt, deg60_pt);
 
@@ -313,17 +317,17 @@ void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped& m
 
 void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg) {
   new_goal_ = true;
-  prev_goal_ = goal_msg_;
-  goal_msg_ = msg;
+  prev_goal_position_ = goal_position_;
+  goal_position_ = toEigen(msg.pose.position);
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_msg_.pose.position.z = local_planner_->getGoal().z();
+  goal_position_(2) = local_planner_->getGoal().z();
 }
 
 void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg) {
   if (accept_goal_input_topic_ && msg.markers.size() > 0) {
-    prev_goal_ = goal_msg_;
-    goal_msg_.pose = msg.markers[0].pose;
+    prev_goal_position_ = goal_position_;
+    goal_position_ = toEigen(msg.markers[0].pose.position);
     new_goal_ = true;
   }
 }
@@ -332,22 +336,20 @@ void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) 
   bool update =
       ((avoidance::toEigen(msg.point_2.position) - avoidance::toEigen(goal_mission_item_msg_.pose.position)).norm() >
        0.01) ||
-      !std::isfinite(goal_msg_.pose.position.x) || !std::isfinite(goal_msg_.pose.position.y);
+      !std::isfinite(goal_position_(0)) || !std::isfinite(goal_position_(1));
   if ((msg.point_valid[0] == true) && update) {
     new_goal_ = true;
-    prev_goal_ = goal_msg_;
-    goal_msg_.pose.position = msg.point_1.position;
-    desired_vel_msg_.twist.linear = msg.point_1.velocity;
+    prev_goal_position_ = goal_position_;
+    goal_position_ = toEigen(msg.point_1.position);
+    desired_velocity_ = toEigen(msg.point_1.velocity);
     is_land_waypoint_ = (msg.command[0] == static_cast<int>(MavCommand::MAV_CMD_NAV_LAND));
     is_takeoff_waypoint_ = (msg.command[0] == static_cast<int>(MavCommand::MAV_CMD_NAV_TAKEOFF));
   }
   if (msg.point_valid[1] == true) {
     goal_mission_item_msg_.pose.position = msg.point_2.position;
     if (msg.command[1] == UINT16_MAX) {
-      goal_msg_.pose.position = msg.point_2.position;
-      desired_vel_msg_.twist.linear.x = NAN;
-      desired_vel_msg_.twist.linear.y = NAN;
-      desired_vel_msg_.twist.linear.z = NAN;
+      goal_position_ = toEigen(msg.point_2.position);
+      desired_velocity_ << NAN, NAN, NAN;
     }
     desired_yaw_setpoint_ = msg.point_2.yaw;
     desired_yaw_speed_setpoint_ = msg.point_2.yaw_rate;
@@ -455,7 +457,7 @@ void LocalPlannerNode::threadFunction() {
       std::clock_t start_time_ = std::clock();
       local_planner_->runPlanner();
       visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
-                                       newest_adapted_waypoint_position_, newest_pose_);
+                                       newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
       publishLaserScan();
       last_wp_time_ = ros::Time::now();
 
