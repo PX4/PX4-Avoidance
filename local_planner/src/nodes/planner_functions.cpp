@@ -295,7 +295,7 @@ float costChangeInTreeDirection(Eigen::Vector2f &prev_direction, Eigen::Vector2f
   init_angle = std::abs(init_angle);
   float add = init_angle > 10.f ? (5000.f / (1.f + std::exp((-init_angle + 10.f) / 20.f))) : 0.f;
   if (init_angle > 20.f) {
-    add = 1000000.0f;
+    add = 500000.0f;
   }
 
   return add;

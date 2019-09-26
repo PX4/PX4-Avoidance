@@ -90,8 +90,9 @@ void StarPlanner::buildLookAheadTree() {
     simulation_limits limits = lims_;
     simulation_state state = tree_[origin].state;
     limits.max_xy_velocity_norm =
-        std::min(computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
+        std::min(std::min(computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
                                                     (state.position - goal_).head<2>().norm()),
+                computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm, max_sensor_range_)),
                  lims_.max_xy_velocity_norm);
 
     // add candidates as nodes
