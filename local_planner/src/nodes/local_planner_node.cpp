@@ -87,18 +87,15 @@ void LocalPlannerNode::startNode() {
 
 void LocalPlannerNode::readParams() {
   // Parameter from launch file
-  float init_goal_position_x, init_goal_position_y, init_goal_position_z;
-
-  nh_.param<float>("goal_x_param", init_goal_position_x, 9.0);
-  nh_.param<float>("goal_y_param", init_goal_position_y, 13.0);
-  nh_.param<float>("goal_z_param", init_goal_position_z, 3.5);
+  nh_.param<float>("goal_x_param", goal_position_.x(), 9.0);
+  nh_.param<float>("goal_y_param", goal_position_.y(), 13.0);
+  nh_.param<float>("goal_z_param", goal_position_.z(), 3.5);
   nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
 
   std::vector<std::string> camera_topics;
   nh_.getParam("pointcloud_topics", camera_topics);
   initializeCameraSubscribers(camera_topics);
 
-  goal_position_ << init_goal_position_x, init_goal_position_y, init_goal_position_z;
   new_goal_ = true;
 }
 
@@ -319,7 +316,7 @@ void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg
   goal_position_ = toEigen(msg.pose.position);
   /* Selecting the goal from Rviz sets x and y. Get the z coordinate set in
    * the launch file */
-  goal_position_(2) = local_planner_->getGoal().z();
+  goal_position_.z() = local_planner_->getGoal().z();
 }
 
 void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg) {
