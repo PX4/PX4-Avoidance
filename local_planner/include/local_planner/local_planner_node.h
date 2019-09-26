@@ -204,21 +204,23 @@ class LocalPlannerNode {
   ros::Time last_wp_time_;
   ros::Time t_status_sent_;
 
-  geometry_msgs::PoseStamped hover_point_;
-  geometry_msgs::PoseStamped newest_pose_;
-  geometry_msgs::PoseStamped last_pose_;
-  geometry_msgs::Point newest_waypoint_position_;
-  geometry_msgs::Point last_waypoint_position_;
-  geometry_msgs::Point newest_adapted_waypoint_position_;
-  geometry_msgs::Point last_adapted_waypoint_position_;
-  geometry_msgs::PoseStamped goal_msg_;
-  geometry_msgs::TwistStamped vel_msg_;
-  geometry_msgs::PoseStamped prev_goal_;
-  geometry_msgs::TwistStamped desired_vel_msg_;
   geometry_msgs::PoseStamped goal_mission_item_msg_;
   mavros_msgs::Altitude ground_distance_msg_;
 
   bool new_goal_ = false;
+
+  Eigen::Vector3f newest_waypoint_position_;
+  Eigen::Vector3f last_waypoint_position_;
+  Eigen::Vector3f newest_adapted_waypoint_position_;
+  Eigen::Vector3f last_adapted_waypoint_position_;
+  Eigen::Vector3f newest_position_;
+  Eigen::Quaternionf newest_orientation_;
+  Eigen::Vector3f last_position_;
+  Eigen::Quaternionf last_orientation_;
+  Eigen::Vector3f velocity_;
+  Eigen::Vector3f desired_velocity_;
+  Eigen::Vector3f goal_position_;
+  Eigen::Vector3f prev_goal_position_;
 
   NavigationState nav_state_ = NavigationState::none;
 
