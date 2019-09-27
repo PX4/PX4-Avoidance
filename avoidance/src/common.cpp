@@ -278,7 +278,6 @@ double getAngularVelocity(float desired_yaw, float curr_yaw) {
   return 0.5 * static_cast<double>(vel);
 }
 
-
 void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose,
                            geometry_msgs::Twist vel) {
   obst_avoid.header.stamp = ros::Time::now();
