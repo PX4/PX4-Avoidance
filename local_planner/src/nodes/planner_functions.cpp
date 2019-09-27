@@ -229,7 +229,8 @@ int colorImageIndex(int e_ind, int z_ind, int color) {
 }
 
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir) {
+                                     std::vector<candidateDirection>& candidate_vector,
+                                     const Eigen::Vector3f prev_init_dir) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
@@ -282,7 +283,7 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
   std::reverse(candidate_vector.begin(), candidate_vector.end());
 }
 
-float costChangeInTreeDirection(Eigen::Vector2f &prev_direction, Eigen::Vector2f &curr_direction, float &init_angle) {
+float costChangeInTreeDirection(Eigen::Vector2f& prev_direction, Eigen::Vector2f& curr_direction, float& init_angle) {
   init_angle = atan2(curr_direction.y(), curr_direction.x()) - atan2(prev_direction.y(), prev_direction.x());
   if (init_angle > M_PI_F) {
     init_angle -= 2 * M_PI_F;

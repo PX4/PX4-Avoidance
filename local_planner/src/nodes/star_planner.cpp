@@ -40,7 +40,9 @@ void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { 
 void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  return ((goal_ - tree_[node_number].getPosition()).norm() / lims_.max_xy_velocity_norm + tree_[node_number].state.time) * tree_heuristic_weight_;
+  return ((goal_ - tree_[node_number].getPosition()).norm() / lims_.max_xy_velocity_norm +
+          tree_[node_number].state.time) *
+         tree_heuristic_weight_;
 }
 
 void StarPlanner::buildLookAheadTree() {
@@ -79,18 +81,19 @@ void StarPlanner::buildLookAheadTree() {
     candidate_vector.clear();
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
-    if (n!=0) {
+    if (n != 0) {
       starting_direction_ = tree_[origin].getSetpoint();
     }
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector, starting_direction_);
 
     simulation_limits limits = lims_;
     simulation_state state = tree_[origin].state;
-    limits.max_xy_velocity_norm =
-        std::min(std::min(computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
-                                                    (state.position - goal_).head<2>().norm()),
-                computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm, max_sensor_range_)),
-                 lims_.max_xy_velocity_norm);
+    limits.max_xy_velocity_norm = std::min(
+        std::min(
+            computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
+                                               (state.position - goal_).head<2>().norm()),
+            computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm, max_sensor_range_)),
+        lims_.max_xy_velocity_norm);
 
     // add candidates as nodes
     if (candidate_vector.empty()) {
@@ -160,7 +163,7 @@ void StarPlanner::buildLookAheadTree() {
       size_t parent = tree_[i].origin_;
       float total_cost = tree_[i].total_cost_;
       int depth = 0;
-      while(tree_[parent].origin_ > 0) {
+      while (tree_[parent].origin_ > 0) {
         parent = tree_[parent].origin_;
         depth++;
       }
@@ -179,11 +182,9 @@ void StarPlanner::buildLookAheadTree() {
     tree_end = tree_[tree_end].origin_;
   }
 
-
   path_node_setpoints_.push_back(tree_[0].getSetpoint());
   if ((path_node_setpoints_.size() - 2) >= 0) {
     starting_direction_ = path_node_setpoints_[path_node_setpoints_.size() - 2];
   }
-
 }
 }

@@ -81,8 +81,8 @@ usm::Transition WaypointGenerator::runCurrentState() {
 
 usm::Transition WaypointGenerator::runTryPath() {
   Eigen::Vector3f setpoint = Eigen::Vector3f::Zero();
-  const bool tree_available = interpolateBetweenSetpoints(planner_info_.path_node_setpoints, planner_info_.last_path_time,
-                                  planner_info_.tree_node_duration, setpoint);
+  const bool tree_available = interpolateBetweenSetpoints(
+      planner_info_.path_node_setpoints, planner_info_.last_path_time, planner_info_.tree_node_duration, setpoint);
   output_.goto_position = position_ + setpoint;
   getPathMsg();
 

@@ -134,27 +134,27 @@ void LocalPlanner::determineStrategy() {
   }
 
   if (!polar_histogram_.isEmpty()) {
-      getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
-                    max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
+    getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
+                  max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
 
-      simulation_limits lims;
-      setDefaultPx4Parameters();  // TODO: remove but make sure they're set!
-      lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
-      lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
-      lims.max_xy_velocity_norm =
-         std::min(getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
-                              px4_.param_mpc_xy_cruise, mission_item_speed_),
-                  getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, (goal_ - position_).norm(),
-                              px4_.param_mpc_xy_cruise, mission_item_speed_));
-      lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
-      lims.max_jerk_norm = px4_.param_mpc_jerk_max;
-      star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
-      star_planner_->setPointcloud(final_cloud_);
-      star_planner_->setClosestPointOnLine(closest_pt_);
+    simulation_limits lims;
+    setDefaultPx4Parameters();  // TODO: remove but make sure they're set!
+    lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
+    lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
+    lims.max_xy_velocity_norm =
+        std::min(getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
+                             px4_.param_mpc_xy_cruise, mission_item_speed_),
+                 getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, (goal_ - position_).norm(),
+                             px4_.param_mpc_xy_cruise, mission_item_speed_));
+    lims.max_acceleration_norm = px4_.param_mpc_acc_hor;
+    lims.max_jerk_norm = px4_.param_mpc_jerk_max;
+    star_planner_->setParams(cost_params_, lims, px4_.param_nav_acc_rad);
+    star_planner_->setPointcloud(final_cloud_);
+    star_planner_->setClosestPointOnLine(closest_pt_);
 
-      // build search tree
-      star_planner_->buildLookAheadTree();
-      last_path_time_ = ros::Time::now();
+    // build search tree
+    star_planner_->buildLookAheadTree();
+    last_path_time_ = ros::Time::now();
   }
 }
 
@@ -228,7 +228,7 @@ void LocalPlanner::getObstacleDistanceData(sensor_msgs::LaserScan& obstacle_dist
 avoidanceOutput LocalPlanner::getAvoidanceOutput() const {
   avoidanceOutput out;
   out.cruise_velocity = getMaxSpeed(px4_.param_mpc_jerk_max, px4_.param_mpc_acc_hor, max_sensor_range_,
-                                px4_.param_mpc_xy_cruise, mission_item_speed_);
+                                    px4_.param_mpc_xy_cruise, mission_item_speed_);
   out.last_path_time = last_path_time_;
   out.tree_node_duration = tree_node_duration_;
   out.path_node_setpoints = star_planner_->path_node_setpoints_;

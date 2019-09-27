@@ -41,6 +41,7 @@ class StarPlanner {
   simulation_limits lims_;
   Eigen::Vector3f starting_direction_ = Eigen::Vector3f(NAN, NAN, NAN);
   float init_angle_ = 0.f;
+
  protected:
   /**
   * @brief     computes the heuristic for a node
