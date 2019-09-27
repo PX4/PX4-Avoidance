@@ -35,7 +35,7 @@ void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
 
-void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { cloud_ = cloud; }
+void StarPlanner::setPointcloud(const kdtree_t& cloud) { cloud_ = cloud; }
 
 void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
 
@@ -67,19 +67,13 @@ void StarPlanner::buildLookAheadTree() {
   tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
-  kdtree_t tree_cloud;
-  for (auto point : cloud_) {
-    tree_cloud.addPoint(toArray(toEigen(point)), point.intensity, false);
-  }
-  tree_cloud.splitOutstanding();
-
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
 
     histogram.setZero();
-    generateHistogramHACK(histogram, tree_cloud, origin_position, 2.5f);// hack: project 2.5m into each histogram cell
+    generateHistogramHACK(histogram, cloud_, origin_position, 2.5f);  // hack: project 2.5m into each histogram cell
 
     // calculate candidates
     cost_matrix.fill(0.f);

@@ -12,10 +12,13 @@
 
 #include <nav_msgs/GridCells.h>
 
+#include <avoidance/kdtree.h>
 #include <dynamic_reconfigure/server.h>
 #include <local_planner/LocalPlannerNodeConfig.h>
 
 #include <vector>
+
+using kdtree_t = jk::tree::KDTree<float, 3, 16, jk::tree::SquaredL2, float>;
 
 namespace avoidance {
 class TreeNode;
@@ -31,7 +34,7 @@ class StarPlanner {
   float max_sensor_range_ = 15.f;
   float min_sensor_range_ = 0.2f;
 
-  pcl::PointCloud<pcl::PointXYZI> cloud_;
+  kdtree_t cloud_;
 
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -69,7 +72,7 @@ class StarPlanner {
   * @brief     setter method for star_planner pointcloud
   * @param[in] cloud, processed data already cropped and combined with history
   **/
-  void setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud);
+  void setPointcloud(const kdtree_t& cloud);
 
   /**
   * @brief     setter method for vehicle position

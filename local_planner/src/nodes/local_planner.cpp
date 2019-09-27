@@ -88,7 +88,7 @@ void LocalPlanner::create2DObstacleRepresentation(const bool send_to_fcu) {
   // or if it is required by the FCU
   Histogram new_histogram = Histogram(ALPHA_RES);
   to_fcu_histogram_.setZero();
-  generateNewHistogram(new_histogram, final_cloud_, position_);
+  generateHistogramHACK(new_histogram, final_cloud_, position_, 2.5f);  // HACK: hard-code 2.5m outward projection
 
   if (send_to_fcu) {
     compressHistogramElevation(to_fcu_histogram_, new_histogram, position_);
@@ -196,7 +196,15 @@ void LocalPlanner::updateObstacleDistanceMsg() {
 
 Eigen::Vector3f LocalPlanner::getPosition() const { return position_; }
 
-const pcl::PointCloud<pcl::PointXYZI>& LocalPlanner::getPointcloud() const { return final_cloud_; }
+pcl::PointCloud<pcl::PointXYZI> LocalPlanner::getPointcloud() const {
+  pcl::PointCloud<pcl::PointXYZI> ret;
+  std::vector<std::pair<std::array<float, 3>, float>> local_cloud = final_cloud_.getAllPoints();
+  for (const auto& p : local_cloud) {
+    ret.push_back(toXYZI(p.first[0], p.first[1], p.first[2], p.second));
+  }
+  ret.header.frame_id = "/local_origin";
+  return ret;
+}
 
 void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_auto_mode = 1;

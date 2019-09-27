@@ -27,6 +27,7 @@
 #include <deque>
 #include <string>
 #include <vector>
+#include "avoidance/kdtree.h"
 
 namespace avoidance {
 
@@ -57,7 +58,7 @@ class LocalPlanner {
   std::unique_ptr<StarPlanner> star_planner_;
   costParameters cost_params_;
 
-  pcl::PointCloud<pcl::PointXYZI> final_cloud_;
+  kdtree_t final_cloud_;
 
   Eigen::Vector3f position_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f velocity_ = Eigen::Vector3f::Zero();
@@ -178,7 +179,7 @@ class LocalPlanner {
   * @brief     getter method to visualize the pointcloud used for planning
   * @returns   reference to pointcloud
   **/
-  const pcl::PointCloud<pcl::PointXYZI>& getPointcloud() const;
+  pcl::PointCloud<pcl::PointXYZI> getPointcloud() const;
 
   /**
   * @brief     getter method to visualize the tree in rviz

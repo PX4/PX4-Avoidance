@@ -11,7 +11,7 @@ namespace avoidance {
 
 // initialize subscribers for local planner visualization topics
 void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
-  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
+  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("/local_pointcloud", 1);
   pointcloud_size_pub_ = nh.advertise<std_msgs::UInt32>("/pointcloud_size", 1);
   bounding_box_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
   ground_measurement_pub_ = nh.advertise<visualization_msgs::Marker>("/ground_measurement", 1);

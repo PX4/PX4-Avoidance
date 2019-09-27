@@ -17,7 +17,7 @@
 
 namespace avoidance {
 
-using kdtree_t = jk::tree::KDTree<double, 3, 16, jk::tree::SquaredL2, float>;
+using kdtree_t = jk::tree::KDTree<float, 3, 16, jk::tree::SquaredL2, float>;
 
 /**
 * @brief      crops and subsamples the incomming data, then combines it with
@@ -33,11 +33,10 @@ using kdtree_t = jk::tree::KDTree<double, 3, 16, jk::tree::SquaredL2, float>;
 *             be kept, less points are discarded as noise (careful: 0 is not
 *             a valid input here)
 **/
-void processPointcloud(pcl::PointCloud<pcl::PointXYZI>& final_cloud,
-                       const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud, const std::vector<FOV>& fov,
-                       float yaw_fcu_frame_deg, float pitch_fcu_frame_deg, const Eigen::Vector3f& position,
-                       float min_sensor_range, float max_sensor_range, float max_age, float elapsed_s,
-                       int min_num_points_per_cell);
+void processPointcloud(kdtree_t& final_cloud, const std::vector<pcl::PointCloud<pcl::PointXYZ>>& complete_cloud,
+                       const std::vector<FOV>& fov, float yaw_fcu_frame_deg, float pitch_fcu_frame_deg,
+                       const Eigen::Vector3f& position, float min_sensor_range, float max_sensor_range, float max_age,
+                       float elapsed_s, int min_num_points_per_cell);
 
 /**
 * @brief      calculates a histogram from the current frame pointcloud around
