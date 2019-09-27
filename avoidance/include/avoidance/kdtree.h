@@ -175,6 +175,33 @@ class KDTree {
     }
   }
 
+  std::vector<std::pair<point_t, payload_t>> getAllPoints() const {
+    std::vector<std::pair<point_t, payload_t>> result;
+    result.reserve(size());
+    if (size() > 0) {
+      std::vector<std::size_t> searchStack;
+      searchStack.reserve(1 + std::size_t(1.5 * std::log2(1 + size() / BucketSize)));
+      searchStack.push_back(0);
+
+      while (searchStack.size() > 0) {
+        std::size_t nodeIndex = searchStack.back();
+        searchStack.pop_back();
+        const Node& node = m_nodes[nodeIndex];
+        if (node.m_splitDimension == Dimensions) {
+          for (const auto& lp : node.m_locationPayloads) {
+            result.emplace_back(lp.location, lp.payload);
+          }
+        } else {
+          searchStack.push_back(node.m_children.first);
+          searchStack.push_back(node.m_children.second);  // right is popped first
+        }
+      }
+    }
+    return result;
+  }
+
+  std::size_t size() const { return m_nodes[0].m_entries; }
+
   void splitOutstanding() {
     std::vector<std::size_t> searchStack(waitingForSplit.begin(), waitingForSplit.end());
     waitingForSplit.clear();
