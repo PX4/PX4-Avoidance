@@ -98,7 +98,7 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf
 *             the least to the most expensive
 **/
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir, const Eigen::Vector3f pos);
+                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir);
 
 /**
 * @brief      computes the cost of each direction in the polar histogram

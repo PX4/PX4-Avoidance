@@ -40,7 +40,6 @@ void StarPlanner::setPointcloud(const pcl::PointCloud<pcl::PointXYZI>& cloud) { 
 void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  // return (goal_ - tree_[node_number].getPosition()).norm() * tree_heuristic_weight_;
   return ((goal_ - tree_[node_number].getPosition()).norm() / lims_.max_xy_velocity_norm + tree_[node_number].state.time) * tree_heuristic_weight_;
 }
 
@@ -70,8 +69,6 @@ void StarPlanner::buildLookAheadTree() {
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
-    PolarPoint facing_goal = cartesianToPolarHistogram(goal_, origin_position);
-    float distance_to_goal = (goal_ - origin_position).norm();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
@@ -85,7 +82,7 @@ void StarPlanner::buildLookAheadTree() {
     if (n!=0) {
       starting_direction_ = tree_[origin].getSetpoint();
     }
-    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector, starting_direction_, position_);
+    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector, starting_direction_);
 
     simulation_limits limits = lims_;
     simulation_state state = tree_[origin].state;
@@ -184,7 +181,9 @@ void StarPlanner::buildLookAheadTree() {
 
 
   path_node_setpoints_.push_back(tree_[0].getSetpoint());
-  starting_direction_ = path_node_setpoints_[path_node_setpoints_.size() - 2];
+  if ((path_node_setpoints_.size() - 2) >= 0) {
+    starting_direction_ = path_node_setpoints_[path_node_setpoints_.size() - 2];
+  }
 
 }
 }

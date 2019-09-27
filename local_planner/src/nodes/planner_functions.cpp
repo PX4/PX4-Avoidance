@@ -229,8 +229,7 @@ int colorImageIndex(int e_ind, int z_ind, int color) {
 }
 
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir,
-                                   const Eigen::Vector3f pos) {
+                                     std::vector<candidateDirection>& candidate_vector, const Eigen::Vector3f prev_init_dir) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
@@ -395,7 +394,7 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   const float yaw_to_line_cost = weight * cost_params.yaw_cost_param * angle_diff_to_line * angle_diff_to_line;
   const float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
-  const float d = cost_params.obstacle_cost_param - obstacle_distance;
+  const float d = 2 + cost_params.obstacle_cost_param - obstacle_distance;
   const float distance_cost = obstacle_distance > 0.f ? 1000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
   return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost);
