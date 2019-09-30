@@ -20,13 +20,13 @@
 #include <global_planner/GlobalPlannerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
 #include "global_planner/analysis.h"
+#include "global_planner/avoidance_output.h"
 #include "global_planner/cell.h"
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
 #include "global_planner/node.h"
 #include "global_planner/search_tools.h"
 #include "global_planner/visitor.h"
-#include "global_planner/avoidance_output.h"
 
 namespace global_planner {
 

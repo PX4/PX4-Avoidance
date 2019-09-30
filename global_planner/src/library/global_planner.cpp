@@ -361,11 +361,11 @@ nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
 
 std::vector<Eigen::Vector3f> GlobalPlanner::getPath() { return getPath(curr_path_); }
 
-std::vector<Eigen::Vector3f> GlobalPlanner::getPath(std::vector<Cell>& parse_path){
+std::vector<Eigen::Vector3f> GlobalPlanner::getPath(std::vector<Cell>& parse_path) {
   std::vector<Eigen::Vector3f> path;
 
   if (parse_path.size() == 0) return path;
-  for (int i = 0; i < parse_path.size() - 1; ++i)  path.push_back(parse_path[i].toEigen());
+  for (int i = 0; i < parse_path.size() - 1; ++i) path.push_back(parse_path[i].toEigen());
   return path;
 }
 
@@ -543,6 +543,7 @@ avoidanceOutput GlobalPlanner::getAvoidanceOutput() {
   avoidanceOutput out;
   out.cruise_velocity = 5.0;
   out.path_node_positions = getPath();
+  out.last_path_time = ros::Time::now();
   return out;
 }
 

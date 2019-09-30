@@ -2,9 +2,9 @@
 #define GLOBAL_PLANNER_WAYPOINT_GENERATOR_H
 
 #include <avoidance/usm.h>
+#include <Eigen/Dense>
 #include "avoidance/common.h"
 #include "global_planner/avoidance_output.h"
-#include <Eigen/Dense>
 
 #include <ros/time.h>
 
@@ -58,6 +58,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   bool reach_altitude_offboard_{false};
   bool auto_land_{false};
   bool loiter_{false};
+  bool collision_on_direct_path_{true};
   float setpoint_yaw_rad_ = 0.0f;
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
@@ -67,9 +68,9 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 
   avoidance::NavigationState nav_state_ = avoidance::NavigationState::none;
 
-//   ros::Time velocity_time_;
+  //   ros::Time velocity_time_;
 
-//   // state
+  //   // state
   bool trigger_reset_ = false;
   bool state_changed_ = false;
   PlannerState prev_planner_state_ = PlannerState::DIRECT;
@@ -93,10 +94,10 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   **/
   void calculateWaypoint();
 
-//   /**
-//   * @brief     transform a position waypoint into a velocity waypoint
-//   **/
-//   void transformPositionToVelocityWaypoint();
+  //   /**
+  //   * @brief     transform a position waypoint into a velocity waypoint
+  //   **/
+  //   void transformPositionToVelocityWaypoint();
 
   /**
   * @brief     smooths waypoints with a critically damped PD controller
@@ -115,7 +116,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   **/
   void getPathMsg();
 
-//   bool isAltitudeChange();
+  //   bool isAltitudeChange();
 
  public:
   /**
@@ -151,36 +152,41 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   * @param[in] is_land_waypoint, true if the current mission item is a land waypoint
   * @param[in] is_takeoff_waypoint, true if the current mission item is a takeoff waypoint
   * @param[in] desired_vel, velocity setpoint from the Firmware
+  * @param[in] collision_on_direct_path, whether the direct path would collide with an obstacle
   **/
   void updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q, const Eigen::Vector3f& goal,
                    const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne,
-                   const avoidance::NavigationState& nav_state, const bool is_land_waypoint, const bool is_takeoff_waypoint,
-                   const Eigen::Vector3f& desired_vel);
+                   const avoidance::NavigationState& nav_state, const bool is_land_waypoint,
+                   const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel,
+                   const bool collision_on_direct_path);
 
-//   /**
-//   * @brief set the responsiveness of the smoothing
-//   * @param[in] smoothing_speed_xy, set to 0 to disable
-//   * @param[in] smoothing_speed_z, set to 0 to disable
-//   **/
-//   void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
-//     smoothing_speed_xy_ = smoothing_speed_xy;
-//     smoothing_speed_z_ = smoothing_speed_z;
-//   }
+  //   /**
+  //   * @brief set the responsiveness of the smoothing
+  //   * @param[in] smoothing_speed_xy, set to 0 to disable
+  //   * @param[in] smoothing_speed_z, set to 0 to disable
+  //   **/
+  //   void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
+  //     smoothing_speed_xy_ = smoothing_speed_xy;
+  //     smoothing_speed_z_ = smoothing_speed_z;
+  //   }
 
-//   /**
-//   * @brief     getter method for the system time
-//   * @returns   current ROS time
-//   **/
-//   virtual ros::Time getSystemTime();
+  //   /**
+  //   * @brief     getter method for the system time
+  //   * @returns   current ROS time
+  //   **/
+  //   virtual ros::Time getSystemTime();
 
-//   /**
-//   * @brief     getter method to visualize offtrack state
-//   * @param[in] closest_pt, vehicle position projection on the line previous to
-//   * current goal
-//   * @param[in] deg60_pt, 60 degrees angle entry point to line previous to
-//   * current goal from current vehicle postion
-//   **/
-//   void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
+  //   /**
+  //   * @brief     getter method to visualize offtrack state
+  //   * @param[in] closest_pt, vehicle position projection on the line previous to
+  //   * current goal
+  //   * @param[in] deg60_pt, 60 degrees angle entry point to line previous to
+  //   * current goal from current vehicle postion
+  //   **/
+  //   void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
+
+  bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
+                           float velocity, Eigen::Vector3f& setpoint);
 
   WaypointGenerator();
   virtual ~WaypointGenerator() = default;

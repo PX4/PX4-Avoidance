@@ -1,7 +1,7 @@
 #include <ros/param.h>
 
-#include "global_planner/waypoint_generator.h"
 #include "avoidance/common.h"
+#include "global_planner/waypoint_generator.h"
 
 namespace global_planner {
 
@@ -36,9 +36,10 @@ PlannerState WaypointGenerator::chooseNextState(PlannerState currentState, usm::
          USM_MAP(usm::Transition::NEXT2, PlannerState::LOITER));
       USM_STATE(transition, PlannerState::LOITER, USM_MAP(usm::Transition::NEXT1, PlannerState::DIRECT);
          USM_MAP(usm::Transition::NEXT2, PlannerState::NAVIGATE));
-      USM_STATE(transition, PlannerState::DIRECT, USM_MAP(usm::Transition::NEXT1, PlannerState::NAVIGATE));
-      // clang-format on
-  );
+      USM_STATE(transition, PlannerState::DIRECT, USM_MAP(usm::Transition::NEXT1, PlannerState::NAVIGATE);
+         USM_MAP(usm::Transition::NEXT2, PlannerState::LOITER));
+            // clang-format on
+            );
 }
 
 usm::Transition WaypointGenerator::runCurrentState() {
@@ -66,60 +67,74 @@ usm::Transition WaypointGenerator::runCurrentState() {
 }
 
 usm::Transition WaypointGenerator::runLoiter() {
-  // if (state_changed_ || hover_position_.array().hasNaN()) {
-  //   hover_position_ = position_;
-  // }
-  // output_.goto_position = hover_position_;
-  // ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(), output_.goto_position.y(),
-  //           output_.goto_position.z());
+  if (state_changed_ || hover_position_.array().hasNaN()) {
+    hover_position_ = position_;
+  }
+  output_.goto_position = hover_position_;
+  ROS_DEBUG("[WG] Hover at: [%f, %f, %f].", output_.goto_position.x(), output_.goto_position.y(),
+            output_.goto_position.z());
   getPathMsg();
-  bool loiter_ = false;
 
-  if (loiter_) {
-    return usm::Transition::REPEAT;
+  // TODO: Implement collision checker, start the navigate state if a collision is found
+  if (!collision_on_direct_path_) {
+    return usm::Transition::NEXT1;  // DIRECT
+  } else if (loiter_) {
+    // Loiter if there would be a collision and the trajectory has not yet been calculated
+    return usm::Transition::REPEAT;  // LOITER
   } else {
-    return usm::Transition::NEXT1;
+    // Start navigating with path planner when there is a collision and a path is available
+    return usm::Transition::NEXT2;  // NAVIGATE
   }
 }
 
 usm::Transition WaypointGenerator::runDirect() {
   Eigen::Vector3f dir = (goal_ - position_).normalized();
   output_.goto_position = position_ + dir;
-  std::cout << "[RunDirect] position: "<< position_.transpose() << " goal: " << goal_.transpose() << " dir: " << dir.transpose() <<std::endl;
+  std::cout << "[RunDirect] position: " << position_.transpose() << " goal: " << goal_.transpose()
+            << " dir: " << dir.transpose() << std::endl;
 
   ROS_INFO("[WG] Going straight to selected waypoint: [%f, %f, %f].", output_.goto_position.x(),
-            output_.goto_position.y(), output_.goto_position.z());
+           output_.goto_position.y(), output_.goto_position.z());
 
   getPathMsg();
-  bool collision_in_path = false;
-  
-  //TODO: Implement collision checker, start the navigate state if a collision is found
-  if (collision_in_path) {
-    // Start navigating with path planner when there is a collision
-    return usm::Transition::NEXT1;  // NAVIGATE
-  } else {
+
+  // TODO: Implement collision checker, start the navigate state if a collision is found
+  if (!collision_on_direct_path_) {
     return usm::Transition::REPEAT;
+  } else if (loiter_) {
+    // Loiter if there would be a collision and the trajectory has not yet been calculated
+    return usm::Transition::NEXT2;  // LOITER
+  } else {
+    // Start navigating with path planner when there is a collision and a path is available
+    return usm::Transition::NEXT1;  // NAVIGATE
   }
 }
 
 usm::Transition WaypointGenerator::runNavigate() {
-  //   Eigen::Vector3f setpoint = position_;
-//   const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-//                                                   planner_info_.cruise_velocity, setpoint);
-//   output_.goto_position = position_ + (setpoint - position_).normalized();
-//   getPathMsg();
+  Eigen::Vector3f setpoint = position_;
+  bool valid_path = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
+                                        planner_info_.cruise_velocity, setpoint);
 
-//   if (isAltitudeChange()) {
-//     return usm::Transition::NEXT1;  // ALTITUDE_CHANGE
-//   } else if (tree_available) {
-//     ROS_DEBUG("[WG] Using calculated tree\n");
-//     return usm::Transition::REPEAT;
-//   } else if (loiter_) {
-//     return usm::Transition::NEXT3;  // LOITER
-//   } else {
-//     return usm::Transition::NEXT2;  // DIRECT
-//   }
-  return usm::Transition::REPEAT;
+  if ((setpoint - position_).norm() > 0.001f) {
+    output_.goto_position = position_ + (setpoint - position_).normalized();
+  } else {
+    output_.goto_position = position_;  // hovering
+  }
+
+  ROS_INFO("\033[1;32m[WG] running navigate: path valid = %.0f \033[0m", (double)valid_path);
+
+  getPathMsg();
+
+  // TODO: Implement collision checker, start the navigate state if a collision is found
+  if (!collision_on_direct_path_) {
+    return usm::Transition::NEXT1;  // DIRECT
+  } else if (loiter_ || !valid_path) {
+    // Loiter if there would be a collision and the trajectory has not yet been calculated
+    return usm::Transition::NEXT2;  // LOITER
+  } else {
+    // Continue navigating with path planner when there is a collision and a path is available
+    return usm::Transition::REPEAT;  // NAVIGATE
+  }
 }
 
 void WaypointGenerator::calculateWaypoint() {
@@ -143,7 +158,8 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
                                     const Eigen::Vector3f& goal, const Eigen::Vector3f& prev_goal,
                                     const Eigen::Vector3f& vel, bool stay, bool is_airborne,
                                     const avoidance::NavigationState& nav_state, const bool is_land_waypoint,
-                                    const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel) {
+                                    const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel,
+                                    const bool collision_on_direct_path) {
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
@@ -155,8 +171,12 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
   is_takeoff_waypoint_ = is_takeoff_waypoint;
   desired_vel_ = desired_vel;
   loiter_ = stay;
+  collision_on_direct_path_ = collision_on_direct_path;
 
   is_airborne_ = is_airborne;
+
+  ROS_INFO("\033[1;32m[WG] new data: loiter = %.0f, collision_on_direct_path = %.0f \033[0m", (double)stay,
+           (double)collision_on_direct_path);
 
   // Initialize the smoothing point to current location, if it is undefined or
   // the  vehicle is not flying autonomously yet
@@ -205,7 +225,7 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   }
 
   Eigen::Vector3f velocity_diff = desired_velocity - smoothed_goto_location_velocity_;
-  if (!velocity_diff.allFinite()|| velocity_diff.norm() > 100.0) {
+  if (!velocity_diff.allFinite() || velocity_diff.norm() > 100.0) {
     velocity_diff = Eigen::Vector3f::Zero();
   }
 
@@ -246,13 +266,55 @@ void WaypointGenerator::adaptSpeed() {
            output_.adapted_goto_position.z());
 }
 
+bool WaypointGenerator::getSetpointFromPath(const std::vector<Eigen::Vector3f>& path,
+                                            const ros::Time& path_generation_time, float velocity,
+                                            Eigen::Vector3f& setpoint) {
+  int i = path.size();
+  ROS_INFO("\033[1;32m[WG] path size %.0f \033[0m", (double)i);
+
+  // debug
+  for (int j = 0; j < i; j++) {
+    ROS_INFO("\033[1;32m[WG] node %.0f: [%f %f %f]  \033[0m", (double)j, (double)path[j].x(), (double)path[j].y(),
+             (double)path[j].z());
+  }
+
+  // path contains nothing meaningful
+  if (i < 2) {
+    ROS_INFO("\033[1;32m[WG] path smaller than 2 nodes \033[0m");
+    return false;
+  }
+
+  // path only has one segment: return end of that segment as setpoint
+  if (i == 2) {
+    setpoint = path[0];
+    return true;
+  }
+
+  // step through the path until the point where we should be if we had traveled perfectly with velocity along it
+  Eigen::Vector3f path_segment = path[i - 3] - path[i - 2];
+  float distance_left = (ros::Time::now() - path_generation_time).toSec() * velocity;
+  setpoint = path[i - 2] + (distance_left / path_segment.norm()) * path_segment;
+
+  for (i = path.size() - 3; i > 0 && distance_left > path_segment.norm(); --i) {
+    distance_left -= path_segment.norm();
+    path_segment = path[i - 1] - path[i];
+    setpoint = path[i] + (distance_left / path_segment.norm()) * path_segment;
+  }
+
+  // If we excited because we're past the last node of the path, the path is no longer valid!
+  return distance_left < path_segment.norm();
+}
+
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
   output_.adapted_goto_position = output_.goto_position;
 
+  ROS_INFO("[WG] original waypoint: [%f %f %f].\n", output_.goto_position.x(), output_.goto_position.y(),
+           output_.goto_position.z());
+
   float time_diff_sec = static_cast<float>((current_time_ - last_time_).toSec());
   float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.0001f;
- 
+
   if (!auto_land_) {
     // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
     adaptSpeed();
@@ -264,7 +326,8 @@ void WaypointGenerator::getPathMsg() {
            output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
   output_.position_wp = output_.smoothed_goto_position;
   output_.angular_velocity_wp = Eigen::Vector3f::Zero();
-  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
+  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position,
+                           setpoint_yaw_rad_);
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
@@ -273,5 +336,4 @@ waypointResult WaypointGenerator::getWaypoints() {
 }
 
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) { planner_info_ = input; }
-
 }
