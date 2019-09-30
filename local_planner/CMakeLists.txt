@@ -250,6 +250,28 @@ if(CATKIN_ENABLE_TESTING)
                                                  ${YAML_CPP_LIBRARIES})
     endif()
 
+
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Coverage")
+        SET(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage --coverage")
+        SET(CMAKE_C_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage --coverage")
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+
+        add_custom_target(${PROJECT_NAME}-test_coverage
+            COMMAND ${PROJECT_NAME}-test
+            COMMAND ${PROJECT_NAME}-test-roscore
+            COMMAND lcov --no-external --capture --directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov --rc lcov_branch_coverage=1 --summary coverage.info
+            WORKING_DIRECTORY .
+            DEPENDS ${PROJECT_NAME}-test ${PROJECT_NAME}-test-roscore
+        )
+        add_custom_target(${PROJECT_NAME}-test_coverage_html
+            COMMAND genhtml coverage.info --output-directory out --branch-coverage
+            COMMAND x-www-browser out/index.html
+            WORKING_DIRECTORY .
+            DEPENDS ${PROJECT_NAME}-test_coverage
+        )
+    endif()
+
     ## Add folders to be run by python nosetests
     # catkin_add_nosetests(test)
 endif()
