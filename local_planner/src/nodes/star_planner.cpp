@@ -47,7 +47,6 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
-  bool is_expanded_node = true;
   // Simple 6-way unit direction setpoints allowed only.
   // TODO: If compute allowws, make this more fine-grained
   const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},
@@ -58,6 +57,7 @@ void StarPlanner::buildLookAheadTree() {
                                                 Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
                                                 Eigen::Vector3f{0.0f, -1.0f, 0.0f},
                                                 Eigen::Vector3f{0.0f, 0.0f, -1.0f}};
+  bool has_reached_goal = false;
 
   tree_.clear();
   closed_set_.clear();
@@ -72,7 +72,7 @@ void StarPlanner::buildLookAheadTree() {
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
   int origin = 0;
-  for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
+  while (!has_reached_goal) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
 
@@ -104,22 +104,22 @@ void StarPlanner::buildLookAheadTree() {
           }
         }
 
-        if (children < (children_per_node_) && close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
+        if (close_nodes == 0) {
+          tree_.push_back(TreeNode(origin, trajectory.back(), candidate));
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
           children++;
         }
       }
-    }
+
 
     closed_set_.push_back(origin);
     tree_[origin].closed_ = true;
 
     // find best node to continue
     float minimal_cost = HUGE_VAL;
-    is_expanded_node = false;
+    has_reached_goal = false;
     for (size_t i = 0; i < tree_.size(); i++) {
       if (!(tree_[i].closed_)) {
         // If we reach the acceptance radius, add goal as last node and exit
@@ -127,18 +127,21 @@ void StarPlanner::buildLookAheadTree() {
           tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
           closed_set_.push_back(i);
           closed_set_.push_back(tree_.size() - 1);
+          has_reached_goal = true;
           break;
         }
 
-        float node_distance = (tree_[i].getPosition() - position_).norm();
-        if (tree_[i].total_cost_ < minimal_cost && node_distance < max_path_length_) {
+        if (tree_[i].total_cost_ < minimal_cost ) {
           minimal_cost = tree_[i].total_cost_;
           origin = i;
-          is_expanded_node = true;
         }
       }
     }
 
+    // if there is only one node in the tree, we already expanded it.
+    if (tree_.size() == 1){
+      has_reached_goal = true;
+    }
   }
 
   float min_cost_per_depth = FLT_MAX;
