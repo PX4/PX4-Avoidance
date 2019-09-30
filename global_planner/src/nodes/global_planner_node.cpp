@@ -323,6 +323,7 @@ void GlobalPlannerNode::setCurrentPath(const std::vector<geometry_msgs::PoseStam
 void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
   bool is_airborne = true;
+  bool direct_path_is_collision = true;
 
   // Check if all information was received
   ros::Time now = ros::Time::now();
@@ -331,6 +332,7 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   ros::Duration since_start = now - start_time_;
 
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
+  direct_path_is_collision = global_planner_.checkCollisiontoGoal(current_position_, goal_position_);
   
   //TODO: Switch this to waypoint generator
   wp_generator_->updateState(current_position_, current_attitude_,

@@ -546,4 +546,32 @@ avoidanceOutput GlobalPlanner::getAvoidanceOutput() {
   return out;
 }
 
+bool GlobalPlanner::checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal){
+  std::vector<Eigen::Vector3f> path;
+  float collision_checking_resolution = 0.1;
+  float distance = (current_pos - goal).norm();
+  Eigen::Vector3f dir_vector = (current_pos - goal) / distance;
+
+  for(float ray = 0.0; ray < distance; ray+=collision_checking_resolution){
+    if(checkCollision(ray * dir_vector)) return true; //Coliison found along ray
+  }
+  return false;
+}
+
+bool GlobalPlanner::checkCollision(Eigen::Vector3f state){
+  bool collision = true;
+  double occprob = 1.0;
+  uint octree_depth = 16;
+  double logodds;
+
+  if (octree_) {
+    octomap::OcTreeNode* node = octree_->search(double(state(0)), double(state(1)), double(state(2)), octree_depth);
+    if (node) occprob = octomap::probability(logodds = node->getValue());
+    else  occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
+    // Assuming a optimistic planner: Unknown space is considered as unoccupied
+    if (occprob <= 0.5) collision = false;
+  }
+  return collision;
+}
+
 }  // namespace global_planner

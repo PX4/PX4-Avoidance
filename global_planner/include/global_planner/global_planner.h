@@ -115,6 +115,8 @@ class GlobalPlanner {
   double getAltPrior(const Cell& cell);
   bool isOccupied(const Cell& cell);
   bool isLegal(const Node& node);
+  bool checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal);
+  bool checkCollision(Eigen::Vector3f state);
   double getRisk(const Cell& cell);
   double getRisk(const Node& node);
   double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& msg);
