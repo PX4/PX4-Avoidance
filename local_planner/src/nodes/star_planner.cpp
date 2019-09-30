@@ -87,6 +87,16 @@ void StarPlanner::buildLookAheadTree() {
     // add candidates as nodes
     // insert new nodes
     int children = 0;
+    // If we reach the acceptance radius or the sensor horizon, add goal as last node and exit
+    if (origin > 1 && ((tree_[origin].getPosition() - goal_).norm() < acceptance_radius_) ||
+        (tree_[origin].getPosition() - position_).norm() >= 2.0f * max_sensor_range_) {
+      tree_.push_back(TreeNode(origin, simulation_state(0.f, goal_), goal_ - tree_[origin].getPosition()));
+      closed_set_.push_back(origin);
+      closed_set_.push_back(tree_.size() - 1);
+      has_reached_goal = true;
+      break;
+    }
+
     for (const auto& candidate : candidates) {
       simulation_state state = tree_[origin].state;
       TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
@@ -117,19 +127,9 @@ void StarPlanner::buildLookAheadTree() {
     tree_[origin].closed_ = true;
 
     // find best node to continue
-    float minimal_cost = HUGE_VAL;
-    has_reached_goal = false;
+    float minimal_cost = FLT_MAX;
     for (size_t i = 0; i < tree_.size(); i++) {
       if (!(tree_[i].closed_)) {
-        // If we reach the acceptance radius, add goal as last node and exit
-        if (i > 1 && (tree_[i].getPosition() - goal_).norm() < acceptance_radius_) {
-          tree_.push_back(TreeNode(i, simulation_state(0.f, goal_), goal_ - tree_[i].getPosition()));
-          closed_set_.push_back(i);
-          closed_set_.push_back(tree_.size() - 1);
-          has_reached_goal = true;
-          break;
-        }
-
         if (tree_[i].total_cost_ < minimal_cost) {
           minimal_cost = tree_[i].total_cost_;
           origin = i;
@@ -138,31 +138,13 @@ void StarPlanner::buildLookAheadTree() {
     }
 
     // if there is only one node in the tree, we already expanded it.
-    if (tree_.size() == 1) {
+    if (tree_.size() <= 1) {
       has_reached_goal = true;
     }
   }
 
-  float min_cost_per_depth = FLT_MAX;
-  int chosen_children = 0;
-  for (size_t i = 0; i < tree_.size(); i++) {
-    if (tree_[i].closed_ == 0) {
-      size_t parent = tree_[i].origin_;
-      float total_cost = tree_[i].total_cost_;
-      int depth = 0;
-      while (tree_[parent].origin_ > 0) {
-        parent = tree_[parent].origin_;
-        depth++;
-      }
-
-      if (min_cost_per_depth > (total_cost / depth)) {
-        min_cost_per_depth = (total_cost / depth);
-        chosen_children = (int)i;
-      }
-    }
-  }
   // Get setpoints into member vector
-  int tree_end = chosen_children;
+  int tree_end = origin;
   path_node_setpoints_.clear();
   while (tree_end > 0) {
     path_node_setpoints_.push_back(tree_[tree_end].getSetpoint());
