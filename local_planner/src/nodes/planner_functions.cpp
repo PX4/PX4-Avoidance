@@ -363,8 +363,11 @@ float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costPa
       angleDifference(cartesianToPolarHistogram(node.getSetpoint(), node_position).z, facing_goal.z);
 
   const float smoothness_cost = cost_params.velocity_cost_param * node.getVelocity().dot(node.getSetpoint());
-  const float distance_cost = cost_params.obstacle_cost_param * nearest.distance;
+  const float d = 2 + cost_params.obstacle_cost_param - nearest.distance;
+  const float distance_cost = nearest.distance > 0.f ? 1000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
   const float yaw_cost = cost_params.yaw_cost_param * angle_diff * angle_diff;
+
+  return distance_cost;
 }
 
 // cost function for every histogram cell
