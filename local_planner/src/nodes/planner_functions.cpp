@@ -353,16 +353,18 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
       matrix_padded.block(0, n_lines_padding, matrix_padded.rows(), n_lines_padding);
 }
 
-float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costParameters& cost_params, const kdtree_t& cloud){
+float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costParameters& cost_params,
+                 const kdtree_t& cloud) {
   const Eigen::Vector3f node_position = node.getPosition();
   const std::array<float, 3> node_point{node_position.x(), node_position.y(), node_position.z()};
   const auto nearest = cloud.search(node_point);
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, node_position);
-  const float angle_diff = angleDifference(cartesianToPolarHistogram(node.getSetpoint(), node_position).z, facing_goal.z);
+  const float angle_diff =
+      angleDifference(cartesianToPolarHistogram(node.getSetpoint(), node_position).z, facing_goal.z);
 
   const float smoothness_cost = cost_params.velocity_cost_param * node.getVelocity().dot(node.getSetpoint());
   const float distance_cost = cost_params.obstacle_cost_param * nearest.distance;
-  const float yaw_cost =   cost_params.yaw_cost_param * angle_diff * angle_diff;
+  const float yaw_cost = cost_params.yaw_cost_param * angle_diff * angle_diff;
 }
 
 // cost function for every histogram cell

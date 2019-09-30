@@ -123,7 +123,8 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
                                      const Eigen::Vector3f& velocity, const costParameters& cost_params,
                                      const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal);
 
-float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costParameters& cost_params,const kdtree_t& cloud);
+float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costParameters& cost_params,
+                 const kdtree_t& cloud);
 
 /**
 * @brief      max-median filtes the cost matrix

@@ -49,14 +49,10 @@ void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
   // Simple 6-way unit direction setpoints allowed only.
   // TODO: If compute allowws, make this more fine-grained
-  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},
-                                                Eigen::Vector3f{0.5f, 0.5f, 0.0f},
-                                                Eigen::Vector3f{0.5f, -0.5f, 0.0f},
-                                                Eigen::Vector3f{0.0f, 1.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, 0.0f, 1.0f},
-                                                Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, 0.0f, -1.0f}};
+  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},  Eigen::Vector3f{0.5f, 0.5f, 0.0f},
+                                                Eigen::Vector3f{0.5f, -0.5f, 0.0f}, Eigen::Vector3f{0.0f, 1.0f, 0.0f},
+                                                Eigen::Vector3f{0.0f, 0.0f, 1.0f},  Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
+                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f}, Eigen::Vector3f{0.0f, 0.0f, -1.0f}};
   bool has_reached_goal = false;
 
   tree_.clear();
@@ -86,33 +82,33 @@ void StarPlanner::buildLookAheadTree() {
         lims_.max_xy_velocity_norm);
 
     // add candidates as nodes
-      // insert new nodes
-      int children = 0;
-      for (const auto& candidate : candidates) {
-        simulation_state state = tree_[origin].state;
-        TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
-        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate, tree_node_duration_);
+    // insert new nodes
+    int children = 0;
+    for (const auto& candidate : candidates) {
+      simulation_state state = tree_[origin].state;
+      TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
+      std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate, tree_node_duration_);
 
-        // check if another close node has been added
-        float dist = 1.f;
-        int close_nodes = 0;
-        for (size_t i = 0; i < tree_.size(); i++) {
-          dist = (tree_[i].getPosition() - trajectory.back().position).norm();
-          if (dist < 0.2f) {
-            close_nodes++;
-            break;
-          }
-        }
-
-        if (close_nodes == 0) {
-          tree_.push_back(TreeNode(origin, trajectory.back(), candidate));
-          float h = treeHeuristicFunction(tree_.size() - 1);
-          tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
-          children++;
+      // check if another close node has been added
+      float dist = 1.f;
+      int close_nodes = 0;
+      for (size_t i = 0; i < tree_.size(); i++) {
+        dist = (tree_[i].getPosition() - trajectory.back().position).norm();
+        if (dist < 0.2f) {
+          close_nodes++;
+          break;
         }
       }
 
+      if (close_nodes == 0) {
+        tree_.push_back(TreeNode(origin, trajectory.back(), candidate));
+        float h = treeHeuristicFunction(tree_.size() - 1);
+        tree_.back().heuristic_ = h;
+        tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ +
+                                   simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
+        children++;
+      }
+    }
 
     closed_set_.push_back(origin);
     tree_[origin].closed_ = true;
@@ -131,7 +127,7 @@ void StarPlanner::buildLookAheadTree() {
           break;
         }
 
-        if (tree_[i].total_cost_ < minimal_cost ) {
+        if (tree_[i].total_cost_ < minimal_cost) {
           minimal_cost = tree_[i].total_cost_;
           origin = i;
         }
@@ -139,7 +135,7 @@ void StarPlanner::buildLookAheadTree() {
     }
 
     // if there is only one node in the tree, we already expanded it.
-    if (tree_.size() == 1){
+    if (tree_.size() == 1) {
       has_reached_goal = true;
     }
   }
