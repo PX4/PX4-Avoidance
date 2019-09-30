@@ -138,7 +138,6 @@ void LocalPlanner::determineStrategy() {
                   max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
 
     simulation_limits lims;
-    setDefaultPx4Parameters();  // TODO: remove but make sure they're set!
     lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;
     lims.min_z_velocity = -1.0f * px4_.param_mpc_z_vel_max_dn;
     lims.max_xy_velocity_norm =

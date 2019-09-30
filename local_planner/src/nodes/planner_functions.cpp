@@ -391,7 +391,7 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
     weight = 0.25f;
   }
 
-  const float yaw_cost = (1.f - weight) * cost_params.yaw_cost_param * angle_diff * angle_diff;
+  const float yaw_cost = (1.f - weight) * (cost_params.yaw_cost_param / 10000.f) * angle_diff * angle_diff * angle_diff * angle_diff;
   const float yaw_to_line_cost = weight * cost_params.yaw_cost_param * angle_diff_to_line * angle_diff_to_line;
   const float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
