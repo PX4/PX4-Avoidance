@@ -24,7 +24,6 @@ struct waypointResult {
   Eigen::Vector3f angular_velocity_wp;
   Eigen::Vector3f goto_position;           // correction direction, dist=1
   Eigen::Vector3f adapted_goto_position;   // correction direction & dist
-  Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
 class WaypointGenerator : public usm::StateMachine<PlannerState> {
@@ -32,8 +31,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   avoidanceOutput planner_info_;
   waypointResult output_;
 
-  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f goal_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -48,9 +45,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   float curr_pitch_deg_ = NAN;
   ros::Time last_time_{99999.};
   ros::Time current_time_{99999.};
-
-  float smoothing_speed_xy_{10.f};
-  float smoothing_speed_z_{3.0f};
 
   bool is_airborne_ = false;
   bool is_land_waypoint_{false};
@@ -98,11 +92,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 //   **/
 //   void transformPositionToVelocityWaypoint();
 
-  /**
-  * @brief     smooths waypoints with a critically damped PD controller
-  * @param[in] dt, time elapsed between two cycles
-  **/
-  void smoothWaypoint(float dt);
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
@@ -156,16 +145,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
                    const Eigen::Vector3f& prev_goal, const Eigen::Vector3f& vel, bool stay, bool is_airborne,
                    const avoidance::NavigationState& nav_state, const bool is_land_waypoint, const bool is_takeoff_waypoint,
                    const Eigen::Vector3f& desired_vel);
-
-//   /**
-//   * @brief set the responsiveness of the smoothing
-//   * @param[in] smoothing_speed_xy, set to 0 to disable
-//   * @param[in] smoothing_speed_z, set to 0 to disable
-//   **/
-//   void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
-//     smoothing_speed_xy_ = smoothing_speed_xy;
-//     smoothing_speed_z_ = smoothing_speed_z;
-//   }
 
 //   /**
 //   * @brief     getter method for the system time

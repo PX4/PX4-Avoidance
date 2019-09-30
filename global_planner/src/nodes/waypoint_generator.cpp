@@ -160,18 +160,10 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
 
   // Initialize the smoothing point to current location, if it is undefined or
   // the  vehicle is not flying autonomously yet
-  if (!is_airborne_ || !smoothed_goto_location_.allFinite() || !smoothed_goto_location_velocity_.allFinite()) {
-    smoothed_goto_location_ = position_;
-    smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
+  if (!is_airborne_ ) {
     setpoint_yaw_rad_ = curr_yaw_rad_;
     setpoint_yaw_velocity_ = 0.f;
     reach_altitude_offboard_ = false;
-  }
-
-  // If we're changing altitude by Firmware setpoints, keep reinitializing the smoothing
-  if (auto_land_) {
-    smoothed_goto_location_ = position_;
-    smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   }
 }
 
@@ -181,43 +173,6 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
 //   output_.angular_velocity_wp.y() = 0.0f;
 //   output_.angular_velocity_wp.z() = getAngularVelocity(setpoint_yaw_rad_, curr_yaw_rad_);
 // }
-
-void WaypointGenerator::smoothWaypoint(float dt) {
-  // If the smoothing speed is set to zero, dont smooth, aka use adapted
-  // waypoint directly
-  if (smoothing_speed_xy_ < 0.01f || smoothing_speed_z_ < 0.01f) {
-    output_.smoothed_goto_position = output_.adapted_goto_position;
-    return;
-  }
-
-  // Smooth differently in xz than in z
-  const Eigen::Array3f P_constant(smoothing_speed_xy_, smoothing_speed_xy_, smoothing_speed_z_);
-  const Eigen::Array3f D_constant = 2 * P_constant.sqrt();
-
-  const Eigen::Vector3f desired_location = output_.adapted_goto_position;
-  // Prevent overshoot when drone is close to goal
-  const Eigen::Vector3f desired_velocity =
-      (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero() : velocity_;
-
-  Eigen::Vector3f location_diff = desired_location - smoothed_goto_location_;
-  if (!location_diff.allFinite() || location_diff.norm() > 10.0) {
-    location_diff = Eigen::Vector3f::Zero();
-  }
-
-  Eigen::Vector3f velocity_diff = desired_velocity - smoothed_goto_location_velocity_;
-  if (!velocity_diff.allFinite()|| velocity_diff.norm() > 100.0) {
-    velocity_diff = Eigen::Vector3f::Zero();
-  }
-
-  const Eigen::Vector3f p = location_diff.array() * P_constant;
-  const Eigen::Vector3f d = velocity_diff.array() * D_constant;
-  smoothed_goto_location_velocity_ += (p + d) * dt;
-  smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
-  output_.smoothed_goto_position = output_.adapted_goto_position;
-
-  ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f", output_.smoothed_goto_position.x(),
-            output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), dt);
-}
 
 void WaypointGenerator::adaptSpeed() {
   speed_ = planner_info_.cruise_velocity;
@@ -256,15 +211,11 @@ void WaypointGenerator::getPathMsg() {
   if (!auto_land_) {
     // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
     adaptSpeed();
-    smoothWaypoint(dt);
   }
 
-  ROS_INFO("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
-           output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
-           output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
-  output_.position_wp = output_.smoothed_goto_position;
+  output_.position_wp = output_.adapted_goto_position;
   output_.angular_velocity_wp = Eigen::Vector3f::Zero();
-  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
+  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.adapted_goto_position, setpoint_yaw_rad_);
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
