@@ -84,6 +84,8 @@ after_script:
   - if [ $ROS_DISTRO == kinetic ]; then (cd tools && ./check_code_format.sh); fi
   - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi) ; fi
   - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y lcov; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=OFF && catkin build avoidance local_planner ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance --no-deps --cmake-args -DCATKIN_ENABLE_TESTING=True  --catkin-make-args avoidance-test_coverage ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps   --cmake-args -DCATKIN_ENABLE_TESTING=True --catkin-make-args local_planner-test_coverage ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=False ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance local_planner --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=False ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance --no-deps --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True  --catkin-make-args avoidance-test_coverage ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True --catkin-make-args local_planner-test_coverage ; fi
