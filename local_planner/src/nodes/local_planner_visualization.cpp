@@ -40,7 +40,9 @@ void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner
                                                      const Eigen::Quaternionf& newest_orientation) const {
   // visualize clouds
   local_pointcloud_pub_.publish(planner.getPointcloud());
-  pointcloud_size_pub_.publish(static_cast<uint32_t>(planner.getPointcloud().size()));
+  std_msgs::UInt32 msg;
+  msg.data = static_cast<uint32_t>(planner.getPointcloud().size());
+  pointcloud_size_pub_.publish(msg);
 
   // visualize tree calculation
   std::vector<TreeNode> tree;
