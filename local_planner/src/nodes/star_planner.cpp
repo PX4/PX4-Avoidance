@@ -28,9 +28,10 @@ void StarPlanner::setParams(const costParameters& cost_params, const simulation_
   acceptance_radius_ = acc_rad;
 }
 
-void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel) {
+void StarPlanner::setPose(const Eigen::Vector3f& pos, const Eigen::Vector3f& vel, const Eigen::Quaternionf& q) {
   position_ = pos;
   velocity_ = vel;
+  q_ = q;
 }
 
 void StarPlanner::setGoal(const Eigen::Vector3f& goal) { goal_ = goal; }
@@ -49,10 +50,12 @@ void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
   // Simple 6-way unit direction setpoints allowed only.
   // TODO: If compute allowws, make this more fine-grained
-  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},  Eigen::Vector3f{0.5f, 0.5f, 0.0f},
-                                                Eigen::Vector3f{0.5f, -0.5f, 0.0f}, Eigen::Vector3f{0.0f, 1.0f, 0.0f},
+  // These are in a shitty local-aligned but body-centered frame
+  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},  Eigen::Vector3f{0.0f, 1.0f, 0.0f},
                                                 Eigen::Vector3f{0.0f, 0.0f, 1.0f},  Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f}, Eigen::Vector3f{0.0f, 0.0f, -1.0f}};
+                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f}, Eigen::Vector3f{0.0f, 0.0f, -1.0f},
+                                                Eigen::Vector3f{0.707f, 0.707f, 0.0f}, Eigen::Vector3f{0.707f, -0.707f, 0.0f},
+                                                Eigen::Vector3f{-0.707f, 0.707f, 0.0f}, Eigen::Vector3f{-0.707f, -0.707f, 0.0f}};
   bool has_reached_goal = false;
 
   tree_.clear();
@@ -87,7 +90,7 @@ void StarPlanner::buildLookAheadTree() {
     for (const auto& candidate : candidates) {
       simulation_state state = tree_[origin].state;
       TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
-      std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate, tree_node_duration_);
+      std::vector<simulation_state> trajectory = sim.generate_trajectory(q_*candidate, tree_node_duration_);
 
       // check if another close node has been added
       float dist = 1.f;
@@ -101,7 +104,7 @@ void StarPlanner::buildLookAheadTree() {
       }
 
       if (close_nodes == 0) {
-        tree_.push_back(TreeNode(origin, trajectory.back(), candidate));
+        tree_.push_back(TreeNode(origin, trajectory.back(), q_*candidate));
         float h = treeHeuristicFunction(tree_.size() - 1);
         tree_.back().heuristic_ = h;
         tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ +

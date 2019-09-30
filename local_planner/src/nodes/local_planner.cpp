@@ -18,7 +18,7 @@ void LocalPlanner::setState(const Eigen::Vector3f& pos, const Eigen::Vector3f& v
   velocity_ = vel;
   yaw_fcu_frame_deg_ = getYawFromQuaternion(q);
   pitch_fcu_frame_deg_ = getPitchFromQuaternion(q);
-  star_planner_->setPose(position_, velocity_);
+  star_planner_->setPose(position_, velocity_, q);
 }
 
 // set parameters changed by dynamic rconfigure
