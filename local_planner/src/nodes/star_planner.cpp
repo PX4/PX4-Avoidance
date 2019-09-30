@@ -47,13 +47,17 @@ float StarPlanner::treeHeuristicFunction(int node_number) const {
 
 void StarPlanner::buildLookAheadTree() {
   std::clock_t start_time = std::clock();
-
-  Histogram histogram(ALPHA_RES);
-  std::vector<uint8_t> cost_image_data;
-  std::vector<candidateDirection> candidate_vector;
-  Eigen::MatrixXf cost_matrix;
-
   bool is_expanded_node = true;
+  // Simple 6-way unit direction setpoints allowed only.
+  // TODO: If compute allowws, make this more fine-grained
+  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},
+                                                Eigen::Vector3f{0.5f, 0.5f, 0.0f},
+                                                Eigen::Vector3f{0.5f, -0.5f, 0.0f},
+                                                Eigen::Vector3f{0.0f, 1.0f, 0.0f},
+                                                Eigen::Vector3f{0.0f, 0.0f, 1.0f},
+                                                Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
+                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f},
+                                                Eigen::Vector3f{0.0f, 0.0f, -1.0f}};
 
   tree_.clear();
   closed_set_.clear();
@@ -72,20 +76,6 @@ void StarPlanner::buildLookAheadTree() {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
 
-    histogram.setZero();
-    generateHistogramHACK(histogram, cloud_, origin_position, 2.5f);  // hack: project 2.5m into each histogram cell
-
-    // calculate candidates
-    cost_matrix.fill(0.f);
-    cost_image_data.clear();
-    candidate_vector.clear();
-    getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
-    if (n != 0) {
-      starting_direction_ = tree_[origin].getSetpoint();
-    }
-    getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector, starting_direction_);
-
     simulation_limits limits = lims_;
     simulation_state state = tree_[origin].state;
     limits.max_xy_velocity_norm = std::min(
@@ -96,15 +86,12 @@ void StarPlanner::buildLookAheadTree() {
         lims_.max_xy_velocity_norm);
 
     // add candidates as nodes
-    if (candidate_vector.empty()) {
-      tree_[origin].total_cost_ = HUGE_VAL;
-    } else {
       // insert new nodes
       int children = 0;
-      for (candidateDirection candidate : candidate_vector) {
+      for (const auto& candidate : candidates) {
         simulation_state state = tree_[origin].state;
         TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
-        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate.toEigen(), tree_node_duration_);
+        std::vector<simulation_state> trajectory = sim.generate_trajectory(candidate, tree_node_duration_);
 
         // check if another close node has been added
         float dist = 1.f;
@@ -121,7 +108,7 @@ void StarPlanner::buildLookAheadTree() {
           tree_.push_back(TreeNode(origin, trajectory.back(), candidate.toEigen()));
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
-          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
+          tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
           children++;
         }
       }
@@ -152,8 +139,6 @@ void StarPlanner::buildLookAheadTree() {
       }
     }
 
-    cost_image_data.clear();
-    candidate_vector.clear();
   }
 
   float min_cost_per_depth = FLT_MAX;
