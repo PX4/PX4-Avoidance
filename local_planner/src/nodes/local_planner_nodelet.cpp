@@ -41,7 +41,6 @@ void LocalPlannerNodelet::onInit() {
 
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
-
 }
 
 void LocalPlannerNodelet::InitializeNodelet() {
