@@ -255,8 +255,8 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
   }
 
   candidateDirection best_direction = queue.top();
-  for (int i = 0; i < 5; i++) {
-    candidateDirection candidate(0.f, best_direction.elevation_angle, best_direction.azimuth_angle + (i + 1) * 60.f);
+  for (int i = 0; i < 18; i++) {
+    candidateDirection candidate(0.f, best_direction.elevation_angle, best_direction.azimuth_angle + (i + 1) * 20.f);
     PolarPoint candidate_polar = PolarPoint(candidate.elevation_angle, candidate.azimuth_angle, 1.f);
     wrapPolar(candidate_polar);
     Eigen::Vector2i histogram_index = polarToHistogramIndex(candidate_polar, ALPHA_RES);
@@ -396,9 +396,9 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   const float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
   const float d = 2 + cost_params.obstacle_cost_param - obstacle_distance;
-  const float distance_cost = obstacle_distance > 0.f ? 1000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
+  const float distance_cost = obstacle_distance > 0.f ? cost_params.distance_weigth_cost_param * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
-  return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost);
+  return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost + velocity_cost);
 }
 
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,

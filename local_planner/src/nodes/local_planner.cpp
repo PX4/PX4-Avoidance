@@ -28,6 +28,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   cost_params_.yaw_cost_param = config.yaw_cost_param_;
   cost_params_.velocity_cost_param = config.velocity_cost_param_;
   cost_params_.obstacle_cost_param = config.obstacle_cost_param_;
+  cost_params_.distance_weigth_cost_param = config.distance_weigth_cost_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   min_num_points_per_cell_ = config.min_num_points_per_cell_;
   min_sensor_range_ = static_cast<float>(config.min_sensor_range_);

@@ -65,7 +65,7 @@ void StarPlanner::buildLookAheadTree() {
   start_state.acceleration = Eigen::Vector3f(0.0f, 0.0f, 0.0f);
   start_state.time = ros::Time::now().toSec();
   tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
-  tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
+  tree_.back().setCosts(0.0f, treeHeuristicFunction(0));
 
   int origin = 0;
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
@@ -82,7 +82,7 @@ void StarPlanner::buildLookAheadTree() {
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
                   closest_pt_, max_sensor_range_, min_sensor_range_, cost_matrix, cost_image_data);
     if (n != 0) {
-      starting_direction_ = tree_[origin].getSetpoint();
+      starting_direction_ = Eigen::Vector3f(NAN, NAN, NAN); //tree_[origin].getSetpoint();
     }
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector, starting_direction_);
 
