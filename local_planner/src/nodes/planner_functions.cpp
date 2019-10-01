@@ -367,7 +367,7 @@ float simpleCost(const TreeNode& node, const Eigen::Vector3f& goal, const costPa
   const float distance_cost = nearest.distance > 0.f ? 1000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
   const float yaw_cost = cost_params.yaw_cost_param * angle_diff * angle_diff;
 
-  return distance_cost;
+  return distance_cost;  // TODO: use other costs as well. Couldn't get them to do anything meaningful yet
 }
 
 // cost function for every histogram cell

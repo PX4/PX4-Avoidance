@@ -49,11 +49,12 @@ void StarPlanner::buildLookAheadTree() {
   // Simple 6-way unit direction setpoints allowed only.
   // TODO: If compute allowws, make this more fine-grained
   // These are in a shitty local-aligned but body-centered frame
-  const std::vector<Eigen::Vector3f> candidates{Eigen::Vector3f{1.0f, 0.0f, 0.0f},  Eigen::Vector3f{0.0f, 1.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, 0.0f, 1.0f},  Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
-                                                Eigen::Vector3f{0.0f, -1.0f, 0.0f}, Eigen::Vector3f{0.0f, 0.0f, -1.0f},
-                                                Eigen::Vector3f{0.707f, 0.707f, 0.0f}, Eigen::Vector3f{0.707f, -0.707f, 0.0f},
-                                                Eigen::Vector3f{-0.707f, 0.707f, 0.0f}, Eigen::Vector3f{-0.707f, -0.707f, 0.0f}};
+  const std::vector<Eigen::Vector3f> candidates{
+      Eigen::Vector3f{1.0f, 0.0f, 0.0f},      Eigen::Vector3f{0.0f, 1.0f, 0.0f},
+      Eigen::Vector3f{0.0f, 0.0f, 1.0f},      Eigen::Vector3f{-1.0f, 0.0f, 0.0f},
+      Eigen::Vector3f{0.0f, -1.0f, 0.0f},     Eigen::Vector3f{0.0f, 0.0f, -1.0f},
+      Eigen::Vector3f{0.707f, 0.707f, 0.0f},  Eigen::Vector3f{0.707f, -0.707f, 0.0f},
+      Eigen::Vector3f{-0.707f, 0.707f, 0.0f}, Eigen::Vector3f{-0.707f, -0.707f, 0.0f}};
   bool has_reached_goal = false;
 
   tree_.clear();
@@ -82,42 +83,39 @@ void StarPlanner::buildLookAheadTree() {
             computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm, max_sensor_range_)),
         lims_.max_xy_velocity_norm);
 
-    // add candidates as nodes
-    // insert new nodes
-    int children = 0;
     // If we reach the acceptance radius or the sensor horizon, add goal as last node and exit
-    if (origin > 1 && ((tree_[origin].getPosition() - goal_).norm() < acceptance_radius_) ||
-        (tree_[origin].getPosition() - position_).norm() >= 2.0f * max_sensor_range_) {
-      tree_.push_back(TreeNode(origin, simulation_state(0.f, goal_), goal_ - tree_[origin].getPosition()));
+    if ((tree_[origin].getPosition() - goal_).norm() < acceptance_radius_ ||
+        (tree_[origin].getPosition() - position_).norm() >= max_sensor_range_) {
+      tree_.push_back(TreeNode(origin + 1, simulation_state(0.f, goal_), goal_ - tree_[origin].getPosition()));
+      tree_.back().total_cost_ = tree_[origin].total_cost_;
+      tree_.back().heuristic_ = 0.f;
       closed_set_.push_back(origin);
       closed_set_.push_back(tree_.size() - 1);
       has_reached_goal = true;
       break;
     }
 
+    // Expand this node: add all candidates
     for (const auto& candidate : candidates) {
       simulation_state state = tree_[origin].state;
-      TrajectorySimulator sim(limits, state, 0.05f);  // todo: parameterize simulation step size [s]
-      std::vector<simulation_state> trajectory = sim.generate_trajectory(q_*candidate, tree_node_duration_);
+      TrajectorySimulator sim(limits, state, 0.1f);  // todo: parameterize simulation step size [s]
+      std::vector<simulation_state> trajectory = sim.generate_trajectory(q_ * candidate, tree_node_duration_);
 
-      // check if another close node has been added
-      float dist = 1.f;
-      int close_nodes = 0;
-      for (size_t i = 0; i < tree_.size(); i++) {
-        dist = (tree_[i].getPosition() - trajectory.back().position).norm();
-        if (dist < 0.2f) {
-          close_nodes++;
+      // Only add the candidate as a node if it is significantly far away from any current node
+      const float minimal_distance = 0.2f;  // must be at least 1m away
+      bool is_useful_node = true;
+      for (const auto& n : tree_) {
+        if ((n.getPosition() - trajectory.back().position).norm() < minimal_distance) {
+          is_useful_node = false;
           break;
         }
       }
-
-      if (close_nodes == 0) {
-        tree_.push_back(TreeNode(origin, trajectory.back(), q_*candidate));
+      if (is_useful_node) {
+        tree_.push_back(TreeNode(origin, trajectory.back(), q_ * candidate));
         float h = treeHeuristicFunction(tree_.size() - 1);
         tree_.back().heuristic_ = h;
         tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ +
                                    simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
-        children++;
       }
     }
 
