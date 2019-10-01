@@ -19,6 +19,7 @@ cache:
     - rm -f $HOME/.cache/pip/log/debug.log
 cache:
   - apt
+  - ccache
 
 env:
   global:
@@ -29,7 +30,7 @@ before_install:
   - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
   - sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
   - sudo apt-get update -qq
-  - sudo apt-get install -y build-essential git valgrind
+  - sudo apt-get install -y build-essential git valgrind ccache
   - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
   # Install ROS Kinetic
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
@@ -78,14 +79,11 @@ script:
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
-
-after_script:
   - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y clang-format-3.8; fi
   - if [ $ROS_DISTRO == kinetic ]; then (cd tools && ./check_code_format.sh); fi
   - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi) ; fi
   - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y lcov; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=False ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance local_planner --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=False ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=False && catkin build avoidance local_planner; fi
   - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance --no-deps --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True  --catkin-make-args avoidance-test_coverage ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True --catkin-make-args local_planner-test_coverage ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance --no-deps --catkin-make-args avoidance-test_coverage ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps --catkin-make-args local_planner-test_coverage ; fi
