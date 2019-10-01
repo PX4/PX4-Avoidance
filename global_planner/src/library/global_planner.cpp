@@ -424,9 +424,9 @@ bool GlobalPlanner::findPath(std::vector<Cell>& path) {
     Cell parent_of_s = s;  // Ignore the current yaw
   }
 
-  ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
-  ROS_INFO("curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f", curr_pos_.x, curr_pos_.y, curr_pos_.z, s.xPos(),
-           s.yPos(), s.zPos());
+  ROS_INFO("\033[1;35m[GP]Planning a path from cell %s to %s \033[0m", s.asString().c_str(), t.asString().c_str());
+  ROS_INFO("\033[1;35m[GP] curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f\t t: %2.2f,%2.2f,%2.2f \033[0m",
+           curr_pos_.x, curr_pos_.y, curr_pos_.z, s.xPos(), s.yPos(), s.zPos(), t.xPos(), t.yPos(), t.zPos());
 
   bool found_path = false;
   double best_path_cost = INFINITY;
@@ -487,29 +487,23 @@ bool GlobalPlanner::getGlobalPath() {
   Cell t = Cell(goal_pos_);
   current_cell_blocked_ = isOccupied(s);
 
-  if (goal_must_be_free_ && getRisk(t) > max_cell_risk_) {
-    // If goal is occupied, no path is published
-    ROS_INFO("Goal position is occupied");
+  if (getRisk(t) > max_cell_risk_) {
+    ROS_INFO("\033[1;35m[GP] Goal position is occupied: GoalRisk = %f, maxRisk = %.f \033[0m", (double)getRisk(t),
+             (double)max_cell_risk_);
+    goal_is_blocked_ = true;
+  }
+
+  // Both current position and goal are free, try to find a path
+  std::vector<Cell> path;
+  if (!findPath(path)) {
+    double goal_risk = getRisk(t);
+    ROS_INFO("  Failed to find a path, risk of t: %3.2f", goal_risk);
     goal_is_blocked_ = true;
     return false;
-  } else if (current_cell_blocked_) {
-    // If current position is occupied the way back is published
-    ROS_INFO("Current position is occupied, going back.");
-    // goBack();
-    // return true;
-    return false;
-  } else {
-    // Both current position and goal are free, try to find a path
-    std::vector<Cell> path;
-    if (!findPath(path)) {
-      double goal_risk = getRisk(t);
-      ROS_INFO("  Failed to find a path, risk of t: %3.2f", goal_risk);
-      goal_is_blocked_ = true;
-      return false;
-    }
-    setPath(path);
-    return true;
   }
+
+  setPath(path);
+  return true;
 }
 
 // Sets the current path to be the path back until a safe cell is reached
@@ -544,22 +538,24 @@ avoidanceOutput GlobalPlanner::getAvoidanceOutput() {
   out.cruise_velocity = 5.0;
   out.path_node_positions = getPath();
   out.last_path_time = ros::Time::now();
+  out.goal_is_blocked = goal_is_blocked_;
+  // current_cell_blocked_
   return out;
 }
 
-bool GlobalPlanner::checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal){
+bool GlobalPlanner::checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal) {
   std::vector<Eigen::Vector3f> path;
   float collision_checking_resolution = 0.1;
   float distance = (current_pos - goal).norm();
   Eigen::Vector3f dir_vector = (current_pos - goal) / distance;
 
-  for(float ray = 0.0; ray < distance; ray+=collision_checking_resolution){
-    if(checkCollision(ray * dir_vector)) return true; //Coliison found along ray
+  for (float ray = 0.0; ray < distance; ray += collision_checking_resolution) {
+    if (checkCollision(ray * dir_vector)) return true;  // Coliison found along ray
   }
   return false;
 }
 
-bool GlobalPlanner::checkCollision(Eigen::Vector3f state){
+bool GlobalPlanner::checkCollision(Eigen::Vector3f state) {
   bool collision = true;
   double occprob = 1.0;
   uint octree_depth = 16;
@@ -567,8 +563,10 @@ bool GlobalPlanner::checkCollision(Eigen::Vector3f state){
 
   if (octree_) {
     octomap::OcTreeNode* node = octree_->search(double(state(0)), double(state(1)), double(state(2)), octree_depth);
-    if (node) occprob = octomap::probability(logodds = node->getValue());
-    else  occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
+    if (node)
+      occprob = octomap::probability(logodds = node->getValue());
+    else
+      occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
     // Assuming a optimistic planner: Unknown space is considered as unoccupied
     if (occprob <= 0.5) collision = false;
   }

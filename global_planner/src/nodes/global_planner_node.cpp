@@ -105,7 +105,8 @@ void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& ca
 
 // Sets a new goal, plans a path to it and publishes some info
 void GlobalPlannerNode::setNewGoal(const GoalCell& goal) {
-  ROS_INFO("========== Set goal : %s ==========", goal.asString().c_str());
+  ROS_INFO("\033[1;34m[GN] Updating global planner goal cell to [%f, %f, %f] \033[0m", (double)goal.xPos(),
+           (double)goal.yPos(), (double)goal.zPos());
   goal_position_ = goal.toEigen();
   global_planner_.setGoal(goal);
   publishGoal(goal);
@@ -172,7 +173,6 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
   global_planner_.min_overestimate_factor_ = config.min_overestimate_factor_;
   global_planner_.max_overestimate_factor_ = config.max_overestimate_factor_;
   global_planner_.max_iterations_ = config.max_iterations_;
-  global_planner_.goal_must_be_free_ = config.goal_must_be_free_;
   global_planner_.use_current_yaw_ = config.use_current_yaw_;
   global_planner_.use_risk_heuristics_ = config.use_risk_heuristics_;
   global_planner_.use_speedup_heuristics_ = config.use_speedup_heuristics_;
@@ -257,6 +257,9 @@ void GlobalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg)
   const GoalCell new_goal = GoalCell(msg.point_2.position.x, msg.point_2.position.y, msg.point_2.position.z, 1.0);
   if (msg.point_valid[1] == true && ((std::fabs(global_planner_.goal_pos_.xPos() - new_goal.xPos()) > 0.001) ||
                                      (std::fabs(global_planner_.goal_pos_.yPos() - new_goal.yPos()) > 0.001))) {
+    ROS_INFO("\033[1;34m[GN] new goal message [%f, %f, %f] new goal cell [%f, %f, %f] \033[0m", msg.point_2.position.x,
+             msg.point_2.position.y, msg.point_2.position.z, (double)new_goal.xPos(), (double)new_goal.yPos(),
+             (double)new_goal.zPos());
     setNewGoal(new_goal);
   }
 }
@@ -334,10 +337,9 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
 
   collision_on_direct_path = global_planner_.checkCollisiontoGoal(current_position_, goal_position_);
-  
-  //TODO: Switch this to waypoint generator
-  wp_generator_->updateState(current_position_, current_attitude_,
-                             goal_position_, prev_goal_position_,
+
+  // TODO: Switch this to waypoint generator
+  wp_generator_->updateState(current_position_, current_attitude_, goal_position_, prev_goal_position_,
                              current_velocity_, hover_, is_airborne, nav_state_, is_land_waypoint_,
                              is_takeoff_waypoint_, desired_velocity_, collision_on_direct_path);
 
@@ -347,10 +349,14 @@ void GlobalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
 void GlobalPlannerNode::plannerLoopCallback(const ros::TimerEvent& event) {
   std::lock_guard<std::mutex> lock(mutex_);
   bool is_in_goal = global_planner_.goal_pos_.withinPositionRadius(global_planner_.curr_pos_);
-  if (is_in_goal || global_planner_.goal_is_blocked_) {
-    popNextGoal();
-  }
+  //  if (is_in_goal || global_planner_.goal_is_blocked_) {
+  //    popNextGoal();
+  //  }
 
+  ROS_INFO("\033[1;34m[GN] plan path from current position [%f, %f, %f] to goal [%f, %f, %f] \033[0m",
+           (double)global_planner_.curr_pos_.x, (double)global_planner_.curr_pos_.y,
+           (double)global_planner_.curr_pos_.z, (double)global_planner_.goal_pos_.xPos(),
+           (double)global_planner_.goal_pos_.yPos(), (double)global_planner_.goal_pos_.zPos());
   planPath();
   wp_generator_->setPlannerInfo(global_planner_.getAvoidanceOutput());
 

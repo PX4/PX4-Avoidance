@@ -12,6 +12,7 @@ enum waypoint_choice { loiter, direct, navigate };
 struct avoidanceOutput {
   float cruise_velocity;     // mission cruise velocity
   ros::Time last_path_time;  // finish built time for the VFH+* tree
+  bool goal_is_blocked;
 
   std::vector<Eigen::Vector3f> path_node_positions;  // array of tree nodes
                                                      // position, each node
