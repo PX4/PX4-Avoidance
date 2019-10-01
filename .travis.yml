@@ -93,6 +93,5 @@ script:
   - if [ $ROS_DISTRO == kinetic ]; then catkin build safe_landing_planner --no-deps --catkin-make-args safe_landing_planner-test_coverage ; fi
 
 after_success:
-  - if [ $ROS_DISTRO == kinetic ]; then (cd ~/catkin_ws/ && find . | grep coverage.info) ; fi
   - if [ $ROS_DISTRO == kinetic ]; then lcov -a ~/catkin_ws/build/avoidance/coverage.info -a ~/catkin_ws/build/local_planner/coverage.info -a ~/catkin_ws/build/global_planner/coverage.info -a ~/catkin_ws/build/safe_landing_planner/coverage.info -o repo_total.info --rc lcov_branch_coverage=1 ; fi
   - if [ $ROS_DISTRO == kinetic ]; then coveralls-lcov repo_total.info ; fi
