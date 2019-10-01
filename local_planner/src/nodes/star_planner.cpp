@@ -145,7 +145,7 @@ void StarPlanner::buildLookAheadTree() {
   path_node_setpoints_.clear();
   while (tree_end > 0) {
     path_node_setpoints_.push_back(tree_[tree_end].getSetpoint());
-    tree_end = tree_[tree_end].origin_;
+    tree_end = tree_[tree_end].parent_;
   }
 
   path_node_setpoints_.push_back(tree_[0].getSetpoint());

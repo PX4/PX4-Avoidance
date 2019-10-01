@@ -221,7 +221,7 @@ void LocalPlannerVisualization::publishTree(const std::vector<TreeNode>& tree, c
   for (size_t i = 0; i < closed_set.size(); i++) {
     int node_nr = closed_set[i];
     geometry_msgs::Point p1 = toPoint(tree[node_nr].getPosition());
-    int origin = tree[node_nr].origin_;
+    int origin = tree[node_nr].parent_;
     geometry_msgs::Point p2 = toPoint(tree[origin].getPosition());
     tree_marker.points.push_back(p1);
     tree_marker.points.push_back(p2);
