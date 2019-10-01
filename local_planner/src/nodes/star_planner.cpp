@@ -69,13 +69,13 @@ void StarPlanner::buildLookAheadTree() {
   tree_.push_back(TreeNode(0, start_state, Eigen::Vector3f::Zero()));
   tree_.back().setCosts(treeHeuristicFunction(0), treeHeuristicFunction(0));
 
-  int origin = 0;
+  int current_node = 0;
   while (!has_reached_goal) {
-    Eigen::Vector3f origin_position = tree_[origin].getPosition();
-    Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
+    Eigen::Vector3f current_node_position = tree_[current_node].getPosition();
+    Eigen::Vector3f current_node_velocity = tree_[current_node].getVelocity();
 
     simulation_limits limits = lims_;
-    simulation_state state = tree_[origin].state;
+    simulation_state state = tree_[current_node].state;
     limits.max_xy_velocity_norm = std::min(
         std::min(
             computeMaxSpeedFromBrakingDistance(lims_.max_jerk_norm, lims_.max_acceleration_norm,
@@ -84,12 +84,13 @@ void StarPlanner::buildLookAheadTree() {
         lims_.max_xy_velocity_norm);
 
     // If we reach the acceptance radius or the sensor horizon, add goal as last node and exit
-    if ((tree_[origin].getPosition() - goal_).norm() < acceptance_radius_ ||
-        (tree_[origin].getPosition() - position_).norm() >= max_sensor_range_) {
-      tree_.push_back(TreeNode(origin + 1, simulation_state(0.f, goal_), goal_ - tree_[origin].getPosition()));
-      tree_.back().total_cost_ = tree_[origin].total_cost_;
+    if ((tree_[current_node].getPosition() - goal_).norm() < acceptance_radius_ ||
+        (tree_[current_node].getPosition() - position_).norm() >= max_sensor_range_) {
+      tree_.push_back(
+          TreeNode(current_node + 1, simulation_state(0.f, goal_), goal_ - tree_[current_node].getPosition()));
+      tree_.back().total_cost_ = tree_[current_node].total_cost_;
       tree_.back().heuristic_ = 0.f;
-      closed_set_.push_back(origin);
+      closed_set_.push_back(current_node);
       closed_set_.push_back(tree_.size() - 1);
       has_reached_goal = true;
       break;
@@ -97,7 +98,7 @@ void StarPlanner::buildLookAheadTree() {
 
     // Expand this node: add all candidates
     for (const auto& candidate : candidates) {
-      simulation_state state = tree_[origin].state;
+      simulation_state state = tree_[current_node].state;
       TrajectorySimulator sim(limits, state, 0.1f);  // todo: parameterize simulation step size [s]
       std::vector<simulation_state> trajectory = sim.generate_trajectory(q_ * candidate, tree_node_duration_);
 
@@ -111,16 +112,16 @@ void StarPlanner::buildLookAheadTree() {
         }
       }
       if (is_useful_node) {
-        tree_.push_back(TreeNode(origin, trajectory.back(), q_ * candidate));
+        tree_.push_back(TreeNode(current_node, trajectory.back(), q_ * candidate));
         float h = treeHeuristicFunction(tree_.size() - 1);
         tree_.back().heuristic_ = h;
-        tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ +
+        tree_.back().total_cost_ = tree_[current_node].total_cost_ - tree_[current_node].heuristic_ +
                                    simpleCost(tree_.back(), goal_, cost_params_, cloud_) + h;
       }
     }
 
-    closed_set_.push_back(origin);
-    tree_[origin].closed_ = true;
+    closed_set_.push_back(current_node);
+    tree_[current_node].closed_ = true;
 
     // find best node to continue
     float minimal_cost = FLT_MAX;
@@ -128,7 +129,7 @@ void StarPlanner::buildLookAheadTree() {
       if (!(tree_[i].closed_)) {
         if (tree_[i].total_cost_ < minimal_cost) {
           minimal_cost = tree_[i].total_cost_;
-          origin = i;
+          current_node = i;
         }
       }
     }
@@ -140,7 +141,7 @@ void StarPlanner::buildLookAheadTree() {
   }
 
   // Get setpoints into member vector
-  int tree_end = origin;
+  int tree_end = current_node;
   path_node_setpoints_.clear();
   while (tree_end > 0) {
     path_node_setpoints_.push_back(tree_[tree_end].getSetpoint());
