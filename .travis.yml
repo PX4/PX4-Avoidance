@@ -1,7 +1,7 @@
 # Based on https://github.com/felixduvallet/ros-travis-integration
 #
 # vim:set ts=2 sw=2 et:
-language: generic
+language: C++
 
 matrix:
   include:
@@ -25,6 +25,7 @@ env:
   global:
     - ROS_CI_DESKTOP="$(lsb_release -cs)"
     - CI_SOURCE_PATH=$(pwd)
+    - export COVERALLS_SERVICE_NAME=travis-ci
 
 before_install:
   - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
@@ -43,6 +44,7 @@ before_install:
   # Prepare rosdep
   - sudo rosdep init
   - rosdep update
+  - sudo gem install coveralls-lcov
 
 install:
   # Create catkin workspace
@@ -89,3 +91,7 @@ script:
   - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps --catkin-make-args local_planner-test_coverage ; fi
   - if [ $ROS_DISTRO == kinetic ]; then catkin build global_planner --no-deps --catkin-make-args global_planner-test_coverage ; fi
   - if [ $ROS_DISTRO == kinetic ]; then catkin build safe_landing_planner --no-deps --catkin-make-args safe_landing_planner-test_coverage ; fi
+
+after_success:
+  - if [ $ROS_DISTRO == kinetic ]; then lcov -a ../../build/avoidance/coverage.info -a ../../build/local_planner/coverage.info -a ../../build/global_planner/coverage.info -a ../../build/safe_landing_planner/coverage.info -o repo_total.info ; fi
+    - if [ $ROS_DISTRO == kinetic ]; then coveralls-lcov repo_total.info ; fi

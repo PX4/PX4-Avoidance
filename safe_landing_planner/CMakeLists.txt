@@ -152,9 +152,10 @@ if(CATKIN_ENABLE_TESTING)
 
         add_custom_target(${PROJECT_NAME}-test_coverage
             COMMAND lcov --zerocounters --directory ${PROJECT_BINARY_DIR}
-            COMMAND lcov --capture  --initial --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov --capture  --initial --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file base_coverage.info --rc lcov_branch_coverage=1
             COMMAND ${PROJECT_NAME}-test
-            COMMAND lcov --capture  --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov --capture  --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file test_coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov -a base_coverage.info -a test_coverage.info -o coverage.info --rc lcov_branch_coverage=1
             COMMAND lcov --rc lcov_branch_coverage=1 --summary coverage.info
             WORKING_DIRECTORY .
             DEPENDS ${PROJECT_NAME}-test
