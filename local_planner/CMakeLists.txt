@@ -257,9 +257,11 @@ if(CATKIN_ENABLE_TESTING)
         SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
 
         add_custom_target(${PROJECT_NAME}-test_coverage
+            COMMAND lcov --zerocounters --directory ${PROJECT_BINARY_DIR}
+            COMMAND lcov --capture  --initial --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
             COMMAND ${PROJECT_NAME}-test
             COMMAND ${PROJECT_NAME}-test-roscore
-            COMMAND lcov --no-external --capture --directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov --capture  --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file coverage.info --rc lcov_branch_coverage=1
             COMMAND lcov --rc lcov_branch_coverage=1 --summary coverage.info
             WORKING_DIRECTORY .
             DEPENDS ${PROJECT_NAME}-test ${PROJECT_NAME}-test-roscore
