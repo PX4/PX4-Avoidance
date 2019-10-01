@@ -44,7 +44,6 @@ before_install:
   # Prepare rosdep
   - sudo rosdep init
   - rosdep update
-  - sudo gem install coveralls-lcov
 
 install:
   # Create catkin workspace
@@ -84,14 +83,7 @@ script:
   - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y clang-format-3.8; fi
   - if [ $ROS_DISTRO == kinetic ]; then (cd tools && ./check_code_format.sh); fi
   - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi) ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y lcov; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin clean -y; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin config --cmake-args -DCMAKE_BUILD_TYPE=Coverage -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build avoidance --no-deps --catkin-make-args avoidance-test_coverage ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build local_planner --no-deps --catkin-make-args local_planner-test_coverage ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build global_planner --no-deps --catkin-make-args global_planner-test_coverage ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then catkin build safe_landing_planner --no-deps --catkin-make-args safe_landing_planner-test_coverage ; fi
 
 after_success:
-  - if [ $ROS_DISTRO == kinetic ]; then lcov -a ~/catkin_ws/build/avoidance/coverage.info -a ~/catkin_ws/build/local_planner/coverage.info -a ~/catkin_ws/build/global_planner/coverage.info -a ~/catkin_ws/build/safe_landing_planner/coverage.info -o repo_total.info --rc lcov_branch_coverage=1 ; fi
-  - if [ $ROS_DISTRO == kinetic ]; then coveralls-lcov repo_total.info ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y lcov && sudo gem install coveralls-lcov; fi
+  - if [ $ROS_DISTRO == kinetic ]; then (cd ~/catkin_ws/src/avoidance && tools/generate_coverage.sh && coveralls-lcov repo_total.info) ; fi
