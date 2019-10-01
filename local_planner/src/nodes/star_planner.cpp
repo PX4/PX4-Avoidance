@@ -41,9 +41,7 @@ void StarPlanner::setPointcloud(const kdtree_t& cloud) { cloud_ = cloud; }
 void StarPlanner::setClosestPointOnLine(const Eigen::Vector3f& closest_pt) { closest_pt_ = closest_pt; }
 
 float StarPlanner::treeHeuristicFunction(int node_number) const {
-  return ((goal_ - tree_[node_number].getPosition()).norm() / lims_.max_xy_velocity_norm +
-          tree_[node_number].state.time) *
-         tree_heuristic_weight_;
+  return (goal_ - tree_[node_number].getPosition()).norm() * tree_heuristic_weight_;
 }
 
 void StarPlanner::buildLookAheadTree() {
