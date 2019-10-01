@@ -94,4 +94,4 @@ script:
 
 after_success:
   - if [ $ROS_DISTRO == kinetic ]; then lcov -a ../../build/avoidance/coverage.info -a ../../build/local_planner/coverage.info -a ../../build/global_planner/coverage.info -a ../../build/safe_landing_planner/coverage.info -o repo_total.info ; fi
-    - if [ $ROS_DISTRO == kinetic ]; then coveralls-lcov repo_total.info ; fi
+  - if [ $ROS_DISTRO == kinetic ]; then coveralls-lcov repo_total.info ; fi
