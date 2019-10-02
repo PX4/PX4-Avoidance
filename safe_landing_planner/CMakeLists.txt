@@ -48,8 +48,8 @@ generate_messages(
 
 ## Generate dynamic reconfigure parameters in the 'cfg' folder
 generate_dynamic_reconfigure_options(
-  cfg/safe_landing_planner_node.cfg
-  cfg/waypoint_generator_node.cfg
+  cfg/SafeLandingPlannerNode.cfg
+  cfg/WaypointGeneratorNode.cfg
 )
 
 ###################################
