@@ -29,6 +29,7 @@ void LocalPlanner::dynamicReconfigureSetParams(avoidance::LocalPlannerNodeConfig
   cost_params_.velocity_cost_param = config.velocity_cost_param_;
   cost_params_.obstacle_cost_param = config.obstacle_cost_param_;
   cost_params_.distance_weigth_cost_param = config.distance_weigth_cost_param_;
+  cost_params_.tree_hysteresis_param = config.tree_hysteresis_param_;
   max_point_age_s_ = static_cast<float>(config.max_point_age_s_);
   min_num_points_per_cell_ = config.min_num_points_per_cell_;
   min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
@@ -135,8 +136,9 @@ void LocalPlanner::determineStrategy() {
   }
 
   if (!polar_histogram_.isEmpty()) {
+    Eigen::Vector2f previous_direction = velocity_.head<2>();
     getCostMatrix(polar_histogram_, goal_, position_, velocity_, cost_params_, smoothing_margin_degrees_, closest_pt_,
-                  max_sensor_range_, min_sensor_range_, cost_matrix_, cost_image_data_);
+                  max_sensor_range_, min_sensor_range_, previous_direction, cost_matrix_, cost_image_data_);
 
     simulation_limits lims;
     lims.max_z_velocity = px4_.param_mpc_z_vel_max_up;

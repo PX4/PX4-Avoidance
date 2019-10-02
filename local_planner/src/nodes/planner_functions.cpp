@@ -128,7 +128,7 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
                    const Eigen::Vector3f& closest_pt, const float max_sensor_range, const float min_sensor_range,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
+                   const Eigen::Vector2f& previous_tree_root_dir, Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data) {
   Eigen::MatrixXf distance_matrix(GRID_LENGTH_E, GRID_LENGTH_Z);
   distance_matrix.fill(NAN);
 
@@ -168,7 +168,7 @@ void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, cons
       float obstacle_distance = histogram.get_dist(e_index, z_index);
       PolarPoint p_pol = histogramIndexToPolar(e_index, z_index, ALPHA_RES, 1.0f);  // unit vector of current direction
       std::pair<float, float> costs = costFunction(p_pol, obstacle_distance, goal, position, velocity, cost_params,
-                                                   closest_pt, is_obstacle_facing_goal);
+                                                   closest_pt, is_obstacle_facing_goal, previous_tree_root_dir);
       cost_matrix(e_index, z_index) = costs.second;
       distance_matrix(e_index, z_index) = costs.first;
     }
@@ -229,8 +229,7 @@ int colorImageIndex(int e_ind, int z_ind, int color) {
 }
 
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector,
-                                     const Eigen::Vector3f prev_init_dir) {
+                                     std::vector<candidateDirection>& candidate_vector) {
   std::priority_queue<candidateDirection, std::vector<candidateDirection>, std::less<candidateDirection>> queue;
 
   for (int row_index = 0; row_index < matrix.rows(); row_index++) {
@@ -238,13 +237,6 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
       PolarPoint p_pol = histogramIndexToPolar(row_index, col_index, ALPHA_RES, 1.0);
       float cost = matrix(row_index, col_index);
       candidateDirection candidate(cost, p_pol.e, p_pol.z);
-      if (!prev_init_dir.array().hasNaN()) {
-        Eigen::Vector2f candidate_dir = candidate.toEigen().head<2>();
-        Eigen::Vector2f prev_init_dir_2f = prev_init_dir.head<2>();
-        float angle = 0.f;
-        float add = costChangeInTreeDirection(prev_init_dir_2f, candidate_dir, angle);
-        candidate.cost += add;
-      }
       if (queue.size() < number_of_candidates) {
         queue.push(candidate);
       } else if (candidate < queue.top()) {
@@ -261,14 +253,6 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
     wrapPolar(candidate_polar);
     Eigen::Vector2i histogram_index = polarToHistogramIndex(candidate_polar, ALPHA_RES);
     candidate.cost = matrix(histogram_index.y(), histogram_index.x());
-
-    if (!prev_init_dir.array().hasNaN()) {
-      Eigen::Vector2f candidate_dir = candidate.toEigen().head<2>();
-      Eigen::Vector2f prev_init_dir_2f = prev_init_dir.head<2>();
-      float angle = 0.f;
-      float add = costChangeInTreeDirection(prev_init_dir_2f, candidate_dir, angle);
-      candidate.cost += add;
-    }
     queue.push(candidate);
   }
 
@@ -283,18 +267,18 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
   std::reverse(candidate_vector.begin(), candidate_vector.end());
 }
 
-float costChangeInTreeDirection(Eigen::Vector2f& prev_direction, Eigen::Vector2f& curr_direction, float& init_angle) {
-  init_angle = atan2(curr_direction.y(), curr_direction.x()) - atan2(prev_direction.y(), prev_direction.x());
-  if (init_angle > M_PI_F) {
-    init_angle -= 2 * M_PI_F;
-  } else if (init_angle <= -M_PI_F) {
-    init_angle += 2 * M_PI_F;
+float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eigen::Vector2f& curr_direction, const float weight) {
+  float angle = atan2(curr_direction.y(), curr_direction.x()) - atan2(prev_direction.y(), prev_direction.x());
+  if (angle > M_PI_F) {
+    angle -= 2 * M_PI_F;
+  } else if (angle <= -M_PI_F) {
+    angle += 2 * M_PI_F;
   }
 
-  init_angle *= RAD_TO_DEG;
-  init_angle = std::abs(init_angle);
-  float add = init_angle > 10.f ? (2500.f / (1.f + std::exp((-init_angle + 10.f) / 20.f))) : 0.f;
-  if (init_angle > 40.f) {
+  angle *= RAD_TO_DEG;
+  angle = std::abs(angle);
+  float add = angle > 10.f ? (weight / (1.f + std::exp((-angle + 10.f) / 20.f))) : 0.f;
+  if (angle > 40.f) {
     add = 500000.0f;
   }
 
@@ -372,7 +356,8 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
 std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
                                      const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                                      const Eigen::Vector3f& velocity, const costParameters& cost_params,
-                                     const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal) {
+                                     const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal,
+                                     const Eigen::Vector2f &previous_tree_root_dir) {
   // Compute  polar direction to goal and cartesian representation of current direction to evaluate
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
   const Eigen::Vector3f candidate_velocity_cartesian =
@@ -398,7 +383,14 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   const float d = 2 + cost_params.obstacle_cost_param - obstacle_distance;
   const float distance_cost = obstacle_distance > 0.f ? cost_params.distance_weigth_cost_param * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
-  return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost + velocity_cost);
+  float tree_hysteresis_cost = 0.f;
+  if (!previous_tree_root_dir.array().hasNaN()) {
+    candidateDirection candidate(0.f, facing_goal.e, facing_goal.z);
+    Eigen::Vector2f candidate_dir = candidate.toEigen().head<2>();
+    tree_hysteresis_cost = costChangeInTreeDirection(previous_tree_root_dir, candidate_dir, cost_params.tree_hysteresis_param);
+  }
+
+  return std::pair<float, float>(distance_cost, yaw_cost + yaw_to_line_cost + pitch_cost + velocity_cost + tree_hysteresis_cost);
 }
 
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,

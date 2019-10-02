@@ -72,7 +72,7 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
                    const Eigen::Vector3f& closest_pt, const float max_sensor_range, const float min_sensor_range,
-                   Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
+                   const Eigen::Vector2f& previous_tree_root_dir, Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -98,8 +98,7 @@ void generateCostImage(const Eigen::MatrixXf& cost_matrix, const Eigen::MatrixXf
 *             the least to the most expensive
 **/
 void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int number_of_candidates,
-                                     std::vector<candidateDirection>& candidate_vector,
-                                     const Eigen::Vector3f prev_init_dir);
+                                     std::vector<candidateDirection>& candidate_vector);
 
 /**
 * @brief      computes the cost of each direction in the polar histogram
@@ -115,7 +114,8 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
                                      const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                                      const Eigen::Vector3f& velocity, const costParameters& cost_params,
-                                     const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal);
+                                     const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal,
+                                     const Eigen::Vector2f &previous_tree_root_dir);
 
 /**
 * @brief      max-median filtes the cost matrix
@@ -158,6 +158,6 @@ void printHistogram(const Histogram& histogram);
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
                                  const ros::Time& path_generation_time, float tree_node_duration,
                                  Eigen::Vector3f& setpoint);
-float costChangeInTreeDirection(Eigen::Vector2f& prev_direction, Eigen::Vector2f& curr_direction, float& init_angle);
+float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eigen::Vector2f& curr_direction, const float weight);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
