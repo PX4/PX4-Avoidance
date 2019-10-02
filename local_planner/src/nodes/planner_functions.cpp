@@ -280,7 +280,7 @@ float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eig
   angle *= RAD_TO_DEG;
   angle = std::abs(angle);
   float add = angle > 10.f ? (weight / (1.f + std::exp((-angle + 10.f) / 20.f))) : 0.f;
-  if (angle > 40.f) {
+  if (angle > 20.f) {
     add = 500000.0f;
   }
 
