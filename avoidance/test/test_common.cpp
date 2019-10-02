@@ -382,8 +382,8 @@ TEST(Common, IndexPolarIndex) {
   // GIVEN:  some valid histogram indices and resolution
   int res = 6;
 
-  for (int e_ind = 0; e_ind == 30; e_ind + 5) {
-    for (int z_ind = 0; z_ind == 60; z_ind + 5) {
+  for (int e_ind = 0; e_ind < 30; e_ind += 5) {
+    for (int z_ind = 0; z_ind < 60; z_ind += 5) {
       // WHEN: transform it to polar and back to the indices
       PolarPoint p_pol = histogramIndexToPolar(e_ind, z_ind, res, 0.0);
       Eigen::Vector2i p_ind = polarToHistogramIndex(p_pol, res);
