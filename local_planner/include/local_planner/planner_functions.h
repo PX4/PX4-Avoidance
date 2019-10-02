@@ -66,6 +66,7 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 * @param[in]  closest_pt, vehicle position projection on the line previous-current goal
 * @param[in]  max_sensor_range, maximum distance at which the sensor detects objects
 * @param[in]  min_sensor_range, minimum distance at which the sensor detects objects
+* @param[in]  previous_tree_root_dir, previous tree chosen direction at depth 1
 * @param[out] cost_matrix
 * @param[out] image of the cost matrix for visualization
 **/
@@ -110,6 +111,7 @@ void getBestCandidatesFromCostMatrix(const Eigen::MatrixXf& matrix, unsigned int
 * @param[in]  cost_params, weights for goal oriented vs smooth behaviour
 * @param[in]  closest_pt, vehicle position projection on the line previous-current goal
 * @param[in]  is_obstacle_facing_goal, true if there is an obstacle in the goal direction
+* @param[in]  previous_tree_root_dir, previous tree chosen direction at depth 1
 * @returns    a pair with the first value representing the distance cost, and the second the sum of all other costs
 **/
 std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float obstacle_distance,
@@ -159,6 +161,13 @@ void printHistogram(const Histogram& histogram);
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
                                  const ros::Time& path_generation_time, float tree_node_duration,
                                  Eigen::Vector3f& setpoint);
+/**
+* @brief      Returns the cost a direction with respect to the previous decision
+* @param[in]  prev_direction, previous tree direction
+* @param[in]  curr_direction, candidate tree direction
+* @param[in]  weight, parameter to change the weight of this cost
+* @returns    cost of the curr_direction
+**/
 float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eigen::Vector2f& curr_direction,
                                 const float weight);
 }
