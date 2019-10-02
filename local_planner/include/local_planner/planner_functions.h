@@ -72,7 +72,8 @@ void compressHistogramElevation(Histogram& new_hist, const Histogram& input_hist
 void getCostMatrix(const Histogram& histogram, const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                    const Eigen::Vector3f& velocity, const costParameters& cost_params, float smoothing_margin_degrees,
                    const Eigen::Vector3f& closest_pt, const float max_sensor_range, const float min_sensor_range,
-                   const Eigen::Vector2f& previous_tree_root_dir, Eigen::MatrixXf& cost_matrix, std::vector<uint8_t>& image_data);
+                   const Eigen::Vector2f& previous_tree_root_dir, Eigen::MatrixXf& cost_matrix,
+                   std::vector<uint8_t>& image_data);
 
 /**
 * @brief      get the index in the data vector of a color image
@@ -115,7 +116,7 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
                                      const Eigen::Vector3f& goal, const Eigen::Vector3f& position,
                                      const Eigen::Vector3f& velocity, const costParameters& cost_params,
                                      const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal,
-                                     const Eigen::Vector2f &previous_tree_root_dir);
+                                     const Eigen::Vector2f& previous_tree_root_dir);
 
 /**
 * @brief      max-median filtes the cost matrix
@@ -158,6 +159,7 @@ void printHistogram(const Histogram& histogram);
 bool interpolateBetweenSetpoints(const std::vector<Eigen::Vector3f>& setpoint_array,
                                  const ros::Time& path_generation_time, float tree_node_duration,
                                  Eigen::Vector3f& setpoint);
-float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eigen::Vector2f& curr_direction, const float weight);
+float costChangeInTreeDirection(const Eigen::Vector2f& prev_direction, const Eigen::Vector2f& curr_direction,
+                                const float weight);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

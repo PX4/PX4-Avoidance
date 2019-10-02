@@ -80,10 +80,11 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
     if (n != 0) {
-      starting_direction_ = Eigen::Vector3f(NAN, NAN, NAN); //tree_[origin].getSetpoint();
+      starting_direction_ = Eigen::Vector3f(NAN, NAN, NAN);  // tree_[origin].getSetpoint();
     }
     getCostMatrix(histogram, goal_, origin_position, origin_velocity, cost_params_, smoothing_margin_degrees_,
-                  closest_pt_, max_sensor_range_, min_sensor_range_, starting_direction_.head<2>(), cost_matrix, cost_image_data);
+                  closest_pt_, max_sensor_range_, min_sensor_range_, starting_direction_.head<2>(), cost_matrix,
+                  cost_image_data);
 
     getBestCandidatesFromCostMatrix(cost_matrix, children_per_node_, candidate_vector);
 
