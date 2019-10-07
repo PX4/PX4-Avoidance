@@ -61,7 +61,7 @@ void LocalPlannerNodelet::InitializeNodelet() {
   tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
 
   // Set up Dynamic Reconfigure Server
-  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, nh_);
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
   server_->setCallback(f);
