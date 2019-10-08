@@ -455,7 +455,7 @@ void LocalPlannerNodelet::dynamicReconfigureCallback(avoidance::LocalPlannerNode
 
 void LocalPlannerNodelet::publishLaserScan() const {
   // inverted logic to make sure values like NAN default to sending the message
-  if (!(local_planner_->px4_.param_mpc_col_prev_d < 0)) {
+  if (!(local_planner_->px4_.param_mpc_cp_dist < 0)) {
     sensor_msgs::LaserScan distance_data_to_fcu;
     local_planner_->getObstacleDistanceData(distance_data_to_fcu);
 
