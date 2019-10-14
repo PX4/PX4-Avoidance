@@ -82,17 +82,16 @@ usm::Transition WaypointGenerator::runCurrentState() {
 usm::Transition WaypointGenerator::runTryPath() {
   Eigen::Vector3f setpoint = position_;
   const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                                                  planner_info_.cruise_velocity, setpoint);
+                                                  planner_info_.cruise_velocity, getSystemTime(), setpoint);
   output_.goto_position = position_ + (setpoint - position_).normalized();
   getPathMsg();
-
-  if (isAltitudeChange()) {
+  if (loiter_) {
+    return usm::Transition::NEXT3;  // LOITER
+  } else if (isAltitudeChange()) {
     return usm::Transition::NEXT1;  // ALTITUDE_CHANGE
   } else if (tree_available) {
     ROS_DEBUG("[WG] Using calculated tree\n");
     return usm::Transition::REPEAT;
-  } else if (loiter_) {
-    return usm::Transition::NEXT3;  // LOITER
   } else {
     return usm::Transition::NEXT2;  // DIRECT
   }
@@ -146,10 +145,10 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
   }
   getPathMsg();
 
-  if (isAltitudeChange()) {
-    return usm::Transition::REPEAT;
-  } else if (loiter_) {
+  if (loiter_) {
     return usm::Transition::NEXT2;  // LOITER
+  } else if (isAltitudeChange()) {
+    return usm::Transition::REPEAT;  // ALTITUDE_CHANGE
   } else {
     return usm::Transition::NEXT1;  // TRY_PATH
   }
@@ -166,7 +165,7 @@ usm::Transition WaypointGenerator::runLoiter() {
   if (loiter_) {
     return usm::Transition::REPEAT;
   } else {
-    return usm::Transition::NEXT1;
+    return usm::Transition::NEXT1;  // TRY_PATH
   }
 }
 
@@ -180,7 +179,7 @@ usm::Transition WaypointGenerator::runDirect() {
   getPathMsg();
   Eigen::Vector3f setpoint;
   if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
-                          planner_info_.cruise_velocity, setpoint)) {
+                          planner_info_.cruise_velocity, getSystemTime(), setpoint)) {
     return usm::Transition::NEXT1;  // TRY_PATH
   } else if (isAltitudeChange()) {
     return usm::Transition::NEXT2;  // ALTITUDE_CHANGE
@@ -385,7 +384,6 @@ void WaypointGenerator::getPathMsg() {
   ROS_INFO("[WG] Final waypoint: [%f %f %f]. %f %f %f \n", output_.smoothed_goto_position.x(),
            output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), output_.linear_velocity_wp.x(),
            output_.linear_velocity_wp.y(), output_.linear_velocity_wp.z());
-
   createPoseMsg(output_.position_wp, output_.orientation_wp, output_.smoothed_goto_position, setpoint_yaw_rad_);
 }
 
