@@ -41,7 +41,7 @@ void LocalPlannerNodelet::onInit() {
 
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
-    // Set up Dynamic Reconfigure Server
+  // Set up Dynamic Reconfigure Server
   server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
