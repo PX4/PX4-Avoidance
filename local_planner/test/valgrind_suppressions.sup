@@ -4,8 +4,8 @@
    match-leak-kinds: definite
    fun:_Znwm
    fun:_ZN12class_loader20class_loader_private14registerPluginIN9avoidance19LocalPlannerNodeletEN7nodelet7NodeletEEEvRKNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEEESD_
-   fun:_ZN12_GLOBAL__N_110ProxyExec0C1Ev
-   fun:_Z41__static_initialization_and_destruction_0ii
+   fun:ProxyExec0
+   fun:__static_initialization_and_destruction_0
    fun:_GLOBAL__sub_I_local_planner_nodelet.cpp
    fun:call_init.part.0
    fun:call_init
