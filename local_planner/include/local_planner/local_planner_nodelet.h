@@ -18,6 +18,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
+#include <nodelet/nodelet.h>
 #include <pcl/filters/filter.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
@@ -69,10 +70,18 @@ struct cameraData {
   bool transform_registered_ = false;
 };
 
-class LocalPlannerNode {
+class LocalPlannerNodelet : public nodelet::Nodelet {
  public:
-  LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private, const bool tf_spin_thread = true);
-  ~LocalPlannerNode();
+  LocalPlannerNodelet();
+  virtual ~LocalPlannerNodelet();
+  /**
+  * @brief     Initializer for nodeletes
+  **/
+  virtual void onInit();
+  /**
+  * @brief     Initialize ROS components
+  **/
+  void InitializeNodelet();
 
   std::atomic<bool> should_exit_{false};
 
@@ -81,6 +90,9 @@ class LocalPlannerNode {
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
+
+  std::thread worker;
+  std::thread worker_tf_listener;
 
   LocalPlannerVisualization visualizer_;
   std::unique_ptr<avoidance::AvoidanceNode> avoidance_node_;
@@ -224,8 +236,8 @@ class LocalPlannerNode {
 
   NavigationState nav_state_ = NavigationState::none;
 
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
-  tf::TransformListener* tf_listener_;
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_ = nullptr;
+  tf::TransformListener* tf_listener_ = nullptr;
   avoidance::tf_buffer::TransformBuffer tf_buffer_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 

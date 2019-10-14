@@ -22,12 +22,15 @@
     <env name="ROSCONSOLE_CONFIG_FILE" value="$(find local_planner)/resource/custom_rosconsole.conf"/>
 
     <!-- Launch local planner -->
-    <node name="local_planner_node" pkg="local_planner" type="local_planner_node" output="screen">
-        <param name="goal_x_param" value="0" />
-        <param name="goal_y_param" value="0"/>
-        <param name="goal_z_param" value="3" />
-        <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
-        <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
+    <arg name="manager"             default="local_planner_manager"/>
+
+    <node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager" output="screen"/>
+    <node pkg="nodelet" type="nodelet" name="local_planner_nodelet" args="load LocalPlannerNodelet $(arg manager)" output="screen">
+      <param name="goal_x_param" value="17" />
+      <param name="goal_y_param" value="15"/>
+      <param name="goal_z_param" value="3" />
+      <param name="world_name" value="$(find avoidance)/sim/worlds/$(arg world_file_name).yaml" />
+      <rosparam param="pointcloud_topics" subst_value="True">$(arg pointcloud_topics)</rosparam>
     </node>
 
     <node name="rviz" pkg="rviz" type="rviz" output="screen" args="-d $(find local_planner)/resource/local_planner.rviz" />

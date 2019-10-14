@@ -12,7 +12,7 @@ WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh) : nh_(nh) {
   drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
   loop_timer_ = nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
 
-  nh_.param<std::string>("world_name", world_path_, "");
+  nh_.param<std::string>("/local_planner_nodelet/world_name", world_path_, "");
 }
 
 void WorldVisualizer::loopCallback(const ros::TimerEvent& event) {

@@ -1,0 +1,8 @@
+<library path="lib/liblocal_planner_nodelet">
+    <class name="LocalPlannerNodelet" type="avoidance::LocalPlannerNodelet" base_class_type="nodelet::Nodelet">
+        <description>
+            Local planner nodelet
+        </description>
+    </class>
+
+</library>

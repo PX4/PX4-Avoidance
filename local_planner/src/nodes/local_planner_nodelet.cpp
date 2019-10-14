@@ -1,4 +1,4 @@
-#include "local_planner/local_planner_node.h"
+#include "local_planner/local_planner_nodelet.h"
 
 #include "local_planner/local_planner.h"
 #include "local_planner/planner_functions.h"
@@ -15,12 +15,47 @@
 
 namespace avoidance {
 
-LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private,
-                                   const bool tf_spin_thread)
-    : nh_(nh), nh_private_(nh_private), spin_dt_(0.1), tf_buffer_(5.f) {
+LocalPlannerNodelet::LocalPlannerNodelet() : spin_dt_(0.1), tf_buffer_(5.f) {}
+
+LocalPlannerNodelet::~LocalPlannerNodelet() {
+  should_exit_ = true;
+  data_ready_cv_.notify_all();
+
+  if (worker.joinable()) worker.join();
+  if (worker_tf_listener.joinable()) worker_tf_listener.join();
+
+  for (size_t i = 0; i < cameras_.size(); ++i) {
+    cameras_[i].cloud_ready_cv_->notify_all();
+    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
+  }
+
+  if (server_ != nullptr) delete server_;
+  if (tf_listener_ != nullptr) delete tf_listener_;
+}
+
+void LocalPlannerNodelet::onInit() {
+  NODELET_DEBUG("Initializing nodelet...");
+  InitializeNodelet();
+
+  startNode();
+
+  worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
+  worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
+  // Set up Dynamic Reconfigure Server
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
+  server_->setCallback(f);
+}
+
+void LocalPlannerNodelet::InitializeNodelet() {
+  nh_ = ros::NodeHandle("~");
+  nh_private_ = ros::NodeHandle("");
+  const bool tf_spin_thread = true;
+
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
-  avoidance_node_.reset(new AvoidanceNode(nh, nh_private));
+  avoidance_node_.reset(new AvoidanceNode(nh_, nh_private_));
 
 #ifndef DISABLE_SIMULATION
   world_visualizer_.reset(new WorldVisualizer(nh_));
@@ -30,23 +65,17 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
 
   tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
 
-  // Set up Dynamic Reconfigure Server
-  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, nh_);
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
-  f = boost::bind(&LocalPlannerNode::dynamicReconfigureCallback, this, _1, _2);
-  server_->setCallback(f);
-
   // initialize standard subscribers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
-                                                               &LocalPlannerNode::positionCallback, this);
+                                                               &LocalPlannerNodelet::positionCallback, this);
   velocity_sub_ = nh_.subscribe<const geometry_msgs::TwistStamped&>("/mavros/local_position/velocity_local", 1,
-                                                                    &LocalPlannerNode::velocityCallback, this);
-  state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNode::stateCallback, this);
-  clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNode::clickedPointCallback, this);
-  clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNode::clickedGoalCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNode::fcuInputGoalCallback, this);
-  goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1, &LocalPlannerNode::updateGoalCallback, this);
-  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1, &LocalPlannerNode::distanceSensorCallback, this);
+                                                                    &LocalPlannerNodelet::velocityCallback, this);
+  state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNodelet::stateCallback, this);
+  clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNodelet::clickedPointCallback, this);
+  clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNodelet::clickedGoalCallback, this);
+  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNodelet::fcuInputGoalCallback, this);
+  goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1, &LocalPlannerNodelet::updateGoalCallback, this);
+  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1, &LocalPlannerNodelet::distanceSensorCallback, this);
   mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>("/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
   mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
   mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
@@ -66,16 +95,8 @@ LocalPlannerNode::LocalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHan
   start_time_ = ros::Time::now();
 }
 
-LocalPlannerNode::~LocalPlannerNode() {
-  should_exit_ = true;
-  data_ready_cv_.notify_all();
-
-  delete server_;
-  delete tf_listener_;
-}
-
-void LocalPlannerNode::startNode() {
-  ros::TimerOptions timer_options(ros::Duration(spin_dt_), boost::bind(&LocalPlannerNode::cmdLoopCallback, this, _1),
+void LocalPlannerNodelet::startNode() {
+  ros::TimerOptions timer_options(ros::Duration(spin_dt_), boost::bind(&LocalPlannerNodelet::cmdLoopCallback, this, _1),
                                   &cmdloop_queue_);
   cmdloop_timer_ = nh_.createTimer(timer_options);
 
@@ -85,21 +106,24 @@ void LocalPlannerNode::startNode() {
   avoidance_node_->init();
 }
 
-void LocalPlannerNode::readParams() {
+void LocalPlannerNodelet::readParams() {
   // Parameter from launch file
-  nh_.param<float>("goal_x_param", goal_position_.x(), 9.0);
-  nh_.param<float>("goal_y_param", goal_position_.y(), 13.0);
-  nh_.param<float>("goal_z_param", goal_position_.z(), 3.5);
-  nh_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
+  Eigen::Vector3d goal_d = goal_position_.cast<double>();
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_x_param", goal_d.x(), 0.0);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_y_param", goal_d.y(), 0.0);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/lgoal_z_param", goal_d.z(), 0.0);
+  nh_private_.param<bool>(nodelet::Nodelet::getName() + "/accept_goal_input_topic", accept_goal_input_topic_, false);
+  goal_position_ = goal_d.cast<float>();
 
   std::vector<std::string> camera_topics;
-  nh_.getParam("pointcloud_topics", camera_topics);
+  nh_private_.getParam(nodelet::Nodelet::getName() + "/pointcloud_topics", camera_topics);
+
   initializeCameraSubscribers(camera_topics);
 
   new_goal_ = true;
 }
 
-void LocalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
+void LocalPlannerNodelet::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
   cameras_.resize(camera_topics.size());
 
   for (size_t i = 0; i < camera_topics.size(); i++) {
@@ -109,14 +133,14 @@ void LocalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& cam
     cameras_[i].transformed_ = false;
 
     cameras_[i].pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
-        camera_topics[i], 1, boost::bind(&LocalPlannerNode::pointCloudCallback, this, _1, i));
+        camera_topics[i], 1, boost::bind(&LocalPlannerNodelet::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
     cameras_[i].received_ = false;
-    cameras_[i].transform_thread_ = std::thread(&LocalPlannerNode::pointCloudTransformThread, this, i);
+    cameras_[i].transform_thread_ = std::thread(&LocalPlannerNodelet::pointCloudTransformThread, this, i);
   }
 }
 
-size_t LocalPlannerNode::numReceivedClouds() {
+size_t LocalPlannerNodelet::numReceivedClouds() {
   size_t num_received_clouds = 0;
   for (size_t i = 0; i < cameras_.size(); i++) {
     if (cameras_[i].received_) num_received_clouds++;
@@ -124,7 +148,7 @@ size_t LocalPlannerNode::numReceivedClouds() {
   return num_received_clouds;
 }
 
-size_t LocalPlannerNode::numTransformedClouds() {
+size_t LocalPlannerNodelet::numTransformedClouds() {
   size_t num_transformed_clouds = 0;
   for (size_t i = 0; i < cameras_.size(); i++) {
     std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].transformed_cloud_mutex_));
@@ -133,7 +157,7 @@ size_t LocalPlannerNode::numTransformedClouds() {
   return num_transformed_clouds;
 }
 
-void LocalPlannerNode::updatePlanner() {
+void LocalPlannerNodelet::updatePlanner() {
   if (cameras_.size() == numReceivedClouds() && cameras_.size() != 0) {
     if (cameras_.size() == numTransformedClouds()) {
       if (running_mutex_.try_lock()) {
@@ -153,7 +177,7 @@ void LocalPlannerNode::updatePlanner() {
   }
 }
 
-void LocalPlannerNode::updatePlannerInfo() {
+void LocalPlannerNodelet::updatePlannerInfo() {
   // update the point cloud
   local_planner_->original_cloud_vector_.clear();
   for (size_t i = 0; i < cameras_.size(); ++i) {
@@ -185,7 +209,7 @@ void LocalPlannerNode::updatePlannerInfo() {
   local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
 }
 
-void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
+void LocalPlannerNodelet::positionCallback(const geometry_msgs::PoseStamped& msg) {
   last_position_ = newest_position_;
   newest_position_ = toEigen(msg.pose.position);
   newest_orientation_ = toEigen(msg.pose.orientation);
@@ -193,11 +217,11 @@ void LocalPlannerNode::positionCallback(const geometry_msgs::PoseStamped& msg) {
   position_received_ = true;
 }
 
-void LocalPlannerNode::velocityCallback(const geometry_msgs::TwistStamped& msg) {
+void LocalPlannerNodelet::velocityCallback(const geometry_msgs::TwistStamped& msg) {
   velocity_ = toEigen(msg.twist.linear);
 }
 
-void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
+void LocalPlannerNodelet::stateCallback(const mavros_msgs::State& msg) {
   armed_ = msg.armed;
 
   if (msg.mode == "AUTO.MISSION") {
@@ -217,7 +241,7 @@ void LocalPlannerNode::stateCallback(const mavros_msgs::State& msg) {
   }
 }
 
-void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
+void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
   hover_ = false;
 
   // Process callbacks & wait for a position update
@@ -267,11 +291,11 @@ void LocalPlannerNode::cmdLoopCallback(const ros::TimerEvent& event) {
   return;
 }
 
-void LocalPlannerNode::setSystemStatus(MAV_STATE state) { avoidance_node_->setSystemStatus(state); }
+void LocalPlannerNodelet::setSystemStatus(MAV_STATE state) { avoidance_node_->setSystemStatus(state); }
 
-MAV_STATE LocalPlannerNode::getSystemStatus() { return avoidance_node_->getSystemStatus(); }
+MAV_STATE LocalPlannerNodelet::getSystemStatus() { return avoidance_node_->getSystemStatus(); }
 
-void LocalPlannerNode::calculateWaypoints(bool hover) {
+void LocalPlannerNodelet::calculateWaypoints(bool hover) {
   bool is_airborne = armed_ && (nav_state_ != NavigationState::none);
 
   wp_generator_->updateState(newest_position_, newest_orientation_, goal_position_, prev_goal_position_, velocity_,
@@ -306,11 +330,11 @@ void LocalPlannerNode::calculateWaypoints(bool hover) {
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
-void LocalPlannerNode::clickedPointCallback(const geometry_msgs::PointStamped& msg) {
+void LocalPlannerNodelet::clickedPointCallback(const geometry_msgs::PointStamped& msg) {
   printPointInfo(msg.point.x, msg.point.y, msg.point.z);
 }
 
-void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg) {
+void LocalPlannerNodelet::clickedGoalCallback(const geometry_msgs::PoseStamped& msg) {
   new_goal_ = true;
   prev_goal_position_ = goal_position_;
   goal_position_ = toEigen(msg.pose.position);
@@ -319,7 +343,7 @@ void LocalPlannerNode::clickedGoalCallback(const geometry_msgs::PoseStamped& msg
   goal_position_.z() = local_planner_->getGoal().z();
 }
 
-void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray& msg) {
+void LocalPlannerNodelet::updateGoalCallback(const visualization_msgs::MarkerArray& msg) {
   if (accept_goal_input_topic_ && msg.markers.size() > 0) {
     prev_goal_position_ = goal_position_;
     goal_position_ = toEigen(msg.markers[0].pose.position);
@@ -327,7 +351,7 @@ void LocalPlannerNode::updateGoalCallback(const visualization_msgs::MarkerArray&
   }
 }
 
-void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) {
+void LocalPlannerNodelet::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) {
   bool update =
       ((avoidance::toEigen(msg.point_2.position) - avoidance::toEigen(goal_mission_item_msg_.pose.position)).norm() >
        0.01) ||
@@ -351,13 +375,13 @@ void LocalPlannerNode::fcuInputGoalCallback(const mavros_msgs::Trajectory& msg) 
   }
 }
 
-void LocalPlannerNode::distanceSensorCallback(const mavros_msgs::Altitude& msg) {
+void LocalPlannerNodelet::distanceSensorCallback(const mavros_msgs::Altitude& msg) {
   if (!std::isnan(msg.bottom_clearance)) {
     ground_distance_msg_ = msg;
   }
 }
 
-void LocalPlannerNode::transformBufferThread() {
+void LocalPlannerNodelet::transformBufferThread() {
   // wait until all pointclouds were received for the first time and added to the transform list
   while (!should_exit_) {
     bool all_tf_registered = true;
@@ -388,7 +412,7 @@ void LocalPlannerNode::transformBufferThread() {
   }
 }
 
-void LocalPlannerNode::printPointInfo(double x, double y, double z) {
+void LocalPlannerNodelet::printPointInfo(double x, double y, double z) {
   Eigen::Vector3f drone_pos = local_planner_->getPosition();
   int beta_z = floor((atan2(x - drone_pos.x(), y - drone_pos.y()) * 180.0 / M_PI));  //(-180. +180]
   int beta_e = floor((atan((z - drone_pos.z()) / (Eigen::Vector2f(x, y) - drone_pos.topRows<2>()).norm()) * 180.0 /
@@ -402,7 +426,7 @@ void LocalPlannerNode::printPointInfo(double x, double y, double z) {
   ROS_INFO("-------------------------------------------- \n");
 }
 
-void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
+void LocalPlannerNodelet::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
   std::lock_guard<std::mutex> lck(*(cameras_[index].cloud_msg_mutex_));
   cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
   cameras_[index].received_ = true;
@@ -416,14 +440,14 @@ void LocalPlannerNode::pointCloudCallback(const sensor_msgs::PointCloud2::ConstP
   cameras_[index].cloud_ready_cv_->notify_one();
 }
 
-void LocalPlannerNode::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
+void LocalPlannerNodelet::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
   std::lock_guard<std::mutex> guard(running_mutex_);
   local_planner_->dynamicReconfigureSetParams(config, level);
   wp_generator_->setSmoothingSpeed(config.smoothing_speed_xy_, config.smoothing_speed_z_);
   rqt_param_config_ = config;
 }
 
-void LocalPlannerNode::publishLaserScan() const {
+void LocalPlannerNodelet::publishLaserScan() const {
   // inverted logic to make sure values like NAN default to sending the message
   if (!(local_planner_->px4_.param_mpc_col_prev_d < 0)) {
     sensor_msgs::LaserScan distance_data_to_fcu;
@@ -436,7 +460,7 @@ void LocalPlannerNode::publishLaserScan() const {
   }
 }
 
-void LocalPlannerNode::threadFunction() {
+void LocalPlannerNodelet::threadFunction() {
   while (!should_exit_) {
     // wait for data
     {
@@ -462,11 +486,11 @@ void LocalPlannerNode::threadFunction() {
   }
 }
 
-void LocalPlannerNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
+void LocalPlannerNodelet::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
   avoidance_node_->checkFailsafe(since_last_cloud, since_start, hover);
 }
 
-void LocalPlannerNode::pointCloudTransformThread(int index) {
+void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
     {
       std::unique_lock<std::mutex> cloud_msg_lock(*(cameras_[index].cloud_msg_mutex_));
@@ -507,3 +531,5 @@ void LocalPlannerNode::pointCloudTransformThread(int index) {
   }
 }
 }
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_EXPORT_CLASS(avoidance::LocalPlannerNodelet, nodelet::Nodelet);
