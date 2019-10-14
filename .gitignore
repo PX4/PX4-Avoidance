@@ -6,3 +6,6 @@
 .clang_complete
 *.kdev4
 /local_planner/launch/avoidance.launch
+coverage_html/*
+repo_total.info
+*/build/*

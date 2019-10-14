@@ -1,7 +1,7 @@
 # Based on https://github.com/felixduvallet/ros-travis-integration
 #
 # vim:set ts=2 sw=2 et:
-language: generic
+language: C++
 
 matrix:
   include:
@@ -19,17 +19,19 @@ cache:
     - rm -f $HOME/.cache/pip/log/debug.log
 cache:
   - apt
+  - ccache
 
 env:
   global:
     - ROS_CI_DESKTOP="$(lsb_release -cs)"
     - CI_SOURCE_PATH=$(pwd)
+    - export COVERALLS_SERVICE_NAME=travis-ci
 
 before_install:
   - sudo sh -c "echo \"deb http://packages.ros.org/ros/ubuntu $ROS_CI_DESKTOP main\" > /etc/apt/sources.list.d/ros-latest.list"
   - sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
   - sudo apt-get update -qq
-  - sudo apt-get install -y build-essential git valgrind
+  - sudo apt-get install -y build-essential git valgrind ccache
   - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
   # Install ROS Kinetic
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
@@ -78,8 +80,10 @@ script:
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
-
-after_script:
   - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y clang-format-3.8; fi
   - if [ $ROS_DISTRO == kinetic ]; then (cd tools && ./check_code_format.sh); fi
-  - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && exit $status; fi
+  - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi) ; fi
+
+after_success:
+  - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y lcov && sudo gem install coveralls-lcov; fi
+  - if [ $ROS_DISTRO == kinetic ]; then (cd ~/catkin_ws/src/avoidance && tools/generate_coverage.sh && coveralls-lcov repo_total.info) ; fi

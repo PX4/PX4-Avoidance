@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 2.8.12)
 project(avoidance)
 
 add_definitions(-std=c++11)
@@ -95,5 +95,29 @@ if(CATKIN_ENABLE_TESTING)
       target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
                                                  ${YAML_CPP_LIBRARIES})
+    endif()
+
+
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Coverage")
+        SET(CMAKE_CXX_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage --coverage")
+        SET(CMAKE_C_FLAGS "-g -O0 -fprofile-arcs -ftest-coverage --coverage")
+        SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+
+        add_custom_target(${PROJECT_NAME}-test_coverage
+            COMMAND lcov --zerocounters --directory ${PROJECT_BINARY_DIR}
+            COMMAND lcov --capture  --initial --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file base_coverage.info --rc lcov_branch_coverage=1
+            COMMAND ${PROJECT_NAME}-test
+            COMMAND lcov --capture  --no-external --directory ${PROJECT_BINARY_DIR} --base-directory ${${PROJECT_NAME}_SOURCE_DIR} --output-file test_coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov -a base_coverage.info -a test_coverage.info -o coverage.info --rc lcov_branch_coverage=1
+            COMMAND lcov --rc lcov_branch_coverage=1 --summary coverage.info
+            WORKING_DIRECTORY .
+            DEPENDS ${PROJECT_NAME}-test
+        )
+        add_custom_target(${PROJECT_NAME}-test_coverage_html
+            COMMAND genhtml coverage.info --output-directory out --branch-coverage
+            COMMAND x-www-browser out/index.html
+            WORKING_DIRECTORY .
+            DEPENDS ${PROJECT_NAME}-test_coverage
+        )
     endif()
 endif()
