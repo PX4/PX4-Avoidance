@@ -21,16 +21,16 @@ LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
   data_ready_cv_.notify_all();
 
-  worker.join();
-  worker_tf_listener.join();
+  if (worker.joinable()) worker.join();
+  if (worker_tf_listener.joinable()) worker_tf_listener.join();
 
   for (size_t i = 0; i < cameras_.size(); ++i) {
     cameras_[i].cloud_ready_cv_->notify_all();
-    cameras_[i].transform_thread_.join();
+    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
   }
 
-  delete server_;
-  delete tf_listener_;
+  if (server_ != nullptr) delete server_;
+  if (tf_listener_ != nullptr) delete tf_listener_;
 }
 
 void LocalPlannerNodelet::onInit() {
@@ -41,6 +41,11 @@ void LocalPlannerNodelet::onInit() {
 
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
+    // Set up Dynamic Reconfigure Server
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
+  f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
+  server_->setCallback(f);
 }
 
 void LocalPlannerNodelet::InitializeNodelet() {
@@ -59,12 +64,6 @@ void LocalPlannerNodelet::InitializeNodelet() {
   readParams();
 
   tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
-
-  // Set up Dynamic Reconfigure Server
-  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
-  f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
-  server_->setCallback(f);
 
   // initialize standard subscribers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,

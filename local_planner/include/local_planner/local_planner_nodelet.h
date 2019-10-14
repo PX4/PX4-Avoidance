@@ -236,8 +236,8 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
 
   NavigationState nav_state_ = NavigationState::none;
 
-  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_;
-  tf::TransformListener* tf_listener_;
+  dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_ = nullptr;
+  tf::TransformListener* tf_listener_ = nullptr;
   avoidance::tf_buffer::TransformBuffer tf_buffer_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 
