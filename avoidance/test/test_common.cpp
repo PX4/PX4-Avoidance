@@ -26,6 +26,87 @@ TEST(Common, pointInsideFOV) {
   EXPECT_TRUE(inside);
 }
 
+TEST(Common, pointInsideFOVvector) {
+  // GIVEN: three points and a regular FOV
+  FOV fov1(34.0f, 12.0f, 45.0f, 60.0f);
+  FOV fov2(80.0f, 12.0f, 45.0f, 60.0f);
+  std::vector<FOV> fov_vector = {fov1, fov2};
+  PolarPoint p_outside_azimuth(-1.f, 57.0f, 2.0f);
+  PolarPoint p_outside_elevation(-60.0f, 30.0f, 2.0f);
+  PolarPoint p_inside_fov1(25.0f, 27.0f, 2.0f);
+  PolarPoint p_inside_fov2(25.0f, 70.0f, 2.0f);
+
+  // WHEN: we check whether they are inside the FOV
+  bool outside_azimuth = pointInsideFOV(fov_vector, p_outside_azimuth);
+  bool outside_elevation = pointInsideFOV(fov_vector, p_outside_elevation);
+  bool inside = pointInsideFOV(fov_vector, p_inside_fov1);
+  bool inside2 = pointInsideFOV(fov_vector, p_inside_fov2);
+
+  // THEN: they should lie in the expected region
+  EXPECT_FALSE(outside_azimuth);
+  EXPECT_FALSE(outside_elevation);
+  EXPECT_TRUE(inside);
+  EXPECT_TRUE(inside2);
+}
+
+TEST(PlannerFunctions, histogramIndexYawInsideFOV) {
+  FOV fov(34.0f, 12.0f, 90.0f, 60.0f);
+  PolarPoint fov_pol_low;
+  fov_pol_low.e = 0;
+  fov_pol_low.z = fov.yaw_deg - (90.f / 2.f);
+  fov_pol_low.r = 2;
+  Eigen::Vector2i index_low = polarToHistogramIndex(fov_pol_low, ALPHA_RES);
+  PolarPoint fov_pol_high;
+  fov_pol_high.e = 0;
+  fov_pol_high.z = fov.yaw_deg + (90.f / 2.f);
+  fov_pol_high.r = 2;
+  Eigen::Vector2i index_high = polarToHistogramIndex(fov_pol_high, ALPHA_RES);
+
+  for (int i = 0; i < 360 / ALPHA_RES; i++) {
+    bool res = histogramIndexYawInsideFOV(fov, i, Eigen::Vector3f(1.f, 1.f, 5.f), 20.f);
+    if (i >= index_low.x() && i <= index_high.x()) {
+      EXPECT_TRUE(res);
+    } else {
+      EXPECT_FALSE(res);
+    }
+  }
+}
+
+TEST(PlannerFunctions, histogramIndexYawInsideFOVVector) {
+  FOV fov1(34.0f, 12.0f, 45.0f, 60.0f);
+  FOV fov2(80.0f, 12.0f, 45.0f, 60.0f);
+  std::vector<FOV> fov_vector = {fov1, fov2};
+  PolarPoint fov_pol_low1;
+  fov_pol_low1.e = 0;
+  fov_pol_low1.z = fov1.yaw_deg - (fov1.h_fov_deg / 2.f);
+  fov_pol_low1.r = 2;
+  Eigen::Vector2i index_low1 = polarToHistogramIndex(fov_pol_low1, ALPHA_RES);
+  PolarPoint fov_pol_high1;
+  fov_pol_high1.e = 0;
+  fov_pol_high1.z = fov1.yaw_deg + (fov1.h_fov_deg / 2.f);
+  fov_pol_high1.r = 2;
+  Eigen::Vector2i index_high1 = polarToHistogramIndex(fov_pol_high1, ALPHA_RES);
+  PolarPoint fov_pol_low2;
+  fov_pol_low2.e = 0;
+  fov_pol_low2.z = fov2.yaw_deg - (fov2.h_fov_deg / 2.f);
+  fov_pol_low2.r = 2;
+  Eigen::Vector2i index_low2 = polarToHistogramIndex(fov_pol_low2, ALPHA_RES);
+  PolarPoint fov_pol_high2;
+  fov_pol_high2.e = 0;
+  fov_pol_high2.z = fov2.yaw_deg + (fov2.h_fov_deg / 2.f);
+  fov_pol_high2.r = 2;
+  Eigen::Vector2i index_high2 = polarToHistogramIndex(fov_pol_high2, ALPHA_RES);
+
+  for (int i = 0; i < 360 / ALPHA_RES; i++) {
+    bool res = histogramIndexYawInsideFOV(fov_vector, i, Eigen::Vector3f(1.f, 1.f, 5.f), 340.f);
+    if ((i >= index_low1.x() && i <= index_high1.x()) || (i >= index_low2.x() && i < index_high2.x())) {
+      EXPECT_TRUE(res);
+    } else {
+      EXPECT_FALSE(res);
+    }
+  }
+}
+
 TEST(PlannerFunctions, HistogramResolution) {
   // Test that the hardcoded histogram resolution ALPHA_RES is valid
   ASSERT_GT(ALPHA_RES, 0);
@@ -728,4 +809,115 @@ TEST(Common, updateFOVFromMaxima) {
     EXPECT_NEAR(0.0f, fov_nadir.yaw_deg, 1.0f);
     EXPECT_NEAR(-90.0f, fov_nadir.pitch_deg, 1.0f);
     **/
+}
+
+TEST(Common, transformToTrajectory) {
+  ros::Time::init();
+  geometry_msgs::PoseStamped position_sp;
+  geometry_msgs::Twist velocity_sp;
+  mavros_msgs::Trajectory trajectory_message;
+  position_sp.pose.position.x = 1.3;
+  position_sp.pose.position.y = 2.7;
+  position_sp.pose.position.z = 5.0;
+  position_sp.pose.orientation.x = 0.0;
+  position_sp.pose.orientation.y = 0.0;
+  position_sp.pose.orientation.z = 0.0;
+  position_sp.pose.orientation.w = 1.0;
+
+  velocity_sp.linear.x = NAN;
+  velocity_sp.linear.y = NAN;
+  velocity_sp.linear.z = 0.8;
+
+  transformToTrajectory(trajectory_message, position_sp, velocity_sp);
+
+  ASSERT_FLOAT_EQ(position_sp.pose.position.x, trajectory_message.point_1.position.x);
+  ASSERT_FLOAT_EQ(position_sp.pose.position.y, trajectory_message.point_1.position.y);
+  ASSERT_FLOAT_EQ(position_sp.pose.position.z, trajectory_message.point_1.position.z);
+  ASSERT_FALSE(std::isfinite(velocity_sp.linear.x));
+  ASSERT_FALSE(std::isfinite(velocity_sp.linear.y));
+  ASSERT_FLOAT_EQ(velocity_sp.linear.z, trajectory_message.point_1.velocity.z);
+  ASSERT_FLOAT_EQ(0.f, trajectory_message.point_1.yaw_rate);
+  ASSERT_FLOAT_EQ(0.f, trajectory_message.point_1.yaw);
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_1.acceleration_or_force.x));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_1.acceleration_or_force.y));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_1.acceleration_or_force.z));
+
+  ASSERT_TRUE(trajectory_message.point_valid[0]);
+
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.position.x));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.position.y));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.position.z));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.velocity.x));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.velocity.y));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.velocity.z));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.acceleration_or_force.x));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.acceleration_or_force.y));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.acceleration_or_force.z));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.yaw));
+  ASSERT_FALSE(std::isfinite(trajectory_message.point_2.yaw_rate));
+  ASSERT_FALSE(trajectory_message.point_valid[1]);
+}
+
+TEST(Common, angleDifference) {
+  float res1 = angleDifference(0.0f, 349.0f);
+  ASSERT_FLOAT_EQ(11.f, res1);
+  float res2 = angleDifference(179.8f, 0.f);
+  ASSERT_FLOAT_EQ(179.8f, res2);
+  float res3 = angleDifference(0.0f, 180.1f);
+  ASSERT_FLOAT_EQ(179.9f, res3);
+}
+
+TEST(Common, getYawFromQuaternion) {
+  Eigen::Quaternionf q = Eigen::Quaternionf(1.f, 0.f, 0.f, 0.f);
+  float yaw1 = getYawFromQuaternion(q);
+  ASSERT_FLOAT_EQ(0.f, yaw1);
+
+  q = Eigen::Quaternionf(0.691718f, 0.311979f, 0.419491f, 0.498219f);
+  float yaw2 = getYawFromQuaternion(q);
+  ASSERT_FLOAT_EQ(80.942032f, yaw2);
+}
+
+TEST(Common, getPitchFromQuaternion) {
+  float roll = 0.f;
+  float pitch = 0.f;
+  float yaw = 0.0f;
+  Eigen::Quaternionf q = Eigen::AngleAxisf(roll, Eigen::Vector3f::UnitX()) *
+                         Eigen::AngleAxisf(pitch, Eigen::Vector3f::UnitY()) *
+                         Eigen::AngleAxisf(yaw, Eigen::Vector3f::UnitZ());
+  float pitch1 = getPitchFromQuaternion(q);
+  ASSERT_FLOAT_EQ(0.f, pitch1);
+
+  q = Eigen::Quaternionf(0.691718f, 0.311979f, 0.419491f, 0.498219f);
+  float pitch2 = getPitchFromQuaternion(q);
+  ASSERT_FLOAT_EQ(15.632803f, pitch2);
+}
+
+TEST(Common, createPoseMsg) {
+  Eigen::Vector3f out_wp;
+  Eigen::Quaternionf out_q;
+  Eigen::Vector3f in = Eigen::Vector3f(1.2f, 5.5f, 2.3f);
+  float yaw = 0.0f;
+  createPoseMsg(out_wp, out_q, in, yaw);
+
+  ASSERT_FLOAT_EQ(in.x(), out_wp.x());
+  ASSERT_FLOAT_EQ(in.y(), out_wp.y());
+  ASSERT_FLOAT_EQ(in.z(), out_wp.z());
+  ASSERT_FLOAT_EQ(0.0f, out_q.x());
+  ASSERT_FLOAT_EQ(0.0f, out_q.y());
+  ASSERT_FLOAT_EQ(0.0f, out_q.z());
+  ASSERT_FLOAT_EQ(1.0f, out_q.w());
+}
+
+TEST(Common, polarFCUToCartesian) {
+  PolarPoint polar_p = cartesianToPolarFCU(Eigen::Vector3f(1.f, 1.f, 5.f), Eigen::Vector3f(0.0f, 0.0f, 5.0f));
+  Eigen::Vector3f cartesian_p = polarFCUToCartesian(polar_p, Eigen::Vector3f(0.0f, 0.0f, 5.0f));
+  ASSERT_FLOAT_EQ(1.f, cartesian_p.x());
+  ASSERT_FLOAT_EQ(1.f, cartesian_p.y());
+  ASSERT_FLOAT_EQ(5.f, cartesian_p.z());
+
+  polar_p = cartesianToPolarFCU(Eigen::Vector3f(2.4f, 3.1f, 5.f), Eigen::Vector3f(0.2f, -0.4f, 5.0f));
+  cartesian_p = polarFCUToCartesian(polar_p, Eigen::Vector3f(0.2f, -0.4f, 5.0f));
+  ASSERT_FLOAT_EQ(2.4f, cartesian_p.x());
+  ASSERT_FLOAT_EQ(3.1f, cartesian_p.y());
+  ASSERT_FLOAT_EQ(5.f, cartesian_p.z());
 }
