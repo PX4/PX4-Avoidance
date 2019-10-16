@@ -83,7 +83,13 @@ usm::Transition WaypointGenerator::runTryPath() {
   Eigen::Vector3f setpoint = position_;
   const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
                                                   planner_info_.cruise_velocity, getSystemTime(), setpoint);
-  output_.goto_position = position_ + (setpoint - position_).normalized();
+  Eigen::Vector3f goto_position = position_ + (setpoint - position_).normalized();
+  if (goto_position.hasNaN()) {
+      output_.goto_position = position_;
+  }
+  else {
+      output_.goto_position = goto_position;
+  }
   getPathMsg();
   if (loiter_) {
     return usm::Transition::NEXT3;  // LOITER
