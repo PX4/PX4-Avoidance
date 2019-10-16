@@ -85,10 +85,9 @@ usm::Transition WaypointGenerator::runTryPath() {
                                                   planner_info_.cruise_velocity, getSystemTime(), setpoint);
   Eigen::Vector3f goto_position = position_ + (setpoint - position_).normalized();
   if (goto_position.hasNaN()) {
-      output_.goto_position = position_;
-  }
-  else {
-      output_.goto_position = goto_position;
+    output_.goto_position = position_;
+  } else {
+    output_.goto_position = goto_position;
   }
   getPathMsg();
   if (loiter_) {
