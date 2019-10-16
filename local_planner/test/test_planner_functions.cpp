@@ -179,10 +179,12 @@ TEST(PlannerFunctions, getSetpointFromPath) {
   Eigen::Vector3f sp1, sp2, sp3;
 
   // WHEN: we look for the best direction to fly towards
-  bool res = getSetpointFromPath(path_node_positions, t1, velocity, sp1);  // very short time should still return node 1
-  bool res1 = getSetpointFromPath(path_node_positions, t2, velocity, sp2);
-  bool res2 = getSetpointFromPath(path_node_positions, t3, velocity, sp3);  // should be second node on path
-  bool res3 = getSetpointFromPath(empty_path, t1, velocity, sp1);
+  bool res = getSetpointFromPath(path_node_positions, t1, velocity, ros::Time::now(),
+                                 sp1);  // very short time should still return node 1
+  bool res1 = getSetpointFromPath(path_node_positions, t2, velocity, ros::Time::now(), sp2);
+  bool res2 =
+      getSetpointFromPath(path_node_positions, t3, velocity, ros::Time::now(), sp3);  // should be second node on path
+  bool res3 = getSetpointFromPath(empty_path, t1, velocity, ros::Time::now(), sp1);
 
   // THEN: we expect the setpoint in between node n1 and n2 for t1 and t2 between
   // node n2 and n3 for t3, and not to get an available path for the empty path

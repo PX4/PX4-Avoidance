@@ -76,15 +76,21 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
   float pos_sp_to_goal_prev = 1000.0f;
   is_takeoff_waypoint = true;
   desired_velocity.z() = 1.5f;
+  velocity.x() = 1.f;
 
   // WHEN: we generate the first waypoint
   time = ros::Time(time_sec);
   updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
               is_takeoff_waypoint, desired_velocity);
-  waypointResult result = getWaypoints();
-  result = getWaypoints();
-
+  waypointResult result = getWaypoints();  // state LOITER
+  result = getWaypoints();                 // state TRY_PATH
+  result = getWaypoints();                 // state ALTITUDE_CHANGE
   ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+
+  // THEN: first we expect to decelerate
+  ASSERT_FLOAT_EQ(0.f, result.linear_velocity_wp.x());
+  ASSERT_FLOAT_EQ(0.f, result.linear_velocity_wp.y());
+  velocity = result.linear_velocity_wp;
 
   // WHEN: we generate subsequent waypoints
   for (size_t i = 0; i < 10; i++) {
@@ -132,6 +138,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeTest) {
     // location toward the position setpoint
     Eigen::Vector3f pos_to_pos_sp = (result.position_wp - position) * 0.5f;
     Eigen::Vector3f new_pos = position + pos_to_pos_sp;
+
     position = new_pos;
   }
 }
@@ -193,6 +200,7 @@ TEST_F(WaypointGeneratorTests, goStraightTest) {
   // GIVEN: a waypoint of type goStraight
   is_takeoff_waypoint = false;
   desired_velocity.z() = NAN;
+  avoidance_output.path_node_positions.clear();
   setPlannerInfo(avoidance_output);
 
   float goto_to_goal_prev = 1000.0f;
@@ -287,7 +295,7 @@ TEST_F(WaypointGeneratorTests, hoverTest) {
   ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.z()));
 }
 
-TEST_F(WaypointGeneratorTests, trypathTest) {
+TEST_F(WaypointGeneratorTests, trypathTreeAvailableTest) {
   // GIVEN: a waypoint of type tryPath
   setPlannerInfo(avoidance_output);
 
@@ -328,4 +336,170 @@ TEST_F(WaypointGeneratorTests, trypathTest) {
                                                                 // progress trough the tree nodes
     position = new_pos;
   }
+}
+
+TEST_F(WaypointGeneratorTests, trypathToLoiterTest) {
+  // GIVEN: a waypoint of type tryPath
+  setPlannerInfo(avoidance_output);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+
+  // WHEN: we generate waypoints with stay true
+  stay = true;
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: we expect to be in LOITR state
+  ASSERT_EQ(PlannerState::LOITER, getState());
+}
+
+TEST_F(WaypointGeneratorTests, AltitudeChangeLandTest) {
+  // GIVEN: a waypoint of type Loiter and the vehicle has not yet landed
+  ASSERT_EQ(PlannerState::LOITER, getState());
+  position << 1.f, 0.f, 5.f;
+  goal << 1.f, 0.f, NAN;
+  setPlannerInfo(avoidance_output);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+
+  // WHEN: the navigation state switches to auto_land
+  nav_state = NavigationState::auto_land;
+  desired_velocity = Eigen::Vector3f(NAN, NAN, -0.7f);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: we expect the planner to go into ALTITUDE_CHANGE state
+  ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+  result = getWaypoints();
+  // THEN: we expect the descent to be velocity controlled while the xy position controlled
+  ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
+  ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.x()));
+  ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.y()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.x()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.y()));
+  ASSERT_FALSE(std::isfinite(result.position_wp.z()));
+  ASSERT_FLOAT_EQ(position.x(), result.position_wp.x());
+  ASSERT_FLOAT_EQ(position.y(), result.position_wp.y());
+
+  // WHEN: 1 second has elasped
+  float new_pos_z = position.z() + result.linear_velocity_wp.z();
+
+  // THEN: the new vehicle position is at a lower altitude
+  ASSERT_LT(new_pos_z, position.z());
+  position.z() = new_pos_z;
+
+  // WHEN: we go trough another iteration
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: we expect the descent to be velocity controlled while the xy position controlled
+  ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+  ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
+  ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.x()));
+  ASSERT_FALSE(std::isfinite(result.linear_velocity_wp.y()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.x()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.y()));
+  ASSERT_FALSE(std::isfinite(result.position_wp.z()));
+  ASSERT_FLOAT_EQ(position.x(), result.position_wp.x());
+  ASSERT_FLOAT_EQ(position.y(), result.position_wp.y());
+}
+
+TEST_F(WaypointGeneratorTests, directToAltitudeChangeTest) {
+  // GIVEN: a staring condition in LOITER state and a direct waypoint
+  ASSERT_EQ(PlannerState::LOITER, getState());
+  position << 5.f, 5.f, 5.f;
+  goal << 10.f, 10.f, 5.f;
+  avoidance_output.path_node_positions.clear();
+  setPlannerInfo(avoidance_output);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+  result = getWaypoints();
+  ASSERT_EQ(PlannerState::DIRECT, getState());
+
+  // WHEN: the navigation mode switches to RTL
+  nav_state = NavigationState::auto_rtl;
+  goal << 5.f, 5.f, 15.f;
+  desired_velocity = Eigen::Vector3f(NAN, NAN, 1.f);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: we expect the planner to go in ALTITUDE_CHANGE state and that z is both velocity and position controlled
+  ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+  result = getWaypoints();
+  ASSERT_TRUE(std::isfinite(result.linear_velocity_wp.z()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.x()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.y()));
+  ASSERT_TRUE(std::isfinite(result.position_wp.z()));
+}
+
+TEST_F(WaypointGeneratorTests, directToTryPathTest) {
+  // GIVEN: a staring condition in LOITER state and a direct waypoint
+  ASSERT_EQ(PlannerState::LOITER, getState());
+  avoidance_output.path_node_positions.clear();
+  setPlannerInfo(avoidance_output);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+  result = getWaypoints();
+  ASSERT_EQ(PlannerState::DIRECT, getState());
+
+  // WHEN: a tree becomes available
+  avoidance_output.path_node_positions = {Eigen::Vector3f(0.5f, 0.f, 1.f), Eigen::Vector3f(0.9f, 0.f, 1.f)};
+  setPlannerInfo(avoidance_output);
+  result = getWaypoints();
+
+  // THEN: the planner goes into TRY_PATH state
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+}
+
+TEST_F(WaypointGeneratorTests, directToLoiterTest) {
+  // GIVEN: a staring condition in LOITER state and a direct waypoint
+  ASSERT_EQ(PlannerState::LOITER, getState());
+  avoidance_output.path_node_positions.clear();
+  setPlannerInfo(avoidance_output);
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+  result = getWaypoints();
+  ASSERT_EQ(PlannerState::DIRECT, getState());
+
+  // WHEN: the failsafe flag stay is set to true
+  stay = true;
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: the planner goes into LOITER state
+  ASSERT_EQ(PlannerState::LOITER, getState());
+}
+
+TEST_F(WaypointGeneratorTests, altitudeChangeToLoiterTest) {
+  // GIVEN: a staring condition in LOITER state and a takeoff waypoint
+  ASSERT_EQ(PlannerState::LOITER, getState());
+  is_takeoff_waypoint = true;
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  waypointResult result = getWaypoints();
+  ASSERT_EQ(PlannerState::TRY_PATH, getState());
+  result = getWaypoints();
+  ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
+
+  // WHEN: the failsafe flag stay is set to true
+  stay = true;
+  updateState(position, q, goal, prev_goal, velocity, stay, is_airborne, nav_state, is_land_waypoint,
+              is_takeoff_waypoint, desired_velocity);
+  result = getWaypoints();
+
+  // THEN: the planner goes into LOITER state
+  ASSERT_EQ(PlannerState::LOITER, getState());
 }

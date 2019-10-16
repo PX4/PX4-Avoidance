@@ -155,6 +155,6 @@ void printHistogram(const Histogram& histogram);
 * @returns    boolean indicating whether the tree was valid
 **/
 bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
-                         float velocity, Eigen::Vector3f& setpoint);
+                         float velocity, const ros::Time& current_time, Eigen::Vector3f& setpoint);
 }
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
