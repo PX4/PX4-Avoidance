@@ -155,11 +155,14 @@ add_dependencies(local_planner_nodelet local_planner ${${PROJECT_NAME}_EXPORTED_
 
 ## Declare a C++ executable
 # add_executable(avoidance_node src/avoidance_node.cpp)
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libtsan")
+SET(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libtsan")
+
 add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 
-target_compile_options(local_planner PRIVATE -fsanitize=thread)
-target_compile_options(local_planner_nodelet PRIVATE -fsanitize=thread)
-target_compile_options(local_planner_node PRIVATE -fsanitize=thread)
+target_compile_options(local_planner PRIVATE -fsanitize=thread -static-libtsan)
+target_compile_options(local_planner_nodelet PRIVATE -fsanitize=thread -static-libtsan)
+target_compile_options(local_planner_node PRIVATE -fsanitize=thread -static-libtsan)
 
 ## Add cmake target dependencies of the executable
 ## same as for the library above
@@ -173,7 +176,7 @@ target_compile_options(local_planner_node PRIVATE -fsanitize=thread)
 target_link_libraries(
   local_planner
   PUBLIC
-  tsan
+#   tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 
@@ -181,7 +184,7 @@ target_link_libraries(
   local_planner_nodelet
   PUBLIC
   local_planner
-  tsan
+#   tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 
@@ -193,7 +196,6 @@ target_link_libraries(
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${Boost_LIBRARIES})
-
 #############
 ## Install ##
 #############
@@ -248,13 +250,15 @@ if(CATKIN_ENABLE_TESTING)
     if(TARGET ${PROJECT_NAME}-test)
         target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES})
+                                                 ${YAML_CPP_LIBRARIES}
+                                                 tsan)
     endif()
 
     if(TARGET ${PROJECT_NAME}-test-roscore)
         target_link_libraries(${PROJECT_NAME}-test-roscore local_planner_nodelet
                                                  ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES})
+                                                 ${YAML_CPP_LIBRARIES}
+                                                 tsan)
     endif()
 
 

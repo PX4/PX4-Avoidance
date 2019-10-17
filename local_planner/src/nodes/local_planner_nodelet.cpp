@@ -34,7 +34,7 @@ LocalPlannerNodelet::~LocalPlannerNodelet() {
 }
 
 void LocalPlannerNodelet::onInit() {
-  NODELET_DEBUG("Initializing nodelet...");
+//   NODELET_DEBUG("Initializing nodelet...");
   InitializeNodelet();
 
   startNode();
@@ -42,7 +42,7 @@ void LocalPlannerNodelet::onInit() {
   worker = std::thread(&LocalPlannerNodelet::threadFunction, this);
   worker_tf_listener = std::thread(&LocalPlannerNodelet::transformBufferThread, this);
   // Set up Dynamic Reconfigure Server
-  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_, getPrivateNodeHandle());
+  server_ = new dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>(config_mutex_,nh_private_);
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>::CallbackType f;
   f = boost::bind(&LocalPlannerNodelet::dynamicReconfigureCallback, this, _1, _2);
   server_->setCallback(f);
@@ -109,14 +109,14 @@ void LocalPlannerNodelet::startNode() {
 void LocalPlannerNodelet::readParams() {
   // Parameter from launch file
   Eigen::Vector3d goal_d = goal_position_.cast<double>();
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_x_param", goal_d.x(), 0.0);
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_y_param", goal_d.y(), 0.0);
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/lgoal_z_param", goal_d.z(), 0.0);
-  nh_private_.param<bool>(nodelet::Nodelet::getName() + "/accept_goal_input_topic", accept_goal_input_topic_, false);
+  nh_private_.param<double>("goal_x_param", goal_d.x(), 0.0);
+  nh_private_.param<double>("goal_y_param", goal_d.y(), 0.0);
+  nh_private_.param<double>("lgoal_z_param", goal_d.z(), 0.0);
+  nh_private_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
   goal_position_ = goal_d.cast<float>();
 
   std::vector<std::string> camera_topics;
-  nh_private_.getParam(nodelet::Nodelet::getName() + "/pointcloud_topics", camera_topics);
+  nh_private_.getParam("pointcloud_topics", camera_topics);
 
   initializeCameraSubscribers(camera_topics);
 
@@ -537,5 +537,5 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   }
 }
 }
-#include <pluginlib/class_list_macros.h>
-PLUGINLIB_EXPORT_CLASS(avoidance::LocalPlannerNodelet, nodelet::Nodelet);
+// #include <pluginlib/class_list_macros.h>
+// PLUGINLIB_EXPORT_CLASS(avoidance::LocalPlannerNodelet, nodelet::Nodelet);

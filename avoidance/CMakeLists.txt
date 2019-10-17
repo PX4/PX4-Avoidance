@@ -31,6 +31,8 @@ catkin_package(
   LIBRARIES avoidance
 )
 
+SET(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libtsan")
+SET(CMAKE_SHARED_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -static-libtsan")
 ###########
 ## Build ##
 ###########
@@ -60,7 +62,7 @@ if(NOT DISABLE_SIMULATION)
                               "src/rviz_world_loader.cpp")
 endif()
 add_library(avoidance     "${AVOIDANCE_CPP_FILES}")
-target_compile_options(avoidance PRIVATE -fsanitize=thread)
+target_compile_options(avoidance PRIVATE -fsanitize=thread -static-libtsan)
 
 ## Add cmake target dependencies of the library
 add_dependencies(avoidance ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -70,6 +72,8 @@ target_link_libraries(avoidance
   tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
+
+
 
 #############
 ## Install ##
@@ -95,7 +99,8 @@ if(CATKIN_ENABLE_TESTING)
     if(TARGET ${PROJECT_NAME}-test)
       target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME}
                                                  ${catkin_LIBRARIES}
-                                                 ${YAML_CPP_LIBRARIES})
+                                                 ${YAML_CPP_LIBRARIES}
+                                                 tsan)
     endif()
 
 

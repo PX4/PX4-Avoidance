@@ -18,7 +18,7 @@
 #include <mavros_msgs/SetMode.h>
 #include <mavros_msgs/State.h>
 #include <mavros_msgs/Trajectory.h>
-#include <nodelet/nodelet.h>
+// #include <nodelet/nodelet.h>
 #include <pcl/filters/filter.h>
 #include <pcl_conversions/pcl_conversions.h>  // fromROSMsg
 #include <pcl_ros/point_cloud.h>
@@ -70,7 +70,7 @@ struct cameraData {
   bool transform_registered_ = false;
 };
 
-class LocalPlannerNodelet : public nodelet::Nodelet {
+class LocalPlannerNodelet /*: public nodelet::Nodelet*/ {
  public:
   LocalPlannerNodelet();
   virtual ~LocalPlannerNodelet();
