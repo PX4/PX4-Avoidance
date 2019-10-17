@@ -60,13 +60,14 @@ if(NOT DISABLE_SIMULATION)
                               "src/rviz_world_loader.cpp")
 endif()
 add_library(avoidance     "${AVOIDANCE_CPP_FILES}")
-
+target_compile_options(avoidance PRIVATE -fsanitize=thread)
 
 ## Add cmake target dependencies of the library
 add_dependencies(avoidance ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(avoidance
+  tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 

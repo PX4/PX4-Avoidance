@@ -157,6 +157,10 @@ add_dependencies(local_planner_nodelet local_planner ${${PROJECT_NAME}_EXPORTED_
 # add_executable(avoidance_node src/avoidance_node.cpp)
 add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 
+target_compile_options(local_planner PRIVATE -fsanitize=thread)
+target_compile_options(local_planner_nodelet PRIVATE -fsanitize=thread)
+target_compile_options(local_planner_node PRIVATE -fsanitize=thread)
+
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(avoidance_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
@@ -169,6 +173,7 @@ add_executable(local_planner_node src/nodes/local_planner_node_main.cpp)
 target_link_libraries(
   local_planner
   PUBLIC
+  tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 
@@ -176,6 +181,7 @@ target_link_libraries(
   local_planner_nodelet
   PUBLIC
   local_planner
+  tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES})
 
@@ -183,6 +189,7 @@ target_link_libraries(
   local_planner_node
   PUBLIC
   local_planner_nodelet
+  tsan
   ${catkin_LIBRARIES}
   ${YAML_CPP_LIBRARIES}
   ${Boost_LIBRARIES})
