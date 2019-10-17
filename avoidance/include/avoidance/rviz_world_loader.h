@@ -49,11 +49,12 @@ class WorldVisualizer {
   ros::Publisher drone_pub_;
 
   std::string world_path_;
+  std::string nodelet_ns_;
 
   void loopCallback(const ros::TimerEvent& event);
 
  public:
-  WorldVisualizer(const ros::NodeHandle& nh);
+  WorldVisualizer(const ros::NodeHandle& nh, const std::string& nodelet_ns);
 
   /**
   * @brief      initializes all publishers used for local planner visualization
