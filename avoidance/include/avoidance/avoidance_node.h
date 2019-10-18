@@ -30,7 +30,7 @@ class AvoidanceNode {
   **/
   void checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover);
 
-  ModelParameters getPX4Parameters() const { return px4_; }
+  ModelParameters getPX4Parameters() const;
   float getMissionItemSpeed() const { return mission_item_speed_; }
   MAV_STATE getSystemStatus();
 
