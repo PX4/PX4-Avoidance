@@ -132,18 +132,23 @@ void AvoidanceNode::checkPx4Parameters() {
     }
   };
   while (!should_exit_) {
-    px4_.param_cb_mutex->try_lock();
-    request_param("MPC_ACC_HOR", px4_.param_mpc_acc_hor);
-    request_param("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise);
-    request_param("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d);
-    request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
-    request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
-    request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
-    px4_.param_cb_mutex->unlock();
+    bool is_param_not_initialized = true;
+    {
+      std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
+      request_param("MPC_ACC_HOR", px4_.param_mpc_acc_hor);
+      request_param("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise);
+      request_param("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d);
+      request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
+      request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
+      request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
 
-    if (!std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_mpc_col_prev_d) ||
-        !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
-        !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max)) {
+      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) ||
+                                 !std::isfinite(px4_.param_mpc_col_prev_d) ||
+                                 !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
+                                 !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
+    }
+
+    if (is_param_not_initialized) {
       std::this_thread::sleep_for(std::chrono::seconds(5));
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(30));
