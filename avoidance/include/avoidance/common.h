@@ -96,7 +96,7 @@ struct ModelParameters {
 
   // TODO: add estimator limitations for max speed and height
 
-  float param_mpc_cp_dist = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
+  float param_cp_dist = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
   // clang-format on
 };
 
