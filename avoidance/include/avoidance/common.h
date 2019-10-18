@@ -14,6 +14,7 @@
 #include <geometry_msgs/Vector3Stamped.h>
 #include <mavros_msgs/Trajectory.h>
 #include <tf/transform_listener.h>
+#include <mutex>
 
 namespace avoidance {
 
@@ -98,6 +99,7 @@ struct ModelParameters {
 
   float param_cp_dist = NAN; // Collision Prevention distance to keep from obstacle. -1 for disabled
   // clang-format on
+  std::unique_ptr<std::mutex> param_cb_mutex;
 };
 
 #define M_PI_F 3.14159265358979323846f
