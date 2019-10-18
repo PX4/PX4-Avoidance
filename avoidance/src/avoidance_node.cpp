@@ -144,7 +144,7 @@ void AvoidanceNode::checkPx4Parameters() {
       request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
 
       is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) ||
-                                 !std::isfinite(px4_.param_mpc_col_prev_d) ||
+                                 !std::isfinite(px4_.param_cp_dist) ||
                                  !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
                                  !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
     }
@@ -189,7 +189,7 @@ ModelParameters AvoidanceNode::getPX4Parameters() const {
   px4.param_mpc_tko_speed = px4_.param_mpc_tko_speed;
   px4.param_mpc_land_speed = px4_.param_mpc_land_speed;
   px4.param_nav_acc_rad = px4_.param_nav_acc_rad;
-  px4.param_mpc_col_prev_d = px4_.param_mpc_col_prev_d;
+  px4.param_cp_dist = px4_.param_cp_dist;
   return px4;
 }
 }
