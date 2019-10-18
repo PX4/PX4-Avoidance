@@ -16,7 +16,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   server_.setCallback(f);
 
 #ifndef DISABLE_SIMULATION
-  world_visualizer_.reset(new avoidance::WorldVisualizer(nh_));
+  world_visualizer_.reset(new avoidance::WorldVisualizer(nh_, ros::this_node::getName()));
 #endif
 
   avoidance_node_.init();

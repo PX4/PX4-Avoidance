@@ -58,7 +58,7 @@ void LocalPlannerNodelet::InitializeNodelet() {
   avoidance_node_.reset(new AvoidanceNode(nh_, nh_private_));
 
 #ifndef DISABLE_SIMULATION
-  world_visualizer_.reset(new WorldVisualizer(nh_));
+  world_visualizer_.reset(new WorldVisualizer(nh_, nodelet::Nodelet::getName()));
 #endif
 
   readParams();

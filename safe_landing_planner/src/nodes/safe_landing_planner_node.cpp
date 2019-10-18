@@ -8,9 +8,8 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh) : nh_(
   safe_landing_planner_.reset(new SafeLandingPlanner());
 
 #ifndef DISABLE_SIMULATION
-  world_visualizer_.reset(new avoidance::WorldVisualizer(nh_));
+  world_visualizer_.reset(new avoidance::WorldVisualizer(nh_, ros::this_node::getName()));
 #endif
-
   visualizer_.initializePublishers(nh_);
 
   std::string camera_topic;
