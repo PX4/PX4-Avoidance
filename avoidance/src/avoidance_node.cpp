@@ -132,7 +132,6 @@ void AvoidanceNode::checkPx4Parameters() {
     }
   };
   while (!should_exit_) {
-
     bool is_param_not_initialized = true;
     {
       std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
@@ -143,8 +142,7 @@ void AvoidanceNode::checkPx4Parameters() {
       request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
       request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
 
-      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) ||
-                                 !std::isfinite(px4_.param_cp_dist) ||
+      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_cp_dist) ||
                                  !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
                                  !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
     }
