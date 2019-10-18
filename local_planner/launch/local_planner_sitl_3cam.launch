@@ -14,7 +14,7 @@
 
     <!-- Launch PX4 and mavros -->
     <include file="$(find avoidance)/launch/avoidance_sitl_mavros.launch" >
-        <arg name="model" value="iris_depth_camera_3" />
+        <arg name="model" value="iris_triple_depth_camera" />
         <arg name="world_path" value="$(arg world_path)" />
     </include>
 
