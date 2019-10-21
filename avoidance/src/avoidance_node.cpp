@@ -117,7 +117,7 @@ void AvoidanceNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
   parse_param_f("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise) ||
   parse_param_f("MPC_Z_VEL_MAX_DN", px4_.param_mpc_vel_max_dn) ||
   parse_param_f("MPC_Z_VEL_MAX_UP", px4_.param_mpc_z_vel_max_up) ||
-  parse_param_f("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d) ||
+  parse_param_f("CP_DIST", px4_.param_cp_dist) ||
   parse_param_f("NAV_ACC_RAD", px4_.param_nav_acc_rad);
   // clang-format on
 }
@@ -137,13 +137,12 @@ void AvoidanceNode::checkPx4Parameters() {
       std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
       request_param("MPC_ACC_HOR", px4_.param_mpc_acc_hor);
       request_param("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise);
-      request_param("MPC_COL_PREV_D", px4_.param_mpc_col_prev_d);
+      request_param("CP_DIST", px4_.param_cp_dist);
       request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
       request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
       request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
 
-      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) ||
-                                 !std::isfinite(px4_.param_mpc_col_prev_d) ||
+      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_cp_dist) ||
                                  !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
                                  !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
     }
@@ -188,7 +187,7 @@ ModelParameters AvoidanceNode::getPX4Parameters() const {
   px4.param_mpc_tko_speed = px4_.param_mpc_tko_speed;
   px4.param_mpc_land_speed = px4_.param_mpc_land_speed;
   px4.param_nav_acc_rad = px4_.param_nav_acc_rad;
-  px4.param_mpc_col_prev_d = px4_.param_mpc_col_prev_d;
+  px4.param_cp_dist = px4_.param_cp_dist;
   return px4;
 }
 }

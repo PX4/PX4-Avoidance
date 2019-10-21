@@ -118,7 +118,7 @@ void LocalPlanner::determineStrategy() {
   cost_image_data_.clear();
   cost_image_data_.resize(3 * GRID_LENGTH_E * GRID_LENGTH_Z, 0);
 
-  create2DObstacleRepresentation(px4_.param_mpc_col_prev_d > 0.f);
+  create2DObstacleRepresentation(px4_.param_cp_dist > 0.f);
 
   // calculate the vehicle projected position on the line between the previous and current goal
   Eigen::Vector2f u_prev_to_goal = (goal_ - prev_goal_).head<2>().normalized();
@@ -198,7 +198,7 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_xy_cruise = 3.f;
   px4_.param_mpc_tko_speed = 1.f;
   px4_.param_mpc_land_speed = 0.7f;
-  px4_.param_mpc_col_prev_d = 4.f;
+  px4_.param_cp_dist = 4.f;
 }
 
 void LocalPlanner::getTree(std::vector<TreeNode>& tree, std::vector<int>& closed_set,
