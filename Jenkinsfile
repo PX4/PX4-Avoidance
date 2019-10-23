@@ -24,10 +24,11 @@ pipeline {
               git -C ${WORKSPACE}/catkin_ws/src/Firmware submodule update --init --recursive --force Tools/sitl_gazebo;
               git clone --recursive ${WORKSPACE}/catkin_ws/src/Firmware/Tools/sitl_gazebo src/mavlink_sitl_gazebo;
               git -C ${WORKSPACE}/catkin_ws/src/Firmware fetch --tags;
-              git clone https://${GIT_USER}:${GIT_PASS}@github.com/PX4/avoidance.git src -f ${GIT_COMMIT};
               source /opt/ros/melodic/setup.bash;
               catkin init;
-              catkin build -j$(nproc) -l$(nproc);
+              wstool init src src/avoidance/dependencies.rosinstall
+              wstool update -t src
+              catkin build avoidance -j$(nproc) -l$(nproc);
             '''
           }
           post {
@@ -39,7 +40,7 @@ pipeline {
             }
           }
           options {
-            checkoutToSubdirectory('catkin_ws/src/Firmware')
+            checkoutToSubdirectory('catkin_ws/src/avoidance')
           }
         }
       } // prallel
