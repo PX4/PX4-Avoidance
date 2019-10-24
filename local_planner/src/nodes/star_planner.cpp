@@ -71,9 +71,6 @@ void StarPlanner::buildLookAheadTree() {
 
   int current_node = 0;
   while (!has_reached_goal) {
-    Eigen::Vector3f current_node_position = tree_[current_node].getPosition();
-    Eigen::Vector3f current_node_velocity = tree_[current_node].getVelocity();
-
     simulation_limits limits = lims_;
     simulation_state state = tree_[current_node].state;
     limits.max_xy_velocity_norm = std::min(
@@ -100,19 +97,19 @@ void StarPlanner::buildLookAheadTree() {
     for (const auto& candidate : candidates) {
       simulation_state state = tree_[current_node].state;
       TrajectorySimulator sim(limits, state, 0.1f);  // todo: parameterize simulation step size [s]
-      std::vector<simulation_state> trajectory = sim.generate_trajectory(q_ * candidate, tree_node_duration_);
+      simulation_state trajectory_end = sim.generate_trajectory_endpoint(q_ * candidate, tree_node_duration_);
 
       // Only add the candidate as a node if it is significantly far away from any current node
       const float minimal_distance = 0.2f;  // must be at least 1m away
       bool is_useful_node = true;
       for (const auto& n : tree_) {
-        if ((n.getPosition() - trajectory.back().position).norm() < minimal_distance) {
+        if ((n.getPosition() - trajectory_end.position).norm() < minimal_distance) {
           is_useful_node = false;
           break;
         }
       }
       if (is_useful_node) {
-        tree_.push_back(TreeNode(current_node, trajectory.back(), q_ * candidate));
+        tree_.push_back(TreeNode(current_node, trajectory_end, q_ * candidate));
         float h = treeHeuristicFunction(tree_.size() - 1);
         tree_.back().heuristic_ = h;
         tree_.back().total_cost_ = tree_[current_node].total_cost_ - tree_[current_node].heuristic_ +
