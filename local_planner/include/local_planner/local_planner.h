@@ -92,9 +92,9 @@ class LocalPlanner {
   std::vector<uint8_t> cost_image_data_;
   bool currently_armed_ = false;
 
-  double timeout_startup_;
-  double timeout_critical_;
-  double timeout_termination_;
+  double timeout_startup_ = 20.0;
+  double timeout_critical_ = 0.5;
+  double timeout_termination_ = 20.0;
   float speed_ = 1.0f;
   float mission_item_speed_ = NAN;
 

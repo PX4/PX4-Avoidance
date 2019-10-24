@@ -245,6 +245,7 @@ void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
 
   // Process callbacks & wait for a position update
   ros::Time start_query_position = ros::Time::now();
+
   while (!position_received_ && ros::ok()) {
     ros::getGlobalCallbackQueue()->callAvailable(ros::WallDuration(0.1));
     ros::Duration since_query = ros::Time::now() - start_query_position;
@@ -252,7 +253,7 @@ void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
       setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
       if (!position_not_received_error_sent_) {
         // clang-format off
-        ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+        ROS_WARN("\033[1;33m Planner abort: missing required data from FCU \n \033[0m");
         ROS_WARN("----------------------------- Debugging Info -----------------------------");
         ROS_WARN("Local planner has not received a position from FCU, check the following: ");
         ROS_WARN("1. Check cables connecting PX4 autopilot with onboard computer");
