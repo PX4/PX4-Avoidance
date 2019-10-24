@@ -184,6 +184,7 @@ void LocalPlannerNodelet::updatePlannerInfo() {
     std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].transformed_cloud_mutex_));
     try {
       local_planner_->original_cloud_vector_.push_back(std::move(cameras_[i].pcl_cloud));
+      cameras_[i].transformed_ = false;
       local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
       wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
     } catch (tf::TransformException& ex) {
@@ -428,23 +429,16 @@ void LocalPlannerNodelet::printPointInfo(double x, double y, double z) {
 
 void LocalPlannerNodelet::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
   std::lock_guard<std::mutex> lck(*(cameras_[index].cloud_msg_mutex_));
-  float time_since_last_cloud_update =
-      fabsf(cameras_[index].newest_cloud_msg_.header.stamp.toSec() - msg->header.stamp.toSec());
-  if (cameras_[index].transformed_ || time_since_last_cloud_update > 1.0) {
-    cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
-    cameras_[index].received_ = true;
-    cameras_[index].transformed_ = false;
-    if (!cameras_[index].transform_registered_) {
-      std::pair<std::string, std::string> transform_frames;
-      transform_frames.first = msg->header.frame_id;
-      transform_frames.second = "/local_origin";
-      buffered_transforms_.push_back(transform_frames);
-      cameras_[index].transform_registered_ = true;
-    }
-    cameras_[index].cloud_ready_cv_->notify_one();
-  } else {
-    ROS_WARN("Could not retrieve requested transform from buffer. Pointcloud dropped");
+  cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
+  cameras_[index].received_ = true;
+  if (!cameras_[index].transform_registered_) {
+    std::pair<std::string, std::string> transform_frames;
+    transform_frames.first = msg->header.frame_id;
+    transform_frames.second = "/local_origin";
+    buffered_transforms_.push_back(transform_frames);
+    cameras_[index].transform_registered_ = true;
   }
+  cameras_[index].cloud_ready_cv_->notify_one();
 }
 
 void LocalPlannerNodelet::dynamicReconfigureCallback(avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
