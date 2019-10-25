@@ -53,21 +53,22 @@ class LocalPlanner;
 class WaypointGenerator;
 
 struct cameraData {
+
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
-  sensor_msgs::PointCloud2 newest_cloud_msg_;
 
+  pcl::PointCloud<pcl::PointXYZ> untransformed_cloud_;
+  bool received_;
+
+  pcl::PointCloud<pcl::PointXYZ> transformed_cloud_;
+  bool transformed_;
+
+
+  bool transform_registered_ = false;
+  std::unique_ptr<std::mutex> camera_mutex_;
+  std::thread transform_thread_;
   FOV fov_fcu_frame_;
 
-  std::unique_ptr<std::mutex> cloud_msg_mutex_;
-  std::unique_ptr<std::mutex> transformed_cloud_mutex_;
-  std::unique_ptr<std::condition_variable> cloud_ready_cv_;
-  std::thread transform_thread_;
-  pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-
-  bool received_;
-  bool transformed_;
-  bool transform_registered_ = false;
 };
 
 class LocalPlannerNodelet : public nodelet::Nodelet {
@@ -126,12 +127,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   *            setpoint sent to the FCU
   **/
   void updatePlannerInfo();
-
-  /**
-  * @brief     computes the number of available pointclouds
-  * @ returns  number of pointclouds
-  **/
-  size_t numReceivedClouds();
 
   /**
   * @brief     computes the number of transformed pointclouds
@@ -239,6 +234,8 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_ = nullptr;
   tf::TransformListener* tf_listener_ = nullptr;
   avoidance::tf_buffer::TransformBuffer tf_buffer_;
+
+  std::mutex buffered_transforms_mutex_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
 
   bool armed_ = false;
