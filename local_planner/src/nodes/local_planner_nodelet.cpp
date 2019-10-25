@@ -19,14 +19,26 @@ LocalPlannerNodelet::LocalPlannerNodelet() : tf_buffer_(5.f), spin_dt_(0.1) {}
 
 LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
-  data_ready_cv_.notify_all();
+  {
+    std::lock_guard<std::mutex> guard(data_ready_mutex_);
+    data_ready_cv_.notify_all();
+  }
+
+  {
+    std::lock_guard<std::mutex> guard(buffered_transforms_mutex_);
+    tf_buffer_cv_.notify_all();
+  }
+
+  for (size_t i = 0; i < cameras_.size(); ++i) {
+    {
+      std::lock_guard<std::mutex> guard(*cameras_[i].camera_mutex_);
+      cameras_[i].camera_cv_->notify_all();
+    }
+    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
+  }
 
   if (worker.joinable()) worker.join();
   if (worker_tf_listener.joinable()) worker_tf_listener.join();
-
-  for (size_t i = 0; i < cameras_.size(); ++i) {
-    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
-  }
 
   if (server_ != nullptr) delete server_;
   if (tf_listener_ != nullptr) delete tf_listener_;
@@ -126,7 +138,6 @@ void LocalPlannerNodelet::initializeCameraSubscribers(std::vector<std::string>& 
 
   for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].camera_mutex_.reset(new std::mutex);
-    cameras_[i].camera_cv_mutex_.reset(new std::mutex);
     cameras_[i].camera_cv_.reset(new std::condition_variable);
 
     cameras_[i].received_ = false;
@@ -485,8 +496,8 @@ void LocalPlannerNodelet::checkFailsafe(ros::Duration since_last_cloud, ros::Dur
 
 void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
-    bool waiting_on_transform = false;  // else, waiting on new frame
-    bool waiting_on_cloud = false;      // else, waiting on new frame
+    bool waiting_on_transform = false;
+    bool waiting_on_cloud = false;
     {
       std::lock_guard<std::mutex> camera_lock(*(cameras_[index].camera_mutex_));
 
@@ -524,12 +535,15 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
       }
     }
 
+    if (should_exit_) {
+      break;
+    }
+
     if (waiting_on_transform) {
       std::unique_lock<std::mutex> lck(buffered_transforms_mutex_);
       tf_buffer_cv_.wait_for(lck, std::chrono::milliseconds(5000));
-    }
-    if (waiting_on_cloud) {
-      std::unique_lock<std::mutex> lck(*(cameras_[index].camera_cv_mutex_));
+    } else if (waiting_on_cloud) {
+      std::unique_lock<std::mutex> lck(*(cameras_[index].camera_mutex_));
       cameras_[index].camera_cv_->wait_for(lck, std::chrono::milliseconds(5000));
     }
   }

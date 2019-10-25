@@ -53,7 +53,6 @@ class LocalPlanner;
 class WaypointGenerator;
 
 struct cameraData {
-
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
 
@@ -63,15 +62,13 @@ struct cameraData {
   pcl::PointCloud<pcl::PointXYZ> transformed_cloud_;
   bool transformed_;
 
+  std::unique_ptr<std::mutex> camera_mutex_;
+  std::unique_ptr<std::condition_variable> camera_cv_;
 
   bool transform_registered_ = false;
-  std::unique_ptr<std::mutex> camera_mutex_;
-
-  std::unique_ptr<std::mutex> camera_cv_mutex_;
-  std::unique_ptr<std::condition_variable> camera_cv_;
   std::thread transform_thread_;
-  FOV fov_fcu_frame_;
 
+  FOV fov_fcu_frame_;
 };
 
 class LocalPlannerNodelet : public nodelet::Nodelet {
