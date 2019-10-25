@@ -66,6 +66,9 @@ struct cameraData {
 
   bool transform_registered_ = false;
   std::unique_ptr<std::mutex> camera_mutex_;
+
+  std::unique_ptr<std::mutex> camera_cv_mutex_;
+  std::unique_ptr<std::condition_variable> camera_cv_;
   std::thread transform_thread_;
   FOV fov_fcu_frame_;
 
@@ -234,6 +237,7 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_ = nullptr;
   tf::TransformListener* tf_listener_ = nullptr;
   avoidance::tf_buffer::TransformBuffer tf_buffer_;
+  std::condition_variable tf_buffer_cv_;
 
   std::mutex buffered_transforms_mutex_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;

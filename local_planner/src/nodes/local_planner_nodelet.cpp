@@ -126,6 +126,8 @@ void LocalPlannerNodelet::initializeCameraSubscribers(std::vector<std::string>& 
 
   for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].camera_mutex_.reset(new std::mutex);
+    cameras_[i].camera_cv_mutex_.reset(new std::mutex);
+    cameras_[i].camera_cv_.reset(new std::condition_variable);
 
     cameras_[i].received_ = false;
     cameras_[i].transformed_ = false;
@@ -190,7 +192,7 @@ void LocalPlannerNodelet::updatePlanner() {
       data_ready_cv_.notify_one();
     }
   } else {
-    ROS_ERROR("Not enough transformed clouds");
+    ROS_WARN("Not enough transformed clouds");
   }
 }
 
@@ -384,6 +386,7 @@ void LocalPlannerNodelet::transformBufferThread() {
           }
         }
       }
+      tf_buffer_cv_.notify_all();
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
@@ -417,6 +420,7 @@ void LocalPlannerNodelet::pointCloudCallback(const sensor_msgs::PointCloud2::Con
 
   pcl::fromROSMsg(*msg, cameras_[index].untransformed_cloud_);
   cameras_[index].received_ = true;
+  cameras_[index].camera_cv_->notify_all();
 
   // this runs once at the beginning to get the transforms
   if (!cameras_[index].transform_registered_) {
@@ -519,11 +523,14 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
         waiting_on_cloud = true;
       }
     }
+
     if (waiting_on_transform) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(5));  // wake up on new transform
+      std::unique_lock<std::mutex> lck(buffered_transforms_mutex_);
+      tf_buffer_cv_.wait_for(lck, std::chrono::milliseconds(5000));
     }
     if (waiting_on_cloud) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(50));  // wake up on new point cloud
+      std::unique_lock<std::mutex> lck(*(cameras_[index].camera_cv_mutex_));
+      cameras_[index].camera_cv_->wait_for(lck, std::chrono::milliseconds(5000));
     }
   }
 }
