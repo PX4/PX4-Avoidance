@@ -33,6 +33,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   avoidanceOutput planner_info_;
   waypointResult output_;
 
+  std::mutex running_mutex_;
   Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -64,6 +65,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   float heading_at_goal_rad_ = NAN;
   float yaw_reach_height_rad_ = NAN;
   float speed_ = 1.0f;
+
   std::vector<FOV> fov_fcu_frame_;
 
   NavigationState nav_state_ = NavigationState::none;

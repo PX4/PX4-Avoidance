@@ -105,8 +105,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
 
-  std::mutex data_ready_mutex_;
-  std::condition_variable data_ready_cv_;
   bool position_received_ = false;
 
   /**
@@ -118,8 +116,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   * @brief     start spinners
   **/
   void startNode();
-
-  void updatePlanner();
 
   /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
@@ -216,6 +212,7 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
 
   bool new_goal_ = false;
 
+  std::mutex waypoints_mutex_;
   Eigen::Vector3f newest_waypoint_position_;
   Eigen::Vector3f last_waypoint_position_;
   Eigen::Vector3f newest_adapted_waypoint_position_;

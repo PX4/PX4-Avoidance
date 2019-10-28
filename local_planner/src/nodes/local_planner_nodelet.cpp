@@ -20,11 +20,6 @@ LocalPlannerNodelet::LocalPlannerNodelet() : tf_buffer_(5.f), spin_dt_(0.1) {}
 LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
   {
-    std::lock_guard<std::mutex> guard(data_ready_mutex_);
-    data_ready_cv_.notify_all();
-  }
-
-  {
     std::lock_guard<std::mutex> guard(buffered_transforms_mutex_);
     tf_buffer_cv_.notify_all();
   }
@@ -190,22 +185,10 @@ void LocalPlannerNodelet::updatePlannerInfo() {
 
   // update last sent waypoint
   local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
-}
 
-void LocalPlannerNodelet::updatePlanner() {
-  if (cameras_.size() != 0 && cameras_.size() == numTransformedClouds()) {
-    if (running_mutex_.try_lock()) {
-      updatePlannerInfo();
-      wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
-      running_mutex_.unlock();
-      // Wake up the planner
-      std::lock_guard<std::mutex> lck(data_ready_mutex_);
-      data_ready_ = true;
-      data_ready_cv_.notify_one();
-    }
-  } else {
-    ROS_WARN("Not enough transformed clouds");
-  }
+  // update the Firmware parameters
+  local_planner_->px4_ = avoidance_node_->getPX4Parameters();
+  local_planner_->mission_item_speed_ = avoidance_node_->getMissionItemSpeed();
 }
 
 void LocalPlannerNodelet::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -241,6 +224,7 @@ void LocalPlannerNodelet::stateCallback(const mavros_msgs::State& msg) {
 }
 
 void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
+  std::lock_guard<std::mutex> lock(waypoints_mutex_);
   hover_ = false;
 
   // Process callbacks & wait for a position update
@@ -275,16 +259,10 @@ void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
 
   checkFailsafe(since_last_cloud, since_start, hover_);
 
-  // If planner is not running, update planner info and get last results
-  updatePlanner();
-
-  // update the Firmware paramters
-  local_planner_->px4_ = avoidance_node_->getPX4Parameters();
-
-  local_planner_->mission_item_speed_ = avoidance_node_->getMissionItemSpeed();
-
   // send waypoint
-  if (avoidance_node_->getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
+  if (avoidance_node_->getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) {
+    calculateWaypoints(hover_);
+  }
 
   position_received_ = false;
 
@@ -469,25 +447,35 @@ void LocalPlannerNodelet::publishLaserScan() const {
 
 void LocalPlannerNodelet::threadFunction() {
   while (!should_exit_) {
-    //     wait for data
-    {
-      std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ || should_exit_; });
-      data_ready_ = false;
+    ros::Time start_time = ros::Time::now();
+
+    while (cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) {
+      std::this_thread::sleep_for(std::chrono::milliseconds(10));  // wait for new transformed clouds
     }
 
     if (should_exit_) break;
 
-    std::lock_guard<std::mutex> guard(running_mutex_);
-    std::clock_t start_time_ = std::clock();
-    local_planner_->runPlanner();
-    visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
-                                     newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
-    publishLaserScan();
-    last_wp_time_ = ros::Time::now();
+    {
+      std::lock_guard<std::mutex> guard(running_mutex_);
+      updatePlannerInfo();
+      local_planner_->runPlanner();
 
-    ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
-              (std::clock() - start_time_) / (double)(CLOCKS_PER_SEC / 1000));
+      visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
+                                       newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
+      publishLaserScan();
+
+      std::lock_guard<std::mutex> lock(waypoints_mutex_);
+      wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
+      last_wp_time_ = ros::Time::now();
+    }
+
+    if (should_exit_) break;
+
+    ros::Duration loop_time = last_wp_time_ - start_time;
+    ros::Duration required_delay = ros::Duration(spin_dt_) - loop_time;
+    if (required_delay > ros::Duration(0)) {
+      required_delay.sleep();
+    }
   }
 }
 
