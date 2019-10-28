@@ -161,11 +161,12 @@ size_t LocalPlannerNodelet::numTransformedClouds() {
 
 void LocalPlannerNodelet::updatePlannerInfo() {
   // update the point cloud
-  local_planner_->original_cloud_vector_.clear();
+  local_planner_->original_cloud_vector_.resize(cameras_.size());
   for (size_t i = 0; i < cameras_.size(); ++i) {
     std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].camera_mutex_));
     try {
-      local_planner_->original_cloud_vector_.push_back(std::move(cameras_[i].transformed_cloud_));
+      std::swap(local_planner_->original_cloud_vector_[i], cameras_[i].transformed_cloud_);
+      cameras_[i].transformed_cloud_.clear();
       cameras_[i].transformed_ = false;
       local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
       wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
@@ -471,7 +472,7 @@ void LocalPlannerNodelet::threadFunction() {
     //     wait for data
     {
       std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
+      data_ready_cv_.wait(lk, [this] { return data_ready_ || should_exit_; });
       data_ready_ = false;
     }
 
