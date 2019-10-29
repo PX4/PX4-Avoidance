@@ -86,8 +86,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
 
   std::atomic<bool> should_exit_{false};
 
-  std::vector<cameraData> cameras_;
-
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
   std::unique_ptr<ros::AsyncSpinner> cmdloop_spinner_;
@@ -235,6 +233,11 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
 
   std::mutex buffered_transforms_mutex_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
+
+  std::mutex transformed_cloud_mutex_;
+  std::condition_variable transformed_cloud_cv_;
+
+  std::vector<cameraData> cameras_;
 
   bool armed_ = false;
   bool data_ready_ = false;

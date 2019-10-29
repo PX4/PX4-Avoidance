@@ -24,6 +24,11 @@ LocalPlannerNodelet::~LocalPlannerNodelet() {
     tf_buffer_cv_.notify_all();
   }
 
+  {
+    std::lock_guard<std::mutex> guard(transformed_cloud_mutex_);
+    transformed_cloud_cv_.notify_all();
+  }
+
   for (size_t i = 0; i < cameras_.size(); ++i) {
     {
       std::lock_guard<std::mutex> guard(*cameras_[i].camera_mutex_);
@@ -449,8 +454,9 @@ void LocalPlannerNodelet::threadFunction() {
   while (!should_exit_) {
     ros::Time start_time = ros::Time::now();
 
-    while (cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(10));  // wait for new transformed clouds
+    while ((cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) && !should_exit_) {
+      std::unique_lock<std::mutex> lock(transformed_cloud_mutex_);
+      transformed_cloud_cv_.wait_for(lock, std::chrono::milliseconds(5000));
     }
 
     if (should_exit_) break;
@@ -516,6 +522,8 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
           cameras_[index].transformed_ = true;
           cameras_[index].received_ = false;
           waiting_on_cloud = true;
+          std::lock_guard<std::mutex> lock(transformed_cloud_mutex_);
+          transformed_cloud_cv_.notify_all();
         } else {
           waiting_on_transform = true;
         }
