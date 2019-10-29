@@ -55,19 +55,20 @@ class WaypointGenerator;
 struct cameraData {
   std::string topic_;
   ros::Subscriber pointcloud_sub_;
-  sensor_msgs::PointCloud2 newest_cloud_msg_;
+
+  pcl::PointCloud<pcl::PointXYZ> untransformed_cloud_;
+  bool received_;
+
+  pcl::PointCloud<pcl::PointXYZ> transformed_cloud_;
+  bool transformed_;
+
+  std::unique_ptr<std::mutex> camera_mutex_;
+  std::unique_ptr<std::condition_variable> camera_cv_;
+
+  bool transform_registered_ = false;
+  std::thread transform_thread_;
 
   FOV fov_fcu_frame_;
-
-  std::unique_ptr<std::mutex> cloud_msg_mutex_;
-  std::unique_ptr<std::mutex> transformed_cloud_mutex_;
-  std::unique_ptr<std::condition_variable> cloud_ready_cv_;
-  std::thread transform_thread_;
-  pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-
-  bool received_;
-  bool transformed_;
-  bool transform_registered_ = false;
 };
 
 class LocalPlannerNodelet : public nodelet::Nodelet {
@@ -84,8 +85,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   void InitializeNodelet();
 
   std::atomic<bool> should_exit_{false};
-
-  std::vector<cameraData> cameras_;
 
   std::unique_ptr<LocalPlanner> local_planner_;
   std::unique_ptr<WaypointGenerator> wp_generator_;
@@ -104,8 +103,6 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   std::mutex running_mutex_;  ///< guard against concurrent access to input &
                               /// output data (point cloud, position, ...)
 
-  std::mutex data_ready_mutex_;
-  std::condition_variable data_ready_cv_;
   bool position_received_ = false;
 
   /**
@@ -118,20 +115,12 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   **/
   void startNode();
 
-  void updatePlanner();
-
   /**
   * @brief     updates the local planner agorithm with the latest pointcloud,
   *            vehicle position, velocity, state, and distance to ground, goal,
   *            setpoint sent to the FCU
   **/
   void updatePlannerInfo();
-
-  /**
-  * @brief     computes the number of available pointclouds
-  * @ returns  number of pointclouds
-  **/
-  size_t numReceivedClouds();
 
   /**
   * @brief     computes the number of transformed pointclouds
@@ -221,6 +210,7 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
 
   bool new_goal_ = false;
 
+  std::mutex waypoints_mutex_;
   Eigen::Vector3f newest_waypoint_position_;
   Eigen::Vector3f last_waypoint_position_;
   Eigen::Vector3f newest_adapted_waypoint_position_;
@@ -239,7 +229,15 @@ class LocalPlannerNodelet : public nodelet::Nodelet {
   dynamic_reconfigure::Server<avoidance::LocalPlannerNodeConfig>* server_ = nullptr;
   tf::TransformListener* tf_listener_ = nullptr;
   avoidance::tf_buffer::TransformBuffer tf_buffer_;
+  std::condition_variable tf_buffer_cv_;
+
+  std::mutex buffered_transforms_mutex_;
   std::vector<std::pair<std::string, std::string>> buffered_transforms_;
+
+  std::mutex transformed_cloud_mutex_;
+  std::condition_variable transformed_cloud_cv_;
+
+  std::vector<cameraData> cameras_;
 
   bool armed_ = false;
   bool data_ready_ = false;

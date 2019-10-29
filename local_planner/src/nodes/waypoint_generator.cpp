@@ -83,6 +83,7 @@ usm::Transition WaypointGenerator::runTryPath() {
   Eigen::Vector3f setpoint = position_;
   const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
                                                   planner_info_.cruise_velocity, getSystemTime(), setpoint);
+
   Eigen::Vector3f goto_position = position_ + (setpoint - position_).normalized();
   if (goto_position.hasNaN()) {
     output_.goto_position = position_;
@@ -182,6 +183,7 @@ usm::Transition WaypointGenerator::runDirect() {
             output_.goto_position.y(), output_.goto_position.z());
 
   getPathMsg();
+
   Eigen::Vector3f setpoint;
   if (getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
                           planner_info_.cruise_velocity, getSystemTime(), setpoint)) {
@@ -213,11 +215,11 @@ void WaypointGenerator::calculateWaypoint() {
 }
 
 void WaypointGenerator::setFOV(int i, const FOV& fov) {
-  if (i < fov_fcu_frame_.size()) {
-    fov_fcu_frame_[i] = fov;
-  } else {
-    fov_fcu_frame_.push_back(fov);
+  std::lock_guard<std::mutex> lock(running_mutex_);
+  if (i >= fov_fcu_frame_.size()) {
+    fov_fcu_frame_.resize(i + 1);
   }
+  fov_fcu_frame_[i] = fov;
 }
 
 void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen::Quaternionf& q,
@@ -225,6 +227,7 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
                                     const Eigen::Vector3f& vel, bool stay, bool is_airborne,
                                     const NavigationState& nav_state, const bool is_land_waypoint,
                                     const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel) {
+  std::lock_guard<std::mutex> lock(running_mutex_);
   position_ = act_pose;
   velocity_ = vel;
   goal_ = goal;
@@ -393,6 +396,7 @@ void WaypointGenerator::getPathMsg() {
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
+  std::lock_guard<std::mutex> lock(running_mutex_);
   calculateWaypoint();
   return output_;
 }
@@ -433,9 +437,13 @@ bool WaypointGenerator::isAltitudeChange() {
   return false;
 }
 
-void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) { planner_info_ = input; }
+void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) {
+  std::lock_guard<std::mutex> lock(running_mutex_);
+  planner_info_ = input;
+}
 
 void WaypointGenerator::getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt) {
+  std::lock_guard<std::mutex> lock(running_mutex_);
   closest_pt.x() = closest_pt_.x();
   closest_pt.y() = closest_pt_.y();
   closest_pt.z() = goal_.z();

@@ -15,19 +15,30 @@
 
 namespace avoidance {
 
-LocalPlannerNodelet::LocalPlannerNodelet() : spin_dt_(0.1), tf_buffer_(5.f) {}
+LocalPlannerNodelet::LocalPlannerNodelet() : tf_buffer_(5.f), spin_dt_(0.1) {}
 
 LocalPlannerNodelet::~LocalPlannerNodelet() {
   should_exit_ = true;
-  data_ready_cv_.notify_all();
+  {
+    std::lock_guard<std::mutex> guard(buffered_transforms_mutex_);
+    tf_buffer_cv_.notify_all();
+  }
+
+  {
+    std::lock_guard<std::mutex> guard(transformed_cloud_mutex_);
+    transformed_cloud_cv_.notify_all();
+  }
+
+  for (size_t i = 0; i < cameras_.size(); ++i) {
+    {
+      std::lock_guard<std::mutex> guard(*cameras_[i].camera_mutex_);
+      cameras_[i].camera_cv_->notify_all();
+    }
+    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
+  }
 
   if (worker.joinable()) worker.join();
   if (worker_tf_listener.joinable()) worker_tf_listener.join();
-
-  for (size_t i = 0; i < cameras_.size(); ++i) {
-    cameras_[i].cloud_ready_cv_->notify_all();
-    if (cameras_[i].transform_thread_.joinable()) cameras_[i].transform_thread_.join();
-  }
 
   if (server_ != nullptr) delete server_;
   if (tf_listener_ != nullptr) delete tf_listener_;
@@ -51,7 +62,6 @@ void LocalPlannerNodelet::onInit() {
 void LocalPlannerNodelet::InitializeNodelet() {
   nh_ = ros::NodeHandle("~");
   nh_private_ = ros::NodeHandle("");
-  const bool tf_spin_thread = true;
 
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
@@ -63,7 +73,7 @@ void LocalPlannerNodelet::InitializeNodelet() {
 
   readParams();
 
-  tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), tf_spin_thread);
+  tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), true);
 
   // initialize standard subscribers
   pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
@@ -127,63 +137,37 @@ void LocalPlannerNodelet::initializeCameraSubscribers(std::vector<std::string>& 
   cameras_.resize(camera_topics.size());
 
   for (size_t i = 0; i < camera_topics.size(); i++) {
-    cameras_[i].cloud_msg_mutex_.reset(new std::mutex);
-    cameras_[i].transformed_cloud_mutex_.reset(new std::mutex);
-    cameras_[i].cloud_ready_cv_.reset(new std::condition_variable);
+    cameras_[i].camera_mutex_.reset(new std::mutex);
+    cameras_[i].camera_cv_.reset(new std::condition_variable);
+
+    cameras_[i].received_ = false;
     cameras_[i].transformed_ = false;
 
     cameras_[i].pointcloud_sub_ = nh_.subscribe<sensor_msgs::PointCloud2>(
         camera_topics[i], 1, boost::bind(&LocalPlannerNodelet::pointCloudCallback, this, _1, i));
     cameras_[i].topic_ = camera_topics[i];
-    cameras_[i].received_ = false;
     cameras_[i].transform_thread_ = std::thread(&LocalPlannerNodelet::pointCloudTransformThread, this, i);
   }
-}
-
-size_t LocalPlannerNodelet::numReceivedClouds() {
-  size_t num_received_clouds = 0;
-  for (size_t i = 0; i < cameras_.size(); i++) {
-    if (cameras_[i].received_) num_received_clouds++;
-  }
-  return num_received_clouds;
 }
 
 size_t LocalPlannerNodelet::numTransformedClouds() {
   size_t num_transformed_clouds = 0;
   for (size_t i = 0; i < cameras_.size(); i++) {
-    std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].transformed_cloud_mutex_));
+    std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].camera_mutex_));
     if (cameras_[i].transformed_) num_transformed_clouds++;
   }
   return num_transformed_clouds;
 }
 
-void LocalPlannerNodelet::updatePlanner() {
-  if (cameras_.size() == numReceivedClouds() && cameras_.size() != 0) {
-    if (cameras_.size() == numTransformedClouds()) {
-      if (running_mutex_.try_lock()) {
-        updatePlannerInfo();
-        // reset all clouds to not yet received
-        for (size_t i = 0; i < cameras_.size(); i++) {
-          cameras_[i].received_ = false;
-        }
-        wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
-        running_mutex_.unlock();
-        // Wake up the planner
-        std::unique_lock<std::mutex> lck(data_ready_mutex_);
-        data_ready_ = true;
-        data_ready_cv_.notify_one();
-      }
-    }
-  }
-}
-
 void LocalPlannerNodelet::updatePlannerInfo() {
   // update the point cloud
-  local_planner_->original_cloud_vector_.clear();
+  local_planner_->original_cloud_vector_.resize(cameras_.size());
   for (size_t i = 0; i < cameras_.size(); ++i) {
-    std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].transformed_cloud_mutex_));
+    std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[i].camera_mutex_));
     try {
-      local_planner_->original_cloud_vector_.push_back(std::move(cameras_[i].pcl_cloud));
+      std::swap(local_planner_->original_cloud_vector_[i], cameras_[i].transformed_cloud_);
+      cameras_[i].transformed_cloud_.clear();
+      cameras_[i].transformed_ = false;
       local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
       wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
     } catch (tf::TransformException& ex) {
@@ -206,6 +190,10 @@ void LocalPlannerNodelet::updatePlannerInfo() {
 
   // update last sent waypoint
   local_planner_->last_sent_waypoint_ = newest_waypoint_position_;
+
+  // update the Firmware parameters
+  local_planner_->px4_ = avoidance_node_->getPX4Parameters();
+  local_planner_->mission_item_speed_ = avoidance_node_->getMissionItemSpeed();
 }
 
 void LocalPlannerNodelet::positionCallback(const geometry_msgs::PoseStamped& msg) {
@@ -241,6 +229,7 @@ void LocalPlannerNodelet::stateCallback(const mavros_msgs::State& msg) {
 }
 
 void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
+  std::lock_guard<std::mutex> lock(waypoints_mutex_);
   hover_ = false;
 
   // Process callbacks & wait for a position update
@@ -275,16 +264,10 @@ void LocalPlannerNodelet::cmdLoopCallback(const ros::TimerEvent& event) {
 
   checkFailsafe(since_last_cloud, since_start, hover_);
 
-  // If planner is not running, update planner info and get last results
-  updatePlanner();
-
-  // update the Firmware paramters
-  local_planner_->px4_ = avoidance_node_->getPX4Parameters();
-
-  local_planner_->mission_item_speed_ = avoidance_node_->getMissionItemSpeed();
-
   // send waypoint
-  if (avoidance_node_->getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) calculateWaypoints(hover_);
+  if (avoidance_node_->getSystemStatus() == MAV_STATE::MAV_STATE_ACTIVE) {
+    calculateWaypoints(hover_);
+  }
 
   position_received_ = false;
 
@@ -382,31 +365,23 @@ void LocalPlannerNodelet::distanceSensorCallback(const mavros_msgs::Altitude& ms
 }
 
 void LocalPlannerNodelet::transformBufferThread() {
-  // wait until all pointclouds were received for the first time and added to the transform list
-  while (!should_exit_) {
-    bool all_tf_registered = true;
-    for (auto const& camera : cameras_) {
-      all_tf_registered = all_tf_registered && camera.transform_registered_;
-    }
-    if (all_tf_registered) {
-      break;
-    }
-    std::this_thread::sleep_for(std::chrono::milliseconds(5));
-  }
-
   // grab transforms from tf and store them into the buffer
   while (!should_exit_) {
-    for (auto const& frame_pair : buffered_transforms_) {
-      tf::StampedTransform transform;
+    {
+      std::lock_guard<std::mutex> guard(buffered_transforms_mutex_);
+      for (auto const& frame_pair : buffered_transforms_) {
+        tf::StampedTransform transform;
 
-      if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {
-        try {
-          tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
-          tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
-        } catch (tf::TransformException& ex) {
-          ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
+        if (tf_listener_->canTransform(frame_pair.second, frame_pair.first, ros::Time(0))) {
+          try {
+            tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
+            tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
+          } catch (tf::TransformException& ex) {
+            ROS_ERROR("Received an exception trying to get transform: %s", ex.what());
+          }
         }
       }
+      tf_buffer_cv_.notify_all();
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(5));
   }
@@ -427,23 +402,31 @@ void LocalPlannerNodelet::printPointInfo(double x, double y, double z) {
 }
 
 void LocalPlannerNodelet::pointCloudCallback(const sensor_msgs::PointCloud2::ConstPtr& msg, int index) {
-  std::lock_guard<std::mutex> lck(*(cameras_[index].cloud_msg_mutex_));
-  float time_since_last_cloud_update =
-      fabsf(cameras_[index].newest_cloud_msg_.header.stamp.toSec() - msg->header.stamp.toSec());
-  if (cameras_[index].transformed_ || time_since_last_cloud_update > 1.0) {
-    cameras_[index].newest_cloud_msg_ = *msg;  // FIXME: avoid a copy
-    cameras_[index].received_ = true;
-    cameras_[index].transformed_ = false;
-    if (!cameras_[index].transform_registered_) {
-      std::pair<std::string, std::string> transform_frames;
-      transform_frames.first = msg->header.frame_id;
-      transform_frames.second = "/local_origin";
-      buffered_transforms_.push_back(transform_frames);
-      cameras_[index].transform_registered_ = true;
-    }
-    cameras_[index].cloud_ready_cv_->notify_one();
-  } else {
-    ROS_WARN("Could not retrieve requested transform from buffer. Pointcloud dropped");
+  std::lock_guard<std::mutex> lck(*(cameras_[index].camera_mutex_));
+
+  auto timeSinceLast = [&]() -> ros::Duration {
+    ros::Time lastCloudReceived = pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp);
+    return msg->header.stamp - lastCloudReceived;
+  };
+
+  if (cameras_[index].received_ && timeSinceLast() < ros::Duration(0.3)) {
+    return;
+  }
+
+  pcl::fromROSMsg(*msg, cameras_[index].untransformed_cloud_);
+  cameras_[index].received_ = true;
+  cameras_[index].camera_cv_->notify_all();
+
+  // this runs once at the beginning to get the transforms
+  if (!cameras_[index].transform_registered_) {
+    std::lock_guard<std::mutex> tf_list_guard(buffered_transforms_mutex_);
+    std::pair<std::string, std::string> transform_frames;
+    transform_frames.first = msg->header.frame_id;
+    transform_frames.second = "/local_origin";
+    buffered_transforms_.push_back(transform_frames);
+    transform_frames.second = "/fcu";
+    buffered_transforms_.push_back(transform_frames);
+    cameras_[index].transform_registered_ = true;
   }
 }
 
@@ -469,26 +452,35 @@ void LocalPlannerNodelet::publishLaserScan() const {
 
 void LocalPlannerNodelet::threadFunction() {
   while (!should_exit_) {
-    // wait for data
-    {
-      std::unique_lock<std::mutex> lk(data_ready_mutex_);
-      data_ready_cv_.wait(lk, [this] { return data_ready_ && !should_exit_; });
-      data_ready_ = false;
+    ros::Time start_time = ros::Time::now();
+
+    while ((cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) && !should_exit_) {
+      std::unique_lock<std::mutex> lock(transformed_cloud_mutex_);
+      transformed_cloud_cv_.wait_for(lock, std::chrono::milliseconds(5000));
     }
 
     if (should_exit_) break;
 
     {
       std::lock_guard<std::mutex> guard(running_mutex_);
-      std::clock_t start_time_ = std::clock();
+      updatePlannerInfo();
       local_planner_->runPlanner();
+
       visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
                                        newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
       publishLaserScan();
-      last_wp_time_ = ros::Time::now();
 
-      ROS_DEBUG("\033[0;35m[OA]Planner calculation time: %2.2f ms \n \033[0m",
-                (std::clock() - start_time_) / (double)(CLOCKS_PER_SEC / 1000));
+      std::lock_guard<std::mutex> lock(waypoints_mutex_);
+      wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
+      last_wp_time_ = ros::Time::now();
+    }
+
+    if (should_exit_) break;
+
+    ros::Duration loop_time = last_wp_time_ - start_time;
+    ros::Duration required_delay = ros::Duration(spin_dt_) - loop_time;
+    if (required_delay > ros::Duration(0)) {
+      required_delay.sleep();
     }
   }
 }
@@ -499,41 +491,57 @@ void LocalPlannerNodelet::checkFailsafe(ros::Duration since_last_cloud, ros::Dur
 
 void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
+    bool waiting_on_transform = false;
+    bool waiting_on_cloud = false;
     {
-      std::unique_lock<std::mutex> cloud_msg_lock(*(cameras_[index].cloud_msg_mutex_));
-      cameras_[index].cloud_ready_cv_->wait(cloud_msg_lock);
-    }
-    while (cameras_[index].transformed_ == false) {
-      if (should_exit_) break;
+      std::lock_guard<std::mutex> camera_lock(*(cameras_[index].camera_mutex_));
 
-      std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(
-          new std::lock_guard<std::mutex>(*(cameras_[index].cloud_msg_mutex_)));
+      if (cameras_[index].received_) {
+        tf::StampedTransform cloud_transform;
+        tf::StampedTransform fcu_transform;
 
-      tf::StampedTransform transform;
-      if (tf_buffer_.getTransform(cameras_[index].newest_cloud_msg_.header.frame_id, "/local_origin",
-                                  cameras_[index].newest_cloud_msg_.header.stamp, transform)) {
-        pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
-        // transform message to pcl type
-        pcl::fromROSMsg(cameras_[index].newest_cloud_msg_, pcl_cloud);
-        cloud_msg_lock.reset();
+        if (tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "/local_origin",
+                                    pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp),
+                                    cloud_transform) &&
+            tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "/fcu",
+                                    pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp),
+                                    fcu_transform)) {
+          // remove nan padding and compute fov
+          pcl::PointCloud<pcl::PointXYZ> maxima = removeNaNAndGetMaxima(cameras_[index].untransformed_cloud_);
 
-        // remove nan padding and compute fov
-        pcl::PointCloud<pcl::PointXYZ> maxima = removeNaNAndGetMaxima(pcl_cloud);
-        pcl_ros::transformPointCloud("fcu", maxima, maxima, *tf_listener_);
-        updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
+          // update point cloud FOV
+          pcl_ros::transformPointCloud(maxima, maxima, fcu_transform);
+          updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
 
-        // transform cloud to /local_origin frame
-        pcl_ros::transformPointCloud(pcl_cloud, pcl_cloud, transform);
-        pcl_cloud.header.frame_id = "/local_origin";
+          // transform cloud to /local_origin frame
+          pcl_ros::transformPointCloud(cameras_[index].untransformed_cloud_, cameras_[index].transformed_cloud_,
+                                       cloud_transform);
+          cameras_[index].transformed_cloud_.header.frame_id = "/local_origin";
+          cameras_[index].transformed_cloud_.header.stamp = cameras_[index].untransformed_cloud_.header.stamp;
 
-        std::lock_guard<std::mutex> transformed_cloud_guard(*(cameras_[index].transformed_cloud_mutex_));
-        cameras_[index].transformed_ = true;
-        cameras_[index].pcl_cloud = std::move(pcl_cloud);
-
+          cameras_[index].transformed_ = true;
+          cameras_[index].received_ = false;
+          waiting_on_cloud = true;
+          std::lock_guard<std::mutex> lock(transformed_cloud_mutex_);
+          transformed_cloud_cv_.notify_all();
+        } else {
+          waiting_on_transform = true;
+        }
       } else {
-        cloud_msg_lock.reset();
-        ros::Duration(0.001).sleep();
+        waiting_on_cloud = true;
       }
+    }
+
+    if (should_exit_) {
+      break;
+    }
+
+    if (waiting_on_transform) {
+      std::unique_lock<std::mutex> lck(buffered_transforms_mutex_);
+      tf_buffer_cv_.wait_for(lck, std::chrono::milliseconds(5000));
+    } else if (waiting_on_cloud) {
+      std::unique_lock<std::mutex> lck(*(cameras_[index].camera_mutex_));
+      cameras_[index].camera_cv_->wait_for(lck, std::chrono::milliseconds(5000));
     }
   }
 }
