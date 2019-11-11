@@ -67,11 +67,16 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
     return false;
   } else {
     if (iterator->second.back().stamp_ < time) {
-      print(log_level::debug, "TF Buffer: could not retrieve requested transform from buffer, tf has not yet arrived");
+      double time_newest = iterator->second.back().stamp_.toSec();
+      double time_request = time.toSec();
+      print(log_level::warn, "TF Buffer: tf has not yet arrived. Time requested " + std::to_string(time_request) +
+                                 " newest available " + std::to_string(time_newest));
       return false;
     } else if (iterator->second.front().stamp_ > time) {
-      print(log_level::warn,
-            "TF Buffer: could not retrieve requested transform from buffer, tf has already been dropped from buffer");
+      double time_oldest = iterator->second.front().stamp_.toSec();
+      double time_request = time.toSec();
+      print(log_level::warn, "TF Buffer: tf has already been dropped from buffer. Time requested " +
+                                 std::to_string(time_request) + " oldest available " + std::to_string(time_oldest));
       return false;
     } else {
       const tf::StampedTransform* previous = &iterator->second.back();
