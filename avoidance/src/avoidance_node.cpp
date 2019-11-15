@@ -128,7 +128,7 @@ void AvoidanceNode::checkPx4Parameters() {
     mavros_msgs::ParamGet req;
     req.request.param_id = name;
     if (client.call(req) && req.response.success) {
-      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val, req.response.value.real);
+      ROS_INFO("parameter %s is set from %f to %f \n", name.c_str(), val, req.response.value.real);
       val = req.response.value.real;
     }
   };
@@ -148,8 +148,10 @@ void AvoidanceNode::checkPx4Parameters() {
                                  !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
     }
 
-    if (is_param_not_initialized) {
-      std::this_thread::sleep_for(std::chrono::seconds(5));
+    // keep checking parameters if either not initialized yet or if collision prevention is disabled
+    // if collision prevention gets enabled, we need to catch the parameter change as fast as possible
+    if (is_param_not_initialized || px4_.param_cp_dist < 0.f) {
+      std::this_thread::sleep_for(std::chrono::seconds(3));
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(30));
     }
