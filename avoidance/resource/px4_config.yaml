@@ -151,6 +151,13 @@ mocap:
   use_tf: true   # ~mocap/tf
   use_pose: false  # ~mocap/pose
 
+
+# odom
+odometry:
+  fcu:
+    odom_parent_id_des: "map"    # desired parent frame rotation of the FCU's odometry
+    odom_child_id_des: "base_link"    # desired child frame rotation of the FCU's odometry
+
 # px4flow
 px4flow:
   frame_id: "px4flow"
