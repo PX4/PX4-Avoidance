@@ -128,6 +128,7 @@ void AvoidanceNode::checkPx4Parameters() {
     mavros_msgs::ParamGet req;
     req.request.param_id = name;
     if (client.call(req) && req.response.success) {
+      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val, req.response.value.real);
       val = req.response.value.real;
     }
   };
