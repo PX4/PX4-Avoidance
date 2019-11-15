@@ -153,7 +153,7 @@ void AvoidanceNode::checkPx4Parameters() {
     // keep checking parameters if either not initialized yet or if collision prevention is disabled
     // if collision prevention gets enabled, we need to catch the parameter change as fast as possible
     if (is_param_not_initialized || px4_.param_cp_dist < 0.f) {
-      std::this_thread::sleep_for(std::chrono::seconds(0.2));
+      std::this_thread::sleep_for(std::chrono::milliseconds(200));
     } else {
       std::this_thread::sleep_for(std::chrono::seconds(30));
     }
