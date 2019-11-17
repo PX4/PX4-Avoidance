@@ -11,7 +11,7 @@ pipeline {
         stage('Catkin build on ROS workspace') {
           agent {
             docker {
-              image 'px4io/px4-dev-ros-melodic:2019-10-04'
+              image 'jaeyoung/containers:2019-11-17'
               args '-e CCACHE_BASEDIR=$WORKSPACE -v ${CCACHE_DIR}:${CCACHE_DIR}:rw -e HOME=$WORKSPACE'
             }
           }
@@ -28,7 +28,7 @@ pipeline {
               catkin init;
               wstool init src src/avoidance/dependencies.rosinstall
               wstool update -t src
-              catkin build avoidance -j$(nproc) -l$(nproc);
+              catkin build local_planner -j$(nproc) -l$(nproc);
             '''
           }
           post {
