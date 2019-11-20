@@ -231,18 +231,6 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    roslaunch local_planner local_planner_sitl_3cam.launch
    ```
 
-* simulate one Intel Realsense camera:
-
-   ```bash
-   git clone git@github.com:SyrianSpock/realsense_gazebo_plugin.git
-
-   catkin build realsense_gazebo_plugin #(for ROS kinetic, the kinetic-devel branch must be used)
-
-   export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/realsense_gazebo_plugin/models
-
-   roslaunch local_planner local_planner_realsense.launch
-   ```
-
 You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOARD, run:
 
 ```bash
