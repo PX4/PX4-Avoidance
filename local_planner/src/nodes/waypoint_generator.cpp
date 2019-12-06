@@ -137,7 +137,8 @@ usm::Transition WaypointGenerator::runAltitudeChange() {
       change_altitude_pos_ = position_;
     } else {
       // Change altitude
-      output_.goto_position = goal_;
+      output_.goto_position.topRows<2>() = change_altitude_pos_.topRows<2>();
+      output_.goto_position.z() = goal_.z();
 
       if (auto_land_) {
         output_.goto_position.topRows<2>() = change_altitude_pos_.topRows<2>();
