@@ -126,9 +126,10 @@ void LocalPlanner::determineStrategy() {
   closest_pt_.head<2>() = prev_goal_.head<2>() + (u_prev_to_goal * u_prev_to_goal.dot(prev_to_pos));
   closest_pt_.z() = goal_.z();
 
-  // if the vehicle is less than the cruise speed away from the line, set the projection point to the goal such that
-  // the cost function doesn't pull the vehicle towards the line
-  if ((position_ - closest_pt_).head<2>().norm() < px4_.param_mpc_xy_cruise) {
+  // if the vehicle is less than the cruise speed away from the line or if prev goal is the same as goal,
+  // set the projection point to the goal such that the cost function doesn't pull the vehicle towards the line
+  if ((position_ - closest_pt_).head<2>().norm() < px4_.param_mpc_xy_cruise ||
+      (goal_ - prev_goal_).head<2>().norm() < 0.001f) {
     closest_pt_ = goal_;
   }
 
