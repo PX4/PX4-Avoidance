@@ -80,8 +80,6 @@ script:
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON && catkin build
   - catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True && catkin build avoidance local_planner global_planner safe_landing_planner --no-deps -v -i --catkin-make-args tests
   - status=0 && for f in ~/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
-  - if [ $ROS_DISTRO == kinetic ]; then  sudo apt-get install -y clang-format-3.8; fi
-  - if [ $ROS_DISTRO == kinetic ]; then (cd tools && ./check_code_format.sh); fi
   - if [ $ROS_DISTRO == kinetic ]; then (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi) ; fi
 
 after_success:
