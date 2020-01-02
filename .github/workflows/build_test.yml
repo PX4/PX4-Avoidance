@@ -1,0 +1,23 @@
+
+name: Build Test
+on: [push]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-ros-melodic:2019-10-24
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+    - name: build_test
+      working-directory: 
+      run: |
+        mkdir -p $HOME/catkin_ws/src;
+        cd $HOME/catkin_ws
+        catkin init
+        catkin config --extend "/opt/ros/melodic"
+        catkin config --merge-devel
+        cd $HOME/catkin_ws/src
+        ln -s $GITHUB_WORKSPACE
+        catkin build -j$(nproc) -l$(nproc) local_planner
