@@ -227,6 +227,8 @@ target_link_libraries(
 #############
 
 if(CATKIN_ENABLE_TESTING)
+    find_package(rostest REQUIRED)
+    add_rostest(test/local_planner_mission.test)
     # Add gtest based cpp test target and link libraries
     catkin_add_gtest(${PROJECT_NAME}-test test/main.cpp
                                           test/test_example.cpp
