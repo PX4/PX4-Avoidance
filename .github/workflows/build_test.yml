@@ -24,7 +24,7 @@ jobs:
     - uses: actions/checkout@v1
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
-    - name: build_test
+    - name: release_build_test
       working-directory: 
       run: |
         mkdir -p $HOME/catkin_ws/src;
@@ -34,4 +34,14 @@ jobs:
         catkin config --merge-devel
         cd $HOME/catkin_ws/src
         ln -s $GITHUB_WORKSPACE
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON
         catkin build -j$(nproc) -l$(nproc) local_planner
+    - name: unit_tests
+      working-directory:
+      run: |
+        apt update
+        apt install -y valgrind
+        cd $HOME/catkin_ws/src
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
+        catkin build avoidance local_planner --no-deps -v -i --catkin-make-args tests
+        status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
