@@ -6,6 +6,7 @@
 #include <tuple>
 
 #include <geometry_msgs/Point.h>
+#include <Eigen/Dense>
 
 #include "global_planner/common.h"
 
@@ -33,6 +34,7 @@ class Cell {
   double zPos() const;
 
   geometry_msgs::Point toPoint() const;
+  Eigen::Vector3f toEigen() const;
 
   double manhattanDist(double _x, double _y, double _z) const;
   double distance2D(const Cell& b) const;

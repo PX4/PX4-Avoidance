@@ -1,0 +1,9 @@
+digraph {
+    "NAVIGATE" -> "DIRECT" [label="NEXT1\nERROR", style="solid", weight=1]
+    "NAVIGATE" -> "LOITER" [label="NEXT2", style="solid", weight=1]
+    "LOITER" -> "DIRECT" [label="NEXT1\nERROR", style="solid", weight=1]
+    "LOITER" -> "NAVIGATE" [label="NEXT2", style="solid", weight=1]
+    "DIRECT" -> "NAVIGATE" [label="NEXT1", style="solid", weight=1]
+    "DIRECT" -> "LOITER" [label="NEXT2", style="solid", weight=1]
+    "DIRECT" -> "DIRECT" [label="ERROR", style="dotted", weight=0.1]
+}

@@ -359,6 +359,16 @@ nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
   return path_msg;
 }
 
+std::vector<Eigen::Vector3f> GlobalPlanner::getPath() { return getPath(curr_path_); }
+
+std::vector<Eigen::Vector3f> GlobalPlanner::getPath(std::vector<Cell>& parse_path) {
+  std::vector<Eigen::Vector3f> path;
+
+  if (parse_path.size() == 0) return path;
+  for (int i = 0; i < parse_path.size() - 1; ++i) path.push_back(parse_path[i].toEigen());
+  return path;
+}
+
 PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
   nav_msgs::Path path_msg = getPathMsg();
   PathWithRiskMsg risk_msg;
@@ -528,5 +538,45 @@ void GlobalPlanner::stop() {
 }
 
 void GlobalPlanner::setRobotRadius(double radius) { robot_radius_ = radius; }
+
+avoidanceOutput GlobalPlanner::getAvoidanceOutput() {
+  avoidanceOutput out;
+  out.last_path_time = ros::Time::now();
+  out.cruise_velocity = 5.0;
+  out.path_node_positions = getPath();
+  return out;
+}
+
+bool GlobalPlanner::checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal) {
+  std::vector<Eigen::Vector3f> path;
+  float collision_checking_resolution = 0.1;
+  float distance = (current_pos - goal).norm();
+  Eigen::Vector3f dir_vector = (current_pos - goal) / distance;
+
+  for (float ray = 0.0; ray < distance; ray += collision_checking_resolution) {
+    if (checkCollision(ray * dir_vector)) return true;  // Coliison found along ray
+  }
+  return false;
+}
+
+bool GlobalPlanner::checkCollision(Eigen::Vector3f state) {
+  bool collision = true;
+  double occprob = 1.0;
+  uint octree_depth = 16;
+  double logodds;
+
+  if (octree_) {
+    octomap::OcTreeNode* node = octree_->search(double(state(0)), double(state(1)), double(state(2)), octree_depth);
+    if (node)
+      occprob = octomap::probability(logodds = node->getValue());
+    else
+      occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
+    // Assuming a optimistic planner: Unknown space is considered as unoccupied
+    if (occprob <= 0.5) collision = false;
+  }
+  return collision;
+}
+
+bool GlobalPlanner::isOctomapExists() { return bool(octree_); }
 
 }  // namespace global_planner

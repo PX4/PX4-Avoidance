@@ -154,6 +154,7 @@ add_library(global_planner
   src/library/cell.cpp
   src/library/global_planner.cpp
   src/nodes/global_planner_node.cpp
+  src/nodes/waypoint_generator.cpp
 )
 
 ## Add cmake target dependencies of the library

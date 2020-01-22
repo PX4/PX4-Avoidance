@@ -20,6 +20,7 @@
 #include <global_planner/GlobalPlannerNodeConfig.h>
 #include <global_planner/PathWithRiskMsg.h>
 #include "global_planner/analysis.h"
+#include "global_planner/avoidance_output.h"
 #include "global_planner/cell.h"
 #include "global_planner/common.h"
 #include "global_planner/common_ros.h"
@@ -114,6 +115,8 @@ class GlobalPlanner {
   double getAltPrior(const Cell& cell);
   bool isOccupied(const Cell& cell);
   bool isLegal(const Node& node);
+  bool checkCollisiontoGoal(Eigen::Vector3f current_pos, Eigen::Vector3f goal);
+  bool checkCollision(Eigen::Vector3f state);
   double getRisk(const Cell& cell);
   double getRisk(const Node& node);
   double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& msg);
@@ -129,6 +132,8 @@ class GlobalPlanner {
   geometry_msgs::PoseStamped createPoseMsg(const Cell& cell, double yaw);
   nav_msgs::Path getPathMsg();
   nav_msgs::Path getPathMsg(const std::vector<Cell>& path);
+  std::vector<Eigen::Vector3f> getPath();
+  std::vector<Eigen::Vector3f> getPath(std::vector<Cell>& path);
   PathWithRiskMsg getPathWithRiskMsg();
   PathInfo getPathInfo(const std::vector<Cell>& path);
 
@@ -139,6 +144,8 @@ class GlobalPlanner {
   void goBack();
   void stop();
   void setRobotRadius(double radius);
+  avoidanceOutput getAvoidanceOutput();
+  bool isOctomapExists();
 
  private:
   double robot_radius_;
