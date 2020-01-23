@@ -23,8 +23,6 @@ struct waypointResult {
   Eigen::Vector3f linear_velocity_wp;
   Eigen::Vector3f angular_velocity_wp;
   Eigen::Vector3f goto_position;           // correction direction, dist=1
-  Eigen::Vector3f adapted_goto_position;   // correction direction & dist
-  Eigen::Vector3f smoothed_goto_position;  // what is sent to the drone
 };
 
 class WaypointGenerator : public usm::StateMachine<PlannerState> {
@@ -98,12 +96,12 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   * @brief     smooths waypoints with a critically damped PD controller
   * @param[in] dt, time elapsed between two cycles
   **/
-  void smoothWaypoint(float dt);
+  Eigen::Vector3f smoothWaypoint(Eigen::Vector3f wp, float dt);
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
   **/
-  void adaptSpeed();
+  Eigen::Vector3f adaptSpeed();
   /**
   * @brief     adjust waypoints based on new velocity calculation, proximity to
   *            goal, smoothing, climing to goal height. Compute waypoint

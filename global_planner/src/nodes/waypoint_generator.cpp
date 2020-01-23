@@ -184,19 +184,19 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
 //   output_.angular_velocity_wp.z() = getAngularVelocity(setpoint_yaw_rad_, curr_yaw_rad_);
 // }
 
-void WaypointGenerator::smoothWaypoint(float dt) {
+Eigen::Vector3f WaypointGenerator::smoothWaypoint(Eigen::Vector3f wp, float dt) {
   // If the smoothing speed is set to zero, dont smooth, aka use adapted
   // waypoint directly
   if (smoothing_speed_xy_ < 0.01f || smoothing_speed_z_ < 0.01f) {
-    output_.smoothed_goto_position = output_.adapted_goto_position;
-    return;
+    return wp;
   }
 
+  Eigen::Vector3f smoothed_wp;
   // Smooth differently in xz than in z
   const Eigen::Array3f P_constant(smoothing_speed_xy_, smoothing_speed_xy_, smoothing_speed_z_);
   const Eigen::Array3f D_constant = 2 * P_constant.sqrt();
 
-  const Eigen::Vector3f desired_location = output_.adapted_goto_position;
+  const Eigen::Vector3f desired_location = wp;
   // Prevent overshoot when drone is close to goal
   const Eigen::Vector3f desired_velocity =
       (desired_location - goal_).norm() < 0.1 ? Eigen::Vector3f::Zero() : velocity_;
@@ -215,54 +215,60 @@ void WaypointGenerator::smoothWaypoint(float dt) {
   const Eigen::Vector3f d = velocity_diff.array() * D_constant;
   smoothed_goto_location_velocity_ += (p + d) * dt;
   smoothed_goto_location_ += smoothed_goto_location_velocity_ * dt;
-  output_.smoothed_goto_position = output_.adapted_goto_position;
+  smoothed_wp = smoothed_goto_location_;
 
-  ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f", output_.smoothed_goto_position.x(),
-            output_.smoothed_goto_position.y(), output_.smoothed_goto_position.z(), dt);
+  ROS_DEBUG("[WG] Smoothed GoTo location: %f, %f, %f, with dt=%f", smoothed_wp.x(), smoothed_wp.y(), smoothed_wp.z(), dt);
+
+  return smoothed_wp;
 }
 
-void WaypointGenerator::adaptSpeed() {
+Eigen::Vector3f WaypointGenerator::adaptSpeed() {
+  Eigen::Vector3f adapted_wp;
+
   speed_ = planner_info_.cruise_velocity;
 
   // If the goal is so close, that the speed-adapted way point would overreach
   float goal_dist = (goal_ - position_).norm();
   if (goal_dist < 1.f) {
-    output_.adapted_goto_position = goal_;
+    adapted_wp = goal_;
 
     // First time we reach this goal, remember the heading
     if (!std::isfinite(heading_at_goal_rad_)) {
       heading_at_goal_rad_ = curr_yaw_rad_;
     }
     setpoint_yaw_rad_ = heading_at_goal_rad_;
+    std::cout << "Too short" << std::endl;
   } else {
     // Scale the pose_to_wp by the speed
     Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
     if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
-    pose_to_wp *= std::min(speed_, goal_dist);
+    pose_to_wp *= std::min(float(0.5 * speed_), goal_dist);
 
     heading_at_goal_rad_ = NAN;
-    output_.adapted_goto_position = position_ + pose_to_wp;
+    adapted_wp = position_ + pose_to_wp;
+    std::cout << "Too Far" << std::endl;
+
   }
 
-  ROS_INFO("[WG] Speed adapted WP: [%f %f %f].", output_.adapted_goto_position.x(), output_.adapted_goto_position.y(),
-           output_.adapted_goto_position.z());
+  ROS_INFO("[WG] Speed adapted WP: [%f %f %f].", adapted_wp.x(), adapted_wp.y(), adapted_wp.z());
+  return adapted_wp;
 }
+
 
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
-  output_.adapted_goto_position = output_.goto_position;
+  Eigen::Vector3f position_wp;
 
   float time_diff_sec = static_cast<float>((current_time_ - last_time_).toSec());
   float dt = time_diff_sec > 0.0f ? time_diff_sec : 0.0001f;
 
-  if (!auto_land_) {
-    // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
-    adaptSpeed();
-    smoothWaypoint(dt);
-  }
-  output_.position_wp = output_.smoothed_goto_position;
+  Eigen::Vector3f adapted_wp = adaptSpeed();
+  Eigen::Vector3f smoothed_wp = smoothWaypoint(adapted_wp, dt);
+
+  output_.position_wp = smoothed_wp;
   output_.angular_velocity_wp = Eigen::Vector3f::Zero();
-  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.adapted_goto_position,
+
+  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, smoothed_wp,
                            setpoint_yaw_rad_);
 }
 
