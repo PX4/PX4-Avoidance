@@ -161,8 +161,15 @@ double GlobalPlanner::getSingleCellRisk(const Cell& cell) {
 }
 
 double GlobalPlanner::getAltPrior(const Cell& cell) {
-  // return alt_prior_[cell.zIndex()];
-  return alt_prior_[std::round(cell.zPos())];
+  int index = std::round(cell.zPos());
+
+  if (index > alt_prior_.size() - 1) {
+    return alt_prior_.back();
+  } else if (index < 0) {
+    return alt_prior_.front();
+  } else {
+    return alt_prior_.at(index);
+  }
 }
 
 bool GlobalPlanner::isOccupied(const Cell& cell) { return getSingleCellRisk(cell) > 0.5; }
