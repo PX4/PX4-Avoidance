@@ -140,21 +140,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 
   bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
                            float velocity, Eigen::Vector3f& setpoint);
-//   /**
-//   * @brief set the responsiveness of the smoothing
-//   * @param[in] smoothing_speed_xy, set to 0 to disable
-//   * @param[in] smoothing_speed_z, set to 0 to disable
-//   **/
-//   void setSmoothingSpeed(float smoothing_speed_xy, float smoothing_speed_z) {
-//     smoothing_speed_xy_ = smoothing_speed_xy;
-//     smoothing_speed_z_ = smoothing_speed_z;
-//   }
-
-//   /**
-//   * @brief     getter method for the system time
-//   * @returns   current ROS time
-//   **/
-//   virtual ros::Time getSystemTime();
 
   WaypointGenerator();
   virtual ~WaypointGenerator() = default;
