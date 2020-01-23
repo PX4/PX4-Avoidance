@@ -22,7 +22,7 @@ struct waypointResult {
   Eigen::Quaternionf orientation_wp;
   Eigen::Vector3f linear_velocity_wp;
   Eigen::Vector3f angular_velocity_wp;
-  Eigen::Vector3f goto_position;           // correction direction, dist=1
+  Eigen::Vector3f goto_position;  // correction direction, dist=1
 };
 
 class WaypointGenerator : public usm::StateMachine<PlannerState> {

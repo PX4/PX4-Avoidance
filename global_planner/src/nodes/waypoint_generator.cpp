@@ -162,12 +162,11 @@ void WaypointGenerator::updateState(const Eigen::Vector3f& act_pose, const Eigen
 
   // Initialize the smoothing point to current location, if it is undefined or
   // the  vehicle is not flying autonomously yet
-  if (!is_airborne_ ) {
+  if (!is_airborne_) {
     setpoint_yaw_rad_ = curr_yaw_rad_;
     setpoint_yaw_velocity_ = 0.f;
     reach_altitude_offboard_ = false;
   }
-
 }
 
 Eigen::Vector3f WaypointGenerator::adaptSpeed() {
@@ -193,13 +192,11 @@ Eigen::Vector3f WaypointGenerator::adaptSpeed() {
 
     heading_at_goal_rad_ = NAN;
     adapted_wp = position_ + pose_to_wp;
-
   }
 
   ROS_INFO("[WG] Speed adapted WP: [%f %f %f].", adapted_wp.x(), adapted_wp.y(), adapted_wp.z());
   return adapted_wp;
 }
-
 
 // create the message that is sent to the UAV
 void WaypointGenerator::getPathMsg() {
@@ -213,8 +210,7 @@ void WaypointGenerator::getPathMsg() {
   output_.position_wp = adapted_wp;
   output_.angular_velocity_wp = Eigen::Vector3f::Zero();
 
-  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.position_wp,
-                           setpoint_yaw_rad_);
+  avoidance::createPoseMsg(output_.position_wp, output_.orientation_wp, output_.position_wp, setpoint_yaw_rad_);
 }
 
 waypointResult WaypointGenerator::getWaypoints() {
