@@ -40,7 +40,7 @@ jobs:
       working-directory:
       run: |
         apt update
-        apt install -y valgrind
+        apt install -y valgrind libxmlrpcpp-dev
         cd $HOME/catkin_ws/src
         catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
         catkin build avoidance local_planner --no-deps -v -i --catkin-make-args tests
