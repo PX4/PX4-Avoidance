@@ -30,8 +30,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   avoidanceOutput planner_info_;
   waypointResult output_;
 
-  Eigen::Vector3f smoothed_goto_location_ = Eigen::Vector3f(NAN, NAN, NAN);
-  Eigen::Vector3f smoothed_goto_location_velocity_ = Eigen::Vector3f::Zero();
   Eigen::Vector3f position_ = Eigen::Vector3f(NAN, NAN, NAN);
   Eigen::Vector3f loiter_position_ = Eigen::Vector3f(0.0, 0.0, 3.5);
   Eigen::Vector3f velocity_ = Eigen::Vector3f(NAN, NAN, NAN);
@@ -92,11 +90,6 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   **/
   void calculateWaypoint();
 
-  /**
-  * @brief     smooths waypoints with a critically damped PD controller
-  * @param[in] dt, time elapsed between two cycles
-  **/
-  Eigen::Vector3f smoothWaypoint(Eigen::Vector3f wp, float dt);
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
