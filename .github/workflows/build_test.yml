@@ -3,7 +3,7 @@ name: Build Test
 on: [push]
 
 jobs:
-  check_format:
+  checks:
     runs-on: ubuntu-latest
     container: px4io/px4-dev-ros-kinetic:2019-10-24
     steps:
@@ -16,8 +16,44 @@ jobs:
         apt update
         apt install -y clang-format-3.8
         ./check_code_format.sh
-  build:
-    needs: check_format
+    - name: check_state_machine_diagram
+      working-directory: tools
+      run: |
+        ./check_state_machine_diagrams.sh
+  kineticbuild:
+    needs: checks
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-ros-kinetic:2019-10-24
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+    - name: release_build_test
+      working-directory: 
+      run: |
+        mkdir -p $HOME/catkin_ws/src;
+        cd $HOME/catkin_ws
+        catkin init
+        catkin config --extend "/opt/ros/kinetic"
+        catkin config --merge-devel
+        cd $HOME/catkin_ws/src
+        ln -s $GITHUB_WORKSPACE
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON
+        catkin build -j$(nproc) -l$(nproc) local_planner
+    - name: unit_tests
+      working-directory:
+      run: |
+        apt update
+        apt install -y valgrind
+        cd $HOME/catkin_ws/src
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
+        catkin build avoidance local_planner --no-deps -v -i --catkin-make-args tests
+        source $HOME/catkin_ws/devel/setup.bash
+        status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
+        (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=$HOME/catkin_ws/src/avoidance/local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi)
+      shell: bash
+  melodicbuild:
+    needs: checks
     runs-on: ubuntu-latest
     container: px4io/px4-dev-ros-melodic:2019-10-24
     steps:
@@ -47,3 +83,19 @@ jobs:
         source $HOME/catkin_ws/devel/setup.bash
         status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
       shell: bash
+  coverage:
+    needs: [melodicbuild, kineticbuild]
+    runs-on: ubuntu-latest
+    container: px4io/px4-dev-ros-kinetic:2019-10-24
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+    - name: covereage_checks
+      working-directory:
+      run: |
+        apt update
+        apt install -y lcov gem
+        gem install coveralls-lcov
+        cd $HOME/catkin_ws/src/avoidance
+        tools/generate_coverage.sh && coveralls-lcov repo_total.info
