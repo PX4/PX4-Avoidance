@@ -95,7 +95,7 @@ jobs:
       working-directory:
       run: |
         apt update
-        apt install -y lcov gem
+        apt install -y lcov rubygems ruby-dev
         gem install coveralls-lcov
-        cd $HOME/catkin_ws/src/avoidance
         tools/generate_coverage.sh && coveralls-lcov repo_total.info
+      shell: bash
