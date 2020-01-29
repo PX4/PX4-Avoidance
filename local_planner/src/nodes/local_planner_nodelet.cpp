@@ -454,6 +454,7 @@ void LocalPlannerNodelet::threadFunction() {
   while (!should_exit_) {
     ros::Time start_time = ros::Time::now();
 
+    ROS_WARN("cara size %lu numTransformedClouds %lu ", cameras_.size(), numTransformedClouds());
     while ((cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) && !should_exit_) {
       ROS_WARN("waiting for cameras_.size() == numTransformedClouds()");
       std::unique_lock<std::mutex> lock(transformed_cloud_mutex_);
@@ -463,6 +464,7 @@ void LocalPlannerNodelet::threadFunction() {
     if (should_exit_) break;
 
     {
+      ROS_WARN("before mutex ");
       std::lock_guard<std::mutex> guard(running_mutex_);
       ROS_WARN("before updatePlannerInfo");
       updatePlannerInfo();
