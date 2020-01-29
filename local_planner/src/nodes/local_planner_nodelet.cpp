@@ -171,7 +171,7 @@ void LocalPlannerNodelet::updatePlannerInfo() {
       local_planner_->setFOV(i, cameras_[i].fov_fcu_frame_);
       wp_generator_->setFOV(i, cameras_[i].fov_fcu_frame_);
     } catch (tf::TransformException& ex) {
-      ROS_ERROR("Received an exception trying to transform a pointcloud: %s", ex.what());
+      ROS_WARN("Received an exception trying to transform a pointcloud: %s", ex.what());
     }
   }
 
@@ -377,7 +377,7 @@ void LocalPlannerNodelet::transformBufferThread() {
             tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
             tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
           } catch (tf::TransformException& ex) {
-            ROS_ERROR("Received an exception trying to get transform: %s", ex.what());
+            ROS_WARN("Received an exception trying to get transform: %s", ex.what());
           }
         }
       }
@@ -455,6 +455,7 @@ void LocalPlannerNodelet::threadFunction() {
     ros::Time start_time = ros::Time::now();
 
     while ((cameras_.size() == 0 || cameras_.size() != numTransformedClouds()) && !should_exit_) {
+      ROS_WARN("waiting for cameras_.size() == numTransformedClouds()");
       std::unique_lock<std::mutex> lock(transformed_cloud_mutex_);
       transformed_cloud_cv_.wait_for(lock, std::chrono::milliseconds(5000));
     }
@@ -463,15 +464,21 @@ void LocalPlannerNodelet::threadFunction() {
 
     {
       std::lock_guard<std::mutex> guard(running_mutex_);
+      ROS_WARN("before updatePlannerInfo");
       updatePlannerInfo();
+      ROS_WARN("before Run Planner");
       local_planner_->runPlanner();
 
+      ROS_WARN("before visualizePlannerData");
       visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
                                        newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
+      ROS_WARN("before publishLaserScan");
       publishLaserScan();
 
+      ROS_WARN("before setPlannerInfo");
       std::lock_guard<std::mutex> lock(waypoints_mutex_);
       wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
+      ROS_WARN("before set last_wp_time_");
       last_wp_time_ = ros::Time::now();
     }
 

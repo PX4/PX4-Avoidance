@@ -63,7 +63,7 @@ void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration 
   ros::Duration timeout_termination = ros::Duration(timeout_termination_);
   ros::Duration timeout_critical = ros::Duration(timeout_critical_);
   ros::Duration timeout_startup = ros::Duration(timeout_startup_);
-
+  ROS_WARN("since last cloud %f since_start %f ", since_last_cloud.toSec(), since_start.toSec());
   if (since_last_cloud > timeout_termination && since_start > timeout_termination) {
     setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
     ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
