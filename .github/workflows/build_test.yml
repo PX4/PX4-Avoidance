@@ -97,5 +97,5 @@ jobs:
         apt update
         apt install -y lcov rubygems ruby-dev
         gem install coveralls-lcov
-        tools/generate_coverage.sh && coveralls-lcov repo_total.info
+        (roscore &) && tools/generate_coverage.sh && coveralls-lcov repo_total.info
       shell: bash
