@@ -13,6 +13,8 @@
 #include <string>
 #include <thread>
 
+#include <pcl/conversions.h>
+
 namespace avoidance {
 
 LocalPlannerNodelet::LocalPlannerNodelet() : tf_buffer_(5.f), spin_dt_(0.1) {}
@@ -104,6 +106,7 @@ void LocalPlannerNodelet::InitializeNodelet() {
   armed_ = false;
   start_time_ = ros::Time::now();
 }
+
 
 void LocalPlannerNodelet::startNode() {
   ros::TimerOptions timer_options(ros::Duration(spin_dt_), boost::bind(&LocalPlannerNodelet::cmdLoopCallback, this, _1),
@@ -376,9 +379,12 @@ void LocalPlannerNodelet::transformBufferThread() {
           try {
             tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
             tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
+            ROS_WARN("insert transform at time %f ", transform.stamp_.toSec());
           } catch (tf::TransformException& ex) {
             ROS_WARN("Received an exception trying to get transform: %s", ex.what());
           }
+        } else {
+          ROS_WARN("Cannot transform from %s to %s", frame_pair.second.c_str(), frame_pair.first.c_str());
         }
       }
       tf_buffer_cv_.notify_all();
@@ -464,23 +470,16 @@ void LocalPlannerNodelet::threadFunction() {
     if (should_exit_) break;
 
     {
-      ROS_WARN("before mutex ");
       std::lock_guard<std::mutex> guard(running_mutex_);
-      ROS_WARN("before updatePlannerInfo");
       updatePlannerInfo();
-      ROS_WARN("before Run Planner");
       local_planner_->runPlanner();
 
-      ROS_WARN("before visualizePlannerData");
       visualizer_.visualizePlannerData(*(local_planner_.get()), newest_waypoint_position_,
                                        newest_adapted_waypoint_position_, newest_position_, newest_orientation_);
-      ROS_WARN("before publishLaserScan");
       publishLaserScan();
 
-      ROS_WARN("before setPlannerInfo");
       std::lock_guard<std::mutex> lock(waypoints_mutex_);
       wp_generator_->setPlannerInfo(local_planner_->getAvoidanceOutput());
-      ROS_WARN("before set last_wp_time_");
       last_wp_time_ = ros::Time::now();
     }
 
@@ -498,6 +497,7 @@ void LocalPlannerNodelet::checkFailsafe(ros::Duration since_last_cloud, ros::Dur
   avoidance_node_->checkFailsafe(since_last_cloud, since_start, hover);
 }
 
+
 void LocalPlannerNodelet::pointCloudTransformThread(int index) {
   while (!should_exit_) {
     bool waiting_on_transform = false;
@@ -508,6 +508,10 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
       if (cameras_[index].received_) {
         tf::StampedTransform cloud_transform;
         tf::StampedTransform fcu_transform;
+        ros::Time tmp = pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp);
+        ros::Time now = ros::Time::now();
+        ros::Duration diff = now - tmp;
+        ROS_WARN("Time difference (now-untransformed_cloud_.stamp) %f ", diff.toSec());
 
         if (tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "/local_origin",
                                     pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp),
@@ -534,6 +538,8 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
           std::lock_guard<std::mutex> lock(transformed_cloud_mutex_);
           transformed_cloud_cv_.notify_all();
         } else {
+
+          ROS_WARN("Cannot transform cloud with stamp %f", tmp.toSec());
           waiting_on_transform = true;
         }
       } else {

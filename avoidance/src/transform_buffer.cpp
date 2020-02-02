@@ -66,8 +66,8 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
     print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, buffer is empty");
     return false;
   } else {
-    if (iterator->second.back().stamp_ < time) {
-      print(log_level::debug, "TF Buffer: could not retrieve requested transform from buffer, tf has not yet arrived");
+    if (iterator->second.back().stamp_ < (time - ros::Duration(0.01))) {
+      print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, tf has not yet arrived");
       return false;
     } else if (iterator->second.front().stamp_ > time) {
       print(log_level::warn,
