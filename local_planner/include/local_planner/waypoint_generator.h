@@ -64,7 +64,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   float setpoint_yaw_velocity_ = 0.0f;
   float heading_at_goal_rad_ = NAN;
   float yaw_reach_height_rad_ = NAN;
-  float speed_ = 1.0f;
+  float speed_ = 0.0f;
 
   std::vector<FOV> fov_fcu_frame_;
 
@@ -115,8 +115,9 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   /**
   * @brief     change speed depending on the presence of obstacles, proximity to
   *            the goal, and waypoint lying with the FOV
+  * @param[in] dt, time elapsed between two cycles
   **/
-  void adaptSpeed();
+  void adaptSpeed(float dt);
   /**
   * @brief     adjust waypoints based on new velocity calculation, proximity to
   *            goal, smoothing, climing to goal height. Compute waypoint

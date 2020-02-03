@@ -338,14 +338,24 @@ void WaypointGenerator::nextSmoothYaw(float dt) {
   setpoint_yaw_rad_ = wrapAngleToPlusMinusPI(setpoint_yaw_rad_);
 }
 
-void WaypointGenerator::adaptSpeed() {
-  speed_ = planner_info_.cruise_velocity;
+void WaypointGenerator::adaptSpeed(float dt) {
+  // lowpass filter the speed to get smoother accelerations
+  const float filter_time_constant = 0.9f;
+  const float alpha = dt / (filter_time_constant + dt);
+  const float last_speed = speed_;
+
+  // at startup parameters are NAN (avoid propagating)
+  if (std::isfinite(planner_info_.cruise_velocity)) {
+    speed_ = planner_info_.cruise_velocity;
+  } else {
+    speed_ = 2.f;
+  }
 
   // If the goal is so close, that the speed-adapted way point would overreach
   float goal_dist = (goal_ - position_).norm();
   if (goal_dist < 1.f) {
-    output_.adapted_goto_position = goal_;
-
+    output_.goto_position = goal_;
+    speed_ = goal_dist;
     // First time we reach this goal, remember the heading
     if (!std::isfinite(heading_at_goal_rad_)) {
       heading_at_goal_rad_ = curr_yaw_rad_;
@@ -360,15 +370,18 @@ void WaypointGenerator::adaptSpeed() {
       wrapPolar(p_pol_fcu);
       speed_ *= scaleToFOV(fov_fcu_frame_, p_pol_fcu);
     }
-
-    // Scale the pose_to_wp by the speed
-    Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
-    if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
-    pose_to_wp *= std::min(speed_, goal_dist);
-
     heading_at_goal_rad_ = NAN;
-    output_.adapted_goto_position = position_ + pose_to_wp;
   }
+
+  speed_ = alpha * speed_ + (1.f - alpha) * last_speed;
+  speed_ = std::min(speed_, goal_dist);
+
+  // Scale the pose_to_wp by the speed
+  Eigen::Vector3f pose_to_wp = output_.goto_position - position_;
+  if (pose_to_wp.norm() > 0.1f) pose_to_wp.normalize();
+  pose_to_wp *= speed_;
+
+  output_.adapted_goto_position = position_ + pose_to_wp;
 
   ROS_INFO("[WG] Speed adapted WP: [%f %f %f].", output_.adapted_goto_position.x(), output_.adapted_goto_position.y(),
            output_.adapted_goto_position.z());
@@ -386,7 +399,7 @@ void WaypointGenerator::getPathMsg() {
 
   if (!auto_land_) {
     // in auto_land the z is only velocity controlled. Therefore we don't run the smoothing.
-    adaptSpeed();
+    adaptSpeed(dt);
     smoothWaypoint(dt);
   }
 
