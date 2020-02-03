@@ -167,7 +167,7 @@ TEST_F(WaypointGeneratorTests, reachAltitudeOffboardTest) {
   ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
 
   // WHEN: we generate subsequent waypoints
-  for (size_t i = 0; i < 6; i++) {
+  for (size_t i = 0; i < 20; i++) {
     // calculate new vehicle position
     time_sec += 0.03;
     time = ros::Time(time_sec);
@@ -175,6 +175,10 @@ TEST_F(WaypointGeneratorTests, reachAltitudeOffboardTest) {
                 is_takeoff_waypoint, desired_velocity);
     waypointResult result = getWaypoints();
 
+    // break the loop when done with the altitude change
+    if (PlannerState::ALTITUDE_CHANGE != getState()) {
+      break;
+    }
     ASSERT_EQ(PlannerState::ALTITUDE_CHANGE, getState());
 
     // THEN: we expect the z velocity component on the setpoint not to be set

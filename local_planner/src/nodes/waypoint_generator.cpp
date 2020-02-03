@@ -418,6 +418,7 @@ waypointResult WaypointGenerator::getWaypoints() {
 bool WaypointGenerator::isAltitudeChange() {
   bool rtl_descend = false;
   bool rtl_climb = false;
+
   if (position_.z() > (goal_.z() - 0.8f)) {
     rtl_descend = false;
     rtl_climb = false;
@@ -439,7 +440,7 @@ bool WaypointGenerator::isAltitudeChange() {
   const bool need_to_change_altitude = offboard_goal_altitude_not_reached || auto_takeoff || auto_land_;
   if (need_to_change_altitude) {
     if (nav_state_ == NavigationState::offboard) {
-      if (position_.z() > goal_.z()) {
+      if (position_.z() >= goal_.z()) {
         reach_altitude_offboard_ = true;
         return false;
       }
