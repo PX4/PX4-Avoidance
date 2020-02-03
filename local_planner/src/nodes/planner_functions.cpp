@@ -331,6 +331,7 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
                                      const Eigen::Vector3f& closest_pt, const bool is_obstacle_facing_goal) {
   // Compute  polar direction to goal and cartesian representation of current direction to evaluate
   const PolarPoint facing_goal = cartesianToPolarHistogram(goal, position);
+  const float goal_distance = (goal - position).norm();
   const Eigen::Vector3f candidate_velocity_cartesian =
       polarHistogramToCartesian(candidate_polar, Eigen::Vector3f(0.0f, 0.0f, 0.0f));
 
@@ -349,8 +350,12 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
 
   const float yaw_cost = (1.f - weight) * cost_params.yaw_cost_param * angle_diff * angle_diff;
   const float yaw_to_line_cost = weight * cost_params.yaw_cost_param * angle_diff_to_line * angle_diff_to_line;
-  const float pitch_cost =
+  float pitch_cost =
       cost_params.pitch_cost_param * (candidate_polar.e - facing_goal.e) * (candidate_polar.e - facing_goal.e);
+  // increase the pitch cost starting at 5m from the goal (forcing the drone to goal altitude)
+  if (goal_distance < 5.f) {
+    pitch_cost = pitch_cost / ((0.2 * goal_distance) * (0.2 * goal_distance));
+  }
   const float d = cost_params.obstacle_cost_param - obstacle_distance;
   const float distance_cost = obstacle_distance > 0 ? 5000.0f * (1 + d / sqrt(1 + d * d)) : 0.0f;
 
