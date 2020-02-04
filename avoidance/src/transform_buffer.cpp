@@ -41,8 +41,9 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
     buffer_[getKey(source_frame, target_frame)] = empty_deque;
     iterator = buffer_.find(getKey(source_frame, target_frame));
   }
-  std::cout << "iterator back-front stamp_ " << iterator->second.back().stamp_.toSec() << " " << iterator->second.front().stamp_ << std::endl;
-
+  if (iterator->second.size() !=0){
+  std::cout << "iterator back-front stamp_ " << iterator->second.back().stamp_ << " " << iterator->second.front().stamp_ << std::endl;
+}
   // check if the given transform is newer than the last buffered one
   if (iterator->second.size() == 0 || iterator->second.back().stamp_ < transform.stamp_) {
     ROS_WARN("push back transform %f ", transform.stamp_.toSec());
