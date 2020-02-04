@@ -41,9 +41,11 @@ bool TransformBuffer::insertTransform(const std::string& source_frame, const std
     buffer_[getKey(source_frame, target_frame)] = empty_deque;
     iterator = buffer_.find(getKey(source_frame, target_frame));
   }
+  std::cout << "iterator back-front stamp_ " << iterator->second.back().stamp_.toSec() << " " << iterator->second.front().stamp_ << std::endl;
 
   // check if the given transform is newer than the last buffered one
   if (iterator->second.size() == 0 || iterator->second.back().stamp_ < transform.stamp_) {
+    ROS_WARN("push back transform %f ", transform.stamp_.toSec());
     iterator->second.push_back(transform);
     // remove transforms which are outside the buffer size
     while (transform.stamp_ - iterator->second.front().stamp_ > buffer_size_) {
@@ -66,7 +68,7 @@ bool TransformBuffer::getTransform(const std::string& source_frame, const std::s
     print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, buffer is empty");
     return false;
   } else {
-    if (iterator->second.back().stamp_ < (time - ros::Duration(0.01))) {
+    if (iterator->second.back().stamp_ < time) {
       print(log_level::warn, "TF Buffer: could not retrieve requested transform from buffer, tf has not yet arrived");
       return false;
     } else if (iterator->second.front().stamp_ > time) {

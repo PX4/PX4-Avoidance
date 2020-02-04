@@ -379,7 +379,7 @@ void LocalPlannerNodelet::transformBufferThread() {
           try {
             tf_listener_->lookupTransform(frame_pair.second, frame_pair.first, ros::Time(0), transform);
             tf_buffer_.insertTransform(frame_pair.first, frame_pair.second, transform);
-            ROS_WARN("insert transform at time %f ", transform.stamp_.toSec());
+            ROS_WARN("insert transform at time %f - %f | %s %s ", transform.stamp_.toSec(), (ros::Time::now() - transform.stamp_).toSec(), frame_pair.first, frame_pair.second );
           } catch (tf::TransformException& ex) {
             ROS_WARN("Received an exception trying to get transform: %s", ex.what());
           }
