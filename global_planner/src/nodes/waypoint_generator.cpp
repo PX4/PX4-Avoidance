@@ -107,7 +107,8 @@ usm::Transition WaypointGenerator::runDirect() {
 
 usm::Transition WaypointGenerator::runNavigate() {
   Eigen::Vector3f setpoint = position_;
-  const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, planner_info_.last_path_time,
+  const double time_since_path = (ros::Time::now() - planner_info_.last_path_time).toSec();
+  const bool tree_available = getSetpointFromPath(planner_info_.path_node_positions, time_since_path,
                                                   planner_info_.cruise_velocity, setpoint);
   output_.goto_position = position_ + (setpoint - position_).normalized();
   getPathMsg();
@@ -221,7 +222,7 @@ waypointResult WaypointGenerator::getWaypoints() {
 void WaypointGenerator::setPlannerInfo(const avoidanceOutput& input) { planner_info_ = input; }
 
 bool WaypointGenerator::getSetpointFromPath(const std::vector<Eigen::Vector3f>& path,
-                                            const ros::Time& path_generation_time, float velocity,
+                                            const float time, float velocity,
                                             Eigen::Vector3f& setpoint) {
   int num_pathsegments = path.size();
 
@@ -231,13 +232,14 @@ bool WaypointGenerator::getSetpointFromPath(const std::vector<Eigen::Vector3f>& 
   }
 
   // path only has one segment: return end of that segment as setpoint
+  // TODO: Check if the root of the path is not the current position
   if (num_pathsegments == 2) {
-    setpoint = path[0];
+    setpoint = path[1];
     return true;
   }
 
   // step through the path until the point where we should be if we had traveled perfectly with velocity along it
-  float distance_left = (ros::Time::now() - path_generation_time).toSec() * velocity;
+  float distance_left = time * velocity;
 
   for (int i = 1; i < num_pathsegments; i++) {
     Eigen::Vector3f path_segment = path[i] - path[i - 1];

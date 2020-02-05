@@ -138,7 +138,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
                    const avoidance::NavigationState& nav_state, const bool is_land_waypoint,
                    const bool is_takeoff_waypoint, const Eigen::Vector3f& desired_vel, const bool path_in_collision);
 
-  bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
+  bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const float time,
                            float velocity, Eigen::Vector3f& setpoint);
 
   WaypointGenerator();
