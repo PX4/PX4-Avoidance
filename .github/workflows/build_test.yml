@@ -52,6 +52,15 @@ jobs:
         status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
         (roscore &) && for f in ~/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=$HOME/catkin_ws/src/avoidance/local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi)
       shell: bash
+    - name: coverage
+      working-directory:
+      run: |
+        apt update
+        apt install -y lcov rubygems ruby-dev
+        gem install coveralls-lcov
+        cd $HOME/catkin_ws/src/avoidance
+        tools/generate_coverage.sh && coveralls-lcov repo_total.info
+      shell: bash
   melodicbuild:
     needs: checks
     runs-on: ubuntu-latest
@@ -82,20 +91,4 @@ jobs:
         catkin build avoidance local_planner --no-deps -v -i --catkin-make-args tests
         source $HOME/catkin_ws/devel/setup.bash
         status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
-      shell: bash
-  coverage:
-    needs: [melodicbuild, kineticbuild]
-    runs-on: ubuntu-latest
-    container: px4io/px4-dev-ros-kinetic:2019-10-24
-    steps:
-    - uses: actions/checkout@v1
-      with:
-        token: ${{ secrets.ACCESS_TOKEN }}
-    - name: covereage_checks
-      working-directory:
-      run: |
-        apt update
-        apt install -y lcov rubygems ruby-dev
-        gem install coveralls-lcov
-        (roscore &) && tools/generate_coverage.sh && coveralls-lcov repo_total.info
       shell: bash
