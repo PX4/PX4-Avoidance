@@ -56,7 +56,7 @@ jobs:
       working-directory:
       run: |
         apt update
-        apt install -y lcov rubygems ruby-dev
+        apt install -y lcov rubygems ruby-dev ros-kinetic-octomap-*
         gem install coveralls-lcov
         cd $HOME/catkin_ws/src/avoidance
         tools/generate_coverage.sh && coveralls-lcov repo_total.info
