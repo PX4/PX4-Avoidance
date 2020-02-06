@@ -28,6 +28,7 @@ jobs:
     - uses: actions/checkout@v1
       with:
         token: ${{ secrets.ACCESS_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
     - name: release_build_test
       working-directory: 
       run: |
