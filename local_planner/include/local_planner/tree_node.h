@@ -15,6 +15,7 @@ class TreeNode {
   float heuristic_;
   int origin_;
   bool closed_;
+  int depth_;
 
   TreeNode();
   TreeNode(int from, const Eigen::Vector3f& pos, const Eigen::Vector3f& vel);

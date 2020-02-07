@@ -60,8 +60,6 @@ void StarPlanner::buildLookAheadTree() {
   for (int n = 0; n < n_expanded_nodes_ && is_expanded_node; n++) {
     Eigen::Vector3f origin_position = tree_[origin].getPosition();
     Eigen::Vector3f origin_velocity = tree_[origin].getVelocity();
-    PolarPoint facing_goal = cartesianToPolarHistogram(goal_, origin_position);
-    float distance_to_goal = (goal_ - origin_position).norm();
 
     histogram.setZero();
     generateNewHistogram(histogram, cloud_, origin_position);
@@ -100,6 +98,7 @@ void StarPlanner::buildLookAheadTree() {
           float h = treeHeuristicFunction(tree_.size() - 1);
           tree_.back().heuristic_ = h;
           tree_.back().total_cost_ = tree_[origin].total_cost_ - tree_[origin].heuristic_ + candidate.cost + h;
+          tree_.back().depth_ = tree_[origin].depth_ + 1;
           children++;
         }
       }
@@ -125,8 +124,21 @@ void StarPlanner::buildLookAheadTree() {
     cost_image_data.clear();
     candidate_vector.clear();
   }
-  // smoothing between trees
-  int tree_end = origin;
+
+  // find best node to follow, taking into account A* completion
+  int max_depth = 0;
+  int max_depth_index = 0;
+  for (size_t i = 0; i < tree_.size(); i++) {
+    if (!(tree_[i].closed_)) {
+      if (tree_[i].depth_ > max_depth) {
+        max_depth = tree_[i].depth_;
+        max_depth_index = i;
+      }
+    }
+  }
+
+  // build final tree
+  int tree_end = max_depth_index;
   path_node_positions_.clear();
   while (tree_end > 0) {
     path_node_positions_.push_back(tree_[tree_end].getPosition());
