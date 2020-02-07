@@ -49,44 +49,56 @@ The documentation contains information about how to setup and run the two planne
 
 ### Installation
 
-This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04 and Kinetic - Ubuntu 18.04 and Melodic are supported as well. You might want to skip some of them if your system is already partially installed.
+This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on either:
+- **Ubuntu 18.04:** *ROS Melodic* with Gazebo 9 (preferred).
+- **Ubuntu 16.04:** *ROS Kinetic* with Gazebo 7
+You might want to skip some steps if your system is already partially installed.
 
-Note that in the following instructions, we assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`. Feel free to adapt this to your situation.
+> **Note:** These instructions assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`.
+  Feel free to adapt this to your situation.
 
-1. Add ROS to sources.list.
+1. Add ROS to sources.list:
+   * Melodic
+     ```bash
+     sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+     sudo apt update
+     ```
+   * Kinetic
+     ```bash
+     echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
+     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+     sudo apt update
+     ```
 
-   ```bash
-   echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
-   sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-   sudo apt update
-   ```
+1. Install ROS with Gazebo:
+   * ROS Melodic (with Gazebo 9)
+     ```bash
+     sudo apt install ros-melodic-desktop-full
 
-1. Install gazebo with ROS (use ROS melodic based on preference).
+     # Source ROS
+     echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+     source ~/.bashrc
+     ```
+   * ROS Kinetic (with Gazebo 7)
+     ```bash
+     sudo apt install ros-kinetic-desktop-full
 
-   ```bash
-   sudo apt install ros-kinetic-desktop-full
-
-   # Source ROS
-   source /opt/ros/kinetic/setup.bash
-   ```
-
-  Full installation of ROS Kinetic comes with Gazebo 7.
-
-  If you are using different version of Gazebo,
-
-  please make sure install ros-gazebo related packages
-
-  For Gazebo 8,
-  ```
-  sudo apt install ros-kinetic-gazebo8-*
-  ```
-  For Gazebo 9,
-  ```
-  sudo apt install ros-kinetic-gazebo9-*
-  ```
+     # Source ROS
+     source /opt/ros/kinetic/setup.bash
+     ```
+   > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
+   >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
+   >  - For Gazebo 8,
+       ```sh
+       sudo apt install ros-kinetic-gazebo8-*
+       ```
+    > - For Gazebo 9,
+       ```
+       sudo apt install ros-kinetic-gazebo9-*
+       ```
 
 1. Initialize rosdep.
-
    ```bash
    rosdep init
    rosdep update
@@ -99,13 +111,18 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    mkdir -p ~/catkin_ws/src
    ```
 
-1. Install mavros version 0.29.0 or above. Instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html. If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
-
+1. Install mavros version 0.29.0 or above. Instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
+   If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
+   * Melodic
+   ```bash
+   sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
+   ```
+   * Kinetic
    ```bash
    sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
    ```
 
-1. Install the geographiclib dataset
+1. Install the *geographiclib* dataset
 
    ```bash
    wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
@@ -114,10 +131,14 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    ```
 
 1. Install avoidance module dependencies (pointcloud library and octomap).
-
-   ```bash
-   sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
-   ```
+   - Melodic
+     ```bash
+     sudo apt install libpcl1 ros-melodic-octomap-* ros-melodic-yaml-*
+     ```
+   - Kinetic
+     ```bash
+     sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
+     ```
 
 1. Clone this repository in your catkin workspace in order to build the avoidance node.
 
@@ -154,12 +175,11 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    ```bash
    cd ~
-   git clone https://github.com/PX4/Firmware.git
+   git clone https://github.com/PX4/Firmware.git --recursive
    cd ~/Firmware
-   git submodule update --init --recursive
    ```
 
-1. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies).
+1. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies). 
 
 1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
 
