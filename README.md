@@ -166,7 +166,7 @@ You might want to skip some steps if your system is already partially installed.
 
 ## Run the Avoidance Gazebo Simulation
 
-In the following section we guide you trough installing and running a Gazebo simulation of both local and global planner.
+In the following section we guide you through installing and running a Gazebo simulation of both local and global planner.
 
 ### Build and Run the Simulator
 
@@ -188,35 +188,37 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    # Build and run simulation
    make px4_sitl_default gazebo
+   
+   # Quit the simulation (Ctrl+C)
 
-   # Setup some more Gazebo-related environment variables (You may need to modify this line based on the location of the Firmware folder on your machine)
+   # Setup some more Gazebo-related environment variables (modify this line based on the location of the Firmware folder on your machine)
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
-1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
-
+1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4:
    ```bash
    export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
    ```
 1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
-```bash
-echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
+   ```bash
+   echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
 ```
 
-Steps 3, 4 and 5 together with sourcing your catkin setup.bash (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
+The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
 
 ### Local Planner (default, heavily flight tested)
 
 This section shows how to start the *local_planner* and use it for avoidance in mission or offboard mode.
 
-The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
+The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
+To run the algorithm it is possible to
 
 * simulate a forward looking stereo camera running OpenCV's block matching algorithm (SGBM by default)
 
    ```bash
    # if stereo-image-proc not yet installed
-   sudo apt install ros-kinetic-stereo-image-proc
+   sudo apt install ros-kinetic-stereo-image-proc 
 
    roslaunch local_planner local_planner_stereo.launch
    ```
@@ -233,7 +235,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    or publish the DisparityImage as a simple sensor_msgs/Image
 
    ```bash
-   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
+   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
    ```
 
    Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
@@ -250,20 +252,26 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
    roslaunch local_planner local_planner_sitl_3cam.launch
    ```
 
-You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOARD, run:
+You will see the Iris drone unarmed in the Gazebo world.
+To start flying, there are two options: OFFBOARD or MISSION mode.
+For OFFBOARD, run:
 
 ```bash
-# In another terminal
+# In another terminal 
 rosrun mavros mavsys mode -c OFFBOARD
 rosrun mavros mavsafety arm
 ```
 
-The drone will first change its altitude to reach the goal height. It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
+The drone will first change its altitude to reach the goal height.
+It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
 ![Screenshot rqt_reconfigure goal height](docs/lp_goal_height.png)
-Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
+Then the drone will start moving towards the goal.
+The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space.
+If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true.
+Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
 
 ### Global Planner (advanced, not flight tested)
