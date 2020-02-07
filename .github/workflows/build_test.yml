@@ -72,7 +72,6 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         parallel-finished: true
-      shell: bash
   melodicbuild:
     needs: checks
     runs-on: ubuntu-latest
