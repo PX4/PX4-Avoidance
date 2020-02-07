@@ -202,7 +202,7 @@ In the following section we guide you through installing and running a Gazebo si
 1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
    ```bash
    echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
-```
+   ```
 
 The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
@@ -212,45 +212,45 @@ You should now be ready to run the simulation using local or global planner.
 This section shows how to start the *local_planner* and use it for avoidance in mission or offboard mode.
 
 The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
-To run the algorithm it is possible to
+
+You *may* need to install some additional dependencies (if not already installed):
+* Melodic:
+  ```sh
+  sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
+  ```
+* Kinetic:
+  ```sh
+  sudo apt install ros-kinetic-stereo-image-proc ros-kinetic-image-view
+  ```
+   
+To run the algorithm it is possible to:
 
 * simulate a forward looking stereo camera running OpenCV's block matching algorithm (SGBM by default)
+  ```bash
+  roslaunch local_planner local_planner_stereo.launch
+  ```
+    
+  The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
+   To visualize the message, either run:
 
-   ```bash
-   # if stereo-image-proc not yet installed
-   sudo apt install ros-kinetic-stereo-image-proc 
-
-   roslaunch local_planner local_planner_stereo.launch
+  ```bash
+  osrun image_view stereo_view stereo:=/stereo image:=image_rect_color
    ```
-
-   The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the    message, either run:
-
-   ```bash
-   # if image_view is not yet installed
-   sudo apt install ros-kinetic-image-view
-
-   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
-   ```
-
-   or publish the DisparityImage as a simple sensor_msgs/Image
-
-   ```bash
-   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
-   ```
-
-   Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
+  or publish the `DisparityImage` as a simple `sensor_msgs/Image`:
+  ```bash
+  rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
+  ```
+  Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
 
 * simulate a forward looking kinect depth sensor:
-
-   ```bash
-   roslaunch local_planner local_planner_depth-camera.launch
-   ```
+  ```bash
+  roslaunch local_planner local_planner_depth-camera.launch
+  ```
 
 * simulate three kinect depth sensors:
-
-   ```bash
-   roslaunch local_planner local_planner_sitl_3cam.launch
-   ```
+  ```bash
+  roslaunch local_planner local_planner_sitl_3cam.launch
+  ```
 
 You will see the Iris drone unarmed in the Gazebo world.
 To start flying, there are two options: OFFBOARD or MISSION mode.
@@ -302,7 +302,9 @@ From the command line, you can also make Gazebo follow the drone, if you want.
 gz camera --camera-name=gzclient_camera --follow=iris
 ```
 
-One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
+One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz.
+The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected.
+It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
 
 ### Safe Landing Planner
