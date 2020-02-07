@@ -159,8 +159,7 @@ You might want to skip some steps if your system is already partially installed.
    catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
    ```
 
-1. Source the catkin setup.bash from your catkin workspace.
-
+1. Source the catkin setup.bash from your catkin workspace:
    ```bash
    source ~/catkin_ws/devel/setup.bash
    ```
