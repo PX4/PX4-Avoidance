@@ -60,7 +60,7 @@ jobs:
         apt install -y lcov rubygems ruby-dev ros-kinetic-octomap-*
         gem install coveralls-lcov
         cd $HOME/catkin_ws/src/avoidance
-        tools/generate_coverage.sh
+        (roscore &) && tools/generate_coverage.sh
     - name: Coveralls Parallel
       uses: coverallsapp/github-action@master
       with:
