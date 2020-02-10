@@ -237,7 +237,7 @@ To run the algorithm it is possible to:
    To visualize the message, either run:
 
   ```bash
-  osrun image_view stereo_view stereo:=/stereo image:=image_rect_color
+  rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
    ```
   or publish the `DisparityImage` as a simple `sensor_msgs/Image`:
   ```bash
