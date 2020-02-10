@@ -111,16 +111,18 @@ You might want to skip some steps if your system is already partially installed.
    mkdir -p ~/catkin_ws/src
    ```
 
-1. Install mavros version 0.29.0 or above. Instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html.
+1. Install MAVROS (version 0.29.0 or above).
+   > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
    If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
+   
    * Melodic
-   ```bash
-   sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
-   ```
+     ```bash
+     sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
+     ```
    * Kinetic
-   ```bash
-   sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
-   ```
+     ```bash
+     sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
+     ```
 
 1. Install the *geographiclib* dataset
 
@@ -160,8 +162,9 @@ You might want to skip some steps if your system is already partially installed.
    ```
 
 1. Source the catkin setup.bash from your catkin workspace:
-   ```bash
-   source ~/catkin_ws/devel/setup.bash
+   ```bash   
+   echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+   source ~/.bashrc
    ```
 
 ## Run the Avoidance Gazebo Simulation
