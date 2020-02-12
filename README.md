@@ -134,7 +134,7 @@ You might want to skip some steps if your system is already partially installed.
 1. Install avoidance module dependencies (pointcloud library and octomap).
    - Melodic
      ```bash
-     sudo apt install libpcl1 ros-melodic-octomap-* ros-melodic-yaml-*
+     sudo apt install libpcl1 ros-melodic-octomap-*
      ```
    - Kinetic
      ```bash
