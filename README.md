@@ -215,41 +215,41 @@ This section shows how to start the *local_planner* and use it for avoidance in 
 
 The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
 
-You *may* need to install some additional dependencies (if not already installed):
-* Melodic:
-  ```sh
-  sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
-  ```
-* Kinetic:
-  ```sh
-  sudo apt install ros-kinetic-stereo-image-proc ros-kinetic-image-view
-  ```
-   
-To run the algorithm it is possible to:
+> **Note:** You *may* need to install some additional dependencies to run the following code (if not installed):
+> * Melodic:
+>   ```sh
+>   sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
+>   ```
+> * Kinetic:
+>   ```sh
+>   sudo apt install ros-kinetic-stereo-image-proc ros-kinetic-image-view
+>   ```
 
-* simulate a forward looking stereo camera running OpenCV's block matching algorithm (SGBM by default)
+Any of the following three launch file scripts can be used to run local planner:
+> **Note:** The scripts run the same planner but simulate different sensor/camera setups. They all enable *Obstacle Avoidance* and *Collision Prevention*.
+* `local_planner_stereo`: simulates a vehicle with a stereo camera that uses OpenCV's block matching algorithm (SGBM by default) to generate depth information
   ```bash
   roslaunch local_planner local_planner_stereo.launch
   ```
     
-  The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
-   To visualize the message, either run:
+  > **Note:** The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
+  > To visualize the message, open a new terminal and do either of:
+  > - run:
+  >   ```bash
+  >   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
+  >   ```
+  > - publish the `DisparityImage` as a simple `sensor_msgs/Image`:
+  >   ```bash
+  >   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
+  >   ```
+  > The disparity map can then be visualized by *rviz* or *rqt* under the topic */stereo/disparity_image*.
 
-  ```bash
-  rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
-   ```
-  or publish the `DisparityImage` as a simple `sensor_msgs/Image`:
-  ```bash
-  rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
-  ```
-  Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
-
-* simulate a forward looking kinect depth sensor:
+* `local_planner_depth_camera`: simulates vehicle with one forward-facing kinect sensor
   ```bash
   roslaunch local_planner local_planner_depth-camera.launch
   ```
 
-* simulate three kinect depth sensors:
+* `local_planner_sitl_3cam`: simulates vehicle with 3 kinect sensors (left, right, front)
   ```bash
   roslaunch local_planner local_planner_sitl_3cam.launch
   ```
