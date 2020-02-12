@@ -233,7 +233,11 @@ Any of the following three launch file scripts can be used to run local planner:
   ```
     
   > **Note:** The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
-  > To visualize the message, open a new terminal and do either of:
+  > To visualize the message, first open a *new terminal* and setup the required environment variables:
+  > ```bash
+  > source devel/setup.bash
+  > ```
+  > Then do either of:
   > - run:
   >   ```bash
   >   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
