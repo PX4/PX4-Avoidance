@@ -113,7 +113,6 @@ You might want to skip some steps if your system is already partially installed.
 
 1. Install MAVROS (version 0.29.0 or above).
    > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
-   If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
    
    * Melodic
      ```bash
