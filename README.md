@@ -180,9 +180,16 @@ In the following section we guide you through installing and running a Gazebo si
    cd ~/Firmware
    ```
 
-1. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies). 
+1. Install [PX4 dependencies](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies). 
+   ```bash
+   # Install PX4 "common" dependencies.
+   ./Tools/setup/ubuntu.sh --no-sim-tools --no-nuttx
+   
+   # Gstreamer plugins (for Gazebo camera)
+   sudo apt install gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly libgstreamer-plugins-base1.0-dev
 
-1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
+1. Build the Firmware once in order to generate SDF model files for Gazebo.
+   This step will actually run a simulation (that you can immediately close).
 
    ```bash
    # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
