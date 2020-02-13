@@ -49,44 +49,56 @@ The documentation contains information about how to setup and run the two planne
 
 ### Installation
 
-This is a step-by-step guide to install and build all the prerequisites for running this module on Ubuntu 16.04 and Kinetic - Ubuntu 18.04 and Melodic are supported as well. You might want to skip some of them if your system is already partially installed.
+This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on either:
+- **Ubuntu 18.04:** *ROS Melodic* with Gazebo 9 (preferred).
+- **Ubuntu 16.04:** *ROS Kinetic* with Gazebo 7
+You might want to skip some steps if your system is already partially installed.
 
-Note that in the following instructions, we assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`. Feel free to adapt this to your situation.
+> **Note:** These instructions assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`.
+  Feel free to adapt this to your situation.
 
-1. Add ROS to sources.list.
+1. Add ROS to sources.list:
+   * Melodic
+     ```bash
+     sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+     sudo apt update
+     ```
+   * Kinetic
+     ```bash
+     echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
+     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+     sudo apt update
+     ```
 
-   ```bash
-   echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
-   sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-   sudo apt update
-   ```
+1. Install ROS with Gazebo:
+   * ROS Melodic (with Gazebo 9)
+     ```bash
+     sudo apt install ros-melodic-desktop-full
 
-1. Install gazebo with ROS (use ROS melodic based on preference).
+     # Source ROS
+     echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+     source ~/.bashrc
+     ```
+   * ROS Kinetic (with Gazebo 7)
+     ```bash
+     sudo apt install ros-kinetic-desktop-full
 
-   ```bash
-   sudo apt install ros-kinetic-desktop-full
-
-   # Source ROS
-   source /opt/ros/kinetic/setup.bash
-   ```
-
-  Full installation of ROS Kinetic comes with Gazebo 7.
-
-  If you are using different version of Gazebo,
-
-  please make sure install ros-gazebo related packages
-
-  For Gazebo 8,
-  ```
-  sudo apt install ros-kinetic-gazebo8-*
-  ```
-  For Gazebo 9,
-  ```
-  sudo apt install ros-kinetic-gazebo9-*
-  ```
+     # Source ROS
+     source /opt/ros/kinetic/setup.bash
+     ```
+   > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
+   >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
+   >  - For Gazebo 8,
+       ```sh
+       sudo apt install ros-kinetic-gazebo8-*
+       ```
+    > - For Gazebo 9,
+       ```
+       sudo apt install ros-kinetic-gazebo9-*
+       ```
 
 1. Initialize rosdep.
-
    ```bash
    rosdep init
    rosdep update
@@ -99,13 +111,19 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    mkdir -p ~/catkin_ws/src
    ```
 
-1. Install mavros version 0.29.0 or above. Instructions to install it from sources can be found here: https://dev.px4.io/en/ros/mavros_installation.html. If you want to install using apt, be sure to check that the version is 0.29.0 or greater.
+1. Install MAVROS (version 0.29.0 or above).
+   > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
+   
+   * Melodic
+     ```bash
+     sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
+     ```
+   * Kinetic
+     ```bash
+     sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
+     ```
 
-   ```bash
-   sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
-   ```
-
-1. Install the geographiclib dataset
+1. Install the *geographiclib* dataset
 
    ```bash
    wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
@@ -114,10 +132,14 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    ```
 
 1. Install avoidance module dependencies (pointcloud library and octomap).
-
-   ```bash
-   sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
-   ```
+   - Melodic
+     ```bash
+     sudo apt install libpcl1 ros-melodic-octomap-*
+     ```
+   - Kinetic
+     ```bash
+     sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
+     ```
 
 1. Clone this repository in your catkin workspace in order to build the avoidance node.
 
@@ -138,15 +160,15 @@ Note that in the following instructions, we assume your catkin workspace (in whi
    catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
    ```
 
-1. Source the catkin setup.bash from your catkin workspace.
-
-   ```bash
-   source ~/catkin_ws/devel/setup.bash
+1. Source the catkin setup.bash from your catkin workspace:
+   ```bash   
+   echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+   source ~/.bashrc
    ```
 
 ## Run the Avoidance Gazebo Simulation
 
-In the following section we guide you trough installing and running a Gazebo simulation of both local and global planner.
+In the following section we guide you through installing and running a Gazebo simulation of both local and global planner.
 
 ### Build and Run the Simulator
 
@@ -154,14 +176,20 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    ```bash
    cd ~
-   git clone https://github.com/PX4/Firmware.git
+   git clone https://github.com/PX4/Firmware.git --recursive
    cd ~/Firmware
-   git submodule update --init --recursive
    ```
 
-1. Install PX4 dependencies. A complete list is available on the [PX4 Dev Guide](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies).
+1. Install [PX4 dependencies](http://dev.px4.io/en/setup/dev_env_linux_ubuntu.html#common-dependencies). 
+   ```bash
+   # Install PX4 "common" dependencies.
+   ./Tools/setup/ubuntu.sh --no-sim-tools --no-nuttx
+   
+   # Gstreamer plugins (for Gazebo camera)
+   sudo apt install gstreamer1.0-plugins-bad gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-plugins-ugly libgstreamer-plugins-base1.0-dev
 
-1. We will now build the Firmware once in order to generate SDF model files for Gazebo. This step will actually run a simulation that you can directly quit.
+1. Build the Firmware once in order to generate SDF model files for Gazebo.
+   This step will actually run a simulation (that you can immediately close).
 
    ```bash
    # This is necessary to prevent some Qt-related errors (feel free to try to omit it)
@@ -169,82 +197,94 @@ In the following section we guide you trough installing and running a Gazebo sim
 
    # Build and run simulation
    make px4_sitl_default gazebo
+   
+   # Quit the simulation (Ctrl+C)
 
-   # Setup some more Gazebo-related environment variables (You may need to modify this line based on the location of the Firmware folder on your machine)
+   # Setup some more Gazebo-related environment variables (modify this line based on the location of the Firmware folder on your machine)
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
-1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4.
-
+1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4:
    ```bash
    export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
    ```
 1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
-```bash
-echo export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds >> ~/.bashrc
-```
+   ```bash
+   echo "export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds" >> ~/.bashrc
+   ```
 
-Steps 3, 4 and 5 together with sourcing your catkin setup.bash (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
+The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
 
 ### Local Planner (default, heavily flight tested)
 
 This section shows how to start the *local_planner* and use it for avoidance in mission or offboard mode.
 
-The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm. To run the algorithm it is possible to
+The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
 
-* simulate a forward looking stereo camera running OpenCV's block matching algorithm (SGBM by default)
+> **Note:** You *may* need to install some additional dependencies to run the following code (if not installed):
+> * Melodic:
+>   ```sh
+>   sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
+>   ```
+> * Kinetic:
+>   ```sh
+>   sudo apt install ros-kinetic-stereo-image-proc ros-kinetic-image-view
+>   ```
 
-   ```bash
-   # if stereo-image-proc not yet installed
-   sudo apt install ros-kinetic-stereo-image-proc
+Any of the following three launch file scripts can be used to run local planner:
+> **Note:** The scripts run the same planner but simulate different sensor/camera setups. They all enable *Obstacle Avoidance* and *Collision Prevention*.
+* `local_planner_stereo`: simulates a vehicle with a stereo camera that uses OpenCV's block matching algorithm (SGBM by default) to generate depth information
+  ```bash
+  roslaunch local_planner local_planner_stereo.launch
+  ```
+    
+  > **Note:** The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
+  > To visualize the message, first open a *new terminal* and setup the required environment variables:
+  > ```bash
+  > source devel/setup.bash
+  > ```
+  > Then do either of:
+  > - run:
+  >   ```bash
+  >   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
+  >   ```
+  > - publish the `DisparityImage` as a simple `sensor_msgs/Image`:
+  >   ```bash
+  >   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
+  >   ```
+  > The disparity map can then be visualized by *rviz* or *rqt* under the topic */stereo/disparity_image*.
 
-   roslaunch local_planner local_planner_stereo.launch
-   ```
+* `local_planner_depth_camera`: simulates vehicle with one forward-facing kinect sensor
+  ```bash
+  roslaunch local_planner local_planner_depth-camera.launch
+  ```
 
-   The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. To visualize the    message, either run:
+* `local_planner_sitl_3cam`: simulates vehicle with 3 kinect sensors (left, right, front)
+  ```bash
+  roslaunch local_planner local_planner_sitl_3cam.launch
+  ```
 
-   ```bash
-   # if image_view is not yet installed
-   sudo apt install ros-kinetic-image-view
-
-   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
-   ```
-
-   or publish the DisparityImage as a simple sensor_msgs/Image
-
-   ```bash
-   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image'
-   ```
-
-   Now the disparity map can be visualized by rviz or rqt under the topic */stereo/disparity_image*.
-
-* simulate a forward looking kinect depth sensor:
-
-   ```bash
-   roslaunch local_planner local_planner_depth-camera.launch
-   ```
-
-* simulate three kinect depth sensors:
-
-   ```bash
-   roslaunch local_planner local_planner_sitl_3cam.launch
-   ```
-
-You will see the Iris drone unarmed in the Gazebo world. To start flying, there are two options: OFFBOARD or MISSION mode. For OFFBOARD, run:
+You will see the Iris drone unarmed in the Gazebo world.
+To start flying, there are two options: OFFBOARD or MISSION mode.
+For OFFBOARD, run:
 
 ```bash
-# In another terminal
+# In another terminal 
 rosrun mavros mavsys mode -c OFFBOARD
 rosrun mavros mavsafety arm
 ```
 
-The drone will first change its altitude to reach the goal height. It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
+The drone will first change its altitude to reach the goal height.
+It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
 ![Screenshot rqt_reconfigure goal height](docs/lp_goal_height.png)
-Then the drone will start moving towards the goal. The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space. If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
+Then the drone will start moving towards the goal.
+The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space.
+If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
 ![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
 
-For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true. Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true.
+Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
 
 
 ### Global Planner (advanced, not flight tested)
@@ -275,7 +315,9 @@ From the command line, you can also make Gazebo follow the drone, if you want.
 gz camera --camera-name=gzclient_camera --follow=iris
 ```
 
-One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz. The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected. It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
+One can plan a new path by setting a new goal with the *2D Nav Goal* button in rviz.
+The planned path should show up in rviz and the drone should follow the path, updating it when obstacles are detected.
+It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
 
 ### Safe Landing Planner
