@@ -37,6 +37,7 @@ enum class NavigationState {
   auto_rtl,
   auto_rtgs,
   offboard,
+  auto_loiter,
   none,
 };
 

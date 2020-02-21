@@ -221,6 +221,8 @@ void LocalPlannerNodelet::stateCallback(const mavros_msgs::State& msg) {
     nav_state_ = NavigationState::auto_rtl;
   } else if (msg.mode == "AUTO.RTGS") {
     nav_state_ = NavigationState::auto_rtgs;
+  } else if (msg.mode == "AUTO.LOITER") {
+    nav_state_ = NavigationState::auto_loiter;
   } else if (msg.mode == "OFFBOARD") {
     nav_state_ = NavigationState::offboard;
   } else {
