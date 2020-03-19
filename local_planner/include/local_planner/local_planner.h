@@ -1,7 +1,7 @@
 #ifndef LOCAL_PLANNER_LOCAL_PLANNER_H
 #define LOCAL_PLANNER_LOCAL_PLANNER_H
 
-#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/image_encodings.hpp>
 #include "avoidance/histogram.h"
 #include "avoidance_output.h"
 #include "candidate_direction.h"
@@ -16,8 +16,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <sensor_msgs/LaserScan.h>
-#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/msg/LaserScan.h>
+#include <sensor_msgs/msg/PointCloud2.h>
 
 #include <nav_msgs/GridCells.h>
 #include <nav_msgs/Path.h>
