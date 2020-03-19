@@ -1,75 +1,47 @@
 <?xml version="1.0"?>
-<package>
+<?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
+<package format="3">
   <name>avoidance</name>
   <version>0.2.0</version>
-  <description>avoidance is a ros package for computer vision based navigtation</description>
+  <description>Avoidance is a ROS2 package for computer vision based navigation.</description>
 
-  <!-- One maintainer tag required, multiple allowed, one person per tag -->
-  <!-- Example:  -->
-  <!-- <maintainer email="jane.doe@example.com">Jane Doe</maintainer> -->
-  <maintainer email="pixhawk@todo.todo">pixhawk</maintainer>
+  <maintainer email="martina@auterion.com">Martina Rivizzigno</maintainer>
+  <author email="jaeyoung@auterion.com">Jaeyoung Lim</author>
+  <author email="jonas@auterion.com">Jonas Vautherin</author>
+  <author email="julian@auterion.com">Julian Kent</author>
+  <author email="martina@auterion.com">Martina Rivizzigno</author>
+  <author email="nico@auterion.com">Nico van Duijn</author>
+  <author email="tanja@auterion.com">Tanja Baumann</author>
+  <author email="nuno.marques@dronesolutions.io">Nuno Marques</author>
 
+  <license>BSD 3-Clause</license>
 
-  <!-- One license tag required, multiple allowed, one license per tag -->
-  <!-- Commonly used license strings: -->
-  <!--   BSD, MIT, Boost Software License, GPLv2, GPLv3, LGPLv2.1, LGPLv3 -->
-  <license>BSD</license>
+  <buildtool_depend>ament_cmake</buildtool_depend>
+  <buildtool_depend>eigen3_cmake_module</buildtool_depend>
 
+  <build_depend>boost</build_depend>
+  <build_depend>eigen</build_depend>
+  <build_depend>pcl</build_depend>
 
-  <!-- Url tags are optional, but mutiple are allowed, one per tag -->
-  <!-- Optional attribute type can be: website, bugtracker, or repository -->
-  <!-- Example: -->
-  <!-- <url type="website">http://wiki.ros.org/avoidance</url> -->
+  <depend>builtin_interfaces</depend>
+  <depend>rclcpp</depend>
 
+  <depend>geometry_msgs</depend>
+  <depend>perception_pcl</depend>
+  <depend>px4_msgs</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf2</depend>
 
-  <!-- Author tags are optional, mutiple are allowed, one per tag -->
-  <!-- Authors do not have to be maintianers, but could be -->
-  <!-- Example: -->
-  <!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+  <exec_depend>rosidl_default_runtime</exec_depend>
 
+  <buildtool_export_depend>eigen3_cmake_module</buildtool_export_depend>
 
-  <!-- The *_depend tags are used to specify dependencies -->
-  <!-- Dependencies can be catkin packages or system dependencies -->
-  <!-- Examples: -->
-  <!-- Use build_depend for packages you need at compile time: -->
-  <!--   <build_depend>message_generation</build_depend> -->
-  <!-- Use buildtool_depend for build tool packages: -->
-  <!--   <buildtool_depend>catkin</buildtool_depend> -->
-  <!-- Use run_depend for packages you need at runtime: -->
-  <!--   <run_depend>message_runtime</run_depend> -->
-  <!-- Use test_depend for packages you need only for testing: -->
-  <!--   <test_depend>gtest</test_depend> -->
-  <buildtool_depend>catkin</buildtool_depend>
+  <build_export_depend>boost</build_export_depend>
+  <build_export_depend>eigen</build_export_depend>
+  <build_export_depend>pcl</build_export_depend>
 
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>rospy</build_depend>
-  <build_depend>std_msgs</build_depend>
-  <build_depend>geometry_msgs</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>mavros</build_depend>
-  <build_depend>mavros_extras</build_depend>
-  <build_depend>mavros_msgs</build_depend>
-
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>rospy</run_depend>
-  <run_depend>std_msgs</run_depend>
-  <run_depend>geometry_msgs</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>octomap</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>mavros</run_depend>
-  <run_depend>mavros_extras</run_depend>
-  <run_depend>mavros_msgs</run_depend>
-
-  <!-- The export tag contains other, unspecified, tags -->
   <export>
-    <!-- Other tools can request additional information be placed here -->
+    <build_type>ament_cmake</build_type>
   </export>
 </package>
