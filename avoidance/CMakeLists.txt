@@ -58,7 +58,7 @@ set(AVOIDANCE_CPP_FILES
   "src/transform_buffer.cpp"
 )
 if(NOT DISABLE_SIMULATION)
-  #set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}" "src/rviz_world_loader.cpp")
+  set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}" "src/rviz_world_loader.cpp")
 endif()
 
 # Add avoidance lib

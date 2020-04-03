@@ -1,35 +1,41 @@
 #include "avoidance/rviz_world_loader.h"
 
-#include <ros/console.h>
+using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 namespace avoidance {
 
-WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh, const std::string& nodelet_ns)
-    : nh_(nh), nodelet_ns_(nodelet_ns) {
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
-                                                               &WorldVisualizer::positionCallback, this);
+WorldVisualizer::WorldVisualizer()
+    : Node("world_visualizer"),
+      world_path_(this->declare_parameter("world_path", ""))
+{
+  pose_sub_ = this->create_subscription<px4_msgs::msg::VehicleOdometry>(
+      "VehicleOdometry_PubSubTopic", 1, std::bind(&WorldVisualizer::positionCallback, this, _1));
 
-  world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
-  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
-  loop_timer_ = nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
+  world_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/world", 1);
+  drone_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/drone", 1);
+  loop_timer_ = this->create_wall_timer(2s, std::bind(&WorldVisualizer::loopCallback, this));
 
-  std::string world_string;
-  if (!nodelet_ns_.empty()) {
-    world_string = nodelet_ns_ + "/world_name";
-  } else {
-    world_string = "/world_name";
-  }
-  nh_.param<std::string>(world_string, world_path_, "");
+  this->get_parameter("world_path", world_path_);
 }
 
-void WorldVisualizer::loopCallback(const ros::TimerEvent& event) {
+void WorldVisualizer::loopCallback() {
   // visualize world in RVIZ
   if (!world_path_.empty()) {
-    if (visualizeRVIZWorld(world_path_)) ROS_WARN("[WorldVisualizer] Failed to visualize Rviz world");
+    if (visualizeRVIZWorld(world_path_)) RCLCPP_WARN(this->get_logger(), "[WorldVisualizer] Failed to visualize Rviz world");
   }
 }
 
-int WorldVisualizer::resolveUri(std::string& uri) {
+void WorldVisualizer::positionCallback(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) const {
+  // visualize drone in RVIZ
+  if (!world_path_.empty()) {
+    if (visualizeDrone(*msg)) {
+      RCLCPP_WARN(this->get_logger(), "Failed to visualize drone in RViz");
+    }
+  }
+}
+
+int WorldVisualizer::resolveUri(std::string& uri) const {
   // Iterate through all locations in GAZEBO_MODEL_PATH
   char* gazebo_model_path = getenv("GAZEBO_MODEL_PATH");
   char* home = getenv("HOME");
@@ -55,7 +61,7 @@ int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
   std::ifstream fin(world_path);
   YAML::Node doc = YAML::Load(fin);
   size_t object_counter = 0;
-  visualization_msgs::MarkerArray marker_array;
+  visualization_msgs::msg::MarkerArray marker_array;
 
   for (YAML::const_iterator it = doc.begin(); it != doc.end(); ++it) {
     const YAML::Node& node = *it;
@@ -64,40 +70,40 @@ int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
     object_counter++;
 
     // convert object to marker
-    visualization_msgs::Marker m;
+    visualization_msgs::msg::Marker m;
     m.header.frame_id = item.frame_id;
-    m.header.stamp = ros::Time::now();
+    m.header.stamp = this->now();
 
     if (item.type == "mesh") {
       if (item.mesh_resource.find("model://") != std::string::npos) {
         if (resolveUri(item.mesh_resource)) {
-          ROS_ERROR("RVIZ world loader could not find model");
+          RCLCPP_ERROR(this->get_logger(), "RVIZ world loader could not find model");
           return 1;
         }
       }
-      m.type = visualization_msgs::Marker::MESH_RESOURCE;
+      m.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
       m.mesh_resource = item.mesh_resource;
       m.mesh_use_embedded_materials = true;
     } else if (item.type == "cube") {
-      m.type = visualization_msgs::Marker::CUBE;
+      m.type = visualization_msgs::msg::Marker::CUBE;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
     } else if (item.type == "sphere") {
-      m.type = visualization_msgs::Marker::SPHERE;
+      m.type = visualization_msgs::msg::Marker::SPHERE;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
     } else if (item.type == "cylinder") {
-      m.type = visualization_msgs::Marker::CYLINDER;
+      m.type = visualization_msgs::msg::Marker::CYLINDER;
       m.color.a = 0.9;
       m.color.r = 0.5;
       m.color.g = 0.5;
       m.color.b = 0.5;
     } else {
-      ROS_ERROR("RVIZ world loader invalid object type in yaml file");
+      RCLCPP_ERROR(this->get_logger(), "RVIZ world loader invalid object type in yaml file");
       return 1;
     }
 
@@ -112,29 +118,29 @@ int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
     m.pose.orientation.z = item.orientation.z();
     m.pose.orientation.w = item.orientation.w();
     m.id = object_counter;
-    m.lifetime = ros::Duration();
-    m.action = visualization_msgs::Marker::ADD;
+    m.lifetime = rclcpp::Duration(0);
+    m.action = visualization_msgs::msg::Marker::ADD;
     marker_array.markers.push_back(m);
   }
 
   if (object_counter != marker_array.markers.size()) {
-    ROS_ERROR("Could not display all world objects");
+    RCLCPP_ERROR(this->get_logger(), "Could not display all world objects");
   }
 
-  world_pub_.publish(marker_array);
-  ROS_INFO_ONCE("Successfully loaded rviz world");
+  world_pub_->publish(marker_array);
+  RCLCPP_INFO_ONCE(this->get_logger(), "Successfully loaded rviz world");
   return 0;
 }
 
-int WorldVisualizer::visualizeDrone(const geometry_msgs::PoseStamped& pose) {
-  visualization_msgs::Marker drone;
+int WorldVisualizer::visualizeDrone(const px4_msgs::msg::VehicleOdometry& pose) const {
+  auto drone = visualization_msgs::msg::Marker();
   drone.header.frame_id = "local_origin";
-  drone.header.stamp = ros::Time::now();
-  drone.type = visualization_msgs::Marker::MESH_RESOURCE;
+  drone.header.stamp = rclcpp::Clock().now();
+  drone.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
   drone.mesh_resource = "model://matrice_100/meshes/Matrice_100.dae";
   if (drone.mesh_resource.find("model://") != std::string::npos) {
     if (resolveUri(drone.mesh_resource)) {
-      ROS_ERROR("RVIZ world loader could not find drone model");
+      RCLCPP_ERROR(this->get_logger(), "RVIZ world loader could not find drone model");
       return 1;
     }
   }
@@ -142,29 +148,21 @@ int WorldVisualizer::visualizeDrone(const geometry_msgs::PoseStamped& pose) {
   drone.scale.x = 1.5;
   drone.scale.y = 1.5;
   drone.scale.z = 1.5;
-  drone.pose.position.x = pose.pose.position.x;
-  drone.pose.position.y = pose.pose.position.y;
-  drone.pose.position.z = pose.pose.position.z;
-  drone.pose.orientation.x = pose.pose.orientation.x;
-  drone.pose.orientation.y = pose.pose.orientation.y;
-  drone.pose.orientation.z = pose.pose.orientation.z;
-  drone.pose.orientation.w = pose.pose.orientation.w;
+  //TODO: apply frame transforms?
+  drone.pose.position.x = pose.x;
+  drone.pose.position.y = pose.y;
+  drone.pose.position.z = pose.z;
+  drone.pose.orientation.x = pose.q[3];
+  drone.pose.orientation.y = pose.q[0];
+  drone.pose.orientation.z = pose.q[1];
+  drone.pose.orientation.w = pose.q[2];
   drone.id = 0;
-  drone.lifetime = ros::Duration();
-  drone.action = visualization_msgs::Marker::ADD;
+  drone.lifetime = rclcpp::Duration(0);
+  drone.action = visualization_msgs::msg::Marker::ADD;
 
-  drone_pub_.publish(drone);
+  drone_pub_->publish(drone);
 
   return 0;
-}
-
-void WorldVisualizer::positionCallback(const geometry_msgs::PoseStamped& msg) {
-  // visualize drone in RVIZ
-  if (!world_path_.empty()) {
-    if (visualizeDrone(msg)) {
-      ROS_WARN("Failed to visualize drone in RViz");
-    }
-  }
 }
 
 // extraction operators
