@@ -54,11 +54,11 @@ include_directories(
 ## Declare a C++ library
 set(AVOIDANCE_CPP_FILES
   "src/common.cpp"
-  "src/histogram.cpp"
-  "src/transform_buffer.cpp"
+  #"src/histogram.cpp"
+  #"src/transform_buffer.cpp"
 )
 if(NOT DISABLE_SIMULATION)
-  set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}" "src/rviz_world_loader.cpp")
+  #set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}" "src/rviz_world_loader.cpp")
 endif()
 
 # Add avoidance lib

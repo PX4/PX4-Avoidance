@@ -278,44 +278,50 @@ double getAngularVelocity(float desired_yaw, float curr_yaw) {
   return 0.5 * static_cast<double>(vel);
 }
 
-void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose,
-                           geometry_msgs::Twist vel) {
-  obst_avoid.header.stamp = ros::Time::now();
+void transformToTrajectory(px4_msgs::msg::VehicleTrajectoryWaypoint& obst_avoid, geometry_msgs::msg::PoseStamped pose,
+                           geometry_msgs::msg::Twist vel) {
+
+  obst_avoid.timestamp =  std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+
+  obst_avoid.waypoints[0].position[0] = pose.pose.position.x;
+  obst_avoid.waypoints[0].position[1] = pose.pose.position.y;
+  obst_avoid.waypoints[0].position[2] = pose.pose.position.z;
+  obst_avoid.waypoints[0].velocity[0] = vel.linear.x;
+  obst_avoid.waypoints[0].velocity[1] = vel.linear.y;
+  obst_avoid.waypoints[0].velocity[2] = vel.linear.z;
+  obst_avoid.waypoints[0].acceleration[0] = NAN;
+  obst_avoid.waypoints[0].acceleration[1] = NAN;
+  obst_avoid.waypoints[0].acceleration[2] = NAN;
+  obst_avoid.waypoints[0].yaw = tf2::getYaw(pose.pose.orientation);
+  obst_avoid.waypoints[0].yaw_speed = -vel.angular.z;
+
   obst_avoid.type = 0;  // MAV_TRAJECTORY_REPRESENTATION::WAYPOINTS
-  obst_avoid.point_1.position.x = pose.pose.position.x;
-  obst_avoid.point_1.position.y = pose.pose.position.y;
-  obst_avoid.point_1.position.z = pose.pose.position.z;
-  obst_avoid.point_1.velocity.x = vel.linear.x;
-  obst_avoid.point_1.velocity.y = vel.linear.y;
-  obst_avoid.point_1.velocity.z = vel.linear.z;
-  obst_avoid.point_1.acceleration_or_force.x = NAN;
-  obst_avoid.point_1.acceleration_or_force.y = NAN;
-  obst_avoid.point_1.acceleration_or_force.z = NAN;
-  obst_avoid.point_1.yaw = tf::getYaw(pose.pose.orientation);
-  obst_avoid.point_1.yaw_rate = -vel.angular.z;
 
-  fillUnusedTrajectoryPoint(obst_avoid.point_2);
-  fillUnusedTrajectoryPoint(obst_avoid.point_3);
-  fillUnusedTrajectoryPoint(obst_avoid.point_4);
-  fillUnusedTrajectoryPoint(obst_avoid.point_5);
+  obst_avoid.waypoints[0].point_valid = true;
 
-  obst_avoid.time_horizon = {NAN, NAN, NAN, NAN, NAN};
+  fillUnusedTrajectoryPoint(obst_avoid.waypoints[1]);
+  fillUnusedTrajectoryPoint(obst_avoid.waypoints[2]);
+  fillUnusedTrajectoryPoint(obst_avoid.waypoints[3]);
+  fillUnusedTrajectoryPoint(obst_avoid.waypoints[4]);
 
-  obst_avoid.point_valid = {true, false, false, false, false};
+  for (size_t i = 0; i < sizeof(obst_avoid.waypoints); i++) {
+    obst_avoid.waypoints[i].timestamp = obst_avoid.timestamp;
+    obst_avoid.waypoints[i].point_valid = false;
+  }
 }
 
-void fillUnusedTrajectoryPoint(mavros_msgs::PositionTarget& point) {
-  point.position.x = NAN;
-  point.position.y = NAN;
-  point.position.z = NAN;
-  point.velocity.x = NAN;
-  point.velocity.y = NAN;
-  point.velocity.z = NAN;
-  point.acceleration_or_force.x = NAN;
-  point.acceleration_or_force.y = NAN;
-  point.acceleration_or_force.z = NAN;
+void fillUnusedTrajectoryPoint(px4_msgs::msg::TrajectoryWaypoint& point) {
+  point.position[0] = NAN;
+  point.position[1] = NAN;
+  point.position[2] = NAN;
+  point.velocity[0] = NAN;
+  point.velocity[1] = NAN;
+  point.velocity[2] = NAN;
+  point.acceleration[0] = NAN;
+  point.acceleration[1] = NAN;
+  point.acceleration[2] = NAN;
   point.yaw = NAN;
-  point.yaw_rate = NAN;
+  point.yaw_speed = NAN;
 }
 
 // This function is a refactor of the original in the pcl library
