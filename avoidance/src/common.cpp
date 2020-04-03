@@ -71,7 +71,7 @@ bool pointInsideYawFOV(const FOV& fov, const PolarPoint& p_pol) {
 bool isInWhichFOV(const std::vector<FOV>& fov_vec, const PolarPoint& p_pol, int& idx) {
   bool retval = false;
   idx = -1;
-  for (int i = 0; i < fov_vec.size(); ++i) {
+  for (size_t i = 0; i < fov_vec.size(); ++i) {
     if (pointInsideYawFOV(fov_vec[i], p_pol)) {
       if (retval) {  // if it's been found before, return false!
         idx = -1;

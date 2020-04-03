@@ -2,11 +2,15 @@
 
 #include <float.h>
 #include <math.h>
-#include <tf/transform_listener.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 #include <deque>
 #include <mutex>
 #include <string>
 #include <unordered_map>
+
+#include <avoidance/common.h>
 
 namespace avoidance {
 
@@ -28,7 +32,7 @@ class TransformBuffer {
   *             if it is the same or older than the last one that was buffered)
   **/
   bool insertTransform(const std::string& source_frame, const std::string& target_frame,
-                       tf::StampedTransform transform);
+                       geometry_msgs::msg::TransformStamped transform);
 
   /**
   * @brief      retrieves transform from buffer
@@ -38,14 +42,16 @@ class TransformBuffer {
   * @param[out] transform
   * @returns    bool, true if the transform could be retrieved from the buffer
   **/
-  bool getTransform(const std::string& source_frame, const std::string& target_frame, const ros::Time& time,
-                    tf::StampedTransform& transform) const;
+  bool getTransform(const std::string& source_frame, const std::string& target_frame, const rclcpp::Time& time,
+                    geometry_msgs::msg::TransformStamped& transform) const;
 
  protected:
-  std::unordered_map<std::string, std::deque<tf::StampedTransform>> buffer_;
+  std::unordered_map<std::string, std::deque<geometry_msgs::msg::TransformStamped>> buffer_;
   mutable std::mutex mutex_;
-  ros::Duration buffer_size_;
-  ros::Time startup_time_;
+  rclcpp::Duration buffer_size_;
+  rclcpp::Time startup_time_;
+
+  rclcpp::Logger tf_logger_ = rclcpp::get_logger("tf_buffer");
 
   /**
   * @brief      gets a key word from two frame names to identify a transform
@@ -64,8 +70,8 @@ class TransformBuffer {
   *                                 otherwise transform remains unchanged
   * @returns    bool, true if the transform was correctly interpolated
   **/
-  bool interpolateTransform(const tf::StampedTransform& tf_earlier, const tf::StampedTransform& tf_later,
-                            tf::StampedTransform& transform) const;
+  bool interpolateTransform(const geometry_msgs::msg::TransformStamped& tf_earlier, const geometry_msgs::msg::TransformStamped& tf_later,
+                            geometry_msgs::msg::TransformStamped& transform) const;
 
   /**
   * @brief      prints a message

@@ -467,6 +467,24 @@ inline geometry_msgs::msg::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3,
   return gmps;
 }
 
+inline geometry_msgs::msg::Vector3 toVector3Msg(const tf2::Vector3& in) {
+  geometry_msgs::msg::Vector3 out;
+  out.x = in.getX();
+  out.y = in.getY();
+  out.z = in.getZ();
+  return out;
+}
+
+inline geometry_msgs::msg::Vector3Stamped toVector3StampedMsg(const tf2::Vector3& in) {
+  geometry_msgs::msg::Vector3Stamped out;
+  // TODO: check if it is required to use the Node clock instead
+  out.header.stamp = rclcpp::Clock().now();
+  out.vector.x = in.getX();
+  out.vector.y = in.getY();
+  out.vector.z = in.getZ();
+  return out;
+}
+
 }  // namespace avoidance
 
 #endif  // COMMON_H
