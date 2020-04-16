@@ -191,10 +191,10 @@ void LocalPlanner::setDefaultPx4Parameters() {
   px4_.param_mpc_auto_mode = 1;
   px4_.param_mpc_jerk_min = 8.f;
   px4_.param_mpc_jerk_max = 20.f;
-  px4_.param_acc_up_max = 10.f;
+  px4_.param_mpc_acc_up_max = 10.f;
   px4_.param_mpc_z_vel_max_up = 3.f;
   px4_.param_mpc_acc_down_max = 10.f;
-  px4_.param_mpc_vel_max_dn = 1.f;
+  px4_.param_mpc_z_vel_max_dn = 1.f;
   px4_.param_mpc_acc_hor = 5.f;
   px4_.param_mpc_xy_cruise = 3.f;
   px4_.param_mpc_tko_speed = 1.f;

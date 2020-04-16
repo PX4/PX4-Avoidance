@@ -67,6 +67,7 @@ class AvoidanceNode {
   MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
 
   ModelParameters px4_;  // PX4 Firmware paramters
+  std::unique_ptr<std::mutex> param_cb_mutex_;
 
   std::thread worker_;
 
