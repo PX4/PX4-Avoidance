@@ -32,7 +32,7 @@ before_install:
   - sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
   - sudo apt-get update -qq
   - sudo apt-get install -y build-essential git valgrind ccache
-  - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools
+  - sudo apt-get install -y python-rosinstall python-rosinstall-generator python-wstool python-catkin-tools python-rosdep
   # Install ROS Kinetic
   - sudo apt-get install -y ros-$ROS_DISTRO-ros-base
   # Install yaml-cpp ROS package
