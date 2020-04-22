@@ -1,6 +1,7 @@
 #ifndef STAR_PLANNER_H
 #define STAR_PLANNER_H
 
+#include <rclcpp/rclcpp.hpp>
 #include "avoidance/histogram.h"
 #include "cost_parameters.h"
 
@@ -9,10 +10,9 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-#include <nav_msgs/GridCells.h>
+#include <nav_msgs/msg/grid_cells.hpp>
 
-#include <dynamic_reconfigure/server.h>
-#include <local_planner/LocalPlannerNodeConfig.h>
+#include "local_planner/local_planner.h"
 
 #include <vector>
 
@@ -89,9 +89,14 @@ class StarPlanner {
   void buildLookAheadTree();
 
   /**
-  * @brief     setter method for server paramters
+  * @brief     setter method for node parameters
   **/
-  void dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level);
+  //void SetStarParams(const std::shared_ptr<LocalPlanner::LocalPlanner> node, uint32_t level);
+
+  /**
+   * @brief Local planner logger
+   */
+  rclcpp::Logger planner_logger_ = rclcpp::get_logger("local_planner");
 };
 }
 #endif  // STAR_PLANNER_H

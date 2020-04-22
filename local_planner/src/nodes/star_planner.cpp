@@ -4,23 +4,23 @@
 #include "local_planner/planner_functions.h"
 #include "local_planner/tree_node.h"
 
-#include <ros/console.h>
-
 namespace avoidance {
 
 StarPlanner::StarPlanner() {}
 
-// set parameters changed by dynamic rconfigure
-void StarPlanner::dynamicReconfigureSetStarParams(const avoidance::LocalPlannerNodeConfig& config, uint32_t level) {
-  children_per_node_ = config.children_per_node_;
-  n_expanded_nodes_ = config.n_expanded_nodes_;
-  tree_node_distance_ = static_cast<float>(config.tree_node_distance_);
-  max_path_length_ = static_cast<float>(config.max_sensor_range_);
-  smoothing_margin_degrees_ = static_cast<float>(config.smoothing_margin_degrees_);
-  tree_heuristic_weight_ = static_cast<float>(config.tree_heuristic_weight_);
-  max_sensor_range_ = static_cast<float>(config.max_sensor_range_);
-  min_sensor_range_ = static_cast<float>(config.min_sensor_range_);
+// set parameters changed on the node
+/*
+void StarPlanner::SetStarParams(const std::shared_ptr<LocalPlanner::LocalPlanner> node, uint32_t level) {
+  children_per_node_ = node->get_parameter("children_per_node", node->n_processes_);
+  n_expanded_nodes_ = node->get_parameter("n_expanded_nodes", node->n_expanded_nodes_));
+  tree_node_distance_ = static_cast<float>(node->get_parameter("tree_node_distance", node->tree_node_distance_));
+  max_path_length_ = static_cast<float>(node->get_parameter("max_path_length", node->max_path_length_));
+  smoothing_margin_degrees_ = static_cast<float>(node->get_parameter("smoothing_margin_degrees", node->smoothing_margin_degrees_));
+  tree_heuristic_weight_ = static_cast<float>(node->get_parameter("tree_heuristic_weight", node->tree_heuristic_weight_));
+  max_sensor_range_ = static_cast<float>(node->get_parameter("max_sensor_range", node->max_sensor_range_));
+  min_sensor_range_ = static_cast<float>(node->get_parameter("min_sensor_range", node->min_sensor_range_));
 }
+*/
 
 void StarPlanner::setParams(costParameters cost_params) { cost_params_ = cost_params; }
 
@@ -146,13 +146,13 @@ void StarPlanner::buildLookAheadTree() {
   }
   path_node_positions_.push_back(tree_[0].getPosition());
 
-  ROS_INFO("\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
+  RCLCPP_INFO(planner_logger_, "\033[0;35m[SP]Tree (%lu nodes, %lu path nodes, %lu expanded) calculated in %2.2fms.\033[0m", tree_.size(),
            path_node_positions_.size(), closed_set_.size(),
            static_cast<double>((std::clock() - start_time) / static_cast<double>(CLOCKS_PER_SEC / 1000)));
 
 #ifndef DISABLE_SIMULATION  // For large trees, this could be very slow!
   for (int j = 0; j < path_node_positions_.size(); j++) {
-    ROS_DEBUG("\033[0;35m[SP] node %i : [ %f, %f, %f]\033[0m", j, path_node_positions_[j].x(),
+    RCLCPP_DEBUG(planner_logger_, "\033[0;35m[SP] node %i : [ %f, %f, %f]\033[0m", j, path_node_positions_[j].x(),
               path_node_positions_[j].y(), path_node_positions_[j].z());
   }
 #endif
