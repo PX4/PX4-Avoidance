@@ -7,7 +7,7 @@
 
 #include <Eigen/Dense>
 
-#include <ros/time.h>
+#include <rclcpp/rclcpp.hpp>
 
 #include <string>
 #include <vector>
@@ -48,8 +48,8 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 
   float curr_yaw_rad_ = NAN;
   float curr_pitch_deg_ = NAN;
-  ros::Time last_time_{99999.};
-  ros::Time current_time_{99999.};
+  rclcpp::Time last_time_{std::numeric_limits<long>::max()};
+  rclcpp::Time current_time_{std::numeric_limits<long>::max()};
 
   float smoothing_speed_xy_{10.f};
   float smoothing_speed_z_{3.0f};
@@ -70,7 +70,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 
   NavigationState nav_state_ = NavigationState::none;
 
-  ros::Time velocity_time_;
+  rclcpp::Time velocity_time_;
 
   // state
   bool trigger_reset_ = false;
@@ -146,7 +146,7 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   * @param[in] index of the camera
   * @param[in] FOV structures defining the FOV of the specific camera
   **/
-  void setFOV(int i, const FOV& fov);
+  void setFOV(size_t i, const FOV& fov);
 
   /**
   * @brief update with FCU vehice states
@@ -179,9 +179,9 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
 
   /**
   * @brief     getter method for the system time
-  * @returns   current ROS time
+  * @returns   current steady clock time
   **/
-  virtual ros::Time getSystemTime();
+  virtual rclcpp::Time getSystemTime();
 
   /**
   * @brief     getter method to visualize offtrack state
@@ -191,6 +191,11 @@ class WaypointGenerator : public usm::StateMachine<PlannerState> {
   * current goal from current vehicle postion
   **/
   void getOfftrackPointsForVisualization(Eigen::Vector3f& closest_pt, Eigen::Vector3f& deg60_pt);
+
+  /**
+   * @brief Local planner logger
+   */
+  rclcpp::Logger waypoint_generator_logger_ = rclcpp::get_logger("local_planner");
 
   WaypointGenerator();
   virtual ~WaypointGenerator() = default;

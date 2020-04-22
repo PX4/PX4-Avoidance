@@ -17,6 +17,7 @@ find_package("${rmw_implementation}" REQUIRED)
 find_package(avoidance REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(px4_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
@@ -52,9 +53,9 @@ include_directories(
 ## Declare a C++ library
 set(LOCAL_PLANNER_CPP_FILES
   #"src/nodes/local_planner.cpp"
-  #"src/nodes/waypoint_generator.cpp"
+  "src/nodes/waypoint_generator.cpp"
   #"src/nodes/tree_node.cpp"
-  #"src/nodes/star_planner.cpp"
+  "src/nodes/star_planner.cpp"
   "src/nodes/planner_functions.cpp"
   #"src/nodes/local_planner_visualization.cpp"
   #"src/utils/trajectory_simulator.cpp"
