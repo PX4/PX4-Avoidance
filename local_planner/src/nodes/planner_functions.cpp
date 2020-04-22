@@ -296,7 +296,7 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
   matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) = matrix;
 
   if (matrix.cols() % 2 > 0) {
-    RCLCPP_ERROR(planner_logger_, "invalid resolution: 180 mod (2* resolution) must be zero");
+    RCLCPP_ERROR(planner_functions_logger_, "invalid resolution: 180 mod (2* resolution) must be zero");
   }
   int middle_index = floor(matrix.cols() / 2);
 

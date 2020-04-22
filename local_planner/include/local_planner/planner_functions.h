@@ -161,6 +161,6 @@ bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const rclcpp:
 /**
  * @brief Local planner logger
  */
-rclcpp::Logger planner_logger_ = rclcpp::get_logger("local_planner");
+rclcpp::Logger planner_functions_logger_ = rclcpp::get_logger("local_planner");
 
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
