@@ -2,7 +2,7 @@
 <?xml-model href="http://download.ros.org/schema/package_format3.xsd" schematypens="http://www.w3.org/2001/XMLSchema"?>
 <package format="3">
   <name>avoidance</name>
-  <version>0.2.0</version>
+  <version>0.3.1</version>
   <description>Avoidance is a ROS2 package for computer vision based navigation.</description>
 
   <maintainer email="martina@auterion.com">Martina Rivizzigno</maintainer>
@@ -10,9 +10,9 @@
   <author email="jonas@auterion.com">Jonas Vautherin</author>
   <author email="julian@auterion.com">Julian Kent</author>
   <author email="martina@auterion.com">Martina Rivizzigno</author>
+  <author email="nuno.marques@dronesolutions.io">Nuno Marques</author>
   <author email="nico@auterion.com">Nico van Duijn</author>
   <author email="tanja@auterion.com">Tanja Baumann</author>
-  <author email="nuno.marques@dronesolutions.io">Nuno Marques</author>
 
   <license>BSD 3-Clause</license>
 
