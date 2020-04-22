@@ -54,11 +54,11 @@ include_directories(
 set(LOCAL_PLANNER_CPP_FILES
   #"src/nodes/local_planner.cpp"
   "src/nodes/waypoint_generator.cpp"
-  #"src/nodes/tree_node.cpp"
+  "src/nodes/tree_node.cpp"
   "src/nodes/star_planner.cpp"
   "src/nodes/planner_functions.cpp"
   #"src/nodes/local_planner_visualization.cpp"
-  #"src/utils/trajectory_simulator.cpp"
+  "src/utils/trajectory_simulator.cpp"
 )
 
 # Add local_planner lib
