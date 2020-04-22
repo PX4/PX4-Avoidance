@@ -28,6 +28,7 @@
 
   <depend>avoidance</depend>
   <depend>geometry_msgs</depend>
+  <depend>nav_msgs</depend>
   <depend>perception_pcl</depend>
   <depend>px4_msgs</depend>
   <depend>sensor_msgs</depend>
