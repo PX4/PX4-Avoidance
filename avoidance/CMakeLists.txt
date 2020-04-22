@@ -71,26 +71,26 @@ target_include_directories(avoidance PUBLIC
 )
 
 ## Declare a C++ executable
-add_executable(avoidance_node
-  src/avoidance_node.cpp
-)
+# add_executable(avoidance_node
+#   src/avoidance_node.cpp
+# )
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(
-  avoidance_node
-  avoidance
-  Eigen3::Eigen
-  ${YAML_CPP_LIBRARIES}
-)
+# target_link_libraries(
+#   avoidance_node
+#   avoidance
+#   Eigen3::Eigen
+#   ${YAML_CPP_LIBRARIES}
+# )
 
 # Add node dependencies
-ament_target_dependencies(avoidance_node avoidance px4_msgs rclcpp Eigen3::Eigen)
+# ament_target_dependencies(avoidance_node avoidance px4_msgs rclcpp Eigen3::Eigen)
 
 # Export information to downstream packages
-ament_export_dependencies(ament_cmake avoidance rclcpp rosidl_default_runtime eigen3_cmake_module Eigen3 px4_msgs geometry_msgs sensor_msgs std_msgs)
+ament_export_dependencies(ament_cmake rclcpp rosidl_default_runtime eigen3_cmake_module Eigen3 px4_msgs geometry_msgs sensor_msgs std_msgs)
 ament_export_interfaces(export_avoidance HAS_LIBRARY_TARGET)
-ament_export_include_directories(include ${px4_msgs_INCLUDE_DIRS})
-ament_export_libraries()
+ament_export_include_directories(include)
+ament_export_libraries(avoidance)
 
 #############
 ## Install ##
@@ -104,9 +104,6 @@ install(DIRECTORY include/${PROJECT_NAME}/
 )
 
 # Install artifacts
-install(DIRECTORY cmake
-        DESTINATION share/${PROJECT_NAME}
-)
 install(TARGETS avoidance
         EXPORT export_avoidance
         ARCHIVE DESTINATION lib
@@ -114,12 +111,12 @@ install(TARGETS avoidance
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
 )
-install(TARGETS avoidance_node
-        ARCHIVE DESTINATION lib/${PROJECT_NAME}
-        LIBRARY DESTINATION lib/${PROJECT_NAME}
-        RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
-)
+# install(TARGETS avoidance_node
+#         ARCHIVE DESTINATION lib/${PROJECT_NAME}
+#         LIBRARY DESTINATION lib/${PROJECT_NAME}
+#         RUNTIME DESTINATION bin
+#         INCLUDES DESTINATION include
+# )
 
 # Install launch files
 install(DIRECTORY
