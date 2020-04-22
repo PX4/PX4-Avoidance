@@ -156,11 +156,11 @@ void printHistogram(const Histogram& histogram);
 **/
 bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const rclcpp::Time& path_generation_time,
                          float velocity, const rclcpp::Time& current_time, Eigen::Vector3f& setpoint);
-}
 
 /**
- * @brief Local planner logger
- */
-rclcpp::Logger planner_functions_logger_ = rclcpp::get_logger("local_planner");
+* @brief Local planner logger
+*/
+static rclcpp::Logger planner_functions_logger_ = rclcpp::get_logger("local_planner");
+}
 
 #endif  // LOCAL_PLANNER_FUNCTIONS_H
