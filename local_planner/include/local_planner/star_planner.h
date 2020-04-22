@@ -96,7 +96,7 @@ class StarPlanner {
   /**
    * @brief Local planner logger
    */
-  rclcpp::Logger planner_logger_ = rclcpp::get_logger("local_planner");
+  rclcpp::Logger star_planner_logger_ = rclcpp::get_logger("local_planner");
 };
 }
 #endif  // STAR_PLANNER_H
