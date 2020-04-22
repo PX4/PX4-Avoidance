@@ -14,8 +14,9 @@ find_package(tf2 REQUIRED)
 get_default_rmw_implementation(rmw_implementation)
 find_package("${rmw_implementation}" REQUIRED)
 
+find_package(avoidance REQUIRED)
 find_package(geometry_msgs REQUIRED)
-#find_package(px4_msgs REQUIRED)
+find_package(px4_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(std_msgs REQUIRED)
 
@@ -42,6 +43,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 include_directories(
   include
+  ${avoidance_INCLUDE_DIRS}
   ${rclcpp_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
   ${YAML_CPP_INCLUDE_DIR}
@@ -49,13 +51,13 @@ include_directories(
 
 ## Declare a C++ library
 set(LOCAL_PLANNER_CPP_FILES
-  "src/nodes/local_planner.cpp"
-  "src/nodes/waypoint_generator.cpp"
-  "src/nodes/tree_node.cpp"
-  "src/nodes/star_planner.cpp"
+  #"src/nodes/local_planner.cpp"
+  #"src/nodes/waypoint_generator.cpp"
+  #"src/nodes/tree_node.cpp"
+  #"src/nodes/star_planner.cpp"
   "src/nodes/planner_functions.cpp"
-  "src/nodes/local_planner_visualization.cpp"
-  "src/utils/trajectory_simulator.cpp"
+  #"src/nodes/local_planner_visualization.cpp"
+  #"src/utils/trajectory_simulator.cpp"
 )
 
 # Add local_planner lib
@@ -77,13 +79,13 @@ add_executable(local_planner_node
 target_link_libraries(
   local_planner_node
   local_planner
-  #avoidance
+  avoidance
   ${YAML_CPP_LIBRARIES}
   ${Boost_LIBRARIES}
 )
 
 # Add node dependencies
-ament_target_dependencies(local_planner_node local_planner px4_msgs rclcpp) #avoidance)
+ament_target_dependencies(local_planner_node local_planner px4_msgs rclcpp avoidance)
 
 # Export information to downstream packages
 ament_export_dependencies(ament_cmake local_planner rclcpp rosidl_default_runtime eigen3_cmake_module Eigen3 px4_msgs geometry_msgs sensor_msgs std_msgs)

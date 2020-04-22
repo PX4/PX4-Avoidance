@@ -154,7 +154,13 @@ void printHistogram(const Histogram& histogram);
 * @param[out] setpoint on the tree toward which the drone should fly
 * @returns    boolean indicating whether the tree was valid
 **/
-bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
-                         float velocity, const ros::Time& current_time, Eigen::Vector3f& setpoint);
+bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const rclcpp::Time& path_generation_time,
+                         float velocity, const rclcpp::Time& current_time, Eigen::Vector3f& setpoint);
 }
+
+/**
+ * @brief Local planner logger
+ */
+rclcpp::Logger planner_logger_ = rclcpp::get_logger("local_planner");
+
 #endif  // LOCAL_PLANNER_FUNCTIONS_H

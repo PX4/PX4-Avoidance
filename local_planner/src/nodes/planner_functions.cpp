@@ -1,9 +1,5 @@
 #include "local_planner/planner_functions.h"
 
-#include "avoidance/common.h"
-
-#include <ros/console.h>
-
 #include <numeric>
 
 namespace avoidance {
@@ -300,7 +296,7 @@ void padPolarMatrix(const Eigen::MatrixXf& matrix, unsigned int n_lines_padding,
   matrix_padded.block(n_lines_padding, n_lines_padding, matrix.rows(), matrix.cols()) = matrix;
 
   if (matrix.cols() % 2 > 0) {
-    ROS_ERROR("invalid resolution: 180 mod (2* resolution) must be zero");
+    RCLCPP_ERROR(planner_logger_, "invalid resolution: 180 mod (2* resolution) must be zero");
   }
   int middle_index = floor(matrix.cols() / 2);
 
@@ -362,8 +358,8 @@ std::pair<float, float> costFunction(const PolarPoint& candidate_polar, float ob
   return std::pair<float, float>(distance_cost, velocity_cost + yaw_cost + yaw_to_line_cost + pitch_cost);
 }
 
-bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Time& path_generation_time,
-                         float velocity, const ros::Time& current_time, Eigen::Vector3f& setpoint) {
+bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const rclcpp::Time& path_generation_time,
+                         float velocity, const rclcpp::Time& current_time, Eigen::Vector3f& setpoint) {
   int i = path.size();
   // path contains nothing meaningful
   if (i < 2) {
@@ -378,7 +374,7 @@ bool getSetpointFromPath(const std::vector<Eigen::Vector3f>& path, const ros::Ti
 
   // step through the path until the point where we should be if we had traveled perfectly with velocity along it
   Eigen::Vector3f path_segment = path[i - 3] - path[i - 2];
-  float distance_left = (current_time - path_generation_time).toSec() * velocity;
+  float distance_left = (current_time - path_generation_time).seconds() * velocity;
   setpoint = path[i - 2] + (distance_left / path_segment.norm()) * path_segment;
   for (i = path.size() - 3; i > 0 && distance_left > path_segment.norm(); --i) {
     distance_left -= path_segment.norm();
