@@ -56,6 +56,7 @@ set(AVOIDANCE_CPP_FILES
   "src/common.cpp"
   "src/histogram.cpp"
   "src/transform_buffer.cpp"
+  "src/avoidance_node.cpp"
 )
 if(NOT DISABLE_SIMULATION)
   set(AVOIDANCE_CPP_FILES "${AVOIDANCE_CPP_FILES}" "src/rviz_world_loader.cpp")
@@ -70,21 +71,15 @@ target_include_directories(avoidance PUBLIC
   ${Eigen3_INCLUDE_DIRS}
 )
 
-## Declare a C++ executable
-# add_executable(avoidance_node
-#   src/avoidance_node.cpp
-# )
-
 ## Specify libraries to link a library or executable target against
-# target_link_libraries(
-#   avoidance_node
-#   avoidance
-#   Eigen3::Eigen
-#   ${YAML_CPP_LIBRARIES}
-# )
+target_link_libraries(
+  avoidance
+  Eigen3::Eigen
+  ${YAML_CPP_LIBRARIES}
+)
 
 # Add node dependencies
-# ament_target_dependencies(avoidance_node avoidance px4_msgs rclcpp Eigen3::Eigen)
+ament_target_dependencies(avoidance px4_msgs rclcpp Eigen3::Eigen)
 
 # Export information to downstream packages
 ament_export_dependencies(ament_cmake rclcpp rosidl_default_runtime eigen3_cmake_module Eigen3 px4_msgs geometry_msgs sensor_msgs std_msgs)
@@ -111,12 +106,6 @@ install(TARGETS avoidance
         RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
 )
-# install(TARGETS avoidance_node
-#         ARCHIVE DESTINATION lib/${PROJECT_NAME}
-#         LIBRARY DESTINATION lib/${PROJECT_NAME}
-#         RUNTIME DESTINATION bin
-#         INCLUDES DESTINATION include
-# )
 
 # Install launch files
 install(DIRECTORY

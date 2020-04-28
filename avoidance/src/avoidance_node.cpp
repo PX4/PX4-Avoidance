@@ -1,80 +1,94 @@
 #include "avoidance/avoidance_node.h"
 
+#include <thread>
+
+using namespace std::chrono_literals;
+
 namespace avoidance {
 
-AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
-    : nh_(nh), nh_private_(nh_private), cmdloop_dt_(0.1), statusloop_dt_(0.2) {
-  position_received_ = true;
-  should_exit_ = false;
+AvoidanceNode::AvoidanceNode()
+    : cmdloop_dt_(100ms),
+      statusloop_dt_(200ms),
+      timeout_termination_(15000000000ns), // ns
+      timeout_critical_(500000000ns), // ns
+      timeout_startup_(5000000000ns), // ns
+      position_received_(true),
+      should_exit_(false)
+{
+  // We are not retrieving the parameter list or the waypoint list from the vehicle
+  // using this interface. So for now we limit the mission_item_speed_
+  // to whatever the cruise speed is set.
+  this->px4ParamsInit();
+  mission_item_speed_ = px4_.param_mpc_xy_cruise;
 
-  timeout_termination_ = 15;
-  timeout_critical_ = 0.5;
-  timeout_startup_ = 5.0;
-
-  mission_item_speed_ = NAN;
-  px4_.param_cb_mutex.reset(new std::mutex);
+  this->init();
 }
 
 AvoidanceNode::~AvoidanceNode() {}
 
 void AvoidanceNode::init() {
-  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
-  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
-  mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1, &AvoidanceNode::missionCallback, this);
-  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
-
-  ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
-                                         boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);
-  cmdloop_timer_ = nh_.createTimer(cmdlooptimer_options);
-
-  ros::TimerOptions statuslooptimer_options(
-      ros::Duration(statusloop_dt_), boost::bind(&AvoidanceNode::statusLoopCallback, this, _1), &statusloop_queue_);
-  statusloop_timer_ = nh_.createTimer(statuslooptimer_options);
-
   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
-  cmdloop_spinner_.reset(new ros::AsyncSpinner(1, &cmdloop_queue_));
-  cmdloop_spinner_->start();
-  statusloop_spinner_.reset(new ros::AsyncSpinner(1, &statusloop_queue_));
-  statusloop_spinner_->start();
+  // Command loop executor
+  auto cmd_loop_callback = [&]() { /* Empty ?? */ };
+  auto avoidance_node_cmd = rclcpp::Node::make_shared("avoidance_node_cmd");
+  cmdloop_timer_ = avoidance_node_cmd->create_wall_timer(cmdloop_dt_, cmd_loop_callback);
+  cmdloop_executor_.add_node(avoidance_node_cmd);
 
-  worker_ = std::thread(&AvoidanceNode::checkPx4Parameters, this);
+  // Status loop executor
+  auto status_loop_callback = [&]() { publishSystemStatus(); };
+  auto avoidance_node_status = rclcpp::Node::make_shared("avoidance_node_status");
+  // This is a passthrough that replaces the usage of Mavlink Heartbeats
+  telemetry_status_pub_ =
+        avoidance_node_status->create_publisher<px4_msgs::msg::TelemetryStatus>("TelemetryStatus_PubSubTopic", 1);
+  statusloop_timer_ = avoidance_node_status->create_wall_timer(statusloop_dt_, status_loop_callback);
+  statusloop_executor_.add_node(avoidance_node_status);
+
+  auto statusloop_spin_executor = [&]() {
+    statusloop_executor_.spin();
+  };
+
+  // Launch both executors
+  std::thread execution_thread(statusloop_spin_executor);
+  cmdloop_executor_.spin();
+  execution_thread.join();
 }
 
-void AvoidanceNode::cmdLoopCallback(const ros::TimerEvent& event) {}
+void AvoidanceNode::setSystemStatus(MAV_STATE state) {
+    companion_state_ = state;
+}
 
-void AvoidanceNode::statusLoopCallback(const ros::TimerEvent& event) { publishSystemStatus(); }
+MAV_STATE AvoidanceNode::getSystemStatus() {
+    return companion_state_;
+}
 
-void AvoidanceNode::setSystemStatus(MAV_STATE state) { companion_state_ = state; }
-
-MAV_STATE AvoidanceNode::getSystemStatus() { return companion_state_; }
-
-// Publish companion process status
 void AvoidanceNode::publishSystemStatus() {
-  mavros_msgs::CompanionProcessStatus status_msg;
-  status_msg.header.stamp = ros::Time::now();
-  status_msg.component = 196;  // MAV_COMPONENT_ID_AVOIDANCE
-  status_msg.state = (int)companion_state_;
+  // Publish companion process status as telemetry_status msg
+  auto status_msg = px4_msgs::msg::TelemetryStatus();
 
-  mavros_system_status_pub_.publish(status_msg);
+  status_msg.timestamp = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+  status_msg.heartbeat_time = status_msg.timestamp;
+  status_msg.remote_system_id = 1;
+  status_msg.remote_component_id = px4_msgs::msg::TelemetryStatus::COMPONENT_ID_OBSTACLE_AVOIDANCE;
+  status_msg.remote_type = px4_msgs::msg::TelemetryStatus::MAV_TYPE_ONBOARD_CONTROLLER;
+  status_msg.remote_system_status = (int)(this->getSystemStatus());
+  status_msg.type = px4_msgs::msg::TelemetryStatus::LINK_TYPE_WIRE;
+
+  telemetry_status_pub_->publish(status_msg);
 }
 
-void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration since_start, bool& hover) {
-  ros::Duration timeout_termination = ros::Duration(timeout_termination_);
-  ros::Duration timeout_critical = ros::Duration(timeout_critical_);
-  ros::Duration timeout_startup = ros::Duration(timeout_startup_);
-
-  if (since_last_cloud > timeout_termination && since_start > timeout_termination) {
+void AvoidanceNode::checkFailsafe(rclcpp::Duration since_last_cloud, rclcpp::Duration since_start, bool& hover) {
+  if (since_last_cloud > timeout_termination_ && since_start > timeout_termination_) {
     setSystemStatus(MAV_STATE::MAV_STATE_FLIGHT_TERMINATION);
-    ROS_WARN("\033[1;33m Planner abort: missing required data \n \033[0m");
+    RCLCPP_WARN(avoidance_node_logger_, "\033[1;33m Planner abort: missing required data \n \033[0m");
   } else {
-    if (since_last_cloud > timeout_critical && since_start > timeout_startup) {
+    if (since_last_cloud > timeout_critical_ && since_start > timeout_startup_) {
       if (position_received_) {
         hover = true;
         setSystemStatus(MAV_STATE::MAV_STATE_CRITICAL);
         std::string not_received = "";
       } else {
-        ROS_WARN("\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
+        RCLCPP_WARN(avoidance_node_logger_, "\033[1;33m Pointcloud timeout: No position received, no WP to output.... \n \033[0m");
       }
     } else {
       if (!hover) setSystemStatus(MAV_STATE::MAV_STATE_ACTIVE);
@@ -82,112 +96,24 @@ void AvoidanceNode::checkFailsafe(ros::Duration since_last_cloud, ros::Duration 
   }
 }
 
-void AvoidanceNode::px4ParamsCallback(const mavros_msgs::Param& msg) {
-  // collect all px4_ parameters needed for model based trajectory planning
-  // when adding new parameter to the struct ModelParameters,
-  // add new else if case with correct value type
-  auto parse_param_f = [&msg](const std::string& name, float& val) -> bool {
-    if (msg.param_id == name) {
-      ROS_INFO("parameter %s is set from  %f to %f \n", name.c_str(), val, msg.value.real);
-      val = msg.value.real;
-      return true;
-    }
-    return false;
-  };
-
-  auto parse_param_i = [&msg](const std::string& name, int& val) -> bool {
-    if (msg.param_id == name) {
-      ROS_INFO("parameter %s is set from %i to %li \n", name.c_str(), val, msg.value.integer);
-      val = msg.value.integer;
-      return true;
-    }
-    return false;
-  };
+void AvoidanceNode::px4ParamsInit() {
+  // inits PX4 parameters needed for model based trajectory planning manually
+  // done while we don't have in interface that exposes the vehicle dynamics
 
   // clang-format off
-  std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
-  parse_param_f("MPC_ACC_DOWN_MAX", px4_.param_mpc_acc_down_max) ||
-  parse_param_f("MPC_ACC_HOR", px4_.param_mpc_acc_hor) ||
-  parse_param_f("MPC_ACC_UP_MAX", px4_.param_acc_up_max) ||
-  parse_param_i("MPC_AUTO_MODE", px4_.param_mpc_auto_mode) ||
-  parse_param_f("MPC_JERK_MIN", px4_.param_mpc_jerk_min) ||
-  parse_param_f("MPC_JERK_MAX", px4_.param_mpc_jerk_max) ||
-  parse_param_f("MPC_LAND_SPEED", px4_.param_mpc_land_speed) ||
-  parse_param_f("MPC_TKO_SPEED", px4_.param_mpc_tko_speed) ||
-  parse_param_f("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise) ||
-  parse_param_f("MPC_Z_VEL_MAX_DN", px4_.param_mpc_vel_max_dn) ||
-  parse_param_f("MPC_Z_VEL_MAX_UP", px4_.param_mpc_z_vel_max_up) ||
-  parse_param_f("CP_DIST", px4_.param_cp_dist) ||
-  parse_param_f("NAV_ACC_RAD", px4_.param_nav_acc_rad);
+  px4_.param_mpc_acc_down_max = 3.0f;
+  px4_.param_mpc_acc_hor = 3.0f;
+  px4_.param_acc_up_max = 4.0f;
+  px4_.param_mpc_auto_mode = 1; // Deprecated
+  px4_.param_mpc_jerk_min = 8.0f;
+  px4_.param_mpc_jerk_max = 8.0f;
+  px4_.param_mpc_land_speed = 0.7f;
+  px4_.param_mpc_tko_speed = 1.5f;
+  px4_.param_mpc_xy_cruise = 5.0f;
+  px4_.param_mpc_z_vel_max_up = 1.0f;
+  px4_.param_cp_dist = -1.0f;
+  px4_.param_nav_acc_rad = 10.0;
   // clang-format on
 }
 
-void AvoidanceNode::checkPx4Parameters() {
-  auto& client = get_px4_param_client_;
-  auto request_param = [&client](const std::string& name, float& val) {
-    mavros_msgs::ParamGet req;
-    req.request.param_id = name;
-    if (client.call(req) && req.response.success) {
-      val = req.response.value.real;
-    }
-  };
-  while (!should_exit_) {
-    bool is_param_not_initialized = true;
-    {
-      std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
-      request_param("MPC_ACC_HOR", px4_.param_mpc_acc_hor);
-      request_param("MPC_XY_CRUISE", px4_.param_mpc_xy_cruise);
-      request_param("CP_DIST", px4_.param_cp_dist);
-      request_param("MPC_LAND_SPEED", px4_.param_mpc_land_speed);
-      request_param("MPC_JERK_MAX", px4_.param_mpc_jerk_max);
-      request_param("NAV_ACC_RAD", px4_.param_nav_acc_rad);
-
-      is_param_not_initialized = !std::isfinite(px4_.param_mpc_xy_cruise) || !std::isfinite(px4_.param_cp_dist) ||
-                                 !std::isfinite(px4_.param_mpc_land_speed) || !std::isfinite(px4_.param_nav_acc_rad) ||
-                                 !std::isfinite(px4_.param_mpc_acc_hor) || !std::isfinite(px4_.param_mpc_jerk_max);
-    }
-
-    if (is_param_not_initialized) {
-      std::this_thread::sleep_for(std::chrono::seconds(5));
-    } else {
-      std::this_thread::sleep_for(std::chrono::seconds(30));
-    }
-  }
-}
-
-void AvoidanceNode::missionCallback(const mavros_msgs::WaypointList& msg) {
-  for (int index = 0; index < msg.waypoints.size(); index++) {
-    if (msg.waypoints[index].is_current) {
-      for (int i = index; i >= 0; i--) {
-        if (msg.waypoints[i].command == static_cast<int>(MavCommand::MAV_CMD_DO_CHANGE_SPEED) &&
-            (msg.waypoints[i].param1 - 1.0f) < FLT_MIN && msg.waypoints[i].param2 > 0.0f) {
-          // 1MAV_CMD_DO_CHANGE_SPEED, speed type: ground speed, speed valid
-          mission_item_speed_ = msg.waypoints[i].param2;
-          break;
-        }
-      }
-      break;
-    }
-  }
-}
-
-ModelParameters AvoidanceNode::getPX4Parameters() const {
-  // mutex in ModelParameters cannot be copied. So make a copy of the paramters
-  ModelParameters px4;
-  std::lock_guard<std::mutex> lck(*(px4_.param_cb_mutex));
-  px4.param_mpc_auto_mode = px4_.param_mpc_auto_mode;
-  px4.param_mpc_jerk_min = px4_.param_mpc_jerk_min;
-  px4.param_mpc_jerk_max = px4_.param_mpc_jerk_max;
-  px4.param_acc_up_max = px4_.param_acc_up_max;
-  px4.param_mpc_z_vel_max_up = px4_.param_mpc_z_vel_max_up;
-  px4.param_mpc_acc_down_max = px4_.param_mpc_acc_down_max;
-  px4.param_mpc_vel_max_dn = px4_.param_mpc_vel_max_dn;
-  px4.param_mpc_acc_hor = px4_.param_mpc_acc_hor;
-  px4.param_mpc_xy_cruise = px4_.param_mpc_xy_cruise;
-  px4.param_mpc_tko_speed = px4_.param_mpc_tko_speed;
-  px4.param_mpc_land_speed = px4_.param_mpc_land_speed;
-  px4.param_nav_acc_rad = px4_.param_nav_acc_rad;
-  px4.param_cp_dist = px4_.param_cp_dist;
-  return px4;
-}
 }
