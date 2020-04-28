@@ -1,0 +1,15 @@
+px4:
+    ros__parameters:
+        use_sim_time:            true
+gazebo_ros:
+    ros__parameters:
+        use_sim_time:            true
+
+# stereo_image_proc:
+#     ros__parameters:
+#         stereo_algorithm:        1.0
+#         correlation_window_size: 19.0
+#         disparity_range:         32.0
+#         uniqueness_ratio:        40.0
+#         speckle_size:            1000.0
+#         speckle_range:           2.0

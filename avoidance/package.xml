@@ -31,7 +31,9 @@
   <depend>px4_msgs</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
+  <depend>stereo_image_proc</depend>
   <depend>tf2</depend>
+  <depend>tf2_ros</depend>
 
   <exec_depend>rosidl_default_runtime</exec_depend>
 
