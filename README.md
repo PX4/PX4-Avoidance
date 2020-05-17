@@ -16,7 +16,7 @@ The *safe_landing_planner* classifies the terrain underneath the vehicle based o
 
 > **Note** The development team is right now focused on the *local_planner*.
 
-The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 16.04, for both avoidance and collision prevention use cases.
+The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 18.04 (recommended), for both avoidance and collision prevention use cases.
 
 > **Note** PX4-side setup is covered in the PX4 User Guide:
   - [Obstacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
