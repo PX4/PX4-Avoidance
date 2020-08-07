@@ -64,11 +64,6 @@ class GlobalPlanner {
   GoalCell goal_pos_ = GoalCell(0.5, 0.5, 3.5);
   bool going_back_ = true;  // we start by just finding the start position
 
-  double overestimate_factor_ = max_overestimate_factor_;
-  std::vector<Cell> curr_path_;
-  PathInfo curr_path_info_;
-  SearchVisitor<std::unordered_set<Cell>, std::unordered_map<Cell, double> > visitor_;
-
   // Dynamic reconfigure parameters
   int min_altitude_ = 1;
   int max_altitude_ = 10;
@@ -93,6 +88,11 @@ class GlobalPlanner {
   bool use_speedup_heuristics_ = true;
   std::string default_node_type_ = "SpeedNode";
   std::string frame_id_ = "world";
+
+  double overestimate_factor_ = max_overestimate_factor_;
+  std::vector<Cell> curr_path_;
+  PathInfo curr_path_info_;
+  SearchVisitor<std::unordered_set<Cell>, std::unordered_map<Cell, double> > visitor_;
 
   GlobalPlanner();
   ~GlobalPlanner();
