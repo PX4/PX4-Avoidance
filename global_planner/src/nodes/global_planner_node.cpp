@@ -292,7 +292,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
     pointcloud_pub_.publish(msg);
   } catch (tf::TransformException const& ex) {
     ROS_DEBUG("%s", ex.what());
-    ROS_WARN("Transformation not available (%s to /camera_link", frame_id_);
+    ROS_WARN("Transformation not available (%s to /camera_link)", frame_id_.c_str());
   }
 }
 

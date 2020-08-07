@@ -405,6 +405,8 @@ NodePtr GlobalPlanner::getStartNode(const Cell& start, const Cell& parent, const
   }
   if (type == "SpeedNode") {
     return NodePtr(new SpeedNode(start, parent));
+  } else {
+    return NodePtr(new Node(start, parent));
   }
 }
 

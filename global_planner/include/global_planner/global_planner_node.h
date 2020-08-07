@@ -106,8 +106,7 @@ class GlobalPlannerNode {
   double cmdloop_dt_;
   double plannerloop_dt_;
   double mapupdate_dt_;
-  double min_speed_;
-  double speed_ = min_speed_;
+  double speed_;
   double start_yaw_;
   bool position_received_;
   std::string frame_id_;
