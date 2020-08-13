@@ -79,6 +79,7 @@ class GlobalPlanner {
   double search_time_ = 0.5;  // The time it takes to find a path in worst case
   double min_overestimate_factor_ = 1.03;
   double max_overestimate_factor_ = 2.0;
+  double max_speed_ = 3.0;    // Maximum speed of flight.
   int max_iterations_ = 2000;
   bool goal_is_blocked_ = false;
   bool current_cell_blocked_ = false;
@@ -86,6 +87,7 @@ class GlobalPlanner {
   bool use_current_yaw_ = true;    // The current orientation is factored into the smoothness
   bool use_risk_heuristics_ = true;
   bool use_speedup_heuristics_ = true;
+  bool use_risk_based_speedup_ = true;
   std::string default_node_type_ = "SpeedNode";
   std::string frame_id_ = "world";
 
