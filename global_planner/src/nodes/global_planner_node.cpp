@@ -171,6 +171,7 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
   global_planner_.use_current_yaw_ = config.use_current_yaw_;
   global_planner_.use_risk_heuristics_ = config.use_risk_heuristics_;
   global_planner_.use_speedup_heuristics_ = config.use_speedup_heuristics_;
+  global_planner_.use_risk_based_speedup_ = config.use_risk_based_speedup_;
 
   // global_planner_node
   clicked_goal_alt_ = config.clicked_goal_alt_;
@@ -427,6 +428,8 @@ void GlobalPlannerNode::publishSetpoint() {
     } else {                // If current risk is low, speed up for fast flight.
       speed_ = 1.0 + (global_planner_.max_speed_ - 1.0) * (1 - cur_risk);
     }
+  } else {
+    speed_ = 2.0;
   }
   
   // If we are less than 1.0 away, then we should stop at the goal
