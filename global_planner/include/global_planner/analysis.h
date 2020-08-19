@@ -124,10 +124,10 @@ void printPointStats(GlobalPlanner* global_planner, double x, double y, double z
     if (global_planner->occupied_.find(cell) != global_planner->occupied_.end()) {
       ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
     } else {
-      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner->expore_penalty_ * post_prob);
+      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner->explore_penalty_ * post_prob);
     }
   } else {
-    ROS_INFO("Cell not in tree, prob: %2.2f", global_planner->expore_penalty_ * global_planner->getAltPrior(cell));
+    ROS_INFO("Cell not in tree, prob: %2.2f", global_planner->explore_penalty_ * global_planner->getAltPrior(cell));
   }
 }
 

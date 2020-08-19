@@ -163,7 +163,7 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
   global_planner_.vert_to_hor_cost_ = config.vert_to_hor_cost_;
   global_planner_.risk_factor_ = config.risk_factor_;
   global_planner_.neighbor_risk_flow_ = config.neighbor_risk_flow_;
-  global_planner_.expore_penalty_ = config.expore_penalty_;
+  global_planner_.explore_penalty_ = config.explore_penalty_;
   global_planner_.up_cost_ = config.up_cost_;
   global_planner_.down_cost_ = config.down_cost_;
   global_planner_.search_time_ = config.search_time_;

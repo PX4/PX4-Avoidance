@@ -73,7 +73,7 @@ class GlobalPlanner {
                                    // horizontal motion (TODO: use it)
   double risk_factor_ = 500.0;
   double neighbor_risk_flow_ = 1.0;
-  double expore_penalty_ = 0.005;
+  double explore_penalty_ = 0.005;
   double up_cost_ = 3.0;
   double down_cost_ = 1.0;
   double search_time_ = 0.5;  // The time it takes to find a path in worst case

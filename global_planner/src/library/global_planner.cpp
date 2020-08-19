@@ -154,10 +154,10 @@ double GlobalPlanner::getSingleCellRisk(const Cell& cell) {
       return post_prob;
     }
     // No obstacle spotted (all measurements hint towards it being free)
-    return expore_penalty_ * post_prob;
+    return explore_penalty_ * post_prob;
   }
   // No measurements at all
-  return expore_penalty_ * getAltPrior(cell);  // Risk for unexplored cells
+  return explore_penalty_ * getAltPrior(cell);  // Risk for unexplored cells
 }
 
 double GlobalPlanner::getAltPrior(const Cell& cell) {
@@ -252,7 +252,7 @@ double GlobalPlanner::riskHeuristic(const Cell& u, const Cell& goal) {
   if (u == goal) {
     return 0.0;
   }
-  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_;
+  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * explore_penalty_ * risk_factor_;
   double xy_dist = u.diagDistance2D(goal) - 1.0;  // XY distance excluding the goal cell
   double xy_risk = xy_dist * unexplored_risk * getAltPrior(u);
   double z_risk =
@@ -271,7 +271,7 @@ double GlobalPlanner::riskHeuristicReverseCache(const Cell& u, const Cell& goal)
     return 0.0;
   }
   double dist_to_bubble = std::max(0.0, u.diagDistance3D(goal) - bubble_radius_);
-  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_;
+  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * explore_penalty_ * risk_factor_;
   double heuristic = bubble_cost_ + dist_to_bubble * unexplored_risk * getAltPrior(u);
   // bubble_risk_cache_[u] = heuristic;
   return heuristic;
