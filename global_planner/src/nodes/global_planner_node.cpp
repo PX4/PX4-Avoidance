@@ -65,7 +65,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
 
-  speed_ = 5.0;
+  speed_ = global_planner_.default_speed_;
 
   start_time_ = ros::Time::now();
 }
@@ -165,6 +165,8 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
   global_planner_.search_time_ = config.search_time_;
   global_planner_.min_overestimate_factor_ = config.min_overestimate_factor_;
   global_planner_.max_overestimate_factor_ = config.max_overestimate_factor_;
+  global_planner_.risk_threshold_risk_based_speedup_ = config.risk_threshold_risk_based_speedup_;
+  global_planner_.default_speed_ = config.default_speed_;
   global_planner_.max_speed_ = config.max_speed_;
   global_planner_.max_iterations_ = config.max_iterations_;
   global_planner_.goal_must_be_free_ = config.goal_must_be_free_;
@@ -375,42 +377,6 @@ void GlobalPlannerNode::publishPath() {
   smooth_path_pub_.publish(smoothPath(simple_path_msg));
 }
 
-// Publish the cells that were explored in the last search
-// Can be tweeked to publish other info (path_cells)
-void GlobalPlannerNode::publishExploredCells() {
-  visualization_msgs::MarkerArray msg;
-
-  // The first marker deletes the ones from previous search
-  int id = 0;
-  visualization_msgs::Marker marker;
-  marker.id = id;
-  marker.action = 3;  // same as visualization_msgs::Marker::DELETEALL
-  msg.markers.push_back(marker);
-
-  id = 1;
-  for (const auto& cell : global_planner_.visitor_.seen_) {
-    // for (auto const& x : global_planner_.bubble_risk_cache_) {
-    // Cell cell = x.first;
-
-    // double hue = (cell.zPos()-1.0) / 7.0;                // height from 1 to
-    // 8 meters double hue = 0.5;                                    // single
-    // color (green) double hue = global_planner_.getHeuristic(Node(cell, cell),
-    // global_planner_.goal_pos_) / global_planner_.curr_path_info_.cost; The
-    // color is the square root of the risk, shows difference in low risk
-    double hue = std::sqrt(global_planner_.getRisk(cell));
-    auto color = spectralColor(hue);
-    if (!global_planner_.octree_->search(cell.xPos(), cell.yPos(), cell.zPos())) {
-      // Unknown space
-      color.r = color.g = color.b = 0.2;  // Dark gray
-    }
-    visualization_msgs::Marker marker = createMarker(id++, cell.toPoint(), color);
-
-    // risk from 0% to 100%, sqrt is used to increase difference in low risk
-    msg.markers.push_back(marker);
-  }
-  explored_cells_pub_.publish(msg);
-}
-
 // Prints information about the point, mostly the risk of the containing cell
 void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
   // Update explored cells
@@ -423,13 +389,13 @@ void GlobalPlannerNode::publishSetpoint() {
   if (global_planner_.use_speedup_heuristics_){
     Cell cur_cell = global_planner::Cell(last_pos_.pose.position.x, last_pos_.pose.position.y, last_pos_.pose.position.z);
     double cur_risk = std::sqrt(global_planner_.getRisk(cur_cell));
-    if(cur_risk >= 0.5) {   // If current risk is too high, set speed as low to stable flight.
-      speed_ = 1.0;
+    if(cur_risk >= global_planner_.risk_threshold_risk_based_speedup_) {   // If current risk is too high(more than risk_threshold_risk_based_speedup_), set speed as low to stable flight.
+      speed_ = global_planner_.default_speed_;
     } else {                // If current risk is low, speed up for fast flight.
-      speed_ = 1.0 + (global_planner_.max_speed_ - 1.0) * (1 - cur_risk);
+      speed_ = global_planner_.default_speed_ + (global_planner_.max_speed_ - global_planner_.default_speed_) * (1 - cur_risk);
     }
-  } else {
-    speed_ = 2.0;
+  } else {  // If risk based speed up is not activated, use default_speed_.
+    speed_ = global_planner_.default_speed_;
   }
   
   // If we are less than 1.0 away, then we should stop at the goal
