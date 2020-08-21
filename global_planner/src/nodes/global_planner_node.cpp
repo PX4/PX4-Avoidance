@@ -386,18 +386,22 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
 void GlobalPlannerNode::publishSetpoint() {
   // Vector pointing from current position to the current goal
   tf::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
-  if (global_planner_.use_speedup_heuristics_){
-    Cell cur_cell = global_planner::Cell(last_pos_.pose.position.x, last_pos_.pose.position.y, last_pos_.pose.position.z);
+  if (global_planner_.use_speedup_heuristics_) {
+    Cell cur_cell =
+        global_planner::Cell(last_pos_.pose.position.x, last_pos_.pose.position.y, last_pos_.pose.position.z);
     double cur_risk = std::sqrt(global_planner_.getRisk(cur_cell));
-    if(cur_risk >= global_planner_.risk_threshold_risk_based_speedup_) {   // If current risk is too high(more than risk_threshold_risk_based_speedup_), set speed as low to stable flight.
+    if (cur_risk >= global_planner_.risk_threshold_risk_based_speedup_) {  // If current risk is too high(more than
+                                                                           // risk_threshold_risk_based_speedup_), set
+                                                                           // speed as low to stable flight.
       speed_ = global_planner_.default_speed_;
-    } else {                // If current risk is low, speed up for fast flight.
-      speed_ = global_planner_.default_speed_ + (global_planner_.max_speed_ - global_planner_.default_speed_) * (1 - cur_risk);
+    } else {  // If current risk is low, speed up for fast flight.
+      speed_ = global_planner_.default_speed_ +
+               (global_planner_.max_speed_ - global_planner_.default_speed_) * (1 - cur_risk);
     }
   } else {  // If risk based speed up is not activated, use default_speed_.
     speed_ = global_planner_.default_speed_;
   }
-  
+
   // If we are less than 1.0 away, then we should stop at the goal
   double new_len = vec.length() < 1.0 ? vec.length() : speed_;
   vec.normalize();

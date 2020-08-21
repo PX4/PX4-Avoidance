@@ -81,7 +81,7 @@ class GlobalPlanner {
   double max_overestimate_factor_ = 2.0;
   double risk_threshold_risk_based_speedup_ = 0.5;
   double default_speed_ = 1.0;  // Default speed of flight.
-  double max_speed_ = 3.0;    // Maximum speed of flight.
+  double max_speed_ = 3.0;      // Maximum speed of flight.
   int max_iterations_ = 2000;
   bool goal_is_blocked_ = false;
   bool current_cell_blocked_ = false;
