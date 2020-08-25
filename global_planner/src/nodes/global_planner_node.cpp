@@ -65,7 +65,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
 
-  speed_ = 5.0;
+  speed_ = 2.0;
 
   start_time_ = ros::Time::now();
 }

@@ -30,7 +30,7 @@
         <arg name="start_pos_y" value="$(arg start_pos_y)" />
         <arg name="start_pos_z" value="$(arg start_pos_z)" />
         <arg name="pointcloud_topics" value="$(arg pointcloud_topics)"/>
-        <arg name="camera_frame_id" value="/$(arg camera_frame_id)" />
+        <arg name="camera_frame_id" value="$(arg camera_frame_id)" />
     </include>
 
     <!-- RViz -->
