@@ -24,7 +24,7 @@
     <!-- Global planner -->
     <include file="$(find global_planner)/launch/global_planner_octomap.launch" >
         <arg name="pointcloud_topics" value="$(arg pointcloud_topics)" />
-        <arg name="camera_frame_id" value="/$(arg camera_frame_id)" />
+        <arg name="camera_frame_id" value="$(arg camera_frame_id)" />
         <arg name="start_pos_x" value="$(arg start_pos_x)" />
         <arg name="start_pos_y" value="$(arg start_pos_y)" />
         <arg name="start_pos_z" value="$(arg start_pos_z)" />
