@@ -81,6 +81,11 @@ void GlobalPlannerNode::readParams() {
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
   nh_.param<std::string>("frame_id", frame_id_, "/local_origin");
   nh_.getParam("pointcloud_topics", camera_topics);
+  if (!nh_.hasParam("camera_frame_id")) {
+    nh_.setParam("camera_frame_id", "/camera_link");
+  } else {
+    nh_.getParam("camera_frame_id", camera_frame_id_);
+  }
 
   initializeCameraSubscribers(camera_topics);
   global_planner_.goal_pos_ = GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
@@ -273,9 +278,9 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
   try {
     // Transform msg from camera frame to world frame
     ros::Time now = ros::Time::now();
-    listener_.waitForTransform(frame_id_, "/camera_link", now, ros::Duration(5.0));
+    listener_.waitForTransform(frame_id_, camera_frame_id_, now, ros::Duration(5.0));
     tf::StampedTransform transform;
-    listener_.lookupTransform(frame_id_, "/camera_link", now, transform);
+    listener_.lookupTransform(frame_id_, camera_frame_id_, now, transform);
     sensor_msgs::PointCloud2 transformed_msg;
     pcl_ros::transformPointCloud(frame_id_, transform, msg, transformed_msg);
     pcl::PointCloud<pcl::PointXYZ> cloud;  // Easier to loop through pcl::PointCloud
@@ -292,7 +297,7 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::PointCloud2& msg)
     pointcloud_pub_.publish(msg);
   } catch (tf::TransformException const& ex) {
     ROS_DEBUG("%s", ex.what());
-    ROS_WARN("Transformation not available (%s to /camera_link)", frame_id_.c_str());
+    ROS_WARN("Transformation not available (%s to %s)", frame_id_.c_str(), camera_frame_id_.c_str());
   }
 }
 
