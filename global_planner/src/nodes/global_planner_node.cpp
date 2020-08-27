@@ -65,8 +65,7 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(start_yaw_);
   last_goal_ = current_goal_;
 
-  speed_ = 2.0;
-
+  speed_ = global_planner_.default_speed_;
   start_time_ = ros::Time::now();
 }
 
@@ -170,11 +169,15 @@ void GlobalPlannerNode::dynamicReconfigureCallback(global_planner::GlobalPlanner
   global_planner_.search_time_ = config.search_time_;
   global_planner_.min_overestimate_factor_ = config.min_overestimate_factor_;
   global_planner_.max_overestimate_factor_ = config.max_overestimate_factor_;
+  global_planner_.risk_threshold_risk_based_speedup_ = config.risk_threshold_risk_based_speedup_;
+  global_planner_.default_speed_ = config.default_speed_;
+  global_planner_.max_speed_ = config.max_speed_;
   global_planner_.max_iterations_ = config.max_iterations_;
   global_planner_.goal_must_be_free_ = config.goal_must_be_free_;
   global_planner_.use_current_yaw_ = config.use_current_yaw_;
   global_planner_.use_risk_heuristics_ = config.use_risk_heuristics_;
   global_planner_.use_speedup_heuristics_ = config.use_speedup_heuristics_;
+  global_planner_.use_risk_based_speedup_ = config.use_risk_based_speedup_;
 
   // global_planner_node
   clicked_goal_alt_ = config.clicked_goal_alt_;
@@ -387,6 +390,22 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
 void GlobalPlannerNode::publishSetpoint() {
   // Vector pointing from current position to the current goal
   tf::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
+  if (global_planner_.use_speedup_heuristics_) {
+    Cell cur_cell =
+        global_planner::Cell(last_pos_.pose.position.x, last_pos_.pose.position.y, last_pos_.pose.position.z);
+    double cur_risk = std::sqrt(global_planner_.getRisk(cur_cell));
+    if (cur_risk >= global_planner_.risk_threshold_risk_based_speedup_) {  // If current risk is too high(more than
+                                                                           // risk_threshold_risk_based_speedup_), set
+                                                                           // speed as low to stable flight.
+      speed_ = global_planner_.default_speed_;
+    } else {  // If current risk is low, speed up for fast flight.
+      speed_ = global_planner_.default_speed_ +
+               (global_planner_.max_speed_ - global_planner_.default_speed_) * (1 - cur_risk);
+    }
+  } else {  // If risk based speed up is not activated, use default_speed_.
+    speed_ = global_planner_.default_speed_;
+  }
+
   // If we are less than 1.0 away, then we should stop at the goal
   double new_len = vec.length() < 1.0 ? vec.length() : speed_;
   vec.normalize();
@@ -411,6 +430,6 @@ void GlobalPlannerNode::publishSetpoint() {
   mavros_obstacle_free_path_pub_.publish(obst_free_path);
 }
 
-bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < 1.5; }
+bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < speed_; }
 
 }  // namespace global_planner
