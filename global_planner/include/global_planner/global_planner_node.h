@@ -110,6 +110,7 @@ class GlobalPlannerNode {
   double start_yaw_;
   bool position_received_;
   std::string frame_id_;
+  std::string camera_frame_id_;
 
   // Dynamic Reconfiguration
   double clicked_goal_alt_;
