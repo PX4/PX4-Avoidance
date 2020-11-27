@@ -40,7 +40,6 @@ class AvoidanceNode {
 
   rclcpp::executors::MultiThreadedExecutor cmdloop_executor_;
   rclcpp::executors::MultiThreadedExecutor statusloop_executor_;
-  
   rclcpp::TimerBase::SharedPtr cmdloop_timer_;
   rclcpp::TimerBase::SharedPtr statusloop_timer_;
 
