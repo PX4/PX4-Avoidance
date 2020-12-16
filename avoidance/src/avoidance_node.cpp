@@ -29,29 +29,26 @@ AvoidanceNode::~AvoidanceNode() {}
 void AvoidanceNode::init() {
   setSystemStatus(MAV_STATE::MAV_STATE_BOOT);
 
-  // Command loop executor
-  auto cmd_loop_callback = [&]() { /* Empty ?? */ };
-  auto avoidance_node_cmd = rclcpp::Node::make_shared("avoidance_node_cmd");
-  cmdloop_timer_ = avoidance_node_cmd->create_wall_timer(cmdloop_dt_, cmd_loop_callback);
+  avoidance_node_cmd = rclcpp::Node::make_shared("avoidance_node_cmd");
+  cmdloop_timer_ = avoidance_node_cmd->create_wall_timer(cmdloop_dt_, [&](){});
   cmdloop_executor_.add_node(avoidance_node_cmd);
 
-  // Status loop executor
-  auto status_loop_callback = [&]() { publishSystemStatus(); };
-  auto avoidance_node_status = rclcpp::Node::make_shared("avoidance_node_status");
+  // Start cmdloop thread
+  cmdloop_thread = new std::thread([&]() {
+    cmdloop_executor_.spin();
+  });
+
+  avoidance_node_status = rclcpp::Node::make_shared("avoidance_node_status");
   // This is a passthrough that replaces the usage of Mavlink Heartbeats
   telemetry_status_pub_ =
         avoidance_node_status->create_publisher<px4_msgs::msg::TelemetryStatus>("TelemetryStatus_PubSubTopic", 1);
-  statusloop_timer_ = avoidance_node_status->create_wall_timer(statusloop_dt_, status_loop_callback);
+  statusloop_timer_ = avoidance_node_status->create_wall_timer(statusloop_dt_, [&](){ publishSystemStatus(); });
   statusloop_executor_.add_node(avoidance_node_status);
 
-  auto statusloop_spin_executor = [&]() {
+  // Start statusloop thread
+  statusloop_thread = new std::thread([&]() {
     statusloop_executor_.spin();
-  };
-
-  // Launch both executors
-  std::thread execution_thread(statusloop_spin_executor);
-  cmdloop_executor_.spin();
-  execution_thread.join();
+  });
 }
 
 void AvoidanceNode::setSystemStatus(MAV_STATE state) {

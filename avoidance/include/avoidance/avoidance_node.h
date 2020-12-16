@@ -40,9 +40,14 @@ class AvoidanceNode {
 
   rclcpp::executors::MultiThreadedExecutor cmdloop_executor_;
   rclcpp::executors::MultiThreadedExecutor statusloop_executor_;
-
   rclcpp::TimerBase::SharedPtr cmdloop_timer_;
   rclcpp::TimerBase::SharedPtr statusloop_timer_;
+
+  std::thread* statusloop_thread;
+  std::thread* cmdloop_thread;
+  
+  rclcpp::Node::SharedPtr avoidance_node_status;
+  rclcpp::Node::SharedPtr avoidance_node_cmd;
 
   MAV_STATE companion_state_ = MAV_STATE::MAV_STATE_STANDBY;
 

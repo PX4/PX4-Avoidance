@@ -26,9 +26,10 @@ bool TransformBuffer::interpolateTransform(const geometry_msgs::msg::TransformSt
   tf2::Vector3 tf_earlier_translation;
   tf2::Quaternion tf_earlier_rotation;
   tf2::Quaternion tf_later_rotation;
-  tf2::fromMsg(tf_earlier_translation, tf_earlier.transform.translation);
-  tf2::fromMsg(tf_earlier_rotation, tf_earlier.transform.rotation);
-  tf2::fromMsg(tf_later_rotation, tf_later.transform.rotation);
+  tf_earlier_translation.setValue(tf_earlier.transform.translation.x, tf_earlier.transform.translation.y, tf_earlier.transform.translation.z);
+  // tf2::fromMsg(tf_earlier.transform.translation, tf_earlier_translation);
+  tf2::fromMsg(tf_earlier.transform.rotation, tf_earlier_rotation);
+  tf2::fromMsg(tf_later.transform.rotation, tf_later_rotation);
 
   const tf2::Vector3 translation = tf_earlier_translation * (1.f - tau) + tf_earlier_translation * tau;
   const tf2::Quaternion rotation = tf_earlier_rotation.slerp(tf_later_rotation, tau);
