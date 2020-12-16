@@ -304,7 +304,7 @@ void transformToTrajectory(px4_msgs::msg::VehicleTrajectoryWaypoint& obst_avoid,
   fillUnusedTrajectoryPoint(obst_avoid.waypoints[3]);
   fillUnusedTrajectoryPoint(obst_avoid.waypoints[4]);
 
-  for (size_t i = 0; i < sizeof(obst_avoid.waypoints); i++) {
+  for (size_t i = 0; i < obst_avoid.waypoints.size(); i++) {
     obst_avoid.waypoints[i].timestamp = obst_avoid.timestamp;
     obst_avoid.waypoints[i].point_valid = false;
   }
