@@ -1,0 +1,4 @@
+[submodule "src/octomap_msgs"]
+	path = src/octomap_msgs
+	url = https://github.com/OctoMap/octomap_msgs
+	branch = ros2
