@@ -3,14 +3,14 @@
 
 #include <string>
 
+#include <math.h>  // sqrt
+#include <nav_msgs/msg/path.h>
+#include <tf2/LinearMath/Vector3.h>
+#include <tf2_ros/transform_listener.h>  // getYaw createQuaternionMsgFromYaw
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist_stamped.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
-#include <math.h>  // sqrt
-#include <nav_msgs/msg/path.h>
 #include <std_msgs/msg/color_rgba.hpp>
-#include <tf2/LinearMath/Vector3.h>
-#include <tf2_ros/transform_listener.h>  // getYaw createQuaternionMsgFromYaw
 #include <visualization_msgs/msg/marker.hpp>
 
 #include "global_planner/common.h"  // hasSameYawAndAltitude
@@ -30,11 +30,11 @@ inline double distance(const geometry_msgs::msg::PoseStamped& a, const geometry_
   return distance(a.pose.position, b.pose.position);
 }
 
-
 // https://github.com/trainman419/fiducials_ros/blob/master/src/fiducials_localization.cpp
 inline geometry_msgs::msg::TwistStamped transformTwistMsg(const tf2_ros::TransformListener& listener,
-                                                     const std::string& target_frame, const std::string& fixed_frame,
-                                                     const geometry_msgs::msg::TwistStamped& msg) {
+                                                          const std::string& target_frame,
+                                                          const std::string& fixed_frame,
+                                                          const geometry_msgs::msg::TwistStamped& msg) {
   auto transformed_msg = msg;
   geometry_msgs::msg::Vector3Stamped before;
   before.vector = msg.twist.linear;
@@ -58,7 +58,7 @@ inline std_msgs::msg::ColorRGBA spectralColor(double hue, double alpha = 1.0) {
 
 template <typename Point, typename Color>
 visualization_msgs::msg::Marker createMarker(int id, Point position, Color color, double scale = 0.1,
-                                        std::string frame_id = "/world") {
+                                             std::string frame_id = "/world") {
   visualization_msgs::msg::Marker marker;
   marker.id = id;
   marker.header.frame_id = frame_id;
@@ -93,7 +93,8 @@ inline double pathLength(const nav_msgs::msg::Path& path) {
 }
 
 // Returns a path with only the corner points of msg
-inline std::vector<geometry_msgs::msg::PoseStamped> filterPathCorners(const std::vector<geometry_msgs::msg::PoseStamped>& msg) {
+inline std::vector<geometry_msgs::msg::PoseStamped> filterPathCorners(
+    const std::vector<geometry_msgs::msg::PoseStamped>& msg) {
   std::vector<geometry_msgs::msg::PoseStamped> corners = msg;
   corners.clear();
   if (msg.size() < 1) {

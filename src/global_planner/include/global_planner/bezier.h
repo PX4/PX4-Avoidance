@@ -119,7 +119,8 @@ double getAccelerationMagnitude(const P& p0, const P& p1, const P& p2, double du
 }
 
 template <typename BezierMsg>
-nav_msgs::msg::Path pathToTriplets(const nav_msgs::msg::Path& path, std::vector<BezierMsg> triplets, std::vector<double> speed) {
+nav_msgs::msg::Path pathToTriplets(const nav_msgs::msg::Path& path, std::vector<BezierMsg> triplets,
+                                   std::vector<double> speed) {
   if (path.poses.size() < 3) {
     return path;
   }

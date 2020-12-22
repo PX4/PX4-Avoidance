@@ -10,10 +10,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <nav_msgs/msg/path.hpp>
-#include <px4_msgs/msg/vehicle_local_position.hpp>
 #include <tf2/LinearMath/Quaternion.h>
 #include <tf2/utils.h>
+#include <nav_msgs/msg/path.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
 
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>

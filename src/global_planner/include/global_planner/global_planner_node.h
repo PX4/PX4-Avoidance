@@ -9,26 +9,26 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 
-#include <px4_msgs/msg/vehicle_local_position.hpp>
-#include <px4_msgs/msg/vehicle_trajectory_waypoint.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <tf2/convert.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/common/transforms.h>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_trajectory_waypoint.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
-#include <tf2_ros/transform_listener.h>
-#include <tf2/convert.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <octomap/octomap.h>
-#include <octomap_msgs/msg/octomap.h>
 #include <octomap_msgs/conversions.h>
+#include <octomap_msgs/msg/octomap.h>
 
 #include "avoidance/avoidance_node.h"
 #include "global_planner/global_planner.h"
@@ -46,7 +46,7 @@ struct cameraData {
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
 };
 
-class GlobalPlannerNode  : public rclcpp::Node {
+class GlobalPlannerNode : public rclcpp::Node {
  public:
   // TODO: Deque instead of vector
   GlobalPlanner global_planner_;
@@ -86,14 +86,14 @@ class GlobalPlannerNode  : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr gp_plannerloop_timer_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;  
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
 
   nav_msgs::msg::Path actual_path_;
   geometry_msgs::msg::Point start_pos_;
   geometry_msgs::msg::PoseStamped current_goal_;
   geometry_msgs::msg::PoseStamped last_goal_;
   geometry_msgs::msg::PoseStamped last_pos_;
-  
+
   std::vector<geometry_msgs::msg::PoseStamped> last_clicked_points;
   std::vector<geometry_msgs::msg::PoseStamped> path_;
   std::vector<cameraData> cameras_;

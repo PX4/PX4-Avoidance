@@ -3,13 +3,9 @@
 namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode()
-   : Node("global_planner_node") ,
-     gp_cmdloop_dt_(100ms),
-     gp_plannerloop_dt_(1000ms),
-     start_yaw_(0.0)
-    {
+    : Node("global_planner_node"), gp_cmdloop_dt_(100ms), gp_plannerloop_dt_(1000ms), start_yaw_(0.0) {
   RCLCPP_INFO_ONCE(this->get_logger(), "GlobalPlannerNode STARTED!");
- 
+
 // GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private)
 //     : nh_(nh),
 //       nh_private_(nh_private),
@@ -29,12 +25,13 @@ GlobalPlannerNode::GlobalPlannerNode()
   // Subscribers
   rclcpp::QoS qos = rclcpp::SystemDefaultsQoS();
   octomap_full_sub_ = this->create_subscription<octomap_msgs::msg::Octomap>(
-    "/octomap_full", qos, std::bind(&GlobalPlannerNode::octomapFullCallback, this, _1));
+      "/octomap_full", qos, std::bind(&GlobalPlannerNode::octomapFullCallback, this, _1));
   position_sub_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-    "VehicleLocalPosition_PubSubTopic", qos, std::bind(&GlobalPlannerNode::positionCallback, this, _1));
+      "VehicleLocalPosition_PubSubTopic", qos, std::bind(&GlobalPlannerNode::positionCallback, this, _1));
   clicked_point_sub_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/clicked_point", qos, std::bind(&GlobalPlannerNode::clickedPointCallback, this, _1));
-  // move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
+      "/clicked_point", qos, std::bind(&GlobalPlannerNode::clickedPointCallback, this, _1));
+  // move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback,
+  // this);
   // fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
 
   // Publishers
@@ -45,14 +42,15 @@ GlobalPlannerNode::GlobalPlannerNode()
   global_temp_goal_pub_ = this->create_publisher<geometry_msgs::msg::PointStamped>("/global_temp_goal", 10);
   explored_cells_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/explored_cells", 10);
   mavros_waypoint_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/setpoint_position/local", 10);
-  mavros_obstacle_free_path_pub_ = this->create_publisher<px4_msgs::msg::VehicleTrajectoryWaypoint>("/trajectory/generated", 10);  
+  mavros_obstacle_free_path_pub_ =
+      this->create_publisher<px4_msgs::msg::VehicleTrajectoryWaypoint>("/trajectory/generated", 10);
   current_waypoint_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/current_setpoint", 10);
   pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_in", 10);
 
   actual_path_.header.frame_id = frame_id_;
 
-  gp_cmdloop_timer_ = this->create_wall_timer(gp_cmdloop_dt_, [&](){ cmdLoopCallback(); });
-  gp_plannerloop_timer_ = this->create_wall_timer(gp_plannerloop_dt_, [&](){ plannerLoopCallback(); });
+  gp_cmdloop_timer_ = this->create_wall_timer(gp_cmdloop_dt_, [&]() { cmdLoopCallback(); });
+  gp_plannerloop_timer_ = this->create_wall_timer(gp_plannerloop_dt_, [&]() { plannerLoopCallback(); });
 
   current_goal_.header.frame_id = frame_id_;
   current_goal_.pose.position = start_pos_;
@@ -70,7 +68,7 @@ void GlobalPlannerNode::readParams() {
   std::vector<std::string> camera_topics;
 
   this->declare_parameter("frame_id", "/local_origin");
-  
+
   this->get_parameter("frame_id", frame_id_);
   this->get_parameter_or("start_pos_x", start_pos_.x, 0.5);
   this->get_parameter_or("start_pos_y", start_pos_.y, 0.5);
@@ -92,7 +90,7 @@ void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& ca
 
   for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].pointcloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      camera_topics[i], 1, std::bind(&GlobalPlannerNode::depthCameraCallback, this, _1));
+        camera_topics[i], 1, std::bind(&GlobalPlannerNode::depthCameraCallback, this, _1));
   }
 }
 
@@ -121,7 +119,8 @@ void GlobalPlannerNode::popNextGoal() {
 void GlobalPlannerNode::planPath() {
   std::clock_t start_time = std::clock();
   if (global_planner_.octree_) {
-    RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
+    RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB",
+                global_planner_.octree_->memoryUsage() / 1000000.0);
   }
 
   bool found_path = global_planner_.getGlobalPath();
@@ -197,7 +196,7 @@ void GlobalPlannerNode::positionCallback(const px4_msgs::msg::VehicleLocalPositi
   pose->pose.position.y = msg->y;
   pose->pose.position.z = msg->z;
   pose->pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->yaw);
-  
+
   // Update position
   last_pos_ = *pose;
   global_planner_.setPose(pose, msg->yaw);
@@ -288,7 +287,8 @@ void GlobalPlannerNode::depthCameraCallback(const sensor_msgs::msg::PointCloud2:
     sensor_msgs::msg::PointCloud2 transformed_msg;
 
     geometry_msgs::msg::TransformStamped transformStamped;
-    transformStamped = tf_buffer_->lookupTransform("base_link", msg->header.frame_id, tf2_ros::fromMsg(msg->header.stamp), tf2::durationFromSec(5.0));
+    transformStamped = tf_buffer_->lookupTransform("base_link", msg->header.frame_id,
+                                                   tf2_ros::fromMsg(msg->header.stamp), tf2::durationFromSec(5.0));
     tf2::doTransform(*msg, transformed_msg, transformStamped);
 
     pcl::PointCloud<pcl::PointXYZ> cloud;  // Easier to loop through pcl::PointCloud
@@ -348,8 +348,10 @@ void GlobalPlannerNode::plannerLoopCallback() {
 
   // Print and publish info
   if (is_in_goal && !waypoints_.empty()) {
-    RCLCPP_INFO(this->get_logger(), "Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int)waypoints_.size());
-    RCLCPP_INFO(this->get_logger(), "Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
+    RCLCPP_INFO(this->get_logger(), "Reached current goal %s, %d goals left\n\n",
+                global_planner_.goal_pos_.asString().c_str(), (int)waypoints_.size());
+    RCLCPP_INFO(this->get_logger(), "Actual travel distance: %2.2f \t Actual energy usage: %2.2f",
+                pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
   }
 
   publishPath();
@@ -418,8 +420,6 @@ void GlobalPlannerNode::publishSetpoint() {
   mavros_obstacle_free_path_pub_->publish(obst_free_path);
 }
 
-bool GlobalPlannerNode::isCloseToGoal() { 
-  return distance(current_goal_, last_pos_) < 1.5;
-}
+bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < 1.5; }
 
 }  // namespace global_planner

@@ -31,7 +31,7 @@ void GlobalPlanner::setPose(const geometry_msgs::msg::PoseStamped::SharedPtr new
   curr_pos_ = new_pose->pose.position;
   // curr_yaw_ = tf2::getYaw(new_pose->pose.orientation);
   curr_yaw_ = yaw;  // get Yaw directly from px4_msgs::msg::VehicleLocalPosition.
-  
+
   Cell curr_cell = Cell(curr_pos_);
   if (!going_back_ && (path_back_.empty() || curr_cell != path_back_.back())) {
     // Keep track of where we have been, add current position to path_back_ if
@@ -339,12 +339,15 @@ geometry_msgs::msg::PoseStamped GlobalPlanner::createPoseMsg(const Cell& cell, d
   pose_msg.header.frame_id = frame_id_;
   pose_msg.pose.position = cell.toPoint();
   // pose_msg.pose.orientation = tf2::createQuaternionMsgFromYaw(yaw);    // tf version
-  
+
   // tf2 version
   tf2::Quaternion quaternion;
-  quaternion.setRPY( 0, 0, yaw );
+  quaternion.setRPY(0, 0, yaw);
   geometry_msgs::msg::Quaternion qOri;
-  qOri.x = quaternion.x(); qOri.y = quaternion.y(); qOri.z = quaternion.z(); qOri.w = quaternion.w(); 
+  qOri.x = quaternion.x();
+  qOri.y = quaternion.y();
+  qOri.z = quaternion.z();
+  qOri.w = quaternion.w();
   pose_msg.pose.orientation = qOri;
 
   return pose_msg;
@@ -433,7 +436,7 @@ bool GlobalPlanner::findPath(std::vector<Cell>& path) {
 
   // ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
   // ROS_INFO("curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f", curr_pos_.x, curr_pos_.y, curr_pos_.z, s.xPos(),
-           // s.yPos(), s.zPos());
+  // s.yPos(), s.zPos());
 
   bool found_path = false;
   double best_path_cost = INFINITY;
