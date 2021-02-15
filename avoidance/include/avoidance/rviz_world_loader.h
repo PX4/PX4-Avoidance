@@ -13,11 +13,20 @@
 #include "rclcpp/rclcpp.hpp"
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
-#include <px4_msgs/msg/vehicle_odometry.hpp>
+// #include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/create_timer_ros.h>
+#include <tf2_ros/buffer.h>
+#include <tf2/convert.h>
 
 #include <sys/stat.h>
 
 namespace avoidance {
+
+using std::placeholders::_1;
+using namespace std::chrono_literals;
 
 // data types
 struct world_object {
@@ -44,14 +53,21 @@ private:
   int resolveUri(std::string& uri) const;
 
   rclcpp::TimerBase::SharedPtr loop_timer_;
+  rclcpp::TimerBase::SharedPtr visualize_drone_timer_;
 
-  rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr pose_sub_;
+  // rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr pose_sub_;
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr world_pub_;
   rclcpp::Publisher<visualization_msgs::msg::Marker>::SharedPtr drone_pub_;
 
   std::string world_path_;
 
+  std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;  
+  std::shared_ptr<tf2_ros::TransformBroadcaster> transform_broadcaster_;
+
   void loopCallback();
+
+  void tf2Callback(const std::shared_future<geometry_msgs::msg::TransformStamped>& tf);
 
 public:
   /**
@@ -63,7 +79,7 @@ public:
   /**
    * @brief      callback for subscribing mav pose topic
    **/
-  void positionCallback(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) const;
+  // void positionCallback(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) const;
 
   /**
    * @brief      parse the yaml file and publish world marker
@@ -75,7 +91,7 @@ public:
    * @brief      visualize the drone mesh at the current drone position
    * @param[in]  pose, current drone pose
    **/
-  int visualizeDrone(const px4_msgs::msg::VehicleOdometry& pose) const;
+  void visualizeDrone();
 };
 }
 

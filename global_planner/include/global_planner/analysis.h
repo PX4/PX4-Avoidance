@@ -92,7 +92,7 @@ void printPathStats(GlobalPlanner* global_planner, const std::vector<Cell>& path
       double num_45_deg_turns = std::ceil(ang_diff3 / (M_PI / 4));  // Minimum number of 45-turns to goal
       printf("\t|| \t%3.2f \t%3.2f \t%3.2f \t%3.2f \t%3.2f \t%3.2f \n", u_ang, goal_ang, ang_diff, ang_diff2, ang_diff3,
              num_45_deg_turns);
-      ROS_INFO("WTF? \n %f %f \n\n\n\n\n\n\n\n\n\n\n\n", angleToRange(5.5), angleToRange(-5.5));
+      // ROS_INFO("WTF? \n %f %f \n\n\n\n\n\n\n\n\n\n\n\n", angleToRange(5.5), angleToRange(-5.5));
     }
   }
   printf("\n\n");
@@ -102,32 +102,32 @@ void printPathStats(GlobalPlanner* global_planner, const std::vector<Cell>& path
 template <typename GlobalPlanner>
 void printPointStats(GlobalPlanner* global_planner, double x, double y, double z) {
   Cell cell(x, y, z);
-  ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
-  ROS_INFO("Rist cost: %2.2f", global_planner->risk_factor_ * global_planner->getRisk(cell));
-  ROS_INFO("getRisk: %2.2f", global_planner->getRisk(cell));
-  ROS_INFO("singleCellRisk: %2.2f", global_planner->getSingleCellRisk(cell));
-  ROS_INFO(
-      "Neighbors:\n \t %2.2f \t \t \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f "
-      "\t \t \t %2.2f",
-      global_planner->getSingleCellRisk(Cell(x, y + 1, z)), global_planner->getSingleCellRisk(Cell(x, y, z + 1)),
-      global_planner->getSingleCellRisk(Cell(x - 1, y, z)), global_planner->getSingleCellRisk(Cell(x + 1, y, z)),
-      global_planner->getSingleCellRisk(Cell(x, y - 1, z)), global_planner->getSingleCellRisk(Cell(x, y, z - 1)));
+  // ROS_INFO("\n\nDEBUG INFO FOR %s", cell.asString().c_str());
+  // ROS_INFO("Rist cost: %2.2f", global_planner->risk_factor_ * global_planner->getRisk(cell));
+  // ROS_INFO("getRisk: %2.2f", global_planner->getRisk(cell));
+  // ROS_INFO("singleCellRisk: %2.2f", global_planner->getSingleCellRisk(cell));
+  // ROS_INFO(
+  //     "Neighbors:\n \t %2.2f \t \t \t %2.2f \n %2.2f \t \t %2.2f \n \t %2.2f "
+  //     "\t \t \t %2.2f",
+  //     global_planner->getSingleCellRisk(Cell(x, y + 1, z)), global_planner->getSingleCellRisk(Cell(x, y, z + 1)),
+  //     global_planner->getSingleCellRisk(Cell(x - 1, y, z)), global_planner->getSingleCellRisk(Cell(x + 1, y, z)),
+  //     global_planner->getSingleCellRisk(Cell(x, y - 1, z)), global_planner->getSingleCellRisk(Cell(x, y, z - 1)));
 
   double heuristics = global_planner->getHeuristic(Node(cell, cell), global_planner->goal_pos_);
-  ROS_INFO("Heuristics: %2.2f", heuristics);
+  // ROS_INFO("Heuristics: %2.2f", heuristics);
 
   octomap::OcTreeNode* node = global_planner->octree_->search(x, y, z);
   if (node) {
     double prob = octomap::probability(node->getValue());
     double post_prob = posterior(global_planner->getAltPrior(cell), prob);
-    ROS_INFO("prob: %2.2f \t post_prob: %2.2f", prob, post_prob);
+    // ROS_INFO("prob: %2.2f \t post_prob: %2.2f", prob, post_prob);
     if (global_planner->occupied_.find(cell) != global_planner->occupied_.end()) {
-      ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
+      // ROS_INFO("Cell in occupied, posterior: %2.2f", post_prob);
     } else {
-      ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner->expore_penalty_ * post_prob);
+      // ROS_INFO("Cell NOT in occupied, posterior: %2.2f", global_planner->expore_penalty_ * post_prob);
     }
   } else {
-    ROS_INFO("Cell not in tree, prob: %2.2f", global_planner->expore_penalty_ * global_planner->getAltPrior(cell));
+    // ROS_INFO("Cell not in tree, prob: %2.2f", global_planner->expore_penalty_ * global_planner->getAltPrior(cell));
   }
 }
 

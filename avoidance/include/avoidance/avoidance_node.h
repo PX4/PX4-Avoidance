@@ -5,10 +5,15 @@
 
 #include "avoidance/common.h"
 #include <px4_msgs/msg/telemetry_status.hpp>
+#include <px4_msgs/msg/vehicle_odometry.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <geometry_msgs/msg/transform_stamped.hpp>
 
 #include <chrono>
 
 namespace avoidance {
+
+using std::placeholders::_1;
 
 class AvoidanceNode {
  public:
@@ -37,6 +42,8 @@ class AvoidanceNode {
  private:
   // telemetry_status Publisher
   rclcpp::Publisher<px4_msgs::msg::TelemetryStatus>::SharedPtr telemetry_status_pub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleOdometry>::SharedPtr odom_sub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr position_sub_;
 
   rclcpp::executors::MultiThreadedExecutor cmdloop_executor_;
   rclcpp::executors::MultiThreadedExecutor statusloop_executor_;
@@ -61,13 +68,14 @@ class AvoidanceNode {
   rclcpp::Duration timeout_critical_;
   rclcpp::Duration timeout_startup_;
 
+  int agent_number_ = 1;
   bool position_received_;
   bool should_exit_;
 
   float mission_item_speed_;
 
   void publishSystemStatus();
-
+  
   rclcpp::Logger avoidance_node_logger_ = rclcpp::get_logger("avoidance_node");
 
 };

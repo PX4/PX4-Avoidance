@@ -31,33 +31,33 @@ struct SearchInfo {
 
 inline void printSearchInfo(SearchInfo info, std::string node_type = "Node", double overestimate_factor = 1.0) {
   double avg_time = info.search_time / info.num_iter;
-  std::cout << std::setw(20) << std::left << node_type << std::setw(10) << std::setprecision(3) << avg_time
-            << std::setw(10) << std::setprecision(3) << overestimate_factor << std::setw(10) << info.num_iter
-            << std::setw(10) << 0.0;
+  // std::cout << std::setw(20) << std::left << node_type << std::setw(10) << std::setprecision(3) << avg_time
+  //           << std::setw(10) << std::setprecision(3) << overestimate_factor << std::setw(10) << info.num_iter
+  //           << std::setw(10) << 0.0;
 }
 
 // Returns a path where corners are smoothed with quadratic Bezier-curves
-inline nav_msgs::Path smoothPath(const nav_msgs::Path& path) {
+inline nav_msgs::msg::Path smoothPath(const nav_msgs::msg::Path& path) {
   if (path.poses.size() < 3) {
     return path;
   }
 
-  nav_msgs::Path smooth_path;
+  nav_msgs::msg::Path smooth_path;
   smooth_path.header = path.header;
 
   // Repeat the first and last points to get the first half of the first edge
   // and the second half of the last edge
   smooth_path.poses.push_back((path.poses.front()));
   for (int i = 2; i < path.poses.size(); i++) {
-    geometry_msgs::Point p0 = path.poses[i - 2].pose.position;
-    geometry_msgs::Point p1 = path.poses[i - 1].pose.position;
-    geometry_msgs::Point p2 = path.poses[i].pose.position;
+    geometry_msgs::msg::Point p0 = path.poses[i - 2].pose.position;
+    geometry_msgs::msg::Point p1 = path.poses[i - 1].pose.position;
+    geometry_msgs::msg::Point p2 = path.poses[i].pose.position;
     p0 = middlePoint(p0, p1);
     p2 = middlePoint(p1, p2);
 
-    std::vector<geometry_msgs::Point> smooth_turn = threePointBezier(p0, p1, p2);
+    std::vector<geometry_msgs::msg::Point> smooth_turn = threePointBezier(p0, p1, p2);
     for (const auto& point : smooth_turn) {
-      geometry_msgs::PoseStamped pose_msg = path.poses.front();  // Copy the original header info
+      geometry_msgs::msg::PoseStamped pose_msg = path.poses.front();  // Copy the original header info
       pose_msg.pose.position = point;
       smooth_path.poses.push_back(pose_msg);
     }

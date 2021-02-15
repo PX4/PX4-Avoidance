@@ -253,6 +253,40 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q) {
   return pitch * RAD_TO_DEG;
 }
 
+geometry_msgs::msg::Quaternion createQuaternionMsgFromYaw(double yaw) {
+  tf2::Quaternion quat_tf;
+  quat_tf.setRPY( 0, 0, yaw );
+  geometry_msgs::msg::Quaternion quat_msg;
+  quat_msg = tf2::toMsg(quat_tf);
+  return quat_msg;
+}
+
+geometry_msgs::msg::PoseStamped transfromNEDtoENU(geometry_msgs::msg::PoseStamped pose) {
+  geometry_msgs::msg::TransformStamped transformStamped;
+  tf2::Quaternion tf2_q_NED;
+  tf2_q_NED.setRPY(3.14, 0, 1.57);
+  geometry_msgs::msg::Quaternion geomsg_q;
+  tf2::convert(tf2_q_NED, geomsg_q);
+  transformStamped.transform.rotation = geomsg_q;
+  
+  geometry_msgs::msg::PoseStamped transformed_pose;
+  tf2::doTransform(pose, transformed_pose, transformStamped);
+  return transformed_pose;
+}
+
+geometry_msgs::msg::PoseStamped transfromENUtoNED(geometry_msgs::msg::PoseStamped pose) {
+  geometry_msgs::msg::TransformStamped transformStamped;
+  tf2::Quaternion tf2_q_NED;
+  tf2_q_NED.setRPY(3.14, 0, 1.57);
+  geometry_msgs::msg::Quaternion geomsg_q;
+  tf2::convert(tf2_q_NED, geomsg_q);
+  transformStamped.transform.rotation = geomsg_q;
+  
+  geometry_msgs::msg::PoseStamped transformed_pose;
+  tf2::doTransform(pose, transformed_pose, transformStamped);
+  return transformed_pose;
+}
+
 float wrapAngleToPlusMinusPI(float angle) { return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f); }
 
 float wrapAngleToPlusMinus180(float angle) { return angle - 360.f * std::floor(angle / 360.f + 0.5f); }

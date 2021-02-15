@@ -6,7 +6,7 @@ namespace tf_buffer {
 
 TransformBuffer::TransformBuffer(float buffer_size_s) : buffer_size_(rclcpp::Duration(buffer_size_s)) {
   startup_time_ = rclcpp::Clock().now();
-};
+}
 
 std::string TransformBuffer::getKey(const std::string& source_frame, const std::string& target_frame) const {
   return source_frame + "_to_" + target_frame;
