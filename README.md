@@ -41,7 +41,7 @@ The documentation contains information about how to setup and run the two planne
 - [Advanced](#advanced)
   - [Message Flows](#message-flow)
     - [PX4 and local planner](#px4-and-local-planner)
-    - [PX4 and global planner](#px4-and-gloabl-planner)
+    - [PX4 and global planner](#px4-and-global-planner)
 - [Contributing](#contributing)
 
 # Getting Started
@@ -471,8 +471,8 @@ home_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_air_data | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
 vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
 vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
-- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
-- | MISSION_ITEM | waypoint | mavros_msgs::WaypointList | /mavros/mission/waypoints
+*none* | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
+*none* | MISSION_ITEM | waypoint | mavros_msgs::WaypointList | /mavros/mission/waypoints
 
 
 This is the complete message flow *to* PX4 Firmware from the local planner.
@@ -511,7 +511,7 @@ PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic
 vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
 vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
 vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
-- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
+*none* | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
 
 This is the complete message flow *to* PX4 Firmware from the safe landing planner.
 
