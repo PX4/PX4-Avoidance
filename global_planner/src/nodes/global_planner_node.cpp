@@ -228,7 +228,7 @@ void GlobalPlannerNode::localPositionCallback(const px4_msgs::msg::VehicleLocalP
     pose.pose.position.z = msg->z;
     pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->yaw);
 
-    geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transfromNEDtoENU(pose);
+    geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transfromNEDandENU(pose);
 
     // Update position
     last_pos_ = transformed_pose;
@@ -300,7 +300,7 @@ void GlobalPlannerNode::globalPositionCallback(const px4_msgs::msg::VehicleGloba
   pose.pose.position.z = local_pos.z;
   pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(0);
 
-  geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transfromNEDtoENU(pose);
+  geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transfromNEDandENU(pose);
 
   // Update position
   last_pos_ = transformed_pose;
@@ -473,7 +473,7 @@ void GlobalPlannerNode::publishSetpoint() {
   setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
   setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
 
-  geometry_msgs::msg::PoseStamped NED_setpoint = avoidance::transfromENUtoNED(setpoint);
+  geometry_msgs::msg::PoseStamped NED_setpoint = avoidance::transfromNEDandENU(setpoint);
   // Publish setpoint for vizualization
   // current_waypoint_publisher_->publish(setpoint);
   geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(ref_point_, NED_setpoint.pose.position);
