@@ -73,9 +73,9 @@ You might want to skip some steps if your system is already partially installed.
    ```
 
 
-1. Source the catkin setup.bash from your catkin workspace:
+1. Source the workspace setup.bash from your avoidance workspace:
    ```bash   
-   echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+   echo "source ~/avoidance_ws/src/PX4-Avoidance/install/setup.bash" >> ~/.bashrc
    source ~/.bashrc
    ```
 
