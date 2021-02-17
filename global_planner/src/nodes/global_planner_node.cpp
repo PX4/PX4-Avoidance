@@ -3,17 +3,13 @@
 namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode()
-   : Node("global_planner_node") ,
-     gp_cmdloop_dt_(100ms),
-     gp_plannerloop_dt_(1000ms),
-     start_yaw_(0.0)
-    {
+    : Node("global_planner_node"), gp_cmdloop_dt_(100ms), gp_plannerloop_dt_(1000ms), start_yaw_(0.0) {
   RCLCPP_INFO_ONCE(this->get_logger(), "GlobalPlannerNode STARTED!");
- 
-  #ifndef DISABLE_SIMULATION
-    world_visualizer_ = std::make_shared<avoidance::WorldVisualizer>();
-    world_visualizer_executor_.add_node(world_visualizer_);
-  #endif
+
+#ifndef DISABLE_SIMULATION
+  world_visualizer_ = std::make_shared<avoidance::WorldVisualizer>();
+  world_visualizer_executor_.add_node(world_visualizer_);
+#endif
 
   // Read Ros parameters
   readParams();
@@ -23,17 +19,19 @@ GlobalPlannerNode::GlobalPlannerNode()
   rclcpp::QoS qos_best_effort = rclcpp::QoS(5).reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
 
   octomap_full_sub_ = this->create_subscription<octomap_msgs::msg::Octomap>(
-    "/octomap_full", qos_best_effort, std::bind(&GlobalPlannerNode::octomapFullCallback, this, _1));
+      "/octomap_full", qos_best_effort, std::bind(&GlobalPlannerNode::octomapFullCallback, this, _1));
   attitude_sub_ = this->create_subscription<px4_msgs::msg::VehicleAttitude>(
-    "/VehicleAttitude_PubSubTopic", qos_best_effort, std::bind(&GlobalPlannerNode::attitudeCallback, this, _1));
+      "/VehicleAttitude_PubSubTopic", qos_best_effort, std::bind(&GlobalPlannerNode::attitudeCallback, this, _1));
   clicked_point_sub_ = this->create_subscription<geometry_msgs::msg::PointStamped>(
-    "/clicked_point", qos_default, std::bind(&GlobalPlannerNode::clickedPointCallback, this, _1));
+      "/clicked_point", qos_default, std::bind(&GlobalPlannerNode::clickedPointCallback, this, _1));
   move_base_simple_sub_ = this->create_subscription<geometry_msgs::msg::PoseStamped>(
-    "/goal_pose", qos_default, std::bind(&GlobalPlannerNode::moveBaseSimpleCallback, this, _1));
+      "/goal_pose", qos_default, std::bind(&GlobalPlannerNode::moveBaseSimpleCallback, this, _1));
   local_position_sub_ = this->create_subscription<px4_msgs::msg::VehicleLocalPosition>(
-    "/VehicleLocalPosition_PubSubTopic", qos_best_effort, std::bind(&GlobalPlannerNode::localPositionCallback, this, _1));
+      "/VehicleLocalPosition_PubSubTopic", qos_best_effort,
+      std::bind(&GlobalPlannerNode::localPositionCallback, this, _1));
   global_position_sub_ = this->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(
-    "/VehicleGlobalPosition_PubSubTopic", qos_best_effort, std::bind(&GlobalPlannerNode::globalPositionCallback, this, _1));
+      "/VehicleGlobalPosition_PubSubTopic", qos_best_effort,
+      std::bind(&GlobalPlannerNode::globalPositionCallback, this, _1));
 
   // Publishers
   global_temp_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/global_temp_path", 10);
@@ -42,7 +40,7 @@ GlobalPlannerNode::GlobalPlannerNode()
   global_goal_pub_ = this->create_publisher<geometry_msgs::msg::PointStamped>("/global_goal", 10);
   global_temp_goal_pub_ = this->create_publisher<geometry_msgs::msg::PointStamped>("/global_temp_goal", 10);
   explored_cells_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/explored_cells", 10);
-  vehicle_command_pub_ = this->create_publisher<px4_msgs::msg::VehicleCommand>("/VehicleCommand_PubSubTopic", 10);  
+  vehicle_command_pub_ = this->create_publisher<px4_msgs::msg::VehicleCommand>("/VehicleCommand_PubSubTopic", 10);
   current_waypoint_publisher_ = this->create_publisher<geometry_msgs::msg::PoseStamped>("/current_setpoint", 10);
   pointcloud_pub_ = this->create_publisher<sensor_msgs::msg::PointCloud2>("/cloud_in", 10);
 
@@ -50,8 +48,8 @@ GlobalPlannerNode::GlobalPlannerNode()
 
   actual_path_.header.frame_id = frame_id_;
 
-  gp_cmdloop_timer_ = this->create_wall_timer(gp_cmdloop_dt_, [&](){ cmdLoopCallback(); });
-  gp_plannerloop_timer_ = this->create_wall_timer(gp_plannerloop_dt_, [&](){ plannerLoopCallback(); });
+  gp_cmdloop_timer_ = this->create_wall_timer(gp_cmdloop_dt_, [&]() { cmdLoopCallback(); });
+  gp_plannerloop_timer_ = this->create_wall_timer(gp_plannerloop_dt_, [&]() { plannerLoopCallback(); });
 
   current_goal_.header.frame_id = frame_id_;
   current_goal_.pose.position = start_pos_;
@@ -59,9 +57,8 @@ GlobalPlannerNode::GlobalPlannerNode()
   last_goal_ = current_goal_;
 
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
-  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
-    this->get_node_base_interface(),
-    this->get_node_timers_interface());
+  auto timer_interface =
+      std::make_shared<tf2_ros::CreateTimerROS>(this->get_node_base_interface(), this->get_node_timers_interface());
   tf_buffer_->setCreateTimerInterface(timer_interface);
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -83,24 +80,32 @@ void GlobalPlannerNode::readParams() {
   global_planner_.smooth_factor_ = this->declare_parameter("smooth_factor", global_planner_.smooth_factor_);
   global_planner_.vert_to_hor_cost_ = this->declare_parameter("vert_to_hor_cost", global_planner_.vert_to_hor_cost_);
   global_planner_.risk_factor_ = this->declare_parameter("risk_factor", global_planner_.risk_factor_);
-  global_planner_.neighbor_risk_flow_ = this->declare_parameter("neighbor_risk_flow", global_planner_.neighbor_risk_flow_);
+  global_planner_.neighbor_risk_flow_ =
+      this->declare_parameter("neighbor_risk_flow", global_planner_.neighbor_risk_flow_);
   global_planner_.explore_penalty_ = this->declare_parameter("explore_penalty", global_planner_.explore_penalty_);
   global_planner_.up_cost_ = this->declare_parameter("up_cost", global_planner_.up_cost_);
   global_planner_.down_cost_ = this->declare_parameter("down_cost", global_planner_.down_cost_);
   global_planner_.search_time_ = this->declare_parameter("search_time", global_planner_.search_time_);
-  global_planner_.min_overestimate_factor_ = this->declare_parameter("min_overestimate_factor", global_planner_.min_overestimate_factor_);
-  global_planner_.max_overestimate_factor_ = this->declare_parameter("max_overestimate_factor", global_planner_.max_overestimate_factor_);
-  global_planner_.risk_threshold_risk_based_speedup_ = this->declare_parameter("risk_threshold_risk_based_speedup", global_planner_.risk_threshold_risk_based_speedup_);
+  global_planner_.min_overestimate_factor_ =
+      this->declare_parameter("min_overestimate_factor", global_planner_.min_overestimate_factor_);
+  global_planner_.max_overestimate_factor_ =
+      this->declare_parameter("max_overestimate_factor", global_planner_.max_overestimate_factor_);
+  global_planner_.risk_threshold_risk_based_speedup_ =
+      this->declare_parameter("risk_threshold_risk_based_speedup", global_planner_.risk_threshold_risk_based_speedup_);
   global_planner_.default_speed_ = this->declare_parameter("default_speed", global_planner_.default_speed_);
   global_planner_.max_speed_ = this->declare_parameter("max_speed", global_planner_.max_speed_);
   global_planner_.max_iterations_ = this->declare_parameter("max_iterations", global_planner_.max_iterations_);
   global_planner_.goal_is_blocked_ = this->declare_parameter("goal_is_blocked", global_planner_.goal_is_blocked_);
-  global_planner_.current_cell_blocked_ = this->declare_parameter("current_cell_blocked", global_planner_.current_cell_blocked_);
+  global_planner_.current_cell_blocked_ =
+      this->declare_parameter("current_cell_blocked", global_planner_.current_cell_blocked_);
   global_planner_.goal_must_be_free_ = this->declare_parameter("goal_must_be_free", global_planner_.goal_must_be_free_);
   global_planner_.use_current_yaw_ = this->declare_parameter("use_current_yaw", global_planner_.use_current_yaw_);
-  global_planner_.use_risk_heuristics_ = this->declare_parameter("use_risk_heuristics", global_planner_.use_risk_heuristics_);
-  global_planner_.use_speedup_heuristics_ = this->declare_parameter("use_speedup_heuristics", global_planner_.use_speedup_heuristics_);
-  global_planner_.use_risk_based_speedup_ = this->declare_parameter("use_risk_based_speedup", global_planner_.use_risk_based_speedup_);
+  global_planner_.use_risk_heuristics_ =
+      this->declare_parameter("use_risk_heuristics", global_planner_.use_risk_heuristics_);
+  global_planner_.use_speedup_heuristics_ =
+      this->declare_parameter("use_speedup_heuristics", global_planner_.use_speedup_heuristics_);
+  global_planner_.use_risk_based_speedup_ =
+      this->declare_parameter("use_risk_based_speedup", global_planner_.use_risk_based_speedup_);
   global_planner_.position_mode_ = this->declare_parameter("position_mode", global_planner_.position_mode_);
 
   camera_topics = this->declare_parameter("pointcloud_topics", camera_topics);
@@ -127,10 +132,10 @@ void GlobalPlannerNode::readParams() {
 void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
   cameras_.resize(camera_topics.size());
   rclcpp::QoS qos_best_effort = rclcpp::QoS(5).reliability(RMW_QOS_POLICY_RELIABILITY_BEST_EFFORT);
-    
+
   for (size_t i = 0; i < camera_topics.size(); i++) {
     cameras_[i].pointcloud_sub_ = this->create_subscription<sensor_msgs::msg::PointCloud2>(
-      camera_topics[i], qos_best_effort, std::bind(&GlobalPlannerNode::depthCameraCallback, this, _1));
+        camera_topics[i], qos_best_effort, std::bind(&GlobalPlannerNode::depthCameraCallback, this, _1));
   }
 }
 
@@ -159,7 +164,8 @@ void GlobalPlannerNode::popNextGoal() {
 void GlobalPlannerNode::planPath() {
   std::clock_t start_time = std::clock();
   // if (global_planner_.octree_) {
-  //   RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() / 1000000.0);
+  //   RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() /
+  //   1000000.0);
   // }
 
   bool found_path = global_planner_.getGlobalPath();
@@ -187,12 +193,12 @@ void GlobalPlannerNode::setIntermediateGoal() {
 }
 
 void GlobalPlannerNode::attitudeCallback(const px4_msgs::msg::VehicleAttitude::SharedPtr msg) {
-  tf2::Quaternion q( msg->q[0], msg->q[1], msg->q[2], msg->q[3] );
+  tf2::Quaternion q(msg->q[0], msg->q[1], msg->q[2], msg->q[3]);
   // tf2::Quaternion q( -msg->q[1], -msg->q[0], -msg->q[2], msg->q[3] );
   double yaw, pitch, roll;
   tf2::getEulerYPR(q, yaw, pitch, roll);
   tf2::Quaternion q_NED;
-  q_NED.setRPY(yaw+3.14, -pitch, -roll-3.141592);
+  q_NED.setRPY(yaw + 3.14, -pitch, -roll - 3.141592);
   geometry_msgs::msg::Quaternion quat_geomsg;
   tf2::convert(q_NED, quat_geomsg);
 
@@ -206,7 +212,7 @@ void GlobalPlannerNode::attitudeCallback(const px4_msgs::msg::VehicleAttitude::S
 
 // Sets the current position and checks if the current goal has been reached
 void GlobalPlannerNode::localPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg) {
-  if(global_planner_.position_mode_.compare("local_position") == 0) {
+  if (global_planner_.position_mode_.compare("local_position") == 0) {
     geometry_msgs::msg::TransformStamped tfmsg;
     tfmsg.header.stamp = rclcpp::Clock().now();
     tfmsg.header.frame_id = "base_frame_ned";
@@ -392,9 +398,9 @@ void GlobalPlannerNode::cmdLoopCallback() {
   avoidance_node_.checkFailsafe(since_last_cloud, since_start, hover_);
   publishSetpoint();
 
-  #ifndef DISABLE_SIMULATION
-    world_visualizer_executor_.spin_some();
-  #endif
+#ifndef DISABLE_SIMULATION
+  world_visualizer_executor_.spin_some();
+#endif
 }
 
 void GlobalPlannerNode::plannerLoopCallback() {
@@ -408,8 +414,10 @@ void GlobalPlannerNode::plannerLoopCallback() {
 
   // Print and publish info
   if (is_in_goal && !waypoints_.empty()) {
-    RCLCPP_INFO(this->get_logger(), "Reached current goal %s, %d goals left\n\n", global_planner_.goal_pos_.asString().c_str(), (int)waypoints_.size());
-    RCLCPP_INFO(this->get_logger(), "Actual travel distance: %2.2f \t Actual energy usage: %2.2f", pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
+    RCLCPP_INFO(this->get_logger(), "Reached current goal %s, %d goals left\n\n",
+                global_planner_.goal_pos_.asString().c_str(), (int)waypoints_.size());
+    RCLCPP_INFO(this->get_logger(), "Actual travel distance: %2.2f \t Actual energy usage: %2.2f",
+                pathLength(actual_path_), pathEnergy(actual_path_, global_planner_.up_cost_));
   }
 
   publishPath();
@@ -437,7 +445,8 @@ void GlobalPlannerNode::publishPath() {
   setCurrentPath(path_msg.poses);
   smooth_path_pub_->publish(smoothPath(path_msg));
 
-  // auto simple_path = simplifyPath(&global_planner_, global_planner_.curr_path_, simplify_iterations_, simplify_margin_);
+  // auto simple_path = simplifyPath(&global_planner_, global_planner_.curr_path_, simplify_iterations_,
+  // simplify_margin_);
   // auto simple_path_msg = global_planner_.getPathMsg(simple_path);
   // global_temp_path_pub_->publish(simple_path_msg);
   // setCurrentPath(simple_path_msg.poses);
@@ -470,7 +479,7 @@ void GlobalPlannerNode::publishSetpoint() {
   geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(ref_point_, NED_setpoint.pose.position);
   auto reposition_cmd = px4_msgs::msg::VehicleCommand();
   reposition_cmd.target_system = 1;
-  reposition_cmd.command = 192; // MAV_CMD_DO_REPOSITION
+  reposition_cmd.command = 192;  // MAV_CMD_DO_REPOSITION
   reposition_cmd.param1 = -1.0;
   reposition_cmd.param2 = 1.0;
   reposition_cmd.param3 = 0.0;
@@ -487,8 +496,6 @@ void GlobalPlannerNode::publishSetpoint() {
   // mavros_obstacle_free_path_pub_->publish(obst_free_path);
 }
 
-bool GlobalPlannerNode::isCloseToGoal() { 
-  return distance(current_goal_, last_pos_) < global_planner_.default_speed_;
-}
+bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < global_planner_.default_speed_; }
 
 }  // namespace global_planner

@@ -9,36 +9,36 @@
 #include <string>
 #include "rclcpp/rclcpp.hpp"
 
-#include <px4_msgs/msg/vehicle_local_position.hpp>
-#include <px4_msgs/msg/vehicle_global_position.hpp>
-#include <px4_msgs/msg/vehicle_attitude.hpp>
-#include <px4_msgs/msg/vehicle_command.hpp>
-#include <px4_msgs/msg/vehicle_trajectory_waypoint.hpp>
-#include <px4_msgs/msg/monitoring.hpp>
-#include <geometry_msgs/msg/quaternion.hpp>
+#include <pcl/common/transforms.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <tf2/convert.h>
+#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
+#include <tf2_ros/buffer.h>
+#include <tf2_ros/create_timer_ros.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <tf2_ros/transform_listener.h>
+#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
+#include <geographic_msgs/msg/geo_point.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/transform_stamped.hpp>
-#include <geographic_msgs/msg/geo_point.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/common/transforms.h>
+#include <px4_msgs/msg/monitoring.hpp>
+#include <px4_msgs/msg/vehicle_attitude.hpp>
+#include <px4_msgs/msg/vehicle_command.hpp>
+#include <px4_msgs/msg/vehicle_global_position.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_trajectory_waypoint.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
-#include <tf2_ros/transform_listener.h>
-#include <tf2_ros/transform_broadcaster.h>
-#include <tf2_ros/create_timer_ros.h>
-#include <tf2_ros/buffer.h>
-#include <tf2/convert.h>
-#include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <tf2_geometry_msgs/tf2_geometry_msgs.h>
 #include <visualization_msgs/msg/marker.hpp>
 #include <visualization_msgs/msg/marker_array.hpp>
 
 #include <octomap/octomap.h>
-#include <octomap_msgs/msg/octomap.h>
 #include <octomap_msgs/conversions.h>
+#include <octomap_msgs/msg/octomap.h>
 
 #include "avoidance/avoidance_node.h"
 #include "global_planner/global_planner.h"
@@ -56,7 +56,7 @@ struct cameraData {
   rclcpp::Subscription<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_sub_;
 };
 
-class GlobalPlannerNode  : public rclcpp::Node {
+class GlobalPlannerNode : public rclcpp::Node {
  public:
   // TODO: Deque instead of vector
   GlobalPlanner global_planner_;
@@ -76,7 +76,7 @@ class GlobalPlannerNode  : public rclcpp::Node {
   rclcpp::Subscription<px4_msgs::msg::VehicleAttitude>::SharedPtr attitude_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr clicked_point_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr move_base_simple_sub_;
-  
+
   // Publishers
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr global_temp_path_pub_;
   rclcpp::Publisher<nav_msgs::msg::Path>::SharedPtr smooth_path_pub_;
@@ -89,7 +89,6 @@ class GlobalPlannerNode  : public rclcpp::Node {
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr current_waypoint_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
 
-
   rclcpp::Time start_time_;
   rclcpp::Time last_wp_time_;
 
@@ -97,9 +96,9 @@ class GlobalPlannerNode  : public rclcpp::Node {
   rclcpp::TimerBase::SharedPtr gp_plannerloop_timer_;
 
   std::shared_ptr<tf2_ros::Buffer> tf_buffer_;
-  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;  
+  std::shared_ptr<tf2_ros::TransformListener> tf_listener_;
   std::shared_ptr<tf2_ros::TransformBroadcaster> transform_broadcaster_;
-  
+
   nav_msgs::msg::Path actual_path_;
   geometry_msgs::msg::Point start_pos_;
   geometry_msgs::msg::PoseStamped current_goal_;
@@ -107,7 +106,7 @@ class GlobalPlannerNode  : public rclcpp::Node {
   geometry_msgs::msg::PoseStamped last_pos_;
   px4_msgs::msg::VehicleLocalPosition local_pos_;
   sensor_msgs::msg::PointCloud2 pointcloud2_;
-  
+
   std::vector<geometry_msgs::msg::PoseStamped> last_clicked_points;
   std::vector<geometry_msgs::msg::PoseStamped> path_;
   std::vector<cameraData> cameras_;
