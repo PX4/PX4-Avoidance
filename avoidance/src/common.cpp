@@ -261,7 +261,7 @@ geometry_msgs::msg::Quaternion createQuaternionMsgFromYaw(double yaw) {
   return quat_msg;
 }
 
-geometry_msgs::msg::PoseStamped transfromNEDandENU(geometry_msgs::msg::PoseStamped pose) {
+geometry_msgs::msg::PoseStamped transformNEDandENU(geometry_msgs::msg::PoseStamped pose) {
   geometry_msgs::msg::TransformStamped transformStamped;
   tf2::Quaternion tf2_q_NED;
   tf2_q_NED.setRPY(3.14, 0, 1.57);
