@@ -25,7 +25,6 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <px4_msgs/msg/monitoring.hpp>
 #include <px4_msgs/msg/vehicle_attitude.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
 #include <px4_msgs/msg/vehicle_global_position.hpp>
@@ -147,7 +146,6 @@ class GlobalPlannerNode : public rclcpp::Node {
   void setCurrentPath(const std::vector<geometry_msgs::msg::PoseStamped>& poses);
   void localPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg);
   void globalPositionCallback(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg);
-  void monitoringCallback(const px4_msgs::msg::Monitoring::SharedPtr msg);
   void clickedPointCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
   void moveBaseSimpleCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
   void octomapFullCallback(const octomap_msgs::msg::Octomap::SharedPtr msg);

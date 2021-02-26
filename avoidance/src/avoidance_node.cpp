@@ -64,13 +64,14 @@ void AvoidanceNode::publishSystemStatus() {
   // Publish companion process status as telemetry_status msg
   auto status_msg = px4_msgs::msg::TelemetryStatus();
 
-  status_msg.timestamp = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
+  // TODO : TelemetryStatus.msg is totally changed in px4_msgs. It should be reflected.
+  /*status_msg.timestamp = std::chrono::time_point_cast<std::chrono::microseconds>(std::chrono::steady_clock::now()).time_since_epoch().count();
   status_msg.heartbeat_time = status_msg.timestamp;
   status_msg.remote_system_id = 1;
   status_msg.remote_component_id = px4_msgs::msg::TelemetryStatus::COMPONENT_ID_OBSTACLE_AVOIDANCE;
   status_msg.remote_type = px4_msgs::msg::TelemetryStatus::MAV_TYPE_ONBOARD_CONTROLLER;
   status_msg.remote_system_status = (int)(this->getSystemStatus());
-  status_msg.type = px4_msgs::msg::TelemetryStatus::LINK_TYPE_WIRE;
+  status_msg.type = px4_msgs::msg::TelemetryStatus::LINK_TYPE_WIRE;*/
 
   telemetry_status_pub_->publish(status_msg);
 }
