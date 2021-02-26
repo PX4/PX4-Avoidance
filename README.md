@@ -1,3 +1,4 @@
+
 # Obstacle Detection and Avoidance
 [![Release Status](https://img.shields.io/github/v/release/PX4/avoidance)](https://github.com/PX4/avoidance/releases)
 [![Build Status](https://travis-ci.org/PX4/avoidance.svg?branch=master)](https://travis-ci.org/PX4/avoidance)
@@ -58,11 +59,12 @@ You might want to skip some steps if your system is already partially installed.
 
 1. Install ROS foxy to your PC. Follow steps on [#Installing ROS 2 via Debian Packages](https://index.ros.org/doc/ros2/Installation/Foxy/Linux-Install-Debians/)
 
-1. Clone this repository in your avoidance workspace in order to build the avoidance node. (ros2 branch)
+1. Clone this repository in your avoidance workspace in order to build the avoidance node (ros2 branch) and px4_ros_com to use micrortps_agent
 
    ```bash
    cd ~/avoidance_ws/src/
    git clone -b ros2 --recursive https://github.com/PX4/avoidance.git
+   git clone https://github.com/PX4/px4_ros_com.git
    ```
 
 1. Actually build the avoidance node. (exclude local_planner since it is not fully working at this time)
@@ -83,7 +85,7 @@ You might want to skip some steps if your system is already partially installed.
 
 In the following section we guide you through installing and running a Gazebo simulation of both local and global planner.
 
-### Build and Run the Simulator
+### Build the Simulator
 
 1. Clone the PX4 Firmware and all its submodules (it may take some time).
 
@@ -117,13 +119,35 @@ In the following section we guide you through installing and running a Gazebo si
    . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_rtps
    ```
 
-1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
+1. Set the GAZEBO_MODEL_PATH in your bashrc:
    ```bash
    echo "export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/avoidance_ws/src/PX4-avoidance/avoidance/sim/models:~/avoidance_ws/src/PX4-avoidance/avoidance/sim/worlds" >> ~/.bashrc
    ```
 
 The last three steps, together with sourcing your ros2 workspace **setup.bash** (`source ~/avoidance_ws/install/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
+
+### Run gazebo simulator for using planners
+
+1. Run px4_sitl_rtps
+ ```bash
+   # Build and run simulation
+   make px4_sitl_rtps gazebo
+   ```
+
+2. Run px4_ros_com to send/receive msgs with drone
+```bash
+   ~/avoidance_ws/build/px4_ros_com/micrortps_agent -t UDP
+```
+
+3.  Check communication via ros2 has no problem
+```bash
+   # See which topics are existing
+   ros2 topic list
+
+   # Echo topic data for test
+   ros2 topic echo /VehicleLocalPosition_PubSubTopic
+```
 
 ### Local Planner (default, ros2 version is not ready)
 
@@ -215,7 +239,6 @@ PX4 topic | MAVLink | ROS Msgs. | Topic
 vehicle_attitude | ATTITUDE | px4_msgs::msg::VehicleAttitude | /VehicleAttitude_PubSubTopic
 vehicle_global_position | GLOBAL_POSITION_INT | px4_msgs::msg::VehicleGlobalPosition | /VehicleGlobalPosition_PubSubTopic
 vehicle_local_position | LOCAL_POSITION_NED | geometry_msgs::TwistStamped | /VehicleLocalPosition_PubSubTopic
-vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | mavros_msgs::Trajectory | mavros/trajectory/desired
 
 This is the complete message flow *to* PX4 Firmware *from* the global planner.
 
@@ -237,4 +260,3 @@ For convenience, you can install the commit hooks which will run this formatting
 `./tools/set_up_commit_hooks` from the main directory.
 
 Commit your changes with informative commit messages, push your branch and open a new pull request. Please provide ROS bags and the Autopilot flight logs relevant to the changes you have made.
-
