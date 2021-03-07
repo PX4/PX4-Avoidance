@@ -84,7 +84,10 @@ You might want to skip some steps if your system is already partially installed.
 
 1. Install and initialize rosdep.
    ```bash
-   sudo apt install python-rosdep
+   # for ros-melodic install:
+   sudo apt install pyhton-rosdep
+   # for ros-noetic install: 
+   sudo apt install pyhton3-rosdep
 
    rosdep init
    rosdep update
