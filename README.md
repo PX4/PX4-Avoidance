@@ -82,8 +82,13 @@ You might want to skip some steps if your system is already partially installed.
        sudo apt install ros-melodic-gazebo9-*
        ```
 
-1. Initialize rosdep.
+1. Install and initialize rosdep.
    ```bash
+   # for ros-melodic install:
+   sudo apt install python-rosdep
+   # for ros-noetic install: 
+   sudo apt install python3-rosdep
+
    rosdep init
    rosdep update
    ```
