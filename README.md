@@ -238,7 +238,7 @@ PX4 topic | MAVLink | ROS Msgs. | Topic
 --- | --- | --- | ---
 vehicle_attitude | ATTITUDE | px4_msgs::msg::VehicleAttitude | /VehicleAttitude_PubSubTopic
 vehicle_global_position | GLOBAL_POSITION_INT | px4_msgs::msg::VehicleGlobalPosition | /VehicleGlobalPosition_PubSubTopic
-vehicle_local_position | LOCAL_POSITION_NED | geometry_msgs::TwistStamped | /VehicleLocalPosition_PubSubTopic
+vehicle_local_position | LOCAL_POSITION_NED | px4_msgs::msg::VehicleLocalPosition | /VehicleLocalPosition_PubSubTopic
 
 This is the complete message flow *to* PX4 Firmware *from* the global planner.
 
