@@ -4,7 +4,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/PX4/avoidance/badge.svg)](https://coveralls.io/github/PX4/avoidance)
 
 PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance.
-This repository contains two different implementations:
+This repository contains three different implementations:
 
   * *local_planner* is a local VFH+* based planner that plans (including some history) in a vector field histogram
   * *global_planner* is a global, graph based planner that plans in a traditional octomap occupancy grid
