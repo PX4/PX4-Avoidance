@@ -10,8 +10,9 @@ from launch_ros.actions import Node
 from launch_ros.substitutions import FindPackageShare
 from launch.substitutions import ThisLaunchFileDir
 
-
 def generate_launch_description():
+    pkg_share_path = FindPackageShare('global_planner').find('global_planner')
+    pkg_share_path_avoidance = FindPackageShare('avoidance').find('avoidance')
 
     camera_frame_name = 'camera_frame'
 
@@ -37,11 +38,11 @@ def generate_launch_description():
                 package='rviz2',
                 executable='rviz2',
                 name='rviz2',
-                arguments=['-d', '/home/user/git/global_planner_ws/src/PX4-global-planner-ros2/global_planner/resources/global_planner.rviz'])
+                arguments=['-d', pkg_share_path + '/resource/global_planner.rviz'])
 
     gp_params = {'frame_id': 'base_frame',
-                 'position_mode': 'monitoring',
-                 'world_path': '/home/user/git/global_planner_ws/src/PX4-global-planner-ros2/avoidance/sim/worlds/simple_obstacle.yaml',
+                 'position_mode': 'local_position',
+                 'world_path': pkg_share_path_avoidance + '/sim/worlds/simple_obstacle.yaml',
                  'pointcloud_topics': ['/camera/points'],
                  'start_pos_x': 0.0,
                  'start_pos_y': 0.0,
@@ -76,13 +77,13 @@ def generate_launch_description():
                  output='screen',
                  parameters=[gp_params])
 
-    octomap_params = {'resolution': 0.5,
+    octomap_params = {'resolution': 0.1,
               'frame_id': 'base_frame',
-              'base_frame_id': 'base_footprint',
+              'base_frame_id': 'base_frame',
               'height_map': True,
               'colored_map': False,
               'color_factor': 0.8,
-              'filter_ground': False,
+              'filter_ground': True,
               'filter_speckles': False,
               'compress_map': True,
               'incremental_2D_projection': False,
@@ -97,7 +98,7 @@ def generate_launch_description():
               'pointcloud_min_x': -100.0,
               'pointcloud_min_y': -100.0,
               'pointcloud_min_z': -100.0,
-              'occupancy_min_z': 1.0,
+              'occupancy_min_z': 0.0,
               'color/r': 0.0,
               'color/g': 0.0,
               'color/b': 1.0,

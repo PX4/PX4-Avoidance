@@ -116,6 +116,11 @@ install(DIRECTORY
         DESTINATION share/${PROJECT_NAME}
 )
 
+install(DIRECTORY
+	sim
+	DESTINATION share/${PROJECT_NAME}
+)
+
 #############
 ## Testing ##
 #############
