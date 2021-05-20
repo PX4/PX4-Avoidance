@@ -50,16 +50,9 @@ def generate_launch_description():
                           'base_frame', 'base_frame_ned'],
                 output='screen')
 
-    rviz2_node = Node(
-                package='rviz2',
-                executable='rviz2',
-                name='rviz2',
-                arguments=['-d', '/home/karidrone/git/global_planner_ws/src/PX4-global-planner-ros2/global_planner/resources/global_planner.rviz'])
-
     gp_params = {'frame_id': 'base_frame',
                  'agent_number': 14,
                  'position_mode': 'local_position',
-                 'world_path': '/home/user/git/global_planner_ws/src/PX4-global-planner-ros2/avoidance/sim/worlds/simple_obstacle.yaml',
                  'pointcloud_topics': ['/rs2_pc'],
                  'start_pos_x': 0.0,
                  'start_pos_y': 0.0,
@@ -127,8 +120,6 @@ def generate_launch_description():
               'publish_free_space': False,
     }
 
-    # octomap_remap = [('cloud_in', '/camera/points')]
-    
     octomap_node = Node(package='octomap_server2',
                  executable='octomap_server',
                  output='log',
