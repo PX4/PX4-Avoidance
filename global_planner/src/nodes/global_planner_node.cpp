@@ -32,6 +32,9 @@ GlobalPlannerNode::GlobalPlannerNode()
   global_position_sub_ = this->create_subscription<px4_msgs::msg::VehicleGlobalPosition>(
       "/VehicleGlobalPosition_PubSubTopic", qos_best_effort,
       std::bind(&GlobalPlannerNode::globalPositionCallback, this, _1));
+  status_sub_ = this->create_subscription<px4_msgs::msg::VehicleStatus>(
+      "/VehicleStatus_PubSubTopic", qos_best_effort,
+      std::bind(&GlobalPlannerNode::vehicleStatusCallback, this, _1));
 
   // Publishers
   global_temp_path_pub_ = this->create_publisher<nav_msgs::msg::Path>("/global_temp_path", 10);
@@ -119,14 +122,14 @@ void GlobalPlannerNode::readParams() {
   global_planner_.setRobotRadius(robot_radius);
 
   // Position for PX4 sitl default location
-  // ref_point_.latitude = 47.3977508;
-  // ref_point_.longitude = 8.5456073;
-  // ref_point_.altitude = 488.10101318359375;
+  ref_point_.latitude = 47.3977508;
+  ref_point_.longitude = 8.5456073;
+  ref_point_.altitude = 488.10101318359375;
 
   // Position for KARI test location
-  ref_point_.latitude = 36.37415;
-  ref_point_.longitude = 127.35275;
-  ref_point_.altitude = 85.4;
+  // ref_point_.latitude = 36.37415;
+  // ref_point_.longitude = 127.35275;
+  // ref_point_.altitude = 85.4;
 }
 
 void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
@@ -163,10 +166,10 @@ void GlobalPlannerNode::popNextGoal() {
 // Plans a new path and publishes it
 void GlobalPlannerNode::planPath() {
   std::clock_t start_time = std::clock();
-  // if (global_planner_.octree_) {
-  //   RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() /
-  //   1000000.0);
-  // }
+  if (global_planner_.octree_) {
+    RCLCPP_INFO(this->get_logger(), "OctoMap memory usage: %2.3f MB", global_planner_.octree_->memoryUsage() /
+    1000000.0);
+  }
 
   bool found_path = global_planner_.getGlobalPath();
 
@@ -242,7 +245,7 @@ void GlobalPlannerNode::localPositionCallback(const px4_msgs::msg::VehicleLocalP
     global_planner_.curr_vel_ = vel;
 
     // Check if a new goal is needed
-    if (num_local_pos_msg_++ % 100 == 0) {
+    if (num_local_pos_msg_++ % 10 == 0) {
       last_pos_.header.frame_id = frame_id_;
       actual_path_.poses.push_back(last_pos_);
       actual_path_pub_->publish(actual_path_);
@@ -332,6 +335,14 @@ void GlobalPlannerNode::globalPositionCallback(const px4_msgs::msg::VehicleGloba
       path_.erase(path_.begin());
     }
   }
+}
+
+void GlobalPlannerNode::vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg) {
+  last_vehicle_status_.timestamp = msg->timestamp;
+  last_vehicle_status_.nav_state = msg->nav_state;
+  last_vehicle_status_.nav_state_timestamp = msg->nav_state_timestamp;
+  last_vehicle_status_.system_id = msg->system_id;
+  last_vehicle_status_.component_id = msg->component_id;
 }
 
 void GlobalPlannerNode::clickedPointCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg) {
@@ -460,40 +471,40 @@ void GlobalPlannerNode::printPointInfo(double x, double y, double z) {
 }
 
 void GlobalPlannerNode::publishSetpoint() {
-  // Vector pointing from current position to the current goal
-  tf2::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
+  // For the safty reason, publishing setpoint should work only if navigation state is AUTO LOITER mode.
+  if (last_vehicle_status_.nav_state == px4_msgs::msg::VehicleStatus::NAVIGATION_STATE_AUTO_LOITER) {
+    // Vector pointing from current position to the current goal
+    tf2::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
 
-  // If we are less than 1.0 away, then we should stop at the goal
-  double new_len = vec.length() < 1.0 ? vec.length() : global_planner_.default_speed_;
-  vec.normalize();
-  vec *= new_len;
+    // If we are less than 1.0 away, then we should stop at the goal
+    double new_len = vec.length() < 1.0 ? vec.length() : global_planner_.default_speed_;
+    vec.normalize();
+    vec *= new_len;
 
-  auto setpoint = current_goal_;  // The intermediate position sent to Mavros
-  setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
-  setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
-  setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
+    auto setpoint = current_goal_;  // The intermediate position sent to Mavros
+    setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
+    setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
+    setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
 
-  geometry_msgs::msg::PoseStamped NED_setpoint = avoidance::transformNEDandENU(setpoint);
-  // Publish setpoint for vizualization
-  // current_waypoint_publisher_->publish(setpoint);
-  geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(ref_point_, NED_setpoint.pose.position);
-  auto reposition_cmd = px4_msgs::msg::VehicleCommand();
-  reposition_cmd.target_system = 1;
-  reposition_cmd.command = 192;  // MAV_CMD_DO_REPOSITION
-  reposition_cmd.param1 = -1.0;
-  reposition_cmd.param2 = 1.0;
-  reposition_cmd.param3 = 0.0;
+    geometry_msgs::msg::PoseStamped NED_setpoint = avoidance::transformNEDandENU(setpoint);
+    // Publish setpoint for vizualization
+    // current_waypoint_publisher_->publish(setpoint);
+    geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(ref_point_, NED_setpoint.pose.position);
+    auto reposition_cmd = px4_msgs::msg::VehicleCommand();
+    reposition_cmd.target_system = last_vehicle_status_.system_id;
+    reposition_cmd.command = px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_REPOSITION;
+    reposition_cmd.param1 = -1.0;
+    reposition_cmd.param2 = 1.0;
+    reposition_cmd.param3 = 0.0;
 
-  double yaw = atan2(vec.getX(), vec.getY());
-  reposition_cmd.param4 = yaw;  // yaw
-  reposition_cmd.param5 = setpoint_geopoint.latitude;
-  reposition_cmd.param6 = setpoint_geopoint.longitude;
-  reposition_cmd.param7 = setpoint_geopoint.altitude;
-  reposition_cmd.from_external = true;
-  vehicle_command_pub_->publish(reposition_cmd);
-
-  // avoidance::transformToTrajectory(obst_free_path, setpoint, velocity_setpoint);
-  // mavros_obstacle_free_path_pub_->publish(obst_free_path);
+    double yaw = atan2(vec.getX(), vec.getY());
+    reposition_cmd.param4 = yaw;  // yaw
+    reposition_cmd.param5 = setpoint_geopoint.latitude;
+    reposition_cmd.param6 = setpoint_geopoint.longitude;
+    reposition_cmd.param7 = setpoint_geopoint.altitude;
+    reposition_cmd.from_external = true;
+    vehicle_command_pub_->publish(reposition_cmd);
+  }
 }
 
 bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < global_planner_.default_speed_; }
