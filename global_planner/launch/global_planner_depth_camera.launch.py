@@ -71,10 +71,18 @@ def generate_launch_description():
                  'use_risk_heuristics': True,
                  'use_speedup_heuristics': True,
                  'use_risk_based_speedup': True}
+
+    agent_id = 1
+    gp_remap = [('/VehicleAttitude_PubSubTopic', '/agent{}/vehicle_attitude'.format(agent_id)),
+            ('/VehicleLocalPosition_PubSubTopic', '/agent{}/vehicle_local_position'.format(agent_id)),
+            ('/VehicleGlobalPosition_PubSubTopic','/agent{}/vehicle_global_position'.format(agent_id)),
+            ('/VehicleStatus_PubSubTopic', '/agent{}/vehicle_status'.format(agent_id)),
+            ('/VehicleCommand_PubSubTopic','/agent{}/vehicle_command'.format(agent_id))]
     
     gp_node = Node(package='global_planner',
                  executable='global_planner_node',
                  output='screen',
+                 remappings = gp_remap,
                  parameters=[gp_params])
 
     octomap_params = {'resolution': 0.1,
@@ -110,8 +118,6 @@ def generate_launch_description():
               'publish_free_space': False,
     }
 
-    # octomap_remap = [('cloud_in', '/camera/points')]
-    
     octomap_node = Node(package='octomap_server2',
                  executable='octomap_server',
                  output='log',
