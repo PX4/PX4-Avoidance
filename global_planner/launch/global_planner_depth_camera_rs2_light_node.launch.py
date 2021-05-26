@@ -73,7 +73,7 @@ def generate_launch_description():
                  'risk_threshold_risk_based_speedup': 0.5,
                  'default_speed': 1.0,
                  'max_speed': 3.0,
-                 'max_iterations': 2000,
+                 'max_iterations': 500,
                  'goal_is_blocked': False,
                  'current_cell_blocked': False,
                  'goal_must_be_free': True,
@@ -87,7 +87,7 @@ def generate_launch_description():
                  output='screen',
                  parameters=[gp_params])
 
-    octomap_params = {'resolution': 0.2,
+    octomap_params = {'resolution': 0.25,
               'frame_id': 'base_frame',
               'base_frame_id': 'base_frame',
               'height_map': True,
@@ -108,7 +108,7 @@ def generate_launch_description():
               'pointcloud_min_x': -100.0,
               'pointcloud_min_y': -100.0,
               'pointcloud_min_z': -100.0,
-              'occupancy_min_z': 0.5,
+              'occupancy_min_z': 0.1,
               'color/r': 0.0,
               'color/g': 0.0,
               'color/b': 1.0,
@@ -123,6 +123,5 @@ def generate_launch_description():
     octomap_node = Node(package='octomap_server2',
                  executable='octomap_server',
                  output='log',
-                 # remappings=octomap_remap,
                  parameters=[octomap_params])
     return LaunchDescription([realsense2_node, tf2_static_pub_node, tf2_static_pub_node2, octomap_node, gp_node]) #, rviz2_node])
