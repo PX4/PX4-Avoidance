@@ -25,10 +25,11 @@
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <nav_msgs/msg/odometry.hpp>
 #include <nav_msgs/msg/path.hpp>
-#include <px4_msgs/msg/vehicle_attitude.hpp>
+#include <px4_msgs/msg/vehicle_status.hpp>
 #include <px4_msgs/msg/vehicle_command.hpp>
-#include <px4_msgs/msg/vehicle_global_position.hpp>
+#include <px4_msgs/msg/vehicle_attitude.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <px4_msgs/msg/vehicle_global_position.hpp>
 #include <px4_msgs/msg/vehicle_trajectory_waypoint.hpp>
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include <std_msgs/msg/color_rgba.hpp>
@@ -68,11 +69,11 @@ class GlobalPlannerNode : public rclcpp::Node {
   std::mutex mutex_;
 
   // Subscribers
-  // ros::Subscriber octomap_sub_;
   rclcpp::Subscription<octomap_msgs::msg::Octomap>::SharedPtr octomap_full_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleLocalPosition>::SharedPtr local_position_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleGlobalPosition>::SharedPtr global_position_sub_;
   rclcpp::Subscription<px4_msgs::msg::VehicleAttitude>::SharedPtr attitude_sub_;
+  rclcpp::Subscription<px4_msgs::msg::VehicleStatus>::SharedPtr status_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PointStamped>::SharedPtr clicked_point_sub_;
   rclcpp::Subscription<geometry_msgs::msg::PoseStamped>::SharedPtr move_base_simple_sub_;
 
@@ -83,7 +84,6 @@ class GlobalPlannerNode : public rclcpp::Node {
   rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr explored_cells_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr global_goal_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr global_temp_goal_pub_;
-  // rclcpp::Publisher<px4_msgs::msg::VehicleTrajectoryWaypoint>::SharedPtr mavros_obstacle_free_path_pub_;
   rclcpp::Publisher<px4_msgs::msg::VehicleCommand>::SharedPtr vehicle_command_pub_;
   rclcpp::Publisher<geometry_msgs::msg::PoseStamped>::SharedPtr current_waypoint_publisher_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pointcloud_pub_;
@@ -103,7 +103,7 @@ class GlobalPlannerNode : public rclcpp::Node {
   geometry_msgs::msg::PoseStamped current_goal_;
   geometry_msgs::msg::PoseStamped last_goal_;
   geometry_msgs::msg::PoseStamped last_pos_;
-  px4_msgs::msg::VehicleLocalPosition local_pos_;
+  px4_msgs::msg::VehicleStatus last_vehicle_status_;
   sensor_msgs::msg::PointCloud2 pointcloud2_;
 
   std::vector<geometry_msgs::msg::PoseStamped> last_clicked_points;
@@ -146,6 +146,7 @@ class GlobalPlannerNode : public rclcpp::Node {
   void setCurrentPath(const std::vector<geometry_msgs::msg::PoseStamped>& poses);
   void localPositionCallback(const px4_msgs::msg::VehicleLocalPosition::SharedPtr msg);
   void globalPositionCallback(const px4_msgs::msg::VehicleGlobalPosition::SharedPtr msg);
+  void vehicleStatusCallback(const px4_msgs::msg::VehicleStatus::SharedPtr msg);
   void clickedPointCallback(const geometry_msgs::msg::PointStamped::SharedPtr msg);
   void moveBaseSimpleCallback(const geometry_msgs::msg::PoseStamped::SharedPtr msg);
   void octomapFullCallback(const octomap_msgs::msg::Octomap::SharedPtr msg);
