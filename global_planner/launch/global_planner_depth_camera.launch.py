@@ -72,6 +72,7 @@ def generate_launch_description():
                  'use_speedup_heuristics': True,
                  'use_risk_based_speedup': True}
 
+    # Remapping rules for using other types of topic name instead of default PubSubTopic names
     agent_id = 1
     gp_remap = [('/VehicleAttitude_PubSubTopic', '/agent{}/vehicle_attitude'.format(agent_id)),
             ('/VehicleLocalPosition_PubSubTopic', '/agent{}/vehicle_local_position'.format(agent_id)),
