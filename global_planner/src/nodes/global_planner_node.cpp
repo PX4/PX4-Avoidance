@@ -3,7 +3,7 @@
 namespace global_planner {
 
 GlobalPlannerNode::GlobalPlannerNode()
-    : Node("global_planner_node"), gp_cmdloop_dt_(100ms), gp_plannerloop_dt_(1000ms), start_yaw_(0.0) {
+    : Node("global_planner_node"), gp_cmdloop_dt_(200ms), gp_plannerloop_dt_(1000ms), start_yaw_(0.0) {
   RCLCPP_INFO_ONCE(this->get_logger(), "GlobalPlannerNode STARTED!");
 
 #ifndef DISABLE_SIMULATION
@@ -122,14 +122,16 @@ void GlobalPlannerNode::readParams() {
   global_planner_.setRobotRadius(robot_radius);
 
   // Position for PX4 sitl default location
-  ref_point_.latitude = 47.3977508;
-  ref_point_.longitude = 8.5456073;
-  ref_point_.altitude = 488.10101318359375;
+  global_planner_.ref_point_.latitude = 47.3977508;
+  global_planner_.ref_point_.longitude = 8.5456073;
+  global_planner_.ref_point_.altitude = 488.10101318359375;
 
-  // Position for KARI test location
-  // ref_point_.latitude = 36.37415;
-  // ref_point_.longitude = 127.35275;
-  // ref_point_.altitude = 85.4;
+  global_planner_.ref_point_.latitude = 
+    this->declare_parameter("ref_point_lat", global_planner_.ref_point_.latitude);
+  global_planner_.ref_point_.longitude = 
+    this->declare_parameter("ref_point_long", global_planner_.ref_point_.longitude);
+  global_planner_.ref_point_.altitude = 
+    this->declare_parameter("ref_point_alt", global_planner_.ref_point_.altitude);
 }
 
 void GlobalPlannerNode::initializeCameraSubscribers(std::vector<std::string>& camera_topics) {
@@ -229,13 +231,13 @@ void GlobalPlannerNode::localPositionCallback(const px4_msgs::msg::VehicleLocalP
     pose.pose.position.x = msg->x;
     pose.pose.position.y = msg->y;
     pose.pose.position.z = msg->z;
-    pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->heading);
+    pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->yaw);
 
     geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transformNEDandENU(pose);
 
     // Update position
     last_pos_ = transformed_pose;
-    global_planner_.setPose(transformed_pose, msg->heading);
+    global_planner_.setPose(transformed_pose, msg->yaw);
 
     // Update velocity (considering NED to ENU transformation)
     geometry_msgs::msg::Vector3 vel;
@@ -286,7 +288,7 @@ void GlobalPlannerNode::globalPositionCallback(const px4_msgs::msg::VehicleGloba
   cur_point.longitude = msg->lon;
   cur_point.altitude = msg->alt;
 
-  geometry_msgs::msg::Point local_pos = LLH2NED(ref_point_, cur_point);
+  geometry_msgs::msg::Point local_pos = LLH2NED(global_planner_.ref_point_, cur_point);
 
   geometry_msgs::msg::TransformStamped tfmsg;
   tfmsg.header.stamp = rclcpp::Clock().now();
@@ -489,7 +491,7 @@ void GlobalPlannerNode::publishSetpoint() {
     geometry_msgs::msg::PoseStamped NED_setpoint = avoidance::transformNEDandENU(setpoint);
     // Publish setpoint for vizualization
     // current_waypoint_publisher_->publish(setpoint);
-    geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(ref_point_, NED_setpoint.pose.position);
+    geographic_msgs::msg::GeoPoint setpoint_geopoint = NED2LLH(global_planner_.ref_point_, NED_setpoint.pose.position);
     auto reposition_cmd = px4_msgs::msg::VehicleCommand();
     reposition_cmd.target_system = last_vehicle_status_.system_id;
     reposition_cmd.command = px4_msgs::msg::VehicleCommand::VEHICLE_CMD_DO_REPOSITION;

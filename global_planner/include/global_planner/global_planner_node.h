@@ -18,7 +18,6 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_sensor_msgs/tf2_sensor_msgs.h>
-#include <geographic_msgs/msg/geo_point.hpp>
 #include <geometry_msgs/msg/point_stamped.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/quaternion.hpp>
@@ -122,8 +121,7 @@ class GlobalPlannerNode : public rclcpp::Node {
   bool position_received_;
   std::string frame_id_;
   std::string camera_frame_id_;
-  geographic_msgs::msg::GeoPoint ref_point_;
-
+  
   double clicked_goal_alt_;
   double clicked_goal_radius_;
   bool hover_;

@@ -14,6 +14,7 @@
 #include <tf2/utils.h>
 #include <nav_msgs/msg/path.hpp>
 #include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <geographic_msgs/msg/geo_point.hpp>
 
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>
@@ -99,6 +100,7 @@ class GlobalPlanner {
   std::string default_node_type_ = "SpeedNode";
   std::string frame_id_ = "world";
   std::string position_mode_ = "local_position";
+  geographic_msgs::msg::GeoPoint ref_point_;
 
   GlobalPlanner();
   ~GlobalPlanner();
