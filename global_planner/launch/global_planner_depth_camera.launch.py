@@ -62,15 +62,15 @@ def generate_launch_description():
                  'max_overestimate_factor': 2.0,
                  'risk_threshold_risk_based_speedup': 0.5,
                  'default_speed': 1.0,
-                 'max_speed': 3.0,
-                 'max_iterations': 2000,
+                 'max_speed': 2.0,
+                 'max_iterations': 1000,
                  'goal_is_blocked': False,
                  'current_cell_blocked': False,
                  'goal_must_be_free': True,
                  'use_current_yaw': True,
                  'use_risk_heuristics': True,
                  'use_speedup_heuristics': True,
-                 'use_risk_based_speedup': True}
+                 'use_risk_based_speedup': False}
 
     # Remapping rules for using other types of topic name instead of default PubSubTopic names
     agent_id = 1
@@ -83,10 +83,10 @@ def generate_launch_description():
     gp_node = Node(package='global_planner',
                  executable='global_planner_node',
                  output='screen',
-                 remappings = gp_remap,
+#                 remappings = gp_remap,
                  parameters=[gp_params])
 
-    octomap_params = {'resolution': 0.1,
+    octomap_params = {'resolution': 1.0,
               'frame_id': 'base_frame',
               'base_frame_id': 'base_frame',
               'height_map': True,

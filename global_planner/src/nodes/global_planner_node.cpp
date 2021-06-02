@@ -199,7 +199,6 @@ void GlobalPlannerNode::setIntermediateGoal() {
 
 void GlobalPlannerNode::attitudeCallback(const px4_msgs::msg::VehicleAttitude::SharedPtr msg) {
   tf2::Quaternion q(msg->q[0], msg->q[1], msg->q[2], msg->q[3]);
-  // tf2::Quaternion q( -msg->q[1], -msg->q[0], -msg->q[2], msg->q[3] );
   double yaw, pitch, roll;
   tf2::getEulerYPR(q, yaw, pitch, roll);
   tf2::Quaternion q_NED;
@@ -479,9 +478,24 @@ void GlobalPlannerNode::publishSetpoint() {
     tf2::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
 
     // If we are less than 1.0 away, then we should stop at the goal
-    double new_len = vec.length() < 1.0 ? vec.length() : global_planner_.default_speed_;
+    double new_len = vec.length() < 1.5 ? vec.length() : global_planner_.default_speed_;
     vec.normalize();
     vec *= new_len;
+
+    // RCLCPP_INFO(this->get_logger(), "Current goal : %lf %lf %lf",
+    //   current_goal_.pose.position.x, current_goal_.pose.position.y, current_goal_.pose.position.z);
+    // RCLCPP_INFO(this->get_logger(), "Last pos : %lf %lf %lf",
+    //   last_pos_.pose.position.x, last_pos_.pose.position.y, last_pos_.pose.position.z);
+    // RCLCPP_INFO(this->get_logger(), "Vec : %lf %lf %lf",
+    //   vec.x(), vec.y(), vec.z());
+
+    // To reduce noisy command, ignore small vector values of x,y,z.
+    if (std::abs(vec.x()) <= 0.1)
+      vec.setX(0);
+    if (std::abs(vec.y()) <= 0.1)
+      vec.setY(0);
+    if (std::abs(vec.z()) <= 0.1)
+      vec.setZ(0);
 
     auto setpoint = current_goal_;  // The intermediate position sent to Mavros
     setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
