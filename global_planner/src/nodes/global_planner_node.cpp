@@ -117,7 +117,7 @@ void GlobalPlannerNode::readParams() {
   initializeCameraSubscribers(camera_topics);
   global_planner_.goal_pos_ = GoalCell(start_pos_.x, start_pos_.y, start_pos_.z);
   double robot_radius;
-  this->get_parameter_or("robot_radius", robot_radius, 0.5);
+  this->get_parameter_or("robot_radius", robot_radius, 1.0);
   global_planner_.setFrame(frame_id_);
   global_planner_.setRobotRadius(robot_radius);
 
@@ -478,9 +478,11 @@ void GlobalPlannerNode::publishSetpoint() {
     tf2::Vector3 vec = toTfVector3(subtractPoints(current_goal_.pose.position, last_pos_.pose.position));
 
     // If we are less than 1.0 away, then we should stop at the goal
-    double new_len = vec.length() < 1.5 ? vec.length() : global_planner_.default_speed_;
+    if (vec.length() < 1.0)
+      return;
+    // double new_len = vec.length() < 1.0 ? vec.length() : global_planner_.default_speed_;
     vec.normalize();
-    vec *= new_len;
+    vec *= global_planner_.default_speed_;
 
     // RCLCPP_INFO(this->get_logger(), "Current goal : %lf %lf %lf",
     //   current_goal_.pose.position.x, current_goal_.pose.position.y, current_goal_.pose.position.z);
@@ -523,6 +525,6 @@ void GlobalPlannerNode::publishSetpoint() {
   }
 }
 
-bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < global_planner_.default_speed_; }
+bool GlobalPlannerNode::isCloseToGoal() { return distance(current_goal_, last_pos_) < global_planner_.default_speed_ * 1.5; }
 
 }  // namespace global_planner
