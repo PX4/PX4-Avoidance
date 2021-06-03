@@ -51,7 +51,6 @@ def generate_launch_description():
                 output='screen')
 
     gp_params = {'frame_id': 'base_frame',
-                 'agent_number': 14,
                  'position_mode': 'local_position',
                  'pointcloud_topics': ['/rs2_pc'],
                  'start_pos_x': 0.0,
