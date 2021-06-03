@@ -43,6 +43,8 @@ rosidl_generate_interfaces(${PROJECT_NAME}
 
 find_package(PCL 1.8 REQUIRED)
 
+set(DISABLE_SIMULATION OFF)
+
 if(DISABLE_SIMULATION)
   message(STATUS "Building avoidance without Gazebo Simulation")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DDISABLE_SIMULATION")
