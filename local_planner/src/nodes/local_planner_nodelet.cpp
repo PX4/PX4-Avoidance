@@ -121,7 +121,7 @@ void LocalPlannerNodelet::readParams() {
   Eigen::Vector3d goal_d = goal_position_.cast<double>();
   nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_x_param", goal_d.x(), 0.0);
   nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_y_param", goal_d.y(), 0.0);
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/lgoal_z_param", goal_d.z(), 0.0);
+  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_z_param", goal_d.z(), 0.0);
   nh_private_.param<bool>(nodelet::Nodelet::getName() + "/accept_goal_input_topic", accept_goal_input_topic_, false);
   goal_position_ = goal_d.cast<float>();
 
