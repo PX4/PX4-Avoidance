@@ -1,13 +1,9 @@
 #include "global_planner/global_planner_node.h"
+#include <rclcpp/rclcpp.hpp>
 
 int main(int argc, char** argv) {
-  ros::init(argc, argv, "global_planner_node");
-
-  ros::NodeHandle nh("~");
-  ros::NodeHandle nh_private("");
-
-  global_planner::GlobalPlannerNode global_planner_node(nh, nh_private);
-
-  ros::spin();
+  rclcpp::init(argc, argv);
+  auto global_planner_nd = std::make_shared<global_planner::GlobalPlannerNode>();
+  rclcpp::spin(global_planner_nd);
   return 0;
 }

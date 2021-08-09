@@ -1,8 +1,13 @@
 #ifndef GLOBAL_PLANNER_COMMON_H_
 #define GLOBAL_PLANNER_COMMON_H_
+#define M_PI 3.1415926535897932384626433832
+#define EARTH_MEAN_RADIUS 6371.0072
 
 #include <math.h>  // sqrt
+#include <geographic_msgs/msg/geo_point.hpp>
+#include <geometry_msgs/msg/point.hpp>
 #include <string>
+#include "rclcpp/rclcpp.hpp"
 
 namespace global_planner {
 
@@ -109,6 +114,81 @@ inline double posterior(double p, double prior) {
   double prob_obstacle = p * prior;
   double prob_free = (1 - p) * (1 - prior);
   return prob_obstacle / (prob_obstacle + prob_free + 0.0001);
+}
+
+inline double distanceTo(geographic_msgs::msg::GeoPoint pos_ref, geographic_msgs::msg::GeoPoint pos_to) {
+  // Haversine formula
+  double dlat = (pos_to.latitude - pos_ref.latitude) * M_PI / 180;
+  double dlon = (pos_to.longitude - pos_ref.longitude) * M_PI / 180;
+  double haversine_dlat = sin(dlat / 2.0);
+  haversine_dlat *= haversine_dlat;
+  double haversine_dlon = sin(dlon / 2.0);
+  haversine_dlon *= haversine_dlon;
+  double y = haversine_dlat + cos(pos_ref.latitude * M_PI / 180) * cos(pos_to.latitude * M_PI / 180) * haversine_dlon;
+  double x = 2 * asin(sqrt(y));
+  return (x * EARTH_MEAN_RADIUS * 1000);
+}
+
+inline geographic_msgs::msg::GeoPoint atDistanceAndAzimuth(geographic_msgs::msg::GeoPoint pos, double distance,
+                                                           double azimuth) {
+  double latRad = pos.latitude * M_PI / 180;
+  double lonRad = pos.longitude * M_PI / 180;
+  double cosLatRad = cos(latRad);
+  double sinLatRad = sin(latRad);
+
+  double azimuthRad = azimuth * M_PI / 180;
+
+  double ratio = (distance / (EARTH_MEAN_RADIUS * 1000.0));
+  double cosRatio = cos(ratio);
+  double sinRatio = sin(ratio);
+
+  double resultLatRad = asin(sinLatRad * cosRatio + cosLatRad * sinRatio * cos(azimuthRad));
+  double resultLonRad =
+      lonRad + atan2(sin(azimuthRad) * sinRatio * cosLatRad, cosRatio - sinLatRad * sin(resultLatRad));
+
+  pos.latitude = resultLatRad * 180 / M_PI;
+  pos.longitude = resultLonRad * 180 / M_PI;
+  return pos;
+}
+
+// geometry_msgs::msg::Point start_pos_
+inline geometry_msgs::msg::Point LLH2NED(geographic_msgs::msg::GeoPoint pos_ref,
+                                         geographic_msgs::msg::GeoPoint pos_to) {
+  // Calc x,y,z of pos with refPos
+  geographic_msgs::msg::GeoPoint pos_calc_X, pos_calc_Y;
+
+  pos_calc_X.latitude = pos_to.latitude;
+  pos_calc_X.longitude = pos_ref.longitude;
+  pos_calc_X.altitude = pos_ref.altitude;
+
+  pos_calc_Y.latitude = pos_ref.latitude;
+  pos_calc_Y.longitude = pos_to.longitude;
+  pos_calc_Y.altitude = pos_ref.latitude;
+
+  double NED_X = distanceTo(pos_ref, pos_calc_X);
+  if (pos_to.latitude < pos_ref.latitude) NED_X = -NED_X;
+  double NED_Y = distanceTo(pos_ref, pos_calc_Y);
+  if (pos_to.longitude < pos_ref.longitude) NED_Y = -NED_Y;
+  double NED_Z = -(pos_to.altitude - pos_ref.altitude);
+
+  geometry_msgs::msg::Point result_point;
+  result_point.x = NED_X;
+  result_point.y = NED_Y;
+  result_point.z = NED_Z;
+  return result_point;
+}
+
+inline geographic_msgs::msg::GeoPoint NED2LLH(geographic_msgs::msg::GeoPoint pos_ref,
+                                              geometry_msgs::msg::Point pos_to) {
+  geographic_msgs::msg::GeoPoint result_point;
+  // Calc lat, lon, alt of pos with refPos
+
+  // QGeoCoordinate LLHPosition = QGeoCoordinate(refPos.latitude(), refPos.longitude(), refPos.altitude());
+  result_point = atDistanceAndAzimuth(pos_ref, pos_to.x, 0);
+  result_point = atDistanceAndAzimuth(result_point, pos_to.y, 90);
+  result_point.altitude = result_point.altitude - pos_to.z;
+
+  return result_point;
 }
 
 }  // namespace global_planner

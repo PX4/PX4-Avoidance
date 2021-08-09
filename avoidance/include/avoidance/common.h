@@ -9,6 +9,7 @@
 #include <Eigen/Dense>
 
 #include <geometry_msgs/msg/point.hpp>
+#include <geometry_msgs/msg/quaternion.hpp>
 #include <geometry_msgs/msg/pose_stamped.hpp>
 #include <geometry_msgs/msg/twist.hpp>
 #include <geometry_msgs/msg/vector3_stamped.hpp>
@@ -293,6 +294,19 @@ float getYawFromQuaternion(const Eigen::Quaternionf q);
 * @returns   pitch angle in degrees
 **/
 float getPitchFromQuaternion(const Eigen::Quaternionf q);
+
+
+/**
+* @brief     Tranform yaw angle to quaternion msg
+* @returns   quaternion msg (in geometry_msgs)
+**/
+geometry_msgs::msg::Quaternion createQuaternionMsgFromYaw(double yaw);
+
+/**
+* @brief     Tranform between NED PoseStamped msg and ENU PoseStamped msg
+* @returns   PoseStamped msg (in geometry_msgs)
+**/
+geometry_msgs::msg::PoseStamped transformNEDandENU(geometry_msgs::msg::PoseStamped pose);
 
 /**
 * @brief     wrappes the input angle in to plus minus PI space

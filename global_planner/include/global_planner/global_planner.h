@@ -10,15 +10,17 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#include <dynamic_reconfigure/server.h>
-#include <nav_msgs/Path.h>
-#include <tf/transform_listener.h>  // getYaw createQuaternionMsgFromYaw
+#include <tf2/LinearMath/Quaternion.h>
+#include <tf2/utils.h>
+#include <nav_msgs/msg/path.hpp>
+#include <px4_msgs/msg/vehicle_local_position.hpp>
+#include <geographic_msgs/msg/geo_point.hpp>
 
 #include <octomap/OcTree.h>
 #include <octomap/octomap.h>
 
-#include <global_planner/GlobalPlannerNodeConfig.h>
-#include <global_planner/PathWithRiskMsg.h>
+// #include <global_planner/GlobalPlannerNodeConfig.h>
+// #include <global_planner/msg/path_with_risk_msg.hpp>
 #include "global_planner/analysis.h"
 #include "global_planner/cell.h"
 #include "global_planner/common.h"
@@ -58,9 +60,9 @@ class GlobalPlanner {
 
   // TODO: rename and remove not needed
   std::vector<Cell> path_back_;
-  geometry_msgs::Point curr_pos_;
+  geometry_msgs::msg::Point curr_pos_;
   double curr_yaw_;
-  geometry_msgs::Vector3 curr_vel_;
+  geometry_msgs::msg::Vector3 curr_vel_;
   GoalCell goal_pos_ = GoalCell(0.5, 0.5, 3.5);
   bool going_back_ = true;  // we start by just finding the start position
 
@@ -72,18 +74,21 @@ class GlobalPlanner {
   // Dynamic reconfigure parameters
   int min_altitude_ = 1;
   int max_altitude_ = 10;
-  double max_cell_risk_ = 0.2;
+  double max_cell_risk_ = 0.5;
   double smooth_factor_ = 10.0;
   double vert_to_hor_cost_ = 1.0;  // The cost of changing between vertical and
                                    // horizontal motion (TODO: use it)
   double risk_factor_ = 500.0;
   double neighbor_risk_flow_ = 1.0;
-  double expore_penalty_ = 0.005;
+  double explore_penalty_ = 0.005;
   double up_cost_ = 3.0;
   double down_cost_ = 1.0;
   double search_time_ = 0.5;  // The time it takes to find a path in worst case
   double min_overestimate_factor_ = 1.03;
   double max_overestimate_factor_ = 2.0;
+  double risk_threshold_risk_based_speedup_ = 0.5;
+  double default_speed_ = 1.0;  // Default speed of flight.
+  double max_speed_ = 3.0;      // Maximum speed of flight.
   int max_iterations_ = 2000;
   bool goal_is_blocked_ = false;
   bool current_cell_blocked_ = false;
@@ -91,15 +96,18 @@ class GlobalPlanner {
   bool use_current_yaw_ = true;    // The current orientation is factored into the smoothness
   bool use_risk_heuristics_ = true;
   bool use_speedup_heuristics_ = true;
+  bool use_risk_based_speedup_ = true;
   std::string default_node_type_ = "SpeedNode";
   std::string frame_id_ = "world";
+  std::string position_mode_ = "local_position";
+  geographic_msgs::msg::GeoPoint ref_point_;
 
   GlobalPlanner();
   ~GlobalPlanner();
 
   void calculateAccumulatedHeightPrior();
 
-  void setPose(const geometry_msgs::PoseStamped& new_pose);
+  void setPose(const geometry_msgs::msg::PoseStamped new_pose, const double yaw);
   void setGoal(const GoalCell& goal);
   void setPath(const std::vector<Cell>& path);
   void setFrame(std::string frame_id);
@@ -116,7 +124,7 @@ class GlobalPlanner {
   bool isLegal(const Node& node);
   double getRisk(const Cell& cell);
   double getRisk(const Node& node);
-  double getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& msg);
+  double getRiskOfCurve(const std::vector<geometry_msgs::msg::PoseStamped>& msg);
   double getTurnSmoothness(const Node& u, const Node& v);
   double getEdgeCost(const Node& u, const Node& v);
 
@@ -126,10 +134,10 @@ class GlobalPlanner {
   double altitudeHeuristic(const Cell& u, const Cell& goal);
   double getHeuristic(const Node& u, const Cell& goal);
 
-  geometry_msgs::PoseStamped createPoseMsg(const Cell& cell, double yaw);
-  nav_msgs::Path getPathMsg();
-  nav_msgs::Path getPathMsg(const std::vector<Cell>& path);
-  PathWithRiskMsg getPathWithRiskMsg();
+  geometry_msgs::msg::PoseStamped createPoseMsg(const Cell& cell, double yaw);
+  nav_msgs::msg::Path getPathMsg();
+  nav_msgs::msg::Path getPathMsg(const std::vector<Cell>& path);
+  // avoidance_msgs::msg::PathWithRiskMsg getPathWithRiskMsg();
   PathInfo getPathInfo(const std::vector<Cell>& path);
 
   NodePtr getStartNode(const Cell& start, const Cell& parent, const std::string& type);
@@ -142,7 +150,7 @@ class GlobalPlanner {
 
  private:
   double robot_radius_;
-  double octree_resolution_;
+  double octree_resolution_ = 1.0;
 };
 
 }  // namespace global_planner

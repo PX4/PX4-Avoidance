@@ -1,3 +1,4 @@
+
 # Obstacle Detection and Avoidance
 [![Release Status](https://img.shields.io/github/v/release/PX4/avoidance)](https://github.com/PX4/avoidance/releases)
 [![Build Status](https://travis-ci.org/PX4/avoidance.svg?branch=master)](https://travis-ci.org/PX4/avoidance)
@@ -50,119 +51,33 @@ The documentation contains information about how to setup and run the two planne
 ### Installation
 
 This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on either:
-- **Ubuntu 18.04:** *ROS Melodic* with Gazebo 9 (preferred).
-- **Ubuntu 16.04:** *ROS Kinetic* with Gazebo 7
+- **Ubuntu 20.04:** *ROS2 Foxy* with Gazebo 11 (preferred).
 You might want to skip some steps if your system is already partially installed.
 
-> **Note:** These instructions assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`.
+> **Note:** These instructions assume your workspace (in which we will build the avoidance module) is in `~/avoidance_ws/src/`, and the PX4 Firmware directory is `~/Firmware`.
   Feel free to adapt this to your situation.
 
-1. Add ROS to sources.list:
-   * Melodic
-     ```bash
-     sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-     sudo apt update
-     ```
-   * Kinetic
-     ```bash
-     echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list
-     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
-     sudo apt update
-     ```
+1. Install ROS foxy to your PC. Follow steps on [#Installing ROS 2 via Debian Packages](https://index.ros.org/doc/ros2/Installation/Foxy/Linux-Install-Debians/)
 
-1. Install ROS with Gazebo:
-   * ROS Melodic (with Gazebo 9)
-     ```bash
-     sudo apt install ros-melodic-desktop-full
-
-     # Source ROS
-     echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
-     source ~/.bashrc
-     ```
-   * ROS Kinetic (with Gazebo 7)
-     ```bash
-     sudo apt install ros-kinetic-desktop-full
-
-     # Source ROS
-     source /opt/ros/kinetic/setup.bash
-     ```
-   > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
-   >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
-   >  - For Gazebo 8,
-       ```sh
-       sudo apt install ros-kinetic-gazebo8-*
-       ```
-    > - For Gazebo 9,
-       ```
-       sudo apt install ros-kinetic-gazebo9-*
-       ```
-
-1. Initialize rosdep.
-   ```bash
-   rosdep init
-   rosdep update
-   ```
-
-1. Install catkin and create your catkin workspace directory.
+1. Clone this repository in your avoidance workspace in order to build the avoidance node (ros2 branch) and px4_ros_com to use micrortps_agent
 
    ```bash
-   sudo apt install python-catkin-tools
-   mkdir -p ~/catkin_ws/src
+   cd ~/avoidance_ws/src/
+   git clone -b ros2 --recursive https://github.com/PX4/avoidance.git
+   git clone https://github.com/PX4/px4_ros_com.git
    ```
 
-1. Install MAVROS (version 0.29.0 or above).
-   > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
-   
-   * Melodic
-     ```bash
-     sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
-     ```
-   * Kinetic
-     ```bash
-     sudo apt install ros-kinetic-mavros ros-kinetic-mavros-extras
-     ```
-
-1. Install the *geographiclib* dataset
+1. Actually build the avoidance node. (exclude local_planner since it is not fully working at this time)
 
    ```bash
-   wget https://raw.githubusercontent.com/mavlink/mavros/master/mavros/scripts/install_geographiclib_datasets.sh
-   chmod +x install_geographiclib_datasets.sh
-   sudo ./install_geographiclib_datasets.sh
+   cd ~/avoidance_ws
+   colcon build --packages-skip local_planner
    ```
 
-1. Install avoidance module dependencies (pointcloud library and octomap).
-   - Melodic
-     ```bash
-     sudo apt install libpcl1 ros-melodic-octomap-*
-     ```
-   - Kinetic
-     ```bash
-     sudo apt install libpcl1 ros-kinetic-octomap-* ros-kinetic-yaml-*
-     ```
 
-1. Clone this repository in your catkin workspace in order to build the avoidance node.
-
-   ```bash
-   cd ~/catkin_ws/src
-   git clone https://github.com/PX4/avoidance.git
-   ```
-
-1. Actually build the avoidance node.
-
-   ```bash
-   catkin build -w ~/catkin_ws
-   ```
-
-   Note that you can build the node in release mode this way:
-
-   ```bash
-   catkin build -w ~/catkin_ws --cmake-args -DCMAKE_BUILD_TYPE=Release
-   ```
-
-1. Source the catkin setup.bash from your catkin workspace:
+1. Source the workspace setup.bash from your avoidance workspace:
    ```bash   
-   echo "source ~/catkin_ws/devel/setup.bash" >> ~/.bashrc
+   echo "source ~/avoidance_ws/src/PX4-Avoidance/install/setup.bash" >> ~/.bashrc
    source ~/.bashrc
    ```
 
@@ -170,7 +85,7 @@ You might want to skip some steps if your system is already partially installed.
 
 In the following section we guide you through installing and running a Gazebo simulation of both local and global planner.
 
-### Build and Run the Simulator
+### Build the Simulator
 
 1. Clone the PX4 Firmware and all its submodules (it may take some time).
 
@@ -196,115 +111,78 @@ In the following section we guide you through installing and running a Gazebo si
    export QT_X11_NO_MITSHM=1
 
    # Build and run simulation
-   make px4_sitl_default gazebo
+   make px4_sitl_rtps gazebo
    
    # Quit the simulation (Ctrl+C)
 
    # Setup some more Gazebo-related environment variables (modify this line based on the location of the Firmware folder on your machine)
-   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_rtps
    ```
 
-1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4:
+1. Set the GAZEBO_MODEL_PATH in your bashrc:
    ```bash
-   export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
-   ```
-1. Finally, set the GAZEBO_MODEL_PATH in your bashrc:
-   ```bash
-   echo "export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds" >> ~/.bashrc
+   echo "export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/avoidance_ws/src/PX4-avoidance/avoidance/sim/models:~/avoidance_ws/src/PX4-avoidance/avoidance/sim/worlds" >> ~/.bashrc
    ```
 
-The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
+The last three steps, together with sourcing your ros2 workspace **setup.bash** (`source ~/avoidance_ws/install/setup.bash`) should be repeated each time a new terminal window is open.
 You should now be ready to run the simulation using local or global planner.
 
-### Local Planner (default, heavily flight tested)
+### Run gazebo simulator for using planners
+
+1. Run px4_sitl_rtps
+ ```bash
+   # Build and run simulation
+   make px4_sitl_rtps gazebo
+   ```
+
+2. Run px4_ros_com to send/receive msgs with drone
+```bash
+   ~/avoidance_ws/build/px4_ros_com/micrortps_agent -t UDP
+```
+
+3.  Check communication via ros2 has no problem
+```bash
+   # See which topics are existing
+   ros2 topic list
+
+   # Echo topic data for test
+   ros2 topic echo /VehicleLocalPosition_PubSubTopic
+```
+
+### Local Planner (default, ros2 version is not ready)
 
 This section shows how to start the *local_planner* and use it for avoidance in mission or offboard mode.
 
 The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_08.pdf) algorithm.
 
 > **Note:** You *may* need to install some additional dependencies to run the following code (if not installed):
-> * Melodic:
+> * Foxy:
 >   ```sh
->   sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
->   ```
-> * Kinetic:
->   ```sh
->   sudo apt install ros-kinetic-stereo-image-proc ros-kinetic-image-view
+>   sudo apt install ros-foxy-stereo-image-proc ros-foxy-image-view
 >   ```
 
-Any of the following three launch file scripts can be used to run local planner:
-> **Note:** The scripts run the same planner but simulate different sensor/camera setups. They all enable *Obstacle Avoidance* and *Collision Prevention*.
-* `local_planner_stereo`: simulates a vehicle with a stereo camera that uses OpenCV's block matching algorithm (SGBM by default) to generate depth information
-  ```bash
-  roslaunch local_planner local_planner_stereo.launch
-  ```
-    
-  > **Note:** The disparity map from `stereo-image-proc` is published as a [stereo_msgs/DisparityImage](http://docs.ros.org/api/stereo_msgs/html/msg/DisparityImage.html) message, which is not supported by rviz or rqt. 
-  > To visualize the message, first open a *new terminal* and setup the required environment variables:
-  > ```bash
-  > source devel/setup.bash
-  > ```
-  > Then do either of:
-  > - run:
-  >   ```bash
-  >   rosrun image_view stereo_view stereo:=/stereo image:=image_rect_color
-  >   ```
-  > - publish the `DisparityImage` as a simple `sensor_msgs/Image`:
-  >   ```bash
-  >   rosrun topic_tools transform /stereo/disparity /stereo/disparity_image sensor_msgs/Image 'm.image' 
-  >   ```
-  > The disparity map can then be visualized by *rviz* or *rqt* under the topic */stereo/disparity_image*.
+** Documentation for local planner in ros2 environment should be written here. **
 
-* `local_planner_depth_camera`: simulates vehicle with one forward-facing kinect sensor
-  ```bash
-  roslaunch local_planner local_planner_depth-camera.launch
-  ```
 
-* `local_planner_sitl_3cam`: simulates vehicle with 3 kinect sensors (left, right, front)
-  ```bash
-  roslaunch local_planner local_planner_sitl_3cam.launch
-  ```
+### Global Planner (advanced, simulation tested)
 
-You will see the Iris drone unarmed in the Gazebo world.
-To start flying, there are two options: OFFBOARD or MISSION mode.
-For OFFBOARD, run:
+This section shows how to start the *global_planner* and use it for avoidance in auto_loiter mode.
 
 ```bash
-# In another terminal 
-rosrun mavros mavsys mode -c OFFBOARD
-rosrun mavros mavsafety arm
+ros2 launch global_planner global_planner_depth_camera.launch.py
 ```
 
-The drone will first change its altitude to reach the goal height.
-It is possible to modify the goal altitude with `rqt_reconfigure` GUI.
-![Screenshot rqt_reconfigure goal height](docs/lp_goal_height.png)
-Then the drone will start moving towards the goal.
-The default x, y goal position can be changed in Rviz by clicking on the 2D Nav Goal button and then choosing the new goal x and y position by clicking on the visualized gray space.
-If the goal has been set correctly, a yellow sphere will appear where you have clicked in the grey world.
-![Screenshot rviz goal selection](docs/lp_goal_rviz.png)
+You should now see the drone unarmed on the ground in a forest environment as pictured below. (gazebo and rviz2)
+![Screenshot showing gazebo](docs/gazebo_simple_obstacle_screenshot.png)
 
-For MISSIONS, open [QGroundControl](http://qgroundcontrol.com/) and plan a mission as described [here](https://docs.px4.io/en/flight_modes/mission.html). Set the parameter `COM_OBS_AVOID` true.
-Start the mission and the vehicle will fly the mission waypoints dynamically recomputing the path such that it is collision free.
+![Screenshot showing rviz](docs/simulation_screenshot.png)
 
-
-### Global Planner (advanced, not flight tested)
-
-This section shows how to start the *global_planner* and use it for avoidance in offboard mode.
-
-```bash
-roslaunch global_planner global_planner_stereo.launch
-```
-
-You should now see the drone unarmed on the ground in a forest environment as pictured below.
-
-![Screenshot showing gazebo and rviz](docs/simulation_screenshot.png)
-
-To start flying, put the drone in OFFBOARD mode and arm it. The avoidance node will then take control of it.
+To start flying, arm it. The avoidance node will then take control of it.
+You may use QGroundControl to arm the drone.
 
 ```bash
 # In another terminal
-rosrun mavros mavsys mode -c OFFBOARD
-rosrun mavros mavsafety arm
+ros2 topic pub --once /VehicleCommand_PubSubTopic px4_msgs/msg/VehicleCommand "{target_system: 1, command: 400, param1: 1.0, from_external: true}"
 ```
 
 Initially the drone should just hover at 3.5m altitude.
@@ -320,12 +198,12 @@ The planned path should show up in rviz and the drone should follow the path, up
 It is also possible to set a goal without using the obstacle avoidance (i.e. the drone will go straight to this goal and potentially collide with obstacles). To do so, set the position with the *2D Pose Estimate* button in rviz.
 
 
-### Safe Landing Planner
+### Safe Landing Planner (ros2 version is not ready)
 
 This section shows how to start the *safe_landing_planner* and use it to land safely in mission or auto land mode. To run the node:
 
 ```bash
-roslaunch safe_landing_planner safe_landing_planner.launch
+ros2 launch safe_landing_planner safe_landing_planner.launch.py
 ```
 
 You will see an unarmed vehicle on the ground. Open [QGroundControl](http://qgroundcontrol.com/), either plan a mission with the last item of type *Land* or fly around the world in Position Control, click the *Land* button on the left side where you wish to land.
@@ -334,155 +212,12 @@ If the ground is flat, the vehicle will continue landing. Otherwise it will eval
 
 # Run on Hardware
 
-## Prerequisite
-
-### Camera
-
-Both planners require a 3D point cloud of type `sensor_msgs::PointCloud2`. Any camera that can provide such data is compatible.
-
-The officially supported camera is Intel Realsense D435. We recommend using Firmware version 5.9.13.0. The instructions on how to update the Firmware of the camera can be found [here](https://www.intel.com/content/www/us/en/support/articles/000028171/emerging-technologies/intel-realsense-technology.html)
-
-> **Tip:** Be careful when attaching the camera with a USB3 cable. USB3 might might interfere with GPS and other signals. If possible, always use USB2 cables.
-
-Other tested camera models are: Intel Realsense D415 and R200, Occipital Structure Core.
-
-#### Generating Point-clouds from Depth-maps
-
-In case the point-cloud stream already exists, this step can be skipped.
-
-Assuming there already exists a stream of depth-maps on the ROS-topic <depthmap_topic>, we need to generate a corresponding stream of depth-maps.
-Start by following the instructions from [PX4/disparity_to_point_cloud](https://github.com/PX4/disparity_to_point_cloud).
-Now run the point-cloud generation with the parameters for the camera intrinsics:
-
-```bash
-rosrun disparity_to_point_cloud disparity_to_point_cloud_node \
-    fx_:=fx fy_:=fy cx_:=cx cy_:=cy base_line_:=base_line disparity:=<depthmap_topic>
-```
-
-A stream of point-clouds should now be published to */point_cloud*.
-
-### PX4 Autopilot
-
-Parameters to set through QGC:
-* `COM_OBS_AVOID` to Enabled
-* `MAV_1_CONFIG`, `MAV_1_MODE`, `SER_TEL2_BAUD` to enable MAVLink on a serial port. For more information: [PX4 Dev Guide](http://dev.px4.io/en/companion_computer/pixhawk_companion.html#pixhawk-setup)
-
-### Companion Computer
-
-* OS: Ubuntu 16.04 OS or a docker container running Ubuntu 16.04 must be setup (e.g. if using on a Yocto based system).
-* ROS Kinetic: see [Installation](#installaton)
-* Other Required Components for Intel Realsense:
-  - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
-  - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
-* Other Required Components for Occipital Structure Core:
-  - Download the [Structure SDK](https://structure.io/developers). The version tested with this package is `0.7.1`. Create the `build` directory and build the SDK
-  ```bash
-  mkdir build
-  cd build
-  cmake ..
-  make
-  ```
-  - Clone the [ROS wrapper](https://github.com/Auterion/struct_core_ros) in the `catkin_ws`
-  - Copy the shared object `Libraries/Structure/Linux/x86_64/libStructure.so` from the SDK into `/usr/local/lib/`
-  - Copy the headers from `Libraries/Structure/Headers/` in the SDK to the ROS wrapper include directory `~/catkin_ws/src/struct_core_ros/include`
-
-Tested models:
-- local planner: Intel NUC, Jetson TX2, Intel Atom x7-Z8750 (built-in on Intel Aero RTF drone)
-- global planner: Odroid
-
-## Global Planner
-
-The global planner has been so far tested on a Odroid companion computer by the development team.
-
-## Local Planner
-
-Once the catkin workspace has been built, to run the planner with a Realsense D435 or Occipital Structure Core camera you can generate the launch file using the script *generate_launchfile.sh*
-
-1. `export CAMERA_CONFIGS="camera_namespace, camera_type, serial_n, tf_x, tf_y, tf_z, tf_yaw, tf_pitch, tf_roll"` where  `camera_type` is either `realsense` or `struct_core_ros`, `tf_*` represents the displacement between the camera and the flight controller. If more than one camera is present, list the different camera configuration separated by a semicolon. Within each camera configuration the parameters are separated by commas.
-2. `export DEPTH_CAMERA_FRAME_RATE=frame_rate`. If this variable isn't set, the default frame rate will be taken.
-3. `export VEHICLE_CONFIG=/path/to/params.yaml` where the yaml file contains the value of some parameters different from the defaults set in the cfg file. If this variable isn't set, the default parameters values will be used.
-
-Changing the serial number and `DEPTH_CAMERA_FRAME_RATE` don't have any effect on the Structure Core.
-
-For example:
-```bash
-export CAMERA_CONFIGS="camera_main,realsense,819612070807,0.3,0.32,-0.11,0,0,0"
-export DEPTH_CAMERA_FRAME_RATE=30
-export VEHICLE_CONFIG=~/catkin_ws/src/avoidance/local_planner/cfg/params_vehicle_1.yaml
-./tools/generate_launchfile.sh
-roslaunch local_planner avoidance.launch fcu_url:=/dev/ttyACM0:57600
-```
-
-where `fcu_url` representing the port connecting the companion computer to the flight controller.
-The planner is running correctly if the rate of the processed point cloud is around 10-20 Hz. To check the rate run:
-
-```bash
-rostopic hz /local_pointcloud
-```
-
-If you would like to read debug statements on the console, please change `custom_rosconsole.conf` to
-```bash
-log4j.logger.ros.local_planner=DEBUG
-```
-
-## Safe Landing Planner
-
-Once the catkin workspace has been built, to run the planner with a Realsense D435 and Occipital Structure Core, you can generate the launch file using the script *generate_launchfile.sh*. The script works the same as described in the section above for the Local Planner. For example:
-
-```bash
-export CAMERA_CONFIGS="camera_main,struct_core,819612070807,0.3,0.32,-0.11,0,0,0"
-export VEHICLE_CONFIG_SLP=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/slpn_structure_core.yaml
-export VEHICLE_CONFIG_WPG=~/catkin_ws/src/avoidance/safe_landing_planner/cfg/wpgn_structure_core.yaml
-./safe_landing_planner/tools/generate_launchfile.sh
-roslaunch safe_landing_planner safe_landing_planner_launch.launch
-```
-
-In the `cfg/` folder there are camera specific configurations for the algorithm nodes. These parameters can be loaded by specifying the file in the `VEHICLE_CONFIG_SLP` and `VEHICLE_CONFIG_WPG` system variable for the safe_landing_planner_node and for the waypoint_generator_node respectively.
-
-The size of the squared shape patch of terrain below the vehicle that is evaluated by the algorithm can be changed to suit different vehicle sizes with the WaypointGeneratorNode parameter `smoothing_land_cell`. The algorithm behavior will also be affected by the height at which the decision to land or not is taken (`loiter_height` parameter in WaypointGeneratorNode) and by the size of neighborhood filter smoothing (`smoothing_size` in LandingSiteDetectionNode).
-
-For different cameras you might also need to tune the thresholds on the number of points in each bin, standard deviation and mean.
+Testing avoidance nodes in ros2 environment is not yet done.
+We need support to test nodes with ros2.
 
 # Troubleshooting
 
-### I see the drone position in rviz (shown as a red arrow), but the world around is empty
-Check that some camera topics (including */camera/depth/points*) are published with the following command:
-
-```bash
-rostopic list | grep camera
-```
-
-If */camera/depth/points* is the only one listed, it may be a sign that gazebo is not actually publishing data from the simulated depth camera. Verify this claim by running:
-
-```bash
-rostopic echo /camera/depth/points
-```
-
-When everything runs correctly, the previous command should show a lot of unreadable data in the terminal. If you don't receive any message, it probably means that gazebo is not publishing the camera data.
-
-Check that the clock is being published by Gazebo:
-
-```bash
-rostopic echo /clock
-```
-
-If it is not, you have a problem with Gazebo (Did it finish loading the world? Do you see the buildings and the drone in the Gazebo UI?). However, if it is publishing the clock, then it might be a problem with the depth camera plugin. Make sure the package `ros-kinetic-gazebo-ros-pkgs` is installed. If not, install it and rebuild the Firmware (with `$ make px4_sitl_default gazebo` as explained above).
-
-### I see the drone and world in rviz, but the drone does not move when I set a new "2D Nav Goal"
-Is the drone in OFFBOARD mode? Is it armed and flying?
-
-```bash
-# Set the drone to OFFBOARD mode
-rosrun mavros mavsys mode -c OFFBOARD
-# Arm
-rosrun mavros mavsafety arm
-```
-
-### I see the drone and world in rviz, but the drone does not follow the path properly
-Some tuning may be required in the file *"<Firmware_dir>/posix-configs/SITL/init/rcS_gazebo_iris"*.
-
-### I see the drone and world in rviz, I am in OFFBOARD mode, but the planner is still not working
-Some parameters that can be tuned in *rqt reconfigure*.
+Troubleshooting for ros2 environment is not yet written.
 
 # Advanced
 
@@ -492,65 +227,29 @@ More information about the communication between avoidance system and the Autopi
 
 ### PX4 and local planner
 
-This is the complete message flow *from* PX4 Firmware to the local planner.
-
-PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic
---- | --- | --- | --- | ---
-vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
-vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
-vehicle_local_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
-home_position | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
-vehicle_air_data | ALTITUDE | altitude | mavros_msgs::Altitude | mavros/altitude
-vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
-vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
-- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
-- | MISSION_ITEM | waypoint | mavros_msgs::WaypointList | /mavros/mission/waypoints
-
-
-This is the complete message flow *to* PX4 Firmware from the local planner.
-
-ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
---- | --- | --- | --- | ---
-/mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
-/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
-/mavros/obstacle/send | sensor_msgs::LaserScan | obstacle_distance | OBSTACLE_DISTANCE | obstacle_distance
-/mavros/companion_process/status | mavros_msgs::CompanionProcessStatus | companion_process_status | HEARTBEAT | telemetry_status
+Message flow for ros2 environment is not yet written.
 
 
 ### PX4 and global planner
 
 This is the complete message flow *from* PX4 Firmware *to* the global planner.
 
-PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | Topic
---- | --- | --- | --- | ---
-vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
-vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::TwistStamped | mavros/local_position/velocity
-vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
+PX4 topic | MAVLink | ROS Msgs. | Topic
+--- | --- | --- | ---
+vehicle_attitude | ATTITUDE | px4_msgs::msg::VehicleAttitude | /VehicleAttitude_PubSubTopic
+vehicle_global_position | GLOBAL_POSITION_INT | px4_msgs::msg::VehicleGlobalPosition | /VehicleGlobalPosition_PubSubTopic
+vehicle_local_position | LOCAL_POSITION_NED | px4_msgs::msg::VehicleLocalPosition | /VehicleLocalPosition_PubSubTopic
 
 This is the complete message flow *to* PX4 Firmware *from* the global planner.
 
-ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
---- | --- | --- | --- | ---
-/mavros/setpoint_position/local (offboard) | geometry_msgs::PoseStamped | setpoint_position | SET_POSITION_LOCAL_POSITION_NED | position_setpoint_triplet
-/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
+ROS topic | ROS Msgs. | MAVLink | PX4 Topic
+--- | --- | --- | ---
+/VehicleCommand_PubSubTopic | px4_msgs::msg::VehicleCommand | VEHICLE_COMMAND | vehicle_command
 
 ### PX4 and safe landing planner
 
-This is the complete message flow *from* PX4 Firmware to the safe landing planner.
+Message flow for ros2 environment is not yet written.
 
-PX4 topic | MAVLink | MAVROS Plugin | ROS Msgs. | ROS Topic
---- | --- | --- | --- | ---
-vehicle_local_position | LOCAL_POSITION_NED | local_position | geometry_msgs::PoseStamped | mavros/local_position/pose
-vehicle_status | HEARTBEAT | sys_status | mavros_msgs::State | mavros/state
-vehicle_trajectory_waypoint_desired | TRAJECTORY_REPRESENTATION_WAYPOINT | trajectory  | mavros_msgs::Trajectory | mavros/trajectory/desired
-- | MAVLINK_MSG_ID_PARAM_REQUEST_LIST | param | mavros_msgs::Param | /mavros/param/param_value
-
-This is the complete message flow *to* PX4 Firmware from the safe landing planner.
-
-ROS topic | ROS Msgs. | MAVROS Plugin | MAVLink | PX4 Topic
---- | --- | --- | --- | ---
-/mavros/trajectory/generated (mission) | mavros_msgs::Trajectory | trajectory | TRAJECTORY_REPRESENTATION_WAYPOINT | vehicle_trajectory_waypoint
-/mavros/companion_process/status | mavros_msgs::CompanionProcessStatus | companion_process_status | HEARTBEAT | telemetry_status
 
 # Contributing
 

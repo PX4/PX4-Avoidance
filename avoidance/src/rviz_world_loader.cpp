@@ -9,12 +9,17 @@ WorldVisualizer::WorldVisualizer()
     : Node("world_visualizer"),
       world_path_(this->declare_parameter("world_path", ""))
 {
-  pose_sub_ = this->create_subscription<px4_msgs::msg::VehicleOdometry>(
-      "VehicleOdometry_PubSubTopic", 1, std::bind(&WorldVisualizer::positionCallback, this, _1));
-
   world_pub_ = this->create_publisher<visualization_msgs::msg::MarkerArray>("/world", 1);
   drone_pub_ = this->create_publisher<visualization_msgs::msg::Marker>("/drone", 1);
   loop_timer_ = this->create_wall_timer(2s, std::bind(&WorldVisualizer::loopCallback, this));
+  visualize_drone_timer_ = this->create_wall_timer(200ms, std::bind(&WorldVisualizer::visualizeDrone, this));
+
+  tf_buffer_ = std::make_shared<tf2_ros::Buffer>(get_clock());
+  auto timer_interface = std::make_shared<tf2_ros::CreateTimerROS>(
+    this->get_node_base_interface(),
+    this->get_node_timers_interface());
+  tf_buffer_->setCreateTimerInterface(timer_interface);
+  tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
   this->get_parameter("world_path", world_path_);
 }
@@ -23,15 +28,6 @@ void WorldVisualizer::loopCallback() {
   // visualize world in RVIZ
   if (!world_path_.empty()) {
     if (visualizeRVIZWorld(world_path_)) RCLCPP_WARN(this->get_logger(), "[WorldVisualizer] Failed to visualize Rviz world");
-  }
-}
-
-void WorldVisualizer::positionCallback(const px4_msgs::msg::VehicleOdometry::SharedPtr msg) const {
-  // visualize drone in RVIZ
-  if (!world_path_.empty()) {
-    if (visualizeDrone(*msg)) {
-      RCLCPP_WARN(this->get_logger(), "Failed to visualize drone in RViz");
-    }
   }
 }
 
@@ -132,37 +128,49 @@ int WorldVisualizer::visualizeRVIZWorld(const std::string& world_path) {
   return 0;
 }
 
-int WorldVisualizer::visualizeDrone(const px4_msgs::msg::VehicleOdometry& pose) const {
-  auto drone = visualization_msgs::msg::Marker();
-  drone.header.frame_id = "local_origin";
-  drone.header.stamp = rclcpp::Clock().now();
-  drone.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
-  drone.mesh_resource = "model://matrice_100/meshes/Matrice_100.dae";
-  if (drone.mesh_resource.find("model://") != std::string::npos) {
-    if (resolveUri(drone.mesh_resource)) {
-      RCLCPP_ERROR(this->get_logger(), "RVIZ world loader could not find drone model");
-      return 1;
+void WorldVisualizer::visualizeDrone(){
+  tf_buffer_->waitForTransform("base_frame", "local_origin_odom", rclcpp::Clock().now(), std::chrono::milliseconds(500),
+    std::bind(&WorldVisualizer::tf2Callback, this, _1));
+}
+
+void WorldVisualizer::tf2Callback(const std::shared_future<geometry_msgs::msg::TransformStamped>& tf) {
+  try {
+    geometry_msgs::msg::TransformStamped transformStamped = tf.get();
+
+    auto drone = visualization_msgs::msg::Marker();
+    drone.header.frame_id = "base_frame";
+    drone.header.stamp = rclcpp::Clock().now();
+    drone.type = visualization_msgs::msg::Marker::MESH_RESOURCE;
+    drone.mesh_resource = "model://matrice_100/meshes/Matrice_100.dae";
+    if (drone.mesh_resource.find("model://") != std::string::npos) {
+      if (resolveUri(drone.mesh_resource)) {
+        RCLCPP_ERROR(this->get_logger(), "RVIZ world loader could not find drone model");
+        return;
+      }
     }
+    drone.mesh_use_embedded_materials = true;
+    drone.scale.x = 1.5;
+    drone.scale.y = 1.5;
+    drone.scale.z = 1.5;
+    drone.pose.position.x = transformStamped.transform.translation.x;
+    drone.pose.position.y = transformStamped.transform.translation.y;
+    drone.pose.position.z = transformStamped.transform.translation.z;
+    drone.pose.orientation.x = transformStamped.transform.rotation.x;
+    drone.pose.orientation.y = transformStamped.transform.rotation.y;
+    drone.pose.orientation.z = transformStamped.transform.rotation.z;
+    drone.pose.orientation.w = transformStamped.transform.rotation.w;
+    drone.color.r = 0.0f;
+    drone.color.g = 1.0f;
+    drone.color.b = 0.0f;
+    drone.color.a = 1.0;
+    drone.id = 0;
+    drone.lifetime = rclcpp::Duration(0);
+    drone.action = visualization_msgs::msg::Marker::ADD;
+
+    drone_pub_->publish(drone);
+  } catch(tf2::TimeoutException const& ex) {
+    RCLCPP_WARN(this->get_logger(), "%s", ex.what());
   }
-  drone.mesh_use_embedded_materials = true;
-  drone.scale.x = 1.5;
-  drone.scale.y = 1.5;
-  drone.scale.z = 1.5;
-  //TODO: apply frame transforms?
-  drone.pose.position.x = pose.x;
-  drone.pose.position.y = pose.y;
-  drone.pose.position.z = pose.z;
-  drone.pose.orientation.x = pose.q[3];
-  drone.pose.orientation.y = pose.q[0];
-  drone.pose.orientation.z = pose.q[1];
-  drone.pose.orientation.w = pose.q[2];
-  drone.id = 0;
-  drone.lifetime = rclcpp::Duration(0);
-  drone.action = visualization_msgs::msg::Marker::ADD;
-
-  drone_pub_->publish(drone);
-
-  return 0;
 }
 
 // extraction operators

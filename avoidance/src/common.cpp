@@ -253,6 +253,27 @@ float getPitchFromQuaternion(const Eigen::Quaternionf q) {
   return pitch * RAD_TO_DEG;
 }
 
+geometry_msgs::msg::Quaternion createQuaternionMsgFromYaw(double yaw) {
+  tf2::Quaternion quat_tf;
+  quat_tf.setRPY( 0, 0, yaw );
+  geometry_msgs::msg::Quaternion quat_msg;
+  quat_msg = tf2::toMsg(quat_tf);
+  return quat_msg;
+}
+
+geometry_msgs::msg::PoseStamped transformNEDandENU(geometry_msgs::msg::PoseStamped pose) {
+  geometry_msgs::msg::TransformStamped transformStamped;
+  tf2::Quaternion tf2_q_NED;
+  tf2_q_NED.setRPY(3.14, 0, 1.57);
+  geometry_msgs::msg::Quaternion geomsg_q;
+  tf2::convert(tf2_q_NED, geomsg_q);
+  transformStamped.transform.rotation = geomsg_q;
+  
+  geometry_msgs::msg::PoseStamped transformed_pose;
+  tf2::doTransform(pose, transformed_pose, transformStamped);
+  return transformed_pose;
+}
+
 float wrapAngleToPlusMinusPI(float angle) { return angle - 2.0f * M_PI_F * std::floor(angle / (2.0f * M_PI_F) + 0.5f); }
 
 float wrapAngleToPlusMinus180(float angle) { return angle - 360.f * std::floor(angle / 360.f + 0.5f); }
@@ -304,7 +325,7 @@ void transformToTrajectory(px4_msgs::msg::VehicleTrajectoryWaypoint& obst_avoid,
   fillUnusedTrajectoryPoint(obst_avoid.waypoints[3]);
   fillUnusedTrajectoryPoint(obst_avoid.waypoints[4]);
 
-  for (size_t i = 0; i < sizeof(obst_avoid.waypoints); i++) {
+  for (size_t i = 0; i < obst_avoid.waypoints.size(); i++) {
     obst_avoid.waypoints[i].timestamp = obst_avoid.timestamp;
     obst_avoid.waypoints[i].point_valid = false;
   }

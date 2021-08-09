@@ -36,7 +36,7 @@ std::vector<P> threePointBezier(const P& p0, const P& p1, const P& p2, int num_s
 
 // Returns a quadratic Bezier-curve starting in p0 and and ending in p2
 template <typename Path>
-nav_msgs::Path threePointBezier(const Path& path, int num_steps = 10) {
+nav_msgs::msg::Path threePointBezier(const Path& path, int num_steps = 10) {
   if (path.poses.size() != 3) {
     printf("Path size error, %d != 3 \n", static_cast<int>(path.poses.size()));
     return path;
@@ -119,14 +119,15 @@ double getAccelerationMagnitude(const P& p0, const P& p1, const P& p2, double du
 }
 
 template <typename BezierMsg>
-nav_msgs::Path pathToTriplets(const nav_msgs::Path& path, std::vector<BezierMsg> triplets, std::vector<double> speed) {
+nav_msgs::msg::Path pathToTriplets(const nav_msgs::msg::Path& path, std::vector<BezierMsg> triplets,
+                                   std::vector<double> speed) {
   if (path.poses.size() < 3) {
     return path;
   }
 
   // Extract the points from path, duplicate the first and last point to
   // indicate acceleration at the beginning and deceleration at the end
-  std::vector<geometry_msgs::Point> points;
+  std::vector<geometry_msgs::msg::Point> points;
   points.push_back(path.poses.front().pose.position);
   for (auto pose : path.poses) {
     points.push_back(pose.pose.position);
@@ -134,9 +135,9 @@ nav_msgs::Path pathToTriplets(const nav_msgs::Path& path, std::vector<BezierMsg>
   points.push_back(path.poses.back().pose.position);
 
   for (int i = 1; i < path.poses.size(); i++) {
-    geometry_msgs::Point prev = middlePoint(points[i - 1], points[i]);
-    geometry_msgs::Point ctrl = points[i];
-    geometry_msgs::Point next = middlePoint(points[i], points[i + 1]);
+    geometry_msgs::msg::Point prev = middlePoint(points[i - 1], points[i]);
+    geometry_msgs::msg::Point ctrl = points[i];
+    geometry_msgs::msg::Point next = middlePoint(points[i], points[i + 1]);
     ;
     BezierMsg msg;
     fillBezierMsg(msg, prev, ctrl, next, 1.0);

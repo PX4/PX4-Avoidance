@@ -27,9 +27,11 @@ void GlobalPlanner::calculateAccumulatedHeightPrior() {
 }
 
 // Updates the current pose and keeps track of the path back
-void GlobalPlanner::setPose(const geometry_msgs::PoseStamped& new_pose) {
+void GlobalPlanner::setPose(const geometry_msgs::msg::PoseStamped new_pose, const double yaw) {
   curr_pos_ = new_pose.pose.position;
-  curr_yaw_ = tf::getYaw(new_pose.pose.orientation);
+  // curr_yaw_ = tf2::getYaw(new_pose->pose.orientation);
+  curr_yaw_ = yaw;  // get Yaw directly from px4_msgs::msg::VehicleLocalPosition.
+
   Cell curr_cell = Cell(curr_pos_);
   if (!going_back_ && (path_back_.empty() || curr_cell != path_back_.back())) {
     // Keep track of where we have been, add current position to path_back_ if
@@ -154,10 +156,10 @@ double GlobalPlanner::getSingleCellRisk(const Cell& cell) {
       return post_prob;
     }
     // No obstacle spotted (all measurements hint towards it being free)
-    return expore_penalty_ * post_prob;
+    return explore_penalty_ * post_prob;
   }
   // No measurements at all
-  return expore_penalty_ * getAltPrior(cell);  // Risk for unexplored cells
+  return explore_penalty_ * getAltPrior(cell);  // Risk for unexplored cells
 }
 
 double GlobalPlanner::getAltPrior(const Cell& cell) {
@@ -182,12 +184,18 @@ double GlobalPlanner::getRisk(const Cell& cell) {
   if (risk_cache_.find(cell) != risk_cache_.end()) {
     return risk_cache_[cell];
   }
-
   double risk = getSingleCellRisk(cell);
   int radius = static_cast<int>(std::ceil(robot_radius_ / octree_resolution_));
+  // printf("cell (%.2lf %.2lf %.2lf)  robot_radius_ : %d\n", cell.xPos(), cell.yPos(), cell.zPos(), robot_radius_);
+  int risk_cell_count = 1;
   for (const Cell& neighbor : cell.getFlowNeighbors(radius)) {
+    // printf("neighbor (%.2lf %.2lf %.2lf)  risk : %.3lf\n", neighbor.xPos(), neighbor.yPos(), neighbor.zPos(),
+    // getSingleCellRisk(neighbor));
+    risk_cell_count++;
     risk += neighbor_risk_flow_ * getSingleCellRisk(neighbor);
   }
+  // printf("-------------------------------------------------------------------------\n");
+  risk = risk / risk_cell_count;  // get averaged risk
 
   risk_cache_[cell] = risk;
   return risk;
@@ -204,9 +212,9 @@ double GlobalPlanner::getRisk(const Node& node) {
 
 // Returns the risk of the quadratic Bezier curve defined by poses
 // TODO: think about this
-double GlobalPlanner::getRiskOfCurve(const std::vector<geometry_msgs::PoseStamped>& msg) {
+double GlobalPlanner::getRiskOfCurve(const std::vector<geometry_msgs::msg::PoseStamped>& msg) {
   if (msg.size() != 3) {
-    ROS_INFO("Bezier msg must have 3 points");
+    // ROS_INFO("Bezier msg must have 3 points");
     return -1;
   }
 
@@ -252,7 +260,7 @@ double GlobalPlanner::riskHeuristic(const Cell& u, const Cell& goal) {
   if (u == goal) {
     return 0.0;
   }
-  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_;
+  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * explore_penalty_ * risk_factor_;
   double xy_dist = u.diagDistance2D(goal) - 1.0;  // XY distance excluding the goal cell
   double xy_risk = xy_dist * unexplored_risk * getAltPrior(u);
   double z_risk =
@@ -271,7 +279,7 @@ double GlobalPlanner::riskHeuristicReverseCache(const Cell& u, const Cell& goal)
     return 0.0;
   }
   double dist_to_bubble = std::max(0.0, u.diagDistance3D(goal) - bubble_radius_);
-  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * expore_penalty_ * risk_factor_;
+  double unexplored_risk = (1.0 + 6.0 * neighbor_risk_flow_) * explore_penalty_ * risk_factor_;
   double heuristic = bubble_cost_ + dist_to_bubble * unexplored_risk * getAltPrior(u);
   // bubble_risk_cache_[u] = heuristic;
   return heuristic;
@@ -332,18 +340,29 @@ double GlobalPlanner::getHeuristic(const Node& u, const Cell& goal) {
   return heuristic;
 }
 
-geometry_msgs::PoseStamped GlobalPlanner::createPoseMsg(const Cell& cell, double yaw) {
-  geometry_msgs::PoseStamped pose_msg;
+geometry_msgs::msg::PoseStamped GlobalPlanner::createPoseMsg(const Cell& cell, double yaw) {
+  geometry_msgs::msg::PoseStamped pose_msg;
   pose_msg.header.frame_id = frame_id_;
   pose_msg.pose.position = cell.toPoint();
-  pose_msg.pose.orientation = tf::createQuaternionMsgFromYaw(yaw);
+  // pose_msg.pose.orientation = tf2::createQuaternionMsgFromYaw(yaw);    // tf version
+
+  // tf2 version
+  tf2::Quaternion quaternion;
+  quaternion.setRPY(0, 0, yaw);
+  geometry_msgs::msg::Quaternion qOri;
+  qOri.x = quaternion.x();
+  qOri.y = quaternion.y();
+  qOri.z = quaternion.z();
+  qOri.w = quaternion.w();
+  pose_msg.pose.orientation = qOri;
+
   return pose_msg;
 }
 
-nav_msgs::Path GlobalPlanner::getPathMsg() { return getPathMsg(curr_path_); }
+nav_msgs::msg::Path GlobalPlanner::getPathMsg() { return getPathMsg(curr_path_); }
 
-nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
-  nav_msgs::Path path_msg;
+nav_msgs::msg::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
+  nav_msgs::msg::Path path_msg;
   path_msg.header.frame_id = frame_id_;
 
   if (path.size() == 0) {
@@ -366,18 +385,18 @@ nav_msgs::Path GlobalPlanner::getPathMsg(const std::vector<Cell>& path) {
   return path_msg;
 }
 
-PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
-  nav_msgs::Path path_msg = getPathMsg();
-  PathWithRiskMsg risk_msg;
-  risk_msg.header = path_msg.header;
-  risk_msg.poses = path_msg.poses;
+// avoidance_msgs::msg::PathWithRiskMsg GlobalPlanner::getPathWithRiskMsg() {
+//   nav_msgs::msg::Path path_msg = getPathMsg();
+//   avoidance_msgs::msg::PathWithRiskMsg risk_msg;
+//   risk_msg.header = path_msg.header;
+//   risk_msg.poses = path_msg.poses;
 
-  for (const auto& pose : path_msg.poses) {
-    double risk = getRisk(Cell(pose.pose.position));
-    risk_msg.risks.push_back(risk);
-  }
-  return risk_msg;
-}
+//   for (const auto& pose : path_msg.poses) {
+//     double risk = getRisk(Cell(pose.pose.position));
+//     risk_msg.risks.push_back(risk);
+//   }
+//   return risk_msg;
+// }
 
 // Returns details of the cost of the path
 PathInfo GlobalPlanner::getPathInfo(const std::vector<Cell>& path) {
@@ -421,9 +440,9 @@ bool GlobalPlanner::findPath(std::vector<Cell>& path) {
     Cell parent_of_s = s;  // Ignore the current yaw
   }
 
-  ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
-  ROS_INFO("curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f", curr_pos_.x, curr_pos_.y, curr_pos_.z, s.xPos(),
-           s.yPos(), s.zPos());
+  // ROS_INFO("Planning a path from %s to %s", s.asString().c_str(), t.asString().c_str());
+  // ROS_INFO("curr_pos_: %2.2f,%2.2f,%2.2f\t s: %2.2f,%2.2f,%2.2f", curr_pos_.x, curr_pos_.y, curr_pos_.z, s.xPos(),
+  // s.yPos(), s.zPos());
 
   bool found_path = false;
   double best_path_cost = INFINITY;
@@ -483,15 +502,18 @@ bool GlobalPlanner::getGlobalPath() {
   Cell s = Cell(curr_pos_);
   Cell t = Cell(goal_pos_);
   current_cell_blocked_ = isOccupied(s);
-
+  // printf("getGlobalPath!! from (%.3lf %.3lf %.3lf) -> (%.3lf %.3lf %.3lf) // current_cell_blocked_ : %d\n",
+  // curr_pos_.x, curr_pos_.y, curr_pos_.z,
+  // goal_pos_.xPos(), goal_pos_.yPos(), goal_pos_.zPos(), current_cell_blocked_);
   if (goal_must_be_free_ && getRisk(t) > max_cell_risk_) {
     // If goal is occupied, no path is published
-    ROS_INFO("Goal position is occupied");
+    // ROS_INFO("Goal position is occupied");
     goal_is_blocked_ = true;
+    // printf("goal_is_blocked!! getRisk(t) : %lf, max_cell_risk_ : %lf\n", getRisk(t), max_cell_risk_);
     return false;
   } else if (current_cell_blocked_) {
     // If current position is occupied the way back is published
-    ROS_INFO("Current position is occupied, going back.");
+    // ROS_INFO("Current position is occupied, going back.");
     // goBack();
     // return true;
     return false;
@@ -500,7 +522,7 @@ bool GlobalPlanner::getGlobalPath() {
     std::vector<Cell> path;
     if (!findPath(path)) {
       double goal_risk = getRisk(t);
-      ROS_INFO("  Failed to find a path, risk of t: %3.2f", goal_risk);
+      // printf("  Failed to find a path, risk of t: %3.2f", goal_risk);
       goal_is_blocked_ = true;
       return false;
     }
@@ -512,7 +534,7 @@ bool GlobalPlanner::getGlobalPath() {
 // Sets the current path to be the path back until a safe cell is reached
 // Then the mission can be tried again or a new mission can be set
 void GlobalPlanner::goBack() {
-  ROS_INFO("  GO BACK ");
+  // ROS_INFO("  GO BACK ");
   going_back_ = true;
   std::vector<Cell> new_path = path_back_;
   std::reverse(new_path.begin(), new_path.end());

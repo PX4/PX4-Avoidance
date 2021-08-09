@@ -1,0 +1,15 @@
+[submodule "octomap_msgs"]
+	path = octomap_msgs
+	url = https://github.com/OctoMap/octomap_msgs
+	branch = ros2
+[submodule "octomap_server2"]
+	path = octomap_server2
+	url = https://github.com/ldg810/octomap_server2
+[submodule "perception_pcl"]
+	path = perception_pcl
+	url = https://github.com/ros-perception/perception_pcl
+	branch = foxy-devel
+[submodule "pcl_msgs"]
+	path = pcl_msgs
+	url = https://github.com/ros-perception/pcl_msgs
+	branch = ros2
