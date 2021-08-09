@@ -230,13 +230,13 @@ void GlobalPlannerNode::localPositionCallback(const px4_msgs::msg::VehicleLocalP
     pose.pose.position.x = msg->x;
     pose.pose.position.y = msg->y;
     pose.pose.position.z = msg->z;
-    pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->heading);
+    pose.pose.orientation = avoidance::createQuaternionMsgFromYaw(msg->yaw);
 
     geometry_msgs::msg::PoseStamped transformed_pose = avoidance::transformNEDandENU(pose);
 
     // Update position
     last_pos_ = transformed_pose;
-    global_planner_.setPose(transformed_pose, msg->heading);
+    global_planner_.setPose(transformed_pose, msg->yaw);
 
     // Update velocity (considering NED to ENU transformation)
     geometry_msgs::msg::Vector3 vel;
