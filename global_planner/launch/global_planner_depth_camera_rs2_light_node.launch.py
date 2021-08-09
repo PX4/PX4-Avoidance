@@ -55,7 +55,7 @@ def generate_launch_description():
                  'pointcloud_topics': ['/rs2_pc'],
                  'start_pos_x': 0.0,
                  'start_pos_y': 0.0,
-                 'start_pos_z': 3.0,
+                 'start_pos_z': 2.0,
                  'min_altitude': 1,
                  'max_altitude': 5,
                  'max_cell_risk': 0.5,
