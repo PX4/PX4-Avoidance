@@ -121,6 +121,7 @@ class GlobalPlannerNode : public rclcpp::Node {
   bool position_received_;
   std::string frame_id_;
   std::string camera_frame_id_;
+  bool set_init_pos_ = false;
   
   double clicked_goal_alt_;
   double clicked_goal_radius_;

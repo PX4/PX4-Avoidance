@@ -287,6 +287,13 @@ void GlobalPlannerNode::globalPositionCallback(const px4_msgs::msg::VehicleGloba
   cur_point.longitude = msg->lon;
   cur_point.altitude = msg->alt;
 
+  if (set_init_pos_ == false) {
+    global_planner_.ref_point_.latitude = msg->lat;
+    global_planner_.ref_point_.longitude = msg->lon;
+    global_planner_.ref_point_.altitude = msg->alt;
+    set_init_pos_ = true;
+  }
+
   geometry_msgs::msg::Point local_pos = LLH2NED(global_planner_.ref_point_, cur_point);
 
   geometry_msgs::msg::TransformStamped tfmsg;
