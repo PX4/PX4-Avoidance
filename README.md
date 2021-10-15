@@ -1,6 +1,6 @@
 # Obstacle Detection and Avoidance
 [![Release Status](https://img.shields.io/github/v/release/PX4/avoidance)](https://github.com/PX4/avoidance/releases)
-[![Build Status](https://travis-ci.org/PX4/avoidance.svg?branch=master)](https://travis-ci.org/PX4/avoidance)
+[![Build and Unit Test](https://github.com/PX4/PX4-Avoidance/workflows/Build%20and%20Unit%20Test/badge.svg)](https://github.com/PX4/PX4-Avoidance/actions)
 [![Coverage Status](https://coveralls.io/repos/github/PX4/avoidance/badge.svg)](https://coveralls.io/github/PX4/avoidance)
 
 PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance.

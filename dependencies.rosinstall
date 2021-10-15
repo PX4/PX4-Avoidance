@@ -1,1 +1,3 @@
-- git: {local-name: yaml_cpp_catkin, uri: 'git@github.com:ethz-asl/yaml_cpp_catkin.git', version: 6cad108c4d5a9b9ddc95edd6f7cb23b572926351}
+- git: {local-name: yaml_cpp_catkin, uri: 'https://github.com/ethz-asl/yaml_cpp_catkin.git', version: 6cad108c4d5a9b9ddc95edd6f7cb23b572926351}
+- git: {local-name: catkin_simple, uri: 'https://github.com/catkin/catkin_simple'} 
+- git: {local-name: mav_comm, uri: 'https://github.com/ethz-asl/mav_comm'}

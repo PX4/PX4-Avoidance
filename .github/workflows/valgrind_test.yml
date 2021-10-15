@@ -1,0 +1,60 @@
+name: Check Memory Leaks
+on:
+  push:
+    branches:
+    - 'master'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - {rosdistro: 'kinetic', container: 'px4io/px4-dev-ros-kinetic:2020-07-18'}
+    container: ${{ matrix.config.container }}
+    steps:
+    - uses: actions/checkout@v1
+      with:
+        token: ${{ secrets.ACCESS_TOKEN }}
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+    - name: release_build_test
+      working-directory: 
+      run: |
+        apt update
+        apt install -y python3-wstool libyaml-cpp-dev
+        mkdir -p $HOME/catkin_ws/src;
+        cd $HOME/catkin_ws
+        catkin init
+        catkin config --extend "/opt/ros/${{matrix.config.rosdistro}}"
+        catkin config --merge-devel
+        cd $HOME/catkin_ws/src
+        ln -s $GITHUB_WORKSPACE
+        cd $HOME/catkin_ws
+        wstool init src src/PX4-Avoidance/dependencies.rosinstall
+        wstool update -t src -j4
+        rosdep update
+        rosdep install --from-paths src --ignore-src -y --rosdistro ${{matrix.config.rosdistro}}
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release -DCATKIN_ENABLE_TESTING=False -DDISABLE_SIMULATION=ON
+        catkin build -j$(nproc) -l$(nproc) avoidance local_planner global_planner
+    - name: Run Tests
+      working-directory:
+      run: |
+        cd $HOME/catkin_ws/src
+        catkin config --cmake-args -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCATKIN_ENABLE_TESTING=True
+        catkin build -j$(nproc) -l$(nproc) avoidance local_planner global_planner --no-deps -v -i --catkin-make-args tests
+        source $HOME/catkin_ws/devel/setup.bash
+        status=0 && for f in $HOME/catkin_ws/devel/lib/*/*-test; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 $f || exit 1; done
+        (roscore &) && for f in $HOME/catkin_ws/devel/lib/*/*-test-roscore; do valgrind --leak-check=full --track-origins=yes --error-exitcode=1 --suppressions=$HOME/catkin_ws/src/PX4-Avoidance/local_planner/test/valgrind_suppressions.sup $f || status=1; done && (if (( $status > 0 )); then exit $status; fi)
+      shell: bash
+    - name: Upload Coverage
+      working-directory: $HOME/catkin_ws/src/PX4-Avoidance
+      run: |
+        apt-get install -y lcov
+        gem install coveralls-lcov
+        tools/generate_coverage.sh
+        coveralls-lcov repo_total.info
+      shell: bash
