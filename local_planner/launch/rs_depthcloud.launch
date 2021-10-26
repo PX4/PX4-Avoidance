@@ -28,7 +28,7 @@ limitations under the License.
   <arg name="enable_color"      value="false"/>
   <arg name="enable_infra1"     value="true"/>
   <arg name="enable_infra2"     value="false"/>
-  <arg name="enable_pointcloud" value="false"/>
+  <arg name="enable_pointcloud" value="true"/>
   <arg name="enable_sync"       value="false"/>
   <arg name="align_depth"       value="false"/>
 

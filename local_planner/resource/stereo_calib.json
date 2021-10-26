@@ -72,7 +72,7 @@
     "param-usersm": "1",
     "param-zunits": "1000",
     "stream-depth-format": "Z16",
-    "stream-fps": "15",
+    "stream-fps": "30",
     "stream-height": "480",
     "stream-width": "640"
 }

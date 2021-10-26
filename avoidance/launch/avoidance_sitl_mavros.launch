@@ -1,6 +1,6 @@
 <launch>
-    <arg name="world_path" default="$(find avoidance)/sim/worlds/outdoor_village_3.world" />
-    <arg name="gui" default="false"/>
+    <arg name="world_path" default="$(find avoidance)/sim/worlds/outdoor_village_3.world" />  <!-- $(find gazebo_ros)/launch/empty_world.launch -->
+    <arg name="gui" default="true"/>
     <arg name="ns" default="/"/>
     <arg name="model" default="iris_depth_camera"/>
     <arg name="fcu_url" default="udp://:14540@localhost:14557"/>

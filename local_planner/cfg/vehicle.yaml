@@ -10,7 +10,7 @@ dictitems:
     dictitems:
       adapt_cost_params_: true
       box_radius_: 12.0
-      children_per_node_: 50
+      children_per_node_: 50 
       goal_cost_param_: 10.0
       goal_z_param: 3.0
       groups: !!python/object/new:dynamic_reconfigure.encoding.Config
