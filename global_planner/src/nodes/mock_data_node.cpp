@@ -5,11 +5,11 @@ namespace global_planner {
 MockDataNode::MockDataNode() {
   ros::NodeHandle nh;
 
-  path_sub_ = nh.subscribe("/global_path", 1, &MockDataNode::receivePath, this);
+  path_sub_ = nh.subscribe("global_path", 1, &MockDataNode::receivePath, this);
 
-  depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("/camera/depth/points", 10);
-  local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("/mavros/local_position/pose", 10);
-  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("/clicked_point", 10);
+  depth_points_pub_ = nh.advertise<sensor_msgs::PointCloud2>("camera/depth/points", 10);
+  local_position_pub_ = nh.advertise<geometry_msgs::PoseStamped>("mavros/local_position/pose", 10);
+  global_goal_pub_ = nh.advertise<geometry_msgs::PointStamped>("clicked_point", 10);
 
   createWall(5, 5, 6);
 
@@ -40,7 +40,7 @@ void MockDataNode::createWall(int dist, int width, int height) {
 
 void MockDataNode::sendClickedPoint() {
   geometry_msgs::PointStamped msg;
-  msg.header.frame_id = "/world";
+  msg.header.frame_id = "world";
   msg.point.x = 8.5;
   msg.point.y = 4.5;
   msg.point.z = 1.5;
@@ -60,7 +60,7 @@ void MockDataNode::receivePath(const nav_msgs::Path& msg) {
 void MockDataNode::sendMockData() {
   // Create a PointCloud2
   sensor_msgs::PointCloud2 cloud_msg;
-  cloud_msg.header.frame_id = "/world";
+  cloud_msg.header.frame_id = "world";
   // Fill some internals of the PoinCloud2 like the header/width/height ...
   cloud_msg.height = 1;
   cloud_msg.width = 4;
@@ -111,7 +111,7 @@ void MockDataNode::sendMockData() {
 
   // Send position
   geometry_msgs::PoseStamped pos;
-  pos.header.frame_id = "/world";
+  pos.header.frame_id = "world";
   pos.pose.position.x = 0.5;
   pos.pose.position.y = 2.5;
   pos.pose.position.z = 1.5;

@@ -24,24 +24,24 @@ GlobalPlannerNode::GlobalPlannerNode(const ros::NodeHandle& nh, const ros::NodeH
   readParams();
 
   // Subscribers
-  octomap_full_sub_ = nh_.subscribe("/octomap_full", 1, &GlobalPlannerNode::octomapFullCallback, this);
-  ground_truth_sub_ = nh_.subscribe("/mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
-  velocity_sub_ = nh_.subscribe("/mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
-  clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
-  move_base_simple_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
+  octomap_full_sub_ = nh_.subscribe("octomap_full", 1, &GlobalPlannerNode::octomapFullCallback, this);
+  ground_truth_sub_ = nh_.subscribe("mavros/local_position/pose", 1, &GlobalPlannerNode::positionCallback, this);
+  velocity_sub_ = nh_.subscribe("mavros/local_position/velocity", 1, &GlobalPlannerNode::velocityCallback, this);
+  clicked_point_sub_ = nh_.subscribe("clicked_point", 1, &GlobalPlannerNode::clickedPointCallback, this);
+  move_base_simple_sub_ = nh_.subscribe("move_base_simple/goal", 1, &GlobalPlannerNode::moveBaseSimpleCallback, this);
+  fcu_input_sub_ = nh_.subscribe("mavros/trajectory/desired", 1, &GlobalPlannerNode::fcuInputGoalCallback, this);
 
   // Publishers
-  global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("/global_temp_path", 10);
-  actual_path_pub_ = nh_.advertise<nav_msgs::Path>("/actual_path", 10);
-  smooth_path_pub_ = nh_.advertise<nav_msgs::Path>("/smooth_path", 10);
-  global_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/global_goal", 10);
-  global_temp_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("/global_temp_goal", 10);
-  explored_cells_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/explored_cells", 10);
-  mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
-  current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("/current_setpoint", 10);
-  pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_in", 10);
+  global_temp_path_pub_ = nh_.advertise<nav_msgs::Path>("global_temp_path", 10);
+  actual_path_pub_ = nh_.advertise<nav_msgs::Path>("actual_path", 10);
+  smooth_path_pub_ = nh_.advertise<nav_msgs::Path>("smooth_path", 10);
+  global_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("global_goal", 10);
+  global_temp_goal_pub_ = nh_.advertise<geometry_msgs::PointStamped>("global_temp_goal", 10);
+  explored_cells_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("explored_cells", 10);
+  mavros_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
+  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 10);
+  current_waypoint_publisher_ = nh_.advertise<geometry_msgs::PoseStamped>("current_setpoint", 10);
+  pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("cloud_in", 10);
 
   actual_path_.header.frame_id = frame_id_;
 
@@ -78,10 +78,10 @@ void GlobalPlannerNode::readParams() {
   nh_.param<double>("start_pos_x", start_pos_.x, 0.5);
   nh_.param<double>("start_pos_y", start_pos_.y, 0.5);
   nh_.param<double>("start_pos_z", start_pos_.z, 3.5);
-  nh_.param<std::string>("frame_id", frame_id_, "/local_origin");
+  nh_.param<std::string>("frame_id", frame_id_, "local_origin");
   nh_.getParam("pointcloud_topics", camera_topics);
   if (!nh_.hasParam("camera_frame_id")) {
-    nh_.setParam("camera_frame_id", "/camera_link");
+    nh_.setParam("camera_frame_id", "camera_link");
   } else {
     nh_.getParam("camera_frame_id", camera_frame_id_);
   }

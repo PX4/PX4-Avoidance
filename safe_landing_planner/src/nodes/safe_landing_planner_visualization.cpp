@@ -8,11 +8,11 @@
 namespace avoidance {
 
 void SafeLandingPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
-  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("/grid_pointcloud", 1);
-  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
-  grid_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid", 1);
-  mean_std_dev_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid_mean_std_dev", 1);
-  counter_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/grid_counter", 1);
+  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZI>>("grid_pointcloud", 1);
+  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("path_actual", 1);
+  grid_pub_ = nh.advertise<visualization_msgs::MarkerArray>("grid", 1);
+  mean_std_dev_pub_ = nh.advertise<visualization_msgs::MarkerArray>("grid_mean_std_dev", 1);
+  counter_pub_ = nh.advertise<visualization_msgs::MarkerArray>("grid_counter", 1);
 }
 
 void SafeLandingPlannerVisualization::visualizeSafeLandingPlanner(

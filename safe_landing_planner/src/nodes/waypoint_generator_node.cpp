@@ -11,15 +11,15 @@ WaypointGeneratorNode::WaypointGeneratorNode(const ros::NodeHandle &nh) : nh_(nh
   f = boost::bind(&WaypointGeneratorNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("/mavros/local_position/pose", 1,
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("mavros/local_position/pose", 1,
                                                                 &WaypointGeneratorNode::positionCallback, this);
-  trajectory_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &WaypointGeneratorNode::trajectoryCallback, this);
-  state_sub_ = nh_.subscribe("/mavros/state", 1, &WaypointGeneratorNode::stateCallback, this);
-  grid_sub_ = nh_.subscribe("/grid_slp", 1, &WaypointGeneratorNode::gridCallback, this);
+  trajectory_sub_ = nh_.subscribe("mavros/trajectory/desired", 1, &WaypointGeneratorNode::trajectoryCallback, this);
+  state_sub_ = nh_.subscribe("mavros/state", 1, &WaypointGeneratorNode::stateCallback, this);
+  grid_sub_ = nh_.subscribe("grid_slp", 1, &WaypointGeneratorNode::gridCallback, this);
 
-  trajectory_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
-  land_hysteresis_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/land_hysteresis", 1);
-  marker_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("/goal_position", 1);
+  trajectory_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 10);
+  land_hysteresis_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("land_hysteresis", 1);
+  marker_goal_pub_ = nh_.advertise<visualization_msgs::Marker>("goal_position", 1);
 
   waypointGenerator_.publishTrajectorySetpoints_ = [this](const Eigen::Vector3f &pos_sp, const Eigen::Vector3f &vel_sp,
                                                           float yaw_sp, float yaw_speed_sp) {

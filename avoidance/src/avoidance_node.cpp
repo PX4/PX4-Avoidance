@@ -18,10 +18,10 @@ AvoidanceNode::AvoidanceNode(const ros::NodeHandle& nh, const ros::NodeHandle& n
 AvoidanceNode::~AvoidanceNode() {}
 
 void AvoidanceNode::init() {
-  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
-  px4_param_sub_ = nh_.subscribe("/mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
-  mission_sub_ = nh_.subscribe("/mavros/mission/waypoints", 1, &AvoidanceNode::missionCallback, this);
-  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("/mavros/param/get");
+  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("mavros/companion_process/status", 1);
+  px4_param_sub_ = nh_.subscribe("mavros/param/param_value", 1, &AvoidanceNode::px4ParamsCallback, this);
+  mission_sub_ = nh_.subscribe("mavros/mission/waypoints", 1, &AvoidanceNode::missionCallback, this);
+  get_px4_param_client_ = nh_.serviceClient<mavros_msgs::ParamGet>("mavros/param/get");
 
   ros::TimerOptions cmdlooptimer_options(ros::Duration(cmdloop_dt_),
                                          boost::bind(&AvoidanceNode::cmdLoopCallback, this, _1), &cmdloop_queue_);

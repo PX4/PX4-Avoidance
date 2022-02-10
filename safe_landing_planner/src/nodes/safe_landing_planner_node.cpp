@@ -20,13 +20,13 @@ SafeLandingPlannerNode::SafeLandingPlannerNode(const ros::NodeHandle &nh) : nh_(
   f = boost::bind(&SafeLandingPlannerNode::dynamicReconfigureCallback, this, _1, _2);
   server_.setCallback(f);
 
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("/mavros/local_position/pose", 1,
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped &>("mavros/local_position/pose", 1,
                                                                 &SafeLandingPlannerNode::positionCallback, this);
   pointcloud_sub_ = nh_.subscribe<const sensor_msgs::PointCloud2 &>(camera_topic, 1,
                                                                     &SafeLandingPlannerNode::pointCloudCallback, this);
 
-  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("/mavros/companion_process/status", 1);
-  grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("/grid_slp", 1);
+  mavros_system_status_pub_ = nh_.advertise<mavros_msgs::CompanionProcessStatus>("mavros/companion_process/status", 1);
+  grid_pub_ = nh_.advertise<safe_landing_planner::SLPGridMsg>("grid_slp", 1);
 
   if (safe_landing_planner_->play_rosbag_) {
     raw_grid_sub_ = nh_.subscribe<const safe_landing_planner::SLPGridMsg &>(
@@ -215,7 +215,7 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
       if (should_exit_) break;
 
       std::unique_ptr<std::lock_guard<std::mutex>> cloud_msg_lock(new std::lock_guard<std::mutex>(*(cloud_msg_mutex_)));
-      if (tf_listener_.canTransform("/local_origin", newest_cloud_msg_.header.frame_id,
+      if (tf_listener_.canTransform("local_origin", newest_cloud_msg_.header.frame_id,
                                     newest_cloud_msg_.header.stamp)) {
         try {
           pcl::PointCloud<pcl::PointXYZ> pcl_cloud;
@@ -227,8 +227,8 @@ void SafeLandingPlannerNode::pointCloudTransformThread() {
           dummy_index.reserve(pcl_cloud.points.size());
           pcl::removeNaNFromPointCloud(pcl_cloud, pcl_cloud, dummy_index);
 
-          // transform cloud to /local_origin frame
-          pcl_ros::transformPointCloud("/local_origin", pcl_cloud, pcl_cloud, tf_listener_);
+          // transform cloud to local_origin frame
+          pcl_ros::transformPointCloud("local_origin", pcl_cloud, pcl_cloud, tf_listener_);
 
           std::lock_guard<std::mutex> transformed_cloud_guard(*(transformed_cloud_mutex_));
           cloud_transformed_ = true;

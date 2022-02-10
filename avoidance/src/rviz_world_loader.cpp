@@ -6,18 +6,18 @@ namespace avoidance {
 
 WorldVisualizer::WorldVisualizer(const ros::NodeHandle& nh, const std::string& nodelet_ns)
     : nh_(nh), nodelet_ns_(nodelet_ns) {
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("mavros/local_position/pose", 1,
                                                                &WorldVisualizer::positionCallback, this);
 
-  world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("/world", 1);
-  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("/drone", 1);
+  world_pub_ = nh_.advertise<visualization_msgs::MarkerArray>("world", 1);
+  drone_pub_ = nh_.advertise<visualization_msgs::Marker>("drone", 1);
   loop_timer_ = nh_.createTimer(ros::Duration(2.0), &WorldVisualizer::loopCallback, this);
 
   std::string world_string;
   if (!nodelet_ns_.empty()) {
     world_string = nodelet_ns_ + "/world_name";
   } else {
-    world_string = "/world_name";
+    world_string = "world_name";
   }
   nh_.param<std::string>(world_string, world_path_, "");
 }
