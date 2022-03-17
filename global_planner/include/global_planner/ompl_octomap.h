@@ -26,7 +26,7 @@ class OctomapValidityChecker : public base::StateValidityChecker {
   }
 
   virtual bool checkCollision(Eigen::Vector3d state) const {
-    bool collision = false;
+    bool collision = true;
     double occprob = 1.0;
     uint octree_depth = 16;
     double logodds;
@@ -39,25 +39,7 @@ class OctomapValidityChecker : public base::StateValidityChecker {
         occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
 
       // Assuming a optimistic planner: Unknown space is considered as unoccupied
-      if (occprob > 0.5) collision = true;
-
-      node = map_->search(state(0)+0.5, state(1)+0.5, state(2)+0.5, octree_depth);
-      if (node)
-        occprob = octomap::probability(logodds = node->getValue());
-      else
-        occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
-
-      // Assuming a optimistic planner: Unknown space is considered as unoccupied
-      if (occprob > 0.5) collision = true;
-
-      node = map_->search(state(0)-0.5, state(1)-0.5, state(2)-0.5, octree_depth);
-      if (node)
-        occprob = octomap::probability(logodds = node->getValue());
-      else
-        occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
-
-      // Assuming a optimistic planner: Unknown space is considered as unoccupied
-      if (occprob > 0.5) collision = true;
+      if (occprob <= 0.5) collision = false;
 
       return collision;
     }

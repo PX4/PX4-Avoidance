@@ -56,8 +56,10 @@ class OctomapRrtPlanner {
 
   ros::Publisher trajectory_pub_;
   ros::Publisher global_path_pub_;
+  ros::Publisher actual_path_pub_;
   ros::Publisher pointcloud_pub_;
   ros::Publisher mavros_waypoint_publisher_;
+  ros::Publisher current_waypoint_publisher_;
 
   ros::Subscriber pose_sub_;
   ros::Subscriber octomap_full_sub_;
@@ -81,6 +83,12 @@ class OctomapRrtPlanner {
   int num_octomap_msg_;
   std::string frame_id_;
 
+  double max_altitude_, min_altitude_;
+  double max_x_, max_y_, min_x_, min_y_;
+  double goal_radius_;
+  double speed_;
+  double goal_altitude_;
+
   Eigen::Vector3d local_position_, local_velocity_;
   Eigen::Vector3d reference_pos_;
   geometry_msgs::PoseStamped last_pos_;
@@ -89,6 +97,7 @@ class OctomapRrtPlanner {
   geometry_msgs::PoseStamped current_goal_, global_goal_;
 
   std::vector<Eigen::Vector3d> current_path_;
+  nav_msgs::Path actual_path_;
   std::vector<cameraData> cameras_;
   tf::TransformListener listener_;
 
