@@ -327,6 +327,8 @@ double getAngularVelocity(float desired_yaw, float curr_yaw);
 void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose,
                            geometry_msgs::Twist vel);
 
+void transformToTrajectory(mavros_msgs::Trajectory& obst_avoid, geometry_msgs::PoseStamped pose);
+
 /**
 * @brief      fills MavROS trajectory messages with NAN
 * @param      point, setpoint to be filled with NAN
