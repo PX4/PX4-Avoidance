@@ -3,17 +3,6 @@
 #include "global_planner/octomap_rrt_planner.h"
 #include "global_planner/octomap_ompl_rrt.h"
 
-// Commit: ctrl and plan times in configs
-
-// Commit: initial pose config & reference pos, initial goal
-// Clean code, minimize conversions between eigen and ros
-
-// Commit: state machine, pop goals, controller, publish path
-
-// Commit: solve repeatibility, checks if the planner fails, replan
-
-// Commit: plan yaw
-
 using namespace Eigen;
 using namespace std;
 namespace ob = ompl::base;
@@ -46,14 +35,10 @@ OctomapRrtPlanner::OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeH
 
   // RRT planner parameters
   min_altitude_ = nh_.param<double>("min_altitude", 3.0);
-  max_altitude_ = nh_.param<double>("max_altitude", 7.5);
-  max_x_ = nh_.param<double>("max_x", 5.0);
-  max_y_ = nh_.param<double>("max_y", 5.0);
-  min_x_ = nh_.param<double>("min_x", 5.0);
-  min_y_ = nh_.param<double>("min_y", 5.0);
-  goal_radius_ = nh_.param<double>("goal_radius", 0.5);
+  max_altitude_ = nh_.param<double>("max_altitude", 4.0);
+  goal_radius_ = nh_.param<double>("goal_radius", 1.0);
   speed_ = nh_.param<double>("default_speed",2.0);
-  goal_altitude_ = nh_.param<double>("goal_altitude", 6.0);
+  goal_altitude_ = nh_.param<double>("goal_altitude", 3.5);
   cmdloop_dt_ = nh_.param<double>("control_loop_dt", 0.05);
   plannerloop_dt_ = nh_.param<double>("planner_loop_dt", 0.1);
 
@@ -90,6 +75,8 @@ OctomapRrtPlanner::OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeH
   current_goal_.header.frame_id = frame_id_;
   current_goal_.pose.position.x = 0; current_goal_.pose.position.y = 0; current_goal_.pose.position.z = 3.5;
   current_goal_.pose.orientation = tf::createQuaternionMsgFromYaw(0.0);
+
+  previous_goal_ = current_goal_;
   
   reference_att_.x() = 0.0;
   reference_att_.y() = 0.0;
@@ -177,8 +164,6 @@ void OctomapRrtPlanner::velocityCallback(const geometry_msgs::TwistStamped& msg)
 
 void OctomapRrtPlanner::DesiredTrajectoryCallback(const mavros_msgs::Trajectory& msg) {
   // Read waypoint from trajectory messages
-  ROS_INFO("GOAL RECEIVED DESIRED TRAJ");
-
   if (msg.point_valid[0]) {
     goal_(0) = msg.point_1.position.x;
     goal_(1) = msg.point_1.position.y;
@@ -191,7 +176,7 @@ void OctomapRrtPlanner::DesiredTrajectoryCallback(const mavros_msgs::Trajectory&
 }
 
 void OctomapRrtPlanner::moveBaseSimpleCallback(const geometry_msgs::PoseStamped& msg) {
-  ROS_INFO("GOAL RECEIVED MOVE BASE");
+
   plan_ = true;
   goal_(0) = msg.pose.position.x;
   goal_(1) = msg.pose.position.y;
@@ -218,6 +203,9 @@ void OctomapRrtPlanner::publishSetpoint() {
   setpoint.pose.position.x = last_pos_.pose.position.x + vec.getX();
   setpoint.pose.position.y = last_pos_.pose.position.y + vec.getY();
   setpoint.pose.position.z = last_pos_.pose.position.z + vec.getZ();
+  setpoint.pose.orientation = tf::createQuaternionMsgFromYaw(yaw_);
+
+  previous_goal_ = current_goal_;
 
   mavros_waypoint_publisher_.publish(setpoint);
 
@@ -277,14 +265,24 @@ geometry_msgs::PoseStamped OctomapRrtPlanner::vector3d2PoseStampedMsg(Eigen::Vec
 
 void OctomapRrtPlanner::updateReference(ros::Time current_time) { reference_pos_ << 0.0, 0.0, 3.0; }
 
+double OctomapRrtPlanner::planYaw()
+{
+  
+  double dx = current_goal_.pose.position.x - last_pos_.pose.position.x;
+  double dy = current_goal_.pose.position.y - last_pos_.pose.position.y;
+
+  return atan2(dy,dx);
+
+}
+
 void OctomapRrtPlanner::planWithSimpleSetup() {
 
   if(!isCloseToGoal())
   {
     if(octree_) {
       Eigen::Vector3d in_lower, in_upper, out_lower,out_upper;
-      in_lower << local_position_(0) - min_x_, local_position_(1) - min_y_, min_altitude_;
-      in_upper << goal_(0) + max_x_, goal_(1) + max_y_, max_altitude_;
+      in_lower << local_position_(0), local_position_(1), min_altitude_;
+      in_upper << goal_(0), goal_(1), max_altitude_;
 
       checkBounds(in_lower,in_upper,out_lower,out_upper);
 
@@ -292,6 +290,8 @@ void OctomapRrtPlanner::planWithSimpleSetup() {
       rrt_planner_.setBounds(out_lower, out_upper);
       rrt_planner_.setupProblem();
       rrt_planner_.getPath(local_position_, goal_, &current_path_);
+      yaw_ = planYaw();
+
       if (current_path_.empty()) {
         current_path_.push_back(reference_pos_);
         ROS_INFO("Path is empty");
@@ -302,7 +302,8 @@ void OctomapRrtPlanner::planWithSimpleSetup() {
   else
   {
     plan_ = false;
-    ROS_INFO("ALREADY AT GOAL");
+    yaw_ = 0.0;
+    ROS_INFO("Already at goal");
   }
 
 } 
@@ -319,7 +320,15 @@ bool OctomapRrtPlanner::isCloseToGoal() {
 }
 
 double OctomapRrtPlanner::poseDistance(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2) {
-  return norm( (p2.pose.position.x - p1.pose.position.x, p2.pose.position.y - p1.pose.position.y, p2.pose.position.z - p1.pose.position.z ) );
+  
+  double dx = p2.pose.position.x - p1.pose.position.x;
+  double dy = p2.pose.position.y - p1.pose.position.y;
+  double dz = p2.pose.position.z - p1.pose.position.z;
+
+  Vector3d vec(dx,dy,dz);
+
+  return  vec.norm();
+
 }
 
 void OctomapRrtPlanner::checkBounds(const Eigen::Vector3d& in_lower, const Eigen::Vector3d& in_upper, Eigen::Vector3d& out_lower, Eigen::Vector3d& out_upper ) {

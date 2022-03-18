@@ -5,6 +5,7 @@
 
 #include <stdio.h>
 #include <cstdlib>
+#include <cmath>
 #include <mutex>
 #include <sstream>
 #include <string>
@@ -88,13 +89,14 @@ class OctomapRrtPlanner {
   double goal_radius_;
   double speed_;
   double goal_altitude_;
+  double yaw_;
 
   Eigen::Vector3d local_position_, local_velocity_;
   Eigen::Vector3d reference_pos_;
   geometry_msgs::PoseStamped last_pos_;
   Eigen::Quaternionf reference_att_;
   Eigen::Vector3d goal_;
-  geometry_msgs::PoseStamped current_goal_, global_goal_;
+  geometry_msgs::PoseStamped previous_goal_,current_goal_, global_goal_;
 
   std::vector<Eigen::Vector3d> current_path_;
   nav_msgs::Path actual_path_;
@@ -125,11 +127,11 @@ class OctomapRrtPlanner {
   double poseDistance(const geometry_msgs::PoseStamped& p1, const geometry_msgs::PoseStamped& p2);
   void checkBounds(const Eigen::Vector3d& in_lower, const Eigen::Vector3d& in_upper, Eigen::Vector3d& out_lower, Eigen::Vector3d& out_upper );
 
-
  public:
   OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeHandle& nh_private);
   virtual ~OctomapRrtPlanner();
   void planWithSimpleSetup();
+  double planYaw();
 };
 
 #endif
