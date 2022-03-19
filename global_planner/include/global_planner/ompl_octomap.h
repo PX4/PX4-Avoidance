@@ -26,23 +26,57 @@ class OctomapValidityChecker : public base::StateValidityChecker {
   }
 
   virtual bool checkCollision(Eigen::Vector3d state) const {
-    bool collision = true;
+    bool collision = false;
     double occprob = 1.0;
     uint octree_depth = 16;
     double logodds;
+    octomap::OcTreeNode* node;
+    double resolution = 0.1;
+    double radius = 0.6;
+    int search_iters = radius / resolution;
+    double increment = 0;
 
-    if (map_) {
-      octomap::OcTreeNode* node = map_->search(state(0), state(1), state(2), octree_depth);
-      if (node)
-        occprob = octomap::probability(logodds = node->getValue());
-      else
-        occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
+    if (map_) 
+    {
 
-      // Assuming a optimistic planner: Unknown space is considered as unoccupied
-      if (occprob <= 0.5) collision = false;
+      for(int i = 0; i <= search_iters; i++) 
+      {
+        
+        increment = i*resolution;
+        
+        node = map_->search(state(0) + increment, state(1) + increment, state(2) + increment, octree_depth);
+        if (node)
+          occprob = octomap::probability(logodds = node->getValue());
+        else
+          occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
 
-      return collision;
+        // Assuming a optimistic planner: Unknown space is considered as unoccupied
+        if (occprob > 0.5) 
+        {
+          collision = true;
+          break;
+        }
+
+        node = map_->search(state(0) - increment, state(1) - increment, state(2) - increment, octree_depth);
+        if (node)
+          occprob = octomap::probability(logodds = node->getValue());
+        else
+          occprob = 0.5;  // Unobserved region of the map has equal chance of being occupied / unoccupied
+
+        // Assuming a optimistic planner: Unknown space is considered as unoccupied
+        if (occprob > 0.5) 
+        {
+          collision = true;
+          break;
+        } 
+
+  
+      }
+  
     }
+
+    return collision;
+  
   }
 
  protected:

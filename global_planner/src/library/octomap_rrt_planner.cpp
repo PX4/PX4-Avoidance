@@ -34,8 +34,8 @@ OctomapRrtPlanner::OctomapRrtPlanner(const ros::NodeHandle& nh, const ros::NodeH
   pointcloud_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/cloud_in", 10);
 
   // RRT planner parameters
-  min_altitude_ = nh_.param<double>("min_altitude", 3.0);
-  max_altitude_ = nh_.param<double>("max_altitude", 4.0);
+  min_altitude_ = nh_.param<double>("min_altitude", 1.0);
+  max_altitude_ = nh_.param<double>("max_altitude", 5.0);
   goal_radius_ = nh_.param<double>("goal_radius", 1.0);
   speed_ = nh_.param<double>("default_speed",2.0);
   goal_altitude_ = nh_.param<double>("goal_altitude", 3.5);
@@ -217,7 +217,7 @@ void OctomapRrtPlanner::publishSetpoint() {
   avoidance::transformToTrajectory(msg, setpoint);
   msg.header.frame_id = frame_id_;
   msg.header.stamp = ros::Time::now();
-  //trajectory_pub_.publish(msg);
+  trajectory_pub_.publish(msg);
 }
 
 void OctomapRrtPlanner::publishPath() {
@@ -234,7 +234,7 @@ void OctomapRrtPlanner::publishPath() {
   if(current_path_.size() > 2) {
     msg.poses = path;
     global_path_pub_.publish(msg);
-    current_goal_ = path[2];
+    current_goal_ = path[1];
   }
     
 }
@@ -282,7 +282,7 @@ void OctomapRrtPlanner::planWithSimpleSetup() {
     if(octree_) {
       Eigen::Vector3d in_lower, in_upper, out_lower,out_upper;
       in_lower << local_position_(0), local_position_(1), min_altitude_;
-      in_upper << goal_(0), goal_(1), max_altitude_;
+      in_upper << goal_(0), goal_(1), goal_(2) + max_altitude_;
 
       checkBounds(in_lower,in_upper,out_lower,out_upper);
 
