@@ -60,8 +60,8 @@ void LocalPlannerNodelet::onInit() {
 }
 
 void LocalPlannerNodelet::InitializeNodelet() {
-  nh_ = ros::NodeHandle("~");
-  nh_private_ = ros::NodeHandle("");
+  nh_ = ros::NodeHandle("");
+  nh_private_ = ros::NodeHandle("~");
 
   local_planner_.reset(new LocalPlanner());
   wp_generator_.reset(new WaypointGenerator());
@@ -76,20 +76,20 @@ void LocalPlannerNodelet::InitializeNodelet() {
   tf_listener_ = new tf::TransformListener(ros::Duration(tf::Transformer::DEFAULT_CACHE_TIME), true);
 
   // initialize standard subscribers
-  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("/mavros/local_position/pose", 1,
+  pose_sub_ = nh_.subscribe<const geometry_msgs::PoseStamped&>("mavros/local_position/pose", 1,
                                                                &LocalPlannerNodelet::positionCallback, this);
-  velocity_sub_ = nh_.subscribe<const geometry_msgs::TwistStamped&>("/mavros/local_position/velocity_local", 1,
+  velocity_sub_ = nh_.subscribe<const geometry_msgs::TwistStamped&>("mavros/local_position/velocity_local", 1,
                                                                     &LocalPlannerNodelet::velocityCallback, this);
-  state_sub_ = nh_.subscribe("/mavros/state", 1, &LocalPlannerNodelet::stateCallback, this);
-  clicked_point_sub_ = nh_.subscribe("/clicked_point", 1, &LocalPlannerNodelet::clickedPointCallback, this);
-  clicked_goal_sub_ = nh_.subscribe("/move_base_simple/goal", 1, &LocalPlannerNodelet::clickedGoalCallback, this);
-  fcu_input_sub_ = nh_.subscribe("/mavros/trajectory/desired", 1, &LocalPlannerNodelet::fcuInputGoalCallback, this);
-  goal_topic_sub_ = nh_.subscribe("/input/goal_position", 1, &LocalPlannerNodelet::updateGoalCallback, this);
-  distance_sensor_sub_ = nh_.subscribe("/mavros/altitude", 1, &LocalPlannerNodelet::distanceSensorCallback, this);
-  mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>("/mavros/setpoint_velocity/cmd_vel_unstamped", 10);
-  mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/mavros/setpoint_position/local", 10);
-  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("/mavros/trajectory/generated", 10);
-  mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("/mavros/obstacle/send", 10);
+  state_sub_ = nh_.subscribe("mavros/state", 1, &LocalPlannerNodelet::stateCallback, this);
+  clicked_point_sub_ = nh_.subscribe("clicked_point", 1, &LocalPlannerNodelet::clickedPointCallback, this);
+  clicked_goal_sub_ = nh_.subscribe("move_base_simple/goal", 1, &LocalPlannerNodelet::clickedGoalCallback, this);
+  fcu_input_sub_ = nh_.subscribe("mavros/trajectory/desired", 1, &LocalPlannerNodelet::fcuInputGoalCallback, this);
+  goal_topic_sub_ = nh_.subscribe("input/goal_position", 1, &LocalPlannerNodelet::updateGoalCallback, this);
+  distance_sensor_sub_ = nh_.subscribe("mavros/altitude", 1, &LocalPlannerNodelet::distanceSensorCallback, this);
+  mavros_vel_setpoint_pub_ = nh_.advertise<geometry_msgs::Twist>("mavros/setpoint_velocity/cmd_vel_unstamped", 10);
+  mavros_pos_setpoint_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("mavros/setpoint_position/local", 10);
+  mavros_obstacle_free_path_pub_ = nh_.advertise<mavros_msgs::Trajectory>("mavros/trajectory/generated", 10);
+  mavros_obstacle_distance_pub_ = nh_.advertise<sensor_msgs::LaserScan>("mavros/obstacle/send", 10);
 
   // initialize visualization topics
   visualizer_.initializePublishers(nh_);
@@ -119,10 +119,10 @@ void LocalPlannerNodelet::startNode() {
 void LocalPlannerNodelet::readParams() {
   // Parameter from launch file
   Eigen::Vector3d goal_d = goal_position_.cast<double>();
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_x_param", goal_d.x(), 0.0);
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_y_param", goal_d.y(), 0.0);
-  nh_private_.param<double>(nodelet::Nodelet::getName() + "/goal_z_param", goal_d.z(), 0.0);
-  nh_private_.param<bool>(nodelet::Nodelet::getName() + "/accept_goal_input_topic", accept_goal_input_topic_, false);
+  nh_private_.param<double>("goal_x_param", goal_d.x(), 0.0);
+  nh_private_.param<double>("goal_y_param", goal_d.y(), 0.0);
+  nh_private_.param<double>("goal_z_param", goal_d.z(), 0.0);
+  nh_private_.param<bool>("accept_goal_input_topic", accept_goal_input_topic_, false);
   goal_position_ = goal_d.cast<float>();
 
   std::vector<std::string> camera_topics;
@@ -424,9 +424,9 @@ void LocalPlannerNodelet::pointCloudCallback(const sensor_msgs::PointCloud2::Con
     std::lock_guard<std::mutex> tf_list_guard(buffered_transforms_mutex_);
     std::pair<std::string, std::string> transform_frames;
     transform_frames.first = msg->header.frame_id;
-    transform_frames.second = "/local_origin";
+    transform_frames.second = "local_origin";
     buffered_transforms_.push_back(transform_frames);
-    transform_frames.second = "/fcu";
+    transform_frames.second = "fcu";
     buffered_transforms_.push_back(transform_frames);
     cameras_[index].transform_registered_ = true;
   }
@@ -502,10 +502,10 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
         tf::StampedTransform cloud_transform;
         tf::StampedTransform fcu_transform;
 
-        if (tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "/local_origin",
+        if (tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "local_origin",
                                     pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp),
                                     cloud_transform) &&
-            tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "/fcu",
+            tf_buffer_.getTransform(cameras_[index].untransformed_cloud_.header.frame_id, "fcu",
                                     pcl_conversions::fromPCL(cameras_[index].untransformed_cloud_.header.stamp),
                                     fcu_transform)) {
           // remove nan padding and compute fov
@@ -515,10 +515,10 @@ void LocalPlannerNodelet::pointCloudTransformThread(int index) {
           pcl_ros::transformPointCloud(maxima, maxima, fcu_transform);
           updateFOVFromMaxima(cameras_[index].fov_fcu_frame_, maxima);
 
-          // transform cloud to /local_origin frame
+          // transform cloud to local_origin frame
           pcl_ros::transformPointCloud(cameras_[index].untransformed_cloud_, cameras_[index].transformed_cloud_,
                                        cloud_transform);
-          cameras_[index].transformed_cloud_.header.frame_id = "/local_origin";
+          cameras_[index].transformed_cloud_.header.frame_id = "local_origin";
           cameras_[index].transformed_cloud_.header.stamp = cameras_[index].untransformed_cloud_.header.stamp;
 
           cameras_[index].transformed_ = true;

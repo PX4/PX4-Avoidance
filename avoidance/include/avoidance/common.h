@@ -468,7 +468,7 @@ inline geometry_msgs::Twist toTwist(const Eigen::Vector3f& l, const Eigen::Vecto
 inline geometry_msgs::PoseStamped toPoseStamped(const Eigen::Vector3f& ev3, const Eigen::Quaternionf& eq) {
   geometry_msgs::PoseStamped gmps;
   gmps.header.stamp = ros::Time::now();
-  gmps.header.frame_id = "/local_origin";
+  gmps.header.frame_id = "local_origin";
   gmps.pose.position = toPoint(ev3);
   gmps.pose.orientation = toQuaternion(eq);
   return gmps;

@@ -11,26 +11,26 @@ namespace avoidance {
 
 // initialize subscribers for local planner visualization topics
 void LocalPlannerVisualization::initializePublishers(ros::NodeHandle& nh) {
-  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("/local_pointcloud", 1);
-  pointcloud_size_pub_ = nh.advertise<std_msgs::UInt32>("/pointcloud_size", 1);
-  bounding_box_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/bounding_box", 1);
-  ground_measurement_pub_ = nh.advertise<visualization_msgs::Marker>("/ground_measurement", 1);
-  original_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/original_waypoint", 1);
-  adapted_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/adapted_waypoint", 1);
-  smoothed_wp_pub_ = nh.advertise<visualization_msgs::Marker>("/smoothed_waypoint", 1);
-  complete_tree_pub_ = nh.advertise<visualization_msgs::Marker>("/complete_tree", 1);
-  tree_path_pub_ = nh.advertise<visualization_msgs::Marker>("/tree_path", 1);
-  marker_goal_pub_ = nh.advertise<visualization_msgs::MarkerArray>("/goal_position", 1);
-  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("/path_actual", 1);
-  path_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_waypoint", 1);
-  path_adapted_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/path_adapted_waypoint", 1);
-  current_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("/current_setpoint", 1);
-  histogram_image_pub_ = nh.advertise<sensor_msgs::Image>("/histogram_image", 1);
-  cost_image_pub_ = nh.advertise<sensor_msgs::Image>("/cost_image", 1);
-  closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("/closest_point", 1);
-  deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("/deg60_point", 1);
-  fov_pub_ = nh.advertise<visualization_msgs::Marker>("/fov", 4);
-  range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("/range_scan", 1);
+  local_pointcloud_pub_ = nh.advertise<pcl::PointCloud<pcl::PointXYZ>>("local_pointcloud", 1);
+  pointcloud_size_pub_ = nh.advertise<std_msgs::UInt32>("pointcloud_size", 1);
+  bounding_box_pub_ = nh.advertise<visualization_msgs::MarkerArray>("bounding_box", 1);
+  ground_measurement_pub_ = nh.advertise<visualization_msgs::Marker>("ground_measurement", 1);
+  original_wp_pub_ = nh.advertise<visualization_msgs::Marker>("original_waypoint", 1);
+  adapted_wp_pub_ = nh.advertise<visualization_msgs::Marker>("adapted_waypoint", 1);
+  smoothed_wp_pub_ = nh.advertise<visualization_msgs::Marker>("smoothed_waypoint", 1);
+  complete_tree_pub_ = nh.advertise<visualization_msgs::Marker>("complete_tree", 1);
+  tree_path_pub_ = nh.advertise<visualization_msgs::Marker>("tree_path", 1);
+  marker_goal_pub_ = nh.advertise<visualization_msgs::MarkerArray>("goal_position", 1);
+  path_actual_pub_ = nh.advertise<visualization_msgs::Marker>("path_actual", 1);
+  path_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("path_waypoint", 1);
+  path_adapted_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("path_adapted_waypoint", 1);
+  current_waypoint_pub_ = nh.advertise<visualization_msgs::Marker>("current_setpoint", 1);
+  histogram_image_pub_ = nh.advertise<sensor_msgs::Image>("histogram_image", 1);
+  cost_image_pub_ = nh.advertise<sensor_msgs::Image>("cost_image", 1);
+  closest_point_pub_ = nh.advertise<visualization_msgs::Marker>("closest_point", 1);
+  deg60_point_pub_ = nh.advertise<visualization_msgs::Marker>("deg60_point", 1);
+  fov_pub_ = nh.advertise<visualization_msgs::Marker>("fov", 4);
+  range_scan_pub_ = nh.advertise<visualization_msgs::Marker>("range_scan", 1);
 }
 
 void LocalPlannerVisualization::visualizePlannerData(const LocalPlanner& planner,
