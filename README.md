@@ -75,7 +75,7 @@ You might want to skip some steps if your system is already partially installed.
    > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
    >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
    >  - For Gazebo 8,
-       ```sh
+       ```
        sudo apt install ros-noetic-gazebo8-*
        ```
     > - For Gazebo 9,
