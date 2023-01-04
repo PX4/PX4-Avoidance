@@ -193,6 +193,7 @@ In the following section we guide you through installing and running a Gazebo si
    ```
 
 The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
+
 OR you can ensure your ~/.bashrc is setup correctly so that each new terminal is sourced correctly.  
 
 ```bash
