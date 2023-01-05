@@ -15,9 +15,9 @@ The three algorithms are standalone and they are not meant to be used together.
 The *local_planner* requires less computational power but it doesn't compute optimal paths towards the goal since it doesn't store information about the already explored environment. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/file/d/1EhjTvv1QyUxfdnQnBQcPc-T3Zg3OMnlD/edit). On the other hand, the *global_planner* is computationally more expensive since it builds a map of the environment. For the map to be good enough for navigation, accurate global position and heading are required. An in-depth discussion on how it works can be found in [this thesis](https://drive.google.com/file/d/1hZBBV6zNEpX1OYv_-U6flbC2gmNjqy-L/).
 The *safe_landing_planner* classifies the terrain underneath the vehicle based on the mean and standard deviation of the z coordinate of pointcloud points. The pointcloud from a downwards facing sensor is binned into a 2D grid based on the xy point coordinates. For each bin, the mean and standard deviation of z coordinate of the points are calculated and they are used to locate flat areas where it is safe to land.
 
-> **Note** The development team is right now focused on the *local_planner*.
+> **Note** The most developed and used planner is the *local_planner*. This is where you should start.
 
-The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 18.04 (recommended), for both avoidance and collision prevention use cases.
+The documentation contains information about how to setup and run the two planner systems on the Gazebo simulator and on a companion computer running Ubuntu 20.04 (recommended), for both avoidance and collision prevention use cases.
 
 > **Note** PX4-side setup is covered in the PX4 User Guide:
   - [Obstacle Avoidance](https://docs.px4.io/en/computer_vision/obstacle_avoidance.html)
@@ -50,7 +50,7 @@ The documentation contains information about how to setup and run the two planne
 
 ### Installation
 
-This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on **Ubuntu 18.04** with *ROS Melodic* (includes Gazebo 9).
+This is a step-by-step guide to install and build all the prerequisites for running the avoidance module on **Ubuntu 20.04** with *ROS Noetic* (includes Gazebo 11).
 You might want to skip some steps if your system is already partially installed.
 
 > **Note:** These instructions assume your catkin workspace (in which we will build the avoidance module) is in `~/catkin_ws`, and the PX4 Firmware directory is `~/Firmware`.
@@ -59,36 +59,37 @@ You might want to skip some steps if your system is already partially installed.
 1. Add ROS to sources.list:
      ```bash
      sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-     sudo apt-key adv --keyserver 'hkp://keyserver.ubuntu.com:80' --recv-key C1CF6E31E6BADE8868B172B4F42ED6FBAB17C654
+     sudo apt install curl
+     curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.asc | sudo apt-key add -
      sudo apt update
      ```
 
 1. Install ROS with Gazebo:
      ```bash
-     sudo apt install ros-melodic-desktop-full
+     sudo apt install ros-noetic-desktop-full
 
      # Source ROS
-     echo "source /opt/ros/melodic/setup.bash" >> ~/.bashrc
+     echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
      source ~/.bashrc
      ```
    > **Note** We recommend you use the version of Gazebo that comes with your (full) installation of ROS.
    >  If you must to use another Gazebo version, remember to install associated ros-gazebo related packages:
    >  - For Gazebo 8,
-       ```sh
-       sudo apt install ros-melodic-gazebo8-*
+       ```
+       sudo apt install ros-noetic-gazebo8-*
        ```
     > - For Gazebo 9,
        ```
-       sudo apt install ros-melodic-gazebo9-*
+       sudo apt install ros-noetic-gazebo9-*
        ```
+
+1. Dependencies for building packages
+   ```bash
+   sudo apt install python3-rosdep python3-rosinstall python3-rosinstall-generator python3-wstool build-essential
+   ```
 
 1. Install and initialize rosdep.
    ```bash
-   # for ros-melodic install:
-   sudo apt install python-rosdep
-   # for ros-noetic install: 
-   sudo apt install python3-rosdep
-
    rosdep init
    rosdep update
    ```
@@ -96,7 +97,7 @@ You might want to skip some steps if your system is already partially installed.
 1. Install catkin and create your catkin workspace directory.
 
    ```bash
-   sudo apt install python-catkin-tools
+   sudo apt install python3-catkin-tools
    mkdir -p ~/catkin_ws/src
    ```
 
@@ -104,7 +105,7 @@ You might want to skip some steps if your system is already partially installed.
    > **Note:** Instructions to install MAVROS from sources can be found [here](https://dev.px4.io/en/ros/mavros_installation.html).
 
      ```bash
-     sudo apt install ros-melodic-mavros ros-melodic-mavros-extras
+     sudo apt install ros-noetic-mavros ros-noetic-mavros-extras
      ```
 
 1. Install the *geographiclib* dataset
@@ -117,7 +118,7 @@ You might want to skip some steps if your system is already partially installed.
 
 1. Install avoidance module dependencies (pointcloud library and octomap).
      ```bash
-     sudo apt install libpcl1 ros-melodic-octomap-*
+     sudo apt install libpcl1 ros-noetic-octomap-*
      ```
 
 1. Clone this repository in your catkin workspace in order to build the avoidance node.
@@ -179,7 +180,7 @@ In the following section we guide you through installing and running a Gazebo si
    # Quit the simulation (Ctrl+C)
 
    # Setup some more Gazebo-related environment variables (modify this line based on the location of the Firmware folder on your machine)
-   . ~/Firmware/Tools/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+   . ~/Firmware/Tools/simulation/gazebo/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4:
@@ -192,6 +193,21 @@ In the following section we guide you through installing and running a Gazebo si
    ```
 
 The last three steps, together with sourcing your catkin **setup.bash** (`source ~/catkin_ws/devel/setup.bash`) should be repeated each time a new terminal window is open.
+
+**OR** you can ensure your ~/.bashrc is setup correctly so that each new terminal is sourced correctly.  
+
+```bash
+sudo nano ~/.bashrc
+```
+Ensure that at the bottom of that document you have exactly this:
+```bash
+source /opt/ros/noetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+. ~/Firmware/Tools/simulation/gazebo/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds
+export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
+```
+
 You should now be ready to run the simulation using local or global planner.
 
 ### Local Planner (default, heavily flight tested)
@@ -202,7 +218,7 @@ The planner is based on the [3DVFH+](http://ceur-ws.org/Vol-1319/morse14_paper_0
 
 > **Note:** You *may* need to install some additional dependencies to run the following code (if not installed):
 >   ```sh
->   sudo apt install ros-melodic-stereo-image-proc ros-melodic-image-view
+>   sudo apt install ros-noetic-stereo-image-proc ros-noetic-image-view
 >   ```
 
 Any of the following three launch file scripts can be used to run local planner:
@@ -342,8 +358,8 @@ Parameters to set through QGC:
 
 ### Companion Computer
 
-* OS: Ubuntu 18.04 OS or a docker container running Ubuntu 18.04 must be setup (e.g. if using on a Yocto based system).
-* ROS Melodic: see [Installation](#installation)
+* OS: Ubuntu 20.04 OS or a docker container running Ubuntu 20.04 must be setup (e.g. if using on a Yocto based system).
+* ROS Noetic: see [Installation](#installation)
 * Other Required Components for Intel Realsense:
   - Librealsense (Realsense SDK). The installation instructions can be found [here](https://github.com/IntelRealSense/librealsense/blob/master/doc/installation.md)
   - [Librealsense ROS wrappers](https://github.com/intel-ros/realsense.git)
