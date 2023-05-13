@@ -180,7 +180,7 @@ In the following section we guide you through installing and running a Gazebo si
    # Quit the simulation (Ctrl+C)
 
    # Setup some more Gazebo-related environment variables (modify this line based on the location of the Firmware folder on your machine)
-   . ~/Firmware/Tools/simulation/gazebo/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+   . ~/Firmware/Tools/simulation/gazebo-classic/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
    ```
 
 1. Add the Firmware directory to ROS_PACKAGE_PATH so that ROS can start PX4:
@@ -203,7 +203,7 @@ Ensure that at the bottom of that document you have exactly this:
 ```bash
 source /opt/ros/noetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
-. ~/Firmware/Tools/simulation/gazebo/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
+. ~/Firmware/Tools/simulation/gazebo-classic/setup_gazebo.bash ~/Firmware ~/Firmware/build/px4_sitl_default
 export GAZEBO_MODEL_PATH=${GAZEBO_MODEL_PATH}:~/catkin_ws/src/avoidance/avoidance/sim/models:~/catkin_ws/src/avoidance/avoidance/sim/worlds
 export ROS_PACKAGE_PATH=${ROS_PACKAGE_PATH}:~/Firmware
 ```
