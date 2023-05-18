@@ -3,6 +3,11 @@
 [![Build and Unit Test](https://github.com/PX4/PX4-Avoidance/workflows/Build%20and%20Unit%20Test/badge.svg)](https://github.com/PX4/PX4-Avoidance/actions)
 [![Coverage Status](https://coveralls.io/repos/github/PX4/avoidance/badge.svg)](https://coveralls.io/github/PX4/avoidance)
 
+> **Warning:** This project is currently not maintained.
+> 
+> We'd welcome community support to maintain and update the project.
+> If you're interested in contributing, please contact the [PX4 development team through normal channels](http://docs.px4.io/main/en/contribute/support.html#forums-and-chat).
+
 PX4 computer vision algorithms packaged as ROS nodes for depth sensor fusion and obstacle avoidance.
 This repository contains three different implementations:
 
