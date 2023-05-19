@@ -1,0 +1,19 @@
+
+# RRT Bounds
+min_altitude: 3.0 #min altitude [meters] to plan
+max_altitude: 7.5 #max altitude [meters] to plan
+
+max_x: 5.0 #how much ahead of the goal in the x direction
+max_y: 5.0 #how much ahead of the goal in the y direction
+
+min_x: 5.0 #how much behind of the current location in the x direction
+min_y: 5.0 #how much behind of the current location in the y direction
+
+# Planner params
+goal_radius: 0.5   #Minimum allowed distance from path end to goal
+goal_altitude: 6.0 #Default goal altitude
+
+# Control params
+default_speed: 2.0    #Default speed of the drone
+control_loop_dt: 0.05 #Control loop rate
+planner_loop_dt: 0.1  #Planner loop rate
